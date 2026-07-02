@@ -1,0 +1,6 @@
+export const featureFlags = {
+  // Off by default. When enabled later, this facade can start reading a real
+  // Supabase session without changing route or navigation call sites.
+  enableAuthShell: process.env.NEXT_PUBLIC_AXXESS_AUTH_SHELL === "true",
+  enableSupabaseRuntime: false,
+} as const;
