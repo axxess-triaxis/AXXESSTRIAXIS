@@ -1,0 +1,200 @@
+{
+  "organizations": [
+    {
+      "id": "00000000-0000-4000-8000-000000000001",
+      "name": "Public Safety Canada",
+      "slug": "public-safety-canada",
+      "sector": "government"
+    }
+  ],
+  "profiles": [
+    {
+      "id": "00000000-0000-4000-8000-000000000101",
+      "email": "raj.anand@example.gov",
+      "display_name": "Raj Anand",
+      "avatar_initials": "RA"
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000102",
+      "email": "maya.kim@example.gov",
+      "display_name": "Maya Kim",
+      "avatar_initials": "MK"
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000103",
+      "email": "daniel.mitchell@example.gov",
+      "display_name": "Daniel Mitchell",
+      "avatar_initials": "DM"
+    }
+  ],
+  "roles": [
+    {
+      "id": "00000000-0000-4000-8000-000000000201",
+      "organization_id": "00000000-0000-4000-8000-000000000001",
+      "name": "Organization Admin"
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000202",
+      "organization_id": "00000000-0000-4000-8000-000000000001",
+      "name": "Manager"
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000203",
+      "organization_id": "00000000-0000-4000-8000-000000000001",
+      "name": "Executive"
+    }
+  ],
+  "organization_members": [
+    {
+      "organization_id": "00000000-0000-4000-8000-000000000001",
+      "user_id": "00000000-0000-4000-8000-000000000101",
+      "title": "Deputy Minister",
+      "status": "active"
+    },
+    {
+      "organization_id": "00000000-0000-4000-8000-000000000001",
+      "user_id": "00000000-0000-4000-8000-000000000102",
+      "title": "Assistant Deputy Minister",
+      "status": "active"
+    }
+  ],
+  "user_roles": [
+    {
+      "organization_id": "00000000-0000-4000-8000-000000000001",
+      "user_id": "00000000-0000-4000-8000-000000000101",
+      "role_id": "00000000-0000-4000-8000-000000000201"
+    },
+    {
+      "organization_id": "00000000-0000-4000-8000-000000000001",
+      "user_id": "00000000-0000-4000-8000-000000000102",
+      "role_id": "00000000-0000-4000-8000-000000000202"
+    }
+  ],
+  "programs": [
+    {
+      "id": "00000000-0000-4000-8000-000000000301",
+      "organization_id": "00000000-0000-4000-8000-000000000001",
+      "name": "National Security Modernization",
+      "owner_id": "00000000-0000-4000-8000-000000000101",
+      "status": "active"
+    }
+  ],
+  "projects": [
+    {
+      "id": "00000000-0000-4000-8000-000000000401",
+      "organization_id": "00000000-0000-4000-8000-000000000001",
+      "program_id": "00000000-0000-4000-8000-000000000301",
+      "name": "Border Security AI Platform",
+      "owner_id": "00000000-0000-4000-8000-000000000103",
+      "progress": 42,
+      "risk_level": "high",
+      "status": "at-risk",
+      "due_date": "2025-08-20"
+    },
+    {
+      "id": "00000000-0000-4000-8000-000000000402",
+      "organization_id": "00000000-0000-4000-8000-000000000001",
+      "program_id": "00000000-0000-4000-8000-000000000301",
+      "name": "National Digital ID Infrastructure",
+      "owner_id": "00000000-0000-4000-8000-000000000101",
+      "progress": 67,
+      "risk_level": "medium",
+      "status": "in-progress",
+      "due_date": "2025-03-15"
+    }
+  ],
+  "tasks": [
+    {
+      "organization_id": "00000000-0000-4000-8000-000000000001",
+      "project_id": "00000000-0000-4000-8000-000000000401",
+      "title": "Validate vendor compliance documentation",
+      "assignee_id": "00000000-0000-4000-8000-000000000103",
+      "priority": "high",
+      "status": "pending",
+      "due_date": "2024-11-15"
+    },
+    {
+      "organization_id": "00000000-0000-4000-8000-000000000001",
+      "project_id": "00000000-0000-4000-8000-000000000402",
+      "title": "Review Q3 risk assessment",
+      "assignee_id": "00000000-0000-4000-8000-000000000101",
+      "priority": "high",
+      "status": "in-progress",
+      "due_date": "2024-11-12"
+    }
+  ],
+  "stakeholders": [
+    {
+      "organization_id": "00000000-0000-4000-8000-000000000001",
+      "name": "Minister Sarah Okonkwo",
+      "affiliation": "Ministry of Digital Affairs",
+      "role": "Executive Sponsor",
+      "influence_score": 98,
+      "engagement_level": "high"
+    }
+  ],
+  "documents": [
+    {
+      "organization_id": "00000000-0000-4000-8000-000000000001",
+      "project_id": "00000000-0000-4000-8000-000000000401",
+      "name": "Border Security AI - Ethics Review Board Submission",
+      "storage_path": "mock/documents/border-security-ethics-review.docx",
+      "mime_type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "classification": "confidential",
+      "created_by": "00000000-0000-4000-8000-000000000103"
+    }
+  ],
+  "meetings": [
+    {
+      "id": "00000000-0000-4000-8000-000000000501",
+      "organization_id": "00000000-0000-4000-8000-000000000001",
+      "project_id": "00000000-0000-4000-8000-000000000401",
+      "title": "Border Security AI - Ethics Board Q&A Session",
+      "starts_at": "2024-11-11T14:00:00Z",
+      "ends_at": "2024-11-11T15:00:00Z",
+      "status": "scheduled"
+    }
+  ],
+  "decisions": [
+    {
+      "organization_id": "00000000-0000-4000-8000-000000000001",
+      "meeting_id": "00000000-0000-4000-8000-000000000501",
+      "title": "Pause deployment pending ethics clearance",
+      "summary": "Deployment remains paused until the ethics board approves fairness mitigations.",
+      "decided_by_id": "00000000-0000-4000-8000-000000000101",
+      "decided_at": "2024-11-05T18:30:00Z"
+    }
+  ],
+  "risks": [
+    {
+      "organization_id": "00000000-0000-4000-8000-000000000001",
+      "project_id": "00000000-0000-4000-8000-000000000401",
+      "title": "Unresolved AI fairness concerns",
+      "severity": "high",
+      "likelihood": "medium",
+      "status": "mitigating",
+      "owner_id": "00000000-0000-4000-8000-000000000103"
+    }
+  ],
+  "notifications": [
+    {
+      "organization_id": "00000000-0000-4000-8000-000000000001",
+      "user_id": "00000000-0000-4000-8000-000000000101",
+      "title": "Ethics review escalation",
+      "body": "Border Security AI ethics review requires executive attention.",
+      "status": "unread"
+    }
+  ],
+  "audit_logs": [
+    {
+      "organization_id": "00000000-0000-4000-8000-000000000001",
+      "actor_user_id": "00000000-0000-4000-8000-000000000101",
+      "action": "approval.reviewed",
+      "resource_type": "approval",
+      "metadata": {
+        "source": "mock-seed",
+        "sprint": 3
+      }
+    }
+  ]
+}
