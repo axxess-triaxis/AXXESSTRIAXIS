@@ -1,12 +1,36 @@
 import { featureFlags } from "../config/featureFlags";
+import { getCurrentAuthSession } from "../auth/session";
+import {
+  auditLogsRepository,
+  invitationsRepository,
+  meetingsRepository,
+  notificationsRepository,
+  organizationsRepository,
+  programsRepository,
+  projectsRepository,
+  tasksRepository,
+  usersRepository,
+} from "../repositories/supabaseEnterpriseRepositories";
 import { mockCurrentUserContext } from "../security/rbac";
-import { institutionalMockRepository } from "../services/mockInstitutionalRepository";
-import type { InstitutionalRepository, StorageRepository } from "../repositories/interfaces";
+import { legacyInstitutionalViewRepository } from "../services/legacyInstitutionalViewRepository";
+import type {
+  InstitutionalRepository,
+  AuditLogsRepository,
+  InvitationsRepository,
+  MeetingsRepository,
+  NotificationsRepository,
+  OrganizationsRepository,
+  ProgramsRepository,
+  ProjectsRepository,
+  StorageRepository,
+  TasksRepository,
+  UsersRepository,
+} from "../repositories/interfaces";
 import type { AiProviderService, AuthenticationService, ConfigurationService, NotificationService } from "../services/interfaces";
 
 const authService: AuthenticationService = {
-  getCurrentUser: () => mockCurrentUserContext,
-  isAuthenticated: () => true,
+  getCurrentUser: () => getCurrentAuthSession().user ?? mockCurrentUserContext,
+  isAuthenticated: () => getCurrentAuthSession().status === "authenticated",
 };
 
 const aiService: AiProviderService = {
@@ -48,6 +72,15 @@ const configurationService: ConfigurationService = {
 
 export type ApplicationServices = {
   institutionalRepository: InstitutionalRepository;
+  organizationsRepository: OrganizationsRepository;
+  usersRepository: UsersRepository;
+  programsRepository: ProgramsRepository;
+  projectsRepository: ProjectsRepository;
+  tasksRepository: TasksRepository;
+  meetingsRepository: MeetingsRepository;
+  notificationsRepository: NotificationsRepository;
+  invitationsRepository: InvitationsRepository;
+  auditLogsRepository: AuditLogsRepository;
   authService: AuthenticationService;
   aiService: AiProviderService;
   storageRepository: StorageRepository;
@@ -56,7 +89,16 @@ export type ApplicationServices = {
 };
 
 export const applicationServices: ApplicationServices = {
-  institutionalRepository: institutionalMockRepository,
+  institutionalRepository: legacyInstitutionalViewRepository,
+  organizationsRepository,
+  usersRepository,
+  programsRepository,
+  projectsRepository,
+  tasksRepository,
+  meetingsRepository,
+  notificationsRepository,
+  invitationsRepository,
+  auditLogsRepository,
   authService,
   aiService,
   storageRepository,

@@ -1,5 +1,14 @@
 export type EntityId = string;
 export type ISODateTime = string;
+export type PriorityLevel = "low" | "medium" | "high" | "urgent";
+export type RoleName =
+  | "Super Admin"
+  | "Organization Admin"
+  | "Executive"
+  | "Manager"
+  | "Employee"
+  | "Consultant"
+  | "Guest";
 
 export interface Organization {
   id: EntityId;
@@ -20,15 +29,7 @@ export interface Permission {
 export interface Role {
   id: EntityId;
   organizationId: EntityId | null;
-  name:
-    | "Super Admin"
-    | "Organization Admin"
-    | "Executive"
-    | "Manager"
-    | "Employee"
-    | "External Partner"
-    | "Consultant"
-    | "Guest";
+  name: RoleName;
   permissions: Permission[];
 }
 
@@ -38,6 +39,7 @@ export interface User {
   email: string;
   displayName: string;
   avatarInitials: string;
+  role: RoleName;
   roleIds: EntityId[];
   status: "active" | "invited" | "suspended";
   createdAt: ISODateTime;
@@ -59,22 +61,29 @@ export interface Project {
   organizationId: EntityId;
   programId?: EntityId;
   name: string;
+  description?: string;
   ownerId: EntityId;
   progress: number;
-  riskLevel: "low" | "medium" | "high" | "urgent";
+  riskLevel: PriorityLevel;
+  priority: PriorityLevel;
   status: "planning" | "in-progress" | "review" | "complete" | "at-risk";
+  startDate?: ISODateTime;
   dueDate?: ISODateTime;
+  tags: string[];
 }
 
 export interface Task {
   id: EntityId;
   organizationId: EntityId;
+  programId?: EntityId;
   projectId?: EntityId;
   title: string;
+  description?: string;
   assigneeId?: EntityId;
-  priority: "low" | "medium" | "high" | "urgent";
+  priority: PriorityLevel;
   status: "pending" | "in-progress" | "blocked" | "completed";
   dueDate?: ISODateTime;
+  tags: string[];
 }
 
 export interface Stakeholder {
@@ -102,10 +111,17 @@ export interface Document {
 export interface Meeting {
   id: EntityId;
   organizationId: EntityId;
+  projectId?: EntityId;
+  programId?: EntityId;
+  stakeholderId?: EntityId;
   title: string;
   startsAt: ISODateTime;
   endsAt?: ISODateTime;
   attendeeIds: EntityId[];
+  agenda?: string;
+  notes?: string;
+  decisions: string[];
+  actionItems: string[];
   status: "scheduled" | "completed" | "cancelled";
 }
 
@@ -134,19 +150,38 @@ export interface Notification {
   id: EntityId;
   organizationId: EntityId;
   userId: EntityId;
+  type: "system" | "project" | "task" | "meeting" | "admin";
   title: string;
   body: string;
+  resourceType?: string;
+  resourceId?: EntityId;
   readAt?: ISODateTime;
   createdAt: ISODateTime;
+}
+
+export interface Invitation {
+  id: EntityId;
+  organizationId: EntityId;
+  email: string;
+  role: RoleName;
+  invitedByUserId?: EntityId;
+  status: "pending" | "accepted" | "expired" | "revoked";
+  expiresAt: ISODateTime;
+  acceptedAt?: ISODateTime;
+  createdAt: ISODateTime;
+  updatedAt: ISODateTime;
 }
 
 export interface AuditLog {
   id: EntityId;
   organizationId: EntityId;
   actorUserId?: EntityId;
+  actorRole?: RoleName;
   action: string;
   resourceType: string;
   resourceId?: EntityId;
+  category?: string;
+  requestId?: string;
   metadata?: Record<string, unknown>;
   createdAt: ISODateTime;
 }

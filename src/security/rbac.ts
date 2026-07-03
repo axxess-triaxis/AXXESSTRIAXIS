@@ -1,26 +1,31 @@
 import type { NavGroup, NavSection } from "../app/navigation";
 import type { AppRoute } from "../app/routing/routes";
-import type { Role } from "../domain";
+import type { RoleName } from "../domain";
 
-export type MockUserContext = {
+export type UserContext = {
   id: string;
   organizationId: string;
-  role: Role["name"];
+  role: RoleName;
+  email?: string;
+  displayName?: string;
+  avatarInitials?: string;
 };
 
-const sectionPermissions: Record<NavSection, Role["name"][]> = {
-  dashboard: ["Super Admin", "Organization Admin", "Executive", "Manager", "Employee", "External Partner", "Consultant", "Guest"],
-  "ai-workspace": ["Super Admin", "Organization Admin", "Executive", "Manager", "Employee", "Consultant"],
-  projects: ["Super Admin", "Organization Admin", "Executive", "Manager", "Employee", "External Partner", "Consultant"],
-  tasks: ["Super Admin", "Organization Admin", "Executive", "Manager", "Employee", "External Partner", "Consultant"],
-  stakeholders: ["Super Admin", "Organization Admin", "Executive", "Manager", "Consultant"],
-  knowledge: ["Super Admin", "Organization Admin", "Executive", "Manager", "Employee", "External Partner", "Consultant", "Guest"],
-  documents: ["Super Admin", "Organization Admin", "Executive", "Manager", "Employee", "External Partner", "Consultant", "Guest"],
-  meetings: ["Super Admin", "Organization Admin", "Executive", "Manager", "Employee", "External Partner", "Consultant"],
+export type MockUserContext = UserContext;
+
+const sectionPermissions: Record<NavSection, RoleName[]> = {
+  dashboard: ["Super Admin", "Organization Admin", "Executive", "Manager", "Employee", "Consultant", "Guest"],
+  "ai-workspace": ["Super Admin", "Organization Admin", "Executive", "Manager", "Employee"],
+  projects: ["Super Admin", "Organization Admin", "Executive", "Manager", "Employee", "Consultant"],
+  tasks: ["Super Admin", "Organization Admin", "Executive", "Manager", "Employee", "Consultant"],
+  stakeholders: ["Super Admin", "Organization Admin", "Executive", "Manager"],
+  knowledge: ["Super Admin", "Organization Admin", "Executive", "Manager", "Employee", "Consultant", "Guest"],
+  documents: ["Super Admin", "Organization Admin", "Executive", "Manager", "Employee", "Consultant", "Guest"],
+  meetings: ["Super Admin", "Organization Admin", "Executive", "Manager", "Employee", "Consultant"],
   approvals: ["Super Admin", "Organization Admin", "Executive", "Manager"],
-  analytics: ["Super Admin", "Organization Admin", "Executive", "Manager", "Consultant"],
+  analytics: ["Super Admin", "Organization Admin", "Executive", "Manager"],
   integrations: ["Super Admin", "Organization Admin"],
-  settings: ["Super Admin", "Organization Admin"],
+  settings: ["Super Admin", "Organization Admin", "Executive", "Manager"],
 };
 
 // Mocked for Sprint 3. The auth facade reads this until Supabase Auth is enabled
@@ -29,19 +34,37 @@ export const mockCurrentUserContext: MockUserContext = {
   id: "user_raj_anand",
   organizationId: "org_public_safety",
   role: "Organization Admin",
+  email: "raj.anand@example.gov",
+  displayName: "Raj Anand",
+  avatarInitials: "RA",
 };
 
-export function canAccessSection(user: MockUserContext, section: NavSection) {
+export function isRoleName(value: string): value is RoleName {
+  return ["Super Admin", "Organization Admin", "Executive", "Manager", "Employee", "Consultant", "Guest"].includes(value);
+}
+
+export function canAccessSection(user: UserContext, section: NavSection) {
   return sectionPermissions[section].includes(user.role);
 }
 
-export function canAccessRoute(user: MockUserContext, route: AppRoute) {
+export function canAccessRoute(user: UserContext, route: AppRoute) {
   if (route.access === "guest") return true;
   if (route.requiredRoles?.length) return route.requiredRoles.includes(user.role);
   return canAccessSection(user, route.section);
 }
 
-export function getVisibleNavGroups(groups: NavGroup[], user: MockUserContext): NavGroup[] {
+export function canManageOrganization(user: UserContext, organizationId: string) {
+  if (user.role === "Super Admin") return true;
+  return user.organizationId === organizationId && user.role === "Organization Admin";
+}
+
+export function assertOrganizationAccess(user: UserContext, organizationId: string) {
+  if (user.role !== "Super Admin" && user.organizationId !== organizationId) {
+    throw new Error("Cross-organization access denied.");
+  }
+}
+
+export function getVisibleNavGroups(groups: NavGroup[], user: UserContext): NavGroup[] {
   return groups
     .map((group) => ({
       ...group,
