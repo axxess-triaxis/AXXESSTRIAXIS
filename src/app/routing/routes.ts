@@ -1,5 +1,5 @@
 import type { NavSection } from "../navigation";
-import type { Role } from "../../domain";
+import type { RoleName } from "../../domain";
 
 export type AppRoute = {
   id: string;
@@ -10,7 +10,7 @@ export type AppRoute = {
   description: string;
   access: "guest" | "authenticated" | "role-protected" | "organization-protected";
   requiresAuth: boolean;
-  requiredRoles?: Role["name"][];
+  requiredRoles?: RoleName[];
 };
 
 // Route metadata is intentionally framework-light for Sprint 3. It gives us the

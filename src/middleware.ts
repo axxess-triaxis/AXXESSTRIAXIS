@@ -11,20 +11,32 @@ const protectedRoutePrefixes = [
   "/knowledge",
   "/documents",
   "/meetings",
+  "/approvals",
   "/analytics",
+  "/integrations",
   "/settings",
   "/admin",
 ];
 
-export function middleware(request: NextRequest) {
-  const response = NextResponse.next();
-  const isProtectedRoute = protectedRoutePrefixes.some((prefix) => request.nextUrl.pathname.startsWith(prefix));
+const sessionCookieName = "axxess-access-token";
 
-  // Sprint 4 guard architecture only. Supabase Auth can replace this marker
-  // with a session lookup and tenant assertion in Sprint 5.
-  if (isProtectedRoute) {
-    response.headers.set("x-axxess-route-guard", "mock-authenticated");
+export function isProtectedRoutePath(pathname: string) {
+  return protectedRoutePrefixes.some((prefix) => pathname.startsWith(prefix));
+}
+
+export function middleware(request: NextRequest) {
+  const isAuthShellEnabled = process.env.NEXT_PUBLIC_AXXESS_AUTH_SHELL === "true";
+  const isProtectedRoute = isProtectedRoutePath(request.nextUrl.pathname);
+
+  if (isProtectedRoute && isAuthShellEnabled && !request.cookies.get(sessionCookieName)) {
+    const loginUrl = request.nextUrl.clone();
+    loginUrl.pathname = "/auth";
+    loginUrl.searchParams.set("next", request.nextUrl.pathname);
+    return NextResponse.redirect(loginUrl);
   }
+
+  const response = NextResponse.next();
+  if (isProtectedRoute) response.headers.set("x-axxess-route-guard", isAuthShellEnabled ? "supabase-auth" : "mock-authenticated");
 
   return response;
 }

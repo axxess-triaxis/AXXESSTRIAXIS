@@ -1,5 +1,5 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { getCurrentAuthSession } from "../../auth/session";
+import { useAuth } from "../../auth/AuthProvider";
 import { Avatar } from "../../components/ui/Avatar";
 import { getVisibleNavGroups } from "../../security/rbac";
 import { navGroups, type NavSection } from "../navigation";
@@ -12,8 +12,9 @@ type SidebarProps = {
 };
 
 export function Sidebar({ active, sidebarOpen, onSelectSection, onToggleSidebar }: SidebarProps) {
-  const { user } = getCurrentAuthSession();
-  const visibleNavGroups = getVisibleNavGroups(navGroups, user);
+  const { session } = useAuth();
+  const user = session.user;
+  const visibleNavGroups = user ? getVisibleNavGroups(navGroups, user) : [];
 
   return (
     <aside
@@ -84,11 +85,11 @@ export function Sidebar({ active, sidebarOpen, onSelectSection, onToggleSidebar 
 
       <div className="border-t border-[rgba(255,255,255,0.06)] px-3 py-3">
         <div className="flex items-center gap-2.5">
-          <Avatar initials="RA" size="sm" color="bg-[#8B1E2D]" />
+          <Avatar initials={user?.avatarInitials ?? "AU"} size="sm" color="bg-[#8B1E2D]" />
           {sidebarOpen && (
             <div className="flex-1 min-w-0">
-              <div className="text-xs font-semibold text-white truncate">Raj Anand</div>
-              <div className="text-[10px] text-[rgba(255,255,255,0.4)] truncate">Deputy Minister · Public Safety</div>
+              <div className="text-xs font-semibold text-white truncate">{user?.displayName ?? "AXXESS User"}</div>
+              <div className="text-[10px] text-[rgba(255,255,255,0.4)] truncate">{user?.role ?? "Guest"}</div>
             </div>
           )}
         </div>

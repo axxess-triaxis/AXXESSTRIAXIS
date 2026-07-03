@@ -1,16 +1,24 @@
 import { featureFlags } from "../config/featureFlags";
-import { mockCurrentUserContext, type MockUserContext } from "../security/rbac";
+import { mockCurrentUserContext, type UserContext } from "../security/rbac";
 
 export type AuthSession = {
-  status: "mock";
-  source: "mock-rbac" | "auth-shell";
-  user: MockUserContext;
+  status: "authenticated" | "unauthenticated";
+  source: "mock-rbac" | "supabase-auth";
+  user: UserContext | null;
 };
 
 export function getCurrentAuthSession(): AuthSession {
+  if (featureFlags.enableAuthShell) {
+    return {
+      status: "unauthenticated",
+      source: "supabase-auth",
+      user: null,
+    };
+  }
+
   return {
-    status: "mock",
-    source: featureFlags.enableAuthShell ? "auth-shell" : "mock-rbac",
+    status: "authenticated",
+    source: "mock-rbac",
     user: mockCurrentUserContext,
   };
 }
