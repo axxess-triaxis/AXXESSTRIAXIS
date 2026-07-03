@@ -13,9 +13,9 @@ import {
 } from "../mocks/institutionalData";
 import type { InstitutionalRepository } from "../repositories/interfaces";
 
-// Repository boundary for Sprint 1. UI consumes methods, while the backing data
-// can later move from in-memory mocks to Supabase queries and RLS-aware services.
-export const institutionalMockRepository: InstitutionalRepository = {
+// Legacy view adapter for modules that are outside the Sprint 6 Supabase
+// repository scope. Enterprise resources use Supabase-backed repositories.
+export const legacyInstitutionalViewRepository: InstitutionalRepository = {
   getAiMessages: () => aiMessages,
   getApprovals: () => approvals,
   getDocuments: () => documents,

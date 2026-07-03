@@ -1,7 +1,7 @@
-import type { MockUserContext } from "../security/rbac";
+import type { UserContext } from "../security/rbac";
 
 export interface AuthenticationService {
-  getCurrentUser(): MockUserContext;
+  getCurrentUser(): UserContext | null;
   isAuthenticated(): boolean;
 }
 

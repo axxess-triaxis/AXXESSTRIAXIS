@@ -2,6 +2,10 @@
 
 Describe what changed and why.
 
+## Linear
+
+Linked issue: `AXX-___` or `N/A`
+
 ## Type
 
 - [ ] Feature
@@ -18,6 +22,8 @@ Describe what changed and why.
 - [ ] Data model or migration impact documented
 - [ ] Environment variable or secret impact documented
 - [ ] Accessibility impact considered
+- [ ] Audit logging impact considered
+- [ ] RLS impact considered
 
 ## Verification
 

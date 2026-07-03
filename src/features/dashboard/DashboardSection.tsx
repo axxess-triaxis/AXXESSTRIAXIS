@@ -1,16 +1,56 @@
 import { Download, RefreshCw, Sparkles } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { SectionHeader } from "../../components/layout/SectionHeader";
 import { Avatar } from "../../components/ui/Avatar";
 import { Card } from "../../components/ui/Card";
+import { LoadingState } from "../../components/feedback/LoadingState";
 import { RiskBadge } from "../../components/ui/RiskBadge";
 import { StatusBadge } from "../../components/ui/StatusBadge";
+import { useAuth } from "../../auth/AuthProvider";
 import { KpiCard } from "./components/KpiCard";
-import { dashboardAiRecommendations, dashboardKpis, dashboardObjectives, performanceData, projects, workloadData } from "./data";
+import { dashboardAiRecommendations, dashboardObjectives, dashboardScopeForUser, getDashboardKpis, getDashboardProjects, performanceData, workloadData } from "./data";
+import type { DashboardKpi } from "./types";
+
+type DashboardProject = Awaited<ReturnType<typeof getDashboardProjects>>[number];
 
 export function DashboardSection() {
+  const { session } = useAuth();
+  const tenantScope = useMemo(() => session.user ? dashboardScopeForUser(session.user) : undefined, [session.user]);
+  const [dashboardKpis, setDashboardKpis] = useState<DashboardKpi[]>([]);
+  const [projects, setProjects] = useState<DashboardProject[]>([]);
+  const [loading, setLoading] = useState(Boolean(tenantScope));
+  const [loadError, setLoadError] = useState<string | null>(null);
   const objectives = dashboardObjectives;
   const aiRecs = dashboardAiRecommendations;
+
+  useEffect(() => {
+    if (!tenantScope) return;
+
+    let isMounted = true;
+    setLoading(true);
+    setLoadError(null);
+
+    Promise.all([getDashboardKpis(tenantScope), getDashboardProjects(tenantScope)])
+      .then(([kpis, projectRows]) => {
+        if (!isMounted) return;
+        setDashboardKpis(kpis);
+        setProjects(projectRows);
+      })
+      .catch(() => {
+        if (isMounted) setLoadError("Unable to load Supabase-backed dashboard data.");
+      })
+      .finally(() => {
+        if (isMounted) setLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [tenantScope]);
+
+  if (loading) return <LoadingState label="Loading portfolio data" />;
+
   return (
     <div className="space-y-6">
       <SectionHeader
@@ -34,6 +74,7 @@ export function DashboardSection() {
           <KpiCard key={kpi.label} metric={kpi} />
         ))}
       </div>
+      {loadError && <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-xs font-medium text-red-700">{loadError}</div>}
 
       {/* Strategic Objectives + AI Recommendations */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -186,4 +227,3 @@ export function DashboardSection() {
     </div>
   );
 };
-
