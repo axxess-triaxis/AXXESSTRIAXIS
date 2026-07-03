@@ -96,11 +96,11 @@
     "@vitejs/plugin-react-swc": "^3.11.0",
     "eslint": "^9.31.0",
     "eslint-config-next": "^15.0.0",
-    "jsdom": "^26.1.0",
+    "jsdom": "^29.1.1",
     "tailwindcss": "4.1.12",
     "typescript": "^5.8.3",
     "vite": "6.3.5",
-    "vitest": "^3.2.4"
+    "vitest": "^4.1.9"
   },
   "peerDependencies": {
     "react": "18.3.1",
