@@ -118,7 +118,7 @@ export function ProductAnalyticsSection() {
                 <div className="h-2 flex-1 overflow-hidden rounded-full bg-[#F2F3F5]">
                   <div className="h-full rounded-full bg-[#8B1E2D]" style={{ width: `${Math.max(24, 92 - index * 10)}%` }} />
                 </div>
-                <span className="w-16 text-right font-mono text-[10px] text-[#5F6B73]">placeholder</span>
+                <span className="w-16 text-right font-mono text-[10px] text-[#5F6B73]">{Math.max(24, 92 - index * 10)}%</span>
               </div>
             ))}
           </div>

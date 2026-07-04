@@ -77,6 +77,60 @@ const stakeholderOrganizations = [
   "Rural Clinics Association",
 ];
 
+const districts = [
+  "Kamrup Metropolitan",
+  "Dibrugarh",
+  "Nagaon",
+  "Barpeta",
+  "Cachar",
+  "Tinsukia",
+  "Jorhat",
+  "Golaghat",
+  "Kokrajhar",
+  "Dhubri",
+  "Kohima",
+  "Imphal East",
+  "Aizawl",
+  "Shillong",
+  "Agartala",
+  "Itanagar",
+];
+
+const institutions = [
+  "Gauhati Medical College Hospital",
+  "Assam Medical College Dibrugarh",
+  "Silchar Medical College",
+  "Jorhat Medical College",
+  "Regional Institute of Medical Sciences Imphal",
+  "NEIGRIHMS Shillong",
+  "Agartala Government Medical College",
+  "Tom Riba Institute of Health Sciences",
+  "Kohima District Hospital",
+  "Aizawl Civil Hospital",
+  "Barpeta District Public Health Office",
+  "Dhubri Maternal Referral Unit",
+];
+
+const documentBlueprints = [
+  { title: "Public Health Policy Note", category: "Policy", type: "policy note", tags: ["policy", "governance"], summary: "policy position on district health access, escalation thresholds and state-level sign-off" },
+  { title: "Hospital Standard Operating Procedure", category: "Hospital Operations", type: "hospital SOP", tags: ["clinical", "sop"], summary: "ward-level operating procedure for triage, infection control, referral and shift handover" },
+  { title: "Monthly Public Health Surveillance Report", category: "Public Health Reports", type: "public health report", tags: ["surveillance", "district"], summary: "district surveillance review covering fever clusters, maternal indicators, immunization gaps and response actions" },
+  { title: "Budget Variance Memorandum", category: "Finance", type: "budget memo", tags: ["finance", "variance"], summary: "finance memorandum explaining grant utilization, variance drivers and corrective approvals" },
+  { title: "Procurement Evaluation File", category: "Procurement", type: "procurement file", tags: ["procurement", "vendor"], summary: "procurement evaluation file with vendor due diligence, technical scoring and award recommendation" },
+  { title: "District Review Meeting Minutes", category: "Meeting Minutes", type: "meeting minutes", tags: ["meeting", "district"], summary: "review minutes capturing decisions, action owners, overdue items and state-level dependencies" },
+  { title: "Health Systems Grant Proposal", category: "Grants", type: "grant proposal", tags: ["grant", "funding"], summary: "grant proposal for resilient primary care, diagnostics, digital reporting and monitoring capacity" },
+  { title: "Compliance Checklist", category: "Compliance", type: "compliance checklist", tags: ["compliance", "audit"], summary: "compliance checklist for procurement, data handling, clinical governance and reporting controls" },
+  { title: "Stakeholder Brief", category: "Stakeholder Briefs", type: "stakeholder brief", tags: ["stakeholder", "briefing"], summary: "stakeholder briefing for district officials, hospital leadership and community partners" },
+  { title: "Risk Register Update", category: "Risk", type: "risk register", tags: ["risk", "governance"], summary: "risk register update with severity, mitigation owner, residual exposure and escalation path" },
+  { title: "Implementation Plan", category: "Implementation", type: "implementation plan", tags: ["implementation", "milestone"], summary: "implementation plan for staffing, procurement, reporting, training and district rollout" },
+  { title: "District Review Note", category: "District Reviews", type: "district review note", tags: ["district", "review"], summary: "district review note summarizing progress, bottlenecks, field observations and support needs" },
+  { title: "Audit Observation", category: "Audit", type: "audit observation", tags: ["audit", "control"], summary: "audit observation describing control gaps, evidence reviewed, management response and target closure" },
+  { title: "Monitoring and Evaluation Report", category: "M&E", type: "monitoring and evaluation report", tags: ["monitoring", "evaluation"], summary: "monitoring and evaluation report for outcomes, variance, evidence quality and next review cycle" },
+  { title: "CSR Partnership Proposal", category: "CSR", type: "CSR proposal", tags: ["csr", "partnership"], summary: "CSR proposal aligning private-sector support to district health mission priorities" },
+  { title: "Mission Dashboard Export", category: "Dashboards", type: "health mission dashboard", tags: ["dashboard", "analytics"], summary: "dashboard export covering service delivery, risks, budgets, alerts and district performance" },
+  { title: "Vendor Onboarding File", category: "Vendor Onboarding", type: "vendor onboarding file", tags: ["vendor", "onboarding"], summary: "vendor onboarding file with credentials, bank details, compliance documents and service scope" },
+];
+
 const firstNames = ["Ananya", "Rohan", "Meera", "Dev", "Ishita", "Tashi", "Priya", "Kabir", "Nima", "Farah", "Arjun", "Lina", "Sahil", "Maya", "Nikhil", "Asha"];
 const lastNames = ["Rao", "Das", "Sarmah", "Choudhury", "Lepcha", "Borah", "Deka", "Phukan", "Lal", "Sharma", "Baruah", "Nongrum"];
 const roles: RoleName[] = ["Organization Admin", "Executive", "Manager", "Employee", "Guest"];
@@ -114,22 +168,55 @@ function displayName(index: number) {
   return `${pick(firstNames, index)} ${pick(lastNames, Math.floor(index * 1.7))}`;
 }
 
-export type DemoDataset = ReturnType<typeof createDemoDataset>;
+export type DemoDataset = {
+  organization: Organization;
+  organizations: Organization[];
+  users: User[];
+  programs: Program[];
+  projects: Project[];
+  tasks: Task[];
+  stakeholders: Stakeholder[];
+  documents: Document[];
+  documentVersions: DocumentVersion[];
+  documentCategories: DocumentCategory[];
+  documentTags: DocumentTag[];
+  documentPermissions: DocumentPermission[];
+  documentActivity: DocumentActivity[];
+  knowledgeArticles: KnowledgeArticle[];
+  meetings: Meeting[];
+  notifications: Notification[];
+  auditLogs: AuditLog[];
+  invitations: Invitation[];
+  betaFeedback: BetaFeedback[];
+  institutional: {
+    aiMessages: AiMessageView[];
+    approvals: ApprovalView[];
+    documents: DocumentView[];
+    integrations: IntegrationView[];
+    meetings: MeetingView[];
+    okrData: OkrMetricView[];
+    performanceData: PerformanceMetricView[];
+    projects: ProjectView[];
+    stakeholders: StakeholderView[];
+    tasks: TaskView[];
+    workloadData: WorkloadMetricView[];
+  };
+};
 
 export const demoDatasetSummary = {
   organizationName: demoOrganization.name,
   projects: 186,
   programs: departments.length,
-  documents: 224,
+  documents: 2200,
   knowledgeArticles: 128,
-  activities: 1120,
+  activities: 4200,
   stakeholders: 64,
   approvals: 42,
   auditLogs: 680,
   users: 36,
 } as const;
 
-export function createDemoDataset() {
+export function createDemoDataset(): DemoDataset {
   const organization: Organization = {
     id: demoOrganization.id,
     name: demoOrganization.name,
@@ -169,7 +256,7 @@ export function createDemoDataset() {
   const projects: Project[] = Array.from({ length: 186 }, (_, index) => {
     const program = programs[index % programs.length];
     const theme = pick(projectThemes, index);
-    const district = ["Kamrup", "Dibrugarh", "Kohima", "Aizawl", "Imphal", "Shillong", "Agartala", "Itanagar"][index % 8];
+    const district = pick(districts, index);
     const status = pick(projectStatuses, index + Math.floor(index / 8));
     const riskLevel = index % 19 === 0 ? "urgent" : index % 7 === 0 ? "high" : index % 5 === 0 ? "medium" : "low";
     return {
@@ -216,15 +303,20 @@ export function createDemoDataset() {
     engagementLevel: index % 5 === 0 ? "low" : index % 3 === 0 ? "medium" : "high",
   }));
 
-  const documentCategories: DocumentCategory[] = [
-    "Governance",
+  const documentCategories: DocumentCategory[] = documentBlueprints.map((blueprint, index) => ({
+    id: id("doc_category_nehealth", index),
+    organizationId: organization.id,
+    name: blueprint.category,
+    slug: blueprint.category.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+    description: `${blueprint.category} records used by North East Health Mission teams for governed institutional operations.`,
+    createdAt: dayOffset(-250 + index),
+    updatedAt: dayOffset(-index),
+  }));
+
+  const supplementalCategories: DocumentCategory[] = [
     "Clinical Operations",
-    "Supply Chain",
-    "Finance",
-    "Field Reports",
-    "Policy",
     "Training",
-    "Risk",
+    "Field Reports",
   ].map((name, index) => ({
     id: id("doc_category_nehealth", index),
     organizationId: organization.id,
@@ -234,6 +326,11 @@ export function createDemoDataset() {
     createdAt: dayOffset(-250 + index),
     updatedAt: dayOffset(-index),
   }));
+
+  documentCategories.push(...supplementalCategories.map((category, index) => ({
+    ...category,
+    id: id("doc_category_nehealth_extra", index),
+  })));
 
   const documentTags: DocumentTag[] = [
     "governance",
@@ -266,11 +363,16 @@ export function createDemoDataset() {
     ["image/png", "png"],
   ] as const;
 
-  const documents: Document[] = Array.from({ length: 224 }, (_, index) => {
+  const documents: Document[] = Array.from({ length: demoDatasetSummary.documents }, (_, index) => {
     const project = projects[index % projects.length];
-    const category = documentCategories[index % documentCategories.length];
+    const blueprint = pick(documentBlueprints, index);
+    const district = pick(districts, index + Math.floor(index / 17));
+    const institution = pick(institutions, index + Math.floor(index / 11));
+    const category = documentCategories.find((item) => item.name === blueprint.category) ?? documentCategories[index % documentCategories.length];
     const [mimeType, extension] = pick(mimeTypes, index);
-    const title = `${pick(["District", "Board", "Clinical", "Finance", "Risk", "Implementation"], index)} ${pick(["Briefing", "Review", "Register", "Protocol", "Report", "Pack"], index + 3)} ${String(index + 1).padStart(3, "0")}`;
+    const quarter = `Q${(index % 4) + 1} FY2026`;
+    const cycle = String((index % 24) + 1).padStart(2, "0");
+    const title = `${district} ${blueprint.title} - ${institution} - ${quarter} Cycle ${cycle}`;
     const docId = id("document_nehealth", index);
     return {
       id: docId,
@@ -280,7 +382,7 @@ export function createDemoDataset() {
       categoryName: category.name,
       name: `${title}.${extension}`,
       title,
-      description: `Institutional record connected to ${project.name} and ${category.name}.`,
+      description: `${blueprint.summary}. Connected to ${project.name}; includes ${district} field evidence, ${institution} accountability notes, budget exposure, risk owner, timeline variance and follow-up actions for the North East Health Mission.`,
       storagePath: `organizations/${organization.id}/documents/${docId}/versions/version_001/${title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}.${extension}`,
       fileName: `${title}.${extension}`,
       fileSize: 80_000 + index * 18_500,
@@ -293,7 +395,7 @@ export function createDemoDataset() {
       createdByUserId: users[(index % (users.length - 1)) + 1].id,
       updatedByUserId: users[((index + 4) % (users.length - 1)) + 1].id,
       currentVersion: 1 + (index % 5),
-      tags: [documentTags[index % documentTags.length].name, documentTags[(index + 4) % documentTags.length].name],
+      tags: [...blueprint.tags, district.toLowerCase().replace(/[^a-z0-9]+/g, "-"), documentTags[(index + 4) % documentTags.length].name],
       isFavorite: index % 14 === 0,
       lastViewedAt: dayOffset(-(index % 21)),
       createdAt: dayOffset(-210 + (index % 140)),
@@ -352,7 +454,7 @@ export function createDemoDataset() {
     };
   });
 
-  const documentActivity: DocumentActivity[] = Array.from({ length: 1120 }, (_, index) => {
+  const documentActivity: DocumentActivity[] = Array.from({ length: demoDatasetSummary.activities }, (_, index) => {
     const document = documents[index % documents.length];
     return {
       id: id("document_activity_nehealth", index),
@@ -537,7 +639,7 @@ export function createDemoDataset() {
     { role: "user", content: "Summarize the current operational risk across oxygen resilience, maternal referrals, and district stockouts." },
     {
       role: "assistant",
-      content: "North East Health Mission shows a mature operating rhythm: 186 projects, 224 institutional documents, and 1,120 document activities. Current priority risks are oxygen resilience in three districts, maternal referral turnaround in two corridors, and pharmacy stockout variance in rural blocks.",
+      content: "North East Health Mission shows a mature operating rhythm: 186 projects, 2,200 institutional documents, and 4,200 document activities. Current priority risks are oxygen resilience in three districts, maternal referral turnaround in two corridors, and pharmacy stockout variance in rural blocks.",
       toolUsed: "Knowledge Hub - Risk Register - Meeting Notes",
     },
   ];
