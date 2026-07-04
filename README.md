@@ -27,6 +27,7 @@ Current runtime status: Sprint 9 / Product Release 0.7 beta.
 - Mixpanel-ready product analytics is available with mock analytics as the safe default.
 - Beta feedback collection and internal beta readiness dashboards are implemented.
 - Enterprise Knowledge Hub, document metadata, private Supabase Storage, signed URL access, and PostgreSQL search are implemented.
+- Demo Mode provides a seeded investor-preview tenant without changing application code.
 - AI and RAG providers remain intentionally out of scope for Product Release 0.7.
 
 ## Tech Stack
@@ -56,6 +57,7 @@ Current runtime status: Sprint 9 / Product Release 0.7 beta.
 |   |-- auth/            Mock auth/session facade
 |   |-- components/      Shared layout, feedback, and UI components
 |   |-- config/          Feature flags
+|   |-- demo/            Investor-preview dataset, mode switch, and demo repositories
 |   |-- constants/       Shared route constants
 |   |-- domain/          Core enterprise entity types
 |   |-- features/        Dashboard, projects, tasks, CRM, Knowledge Hub, etc.
@@ -109,6 +111,7 @@ Copy `.env.example` to `.env.local` and fill in values as services are connected
 ```bash
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 NEXT_PUBLIC_AXXESS_AUTH_SHELL=false
+NEXT_PUBLIC_AXXESS_DEMO_MODE=false
 NEXT_PUBLIC_AXXESS_APP_VERSION=0.7.0
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
@@ -122,6 +125,14 @@ GEMINI_API_KEY=
 ```
 
 Only `NEXT_PUBLIC_*` values are safe to expose to the browser. Server-side keys must stay in local environment files or managed deployment secrets. Leave `NEXT_PUBLIC_MIXPANEL_TOKEN` empty to use the mock analytics provider.
+
+`NEXT_PUBLIC_AXXESS_DEMO_MODE=true` opens the seeded North East Health Mission investor-preview tenant. Keep it `false` for live customers so new organizations start as clean tenants.
+
+## Demo Mode
+
+Demo Mode can be enabled from Settings, through the investor preview login, or by setting `NEXT_PUBLIC_AXXESS_DEMO_MODE=true` in a deployment environment. It loads a coherent fictional institution with populated dashboards, programs, projects, approvals, Knowledge Hub records, notifications, recent activity, and audit history.
+
+When Demo Mode is off, the application uses Supabase repositories when configured and otherwise presents a clean tenant with empty-state guidance.
 
 ## Deployment
 

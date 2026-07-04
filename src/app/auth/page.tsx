@@ -15,6 +15,26 @@ function LoginPanel() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
+  async function openInvestorPreview() {
+    setSubmitting(true);
+    setError(null);
+    try {
+      await login("investor.preview@axxess.demo", "preview");
+      analytics.trackEvent("user_login", { auth_method: "demo" }, {
+        organization_id: "org_north_east_health_mission",
+        user_id: "user_demo_executive",
+        user_role: "Organization Admin",
+        module_name: "auth",
+        route: "/auth",
+      });
+      router.push("/dashboard");
+    } catch (loginError) {
+      setError(loginError instanceof Error ? loginError.message : "Unable to open investor preview.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSubmitting(true);
@@ -98,6 +118,17 @@ function LoginPanel() {
           {submitting ? "Signing in..." : "Sign in"}
         </button>
       </form>
+
+      <div className="mt-4 border-t border-[rgba(0,0,0,0.08)] pt-4">
+        <button
+          type="button"
+          onClick={() => void openInvestorPreview()}
+          disabled={submitting}
+          className="w-full rounded-lg border border-[rgba(139,30,45,0.22)] bg-white px-4 py-2 text-sm font-semibold text-[#8B1E2D] hover:bg-[#8B1E2D]/5 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          Open investor preview
+        </button>
+      </div>
     </Card>
   );
 }

@@ -1,5 +1,8 @@
 import { featureFlags } from "../config/featureFlags";
 import { getCurrentAuthSession } from "../auth/session";
+import { demoRepositories } from "../demo/demoRepositories";
+import { emptyRepositories } from "../demo/emptyRepositories";
+import { cleanTenantUserContext, demoUserContext, isDemoModeEnabled } from "../demo/demoMode";
 import {
   auditLogsRepository,
   betaFeedbackRepository,
@@ -20,7 +23,6 @@ import {
   tasksRepository,
   usersRepository,
 } from "../repositories/supabaseEnterpriseRepositories";
-import { mockCurrentUserContext } from "../security/rbac";
 import { legacyInstitutionalViewRepository } from "../services/legacyInstitutionalViewRepository";
 import { documentStorageRepository } from "../services/storage/documentStorage";
 import type {
@@ -48,7 +50,10 @@ import type {
 import type { AiProviderService, AuthenticationService, ConfigurationService, NotificationService } from "../services/interfaces";
 
 const authService: AuthenticationService = {
-  getCurrentUser: () => getCurrentAuthSession().user ?? mockCurrentUserContext,
+  getCurrentUser: () => {
+    if (isDemoModeEnabled()) return demoUserContext;
+    return getCurrentAuthSession().user ?? cleanTenantUserContext;
+  },
   isAuthenticated: () => getCurrentAuthSession().status === "authenticated",
 };
 
@@ -66,12 +71,14 @@ const notificationService: NotificationService = {
 
 const configurationService: ConfigurationService = {
   getFlag(name) {
+    if (name === "enableDemoMode") return isDemoModeEnabled();
     return Boolean(featureFlags[name as keyof typeof featureFlags]);
   },
   getPublicValue(name) {
     const publicEnv: Record<string, string | undefined> = {
       NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
       NEXT_PUBLIC_AXXESS_AUTH_SHELL: process.env.NEXT_PUBLIC_AXXESS_AUTH_SHELL,
+      NEXT_PUBLIC_AXXESS_DEMO_MODE: process.env.NEXT_PUBLIC_AXXESS_DEMO_MODE,
       NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
       NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     };
@@ -107,7 +114,9 @@ export type ApplicationServices = {
   configurationService: ConfigurationService;
 };
 
-export const applicationServices: ApplicationServices = {
+type RepositoryServices = Omit<ApplicationServices, "authService" | "aiService" | "notificationService" | "configurationService">;
+
+const liveRepositories: RepositoryServices = {
   institutionalRepository: legacyInstitutionalViewRepository,
   organizationsRepository,
   usersRepository,
@@ -127,9 +136,27 @@ export const applicationServices: ApplicationServices = {
   invitationsRepository,
   auditLogsRepository,
   betaFeedbackRepository,
-  authService,
-  aiService,
   storageRepository: documentStorageRepository,
-  notificationService,
-  configurationService,
 };
+
+function selectedRepositories(): RepositoryServices {
+  if (isDemoModeEnabled()) return demoRepositories;
+  if (featureFlags.enableSupabaseRuntime) return liveRepositories;
+  return emptyRepositories;
+}
+
+function selectedApplicationServices(): ApplicationServices {
+  return {
+    ...selectedRepositories(),
+    authService,
+    aiService,
+    notificationService,
+    configurationService,
+  };
+}
+
+export const applicationServices: ApplicationServices = new Proxy({} as ApplicationServices, {
+  get(_target, property) {
+    return selectedApplicationServices()[property as keyof ApplicationServices];
+  },
+});
