@@ -1,6 +1,7 @@
 import { AlertTriangle, Bell, CheckCircle2, FolderKanban, LogOut, Search, ShieldCheck } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Avatar } from "../../components/ui/Avatar";
+import { demoModeChangedEvent, demoResetEvent, isDemoModeEnabled } from "../../demo/demoMode";
 import type { Notification } from "../../domain";
 import { applicationServices } from "../../providers/serviceProvider";
 import { tenantScopeFromUser } from "../../repositories/supabaseEnterpriseRepositories";
@@ -47,6 +48,7 @@ export function TopBar({ activeLabel, notifOpen, user, onToggleNotifications, on
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [filter, setFilter] = useState<NotificationFilter>("unread");
   const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null);
+  const [demoMode, setDemoMode] = useState(() => isDemoModeEnabled());
 
   const loadNotifications = useCallback(async () => {
     try {
@@ -64,6 +66,16 @@ export function TopBar({ activeLabel, notifOpen, user, onToggleNotifications, on
   useEffect(() => {
     if (notifOpen) void loadNotifications();
   }, [loadNotifications, notifOpen]);
+
+  useEffect(() => {
+    const syncDemoMode = () => setDemoMode(isDemoModeEnabled());
+    window.addEventListener(demoModeChangedEvent, syncDemoMode);
+    window.addEventListener(demoResetEvent, syncDemoMode);
+    return () => {
+      window.removeEventListener(demoModeChangedEvent, syncDemoMode);
+      window.removeEventListener(demoResetEvent, syncDemoMode);
+    };
+  }, []);
 
   const unreadCount = notifications.filter((notification) => !notification.readAt).length;
   const filteredNotifications = notifications.filter((notification) => {
@@ -118,6 +130,13 @@ export function TopBar({ activeLabel, notifOpen, user, onToggleNotifications, on
       </div>
 
       <div className="ml-auto flex items-center gap-3">
+        {demoMode && (
+          <div className="flex items-center gap-1.5 rounded-full border border-[#C9A227]/35 bg-[#C9A227]/10 px-2.5 py-1 text-[11px] font-semibold text-[#6F5615]">
+            <ShieldCheck size={12} />
+            Investor Preview
+          </div>
+        )}
+
         <div className="flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-medium text-emerald-700">
           <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
           AI Ready
