@@ -33,7 +33,7 @@ export const navGroups: NavGroup[] = [
   {
     label: "Intelligence",
     items: [
-      { id: "knowledge" as NavSection, label: "Institutional Knowledge", icon: BookOpen },
+      { id: "knowledge" as NavSection, label: "Knowledge Hub", icon: BookOpen },
       { id: "documents" as NavSection, label: "Documents & Files", icon: FileText },
       { id: "meetings" as NavSection, label: "Meetings & Decisions", icon: CalendarDays },
     ],

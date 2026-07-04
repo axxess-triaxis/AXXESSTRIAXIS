@@ -3,7 +3,15 @@ import { getCurrentAuthSession } from "../auth/session";
 import {
   auditLogsRepository,
   betaFeedbackRepository,
+  documentActivityRepository,
+  documentCategoriesRepository,
+  documentPermissionsRepository,
+  documentsRepository,
+  documentTagsRepository,
+  documentVersionsRepository,
   invitationsRepository,
+  knowledgeArticlesRepository,
+  knowledgeSearchRepository,
   meetingsRepository,
   notificationsRepository,
   organizationsRepository,
@@ -14,11 +22,20 @@ import {
 } from "../repositories/supabaseEnterpriseRepositories";
 import { mockCurrentUserContext } from "../security/rbac";
 import { legacyInstitutionalViewRepository } from "../services/legacyInstitutionalViewRepository";
+import { documentStorageRepository } from "../services/storage/documentStorage";
 import type {
   InstitutionalRepository,
   AuditLogsRepository,
   BetaFeedbackRepository,
+  DocumentActivityRepository,
+  DocumentCategoriesRepository,
+  DocumentPermissionsRepository,
+  DocumentsRepository,
+  DocumentTagsRepository,
+  DocumentVersionsRepository,
   InvitationsRepository,
+  KnowledgeArticlesRepository,
+  KnowledgeSearchRepository,
   MeetingsRepository,
   NotificationsRepository,
   OrganizationsRepository,
@@ -38,15 +55,6 @@ const authService: AuthenticationService = {
 const aiService: AiProviderService = {
   async completeWithContext() {
     throw new Error("AI provider is not connected in Sprint 4.");
-  },
-};
-
-const storageRepository: StorageRepository = {
-  async getSignedUploadUrl() {
-    throw new Error("Storage is not connected in Sprint 4.");
-  },
-  async getSignedDownloadUrl() {
-    throw new Error("Storage is not connected in Sprint 4.");
   },
 };
 
@@ -81,6 +89,14 @@ export type ApplicationServices = {
   tasksRepository: TasksRepository;
   meetingsRepository: MeetingsRepository;
   notificationsRepository: NotificationsRepository;
+  documentsRepository: DocumentsRepository;
+  documentVersionsRepository: DocumentVersionsRepository;
+  documentCategoriesRepository: DocumentCategoriesRepository;
+  documentTagsRepository: DocumentTagsRepository;
+  documentPermissionsRepository: DocumentPermissionsRepository;
+  documentActivityRepository: DocumentActivityRepository;
+  knowledgeArticlesRepository: KnowledgeArticlesRepository;
+  knowledgeSearchRepository: KnowledgeSearchRepository;
   invitationsRepository: InvitationsRepository;
   auditLogsRepository: AuditLogsRepository;
   betaFeedbackRepository: BetaFeedbackRepository;
@@ -100,12 +116,20 @@ export const applicationServices: ApplicationServices = {
   tasksRepository,
   meetingsRepository,
   notificationsRepository,
+  documentsRepository,
+  documentVersionsRepository,
+  documentCategoriesRepository,
+  documentTagsRepository,
+  documentPermissionsRepository,
+  documentActivityRepository,
+  knowledgeArticlesRepository,
+  knowledgeSearchRepository,
   invitationsRepository,
   auditLogsRepository,
   betaFeedbackRepository,
   authService,
   aiService,
-  storageRepository,
+  storageRepository: documentStorageRepository,
   notificationService,
   configurationService,
 };
