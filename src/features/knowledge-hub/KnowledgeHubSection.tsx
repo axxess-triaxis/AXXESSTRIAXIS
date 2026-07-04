@@ -119,15 +119,15 @@ export const KnowledgeHubSection = () => {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const [activeTab, setActiveTab] = useState<HubTab>(() => (typeof window !== "undefined" && window.location.pathname.includes("documents") ? "documents" : "documents"));
-  const [documents, setDocuments] = useState<Document[]>([]);
-  const [articles, setArticles] = useState<KnowledgeArticle[]>([]);
-  const [categories, setCategories] = useState<DocumentCategory[]>([]);
-  const [tags, setTags] = useState<DocumentTag[]>([]);
-  const [activity, setActivity] = useState<DocumentActivity[]>([]);
+  const [documents, setDocuments] = useState<Document[]>(() => isDemoModeEnabled() ? fallbackDocuments : []);
+  const [articles, setArticles] = useState<KnowledgeArticle[]>(() => isDemoModeEnabled() ? fallbackKnowledgeArticles : []);
+  const [categories, setCategories] = useState<DocumentCategory[]>(() => isDemoModeEnabled() ? fallbackDocumentCategories : []);
+  const [tags, setTags] = useState<DocumentTag[]>(() => isDemoModeEnabled() ? fallbackDocumentTags : []);
+  const [activity, setActivity] = useState<DocumentActivity[]>(() => isDemoModeEnabled() ? fallbackDocumentActivity : []);
   const [selectedDocument, setSelectedDocument] = useState<Document | undefined>();
   const [previewUrl, setPreviewUrl] = useState<string | undefined>();
   const [query, setQuery] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => !isDemoModeEnabled());
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<{ tone: "success" | "error" | "info"; message: string } | null>(null);
   const [renameValue, setRenameValue] = useState("");
@@ -141,15 +141,15 @@ export const KnowledgeHubSection = () => {
   const loadKnowledgeHub = useCallback(async () => {
     if (!scope) return;
     const useFallbackData = isDemoModeEnabled();
-    setLoading(true);
+    setLoading(!useFallbackData);
     setToast(null);
     try {
       const [documentRows, categoryRows, tagRows, articleRows, activityRows] = await Promise.all([
-        applicationServices.documentsRepository.list(scope, { pageSize: 100 }),
+        applicationServices.documentsRepository.list(scope, { pageSize: 2500 }),
         applicationServices.documentCategoriesRepository.list(scope, { pageSize: 100 }),
-        applicationServices.documentTagsRepository.list(scope, { pageSize: 100 }),
-        applicationServices.knowledgeArticlesRepository.list(scope, { pageSize: 100 }),
-        applicationServices.documentActivityRepository.list(scope, { pageSize: 100 }),
+        applicationServices.documentTagsRepository.list(scope, { pageSize: 250 }),
+        applicationServices.knowledgeArticlesRepository.list(scope, { pageSize: 500 }),
+        applicationServices.documentActivityRepository.list(scope, { pageSize: 2500 }),
       ]);
       setDocuments(documentRows.length > 0 ? documentRows : useFallbackData ? fallbackDocuments : []);
       setCategories(categoryRows.length > 0 ? categoryRows : useFallbackData ? fallbackDocumentCategories : []);

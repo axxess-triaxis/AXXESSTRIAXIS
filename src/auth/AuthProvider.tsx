@@ -13,6 +13,7 @@ import {
   setDemoModeEnabled,
 } from "../demo/demoMode";
 import type { UserContext } from "../security/rbac";
+import { createUserProfile, loadStoredUserProfile, mergeUserProfile, saveStoredUserProfile, type LocalUserProfile } from "./localProfile";
 import {
   fetchServerSession,
   signInWithPassword,
@@ -29,12 +30,15 @@ type AuthContextValue = {
   isAuthenticated: boolean;
   login(email: string, password: string): Promise<void>;
   logout(): Promise<void>;
+  createProfile(input: LocalUserProfile): Promise<UserContext>;
+  updateProfile(input: LocalUserProfile): Promise<UserContext>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 function modeAwareMockUser() {
-  return isDemoModeEnabled() ? demoUserContext : cleanTenantUserContext;
+  const user = isDemoModeEnabled() ? demoUserContext : cleanTenantUserContext;
+  return mergeUserProfile(user, loadStoredUserProfile(user) ?? {});
 }
 
 export function createMockAuthSession(): AuthSession {
@@ -49,7 +53,7 @@ function sessionFromUser(user: UserContext, source: "supabase-auth" | "mock-rbac
   return {
     status: "authenticated",
     source,
-    user,
+    user: mergeUserProfile(user, loadStoredUserProfile(user) ?? {}),
   };
 }
 
@@ -129,12 +133,48 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSession(featureFlags.enableAuthShell ? { status: "unauthenticated", source: "supabase-auth", user: null } : createMockAuthSession());
   }, []);
 
+  const updateProfile = useCallback(async (input: LocalUserProfile) => {
+    if (session.status !== "authenticated") {
+      throw new Error("Profile updates require an authenticated session.");
+    }
+    const updatedUser = mergeUserProfile(session.user, input);
+    saveStoredUserProfile(updatedUser, {
+      displayName: updatedUser.displayName,
+      email: updatedUser.email,
+      avatarInitials: updatedUser.avatarInitials,
+      department: updatedUser.department,
+      title: updatedUser.title,
+      timezone: updatedUser.timezone,
+    });
+    setSession({ ...session, user: updatedUser });
+    return updatedUser;
+  }, [session]);
+
+  const createProfile = useCallback(async (input: LocalUserProfile) => {
+    if (session.status !== "authenticated") {
+      throw new Error("Profile creation requires an authenticated session.");
+    }
+    const createdUser = createUserProfile(session.user, input);
+    saveStoredUserProfile(createdUser, {
+      displayName: createdUser.displayName,
+      email: createdUser.email,
+      avatarInitials: createdUser.avatarInitials,
+      department: createdUser.department,
+      title: createdUser.title,
+      timezone: createdUser.timezone,
+    });
+    setSession({ ...session, user: createdUser });
+    return createdUser;
+  }, [session]);
+
   const value = useMemo<AuthContextValue>(() => ({
     session,
     isAuthenticated: session.status === "authenticated",
     login,
     logout,
-  }), [session, login, logout]);
+    createProfile,
+    updateProfile,
+  }), [session, login, logout, createProfile, updateProfile]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

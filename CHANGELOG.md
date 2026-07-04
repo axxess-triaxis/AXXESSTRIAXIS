@@ -4,6 +4,13 @@ All notable changes to AXXESS are documented here. This project follows the spir
 
 ## Unreleased
 
+- Added Sprint 11 production demo hardening with Supabase-to-demo repository fallback for investor-facing dashboards.
+- Expanded the North East Health Mission demo corpus to 2,200 realistic institutional documents and 4,200 document activity records.
+- Added governed RAG services for document chunking, tenant-aware retrieval, permission filtering, citations, confidence scoring, human review flags, and answer audit logging.
+- Added deterministic local NLP utilities for keyword extraction, summary fallback, entity extraction, document classification, tag suggestions, and regional language script detection.
+- Added profile creation/editing helpers and Settings profile, organization, and permission panels.
+- Updated dashboard, AI workspace, analytics, CRM, approvals, and Knowledge Hub copy to remove stale prototype/demo names.
+- Added Sprint 11 tests for dashboard fallback, auth profile helpers, investor preview login, local NLP, and RAG permission filtering.
 - Added Product Release 0.7 Knowledge Hub with documents, knowledge articles, categories, tags, search, activity, shared, favorites, and archived sections.
 - Added Supabase Storage signed URL architecture for private enterprise documents.
 - Added Sprint 9 document, version, permission, activity, knowledge article, search, and storage migration.
