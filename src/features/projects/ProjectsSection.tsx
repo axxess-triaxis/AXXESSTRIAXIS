@@ -348,7 +348,7 @@ export const ProjectsSection = () => {
                 <TextField label="Start Date" type="date" value={form.startDate} onChange={(event) => setForm({ ...form, startDate: event.target.value })} disabled={!canManageProjects || saving} />
                 <TextField label="Due Date" type="date" value={form.dueDate} onChange={(event) => setForm({ ...form, dueDate: event.target.value })} disabled={!canManageProjects || saving} />
               </div>
-              <TextField label="Tags" value={form.tags} placeholder="security, workflow" onChange={(event) => setForm({ ...form, tags: event.target.value })} disabled={!canManageProjects || saving} />
+              <TextField label="Tags" value={form.tags} placeholder="oxygen, district-review" onChange={(event) => setForm({ ...form, tags: event.target.value })} disabled={!canManageProjects || saving} />
               <button
                 onClick={submitProject}
                 disabled={!canManageProjects || saving}

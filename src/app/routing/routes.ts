@@ -33,7 +33,7 @@ export const appRoutes: AppRoute[] = [
   { id: "settings", section: "settings", path: "settings", label: "Settings", module: "settings", description: "Organization and security configuration", access: "organization-protected", requiresAuth: true },
   { id: "admin", section: "settings", path: "admin", label: "Admin", module: "settings", description: "Administrative route guard architecture", access: "role-protected", requiresAuth: true, requiredRoles: ["Super Admin", "Organization Admin"] },
   { id: "beta-readiness", section: "beta-readiness", path: "admin/beta-readiness", label: "Beta Readiness", module: "beta-readiness", description: "Internal beta readiness and pilot launch checks", access: "role-protected", requiresAuth: true, requiredRoles: ["Super Admin", "Organization Admin"] },
-  { id: "auth", section: "dashboard", path: "auth", label: "Authentication", module: "auth", description: "Guest authentication route placeholder", access: "guest", requiresAuth: false },
+  { id: "auth", section: "dashboard", path: "auth", label: "Authentication", module: "auth", description: "Guest authentication and investor preview entry", access: "guest", requiresAuth: false },
 ];
 
 export function routeForSection(section: NavSection) {
