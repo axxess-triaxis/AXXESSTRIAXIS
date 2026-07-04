@@ -6,6 +6,7 @@ describe("route middleware helpers", () => {
     expect(isProtectedRoutePath("/dashboard")).toBe(true);
     expect(isProtectedRoutePath("/projects/active")).toBe(true);
     expect(isProtectedRoutePath("/settings")).toBe(true);
+    expect(isProtectedRoutePath("/admin/beta-readiness")).toBe(true);
   });
 
   it("leaves public auth and static paths unprotected", () => {

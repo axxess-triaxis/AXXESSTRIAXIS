@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import type { UserContext } from "../../security/rbac";
+import { BetaFeedbackButton } from "../../components/feedback/BetaFeedbackButton";
 import type { NavSection } from "../navigation";
 import { Sidebar } from "./Sidebar";
 import { TopBar } from "./TopBar";
@@ -11,6 +12,7 @@ type AppShellProps = {
   notifOpen: boolean;
   children: ReactNode;
   user: UserContext;
+  routePath: string;
   onSelectSection: (section: NavSection) => void;
   onToggleSidebar: () => void;
   onToggleNotifications: () => void;
@@ -27,6 +29,7 @@ export function AppShell({
   notifOpen,
   children,
   user,
+  routePath,
   onSelectSection,
   onToggleSidebar,
   onToggleNotifications,
@@ -55,6 +58,7 @@ export function AppShell({
           {children}
         </main>
       </div>
+      <BetaFeedbackButton user={user} moduleName={activeLabel} route={routePath} />
     </div>
   );
 }

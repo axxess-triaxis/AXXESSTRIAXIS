@@ -11,5 +11,13 @@ describe("enterprise route metadata", () => {
     expect(sectionFromPath("/programs")).toBe("projects");
     expect(sectionFromPath("/crm")).toBe("stakeholders");
     expect(routeForPath("/admin").section).toBe("settings");
+    expect(routeForPath("/admin/beta-readiness").section).toBe("beta-readiness");
+    expect(routeForPath("/admin/product-analytics").section).toBe("product-analytics");
+  });
+
+  it("maps Sprint 8 admin pages to role-protected routes", () => {
+    expect(routeForSection("beta-readiness").path).toBe("admin/beta-readiness");
+    expect(routeForSection("product-analytics").path).toBe("admin/product-analytics");
+    expect(routeForPath("/admin/beta-readiness").requiredRoles).toEqual(["Super Admin", "Organization Admin"]);
   });
 });

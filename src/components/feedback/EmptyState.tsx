@@ -1,4 +1,7 @@
-import type { ReactNode } from "react";
+"use client";
+
+import { useEffect, type ReactNode } from "react";
+import { trackEvent } from "../../services/analytics";
 
 type EmptyStateProps = {
   icon?: ReactNode;
@@ -8,6 +11,16 @@ type EmptyStateProps = {
 };
 
 export function EmptyState({ icon, title, message, action }: EmptyStateProps) {
+  useEffect(() => {
+    trackEvent("empty_state_viewed", {
+      empty_state_title: title ?? "untitled",
+      has_action: Boolean(action),
+    }, {
+      module_name: "empty-state",
+      route: typeof window !== "undefined" ? window.location.pathname : undefined,
+    });
+  }, [action, title]);
+
   return (
     <div className="text-center text-[#5F6B73]">
       {icon && <div className="mx-auto mb-3 flex justify-center opacity-40">{icon}</div>}

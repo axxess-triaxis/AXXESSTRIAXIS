@@ -10,6 +10,7 @@ import { Card } from "../../components/ui/Card";
 import type { Invitation, RoleName, User } from "../../domain";
 import { applicationServices } from "../../providers/serviceProvider";
 import { tenantScopeFromUser } from "../../repositories/supabaseEnterpriseRepositories";
+import { useAnalytics } from "../../services/analytics";
 import { Check, CheckCircle2, Send, Settings, UserPlus, X, XCircle } from "lucide-react";
 
 export const SettingsSection = () => {
@@ -147,6 +148,7 @@ const roleOptions: RoleName[] = ["Super Admin", "Organization Admin", "Executive
 
 function UserAdministration() {
   const { session } = useAuth();
+  const analytics = useAnalytics();
   const user = session.user;
   const scope = useMemo(() => user ? tenantScopeFromUser(user) : undefined, [user]);
   const [users, setUsers] = useState<User[]>([]);
@@ -179,8 +181,28 @@ function UserAdministration() {
     void loadUsers();
   }, [loadUsers]);
 
+  useEffect(() => {
+    if (!user) return;
+    analytics.trackEvent("user_admin_viewed", { panel: "settings_users" }, {
+      organization_id: user.organizationId,
+      user_id: user.id,
+      user_role: user.role,
+      module_name: "settings",
+      route: "/settings",
+    });
+  }, [analytics, user]);
+
   const inviteUser = async () => {
     if (!scope || !inviteEmail.trim()) {
+      if (user) {
+        analytics.trackEvent("form_validation_failed", { form_name: "invite_user", field: "email" }, {
+          organization_id: user.organizationId,
+          user_id: user.id,
+          user_role: user.role,
+          module_name: "settings",
+          route: "/settings",
+        });
+      }
       setToast({ tone: "error", message: "Email is required for invitations." });
       return;
     }
@@ -195,6 +217,13 @@ function UserAdministration() {
         tokenHash: "client-placeholder",
         expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7).toISOString(),
       });
+      analytics.trackEvent("user_invited", { invited_role: inviteRole }, {
+        organization_id: scope.organizationId,
+        user_id: scope.userId,
+        user_role: scope.role,
+        module_name: "settings",
+        route: "/settings",
+      });
       setInviteEmail("");
       setToast({ tone: "success", message: "Invitation created." });
       await loadUsers();
@@ -206,6 +235,13 @@ function UserAdministration() {
         body: JSON.stringify({ email: inviteEmail.trim().toLowerCase(), role: inviteRole }),
       }).catch(() => undefined);
       if (response?.ok) {
+        analytics.trackEvent("user_invited", { invited_role: inviteRole, invite_path: "api" }, {
+          organization_id: scope.organizationId,
+          user_id: scope.userId,
+          user_role: scope.role,
+          module_name: "settings",
+          route: "/settings",
+        });
         setInviteEmail("");
         setToast({ tone: "success", message: "Invitation created." });
         await loadUsers();
@@ -223,6 +259,19 @@ function UserAdministration() {
     setToast(null);
     try {
       const updated = await applicationServices.usersRepository.update(scope, target.id, input);
+      if (input.role && input.role !== target.role) {
+        analytics.trackEvent("role_changed", {
+          target_user_id: target.id,
+          previous_role: target.role,
+          next_role: input.role,
+        }, {
+          organization_id: scope.organizationId,
+          user_id: scope.userId,
+          user_role: scope.role,
+          module_name: "settings",
+          route: "/settings",
+        });
+      }
       setUsers((current) => current.map((row) => row.id === updated.id ? updated : row));
       setSelectedUser(updated);
       setToast({ tone: "success", message: "User updated." });

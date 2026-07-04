@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "../auth/AuthProvider";
 import { EmptyState } from "../components/feedback/EmptyState";
 import { LoadingState } from "../components/feedback/LoadingState";
@@ -11,12 +11,54 @@ import { lazyRouteComponents } from "./routing/lazyRoutes";
 import { RouteBoundary } from "./routing/RouteBoundary";
 import { useAppRouting } from "./routing/useAppRouting";
 import { canAccessRoute, getVisibleNavGroups } from "../security/rbac";
+import { useAnalytics } from "../services/analytics";
+import type { NavSection } from "./navigation";
 
 export default function App() {
   const { active, activeRoute, navigateToSection } = useAppRouting("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [notifOpen, setNotifOpen] = useState(false);
   const { session, isAuthenticated, logout } = useAuth();
+  const analytics = useAnalytics();
+  const currentUser = session.user;
+  const routePath = `/${activeRoute.path}`;
+
+  useEffect(() => {
+    if (!currentUser || session.status !== "authenticated") return;
+    analytics.identifyUser(currentUser.id, {
+      user_role: currentUser.role,
+      organization_id: currentUser.organizationId,
+      beta_user: true,
+      signup_source: "enterprise_beta",
+    });
+    analytics.trackEvent("beta_session_started", { session_source: session.source }, {
+      organization_id: currentUser.organizationId,
+      user_id: currentUser.id,
+      user_role: currentUser.role,
+      module_name: activeRoute.module,
+      route: routePath,
+    });
+  }, [analytics, currentUser, session.status, session.source, activeRoute.module, routePath]);
+
+  useEffect(() => {
+    if (!currentUser || session.status !== "authenticated") return;
+    analytics.trackEvent("module_opened", { module: activeRoute.module, label: activeRoute.label }, {
+      organization_id: currentUser.organizationId,
+      user_id: currentUser.id,
+      user_role: currentUser.role,
+      module_name: activeRoute.module,
+      route: routePath,
+    });
+    if (active === "dashboard") {
+      analytics.trackEvent("dashboard_viewed", { module: "dashboard" }, {
+        organization_id: currentUser.organizationId,
+        user_id: currentUser.id,
+        user_role: currentUser.role,
+        module_name: "dashboard",
+        route: routePath,
+      });
+    }
+  }, [active, activeRoute.label, activeRoute.module, analytics, currentUser, session.status, routePath]);
 
   if (session.status === "loading") {
     return <LoadingState label="Checking session" />;
@@ -38,13 +80,35 @@ export default function App() {
     );
   }
 
-  if (!session.user) return null;
+  if (!currentUser) return null;
 
-  const currentUser = session.user;
   const visibleNavGroups = getVisibleNavGroups(navGroups, currentUser);
   const activeLabel = visibleNavGroups.flatMap((group) => group.items).find((item) => item.id === active)?.label || activeRoute.label;
   const ActiveSection = lazyRouteComponents[active] ?? lazyRouteComponents.dashboard;
   const hasRouteAccess = canAccessRoute(currentUser, activeRoute);
+
+  const handleSelectSection = (section: NavSection) => {
+    analytics.trackEvent("sidebar_navigation_clicked", { target_section: section }, {
+      organization_id: currentUser.organizationId,
+      user_id: currentUser.id,
+      user_role: currentUser.role,
+      module_name: activeRoute.module,
+      route: routePath,
+    });
+    navigateToSection(section);
+  };
+
+  const handleLogout = async () => {
+    analytics.trackEvent("user_logout", { session_source: session.source }, {
+      organization_id: currentUser.organizationId,
+      user_id: currentUser.id,
+      user_role: currentUser.role,
+      module_name: activeRoute.module,
+      route: routePath,
+    });
+    await logout();
+    analytics.resetAnalytics();
+  };
 
   return (
     <AppShell
@@ -52,11 +116,12 @@ export default function App() {
       activeLabel={activeLabel}
       sidebarOpen={sidebarOpen}
       notifOpen={notifOpen}
-      onSelectSection={navigateToSection}
+      routePath={routePath}
+      onSelectSection={handleSelectSection}
       onToggleSidebar={() => setSidebarOpen((open) => !open)}
       onToggleNotifications={() => setNotifOpen((open) => !open)}
       onCloseNotifications={() => notifOpen && setNotifOpen(false)}
-      onLogout={logout}
+      onLogout={handleLogout}
       user={currentUser}
     >
       <RouteBoundary route={activeRoute} hasAccess={hasRouteAccess}>

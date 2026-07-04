@@ -5,6 +5,7 @@ import type { Notification } from "../../domain";
 import { applicationServices } from "../../providers/serviceProvider";
 import { tenantScopeFromUser } from "../../repositories/supabaseEnterpriseRepositories";
 import type { UserContext } from "../../security/rbac";
+import { useAnalytics } from "../../services/analytics";
 
 type TopBarProps = {
   activeLabel: string;
@@ -41,6 +42,7 @@ function relativeTime(value: string) {
 }
 
 export function TopBar({ activeLabel, notifOpen, user, onToggleNotifications, onLogout }: TopBarProps) {
+  const analytics = useAnalytics();
   const scope = useMemo(() => tenantScopeFromUser(user), [user]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [filter, setFilter] = useState<NotificationFilter>("unread");
@@ -78,6 +80,17 @@ export function TopBar({ activeLabel, notifOpen, user, onToggleNotifications, on
     const readAt = new Date().toISOString();
     try {
       const updated = await applicationServices.notificationsRepository.update(scope, notification.id, { readAt });
+      analytics.trackEvent("notification_marked_read", {
+        notification_id: updated.id,
+        notification_type: updated.type,
+        resource_type: updated.resourceType ?? "none",
+      }, {
+        organization_id: updated.organizationId,
+        user_id: user.id,
+        user_role: user.role,
+        module_name: "notifications",
+        route: "/notifications",
+      });
       setNotifications((current) => current.map((row) => row.id === updated.id ? updated : row));
       setSelectedNotification(updated);
     } catch {
@@ -140,7 +153,20 @@ export function TopBar({ activeLabel, notifOpen, user, onToggleNotifications, on
                 {filteredNotifications.map((notification) => {
                   const Icon = notificationIcon(notification.type);
                   return (
-                    <button key={notification.id} onClick={() => void markRead(notification)} className="flex w-full items-start gap-3 border-b border-[rgba(0,0,0,0.04)] px-4 py-3 text-left transition-colors hover:bg-[#F8F9FA]">
+                    <button key={notification.id} onClick={() => {
+                      analytics.trackEvent("notification_viewed", {
+                        notification_id: notification.id,
+                        notification_type: notification.type,
+                        resource_type: notification.resourceType ?? "none",
+                      }, {
+                        organization_id: notification.organizationId,
+                        user_id: user.id,
+                        user_role: user.role,
+                        module_name: "notifications",
+                        route: "/notifications",
+                      });
+                      void markRead(notification);
+                    }} className="flex w-full items-start gap-3 border-b border-[rgba(0,0,0,0.04)] px-4 py-3 text-left transition-colors hover:bg-[#F8F9FA]">
                       <Icon size={14} className={`${notificationColor(notification.type)} mt-0.5 flex-shrink-0`} />
                       <div className="min-w-0 flex-1">
                         <div className="flex items-start gap-2">
