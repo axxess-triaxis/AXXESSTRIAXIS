@@ -12,6 +12,7 @@ import { StatusBadge } from "../../components/ui/StatusBadge";
 import type { Program, Project, Task, User } from "../../domain";
 import { applicationServices } from "../../providers/serviceProvider";
 import { tenantScopeFromUser } from "../../repositories/supabaseEnterpriseRepositories";
+import { useAnalytics } from "../../services/analytics";
 
 type TaskFormState = {
   title: string;
@@ -61,6 +62,7 @@ function tagArray(tags: string) {
 
 export const TasksSection = () => {
   const { session } = useAuth();
+  const analytics = useAnalytics();
   const user = session.user;
   const scope = useMemo(() => user ? tenantScopeFromUser(user) : undefined, [user]);
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -115,6 +117,15 @@ export const TasksSection = () => {
     if (!form.title.trim()) nextErrors.title = "Task title is required.";
     if (!form.assigneeId) nextErrors.assigneeId = "Assignee is required.";
     setErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0 && user) {
+      analytics.trackEvent("form_validation_failed", { form_name: "task", fields: Object.keys(nextErrors) }, {
+        organization_id: user.organizationId,
+        user_id: user.id,
+        user_role: user.role,
+        module_name: "tasks",
+        route: "/tasks",
+      });
+    }
     return Object.keys(nextErrors).length === 0;
   };
 
@@ -137,6 +148,29 @@ export const TasksSection = () => {
       const saved = editingTask
         ? await applicationServices.tasksRepository.update(scope, editingTask.id, payload)
         : await applicationServices.tasksRepository.create(scope, payload);
+      analytics.trackEvent(editingTask ? "task_updated" : "task_created", {
+        task_id: saved.id,
+        status: saved.status,
+        priority: saved.priority,
+      }, {
+        organization_id: saved.organizationId,
+        user_id: scope.userId,
+        user_role: scope.role,
+        module_name: "tasks",
+        route: "/tasks",
+      });
+      if (saved.assigneeId) {
+        analytics.trackEvent("task_assigned", {
+          task_id: saved.id,
+          assigned_user_id: saved.assigneeId,
+        }, {
+          organization_id: saved.organizationId,
+          user_id: scope.userId,
+          user_role: scope.role,
+          module_name: "tasks",
+          route: "/tasks",
+        });
+      }
       setSelectedTask(saved);
       setEditingTask(undefined);
       setToast({ tone: "success", message: editingTask ? "Task updated." : "Task created." });
@@ -153,6 +187,17 @@ export const TasksSection = () => {
     const nextStatus: Task["status"] = task.status === "completed" ? "pending" : "completed";
     try {
       const saved = await applicationServices.tasksRepository.update(scope, task.id, { status: nextStatus });
+      analytics.trackEvent("task_status_changed", {
+        task_id: saved.id,
+        previous_status: task.status,
+        next_status: saved.status,
+      }, {
+        organization_id: saved.organizationId,
+        user_id: scope.userId,
+        user_role: scope.role,
+        module_name: "tasks",
+        route: "/tasks",
+      });
       setTasks((current) => current.map((row) => row.id === saved.id ? saved : row));
       setSelectedTask(saved);
       setToast({ tone: "success", message: "Task status updated." });

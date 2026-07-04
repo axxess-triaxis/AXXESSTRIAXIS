@@ -1,6 +1,21 @@
 export type EntityId = string;
 export type ISODateTime = string;
 export type PriorityLevel = "low" | "medium" | "high" | "urgent";
+export type DocumentKind = "pdf" | "docx" | "xlsx" | "pptx" | "image" | "text" | "markdown" | "link" | "unknown";
+export type DocumentStatus = "active" | "archived" | "deleted";
+export type DocumentVisibility = "private" | "team" | "department" | "organization" | "shared";
+export type DocumentPermissionPrincipal = "user" | "role" | "team" | "department" | "organization" | "external";
+export type DocumentPermissionLevel = "viewer" | "editor" | "owner";
+export type DocumentActivityAction =
+  | "uploaded"
+  | "viewed"
+  | "edited"
+  | "downloaded"
+  | "deleted"
+  | "archived"
+  | "restored"
+  | "permission_changed";
+export type KnowledgeArticleStatus = "draft" | "published" | "archived";
 export type RoleName =
   | "Super Admin"
   | "Organization Admin"
@@ -100,10 +115,103 @@ export interface Document {
   id: EntityId;
   organizationId: EntityId;
   name: string;
+  title?: string;
+  description?: string;
   storagePath: string;
+  fileName?: string;
+  fileSize?: number;
   mimeType: string;
+  documentType?: DocumentKind;
+  status?: DocumentStatus;
+  visibility?: DocumentVisibility;
+  categoryId?: EntityId;
+  categoryName?: string;
+  ownerId?: EntityId;
+  createdByUserId?: EntityId;
+  updatedByUserId?: EntityId;
+  currentVersion?: number;
+  tags?: string[];
+  isFavorite?: boolean;
+  lastViewedAt?: ISODateTime;
   classification?: "public" | "internal" | "confidential" | "restricted";
   projectId?: EntityId;
+  createdAt: ISODateTime;
+  updatedAt: ISODateTime;
+  archivedAt?: ISODateTime;
+  deletedAt?: ISODateTime;
+}
+
+export interface DocumentVersion {
+  id: EntityId;
+  organizationId: EntityId;
+  documentId: EntityId;
+  versionNumber: number;
+  fileName: string;
+  fileSize: number;
+  mimeType: string;
+  storagePath: string;
+  checksum?: string;
+  createdByUserId?: EntityId;
+  createdAt: ISODateTime;
+}
+
+export interface DocumentCategory {
+  id: EntityId;
+  organizationId: EntityId;
+  name: string;
+  slug: string;
+  description?: string;
+  parentId?: EntityId;
+  createdAt: ISODateTime;
+  updatedAt: ISODateTime;
+}
+
+export interface DocumentTag {
+  id: EntityId;
+  organizationId: EntityId;
+  name: string;
+  color?: string;
+  createdAt: ISODateTime;
+  updatedAt: ISODateTime;
+}
+
+export interface DocumentPermission {
+  id: EntityId;
+  organizationId: EntityId;
+  documentId: EntityId;
+  principalType: DocumentPermissionPrincipal;
+  principalId?: EntityId;
+  accessLevel: DocumentPermissionLevel;
+  createdByUserId?: EntityId;
+  expiresAt?: ISODateTime;
+  createdAt: ISODateTime;
+}
+
+export interface DocumentActivity {
+  id: EntityId;
+  organizationId: EntityId;
+  documentId: EntityId;
+  actorUserId?: EntityId;
+  action: DocumentActivityAction;
+  metadata: Record<string, unknown>;
+  createdAt: ISODateTime;
+}
+
+export interface KnowledgeArticle {
+  id: EntityId;
+  organizationId: EntityId;
+  title: string;
+  bodyMarkdown: string;
+  summary?: string;
+  status: KnowledgeArticleStatus;
+  categoryId?: EntityId;
+  categoryName?: string;
+  authorUserId: EntityId;
+  tags: string[];
+  isFavorite?: boolean;
+  lastViewedAt?: ISODateTime;
+  publishedAt?: ISODateTime;
+  archivedAt?: ISODateTime;
   createdAt: ISODateTime;
   updatedAt: ISODateTime;
 }
@@ -183,5 +291,22 @@ export interface AuditLog {
   category?: string;
   requestId?: string;
   metadata?: Record<string, unknown>;
+  createdAt: ISODateTime;
+}
+
+export type BetaFeedbackType = "Bug" | "Feature Request" | "Confusing Workflow" | "General Feedback";
+export type BetaFeedbackStatus = "new" | "triaged" | "in-review" | "resolved" | "closed";
+
+export interface BetaFeedback {
+  id: EntityId;
+  organizationId: EntityId;
+  userId: EntityId;
+  feedbackType: BetaFeedbackType;
+  module: string;
+  rating: number;
+  message: string;
+  permissionToContact: boolean;
+  status: BetaFeedbackStatus;
+  metadata: Record<string, unknown>;
   createdAt: ISODateTime;
 }

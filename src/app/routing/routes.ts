@@ -25,12 +25,14 @@ export const appRoutes: AppRoute[] = [
   { id: "tasks", section: "tasks", path: "tasks", label: "Tasks & Workflow", module: "tasks", description: "Task execution and workflow", access: "organization-protected", requiresAuth: true },
   { id: "crm", section: "stakeholders", path: "crm", label: "CRM", module: "stakeholders", description: "CRM route mapped to stakeholder intelligence", access: "organization-protected", requiresAuth: true },
   { id: "stakeholders", section: "stakeholders", path: "stakeholders", label: "Stakeholders & CRM", module: "stakeholders", description: "Stakeholder relationship intelligence", access: "organization-protected", requiresAuth: true },
-  { id: "knowledge", section: "knowledge", path: "knowledge", label: "Institutional Knowledge", module: "knowledge", description: "Knowledge graph and semantic discovery", access: "organization-protected", requiresAuth: true },
-  { id: "documents", section: "documents", path: "documents", label: "Documents & Files", module: "documents", description: "Document intelligence and file registry", access: "organization-protected", requiresAuth: true },
+  { id: "knowledge", section: "knowledge", path: "knowledge", label: "Knowledge Hub", module: "knowledge", description: "Enterprise documents, articles, and knowledge discovery", access: "organization-protected", requiresAuth: true },
+  { id: "documents", section: "documents", path: "documents", label: "Documents & Files", module: "documents", description: "Enterprise document registry and storage", access: "organization-protected", requiresAuth: true },
   { id: "meetings", section: "meetings", path: "meetings", label: "Meetings & Decisions", module: "meetings", description: "Meetings, summaries, and decisions", access: "organization-protected", requiresAuth: true },
   { id: "analytics", section: "analytics", path: "analytics", label: "Analytics & Reports", module: "analytics", description: "Executive reporting and insights", access: "organization-protected", requiresAuth: true },
+  { id: "product-analytics", section: "product-analytics", path: "admin/product-analytics", label: "Product Analytics", module: "product-analytics", description: "Internal product usage and activation dashboard", access: "role-protected", requiresAuth: true, requiredRoles: ["Super Admin", "Organization Admin"] },
   { id: "settings", section: "settings", path: "settings", label: "Settings", module: "settings", description: "Organization and security configuration", access: "organization-protected", requiresAuth: true },
   { id: "admin", section: "settings", path: "admin", label: "Admin", module: "settings", description: "Administrative route guard architecture", access: "role-protected", requiresAuth: true, requiredRoles: ["Super Admin", "Organization Admin"] },
+  { id: "beta-readiness", section: "beta-readiness", path: "admin/beta-readiness", label: "Beta Readiness", module: "beta-readiness", description: "Internal beta readiness and pilot launch checks", access: "role-protected", requiresAuth: true, requiredRoles: ["Super Admin", "Organization Admin"] },
   { id: "auth", section: "dashboard", path: "auth", label: "Authentication", module: "auth", description: "Guest authentication route placeholder", access: "guest", requiresAuth: false },
 ];
 
@@ -39,8 +41,9 @@ export function routeForSection(section: NavSection) {
 }
 
 export function routeForPath(pathname: string) {
-  const normalized = pathname.replace(/^\/+/, "").split("/")[0] || "dashboard";
-  return appRoutes.find((route) => route.path === normalized) ?? appRoutes[1];
+  const normalized = pathname.replace(/^\/+/, "").replace(/\/+$/, "") || "dashboard";
+  const firstSegment = normalized.split("/")[0];
+  return appRoutes.find((route) => route.path === normalized) ?? appRoutes.find((route) => route.path === firstSegment) ?? appRoutes[1];
 }
 
 export function sectionFromPath(pathname: string): NavSection {

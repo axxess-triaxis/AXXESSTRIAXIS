@@ -20,12 +20,14 @@ Core principles:
 
 AXXESS uses the Next.js App Router as the application runtime. Feature modules are separated from route definitions, service contracts, repository interfaces, security concerns, and design tokens so implementation details can evolve without forcing UI rewrites.
 
-Current runtime status:
+Current runtime status: Sprint 9 / Product Release 0.7 beta.
 
 - UI and route shell are implemented.
-- Data is mock-backed through service/repository boundaries.
-- Supabase schema, seed, and fixture scaffolding are present.
-- Auth, storage, realtime, AI providers, and notifications are architecturally prepared but not connected to production services.
+- Supabase-backed auth, tenant repositories, CRUD workflows, notifications, invitations, and audit foundations are in place.
+- Mixpanel-ready product analytics is available with mock analytics as the safe default.
+- Beta feedback collection and internal beta readiness dashboards are implemented.
+- Enterprise Knowledge Hub, document metadata, private Supabase Storage, signed URL access, and PostgreSQL search are implemented.
+- AI and RAG providers remain intentionally out of scope for Product Release 0.7.
 
 ## Tech Stack
 
@@ -36,6 +38,7 @@ Current runtime status:
 - Radix UI primitives and shadcn-style components
 - Lucide React icons
 - Recharts
+- Mixpanel browser client, disabled unless configured
 - Vitest and React Testing Library
 - Supabase-ready database/auth/storage architecture
 - pnpm
@@ -55,7 +58,7 @@ Current runtime status:
 |   |-- config/          Feature flags
 |   |-- constants/       Shared route constants
 |   |-- domain/          Core enterprise entity types
-|   |-- features/        Dashboard, projects, tasks, CRM, knowledge, documents, etc.
+|   |-- features/        Dashboard, projects, tasks, CRM, Knowledge Hub, etc.
 |   |-- hooks/           Reusable React hooks
 |   |-- lib/             Environment and platform helpers
 |   |-- mocks/           Mock institutional data
@@ -106,15 +109,19 @@ Copy `.env.example` to `.env.local` and fill in values as services are connected
 ```bash
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 NEXT_PUBLIC_AXXESS_AUTH_SHELL=false
+NEXT_PUBLIC_AXXESS_APP_VERSION=0.7.0
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
+NEXT_PUBLIC_MIXPANEL_TOKEN=
+NEXT_PUBLIC_ANALYTICS_DISABLED=false
+NEXT_PUBLIC_BETA_FEEDBACK_FORM_URL=
 SUPABASE_SERVICE_ROLE_KEY=
 OPENAI_API_KEY=
 ANTHROPIC_API_KEY=
 GEMINI_API_KEY=
 ```
 
-Only `NEXT_PUBLIC_*` values are safe to expose to the browser. Server-side keys must stay in local environment files or managed deployment secrets.
+Only `NEXT_PUBLIC_*` values are safe to expose to the browser. Server-side keys must stay in local environment files or managed deployment secrets. Leave `NEXT_PUBLIC_MIXPANEL_TOKEN` empty to use the mock analytics provider.
 
 ## Deployment
 
@@ -143,16 +150,28 @@ Screenshots are intentionally placeholders until production-approved imagery is 
 - Executive Dashboard: `docs/screenshots/dashboard.png`
 - AI Workspace: `docs/screenshots/ai-workspace.png`
 - Projects and Programs: `docs/screenshots/projects.png`
+- Knowledge Hub: `docs/screenshots/knowledge-hub.png`
 
 ## Roadmap
 
-- Connect Supabase Auth, Postgres, Storage, and Realtime.
-- Implement production tenant isolation and organization membership flows.
-- Replace mock repositories with Supabase-backed implementations.
-- Add AI provider adapters with human-review workflow controls.
+- Apply Sprint 9 Knowledge Hub migration to all beta Supabase environments.
+- Complete controlled enterprise pilot onboarding with real document workflows.
+- Promote Mixpanel dashboards from placeholder readiness to operational product reporting.
+- Add invitation-aware document sharing and department/team mappings.
+- Add AI provider adapters with human-review workflow controls after the Knowledge Hub foundation is stable.
 - Expand automated testing around feature modules and route guards.
 - Add visual regression testing for the enterprise UI shell.
 - Add observability, audit logging, and deployment runbooks.
+
+## Knowledge Hub
+
+Product Release 0.7 adds a non-AI enterprise Knowledge Hub with documents, knowledge articles, categories, tags, recent activity, favorites, shared documents, archived documents, and PostgreSQL search. Document binaries are stored in a private Supabase Storage bucket and accessed through signed URLs only.
+
+See:
+
+- `docs/DOCUMENTS.md`
+- `docs/STORAGE.md`
+- `docs/SEARCH.md`
 
 ## Contributing
 
