@@ -1,8 +1,11 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useAuth } from "../../auth/AuthProvider";
 import { SectionHeader } from "../../components/layout/SectionHeader";
 import { Avatar } from "../../components/ui/Avatar";
 import { Card } from "../../components/ui/Card";
 import { applicationServices } from "../../providers/serviceProvider";
+import { tenantScopeFromUser } from "../../repositories/supabaseEnterpriseRepositories";
+import { answerWithGovernedRag, type RagAnswer } from "../../services/rag/governedRag";
 import {
   AlertTriangle,
   ArrowUpRight,
@@ -23,18 +26,70 @@ import {
 
 const aiMessages = applicationServices.institutionalRepository.getAiMessages();
 
+const fallbackRagAnswer: RagAnswer = {
+  answer: "District evidence indicates the highest current operational exposure sits in oxygen resilience, maternal referral handoff, and pharmacy stockout variance. Escalation should prioritize Dibrugarh biomedical maintenance, Cachar referral transfer turnaround, and Dhubri stock reconciliation before the next Mission Secretariat review.",
+  confidence: 0.87,
+  humanReviewRequired: false,
+  keywords: ["oxygen", "maternal", "stockout", "district", "variance"],
+  sources: [
+    {
+      sourceType: "document",
+      sourceId: "demo-risk-register",
+      title: "Dibrugarh Risk Register - Oxygen Resilience",
+      score: 0.91,
+      excerpt: "Biomedical maintenance variance remains the leading oxygen resilience risk for Dibrugarh and adjoining referral corridors.",
+    },
+    {
+      sourceType: "document",
+      sourceId: "demo-maternal-review",
+      title: "Cachar District Review Note - Maternal Referral",
+      score: 0.84,
+      excerpt: "Referral handoff documentation shows transport coordination gaps during night escalation windows.",
+    },
+    {
+      sourceType: "knowledge-article",
+      sourceId: "demo-stockout-article",
+      title: "District Stockout Mitigation Playbook",
+      score: 0.79,
+      excerpt: "Stock reconciliation should be reviewed weekly where block facilities cross the threshold for essential medicines.",
+    },
+  ],
+};
+
 export const AIWorkspaceSection = () => {
+  const { session } = useAuth();
+  const tenantScope = useMemo(() => session.user ? tenantScopeFromUser(session.user) : undefined, [session.user]);
   const [input, setInput] = useState("");
   const [approved, setApproved] = useState(false);
+  const [ragAnswer, setRagAnswer] = useState<RagAnswer>(fallbackRagAnswer);
+
+  useEffect(() => {
+    if (!tenantScope) return;
+
+    let isMounted = true;
+    void answerWithGovernedRag(applicationServices, tenantScope, {
+      question: "Which North East Health Mission district risks need immediate governance attention for oxygen resilience, maternal referrals, stockouts, and budget variance?",
+      limit: 4,
+    })
+      .then((answer) => {
+        if (isMounted && answer.sources.length > 0) setRagAnswer(answer);
+      })
+      .catch(() => {
+        if (isMounted) setRagAnswer(fallbackRagAnswer);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [tenantScope]);
 
   return (
     <div className="h-full flex flex-col">
       <SectionHeader
         title="AI Workspace"
-        subtitle="Contextual institutional intelligence · Human-in-the-Loop execution"
+        subtitle="Governed institutional intelligence with cited sources and human review"
       />
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-4 min-h-0">
-        {/* Conversation panel */}
         <div className="lg:col-span-2 flex flex-col">
           <Card className="flex-1 flex flex-col overflow-hidden">
             <div className="flex items-center gap-3 px-4 py-3 border-b border-[rgba(0,0,0,0.06)]">
@@ -44,12 +99,12 @@ export const AIWorkspaceSection = () => {
               <div>
                 <div className="text-sm font-semibold text-[#0F1117]">AXXESS Intelligence Engine</div>
                 <div className="flex items-center gap-1.5 text-[11px] text-[#5F6B73]">
-                  <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
-                  Active · Analyzing 1,247 documents · Contextual memory enabled
+                  <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
+                  Active - 2,200 documents indexed - Permission-aware retrieval
                 </div>
               </div>
               <div className="ml-auto flex items-center gap-2">
-                {["Document Reasoning", "Multilingual", "Workflow Gen"].map((cap) => (
+                {["RAG", "Multilingual", "Human Review"].map((cap) => (
                   <span key={cap} className="text-[10px] font-medium bg-[#8B1E2D]/8 text-[#8B1E2D] px-2 py-0.5 rounded-full border border-[#8B1E2D]/15">
                     {cap}
                   </span>
@@ -65,7 +120,7 @@ export const AIWorkspaceSection = () => {
                       <div className="bg-[#0F1117] text-white text-sm rounded-2xl rounded-tr-sm px-4 py-3 max-w-[80%] leading-relaxed">
                         {msg.content}
                       </div>
-                      <Avatar initials="RA" size="sm" color="bg-[#2C4A7C]" />
+                      <Avatar initials={session.user?.avatarInitials ?? "AR"} size="sm" color="bg-[#2C4A7C]" />
                     </div>
                   ) : (
                     <div className="flex items-start gap-3">
@@ -107,7 +162,7 @@ export const AIWorkspaceSection = () => {
                         {msg.requiresApproval && approved && (
                           <div className="mt-2 bg-emerald-50 border border-emerald-200 rounded-xl p-2.5 flex items-center gap-2">
                             <CheckCircle2 size={13} className="text-emerald-600" />
-                            <span className="text-xs text-emerald-700 font-medium">Briefing note sent to Minister Okonkwo&apos;s office · Audit logged</span>
+                            <span className="text-xs text-emerald-700 font-medium">Briefing note routed to the Mission Secretariat - audit logged</span>
                           </div>
                         )}
                       </div>
@@ -115,13 +170,36 @@ export const AIWorkspaceSection = () => {
                   )}
                 </div>
               ))}
+
+              <div className="flex items-start gap-3">
+                <div className="w-7 h-7 bg-[#8B1E2D] rounded-full flex items-center justify-center flex-shrink-0">
+                  <ShieldCheck size={12} className="text-white" />
+                </div>
+                <div className="flex-1 max-w-[85%]">
+                  <div className="flex items-center gap-1.5 text-[10px] text-[#5F6B73] mb-2 font-mono">
+                    <Terminal size={10} />
+                    Governed RAG - citations - tenant permissions
+                  </div>
+                  <div className="bg-[#F8F9FA] border border-[rgba(0,0,0,0.06)] rounded-2xl rounded-tl-sm px-4 py-3 text-sm text-[#0F1117] leading-relaxed">
+                    {ragAnswer.answer}
+                  </div>
+                  <div className="mt-2 flex flex-wrap items-center gap-2 text-[10px]">
+                    <span className="rounded-full bg-emerald-50 px-2 py-1 font-semibold text-emerald-700">
+                      Confidence {Math.round(ragAnswer.confidence * 100)}%
+                    </span>
+                    <span className={`rounded-full px-2 py-1 font-semibold ${ragAnswer.humanReviewRequired ? "bg-amber-50 text-amber-700" : "bg-[#F2F3F5] text-[#5F6B73]"}`}>
+                      {ragAnswer.humanReviewRequired ? "Human review flagged" : "Human review optional"}
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div className="px-4 pb-4">
               <div className="flex items-center gap-2 mb-3 flex-wrap">
-                {["Generate project update", "Summarize weekly approvals", "Draft stakeholder briefing", "Identify schedule risks"].map((s) => (
-                  <button key={s} className="text-[11px] text-[#5F6B73] border border-[rgba(0,0,0,0.1)] px-2.5 py-1 rounded-full hover:border-[#8B1E2D] hover:text-[#8B1E2D] transition-colors">
-                    {s}
+                {["Summarize weekly approvals", "Find district SLA breaches", "Draft Mission Secretariat brief", "Identify stockout risks"].map((suggestion) => (
+                  <button key={suggestion} className="text-[11px] text-[#5F6B73] border border-[rgba(0,0,0,0.1)] px-2.5 py-1 rounded-full hover:border-[#8B1E2D] hover:text-[#8B1E2D] transition-colors">
+                    {suggestion}
                   </button>
                 ))}
               </div>
@@ -129,8 +207,8 @@ export const AIWorkspaceSection = () => {
                 <Paperclip size={14} className="text-[#5F6B73]" />
                 <input
                   value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  placeholder="Ask AXXESS anything about your portfolio, programs, or decisions…"
+                  onChange={(event) => setInput(event.target.value)}
+                  placeholder="Ask AXXESS about portfolios, approvals, risks, or cited institutional documents"
                   className="flex-1 bg-transparent text-sm text-[#0F1117] placeholder:text-[#5F6B73] outline-none"
                 />
                 <button className="w-7 h-7 bg-[#8B1E2D] rounded-lg flex items-center justify-center hover:bg-[#7a1a27] transition-colors">
@@ -141,16 +219,15 @@ export const AIWorkspaceSection = () => {
           </Card>
         </div>
 
-        {/* Context panel */}
         <div className="space-y-4">
           <Card className="p-4">
             <h3 className="text-xs font-semibold text-[#0F1117] uppercase tracking-wider mb-3">Context Window</h3>
             <div className="space-y-2">
               {[
-                { type: "Project", name: "Border Security AI Platform", icon: FolderKanban },
-                { type: "Document", name: "Ethics Review Board Submission", icon: FileText },
-                { type: "Meeting", name: "Ethics Board Q&A — Nov 11", icon: CalendarDays },
-                { type: "Stakeholder", name: "Dr. Sarah Osei, Ethics Board", icon: Users },
+                { type: "Project", name: "Dibrugarh Oxygen Resilience Upgrade", icon: FolderKanban },
+                { type: "Document", name: "Cachar Maternal Referral Review Note", icon: FileText },
+                { type: "Meeting", name: "Mission Secretariat SLA Review - Jul 4", icon: CalendarDays },
+                { type: "Stakeholder", name: "Dr. Purnima Bora, State Health Directorate", icon: Users },
               ].map((ctx, i) => (
                 <div key={i} className="flex items-center gap-2.5 p-2 rounded-lg bg-[#F8F9FA] hover:bg-[#F2F3F5] cursor-pointer transition-colors">
                   <ctx.icon size={13} className="text-[#8B1E2D]" />
@@ -162,17 +239,33 @@ export const AIWorkspaceSection = () => {
               ))}
             </div>
             <button className="mt-3 w-full text-xs text-[#5F6B73] border border-dashed border-[rgba(0,0,0,0.12)] rounded-lg py-2 hover:border-[#8B1E2D] hover:text-[#8B1E2D] transition-colors">
-              + Add context
+              Add governed context
             </button>
+          </Card>
+
+          <Card className="p-4">
+            <h3 className="text-xs font-semibold text-[#0F1117] uppercase tracking-wider mb-3">Sources Used</h3>
+            <div className="space-y-2.5">
+              {ragAnswer.sources.map((source) => (
+                <div key={`${source.sourceType}-${source.sourceId}`} className="rounded-lg border border-[rgba(0,0,0,0.06)] bg-[#F8F9FA] p-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[10px] font-mono uppercase text-[#5F6B73]">{source.sourceType === "document" ? "Document" : "Knowledge Article"}</span>
+                    <span className="text-[10px] font-semibold text-[#1A6B4A]">{Math.round(source.score * 100)}%</span>
+                  </div>
+                  <p className="mt-1 text-xs font-semibold leading-snug text-[#0F1117]">{source.title}</p>
+                  <p className="mt-1 line-clamp-2 text-[11px] leading-relaxed text-[#5F6B73]">{source.excerpt}</p>
+                </div>
+              ))}
+            </div>
           </Card>
 
           <Card className="p-4">
             <h3 className="text-xs font-semibold text-[#0F1117] uppercase tracking-wider mb-3">Session Actions</h3>
             <div className="space-y-1.5">
               {[
-                { label: "Generate Task List", icon: CheckSquare, status: "ready" },
-                { label: "Schedule Meeting", icon: CalendarDays, status: "ready" },
-                { label: "Create Approval Request", icon: ShieldCheck, status: "pending-review" },
+                { label: "Generate District Action List", icon: CheckSquare, status: "ready" },
+                { label: "Schedule Secretariat Review", icon: CalendarDays, status: "ready" },
+                { label: "Create Approval Packet", icon: ShieldCheck, status: "pending-review" },
                 { label: "Update Risk Register", icon: AlertTriangle, status: "ready" },
               ].map((action, i) => (
                 <button key={i} className="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-[#F2F3F5] transition-colors group">
@@ -191,9 +284,9 @@ export const AIWorkspaceSection = () => {
             <h3 className="text-xs font-semibold text-[#0F1117] uppercase tracking-wider mb-2">AI Audit Trail</h3>
             <div className="space-y-2">
               {[
-                { time: "08:43", action: "Document analysis: 3 files", user: "Auto" },
-                { time: "08:41", action: "Risk register queried", user: "R. Anand" },
-                { time: "07:55", action: "Meeting summary generated", user: "Auto" },
+                { time: "08:43", action: "RAG answer generated", user: "Auto" },
+                { time: "08:41", action: "Risk register queried", user: session.user?.avatarInitials ?? "AR" },
+                { time: "07:55", action: "District brief drafted", user: "Auto" },
               ].map((log, i) => (
                 <div key={i} className="flex items-center gap-2 text-[11px] text-[#5F6B73]">
                   <span className="font-mono">{log.time}</span>

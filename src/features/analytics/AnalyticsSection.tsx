@@ -12,7 +12,7 @@ export const AnalyticsSection = () => (
   <div>
     <SectionHeader
       title="Analytics & Reports"
-      subtitle="Executive intelligence · FY2024-25 Q4"
+      subtitle="Executive intelligence for the FY2026 mission cycle"
       action={
         <button className="text-xs bg-[#8B1E2D] text-white px-3 py-1.5 rounded-lg flex items-center gap-1.5 hover:bg-[#7a1a27]">
           <Download size={12} /> Export Report
@@ -50,13 +50,15 @@ export const AnalyticsSection = () => (
       <Card className="p-5">
         <h3 className="text-sm font-semibold text-[#0F1117] mb-4">Budget Utilization by Program</h3>
         <div className="space-y-3">
-          {projects.slice(0, 5).map((p) => {
-            const util = Math.round((parseFloat(p.spent.replace("$", "").replace("M", "")) / parseFloat(p.budget.replace("$", "").replace("M", ""))) * 100);
+          {projects.slice(0, 5).map((project) => {
+            const spent = parseFloat(project.spent.replace("$", "").replace("M", ""));
+            const budget = parseFloat(project.budget.replace("$", "").replace("M", ""));
+            const util = Math.round((spent / budget) * 100);
             return (
-              <div key={p.id}>
+              <div key={project.id}>
                 <div className="flex justify-between text-xs mb-1">
-                  <span className="text-[#0F1117] font-medium truncate max-w-[200px]">{p.name.split("—")[0].trim()}</span>
-                  <span className="font-mono text-[#5F6B73]">{p.spent} / {p.budget}</span>
+                  <span className="text-[#0F1117] font-medium truncate max-w-[220px]">{project.name.split("-")[0].trim()}</span>
+                  <span className="font-mono text-[#5F6B73]">{project.spent} / {project.budget}</span>
                 </div>
                 <div className="h-2 bg-[#F2F3F5] rounded-full overflow-hidden">
                   <div className="h-full rounded-full" style={{ width: `${util}%`, backgroundColor: util > 90 ? "#8B1E2D" : util > 70 ? "#C9A227" : "#1A6B4A" }} />
@@ -71,16 +73,16 @@ export const AnalyticsSection = () => (
         <h3 className="text-sm font-semibold text-[#0F1117] mb-4">AI-Generated Insights</h3>
         <div className="space-y-3">
           {[
-            { insight: "Portfolio burn rate is 7% above benchmark — Q4 spending acceleration detected in 4 programs", type: "Financial", severity: "medium" },
-            { insight: "Healthcare and Border Security programs have 94% correlated risk patterns — coordinate mitigation", type: "Risk", severity: "high" },
-            { insight: "Stakeholder engagement dropped 23% in October — Ministry of Finance contacts may need re-activation", type: "Relationship", severity: "medium" },
-            { insight: "11 decisions made in Q3 have no linked action items — accountability gaps identified", type: "Governance", severity: "low" },
-          ].map((ins, i) => (
-            <div key={i} className="flex items-start gap-3 p-3 bg-[#F8F9FA] rounded-lg">
-              <div className={`w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0 ${ins.severity === "high" ? "bg-red-500" : ins.severity === "medium" ? "bg-amber-500" : "bg-blue-500"}`} />
+            { insight: "Portfolio burn rate is 7% above benchmark; Q4 spending acceleration detected in cold-chain and oxygen workstreams", type: "Financial", severity: "medium" },
+            { insight: "Maternal referral and oxygen resilience programs have 91% correlated operational risk patterns", type: "Risk", severity: "high" },
+            { insight: "Stakeholder engagement dropped 18% across two district review cycles; Finance & Grants contacts need reactivation", type: "Relationship", severity: "medium" },
+            { insight: "11 Mission Secretariat decisions have no linked action owner; accountability follow-up is required", type: "Governance", severity: "low" },
+          ].map((insight, index) => (
+            <div key={index} className="flex items-start gap-3 p-3 bg-[#F8F9FA] rounded-lg">
+              <div className={`w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0 ${insight.severity === "high" ? "bg-red-500" : insight.severity === "medium" ? "bg-amber-500" : "bg-blue-500"}`} />
               <div>
-                <p className="text-xs text-[#0F1117] leading-relaxed">{ins.insight}</p>
-                <span className="text-[10px] font-mono text-[#5F6B73] mt-1 inline-block">{ins.type}</span>
+                <p className="text-xs text-[#0F1117] leading-relaxed">{insight.insight}</p>
+                <span className="text-[10px] font-mono text-[#5F6B73] mt-1 inline-block">{insight.type}</span>
               </div>
             </div>
           ))}

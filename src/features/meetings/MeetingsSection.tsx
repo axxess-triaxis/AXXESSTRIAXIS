@@ -315,7 +315,7 @@ export const MeetingsSection = () => {
               <SelectField label="Linked Project" value={form.projectId} options={projectOptions} onChange={(event) => setForm({ ...form, projectId: event.target.value })} disabled={!canManageMeetings || saving} />
               <SelectField label="Linked Program" value={form.programId} options={programOptions} onChange={(event) => setForm({ ...form, programId: event.target.value })} disabled={!canManageMeetings || saving} />
               <TextField label="Linked Stakeholder ID" value={form.stakeholderId} onChange={(event) => setForm({ ...form, stakeholderId: event.target.value })} disabled={!canManageMeetings || saving} />
-              <TextAreaField label="Participants" value={form.attendeeIds} placeholder={attendeeHint || "user uuid, user uuid"} onChange={(event) => setForm({ ...form, attendeeIds: event.target.value })} disabled={!canManageMeetings || saving} />
+              <TextAreaField label="Participants" value={form.attendeeIds} placeholder={attendeeHint || "user_demo_executive, user_district_lead"} onChange={(event) => setForm({ ...form, attendeeIds: event.target.value })} disabled={!canManageMeetings || saving} />
               <TextAreaField label="Agenda" value={form.agenda} onChange={(event) => setForm({ ...form, agenda: event.target.value })} disabled={!canManageMeetings || saving} />
               <TextAreaField label="Notes" value={form.notes} onChange={(event) => setForm({ ...form, notes: event.target.value })} disabled={!canManageMeetings || saving} />
               <TextAreaField label="Decisions" value={form.decisions} onChange={(event) => setForm({ ...form, decisions: event.target.value })} disabled={!canManageMeetings || saving} />
