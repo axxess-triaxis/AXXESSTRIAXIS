@@ -17,6 +17,13 @@ const allowedResources = new Set([
   "programs",
   "projects",
   "tasks",
+  "documents",
+  "document_versions",
+  "document_categories",
+  "document_tags",
+  "document_permissions",
+  "document_activity",
+  "knowledge_articles",
   "meetings",
   "notifications",
   "audit_logs",
@@ -47,6 +54,15 @@ function canWriteResource(resource: ResourceName, role: RoleName) {
   if (resource === "projects" || resource === "meetings") {
     return hasRole(role, ["Super Admin", "Organization Admin", "Executive", "Manager"]);
   }
+  if (resource === "documents" || resource === "document_versions" || resource === "knowledge_articles") {
+    return hasRole(role, ["Super Admin", "Organization Admin", "Executive", "Manager", "Employee"]);
+  }
+  if (resource === "document_categories" || resource === "document_tags" || resource === "document_permissions") {
+    return hasRole(role, ["Super Admin", "Organization Admin", "Executive", "Manager"]);
+  }
+  if (resource === "document_activity") {
+    return hasRole(role, ["Super Admin", "Organization Admin", "Executive", "Manager", "Employee", "Consultant", "Guest"]);
+  }
   if (resource === "tasks") {
     return hasRole(role, ["Super Admin", "Organization Admin", "Executive", "Manager", "Employee"]);
   }
@@ -65,6 +81,20 @@ function validateResourceInput(resource: ResourceName, body: Record<string, unkn
   if (resource === "meetings" && (!title || typeof body.startsAt !== "string" || !body.startsAt.trim())) {
     return "Meeting title and date/time are required.";
   }
+  if (resource === "documents" && !name) return "Document name is required.";
+  if (resource === "document_versions" && (!body.documentId || !body.fileName || !body.storagePath)) {
+    return "Document version metadata is required.";
+  }
+  if ((resource === "document_categories" || resource === "document_tags") && !name) {
+    return "Name is required.";
+  }
+  if (resource === "document_permissions" && (!body.documentId || !body.principalType || !body.accessLevel)) {
+    return "Document permission target and level are required.";
+  }
+  if (resource === "document_activity" && (!body.documentId || !body.action)) {
+    return "Document activity target and action are required.";
+  }
+  if (resource === "knowledge_articles" && !title) return "Knowledge article title is required.";
   if (resource === "notifications" && (!title || typeof body.body !== "string" || !body.body.trim())) {
     return "Notification title and body are required.";
   }

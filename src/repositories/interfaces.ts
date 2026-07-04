@@ -1,6 +1,15 @@
 import type {
   BetaFeedback,
   BetaFeedbackType,
+  Document,
+  DocumentActivity,
+  DocumentActivityAction,
+  DocumentCategory,
+  DocumentPermission,
+  DocumentPermissionLevel,
+  DocumentPermissionPrincipal,
+  DocumentTag,
+  DocumentVersion,
   Meeting,
   Notification,
   Organization,
@@ -12,6 +21,7 @@ import type {
   EntityId,
   Invitation,
   AuditLog,
+  KnowledgeArticle,
 } from "../domain";
 import type {
   AiMessageView,
@@ -46,7 +56,7 @@ export interface TenantRepository<TResource extends { id: EntityId; organization
 }
 
 export type TenantCreateInput<TResource extends { id: EntityId; organizationId: EntityId }> =
-  Omit<Partial<TResource>, "id" | "organizationId"> & { organizationId?: EntityId };
+  Omit<Partial<TResource>, "organizationId"> & { organizationId?: EntityId };
 
 export type TenantUpdateInput<TResource extends { id: EntityId; organizationId: EntityId }> =
   Omit<Partial<TResource>, "id" | "organizationId"> & { organizationId?: EntityId };
@@ -73,6 +83,60 @@ export type ProjectsRepository = MutableTenantRepository<Project>;
 export type TasksRepository = MutableTenantRepository<Task>;
 export type MeetingsRepository = MutableTenantRepository<Meeting>;
 export type NotificationsRepository = MutableTenantRepository<Notification>;
+export type DocumentVersionsRepository = MutableTenantRepository<DocumentVersion>;
+export type DocumentCategoriesRepository = MutableTenantRepository<DocumentCategory>;
+export type DocumentTagsRepository = MutableTenantRepository<DocumentTag>;
+export type DocumentPermissionsRepository = MutableTenantRepository<DocumentPermission>;
+export type DocumentActivityRepository = TenantRepository<DocumentActivity>;
+export type KnowledgeArticlesRepository = MutableTenantRepository<KnowledgeArticle>;
+
+export type DocumentSearchScope =
+  | "all"
+  | "documents"
+  | "articles"
+  | "recent"
+  | "favorites"
+  | "shared"
+  | "archived";
+
+export type KnowledgeSearchQuery = RepositoryQuery & {
+  scope?: DocumentSearchScope;
+  categoryId?: EntityId;
+  tag?: string;
+  ownerId?: EntityId;
+};
+
+export type KnowledgeSearchResult =
+  | { type: "document"; item: Document; score?: number }
+  | { type: "article"; item: KnowledgeArticle; score?: number };
+
+export type CreateDocumentPermissionInput = {
+  documentId: EntityId;
+  principalType: DocumentPermissionPrincipal;
+  principalId?: EntityId;
+  accessLevel: DocumentPermissionLevel;
+  expiresAt?: string;
+};
+
+export type DocumentActivityInput = {
+  documentId: EntityId;
+  action: DocumentActivityAction;
+  metadata?: Record<string, unknown>;
+};
+
+export interface DocumentsRepository extends MutableTenantRepository<Document> {
+  archive(scope: TenantScope, id: EntityId): Promise<Document>;
+  restore(scope: TenantScope, id: EntityId): Promise<Document>;
+  softDelete(scope: TenantScope, id: EntityId): Promise<Document>;
+  listArchived(scope: TenantScope, query?: RepositoryQuery): Promise<Document[]>;
+  listFavorites(scope: TenantScope, query?: RepositoryQuery): Promise<Document[]>;
+  listSharedWithMe(scope: TenantScope, query?: RepositoryQuery): Promise<Document[]>;
+  recordActivity(scope: TenantScope, input: DocumentActivityInput): Promise<DocumentActivity | undefined>;
+}
+
+export interface KnowledgeSearchRepository {
+  search(scope: TenantScope, query: KnowledgeSearchQuery): Promise<KnowledgeSearchResult[]>;
+}
 
 export type CreateInvitationInput = {
   organizationId: EntityId;
@@ -136,4 +200,22 @@ export interface InstitutionalRepository {
 export interface StorageRepository {
   getSignedUploadUrl(path: string): Promise<string>;
   getSignedDownloadUrl(path: string): Promise<string>;
+  createDocumentUploadIntent(input: DocumentStorageRequest): Promise<DocumentStorageIntent>;
+  createDocumentDownloadIntent(input: DocumentStorageRequest): Promise<DocumentStorageIntent>;
 }
+
+export type DocumentStorageRequest = {
+  path: string;
+  fileName?: string;
+  mimeType?: string;
+  sizeBytes?: number;
+  expiresIn?: number;
+};
+
+export type DocumentStorageIntent = {
+  bucket: string;
+  path: string;
+  signedUrl: string;
+  token?: string;
+  expiresIn: number;
+};
