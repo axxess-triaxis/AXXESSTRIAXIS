@@ -1,5 +1,6 @@
 import type {
   AuditLog,
+  BetaFeedback,
   EntityId,
   Invitation,
   Meeting,
@@ -15,6 +16,8 @@ import { normalizeRole } from "../auth/supabaseUser";
 import type { UserContext } from "../security/rbac";
 import type {
   AuditLogsRepository,
+  BetaFeedbackRepository,
+  CreateBetaFeedbackInput,
   InvitationsRepository,
   MeetingsRepository,
   MutableTenantRepository,
@@ -31,7 +34,17 @@ import type {
   UsersRepository,
 } from "./interfaces";
 
-export type ResourceName = "organizations" | "users" | "programs" | "projects" | "tasks" | "meetings" | "notifications" | "audit_logs" | "invitations";
+export type ResourceName =
+  | "organizations"
+  | "users"
+  | "programs"
+  | "projects"
+  | "tasks"
+  | "meetings"
+  | "notifications"
+  | "audit_logs"
+  | "invitations"
+  | "beta_feedback";
 
 type SupabaseRestOptions = {
   method?: "GET" | "POST" | "PATCH";
@@ -159,6 +172,20 @@ type AuditLogRow = {
   created_at: string;
 };
 
+type BetaFeedbackRow = {
+  id: string;
+  organization_id: string;
+  user_id: string;
+  feedback_type: BetaFeedback["feedbackType"];
+  module: string;
+  rating: number;
+  message: string;
+  permission_to_contact: boolean;
+  status: BetaFeedback["status"];
+  metadata: Record<string, unknown> | null;
+  created_at: string;
+};
+
 type ResourceConfig<TRow, TResource> = {
   table: ResourceName;
   select: string;
@@ -270,6 +297,24 @@ async function gatewayMutation<TResource>(
   if (!response.ok) {
     const message = await response.text().catch(() => "");
     throw new Error(`Repository gateway mutation failed for ${resource}: ${message}`);
+  }
+
+  return await response.json() as TResource;
+}
+
+async function gatewayBetaFeedback<TResource>(method: "GET" | "POST", body?: Record<string, unknown>, query?: RepositoryQuery) {
+  const params = gatewayQuery(query);
+  const response = await fetch(`/api/beta-feedback${params.toString() ? `?${params.toString()}` : ""}`, {
+    method,
+    credentials: "include",
+    headers: method === "POST" ? { "Content-Type": "application/json" } : undefined,
+    body: body ? JSON.stringify(body) : undefined,
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    const message = await response.text().catch(() => "");
+    throw new Error(`Beta feedback gateway failed: ${message}`);
   }
 
   return await response.json() as TResource;
@@ -537,6 +582,20 @@ function userUpdateMutation(_scope: TenantScope, input: Record<string, unknown>)
   });
 }
 
+function betaFeedbackMutation(scope: TenantScope, input: CreateBetaFeedbackInput) {
+  return {
+    organization_id: scope.role === "Super Admin" && input.organizationId ? input.organizationId : scope.organizationId,
+    user_id: input.userId ?? scope.userId,
+    feedback_type: input.feedbackType,
+    module: input.module,
+    rating: input.rating,
+    message: input.message,
+    permission_to_contact: input.permissionToContact,
+    status: "new",
+    metadata: input.metadata ?? {},
+  };
+}
+
 const organizationConfig: ResourceConfig<OrganizationRow, Organization> = {
   table: "organizations",
   select: "id,name,slug,sector,created_at,updated_at",
@@ -719,6 +778,26 @@ const auditLogConfig: ResourceConfig<AuditLogRow, AuditLog> = {
   }),
 };
 
+const betaFeedbackConfig: ResourceConfig<BetaFeedbackRow, BetaFeedback> = {
+  table: "beta_feedback",
+  select: "id,organization_id,user_id,feedback_type,module,rating,message,permission_to_contact,status,metadata,created_at",
+  searchColumns: ["feedback_type", "module", "status"],
+  defaultOrder: "created_at.desc",
+  map: (row) => ({
+    id: row.id,
+    organizationId: row.organization_id,
+    userId: row.user_id,
+    feedbackType: row.feedback_type,
+    module: row.module,
+    rating: row.rating,
+    message: row.message,
+    permissionToContact: row.permission_to_contact,
+    status: row.status,
+    metadata: row.metadata ?? {},
+    createdAt: row.created_at,
+  }),
+};
+
 function createTenantRepository<TRow, TResource extends { id: EntityId; organizationId: EntityId }>(
   resource: ResourceName,
   config: ResourceConfig<TRow, TResource>,
@@ -828,6 +907,29 @@ export const auditLogsRepository: AuditLogsRepository = {
   },
 };
 
+export const betaFeedbackRepository: BetaFeedbackRepository = {
+  list: (scope, query) => {
+    if (!scope.accessToken) return gatewayBetaFeedback<BetaFeedback[]>("GET", undefined, query);
+    return listResource("beta_feedback", betaFeedbackConfig, scope, query);
+  },
+  async create(scope, input) {
+    if (!scope.accessToken) return gatewayBetaFeedback<BetaFeedback>("POST", input as Record<string, unknown>);
+
+    const rows = await supabaseRest<BetaFeedbackRow[]>("beta_feedback", {
+      method: "POST",
+      accessToken: scope.accessToken,
+      body: betaFeedbackMutation(scope, input),
+    });
+
+    if (!rows[0]) throw new Error("Beta feedback was not returned by Supabase.");
+    return betaFeedbackConfig.map(rows[0]);
+  },
+  async count(scope) {
+    const rows = await betaFeedbackRepository.list(scope, { pageSize: 100 });
+    return rows.length;
+  },
+};
+
 export async function listRepositoryResource(resource: ResourceName, scope: TenantScope, query?: RepositoryQuery, id?: EntityId) {
   if (id) {
     const item = await resourceRepositories[resource].getById(scope, id);
@@ -872,6 +974,7 @@ export const resourceRepositories = {
   notifications: notificationsRepository,
   audit_logs: { list: auditLogsRepository.list, getById: async () => undefined },
   invitations: { list: invitationsRepository.listPending, getById: async () => undefined },
+  beta_feedback: { list: betaFeedbackRepository.list, getById: async () => undefined, create: betaFeedbackRepository.create },
 } satisfies Record<ResourceName, {
   list(scope: TenantScope, query?: RepositoryQuery): Promise<unknown[]>;
   getById(scope: TenantScope, id: EntityId): Promise<unknown | undefined>;

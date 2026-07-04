@@ -185,3 +185,20 @@ export interface AuditLog {
   metadata?: Record<string, unknown>;
   createdAt: ISODateTime;
 }
+
+export type BetaFeedbackType = "Bug" | "Feature Request" | "Confusing Workflow" | "General Feedback";
+export type BetaFeedbackStatus = "new" | "triaged" | "in-review" | "resolved" | "closed";
+
+export interface BetaFeedback {
+  id: EntityId;
+  organizationId: EntityId;
+  userId: EntityId;
+  feedbackType: BetaFeedbackType;
+  module: string;
+  rating: number;
+  message: string;
+  permissionToContact: boolean;
+  status: BetaFeedbackStatus;
+  metadata: Record<string, unknown>;
+  createdAt: ISODateTime;
+}

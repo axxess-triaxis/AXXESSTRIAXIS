@@ -16,6 +16,8 @@ export const lazyRouteComponents: Record<NavSection, LazyRouteComponent> = {
   meetings: lazy(() => import("../../features/meetings/MeetingsSection")),
   approvals: lazy(() => import("../../features/approvals/ApprovalsSection")),
   analytics: lazy(() => import("../../features/analytics/AnalyticsSection")),
+  "product-analytics": lazy(() => import("../../features/product-analytics/ProductAnalyticsSection")),
   integrations: lazy(() => import("../../features/integrations/IntegrationsSection")),
   settings: lazy(() => import("../../features/settings/SettingsSection")),
+  "beta-readiness": lazy(() => import("../../features/beta-readiness/BetaReadinessSection")),
 };

@@ -10,6 +10,7 @@ import { StatusBadge } from "../../components/ui/StatusBadge";
 import type { Meeting, Program, Project, User } from "../../domain";
 import { applicationServices } from "../../providers/serviceProvider";
 import { tenantScopeFromUser } from "../../repositories/supabaseEnterpriseRepositories";
+import { useAnalytics } from "../../services/analytics";
 
 type MeetingFormState = {
   title: string;
@@ -69,6 +70,7 @@ function meetingForm(meeting?: Meeting): MeetingFormState {
 
 export const MeetingsSection = () => {
   const { session } = useAuth();
+  const analytics = useAnalytics();
   const user = session.user;
   const scope = useMemo(() => user ? tenantScopeFromUser(user) : undefined, [user]);
   const [meetings, setMeetings] = useState<Meeting[]>([]);
@@ -122,6 +124,15 @@ export const MeetingsSection = () => {
     if (!form.title.trim()) nextErrors.title = "Meeting title is required.";
     if (!form.startsAt) nextErrors.startsAt = "Date and time are required.";
     setErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0 && user) {
+      analytics.trackEvent("form_validation_failed", { form_name: "meeting", fields: Object.keys(nextErrors) }, {
+        organization_id: user.organizationId,
+        user_id: user.id,
+        user_role: user.role,
+        module_name: "meetings",
+        route: "/meetings",
+      });
+    }
     return Object.keys(nextErrors).length === 0;
   };
 
@@ -147,6 +158,43 @@ export const MeetingsSection = () => {
       const saved = editingMeeting
         ? await applicationServices.meetingsRepository.update(scope, editingMeeting.id, payload)
         : await applicationServices.meetingsRepository.create(scope, payload);
+      analytics.trackEvent(editingMeeting ? "meeting_updated" : "meeting_created", {
+        meeting_id: saved.id,
+        status: saved.status,
+        attendee_count: saved.attendeeIds.length,
+        decision_count: saved.decisions.length,
+        action_item_count: saved.actionItems.length,
+      }, {
+        organization_id: saved.organizationId,
+        user_id: scope.userId,
+        user_role: scope.role,
+        module_name: "meetings",
+        route: "/meetings",
+      });
+      if (saved.decisions.length > 0) {
+        analytics.trackEvent("decision_recorded", {
+          meeting_id: saved.id,
+          decision_count: saved.decisions.length,
+        }, {
+          organization_id: saved.organizationId,
+          user_id: scope.userId,
+          user_role: scope.role,
+          module_name: "meetings",
+          route: "/meetings",
+        });
+      }
+      if (saved.actionItems.length > 0) {
+        analytics.trackEvent("action_item_created", {
+          meeting_id: saved.id,
+          action_item_count: saved.actionItems.length,
+        }, {
+          organization_id: saved.organizationId,
+          user_id: scope.userId,
+          user_role: scope.role,
+          module_name: "meetings",
+          route: "/meetings",
+        });
+      }
       setSelectedMeeting(saved);
       setEditingMeeting(undefined);
       setToast({ tone: "success", message: editingMeeting ? "Meeting updated." : "Meeting created." });
@@ -192,7 +240,16 @@ export const MeetingsSection = () => {
                 const project = projects.find((row) => row.id === meeting.projectId);
                 return (
                   <Card key={meeting.id} className="cursor-pointer p-4 transition-shadow hover:shadow-md">
-                    <button onClick={() => setSelectedMeeting(meeting)} className="w-full text-left">
+                    <button onClick={() => {
+                      setSelectedMeeting(meeting);
+                      analytics.trackEvent("meeting_viewed", { meeting_id: meeting.id, status: meeting.status }, {
+                        organization_id: meeting.organizationId,
+                        user_id: user?.id,
+                        user_role: user?.role,
+                        module_name: "meetings",
+                        route: "/meetings",
+                      });
+                    }} className="w-full text-left">
                       <div className="mb-2 flex items-start justify-between">
                         <div>
                           <h4 className="text-sm font-semibold leading-snug text-[#0F1117]">{meeting.title}</h4>
@@ -217,7 +274,16 @@ export const MeetingsSection = () => {
             <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-[#5F6B73]">Decision Log</h3>
             <Card className="overflow-hidden">
               {meetings.flatMap((meeting) => meeting.decisions.map((decision) => ({ meeting, decision }))).map(({ meeting, decision }) => (
-                <button key={`${meeting.id}-${decision}`} onClick={() => setSelectedMeeting(meeting)} className="flex w-full items-start gap-3 border-b border-[rgba(0,0,0,0.04)] px-4 py-3 text-left transition-colors hover:bg-[#F8F9FA]">
+                <button key={`${meeting.id}-${decision}`} onClick={() => {
+                  setSelectedMeeting(meeting);
+                  analytics.trackEvent("meeting_viewed", { meeting_id: meeting.id, status: meeting.status, source: "decision_log" }, {
+                    organization_id: meeting.organizationId,
+                    user_id: user?.id,
+                    user_role: user?.role,
+                    module_name: "meetings",
+                    route: "/meetings",
+                  });
+                }} className="flex w-full items-start gap-3 border-b border-[rgba(0,0,0,0.04)] px-4 py-3 text-left transition-colors hover:bg-[#F8F9FA]">
                   <div className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-emerald-500" />
                   <div className="min-w-0 flex-1">
                     <p className="text-xs font-medium leading-snug text-[#0F1117]">{decision}</p>
