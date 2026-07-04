@@ -1,9 +1,9 @@
-import { BarChart3, BookOpen, Brain, CalendarDays, CheckSquare, FileText, FolderKanban, LayoutDashboard, Plug, Settings, ShieldCheck, Users } from "lucide-react";
+import { BarChart3, BookOpen, Brain, CalendarDays, CheckSquare, ClipboardCheck, FileText, FolderKanban, LayoutDashboard, Plug, Settings, ShieldCheck, Users } from "lucide-react";
 
 export type NavSection =
   | "dashboard" | "ai-workspace" | "projects" | "tasks"
   | "stakeholders" | "knowledge" | "documents" | "meetings"
-  | "approvals" | "analytics" | "integrations" | "settings";
+  | "approvals" | "analytics" | "product-analytics" | "integrations" | "settings" | "beta-readiness";
 
 export type NavItem = {
   id: NavSection;
@@ -47,6 +47,7 @@ export const navGroups: NavGroup[] = [
     items: [
       { id: "approvals" as NavSection, label: "Approvals & Governance", icon: ShieldCheck, badge: "23" },
       { id: "analytics" as NavSection, label: "Analytics & Reports", icon: BarChart3 },
+      { id: "product-analytics" as NavSection, label: "Product Analytics", icon: BarChart3 },
     ],
   },
   {
@@ -54,7 +55,7 @@ export const navGroups: NavGroup[] = [
     items: [
       { id: "integrations" as NavSection, label: "Integrations", icon: Plug },
       { id: "settings" as NavSection, label: "Settings", icon: Settings },
+      { id: "beta-readiness" as NavSection, label: "Beta Readiness", icon: ClipboardCheck },
     ],
   },
 ];
-

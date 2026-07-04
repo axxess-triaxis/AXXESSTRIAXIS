@@ -1,4 +1,6 @@
 import type {
+  BetaFeedback,
+  BetaFeedbackType,
   Meeting,
   Notification,
   Organization,
@@ -98,6 +100,23 @@ export type AuditLogInput = {
 export interface AuditLogsRepository {
   list(scope: TenantScope, query?: RepositoryQuery): Promise<AuditLog[]>;
   record(scope: TenantScope, input: AuditLogInput): Promise<AuditLog | undefined>;
+}
+
+export type CreateBetaFeedbackInput = {
+  organizationId?: EntityId;
+  userId?: EntityId;
+  feedbackType: BetaFeedbackType;
+  module: string;
+  rating: number;
+  message: string;
+  permissionToContact: boolean;
+  metadata?: Record<string, unknown>;
+};
+
+export interface BetaFeedbackRepository {
+  list(scope: TenantScope, query?: RepositoryQuery): Promise<BetaFeedback[]>;
+  create(scope: TenantScope, input: CreateBetaFeedbackInput): Promise<BetaFeedback>;
+  count(scope: TenantScope): Promise<number>;
 }
 
 export interface InstitutionalRepository {

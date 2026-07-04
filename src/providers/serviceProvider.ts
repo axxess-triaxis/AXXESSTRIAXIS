@@ -2,6 +2,7 @@ import { featureFlags } from "../config/featureFlags";
 import { getCurrentAuthSession } from "../auth/session";
 import {
   auditLogsRepository,
+  betaFeedbackRepository,
   invitationsRepository,
   meetingsRepository,
   notificationsRepository,
@@ -16,6 +17,7 @@ import { legacyInstitutionalViewRepository } from "../services/legacyInstitution
 import type {
   InstitutionalRepository,
   AuditLogsRepository,
+  BetaFeedbackRepository,
   InvitationsRepository,
   MeetingsRepository,
   NotificationsRepository,
@@ -81,6 +83,7 @@ export type ApplicationServices = {
   notificationsRepository: NotificationsRepository;
   invitationsRepository: InvitationsRepository;
   auditLogsRepository: AuditLogsRepository;
+  betaFeedbackRepository: BetaFeedbackRepository;
   authService: AuthenticationService;
   aiService: AiProviderService;
   storageRepository: StorageRepository;
@@ -99,6 +102,7 @@ export const applicationServices: ApplicationServices = {
   notificationsRepository,
   invitationsRepository,
   auditLogsRepository,
+  betaFeedbackRepository,
   authService,
   aiService,
   storageRepository,

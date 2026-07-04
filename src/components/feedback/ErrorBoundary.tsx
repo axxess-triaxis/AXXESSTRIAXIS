@@ -1,4 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
+import { trackEvent } from "../../services/analytics";
 import { EmptyState } from "./EmptyState";
 
 type ErrorBoundaryProps = {
@@ -18,7 +19,13 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    // Sprint 1 keeps this local. Sprint 2 should route it to audit/telemetry.
+    trackEvent("error_boundary_triggered", {
+      component_stack_present: Boolean(errorInfo.componentStack),
+      error_name: error.name,
+    }, {
+      module_name: "error-boundary",
+      route: typeof window !== "undefined" ? window.location.pathname : undefined,
+    });
     console.error("AXXESS UI boundary captured an error", error, errorInfo);
   }
 

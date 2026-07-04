@@ -4,10 +4,12 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { AuthProvider, useAuth } from "../../auth/AuthProvider";
 import { Card } from "../../components/ui/Card";
+import { AnalyticsProviderShell, useAnalytics } from "../../services/analytics";
 
 function LoginPanel() {
   const router = useRouter();
   const { login, session, isAuthenticated } = useAuth();
+  const analytics = useAnalytics();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -20,6 +22,13 @@ function LoginPanel() {
 
     try {
       await login(email, password);
+      analytics.trackEvent("user_login", { auth_method: "password" }, {
+        organization_id: session.user?.organizationId,
+        user_id: session.user?.id,
+        user_role: session.user?.role,
+        module_name: "auth",
+        route: "/auth",
+      });
       router.push("/dashboard");
     } catch (loginError) {
       setError(loginError instanceof Error ? loginError.message : "Unable to sign in.");
@@ -95,10 +104,12 @@ function LoginPanel() {
 
 export default function AuthPage() {
   return (
-    <AuthProvider>
-      <main className="flex min-h-screen items-center justify-center bg-[#F2F3F5] px-4" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-        <LoginPanel />
-      </main>
-    </AuthProvider>
+    <AnalyticsProviderShell>
+      <AuthProvider>
+        <main className="flex min-h-screen items-center justify-center bg-[#F2F3F5] px-4" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+          <LoginPanel />
+        </main>
+      </AuthProvider>
+    </AnalyticsProviderShell>
   );
 }

@@ -12,6 +12,7 @@ import { StatusBadge } from "../../components/ui/StatusBadge";
 import type { Organization, Program, Project, User } from "../../domain";
 import { applicationServices } from "../../providers/serviceProvider";
 import { ownerInitialsForProject, projectDepartment, tenantScopeFromUser } from "../../repositories/supabaseEnterpriseRepositories";
+import { useAnalytics } from "../../services/analytics";
 
 type ProjectFormState = {
   organizationId: string;
@@ -67,6 +68,7 @@ function tagArray(tags: string) {
 
 export const ProjectsSection = () => {
   const { session } = useAuth();
+  const analytics = useAnalytics();
   const user = session.user;
   const scope = useMemo(() => user ? tenantScopeFromUser(user) : undefined, [user]);
   const [view, setView] = useState<"kanban" | "list">("kanban");
@@ -129,6 +131,15 @@ export const ProjectsSection = () => {
     if (!form.ownerId) nextErrors.ownerId = "Owner is required.";
     if (!form.organizationId) nextErrors.organizationId = "Organization is required.";
     setErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0 && user) {
+      analytics.trackEvent("form_validation_failed", { form_name: "project", fields: Object.keys(nextErrors) }, {
+        organization_id: user.organizationId,
+        user_id: user.id,
+        user_role: user.role,
+        module_name: "projects",
+        route: "/projects",
+      });
+    }
     return Object.keys(nextErrors).length === 0;
   };
 
@@ -153,6 +164,18 @@ export const ProjectsSection = () => {
       const saved = editingProject
         ? await applicationServices.projectsRepository.update(scope, editingProject.id, payload)
         : await applicationServices.projectsRepository.create(scope, { ...payload, progress: 0 });
+      analytics.trackEvent(editingProject ? "project_updated" : "project_created", {
+        project_id: saved.id,
+        status: saved.status,
+        priority: saved.priority,
+        risk_level: saved.riskLevel,
+      }, {
+        organization_id: saved.organizationId,
+        user_id: scope.userId,
+        user_role: scope.role,
+        module_name: "projects",
+        route: "/projects",
+      });
       setSelectedProject(saved);
       setEditingProject(undefined);
       setToast({ tone: "success", message: editingProject ? "Project updated." : "Project created." });
@@ -223,7 +246,16 @@ export const ProjectsSection = () => {
                       <div className="flex-1 space-y-3 overflow-y-auto">
                         {columnProjects.map((project) => (
                           <Card key={project.id} className="cursor-pointer p-3.5 transition-shadow hover:shadow-md">
-                            <button type="button" onClick={() => setSelectedProject(project)} className="w-full text-left">
+                            <button type="button" onClick={() => {
+                              setSelectedProject(project);
+                              analytics.trackEvent("project_viewed", { project_id: project.id, status: project.status }, {
+                                organization_id: project.organizationId,
+                                user_id: user?.id,
+                                user_role: user?.role,
+                                module_name: "projects",
+                                route: "/projects",
+                              });
+                            }} className="w-full text-left">
                               <div className="mb-2 flex items-start justify-between">
                                 <span className="text-[10px] font-medium uppercase tracking-wide text-[#5F6B73]">{projectDepartment(project, programs)}</span>
                                 <RiskBadge level={project.riskLevel} />
@@ -273,7 +305,16 @@ export const ProjectsSection = () => {
                 </thead>
                 <tbody>
                   {projects.map((project) => (
-                    <tr key={project.id} onClick={() => setSelectedProject(project)} className="cursor-pointer border-b border-[rgba(0,0,0,0.04)] transition-colors hover:bg-[#F8F9FA]">
+                    <tr key={project.id} onClick={() => {
+                      setSelectedProject(project);
+                      analytics.trackEvent("project_viewed", { project_id: project.id, status: project.status }, {
+                        organization_id: project.organizationId,
+                        user_id: user?.id,
+                        user_role: user?.role,
+                        module_name: "projects",
+                        route: "/projects",
+                      });
+                    }} className="cursor-pointer border-b border-[rgba(0,0,0,0.04)] transition-colors hover:bg-[#F8F9FA]">
                       <td className="px-4 py-3 pl-5 text-xs font-medium text-[#0F1117]">{project.name}</td>
                       <td className="px-4 py-3 text-xs text-[#5F6B73]">{projectDepartment(project, programs)}</td>
                       <td className="px-4 py-3 text-[11px] font-mono text-[#5F6B73]">{project.progress}%</td>
