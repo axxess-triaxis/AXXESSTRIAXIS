@@ -1,5 +1,6 @@
 import type { RoleName } from "../domain";
-import { isRoleName, mockCurrentUserContext, type UserContext } from "../security/rbac";
+import { cleanTenantUserContext } from "../demo/demoMode";
+import { isRoleName, type UserContext } from "../security/rbac";
 
 type SupabaseAuthUser = {
   id: string;
@@ -50,7 +51,7 @@ export function userContextFromAuthUser(authUser: SupabaseAuthUser): UserContext
 
   return {
     id: authUser.id,
-    organizationId: readMetadataString(metadata, "organization_id") ?? mockCurrentUserContext.organizationId,
+    organizationId: readMetadataString(metadata, "organization_id") ?? cleanTenantUserContext.organizationId,
     role: normalizeRole(readMetadataString(metadata, "role")),
     email,
     displayName,
