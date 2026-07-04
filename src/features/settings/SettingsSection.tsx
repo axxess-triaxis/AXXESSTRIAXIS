@@ -7,15 +7,17 @@ import { EmptyState } from "../../components/feedback/EmptyState";
 import { SectionHeader } from "../../components/layout/SectionHeader";
 import { Avatar } from "../../components/ui/Avatar";
 import { Card } from "../../components/ui/Card";
+import { demoDatasetSummary } from "../../demo/demoDataset";
+import { isDemoModeEnabled, isDemoModeForcedByEnv, resetDemoEnvironment, setDemoModeEnabled } from "../../demo/demoMode";
 import type { Invitation, RoleName, User } from "../../domain";
 import { applicationServices } from "../../providers/serviceProvider";
 import { tenantScopeFromUser } from "../../repositories/supabaseEnterpriseRepositories";
 import { useAnalytics } from "../../services/analytics";
-import { Check, CheckCircle2, Send, Settings, UserPlus, X, XCircle } from "lucide-react";
+import { Check, CheckCircle2, Database, RotateCcw, Send, Settings, Sparkles, UserPlus, X, XCircle } from "lucide-react";
 
 export const SettingsSection = () => {
   const [tab, setTab] = useState("security");
-  const tabs = ["Profile", "Organization", "Security", "Users", "Permissions", "AI Configuration"];
+  const tabs = ["Profile", "Organization", "Security", "Users", "Permissions", "AI Configuration", "Demo"];
 
   return (
     <div>
@@ -92,6 +94,8 @@ export const SettingsSection = () => {
 
       {tab === "users" && <UserAdministration />}
 
+      {tab === "demo" && <DemoModePanel />}
+
       {tab === "ai configuration" && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <Card className="p-5">
@@ -143,6 +147,122 @@ export const SettingsSection = () => {
     </div>
   );
 };
+
+function DemoModePanel() {
+  const [enabled, setEnabled] = useState(() => isDemoModeEnabled());
+  const [toast, setToast] = useState<{ tone: "success" | "error" | "info"; message: string } | null>(null);
+  const forcedByEnv = isDemoModeForcedByEnv();
+
+  const switchDemoMode = (nextEnabled: boolean) => {
+    if (forcedByEnv) {
+      setToast({ tone: "info", message: "Demo Mode is enabled by environment configuration." });
+      return;
+    }
+
+    setDemoModeEnabled(nextEnabled);
+    setEnabled(nextEnabled);
+    setToast({
+      tone: "success",
+      message: nextEnabled ? "Investor preview will open with the seeded institution." : "Normal mode will open as a clean tenant.",
+    });
+    window.setTimeout(() => window.location.assign("/dashboard"), 250);
+  };
+
+  const resetDemo = () => {
+    resetDemoEnvironment();
+    setToast({ tone: "success", message: "Investor preview has been restored." });
+    window.setTimeout(() => window.location.reload(), 250);
+  };
+
+  const metrics = [
+    { label: "Projects", value: demoDatasetSummary.projects.toLocaleString() },
+    { label: "Programs", value: demoDatasetSummary.programs.toLocaleString() },
+    { label: "Documents", value: demoDatasetSummary.documents.toLocaleString() },
+    { label: "Articles", value: demoDatasetSummary.knowledgeArticles.toLocaleString() },
+    { label: "Activities", value: demoDatasetSummary.activities.toLocaleString() },
+    { label: "Audit Logs", value: demoDatasetSummary.auditLogs.toLocaleString() },
+  ];
+
+  return (
+    <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1fr_360px]">
+      <div className="space-y-4">
+        {toast && <InlineToast tone={toast.tone} message={toast.message} />}
+
+        <Card className="p-5">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <div className="mb-2 flex items-center gap-2">
+                <Sparkles size={15} className="text-[#8B1E2D]" />
+                <h3 className="text-sm font-semibold text-[#0F1117]">Investor Preview</h3>
+              </div>
+              <p className="max-w-2xl text-xs leading-relaxed text-[#5F6B73]">
+                {demoDatasetSummary.organizationName} loads as a coherent institutional workspace with populated governance, portfolio, knowledge, activity, and audit records.
+              </p>
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={enabled}
+              disabled={forcedByEnv}
+              onClick={() => switchDemoMode(!enabled)}
+              className={`relative h-7 w-14 rounded-full transition-colors ${enabled ? "bg-[#8B1E2D]" : "bg-[#D1D5DB]"} disabled:cursor-not-allowed disabled:opacity-70`}
+            >
+              <span className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition-transform ${enabled ? "translate-x-7" : "translate-x-1"}`} />
+            </button>
+          </div>
+        </Card>
+
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+          {metrics.map((metric) => (
+            <div key={metric.label} className="rounded-lg border border-[rgba(0,0,0,0.08)] bg-white p-4">
+              <div className="font-mono text-lg font-bold text-[#8B1E2D]">{metric.value}</div>
+              <div className="mt-1 text-[11px] font-medium text-[#5F6B73]">{metric.label}</div>
+            </div>
+          ))}
+        </div>
+
+        <Card className="p-5">
+          <div className="mb-4 flex items-center gap-2">
+            <RotateCcw size={15} className="text-[#8B1E2D]" />
+            <h3 className="text-sm font-semibold text-[#0F1117]">Reset Preview Data</h3>
+          </div>
+          <p className="mb-4 text-xs leading-relaxed text-[#5F6B73]">
+            Restore the seeded institution to its original state after rehearsals, sales demos, or investor meetings.
+          </p>
+          <button
+            type="button"
+            onClick={resetDemo}
+            disabled={!enabled}
+            className="flex items-center gap-2 rounded-lg border border-[rgba(139,30,45,0.22)] bg-white px-3 py-2 text-xs font-semibold text-[#8B1E2D] hover:bg-[#8B1E2D]/5 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <RotateCcw size={13} /> Reset investor preview
+          </button>
+        </Card>
+      </div>
+
+      <Card className="p-5">
+        <div className="mb-4 flex items-center gap-2">
+          <Database size={15} className="text-[#8B1E2D]" />
+          <h3 className="text-sm font-semibold text-[#0F1117]">Mode Status</h3>
+        </div>
+        <div className="space-y-3 text-xs">
+          <div className="flex items-center justify-between rounded-lg bg-[#F8F9FA] p-3">
+            <span className="text-[#5F6B73]">Current mode</span>
+            <span className="font-semibold text-[#0F1117]">{enabled ? "Investor Preview" : "Normal"}</span>
+          </div>
+          <div className="flex items-center justify-between rounded-lg bg-[#F8F9FA] p-3">
+            <span className="text-[#5F6B73]">Configuration</span>
+            <span className="font-semibold text-[#0F1117]">{forcedByEnv ? "Environment" : "Settings"}</span>
+          </div>
+          <div className="flex items-center justify-between rounded-lg bg-[#F8F9FA] p-3">
+            <span className="text-[#5F6B73]">Tenant</span>
+            <span className="font-semibold text-[#0F1117]">{enabled ? "Seeded" : "Clean"}</span>
+          </div>
+        </div>
+      </Card>
+    </div>
+  );
+}
 
 const roleOptions: RoleName[] = ["Super Admin", "Organization Admin", "Executive", "Manager", "Employee", "Guest"];
 

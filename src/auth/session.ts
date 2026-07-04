@@ -1,5 +1,6 @@
 import { featureFlags } from "../config/featureFlags";
-import { mockCurrentUserContext, type UserContext } from "../security/rbac";
+import { cleanTenantUserContext, demoUserContext, isDemoModeEnabled } from "../demo/demoMode";
+import type { UserContext } from "../security/rbac";
 
 export type AuthSession = {
   status: "authenticated" | "unauthenticated";
@@ -8,6 +9,14 @@ export type AuthSession = {
 };
 
 export function getCurrentAuthSession(): AuthSession {
+  if (isDemoModeEnabled()) {
+    return {
+      status: "authenticated",
+      source: "mock-rbac",
+      user: demoUserContext,
+    };
+  }
+
   if (featureFlags.enableAuthShell) {
     return {
       status: "unauthenticated",
@@ -19,6 +28,6 @@ export function getCurrentAuthSession(): AuthSession {
   return {
     status: "authenticated",
     source: "mock-rbac",
-    user: mockCurrentUserContext,
+    user: cleanTenantUserContext,
   };
 }

@@ -26,9 +26,10 @@ export function isProtectedRoutePath(pathname: string) {
 
 export function middleware(request: NextRequest) {
   const isAuthShellEnabled = process.env.NEXT_PUBLIC_AXXESS_AUTH_SHELL === "true";
+  const isDemoModeEnabled = process.env.NEXT_PUBLIC_AXXESS_DEMO_MODE === "true";
   const isProtectedRoute = isProtectedRoutePath(request.nextUrl.pathname);
 
-  if (isProtectedRoute && isAuthShellEnabled && !request.cookies.get(sessionCookieName)) {
+  if (isProtectedRoute && isAuthShellEnabled && !isDemoModeEnabled && !request.cookies.get(sessionCookieName)) {
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = "/auth";
     loginUrl.searchParams.set("next", request.nextUrl.pathname);
@@ -36,7 +37,9 @@ export function middleware(request: NextRequest) {
   }
 
   const response = NextResponse.next();
-  if (isProtectedRoute) response.headers.set("x-axxess-route-guard", isAuthShellEnabled ? "supabase-auth" : "mock-authenticated");
+  if (isProtectedRoute) {
+    response.headers.set("x-axxess-route-guard", isDemoModeEnabled ? "demo-authenticated" : isAuthShellEnabled ? "supabase-auth" : "mock-authenticated");
+  }
 
   return response;
 }
