@@ -9,6 +9,7 @@ import { RiskBadge } from "../../components/ui/RiskBadge";
 import { StatusBadge } from "../../components/ui/StatusBadge";
 import { useAuth } from "../../auth/AuthProvider";
 import { KpiCard } from "./components/KpiCard";
+import { BetaOnboardingChecklist } from "../onboarding/BetaOnboardingChecklist";
 import { dashboardAiRecommendations, dashboardObjectives, dashboardScopeForUser, getDashboardKpis, getDashboardProjects, performanceData, workloadData } from "./data";
 import type { DashboardKpi } from "./types";
 
@@ -67,6 +68,8 @@ export function DashboardSection() {
           </div>
         }
       />
+
+      {session.user && <BetaOnboardingChecklist user={session.user} projectCount={projects.length} />}
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

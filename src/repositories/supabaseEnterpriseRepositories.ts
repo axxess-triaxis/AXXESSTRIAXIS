@@ -1,7 +1,15 @@
 import type {
   AuditLog,
+  BetaFeedback,
+  Document,
+  DocumentActivity,
+  DocumentCategory,
+  DocumentPermission,
+  DocumentTag,
+  DocumentVersion,
   EntityId,
   Invitation,
+  KnowledgeArticle,
   Meeting,
   Notification,
   Organization,
@@ -15,7 +23,19 @@ import { normalizeRole } from "../auth/supabaseUser";
 import type { UserContext } from "../security/rbac";
 import type {
   AuditLogsRepository,
+  BetaFeedbackRepository,
+  CreateBetaFeedbackInput,
+  DocumentActivityInput,
+  DocumentActivityRepository,
+  DocumentCategoriesRepository,
+  DocumentPermissionsRepository,
+  DocumentsRepository,
+  DocumentTagsRepository,
+  DocumentVersionsRepository,
   InvitationsRepository,
+  KnowledgeArticlesRepository,
+  KnowledgeSearchRepository,
+  KnowledgeSearchResult,
   MeetingsRepository,
   MutableTenantRepository,
   NotificationsRepository,
@@ -31,7 +51,24 @@ import type {
   UsersRepository,
 } from "./interfaces";
 
-export type ResourceName = "organizations" | "users" | "programs" | "projects" | "tasks" | "meetings" | "notifications" | "audit_logs" | "invitations";
+export type ResourceName =
+  | "organizations"
+  | "users"
+  | "programs"
+  | "projects"
+  | "tasks"
+  | "documents"
+  | "document_versions"
+  | "document_categories"
+  | "document_tags"
+  | "document_permissions"
+  | "document_activity"
+  | "knowledge_articles"
+  | "meetings"
+  | "notifications"
+  | "audit_logs"
+  | "invitations"
+  | "beta_feedback";
 
 type SupabaseRestOptions = {
   method?: "GET" | "POST" | "PATCH";
@@ -102,6 +139,111 @@ type TaskRow = {
   tags: string[] | null;
 };
 
+type DocumentRow = {
+  id: string;
+  organization_id: string;
+  project_id: string | null;
+  category_id: string | null;
+  name: string;
+  title: string | null;
+  description: string | null;
+  storage_path: string;
+  file_name: string | null;
+  file_size: number | string | null;
+  mime_type: string;
+  document_type: Document["documentType"] | null;
+  status: Document["status"] | null;
+  visibility: Document["visibility"] | null;
+  classification: Document["classification"] | null;
+  owner_user_id: string | null;
+  created_by_user_id: string | null;
+  updated_by_user_id: string | null;
+  current_version: number | string | null;
+  tags: string[] | null;
+  is_favorite?: boolean | null;
+  last_viewed_at?: string | null;
+  category?: { name: string | null } | null;
+  created_at: string;
+  updated_at: string;
+  archived_at: string | null;
+  deleted_at: string | null;
+};
+
+type DocumentVersionRow = {
+  id: string;
+  organization_id: string;
+  document_id: string;
+  version_number: number | string;
+  file_name: string;
+  file_size: number | string;
+  mime_type: string;
+  storage_path: string;
+  checksum: string | null;
+  created_by_user_id: string | null;
+  created_at: string;
+};
+
+type DocumentCategoryRow = {
+  id: string;
+  organization_id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  parent_id: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+type DocumentTagRow = {
+  id: string;
+  organization_id: string;
+  name: string;
+  color: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+type DocumentPermissionRow = {
+  id: string;
+  organization_id: string;
+  document_id: string;
+  principal_type: DocumentPermission["principalType"];
+  principal_id: string | null;
+  access_level: DocumentPermission["accessLevel"];
+  created_by_user_id: string | null;
+  expires_at: string | null;
+  created_at: string;
+};
+
+type DocumentActivityRow = {
+  id: string;
+  organization_id: string;
+  document_id: string;
+  actor_user_id: string | null;
+  action: DocumentActivity["action"];
+  metadata: Record<string, unknown> | null;
+  created_at: string;
+};
+
+type KnowledgeArticleRow = {
+  id: string;
+  organization_id: string;
+  title: string;
+  body_markdown: string;
+  summary: string | null;
+  status: KnowledgeArticle["status"];
+  category_id: string | null;
+  author_user_id: string | null;
+  tags: string[] | null;
+  is_favorite?: boolean | null;
+  last_viewed_at?: string | null;
+  category?: { name: string | null } | null;
+  published_at: string | null;
+  archived_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
 type MeetingRow = {
   id: string;
   organization_id: string;
@@ -155,6 +297,20 @@ type AuditLogRow = {
   resource_id: string | null;
   category: string | null;
   request_id: string | null;
+  metadata: Record<string, unknown> | null;
+  created_at: string;
+};
+
+type BetaFeedbackRow = {
+  id: string;
+  organization_id: string;
+  user_id: string;
+  feedback_type: BetaFeedback["feedbackType"];
+  module: string;
+  rating: number;
+  message: string;
+  permission_to_contact: boolean;
+  status: BetaFeedback["status"];
   metadata: Record<string, unknown> | null;
   created_at: string;
 };
@@ -270,6 +426,24 @@ async function gatewayMutation<TResource>(
   if (!response.ok) {
     const message = await response.text().catch(() => "");
     throw new Error(`Repository gateway mutation failed for ${resource}: ${message}`);
+  }
+
+  return await response.json() as TResource;
+}
+
+async function gatewayBetaFeedback<TResource>(method: "GET" | "POST", body?: Record<string, unknown>, query?: RepositoryQuery) {
+  const params = gatewayQuery(query);
+  const response = await fetch(`/api/beta-feedback${params.toString() ? `?${params.toString()}` : ""}`, {
+    method,
+    credentials: "include",
+    headers: method === "POST" ? { "Content-Type": "application/json" } : undefined,
+    body: body ? JSON.stringify(body) : undefined,
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    const message = await response.text().catch(() => "");
+    throw new Error(`Beta feedback gateway failed: ${message}`);
   }
 
   return await response.json() as TResource;
@@ -398,6 +572,189 @@ function stringArray(value: unknown) {
 
 function compactMutation(body: Record<string, unknown>) {
   return Object.fromEntries(Object.entries(body).filter(([, value]) => value !== undefined));
+}
+
+function optionalId(value: unknown) {
+  return typeof value === "string" && value.trim() ? value.trim() : undefined;
+}
+
+function nullableNumber(value: unknown) {
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+function slugFromName(value: unknown) {
+  const text = typeof value === "string" ? value : "";
+  return text
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "") || "uncategorized";
+}
+
+function documentMutation(scope: TenantScope, input: Record<string, unknown>) {
+  const name = nullableString(input.name) ?? nullableString(input.title);
+  const fileName = nullableString(input.fileName) ?? name;
+
+  return compactMutation({
+    id: optionalId(input.id),
+    organization_id: organizationIdForMutation(scope, input),
+    project_id: nullableString(input.projectId),
+    category_id: nullableString(input.categoryId),
+    name,
+    title: nullableString(input.title) ?? name,
+    description: nullableString(input.description),
+    storage_path: nullableString(input.storagePath),
+    file_name: fileName,
+    file_size: nullableNumber(input.fileSize),
+    mime_type: nullableString(input.mimeType),
+    document_type: input.documentType,
+    status: input.status ?? "active",
+    visibility: input.visibility ?? "organization",
+    classification: input.classification ?? "internal",
+    owner_user_id: nullableString(input.ownerId) ?? scope.userId,
+    created_by_user_id: nullableString(input.createdByUserId) ?? scope.userId,
+    updated_by_user_id: scope.userId,
+    current_version: typeof input.currentVersion === "number" ? input.currentVersion : 1,
+    tags: stringArray(input.tags),
+  });
+}
+
+function documentUpdateMutation(scope: TenantScope, input: Record<string, unknown>) {
+  return compactMutation({
+    project_id: input.projectId === undefined ? undefined : nullableString(input.projectId),
+    category_id: input.categoryId === undefined ? undefined : nullableString(input.categoryId),
+    name: input.name === undefined ? undefined : nullableString(input.name),
+    title: input.title === undefined ? undefined : nullableString(input.title),
+    description: input.description === undefined ? undefined : nullableString(input.description),
+    storage_path: input.storagePath === undefined ? undefined : nullableString(input.storagePath),
+    file_name: input.fileName === undefined ? undefined : nullableString(input.fileName),
+    file_size: input.fileSize === undefined ? undefined : nullableNumber(input.fileSize),
+    mime_type: input.mimeType === undefined ? undefined : nullableString(input.mimeType),
+    document_type: input.documentType,
+    status: input.status,
+    visibility: input.visibility,
+    classification: input.classification,
+    owner_user_id: input.ownerId === undefined ? undefined : nullableString(input.ownerId),
+    updated_by_user_id: scope.userId,
+    current_version: input.currentVersion,
+    tags: input.tags === undefined ? undefined : stringArray(input.tags),
+    archived_at: input.archivedAt === undefined ? undefined : input.archivedAt,
+    deleted_at: input.deletedAt === undefined ? undefined : input.deletedAt,
+  });
+}
+
+function documentVersionMutation(scope: TenantScope, input: Record<string, unknown>) {
+  return compactMutation({
+    id: optionalId(input.id),
+    organization_id: organizationIdForMutation(scope, input),
+    document_id: nullableString(input.documentId),
+    version_number: typeof input.versionNumber === "number" ? input.versionNumber : 1,
+    file_name: nullableString(input.fileName),
+    file_size: nullableNumber(input.fileSize),
+    mime_type: nullableString(input.mimeType),
+    storage_path: nullableString(input.storagePath),
+    checksum: nullableString(input.checksum),
+    created_by_user_id: scope.userId,
+  });
+}
+
+function categoryMutation(scope: TenantScope, input: Record<string, unknown>) {
+  const name = nullableString(input.name);
+  return compactMutation({
+    id: optionalId(input.id),
+    organization_id: organizationIdForMutation(scope, input),
+    name,
+    slug: nullableString(input.slug) ?? slugFromName(name),
+    description: nullableString(input.description),
+    parent_id: nullableString(input.parentId),
+  });
+}
+
+function categoryUpdateMutation(_scope: TenantScope, input: Record<string, unknown>) {
+  return compactMutation({
+    name: input.name === undefined ? undefined : nullableString(input.name),
+    slug: input.slug === undefined ? undefined : nullableString(input.slug) ?? slugFromName(input.name),
+    description: input.description === undefined ? undefined : nullableString(input.description),
+    parent_id: input.parentId === undefined ? undefined : nullableString(input.parentId),
+  });
+}
+
+function tagMutation(scope: TenantScope, input: Record<string, unknown>) {
+  return compactMutation({
+    id: optionalId(input.id),
+    organization_id: organizationIdForMutation(scope, input),
+    name: nullableString(input.name),
+    color: nullableString(input.color),
+  });
+}
+
+function tagUpdateMutation(_scope: TenantScope, input: Record<string, unknown>) {
+  return compactMutation({
+    name: input.name === undefined ? undefined : nullableString(input.name),
+    color: input.color === undefined ? undefined : nullableString(input.color),
+  });
+}
+
+function documentPermissionMutation(scope: TenantScope, input: Record<string, unknown>) {
+  return compactMutation({
+    id: optionalId(input.id),
+    organization_id: organizationIdForMutation(scope, input),
+    document_id: nullableString(input.documentId),
+    principal_type: input.principalType,
+    principal_id: nullableString(input.principalId),
+    access_level: input.accessLevel ?? "viewer",
+    created_by_user_id: scope.userId,
+    expires_at: nullableString(input.expiresAt),
+  });
+}
+
+function documentPermissionUpdateMutation(_scope: TenantScope, input: Record<string, unknown>) {
+  return compactMutation({
+    principal_type: input.principalType,
+    principal_id: input.principalId === undefined ? undefined : nullableString(input.principalId),
+    access_level: input.accessLevel,
+    expires_at: input.expiresAt === undefined ? undefined : nullableString(input.expiresAt),
+  });
+}
+
+function documentActivityMutation(scope: TenantScope, input: DocumentActivityInput) {
+  return {
+    organization_id: scope.organizationId,
+    document_id: input.documentId,
+    actor_user_id: scope.userId,
+    action: input.action,
+    metadata: input.metadata ?? {},
+  };
+}
+
+function articleMutation(scope: TenantScope, input: Record<string, unknown>) {
+  return compactMutation({
+    id: optionalId(input.id),
+    organization_id: organizationIdForMutation(scope, input),
+    title: nullableString(input.title),
+    body_markdown: nullableString(input.bodyMarkdown),
+    summary: nullableString(input.summary),
+    status: input.status ?? "draft",
+    category_id: nullableString(input.categoryId),
+    author_user_id: nullableString(input.authorUserId) ?? scope.userId,
+    tags: stringArray(input.tags),
+    published_at: nullableString(input.publishedAt),
+    archived_at: nullableString(input.archivedAt),
+  });
+}
+
+function articleUpdateMutation(_scope: TenantScope, input: Record<string, unknown>) {
+  return compactMutation({
+    title: input.title === undefined ? undefined : nullableString(input.title),
+    body_markdown: input.bodyMarkdown === undefined ? undefined : nullableString(input.bodyMarkdown),
+    summary: input.summary === undefined ? undefined : nullableString(input.summary),
+    status: input.status,
+    category_id: input.categoryId === undefined ? undefined : nullableString(input.categoryId),
+    author_user_id: input.authorUserId === undefined ? undefined : nullableString(input.authorUserId),
+    tags: input.tags === undefined ? undefined : stringArray(input.tags),
+    published_at: input.publishedAt === undefined ? undefined : nullableString(input.publishedAt),
+    archived_at: input.archivedAt === undefined ? undefined : nullableString(input.archivedAt),
+  });
 }
 
 function projectMutation(scope: TenantScope, input: Record<string, unknown>) {
@@ -537,6 +894,20 @@ function userUpdateMutation(_scope: TenantScope, input: Record<string, unknown>)
   });
 }
 
+function betaFeedbackMutation(scope: TenantScope, input: CreateBetaFeedbackInput) {
+  return {
+    organization_id: scope.role === "Super Admin" && input.organizationId ? input.organizationId : scope.organizationId,
+    user_id: input.userId ?? scope.userId,
+    feedback_type: input.feedbackType,
+    module: input.module,
+    rating: input.rating,
+    message: input.message,
+    permission_to_contact: input.permissionToContact,
+    status: "new",
+    metadata: input.metadata ?? {},
+  };
+}
+
 const organizationConfig: ResourceConfig<OrganizationRow, Organization> = {
   table: "organizations",
   select: "id,name,slug,sector,created_at,updated_at",
@@ -634,6 +1005,164 @@ const taskConfig: ResourceConfig<TaskRow, Task> = {
   toUpdate: taskUpdateMutation,
 };
 
+const documentConfig: ResourceConfig<DocumentRow, Document> = {
+  table: "documents",
+  select: "id,organization_id,project_id,category_id,name,title,description,storage_path,file_name,file_size,mime_type,document_type,status,visibility,classification,owner_user_id,created_by_user_id,updated_by_user_id,current_version,tags,created_at,updated_at,archived_at,deleted_at,category:document_categories(name)",
+  searchColumns: ["name", "title", "description", "file_name", "mime_type"],
+  defaultOrder: "updated_at.desc",
+  map: (row) => ({
+    id: row.id,
+    organizationId: row.organization_id,
+    projectId: row.project_id ?? undefined,
+    categoryId: row.category_id ?? undefined,
+    categoryName: row.category?.name ?? undefined,
+    name: row.name,
+    title: row.title ?? row.name,
+    description: row.description ?? undefined,
+    storagePath: row.storage_path,
+    fileName: row.file_name ?? row.name,
+    fileSize: row.file_size === null ? undefined : Number(row.file_size),
+    mimeType: row.mime_type,
+    documentType: row.document_type ?? "unknown",
+    status: row.status ?? "active",
+    visibility: row.visibility ?? "organization",
+    classification: row.classification ?? "internal",
+    ownerId: row.owner_user_id ?? undefined,
+    createdByUserId: row.created_by_user_id ?? undefined,
+    updatedByUserId: row.updated_by_user_id ?? undefined,
+    currentVersion: row.current_version === null ? undefined : Number(row.current_version),
+    tags: row.tags ?? [],
+    isFavorite: Boolean(row.is_favorite),
+    lastViewedAt: row.last_viewed_at ?? undefined,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    archivedAt: row.archived_at ?? undefined,
+    deletedAt: row.deleted_at ?? undefined,
+  }),
+  toInsert: documentMutation,
+  toUpdate: documentUpdateMutation,
+};
+
+const documentVersionConfig: ResourceConfig<DocumentVersionRow, DocumentVersion> = {
+  table: "document_versions",
+  select: "id,organization_id,document_id,version_number,file_name,file_size,mime_type,storage_path,checksum,created_by_user_id,created_at",
+  searchColumns: ["file_name", "mime_type"],
+  defaultOrder: "created_at.desc",
+  map: (row) => ({
+    id: row.id,
+    organizationId: row.organization_id,
+    documentId: row.document_id,
+    versionNumber: Number(row.version_number),
+    fileName: row.file_name,
+    fileSize: Number(row.file_size),
+    mimeType: row.mime_type,
+    storagePath: row.storage_path,
+    checksum: row.checksum ?? undefined,
+    createdByUserId: row.created_by_user_id ?? undefined,
+    createdAt: row.created_at,
+  }),
+  toInsert: documentVersionMutation,
+};
+
+const documentCategoryConfig: ResourceConfig<DocumentCategoryRow, DocumentCategory> = {
+  table: "document_categories",
+  select: "id,organization_id,name,slug,description,parent_id,created_at,updated_at",
+  searchColumns: ["name", "slug", "description"],
+  defaultOrder: "name.asc",
+  map: (row) => ({
+    id: row.id,
+    organizationId: row.organization_id,
+    name: row.name,
+    slug: row.slug,
+    description: row.description ?? undefined,
+    parentId: row.parent_id ?? undefined,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  }),
+  toInsert: categoryMutation,
+  toUpdate: categoryUpdateMutation,
+};
+
+const documentTagConfig: ResourceConfig<DocumentTagRow, DocumentTag> = {
+  table: "document_tags",
+  select: "id,organization_id,name,color,created_at,updated_at",
+  searchColumns: ["name"],
+  defaultOrder: "name.asc",
+  map: (row) => ({
+    id: row.id,
+    organizationId: row.organization_id,
+    name: row.name,
+    color: row.color ?? undefined,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  }),
+  toInsert: tagMutation,
+  toUpdate: tagUpdateMutation,
+};
+
+const documentPermissionConfig: ResourceConfig<DocumentPermissionRow, DocumentPermission> = {
+  table: "document_permissions",
+  select: "id,organization_id,document_id,principal_type,principal_id,access_level,created_by_user_id,expires_at,created_at",
+  searchColumns: ["principal_type", "access_level"],
+  defaultOrder: "created_at.desc",
+  map: (row) => ({
+    id: row.id,
+    organizationId: row.organization_id,
+    documentId: row.document_id,
+    principalType: row.principal_type,
+    principalId: row.principal_id ?? undefined,
+    accessLevel: row.access_level,
+    createdByUserId: row.created_by_user_id ?? undefined,
+    expiresAt: row.expires_at ?? undefined,
+    createdAt: row.created_at,
+  }),
+  toInsert: documentPermissionMutation,
+  toUpdate: documentPermissionUpdateMutation,
+};
+
+const documentActivityConfig: ResourceConfig<DocumentActivityRow, DocumentActivity> = {
+  table: "document_activity",
+  select: "id,organization_id,document_id,actor_user_id,action,metadata,created_at",
+  searchColumns: ["action"],
+  defaultOrder: "created_at.desc",
+  map: (row) => ({
+    id: row.id,
+    organizationId: row.organization_id,
+    documentId: row.document_id,
+    actorUserId: row.actor_user_id ?? undefined,
+    action: row.action,
+    metadata: row.metadata ?? {},
+    createdAt: row.created_at,
+  }),
+};
+
+const knowledgeArticleConfig: ResourceConfig<KnowledgeArticleRow, KnowledgeArticle> = {
+  table: "knowledge_articles",
+  select: "id,organization_id,title,body_markdown,summary,status,category_id,author_user_id,tags,published_at,archived_at,created_at,updated_at,category:document_categories(name)",
+  searchColumns: ["title", "body_markdown", "summary"],
+  defaultOrder: "updated_at.desc",
+  map: (row) => ({
+    id: row.id,
+    organizationId: row.organization_id,
+    title: row.title,
+    bodyMarkdown: row.body_markdown,
+    summary: row.summary ?? undefined,
+    status: row.status,
+    categoryId: row.category_id ?? undefined,
+    categoryName: row.category?.name ?? undefined,
+    authorUserId: row.author_user_id ?? "",
+    tags: row.tags ?? [],
+    isFavorite: Boolean(row.is_favorite),
+    lastViewedAt: row.last_viewed_at ?? undefined,
+    publishedAt: row.published_at ?? undefined,
+    archivedAt: row.archived_at ?? undefined,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  }),
+  toInsert: articleMutation,
+  toUpdate: articleUpdateMutation,
+};
+
 const meetingConfig: ResourceConfig<MeetingRow, Meeting> = {
   table: "meetings",
   select: "id,organization_id,project_id,program_id,stakeholder_id,title,starts_at,ends_at,attendee_ids,agenda,notes,decisions,action_items,status",
@@ -719,6 +1248,26 @@ const auditLogConfig: ResourceConfig<AuditLogRow, AuditLog> = {
   }),
 };
 
+const betaFeedbackConfig: ResourceConfig<BetaFeedbackRow, BetaFeedback> = {
+  table: "beta_feedback",
+  select: "id,organization_id,user_id,feedback_type,module,rating,message,permission_to_contact,status,metadata,created_at",
+  searchColumns: ["feedback_type", "module", "status"],
+  defaultOrder: "created_at.desc",
+  map: (row) => ({
+    id: row.id,
+    organizationId: row.organization_id,
+    userId: row.user_id,
+    feedbackType: row.feedback_type,
+    module: row.module,
+    rating: row.rating,
+    message: row.message,
+    permissionToContact: row.permission_to_contact,
+    status: row.status,
+    metadata: row.metadata ?? {},
+    createdAt: row.created_at,
+  }),
+};
+
 function createTenantRepository<TRow, TResource extends { id: EntityId; organizationId: EntityId }>(
   resource: ResourceName,
   config: ResourceConfig<TRow, TResource>,
@@ -755,8 +1304,103 @@ export const usersRepository: UsersRepository = {
 export const programsRepository: ProgramsRepository = createTenantRepository("programs", programConfig);
 export const projectsRepository: ProjectsRepository = createMutableTenantRepository("projects", projectConfig);
 export const tasksRepository: TasksRepository = createMutableTenantRepository("tasks", taskConfig);
+const baseDocumentsRepository = createMutableTenantRepository("documents", documentConfig);
+export const documentVersionsRepository: DocumentVersionsRepository = createMutableTenantRepository("document_versions", documentVersionConfig);
+export const documentCategoriesRepository: DocumentCategoriesRepository = createMutableTenantRepository("document_categories", documentCategoryConfig);
+export const documentTagsRepository: DocumentTagsRepository = createMutableTenantRepository("document_tags", documentTagConfig);
+export const documentPermissionsRepository: DocumentPermissionsRepository = createMutableTenantRepository("document_permissions", documentPermissionConfig);
+export const documentActivityRepository: DocumentActivityRepository = createTenantRepository("document_activity", documentActivityConfig);
+export const knowledgeArticlesRepository: KnowledgeArticlesRepository = createMutableTenantRepository("knowledge_articles", knowledgeArticleConfig);
 export const meetingsRepository: MeetingsRepository = createMutableTenantRepository("meetings", meetingConfig);
 export const notificationsRepository: NotificationsRepository = createMutableTenantRepository("notifications", notificationConfig);
+
+export const documentsRepository: DocumentsRepository = {
+  ...baseDocumentsRepository,
+  archive(scope, id) {
+    return baseDocumentsRepository.update(scope, id, { status: "archived", archivedAt: new Date().toISOString() });
+  },
+  restore(scope, id) {
+    return baseDocumentsRepository.update(scope, id, { status: "active", archivedAt: undefined, deletedAt: undefined });
+  },
+  softDelete(scope, id) {
+    return baseDocumentsRepository.update(scope, id, { status: "deleted", deletedAt: new Date().toISOString() });
+  },
+  async listArchived(scope, query) {
+    const documents = await baseDocumentsRepository.list(scope, query);
+    return documents.filter((document) => document.status === "archived");
+  },
+  async listFavorites(scope, query) {
+    const documents = await baseDocumentsRepository.list(scope, query);
+    return documents.filter((document) => document.isFavorite);
+  },
+  async listSharedWithMe(scope, query) {
+    const documents = await baseDocumentsRepository.list(scope, query);
+    return documents.filter((document) => document.visibility === "shared");
+  },
+  async recordActivity(scope, input) {
+    if (!scope.accessToken) {
+      return gatewayMutation<DocumentActivity>("document_activity", "POST", input as unknown as Record<string, unknown>);
+    }
+
+    const rows = await supabaseRest<DocumentActivityRow[]>("document_activity", {
+      method: "POST",
+      accessToken: scope.accessToken,
+      body: documentActivityMutation(scope, input),
+    });
+
+    return rows[0] ? documentActivityConfig.map(rows[0]) : undefined;
+  },
+};
+
+export const knowledgeSearchRepository: KnowledgeSearchRepository = {
+  async search(scope, query) {
+    const [documents, articles] = await Promise.all([
+      query.scope === "articles" ? Promise.resolve([]) : documentsRepository.list(scope, query),
+      query.scope === "documents" || query.scope === "shared" || query.scope === "archived" ? Promise.resolve([]) : knowledgeArticlesRepository.list(scope, query),
+    ]);
+
+    const normalized = (query.search ?? "").trim().toLowerCase();
+    const tag = query.tag?.toLowerCase();
+
+    const documentResults = documents
+      .filter((document) => {
+        if (query.scope === "archived" && document.status !== "archived") return false;
+        if (query.scope === "favorites" && !document.isFavorite) return false;
+        if (query.scope === "shared" && document.visibility !== "shared") return false;
+        if (query.categoryId && document.categoryId !== query.categoryId) return false;
+        if (tag && !(document.tags ?? []).some((item) => item.toLowerCase() === tag)) return false;
+        if (!normalized) return true;
+        return [
+          document.name,
+          document.title,
+          document.description,
+          document.fileName,
+          document.categoryName,
+          ...(document.tags ?? []),
+        ].some((value) => value?.toLowerCase().includes(normalized));
+      })
+      .map((item): KnowledgeSearchResult => ({ type: "document", item }));
+
+    const articleResults = articles
+      .filter((article) => {
+        if (query.scope === "archived" && article.status !== "archived") return false;
+        if (query.scope === "favorites" && !article.isFavorite) return false;
+        if (query.categoryId && article.categoryId !== query.categoryId) return false;
+        if (tag && !article.tags.some((item) => item.toLowerCase() === tag)) return false;
+        if (!normalized) return true;
+        return [
+          article.title,
+          article.summary,
+          article.bodyMarkdown,
+          article.categoryName,
+          ...article.tags,
+        ].some((value) => value?.toLowerCase().includes(normalized));
+      })
+      .map((item): KnowledgeSearchResult => ({ type: "article", item }));
+
+    return [...documentResults, ...articleResults];
+  },
+};
 
 export const invitationsRepository: InvitationsRepository = {
   async create(scope, input) {
@@ -828,6 +1472,29 @@ export const auditLogsRepository: AuditLogsRepository = {
   },
 };
 
+export const betaFeedbackRepository: BetaFeedbackRepository = {
+  list: (scope, query) => {
+    if (!scope.accessToken) return gatewayBetaFeedback<BetaFeedback[]>("GET", undefined, query);
+    return listResource("beta_feedback", betaFeedbackConfig, scope, query);
+  },
+  async create(scope, input) {
+    if (!scope.accessToken) return gatewayBetaFeedback<BetaFeedback>("POST", input as Record<string, unknown>);
+
+    const rows = await supabaseRest<BetaFeedbackRow[]>("beta_feedback", {
+      method: "POST",
+      accessToken: scope.accessToken,
+      body: betaFeedbackMutation(scope, input),
+    });
+
+    if (!rows[0]) throw new Error("Beta feedback was not returned by Supabase.");
+    return betaFeedbackConfig.map(rows[0]);
+  },
+  async count(scope) {
+    const rows = await betaFeedbackRepository.list(scope, { pageSize: 100 });
+    return rows.length;
+  },
+};
+
 export async function listRepositoryResource(resource: ResourceName, scope: TenantScope, query?: RepositoryQuery, id?: EntityId) {
   if (id) {
     const item = await resourceRepositories[resource].getById(scope, id);
@@ -868,10 +1535,18 @@ export const resourceRepositories = {
   programs: programsRepository,
   projects: projectsRepository,
   tasks: tasksRepository,
+  documents: documentsRepository,
+  document_versions: documentVersionsRepository,
+  document_categories: documentCategoriesRepository,
+  document_tags: documentTagsRepository,
+  document_permissions: documentPermissionsRepository,
+  document_activity: { ...documentActivityRepository, create: documentsRepository.recordActivity },
+  knowledge_articles: knowledgeArticlesRepository,
   meetings: meetingsRepository,
   notifications: notificationsRepository,
   audit_logs: { list: auditLogsRepository.list, getById: async () => undefined },
   invitations: { list: invitationsRepository.listPending, getById: async () => undefined },
+  beta_feedback: { list: betaFeedbackRepository.list, getById: async () => undefined, create: betaFeedbackRepository.create },
 } satisfies Record<ResourceName, {
   list(scope: TenantScope, query?: RepositoryQuery): Promise<unknown[]>;
   getById(scope: TenantScope, id: EntityId): Promise<unknown | undefined>;
