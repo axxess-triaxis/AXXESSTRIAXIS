@@ -2,7 +2,17 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { featureFlags } from "../config/featureFlags";
-import { mockCurrentUserContext, type UserContext } from "../security/rbac";
+import {
+  cleanTenantUserContext,
+  demoModeChangedEvent,
+  demoResetEvent,
+  demoUserContext,
+  isDemoLogin,
+  isDemoModeEnabled,
+  isDemoModeForcedByEnv,
+  setDemoModeEnabled,
+} from "../demo/demoMode";
+import type { UserContext } from "../security/rbac";
 import {
   fetchServerSession,
   signInWithPassword,
@@ -23,11 +33,15 @@ type AuthContextValue = {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
+function modeAwareMockUser() {
+  return isDemoModeEnabled() ? demoUserContext : cleanTenantUserContext;
+}
+
 export function createMockAuthSession(): AuthSession {
   return {
     status: "authenticated",
     source: "mock-rbac",
-    user: mockCurrentUserContext,
+    user: modeAwareMockUser(),
   };
 }
 
@@ -40,6 +54,7 @@ function sessionFromUser(user: UserContext, source: "supabase-auth" | "mock-rbac
 }
 
 function getInitialClientSession(): AuthSession {
+  if (isDemoModeEnabled()) return createMockAuthSession();
   if (!featureFlags.enableAuthShell) return createMockAuthSession();
   return { status: "loading", source: "initializing", user: null };
 }
@@ -48,6 +63,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<AuthSession>(getInitialClientSession);
 
   useEffect(() => {
+    if (isDemoModeEnabled()) {
+      setSession(createMockAuthSession());
+      return;
+    }
+
     if (!featureFlags.enableAuthShell) return;
 
     let isMounted = true;
@@ -65,12 +85,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  useEffect(() => {
+    function syncDemoSession() {
+      if (isDemoModeEnabled() || !featureFlags.enableAuthShell) {
+        setSession(createMockAuthSession());
+        return;
+      }
+
+      setSession({ status: "unauthenticated", source: "supabase-auth", user: null });
+    }
+
+    window.addEventListener(demoModeChangedEvent, syncDemoSession);
+    window.addEventListener(demoResetEvent, syncDemoSession);
+    return () => {
+      window.removeEventListener(demoModeChangedEvent, syncDemoSession);
+      window.removeEventListener(demoResetEvent, syncDemoSession);
+    };
+  }, []);
+
   const login = useCallback(async (email: string, password: string) => {
+    if (isDemoLogin(email, password)) {
+      setDemoModeEnabled(true);
+      setSession(sessionFromUser(demoUserContext, "mock-rbac"));
+      return;
+    }
+
     const authState = await signInWithPassword(email, password);
     setSession(sessionFromUser(authState.user));
   }, []);
 
   const logout = useCallback(async () => {
+    if (isDemoModeEnabled()) {
+      setDemoModeEnabled(false);
+      setSession(isDemoModeForcedByEnv()
+        ? sessionFromUser(demoUserContext, "mock-rbac")
+        : featureFlags.enableAuthShell
+          ? { status: "unauthenticated", source: "supabase-auth", user: null }
+          : sessionFromUser(cleanTenantUserContext, "mock-rbac"));
+      return;
+    }
+
     await signOutOfSupabase();
     setSession(featureFlags.enableAuthShell ? { status: "unauthenticated", source: "supabase-auth", user: null } : createMockAuthSession());
   }, []);
