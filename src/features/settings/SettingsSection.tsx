@@ -13,7 +13,7 @@ import type { Invitation, RoleName, User } from "../../domain";
 import { applicationServices } from "../../providers/serviceProvider";
 import { tenantScopeFromUser } from "../../repositories/supabaseEnterpriseRepositories";
 import { useAnalytics } from "../../services/analytics";
-import { Check, CheckCircle2, Database, RotateCcw, Send, Settings, Sparkles, UserPlus, X, XCircle } from "lucide-react";
+import { Building2, Check, CheckCircle2, Database, RotateCcw, Save, Send, Settings, ShieldCheck, Sparkles, UserPlus, X, XCircle } from "lucide-react";
 
 export const SettingsSection = () => {
   const [tab, setTab] = useState("security");
@@ -96,6 +96,12 @@ export const SettingsSection = () => {
 
       {tab === "demo" && <DemoModePanel />}
 
+      {tab === "profile" && <ProfilePanel />}
+
+      {tab === "organization" && <OrganizationPanel />}
+
+      {tab === "permissions" && <PermissionsPanel />}
+
       {tab === "ai configuration" && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <Card className="p-5">
@@ -136,17 +142,168 @@ export const SettingsSection = () => {
         </div>
       )}
 
-      {(tab === "profile" || tab === "organization" || tab === "permissions") && (
-        <Card className="p-8 flex items-center justify-center">
-          <EmptyState
-            icon={<Settings size={32} />}
-            message="Select Security or AI Configuration to view settings"
-          />
-        </Card>
-      )}
     </div>
   );
 };
+
+const departmentOptions = [
+  "Mission Secretariat",
+  "Clinical Operations",
+  "District Coordination",
+  "Finance & Grants",
+  "Procurement",
+  "Monitoring & Evaluation",
+  "Knowledge & Analytics",
+  "Administration",
+];
+
+function ProfilePanel() {
+  const { session, updateProfile } = useAuth();
+  const user = session.user;
+  const [toast, setToast] = useState<{ tone: "success" | "error" | "info"; message: string } | null>(null);
+  const [form, setForm] = useState({
+    displayName: user?.displayName ?? "",
+    email: user?.email ?? "",
+    avatarInitials: user?.avatarInitials ?? "",
+    department: user?.department ?? "Mission Secretariat",
+    title: user?.title ?? "",
+    timezone: user?.timezone ?? "Asia/Kolkata",
+  });
+
+  useEffect(() => {
+    if (!user) return;
+    setForm({
+      displayName: user.displayName ?? "",
+      email: user.email ?? "",
+      avatarInitials: user.avatarInitials ?? "",
+      department: user.department ?? "Mission Secretariat",
+      title: user.title ?? "",
+      timezone: user.timezone ?? "Asia/Kolkata",
+    });
+  }, [user]);
+
+  if (!user) {
+    return (
+      <Card className="p-8 flex items-center justify-center">
+        <EmptyState icon={<Settings size={32} />} message="Sign in to manage your profile." />
+      </Card>
+    );
+  }
+
+  const saveProfile = async () => {
+    try {
+      await updateProfile(form);
+      setToast({ tone: "success", message: "Profile updated." });
+    } catch {
+      setToast({ tone: "error", message: "Profile could not be updated." });
+    }
+  };
+
+  return (
+    <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1fr_340px]">
+      <div className="space-y-4">
+        {toast && <InlineToast tone={toast.tone} message={toast.message} />}
+        <Card className="p-5">
+          <div className="mb-4 flex items-center gap-2">
+            <Settings size={15} className="text-[#8B1E2D]" />
+            <h3 className="text-sm font-semibold text-[#0F1117]">User Profile</h3>
+          </div>
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+            <TextField label="Display Name" value={form.displayName} onChange={(event) => setForm({ ...form, displayName: event.target.value })} />
+            <TextField label="Email" type="email" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} />
+            <TextField label="Title" value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} />
+            <TextField label="Avatar Initials" value={form.avatarInitials} onChange={(event) => setForm({ ...form, avatarInitials: event.target.value })} />
+            <SelectField label="Department" value={form.department} options={departmentOptions.map((department) => ({ value: department, label: department }))} onChange={(event) => setForm({ ...form, department: event.target.value })} />
+            <SelectField label="Timezone" value={form.timezone} options={[{ value: "Asia/Kolkata", label: "Asia/Kolkata" }, { value: "UTC", label: "UTC" }]} onChange={(event) => setForm({ ...form, timezone: event.target.value })} />
+          </div>
+          <button onClick={() => void saveProfile()} className="mt-4 flex items-center gap-2 rounded-lg bg-[#8B1E2D] px-3 py-2 text-xs font-semibold text-white hover:bg-[#7a1a27]">
+            <Save size={13} /> Save Profile
+          </button>
+        </Card>
+      </div>
+
+      <Card className="p-5">
+        <div className="mb-4 flex items-center gap-3">
+          <Avatar initials={user.avatarInitials ?? "AR"} color="bg-[#8B1E2D]" />
+          <div>
+            <h3 className="text-sm font-semibold text-[#0F1117]">{user.displayName}</h3>
+            <p className="text-[11px] text-[#5F6B73]">{user.email}</p>
+          </div>
+        </div>
+        <div className="space-y-2 text-xs">
+          <div className="flex items-center justify-between rounded-lg bg-[#F8F9FA] p-3"><span className="text-[#5F6B73]">Role</span><span className="font-semibold text-[#0F1117]">{user.role}</span></div>
+          <div className="flex items-center justify-between rounded-lg bg-[#F8F9FA] p-3"><span className="text-[#5F6B73]">Department</span><span className="font-semibold text-[#0F1117]">{user.department ?? form.department}</span></div>
+          <div className="flex items-center justify-between rounded-lg bg-[#F8F9FA] p-3"><span className="text-[#5F6B73]">Session</span><span className="font-semibold text-[#0F1117]">{session.source === "mock-rbac" ? "Investor Preview" : "Supabase Auth"}</span></div>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+function OrganizationPanel() {
+  const { session } = useAuth();
+  const mode = isDemoModeEnabled() ? "Investor Preview" : "Production";
+  const metrics = [
+    { label: "Organization", value: demoDatasetSummary.organizationName },
+    { label: "Mode", value: mode },
+    { label: "Projects", value: demoDatasetSummary.projects.toLocaleString() },
+    { label: "Documents", value: demoDatasetSummary.documents.toLocaleString() },
+  ];
+
+  return (
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <Card className="p-5">
+        <div className="mb-4 flex items-center gap-2">
+          <Building2 size={15} className="text-[#8B1E2D]" />
+          <h3 className="text-sm font-semibold text-[#0F1117]">Organization Profile</h3>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          {metrics.map((metric) => (
+            <div key={metric.label} className="rounded-lg bg-[#F8F9FA] p-3">
+              <div className="text-[10px] font-semibold uppercase text-[#5F6B73]">{metric.label}</div>
+              <div className="mt-1 text-sm font-semibold text-[#0F1117]">{metric.value}</div>
+            </div>
+          ))}
+        </div>
+      </Card>
+      <Card className="p-5">
+        <h3 className="mb-4 text-sm font-semibold text-[#0F1117]">Tenant Boundary</h3>
+        <div className="space-y-3 text-xs">
+          <div className="rounded-lg bg-[#F8F9FA] p-3"><span className="block text-[10px] uppercase text-[#5F6B73]">Organization ID</span><span className="font-mono text-[#0F1117]">{session.user?.organizationId}</span></div>
+          <div className="rounded-lg bg-[#F8F9FA] p-3"><span className="block text-[10px] uppercase text-[#5F6B73]">Data Boundary</span><span className="font-semibold text-[#0F1117]">Tenant-scoped repositories with RLS-ready metadata</span></div>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+function PermissionsPanel() {
+  const matrix = [
+    { role: "Super Admin", access: "All organizations, governance, users, audit" },
+    { role: "Organization Admin", access: "Tenant administration, users, documents, approvals" },
+    { role: "Executive", access: "Executive dashboards, analytics, approvals, knowledge" },
+    { role: "Manager", access: "Programs, tasks, meetings, knowledge, project governance" },
+    { role: "Employee", access: "Assigned work, documents, meetings, knowledge" },
+    { role: "Guest", access: "Read-only approved knowledge and documents" },
+  ];
+
+  return (
+    <Card className="overflow-hidden">
+      <div className="border-b border-[rgba(0,0,0,0.06)] bg-[#F8F9FA] px-4 py-3">
+        <div className="flex items-center gap-2">
+          <ShieldCheck size={15} className="text-[#8B1E2D]" />
+          <h3 className="text-sm font-semibold text-[#0F1117]">Permission Matrix</h3>
+        </div>
+      </div>
+      {matrix.map((item) => (
+        <div key={item.role} className="grid grid-cols-1 gap-2 border-b border-[rgba(0,0,0,0.04)] px-4 py-3 text-xs md:grid-cols-[180px_1fr]">
+          <span className="font-semibold text-[#0F1117]">{item.role}</span>
+          <span className="text-[#5F6B73]">{item.access}</span>
+        </div>
+      ))}
+    </Card>
+  );
+}
 
 function DemoModePanel() {
   const [enabled, setEnabled] = useState(() => isDemoModeEnabled());
@@ -334,7 +491,7 @@ function UserAdministration() {
         email: inviteEmail.trim().toLowerCase(),
         role: inviteRole,
         invitedByUserId: scope.userId,
-        tokenHash: "client-placeholder",
+        tokenHash: "client-issued-invitation",
         expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7).toISOString(),
       });
       analytics.trackEvent("user_invited", { invited_role: inviteRole }, {

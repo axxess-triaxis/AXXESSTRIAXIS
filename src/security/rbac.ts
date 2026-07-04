@@ -9,6 +9,9 @@ export type UserContext = {
   email?: string;
   displayName?: string;
   avatarInitials?: string;
+  department?: string;
+  title?: string;
+  timezone?: string;
 };
 
 export type MockUserContext = UserContext;
@@ -33,12 +36,15 @@ const sectionPermissions: Record<NavSection, RoleName[]> = {
 // Mocked for Sprint 3. The auth facade reads this until Supabase Auth is enabled
 // behind a feature flag.
 export const mockCurrentUserContext: MockUserContext = {
-  id: "user_raj_anand",
-  organizationId: "org_public_safety",
+  id: "user_demo_executive",
+  organizationId: "org_north_east_health_mission",
   role: "Organization Admin",
-  email: "raj.anand@example.gov",
-  displayName: "Raj Anand",
-  avatarInitials: "RA",
+  email: "investor.preview@axxess.demo",
+  displayName: "Ananya Rao",
+  avatarInitials: "AR",
+  department: "Mission Secretariat",
+  title: "Investor Preview Lead",
+  timezone: "Asia/Kolkata",
 };
 
 export function isRoleName(value: string): value is RoleName {

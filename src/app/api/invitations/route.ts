@@ -61,7 +61,7 @@ export async function POST(request: Request) {
     resourceType: "invitation",
     resourceId: invitation.id,
     category: "user-management",
-    metadata: { email, role, organizationId, emailProvider: "placeholder" },
+    metadata: { email, role, organizationId, emailProvider: "not-configured" },
   });
 
   await notificationsRepository.create(scope, {
@@ -74,5 +74,5 @@ export async function POST(request: Request) {
     resourceId: invitation.id,
   }).catch(() => undefined);
 
-  return NextResponse.json({ ...invitation, emailDelivery: "placeholder" });
+  return NextResponse.json({ ...invitation, emailDelivery: "not-configured" });
 }
