@@ -24,8 +24,10 @@ const sectionPermissions: Record<NavSection, RoleName[]> = {
   meetings: ["Super Admin", "Organization Admin", "Executive", "Manager", "Employee", "Consultant"],
   approvals: ["Super Admin", "Organization Admin", "Executive", "Manager"],
   analytics: ["Super Admin", "Organization Admin", "Executive", "Manager"],
+  "product-analytics": ["Super Admin", "Organization Admin"],
   integrations: ["Super Admin", "Organization Admin"],
   settings: ["Super Admin", "Organization Admin", "Executive", "Manager"],
+  "beta-readiness": ["Super Admin", "Organization Admin"],
 };
 
 // Mocked for Sprint 3. The auth facade reads this until Supabase Auth is enabled

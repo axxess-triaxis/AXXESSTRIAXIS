@@ -27,6 +27,7 @@ describe("mock RBAC route guards", () => {
     expect(canAccessSection(employee, "dashboard")).toBe(true);
     expect(canAccessSection(employee, "integrations")).toBe(false);
     expect(canAccessSection(employee, "settings")).toBe(false);
+    expect(canAccessRoute(employee, routeForPath("/admin/beta-readiness"))).toBe(false);
   });
 
   it("lets consultants reach delivery data without administrative sections", () => {
@@ -50,5 +51,11 @@ describe("mock RBAC route guards", () => {
 
     expect(canAccessSection(manager, "settings")).toBe(true);
     expect(canAccessRoute(manager, routeForPath("/admin"))).toBe(false);
+    expect(canAccessRoute(manager, routeForPath("/admin/product-analytics"))).toBe(false);
+  });
+
+  it("allows organization admins to view Sprint 8 beta admin pages", () => {
+    expect(canAccessRoute(mockCurrentUserContext, routeForPath("/admin/beta-readiness"))).toBe(true);
+    expect(canAccessRoute(mockCurrentUserContext, routeForPath("/admin/product-analytics"))).toBe(true);
   });
 });
