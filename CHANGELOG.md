@@ -4,12 +4,28 @@ All notable changes to AXXESS are documented here. This project follows the spir
 
 ## Unreleased
 
+- Added Product Release 0.7 Knowledge Hub with documents, knowledge articles, categories, tags, search, activity, shared, favorites, and archived sections.
+- Added Supabase Storage signed URL architecture for private enterprise documents.
+- Added Sprint 9 document, version, permission, activity, knowledge article, search, and storage migration.
+- Added Knowledge Hub repository, storage, permission, and E2E test foundations.
+- Added document, storage, and search architecture documentation.
 - Added Product Release 0.6 beta analytics, feedback, and pilot readiness work.
 - Hardened repository documentation for enterprise collaboration.
 - Added GitHub issue templates for bugs, features, documentation, and enhancements.
 - Added pull request checklist, Dependabot configuration, and CI workflow coverage.
 - Expanded environment variable documentation and ignore rules.
 - Added repository audit documentation for follow-up engineering work.
+
+## v0.7.0-beta - Knowledge Hub & Document Foundation
+
+- Added repository-backed Knowledge Hub UI while preserving the existing AXXESS shell and visual language.
+- Added enterprise document metadata workflows for upload, view, rename, visibility update, archive, restore, delete, categories, tags, and favorites-ready filtering.
+- Added knowledge article drafting and publishing foundations without AI or RAG.
+- Added private Supabase Storage bucket policy design with signed upload and download URL endpoint.
+- Added PostgreSQL `tsvector` search vectors for documents and knowledge articles.
+- Added RLS policies for tenant isolation, role-aware writes, explicit sharing, and guest-safe access.
+- Added audit activity tracking for document actions and metadata changes.
+- Added `docs/DOCUMENTS.md`, `docs/STORAGE.md`, and `docs/SEARCH.md`.
 
 ## v0.6.0-beta - Beta Analytics & Pilot Readiness
 

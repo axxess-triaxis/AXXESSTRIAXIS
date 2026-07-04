@@ -20,13 +20,14 @@ Core principles:
 
 AXXESS uses the Next.js App Router as the application runtime. Feature modules are separated from route definitions, service contracts, repository interfaces, security concerns, and design tokens so implementation details can evolve without forcing UI rewrites.
 
-Current runtime status: Sprint 8 / Product Release 0.6 beta.
+Current runtime status: Sprint 9 / Product Release 0.7 beta.
 
 - UI and route shell are implemented.
 - Supabase-backed auth, tenant repositories, CRUD workflows, notifications, invitations, and audit foundations are in place.
 - Mixpanel-ready product analytics is available with mock analytics as the safe default.
 - Beta feedback collection and internal beta readiness dashboards are implemented.
-- Storage, realtime, and AI providers remain architecturally prepared but are not part of Product Release 0.6.
+- Enterprise Knowledge Hub, document metadata, private Supabase Storage, signed URL access, and PostgreSQL search are implemented.
+- AI and RAG providers remain intentionally out of scope for Product Release 0.7.
 
 ## Tech Stack
 
@@ -57,7 +58,7 @@ Current runtime status: Sprint 8 / Product Release 0.6 beta.
 |   |-- config/          Feature flags
 |   |-- constants/       Shared route constants
 |   |-- domain/          Core enterprise entity types
-|   |-- features/        Dashboard, projects, tasks, CRM, knowledge, documents, etc.
+|   |-- features/        Dashboard, projects, tasks, CRM, Knowledge Hub, etc.
 |   |-- hooks/           Reusable React hooks
 |   |-- lib/             Environment and platform helpers
 |   |-- mocks/           Mock institutional data
@@ -108,7 +109,7 @@ Copy `.env.example` to `.env.local` and fill in values as services are connected
 ```bash
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 NEXT_PUBLIC_AXXESS_AUTH_SHELL=false
-NEXT_PUBLIC_AXXESS_APP_VERSION=0.6.0
+NEXT_PUBLIC_AXXESS_APP_VERSION=0.7.0
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 NEXT_PUBLIC_MIXPANEL_TOKEN=
@@ -149,17 +150,28 @@ Screenshots are intentionally placeholders until production-approved imagery is 
 - Executive Dashboard: `docs/screenshots/dashboard.png`
 - AI Workspace: `docs/screenshots/ai-workspace.png`
 - Projects and Programs: `docs/screenshots/projects.png`
+- Knowledge Hub: `docs/screenshots/knowledge-hub.png`
 
 ## Roadmap
 
-- Apply Sprint 8 beta feedback migration to all beta Supabase environments.
-- Complete controlled enterprise pilot onboarding.
+- Apply Sprint 9 Knowledge Hub migration to all beta Supabase environments.
+- Complete controlled enterprise pilot onboarding with real document workflows.
 - Promote Mixpanel dashboards from placeholder readiness to operational product reporting.
-- Connect Supabase Storage and Realtime.
-- Add AI provider adapters with human-review workflow controls.
+- Add invitation-aware document sharing and department/team mappings.
+- Add AI provider adapters with human-review workflow controls after the Knowledge Hub foundation is stable.
 - Expand automated testing around feature modules and route guards.
 - Add visual regression testing for the enterprise UI shell.
 - Add observability, audit logging, and deployment runbooks.
+
+## Knowledge Hub
+
+Product Release 0.7 adds a non-AI enterprise Knowledge Hub with documents, knowledge articles, categories, tags, recent activity, favorites, shared documents, archived documents, and PostgreSQL search. Document binaries are stored in a private Supabase Storage bucket and accessed through signed URLs only.
+
+See:
+
+- `docs/DOCUMENTS.md`
+- `docs/STORAGE.md`
+- `docs/SEARCH.md`
 
 ## Contributing
 
