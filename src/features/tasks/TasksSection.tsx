@@ -290,7 +290,7 @@ export const TasksSection = () => {
               <SelectField label="Project" value={form.projectId} options={projectOptions} onChange={(event) => setForm({ ...form, projectId: event.target.value })} disabled={!canManageTasks || saving} />
               <SelectField label="Program" value={form.programId} options={programOptions} onChange={(event) => setForm({ ...form, programId: event.target.value })} disabled={!canManageTasks || saving} />
               <TextField label="Due Date" type="date" value={form.dueDate} onChange={(event) => setForm({ ...form, dueDate: event.target.value })} disabled={!canManageTasks || saving} />
-              <TextField label="Tags" value={form.tags} placeholder="security, workflow" onChange={(event) => setForm({ ...form, tags: event.target.value })} disabled={!canManageTasks || saving} />
+              <TextField label="Tags" value={form.tags} placeholder="maternal-referral, sla" onChange={(event) => setForm({ ...form, tags: event.target.value })} disabled={!canManageTasks || saving} />
               <button
                 onClick={submitTask}
                 disabled={!canManageTasks || saving}

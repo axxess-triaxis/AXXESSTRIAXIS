@@ -17,15 +17,21 @@ export const demoUserContext: UserContext = {
   email: "investor.preview@axxess.demo",
   displayName: "Ananya Rao",
   avatarInitials: "AR",
+  department: "Mission Secretariat",
+  title: "Investor Preview Lead",
+  timezone: "Asia/Kolkata",
 };
 
 export const cleanTenantUserContext: UserContext = {
   id: "user_clean_admin",
   organizationId: "org_clean_tenant",
   role: "Organization Admin",
-  email: "admin@example.com",
-  displayName: "Workspace Admin",
-  avatarInitials: "WA",
+  email: "admin@new-organization.local",
+  displayName: "Organization Admin",
+  avatarInitials: "OA",
+  department: "Administration",
+  title: "Tenant Owner",
+  timezone: "Asia/Kolkata",
 };
 
 export function isDemoModeForcedByEnv() {

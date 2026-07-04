@@ -85,10 +85,10 @@ export const StakeholdersSection = () => (
           <h3 className="text-xs font-semibold text-[#0F1117] uppercase tracking-wider mb-3">Engagement Timeline</h3>
           <div className="space-y-2.5">
             {[
-              { contact: "Minister Okonkwo", type: "Meeting", date: "Nov 8" },
-              { contact: "Deputy Minister Anand", type: "Email", date: "Nov 5" },
-              { contact: "Director Thornton", type: "Call", date: "Oct 29" },
-              { contact: "Dr. Mei Chen", type: "Meeting", date: "Oct 22" },
+              { contact: "Dr. Purnima Bora", type: "Meeting", date: "Jul 4" },
+              { contact: "Secretary H. K. Deka", type: "Email", date: "Jul 3" },
+              { contact: "Director Lalthansangi", type: "Call", date: "Jun 29" },
+              { contact: "Prof. R. K. Singh", type: "Meeting", date: "Jun 24" },
             ].map((ev, i) => (
               <div key={i} className="flex items-center gap-2.5">
                 <div className="w-1 h-1 rounded-full bg-[#8B1E2D] flex-shrink-0" />

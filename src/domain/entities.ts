@@ -54,6 +54,9 @@ export interface User {
   email: string;
   displayName: string;
   avatarInitials: string;
+  department?: string;
+  title?: string;
+  timezone?: string;
   role: RoleName;
   roleIds: EntityId[];
   status: "active" | "invited" | "suspended";
