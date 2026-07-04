@@ -25,6 +25,7 @@ import { InlineToast } from "../../components/forms/InlineToast";
 import { SelectField, TextAreaField, TextField } from "../../components/forms/FormField";
 import { SectionHeader } from "../../components/layout/SectionHeader";
 import { Card } from "../../components/ui/Card";
+import { isDemoModeEnabled } from "../../demo/demoMode";
 import type { Document, DocumentActivity, DocumentCategory, DocumentTag, DocumentVisibility, KnowledgeArticle } from "../../domain";
 import { applicationServices } from "../../providers/serviceProvider";
 import { tenantScopeFromUser } from "../../repositories/supabaseEnterpriseRepositories";
@@ -139,6 +140,7 @@ export const KnowledgeHubSection = () => {
 
   const loadKnowledgeHub = useCallback(async () => {
     if (!scope) return;
+    const useFallbackData = isDemoModeEnabled();
     setLoading(true);
     setToast(null);
     try {
@@ -149,18 +151,21 @@ export const KnowledgeHubSection = () => {
         applicationServices.knowledgeArticlesRepository.list(scope, { pageSize: 100 }),
         applicationServices.documentActivityRepository.list(scope, { pageSize: 100 }),
       ]);
-      setDocuments(documentRows.length > 0 ? documentRows : fallbackDocuments);
-      setCategories(categoryRows.length > 0 ? categoryRows : fallbackDocumentCategories);
-      setTags(tagRows.length > 0 ? tagRows : fallbackDocumentTags);
-      setArticles(articleRows.length > 0 ? articleRows : fallbackKnowledgeArticles);
-      setActivity(activityRows.length > 0 ? activityRows : fallbackDocumentActivity);
+      setDocuments(documentRows.length > 0 ? documentRows : useFallbackData ? fallbackDocuments : []);
+      setCategories(categoryRows.length > 0 ? categoryRows : useFallbackData ? fallbackDocumentCategories : []);
+      setTags(tagRows.length > 0 ? tagRows : useFallbackData ? fallbackDocumentTags : []);
+      setArticles(articleRows.length > 0 ? articleRows : useFallbackData ? fallbackKnowledgeArticles : []);
+      setActivity(activityRows.length > 0 ? activityRows : useFallbackData ? fallbackDocumentActivity : []);
     } catch {
-      setDocuments(fallbackDocuments);
-      setCategories(fallbackDocumentCategories);
-      setTags(fallbackDocumentTags);
-      setArticles(fallbackKnowledgeArticles);
-      setActivity(fallbackDocumentActivity);
-      setToast({ tone: "info", message: "Knowledge Hub is using local Sprint 9 sample data." });
+      setDocuments(useFallbackData ? fallbackDocuments : []);
+      setCategories(useFallbackData ? fallbackDocumentCategories : []);
+      setTags(useFallbackData ? fallbackDocumentTags : []);
+      setArticles(useFallbackData ? fallbackKnowledgeArticles : []);
+      setActivity(useFallbackData ? fallbackDocumentActivity : []);
+      setToast({
+        tone: useFallbackData ? "info" : "error",
+        message: useFallbackData ? "Investor preview is using local Knowledge Hub data." : "Knowledge Hub is ready for first documents once storage is connected.",
+      });
     } finally {
       setLoading(false);
     }
