@@ -1,5 +1,9 @@
 import type { ExpoConfig } from "expo/config";
 
+const iosBundleIdentifier = process.env.EXPO_PUBLIC_IOS_BUNDLE_IDENTIFIER ?? "com.triaxis.axxess";
+const androidApplicationId = process.env.EXPO_PUBLIC_ANDROID_APPLICATION_ID ?? "com.triaxis.axxess";
+const easProjectId = process.env.EXPO_PUBLIC_EAS_PROJECT_ID ?? process.env.EAS_PROJECT_ID;
+
 const config: ExpoConfig = {
   name: "AXXESS TRIAXIS",
   slug: "axxess-triaxis",
@@ -7,9 +11,9 @@ const config: ExpoConfig = {
   orientation: "portrait",
   scheme: "axxess",
   userInterfaceStyle: "automatic",
-  owner: "triaxis",
+  owner: "axxess-triaxis",
   ios: {
-    bundleIdentifier: "com.triaxis.axxess",
+    bundleIdentifier: iosBundleIdentifier,
     buildNumber: "1",
     supportsTablet: true,
     infoPlist: {
@@ -17,7 +21,7 @@ const config: ExpoConfig = {
     },
   },
   android: {
-    package: "com.triaxis.axxess",
+    package: androidApplicationId,
     versionCode: 1,
     permissions: [],
     adaptiveIcon: {
@@ -28,9 +32,9 @@ const config: ExpoConfig = {
     appUrl: process.env.EXPO_PUBLIC_APP_URL,
     supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL,
     analyticsProvider: process.env.EXPO_PUBLIC_ANALYTICS_PROVIDER ?? "noop",
-    eas: {
-      projectId: "replace-with-eas-project-id-after-eas-init",
-    },
+    iosBundleIdentifier,
+    androidApplicationId,
+    eas: easProjectId ? { projectId: easProjectId } : undefined,
   },
   plugins: ["expo-router", "expo-secure-store"],
 };

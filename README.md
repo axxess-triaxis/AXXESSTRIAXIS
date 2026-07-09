@@ -174,6 +174,7 @@ Screenshot slots are reserved for production-approved imagery:
 - Enable Supabase MFA, OAuth providers, passkeys/WebAuthn, branch protections, PostHog dashboards, and backup drills.
 - Run Android preview EAS/Bitrise build and prepare iOS signing credentials.
 - In the Expo dashboard, set GitHub build Base directory to `apps/mobile`; see `docs/EXPO_GITHUB_BUILD.md`.
+- Configure iOS and Android signing through Expo-managed EAS credentials; see `docs/EAS_MANAGED_CREDENTIALS.md`.
 - In Wix setup, use `https://github.com/axxess-triaxis/AXXESSTRIAXIS.git`; see `docs/WIX_SETUP.md`.
 
 ## Documentation
@@ -201,6 +202,7 @@ Screenshot slots are reserved for production-approved imagery:
 - `docs/POSTHOG_DASHBOARDS.md`
 - `docs/PLAYWRIGHT.md`
 - `docs/EXPO_GITHUB_BUILD.md`
+- `docs/EAS_MANAGED_CREDENTIALS.md`
 - `docs/WIX_SETUP.md`
 - `docs/ENVIRONMENT_VARIABLES.md`
 - `docs/APP_STORE_READINESS.md`
