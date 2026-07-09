@@ -18,7 +18,7 @@ Core principles:
 
 ## Architecture
 
-Current runtime status: Sprint 11 production demo hardening with governed RAG and local NLP foundations.
+Current runtime status: Sprint 12 production security, DevSecOps, compliance, observability, and governed AI foundation.
 
 - Next.js App Router powers the application shell, protected pages, and server routes.
 - Supabase Auth, tenant repositories, CRUD workflows, notifications, invitations, audit logs, private storage, and RLS-ready metadata are in place.
@@ -26,6 +26,7 @@ Current runtime status: Sprint 11 production demo hardening with governed RAG an
 - Production repository calls fall back to the demo repository layer when Supabase is unavailable, preventing investor-facing backend errors.
 - Governed RAG provides document chunking, permission-aware retrieval, citations, confidence scoring, and answer audit logs.
 - Local NLP utilities provide deterministic keyword extraction, summaries, entity extraction, classification, tag suggestions, and lightweight regional language detection.
+- Sprint 12 security modules add enterprise IAM, tenant guardrails, immutable audit hashing, privacy request planning, compliance control mapping, prompt governance, and PostHog-ready observability.
 
 ## Tech Stack
 
@@ -37,6 +38,7 @@ Current runtime status: Sprint 11 production demo hardening with governed RAG an
 - Lucide React icons
 - Recharts
 - Supabase Auth, Database, and Storage architecture
+- PostHog capture adapter through a dependency-free analytics provider
 - Mixpanel browser client, disabled unless configured
 - Vitest and React Testing Library
 - pnpm
@@ -58,8 +60,10 @@ Current runtime status: Sprint 11 production demo hardening with governed RAG an
 |   |-- features/        Dashboard, projects, tasks, CRM, Knowledge Hub, AI workspace
 |   |-- providers/       Dependency injection and resilient service provider wiring
 |   |-- repositories/    Repository interfaces and Supabase implementations
-|   |-- security/        RBAC and route guard architecture
-|   |-- services/        Analytics, storage, local NLP, governed RAG, contracts
+|   |-- security/        RBAC, enterprise IAM, tenant guards, audit integrity
+|   |-- privacy/         Privacy request planning, masking, tokenization
+|   |-- compliance/      Configurable compliance control resolver
+|   |-- services/        Analytics, observability, storage, local NLP, governed RAG
 |   |-- styles/          Fonts, theme, Tailwind, globals, design tokens
 |   |-- test/            Test setup
 |   `-- utils/           Pure utilities
@@ -106,10 +110,15 @@ NEXT_PUBLIC_AXXESS_DEMO_MODE=false
 NEXT_PUBLIC_AXXESS_APP_VERSION=0.8.0
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
+NEXT_PUBLIC_POSTHOG_KEY=
+NEXT_PUBLIC_POSTHOG_HOST=https://us.i.posthog.com
 NEXT_PUBLIC_MIXPANEL_TOKEN=
 NEXT_PUBLIC_ANALYTICS_DISABLED=false
 NEXT_PUBLIC_BETA_FEEDBACK_FORM_URL=
 SUPABASE_SERVICE_ROLE_KEY=
+AXXESS_KMS_KEY_ALIAS=
+AXXESS_SECRET_ROTATION_DAYS=90
+AXXESS_AUDIT_HASH_SALT=
 ```
 
 Only `NEXT_PUBLIC_*` values are safe to expose to the browser. Server-side keys must stay in local environment files or managed deployment secrets.
@@ -155,7 +164,8 @@ Screenshot slots are reserved for production-approved imagery:
 - Add department/team mappings to document permissions.
 - Add invitation email delivery provider and audit-reviewed provisioning flows.
 - Expand browser E2E coverage for investor preview and protected routes.
-- Add observability, deployment runbooks, and production incident playbooks.
+- Apply Sprint 12 migration to staging and validate RLS across multiple tenant personas.
+- Enable Supabase MFA, OAuth providers, passkeys/WebAuthn, branch protections, PostHog dashboards, and backup drills.
 
 ## Documentation
 
@@ -164,6 +174,18 @@ Screenshot slots are reserved for production-approved imagery:
 - `docs/RAG.md`
 - `docs/NLP.md`
 - `docs/DEPLOYMENT.md`
+- `docs/SECURITY_ARCHITECTURE.md`
+- `docs/COMPLIANCE_ENGINE.md`
+- `docs/PRIVACY_ENGINEERING.md`
+- `docs/AI_GOVERNANCE.md`
+- `docs/OBSERVABILITY.md`
+- `docs/DEVSECOPS.md`
+- `docs/BACKUP_DR.md`
+- `docs/MOBILE_RELEASE.md`
+- `docs/SPRINT_12_RELEASE_READINESS.md`
+- `docs/API.md`
+- `docs/SCHEMA.md`
+- `docs/ADMIN_OPERATIONS.md`
 - `docs/DOCUMENTS.md`
 - `docs/STORAGE.md`
 - `docs/SEARCH.md`
