@@ -1,5 +1,6 @@
 import { MockAnalyticsProvider } from "./MockAnalyticsProvider";
 import { MixpanelAnalyticsProvider } from "./MixpanelAnalyticsProvider";
+import { PostHogAnalyticsProvider } from "./PostHogAnalyticsProvider";
 import type { AnalyticsProvider, AnalyticsRuntime } from "./types";
 
 export const releaseVersion = "0.6.0-beta";
@@ -10,12 +11,18 @@ export function getAnalyticsEnvironment() {
 }
 
 export function isAnalyticsEnabled() {
-  return process.env.NEXT_PUBLIC_ANALYTICS_DISABLED !== "true" && Boolean(process.env.NEXT_PUBLIC_MIXPANEL_TOKEN);
+  return (
+    process.env.NEXT_PUBLIC_ANALYTICS_DISABLED !== "true" &&
+    (Boolean(process.env.NEXT_PUBLIC_POSTHOG_KEY) || Boolean(process.env.NEXT_PUBLIC_MIXPANEL_TOKEN))
+  );
 }
 
 export function createAnalyticsProvider(): AnalyticsProvider {
   if (typeof window === "undefined") return new MockAnalyticsProvider();
   if (!isAnalyticsEnabled()) return new MockAnalyticsProvider();
+  if (process.env.NEXT_PUBLIC_POSTHOG_KEY) {
+    return new PostHogAnalyticsProvider(process.env.NEXT_PUBLIC_POSTHOG_KEY, process.env.NEXT_PUBLIC_POSTHOG_HOST);
+  }
   return new MixpanelAnalyticsProvider(process.env.NEXT_PUBLIC_MIXPANEL_TOKEN);
 }
 
