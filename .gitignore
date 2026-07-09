@@ -20,6 +20,13 @@ test-results/
 .env.test.local
 .env.production.local
 .env.*.local
+apps/mobile/credentials.json
+apps/mobile/*.jks
+apps/mobile/*.keystore
+apps/mobile/*.p8
+apps/mobile/*.p12
+apps/mobile/*.cer
+apps/mobile/*.mobileprovision
 
 # Logs
 *.log

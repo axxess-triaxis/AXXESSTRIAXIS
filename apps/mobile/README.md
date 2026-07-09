@@ -10,7 +10,7 @@ The Expo project root is:
 apps/mobile
 ```
 
-`eas.json` intentionally lives inside `apps/mobile` to avoid the previous EAS failure where `/eas.json` could not be found. Run EAS commands from this directory or through root scripts such as `pnpm mobile:android:preview`.
+`eas.json` intentionally lives inside `apps/mobile`, because Expo expects EAS files to sit at the Expo app root. In the Expo dashboard, set the GitHub build **Base directory** to `apps/mobile`; leaving it as `/` causes Expo to look for `/eas.json` at the repository root.
 
 ## Local Development
 
@@ -31,6 +31,28 @@ pnpm eas:build:all
 ```
 
 Android preview is configured to produce an APK. iOS preview requires Apple credentials and will stop at signing if those are not configured.
+
+For GitHub-triggered builds, use:
+
+```text
+Repository: axxess-triaxis/AXXESSTRIAXIS
+Base directory: apps/mobile
+Profile: preview or production
+iOS bundle identifier: com.triaxis.axxess
+Android application ID: com.triaxis.axxess
+```
+
+The EAS profiles include explicit `image: latest` settings and `credentialsSource: remote` for GitHub builds, so Expo manages signing credentials.
+
+## EAS Credentials
+
+```bash
+pnpm eas:credentials
+pnpm eas:credentials:ios
+pnpm eas:credentials:android
+```
+
+See `docs/EAS_MANAGED_CREDENTIALS.md` from the repository root for the full credential checklist.
 
 ## Environment
 
