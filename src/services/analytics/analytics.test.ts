@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { MockAnalyticsProvider } from "./MockAnalyticsProvider";
 import { MixpanelAnalyticsProvider } from "./MixpanelAnalyticsProvider";
+import { PostHogAnalyticsProvider } from "./PostHogAnalyticsProvider";
 import { sanitizeAnalyticsPayload, sanitizeAnalyticsProperties } from "./sanitize";
 
 vi.mock("mixpanel-browser", () => ({
@@ -38,6 +39,12 @@ describe("analytics service contracts", () => {
   it("initializes Mixpanel as disabled when no token is present", () => {
     const provider = new MixpanelAnalyticsProvider("");
     expect(provider.enabled).toBe(false);
+  });
+
+  it("initializes the PostHog adapter without requiring an SDK dependency", () => {
+    const provider = new PostHogAnalyticsProvider("phx_public_project_token", "https://us.i.posthog.com");
+    expect(provider.enabled).toBe(true);
+    expect(provider.name).toBe("posthog");
   });
 
   it("removes sensitive event properties before analytics dispatch", () => {
