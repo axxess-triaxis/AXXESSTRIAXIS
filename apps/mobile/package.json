@@ -5,9 +5,13 @@
   "main": "expo-router/entry",
   "scripts": {
     "android:preview": "eas build --platform android --profile preview --non-interactive",
+    "eas:build:configure": "eas build:configure --platform all",
     "eas:build:all": "eas build --profile preview --non-interactive",
     "eas:build:android": "eas build --platform android --profile preview --non-interactive",
     "eas:build:ios": "eas build --platform ios --profile preview --non-interactive",
+    "eas:credentials": "eas credentials",
+    "eas:credentials:android": "eas credentials --platform android",
+    "eas:credentials:ios": "eas credentials --platform ios",
     "ios:preview": "eas build --platform ios --profile preview --non-interactive",
     "lint": "expo lint",
     "start": "expo start",
