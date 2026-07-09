@@ -4,6 +4,10 @@ All notable changes to AXXESS are documented here. This project follows the spir
 
 ## Unreleased
 
+- Added Sprint 12 enterprise IAM, tenant guard, immutable audit-chain, privacy request, compliance control, prompt governance, and PostHog observability foundations.
+- Added Sprint 12 Supabase migration for departments, workspaces, security audit events, privacy requests, consents, retention policies, compliance policies, prompt registry, AI output audit, encryption key registry, and vector index manifests with RLS policies.
+- Added GitHub security workflow for CodeQL, dependency review, critical `pnpm audit`, and Gitleaks secret scanning.
+- Added security architecture, compliance, privacy engineering, AI governance, observability, DevSecOps, backup/DR, mobile release, API, schema, admin operations, and Sprint 12 readiness documentation.
 - Added Sprint 11 production demo hardening with Supabase-to-demo repository fallback for investor-facing dashboards.
 - Expanded the North East Health Mission demo corpus to 2,200 realistic institutional documents and 4,200 document activity records.
 - Added governed RAG services for document chunking, tenant-aware retrieval, permission filtering, citations, confidence scoring, human review flags, and answer audit logging.
