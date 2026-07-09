@@ -38,9 +38,21 @@ For GitHub-triggered builds, use:
 Repository: axxess-triaxis/AXXESSTRIAXIS
 Base directory: apps/mobile
 Profile: preview or production
+iOS bundle identifier: com.triaxis.axxess
+Android application ID: com.triaxis.axxess
 ```
 
-The EAS profiles include explicit `image: latest` settings for GitHub builds.
+The EAS profiles include explicit `image: latest` settings and `credentialsSource: remote` for GitHub builds, so Expo manages signing credentials.
+
+## EAS Credentials
+
+```bash
+pnpm eas:credentials
+pnpm eas:credentials:ios
+pnpm eas:credentials:android
+```
+
+See `docs/EAS_MANAGED_CREDENTIALS.md` from the repository root for the full credential checklist.
 
 ## Environment
 
