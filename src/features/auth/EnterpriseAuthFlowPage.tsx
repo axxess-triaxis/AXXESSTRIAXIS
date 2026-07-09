@@ -1,0 +1,145 @@
+"use client";
+
+import { useState } from "react";
+import Link from "next/link";
+import type { Route } from "next";
+import { Card } from "../../components/ui/Card";
+import { trackEvent } from "../../services/analytics";
+
+type AuthFlowKind = "sign-up" | "login" | "forgot-password" | "reset-password" | "mfa-enroll" | "mfa-challenge" | "security" | "account-delete" | "privacy";
+
+const flowCopy: Record<AuthFlowKind, { title: string; subtitle: string; action: string; endpoint?: string }> = {
+  "sign-up": {
+    title: "Create your AXXESS account",
+    subtitle: "Use your organization email. A clean tenant is created during onboarding, never through Demo Mode.",
+    action: "Create account",
+    endpoint: "/api/auth/sign-up",
+  },
+  login: {
+    title: "Sign in",
+    subtitle: "Email/password login remains available while MFA and OAuth are configured per tenant.",
+    action: "Open login",
+  },
+  "forgot-password": {
+    title: "Forgot password",
+    subtitle: "Send a Supabase recovery link to the verified account email.",
+    action: "Send reset link",
+    endpoint: "/api/auth/forgot-password",
+  },
+  "reset-password": {
+    title: "Reset password",
+    subtitle: "Final password reset requires a verified Supabase recovery session.",
+    action: "Check reset status",
+    endpoint: "/api/auth/reset-password",
+  },
+  "mfa-enroll": {
+    title: "Enroll MFA",
+    subtitle: "Enroll a time-based factor after Supabase MFA is enabled for the project.",
+    action: "Start MFA enrollment",
+    endpoint: "/api/auth/mfa/enroll",
+  },
+  "mfa-challenge": {
+    title: "MFA challenge",
+    subtitle: "Challenge an enrolled factor during login or sensitive admin actions.",
+    action: "Verify factor",
+    endpoint: "/api/auth/mfa/challenge",
+  },
+  security: {
+    title: "Security center",
+    subtitle: "Manage MFA, OAuth, passkeys, session posture, and privacy requests.",
+    action: "Open security settings",
+  },
+  "account-delete": {
+    title: "Account deletion",
+    subtitle: "Initiate deletion for beta admin processing with audit retention and legal-hold review.",
+    action: "Request deletion",
+    endpoint: "/api/account/deletion-request",
+  },
+  privacy: {
+    title: "Privacy controls",
+    subtitle: "Request an export and review beta privacy controls for account data.",
+    action: "Request privacy export",
+    endpoint: "/api/privacy/export-request",
+  },
+};
+
+export function EnterpriseAuthFlowPage({ kind }: { kind: AuthFlowKind }) {
+  const copy = flowCopy[kind];
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [displayName, setDisplayName] = useState("");
+  const [message, setMessage] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  async function submit() {
+    if (kind === "login") {
+      window.location.assign("/auth");
+      return;
+    }
+
+    if (kind === "security") {
+      window.location.assign("/settings/security");
+      return;
+    }
+
+    if (!copy.endpoint) return;
+
+    setBusy(true);
+    setMessage(null);
+    try {
+      const response = await fetch(copy.endpoint, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password, displayName }),
+      });
+      const body = await response.json().catch(() => ({} as { message?: string; error?: string; blocker?: string }));
+      setMessage(body.message ?? body.blocker ?? body.error ?? (response.ok ? "Request accepted." : "Request could not be completed."));
+      if (kind === "sign-up" && response.ok) trackEvent("sign_up_completed", { flow: "email_password" }, { module_name: "auth", route: "/auth/sign-up" });
+      if (kind === "account-delete" && response.ok) trackEvent("account_deletion_started", { flow: "beta_admin_processing" }, { module_name: "settings", route: "/settings/account/delete" });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <main className="flex min-h-screen items-center justify-center bg-[#F2F3F5] px-4 py-10" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+      <Card className="w-full max-w-lg p-6">
+        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#8B1E2D]">AXXESS</p>
+        <h1 className="mt-2 text-xl font-bold text-[#0F1117]">{copy.title}</h1>
+        <p className="mt-1 text-sm leading-relaxed text-[#5F6B73]">{copy.subtitle}</p>
+
+        {["sign-up", "forgot-password"].includes(kind) && (
+          <label className="mt-5 block">
+            <span className="mb-1.5 block text-xs font-semibold text-[#0F1117]">Email</span>
+            <input value={email} onChange={(event) => setEmail(event.target.value)} type="email" className="w-full rounded-lg border border-[rgba(0,0,0,0.12)] bg-white px-3 py-2 text-sm outline-none focus:border-[#8B1E2D]" />
+          </label>
+        )}
+
+        {kind === "sign-up" && (
+          <>
+            <label className="mt-3 block">
+              <span className="mb-1.5 block text-xs font-semibold text-[#0F1117]">Display name</span>
+              <input value={displayName} onChange={(event) => setDisplayName(event.target.value)} className="w-full rounded-lg border border-[rgba(0,0,0,0.12)] bg-white px-3 py-2 text-sm outline-none focus:border-[#8B1E2D]" />
+            </label>
+            <label className="mt-3 block">
+              <span className="mb-1.5 block text-xs font-semibold text-[#0F1117]">Password</span>
+              <input value={password} onChange={(event) => setPassword(event.target.value)} type="password" className="w-full rounded-lg border border-[rgba(0,0,0,0.12)] bg-white px-3 py-2 text-sm outline-none focus:border-[#8B1E2D]" />
+            </label>
+          </>
+        )}
+
+        {message && <p className="mt-4 rounded-lg bg-[#F8F9FA] px-3 py-2 text-xs font-medium text-[#0F1117]">{message}</p>}
+
+        <div className="mt-5 flex flex-wrap gap-3">
+          <button onClick={() => void submit()} disabled={busy} className="rounded-lg bg-[#8B1E2D] px-4 py-2 text-sm font-semibold text-white hover:bg-[#7a1a27] disabled:opacity-60">
+            {busy ? "Working..." : copy.action}
+          </button>
+          <Link href={"/onboarding" as Route} className="rounded-lg border border-[rgba(0,0,0,0.12)] px-4 py-2 text-sm font-semibold text-[#0F1117]">
+            Onboarding
+          </Link>
+        </div>
+      </Card>
+    </main>
+  );
+}

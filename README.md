@@ -18,7 +18,7 @@ Core principles:
 
 ## Architecture
 
-Current runtime status: Sprint 12 production security, DevSecOps, compliance, observability, and governed AI foundation.
+Current runtime status: Sprint 13 enterprise beta readiness foundation with onboarding, auth route surfaces, admin readiness pages, Supabase RLS persona artifacts, analytics provider selection, and Expo mobile scaffold.
 
 - Next.js App Router powers the application shell, protected pages, and server routes.
 - Supabase Auth, tenant repositories, CRUD workflows, notifications, invitations, audit logs, private storage, and RLS-ready metadata are in place.
@@ -27,6 +27,7 @@ Current runtime status: Sprint 12 production security, DevSecOps, compliance, ob
 - Governed RAG provides document chunking, permission-aware retrieval, citations, confidence scoring, and answer audit logs.
 - Local NLP utilities provide deterministic keyword extraction, summaries, entity extraction, classification, tag suggestions, and lightweight regional language detection.
 - Sprint 12 security modules add enterprise IAM, tenant guardrails, immutable audit hashing, privacy request planning, compliance control mapping, prompt governance, and PostHog-ready observability.
+- Sprint 13 adds clean-tenant onboarding routes, sign-up/password-recovery/MFA/passkey-ready routes, account deletion initiation, admin governance pages, Expo/EAS mobile scaffold, Bitrise workflows, and due-diligence documentation.
 
 ## Tech Stack
 
@@ -40,6 +41,7 @@ Current runtime status: Sprint 12 production security, DevSecOps, compliance, ob
 - Supabase Auth, Database, and Storage architecture
 - PostHog capture adapter through a dependency-free analytics provider
 - Mixpanel browser client, disabled unless configured
+- Expo/EAS mobile beta scaffold under `apps/mobile`
 - Vitest and React Testing Library
 - pnpm
 
@@ -48,7 +50,9 @@ Current runtime status: Sprint 12 production security, DevSecOps, compliance, ob
 ```text
 .
 |-- .github/             GitHub templates, CI workflows, Dependabot
+|-- apps/mobile/         Expo React Native beta scaffold for iOS and Android
 |-- docs/                Engineering, auth, demo, RAG, NLP, deployment notes
+|-- packages/shared/     Shared Sprint 13 constants for roles, sectors, notices, events
 |-- public/              Static public assets
 |-- src/
 |   |-- app/             Next App Router pages, shell layout, navigation, routing
@@ -110,6 +114,7 @@ NEXT_PUBLIC_AXXESS_DEMO_MODE=false
 NEXT_PUBLIC_AXXESS_APP_VERSION=0.8.0
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
+NEXT_PUBLIC_ANALYTICS_PROVIDER=noop
 NEXT_PUBLIC_POSTHOG_KEY=
 NEXT_PUBLIC_POSTHOG_HOST=https://us.i.posthog.com
 NEXT_PUBLIC_MIXPANEL_TOKEN=
@@ -165,7 +170,9 @@ Screenshot slots are reserved for production-approved imagery:
 - Add invitation email delivery provider and audit-reviewed provisioning flows.
 - Expand browser E2E coverage for investor preview and protected routes.
 - Apply Sprint 12 migration to staging and validate RLS across multiple tenant personas.
+- Apply Sprint 13 migration and run `supabase/tests/rls_persona_tests.sql` in staging.
 - Enable Supabase MFA, OAuth providers, passkeys/WebAuthn, branch protections, PostHog dashboards, and backup drills.
+- Run Android preview EAS/Bitrise build and prepare iOS signing credentials.
 
 ## Documentation
 
@@ -182,6 +189,21 @@ Screenshot slots are reserved for production-approved imagery:
 - `docs/DEVSECOPS.md`
 - `docs/BACKUP_DR.md`
 - `docs/MOBILE_RELEASE.md`
+- `docs/SPRINT_13_AUDIT.md`
+- `docs/VERCEL_DEPLOYMENT.md`
+- `docs/SUPABASE_STAGING.md`
+- `docs/RLS_PERSONA_TESTS.md`
+- `docs/BITRISE.md`
+- `docs/MIXPANEL.md`
+- `docs/POSTHOG.md`
+- `docs/POSTHOG_DASHBOARDS.md`
+- `docs/PLAYWRIGHT.md`
+- `docs/ENVIRONMENT_VARIABLES.md`
+- `docs/APP_STORE_READINESS.md`
+- `docs/PLAY_STORE_READINESS.md`
+- `docs/PRIVACY_DATA_MAP.md`
+- `docs/ACCOUNT_DELETION.md`
+- `docs/DUE_DILIGENCE_PACK.md`
 - `docs/SPRINT_12_RELEASE_READINESS.md`
 - `docs/API.md`
 - `docs/SCHEMA.md`

@@ -1,0 +1,212 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import type { ReactNode } from "react";
+import Link from "next/link";
+import type { Route } from "next";
+import { useRouter } from "next/navigation";
+import { axxessBetaRoles, axxessSectors, createDefaultOnboardingState, enterpriseOnboardingSteps, isOnboardingComplete, nextOnboardingPath, requiredOnboardingNotices, type EnterpriseOnboardingState, type OnboardingStepId } from "../../onboarding/enterpriseOnboarding";
+import { Card } from "../../components/ui/Card";
+import { SectionHeader } from "../../components/layout/SectionHeader";
+import { trackEvent } from "../../services/analytics";
+
+const storageKey = "axxess-enterprise-onboarding";
+
+function loadState(): EnterpriseOnboardingState {
+  if (typeof window === "undefined") return createDefaultOnboardingState();
+  const stored = window.localStorage.getItem(storageKey);
+  if (!stored) return createDefaultOnboardingState();
+  try {
+    return { ...createDefaultOnboardingState(), ...JSON.parse(stored) as EnterpriseOnboardingState };
+  } catch {
+    return createDefaultOnboardingState();
+  }
+}
+
+function saveState(state: EnterpriseOnboardingState) {
+  window.localStorage.setItem(storageKey, JSON.stringify(state));
+}
+
+type EnterpriseOnboardingPageProps = {
+  step: OnboardingStepId;
+};
+
+export function EnterpriseOnboardingPage({ step }: EnterpriseOnboardingPageProps) {
+  const router = useRouter();
+  const [state, setState] = useState<EnterpriseOnboardingState>(() => createDefaultOnboardingState());
+
+  useEffect(() => {
+    setState(loadState());
+  }, []);
+
+  function updateState(nextState: EnterpriseOnboardingState) {
+    setState(nextState);
+    saveState(nextState);
+  }
+
+  function continueFlow() {
+    const nextPath = nextOnboardingPath(step, state);
+    if (step === "security") {
+      trackEvent("onboarding_step_completed", { step, notices_accepted: state.acceptedNotices.length }, { module_name: "onboarding", route: "/onboarding/security" });
+    }
+    router.push(nextPath as Route);
+  }
+
+  const currentIndex = Math.max(0, enterpriseOnboardingSteps.findIndex((item) => item.id === step));
+  const progress = Math.round(((currentIndex + 1) / enterpriseOnboardingSteps.length) * 100);
+  const complete = isOnboardingComplete(state);
+
+  return (
+    <main className="min-h-screen bg-[#F2F3F5] px-4 py-8" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+      <div className="mx-auto max-w-5xl">
+        <SectionHeader title="Enterprise onboarding" subtitle="Create a clean tenant, workspace, role, and beta-safe security baseline." />
+        <div className="mb-6 h-2 overflow-hidden rounded-full bg-white">
+          <div className="h-full rounded-full bg-[#8B1E2D]" style={{ width: `${progress}%` }} />
+        </div>
+
+        <div className="grid gap-4 lg:grid-cols-[240px_1fr]">
+          <Card className="p-4">
+            <div className="space-y-2">
+              {enterpriseOnboardingSteps.map((item, index) => (
+                <Link
+                  key={item.id}
+                  href={item.path as Route}
+                  className={`block rounded-lg px-3 py-2 text-xs font-semibold ${item.id === step ? "bg-[#8B1E2D] text-white" : index <= currentIndex ? "bg-[#F8F9FA] text-[#0F1117]" : "text-[#5F6B73]"}`}
+                >
+                  {item.title}
+                </Link>
+              ))}
+            </div>
+          </Card>
+
+          <Card className="p-6">
+            {step === "start" && (
+              <div className="space-y-4">
+                <h2 className="text-lg font-bold text-[#0F1117]">How should this user enter AXXESS?</h2>
+                <div className="grid gap-3 md:grid-cols-2">
+                  <button onClick={() => updateState({ ...state, mode: "create-organization" })} className={`rounded-lg border p-4 text-left ${state.mode === "create-organization" ? "border-[#8B1E2D] bg-[#8B1E2D]/5" : "border-[rgba(0,0,0,0.08)]"}`}>
+                    <span className="block text-sm font-semibold text-[#0F1117]">Create organization</span>
+                    <span className="mt-1 block text-xs text-[#5F6B73]">Provision a new clean tenant for a live beta customer.</span>
+                  </button>
+                  <button onClick={() => updateState({ ...state, mode: "join-organization" })} className={`rounded-lg border p-4 text-left ${state.mode === "join-organization" ? "border-[#8B1E2D] bg-[#8B1E2D]/5" : "border-[rgba(0,0,0,0.08)]"}`}>
+                    <span className="block text-sm font-semibold text-[#0F1117]">Join organization</span>
+                    <span className="mt-1 block text-xs text-[#5F6B73]">Use an invitation to join an existing tenant.</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {step === "create-organization" && (
+              <FieldPanel title="Create organization" description="This creates a production tenant path. Demo Mode never writes to this tenant.">
+                <TextInput label="Organization name" value={state.organizationName ?? ""} onChange={(value) => updateState({ ...state, mode: "create-organization", organizationName: value })} />
+              </FieldPanel>
+            )}
+
+            {step === "join-organization" && (
+              <FieldPanel title="Join organization" description="Invitation tokens are validated server-side in production. This screen stores no service-role material.">
+                <TextInput label="Invitation code" value={state.invitationCode ?? ""} onChange={(value) => updateState({ ...state, mode: "join-organization", invitationCode: value })} />
+              </FieldPanel>
+            )}
+
+            {step === "sector" && (
+              <FieldPanel title="Sector and role" description="Select the operating context and initial role for RBAC provisioning.">
+                <SelectInput label="Sector" value={state.sector ?? ""} options={axxessSectors} onChange={(value) => updateState({ ...state, sector: value as EnterpriseOnboardingState["sector"] })} />
+                <SelectInput label="Role" value={state.role ?? ""} options={axxessBetaRoles} onChange={(value) => updateState({ ...state, role: value as EnterpriseOnboardingState["role"] })} />
+              </FieldPanel>
+            )}
+
+            {step === "workspace" && (
+              <FieldPanel title="Department and workspace" description="Create the first department and workspace boundary for tenant data.">
+                <TextInput label="Department name" value={state.departmentName ?? ""} onChange={(value) => updateState({ ...state, departmentName: value })} />
+                <TextInput label="Workspace name" value={state.workspaceName ?? ""} onChange={(value) => updateState({ ...state, workspaceName: value })} />
+              </FieldPanel>
+            )}
+
+            {step === "security" && (
+              <FieldPanel title="Security and beta notices" description="Users must accept the beta legal and AI usage notices before entering a clean tenant.">
+                <div className="space-y-2">
+                  {requiredOnboardingNotices.map((notice) => (
+                    <label key={notice} className="flex items-center gap-3 rounded-lg bg-[#F8F9FA] p-3 text-sm text-[#0F1117]">
+                      <input
+                        type="checkbox"
+                        checked={state.acceptedNotices.includes(notice)}
+                        onChange={(event) => {
+                          const acceptedNotices = event.target.checked
+                            ? [...new Set([...state.acceptedNotices, notice])]
+                            : state.acceptedNotices.filter((item) => item !== notice);
+                          updateState({ ...state, acceptedNotices });
+                        }}
+                      />
+                      {notice}
+                    </label>
+                  ))}
+                </div>
+              </FieldPanel>
+            )}
+
+            {step === "complete" && (
+              <div className="space-y-4">
+                <h2 className="text-lg font-bold text-[#0F1117]">{complete ? "Tenant ready for beta" : "Onboarding needs attention"}</h2>
+                <div className="grid gap-3 md:grid-cols-2">
+                  {[
+                    ["Organization", state.organizationName ?? state.invitationCode ?? "Not set"],
+                    ["Sector", state.sector ?? "Not set"],
+                    ["Role", state.role ?? "Not set"],
+                    ["Department", state.departmentName ?? "Not set"],
+                    ["Workspace", state.workspaceName ?? "Not set"],
+                    ["Notices", `${state.acceptedNotices.length}/${requiredOnboardingNotices.length} accepted`],
+                  ].map(([label, value]) => (
+                    <div key={label} className="rounded-lg bg-[#F8F9FA] p-3">
+                      <div className="text-[10px] font-semibold uppercase text-[#5F6B73]">{label}</div>
+                      <div className="mt-1 text-sm font-semibold text-[#0F1117]">{value}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="mt-6 flex flex-wrap gap-3">
+              <button onClick={continueFlow} className="rounded-lg bg-[#8B1E2D] px-4 py-2 text-sm font-semibold text-white hover:bg-[#7a1a27]">
+                {step === "complete" ? "Enter dashboard" : "Continue"}
+              </button>
+              <Link href="/auth" className="rounded-lg border border-[rgba(0,0,0,0.12)] px-4 py-2 text-sm font-semibold text-[#0F1117]">
+                Back to auth
+              </Link>
+            </div>
+          </Card>
+        </div>
+      </div>
+    </main>
+  );
+}
+
+function FieldPanel({ title, description, children }: { title: string; description: string; children: ReactNode }) {
+  return (
+    <div>
+      <h2 className="text-lg font-bold text-[#0F1117]">{title}</h2>
+      <p className="mt-1 max-w-2xl text-sm text-[#5F6B73]">{description}</p>
+      <div className="mt-5 grid gap-4 md:grid-cols-2">{children}</div>
+    </div>
+  );
+}
+
+function TextInput({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
+  return (
+    <label className="block">
+      <span className="mb-1.5 block text-xs font-semibold text-[#0F1117]">{label}</span>
+      <input value={value} onChange={(event) => onChange(event.target.value)} className="w-full rounded-lg border border-[rgba(0,0,0,0.12)] bg-white px-3 py-2 text-sm outline-none focus:border-[#8B1E2D]" />
+    </label>
+  );
+}
+
+function SelectInput({ label, value, options, onChange }: { label: string; value: string; options: readonly string[]; onChange: (value: string) => void }) {
+  return (
+    <label className="block">
+      <span className="mb-1.5 block text-xs font-semibold text-[#0F1117]">{label}</span>
+      <select value={value} onChange={(event) => onChange(event.target.value)} className="w-full rounded-lg border border-[rgba(0,0,0,0.12)] bg-white px-3 py-2 text-sm outline-none focus:border-[#8B1E2D]">
+        <option value="">Select</option>
+        {options.map((option) => <option key={option} value={option}>{option}</option>)}
+      </select>
+    </label>
+  );
+}

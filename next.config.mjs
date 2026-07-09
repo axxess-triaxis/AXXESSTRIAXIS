@@ -4,7 +4,7 @@ const contentSecurityPolicy = [
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob:",
   "font-src 'self' data:",
-  "connect-src 'self'",
+  "connect-src 'self' https://*.supabase.co https://api.mixpanel.com https://*.mixpanel.com https://us.i.posthog.com https://app.posthog.com https://*.posthog.com",
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "form-action 'self'",
