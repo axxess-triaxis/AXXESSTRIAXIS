@@ -4,6 +4,11 @@ All notable changes to AXXESS are documented here. This project follows the spir
 
 ## Unreleased
 
+- Added Sprint 13 audit document, onboarding route family, sign-up/password recovery/MFA/passkey-ready route surfaces, account deletion and privacy request initiation.
+- Added Sprint 13 admin readiness pages for organization, departments, workspaces, users, roles, invitations, privacy, compliance, AI governance, prompt approvals, audit logs, and backups.
+- Added Sprint 13 Supabase migration for tenant/workspace metadata, RLS helper functions, prompt review states, AI output review states, and checked-in RLS persona test artifacts.
+- Added Expo mobile scaffold under `apps/mobile` with EAS profiles, mobile auth helper, core beta screens, and mobile README.
+- Added Bitrise workflows, GitHub Playwright/mobile/Supabase RLS workflows, backup/restore scripts, store readiness docs, analytics docs, and due diligence pack.
 - Added Sprint 12 enterprise IAM, tenant guard, immutable audit-chain, privacy request, compliance control, prompt governance, and PostHog observability foundations.
 - Added Sprint 12 Supabase migration for departments, workspaces, security audit events, privacy requests, consents, retention policies, compliance policies, prompt registry, AI output audit, encryption key registry, and vector index manifests with RLS policies.
 - Added GitHub security workflow for CodeQL, dependency review, critical `pnpm audit`, and Gitleaks secret scanning.
