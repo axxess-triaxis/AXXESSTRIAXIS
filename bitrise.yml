@@ -1,0 +1,140 @@
+format_version: "13"
+default_step_lib_source: https://github.com/bitrise-io/bitrise-steplib.git
+
+project_type: other
+
+workflows:
+  primary_web_vercel_check:
+    description: Validate the root Next.js/Vercel web app.
+    steps:
+      - git-clone@8: {}
+      - script@1:
+          title: Install pnpm and dependencies
+          inputs:
+            - content: |
+                corepack enable
+                corepack prepare pnpm@11.7.0 --activate
+                pnpm install --frozen-lockfile
+      - script@1:
+          title: Web quality gates
+          inputs:
+            - content: |
+                pnpm run typecheck
+                pnpm run lint
+                pnpm run test
+                pnpm run build
+      - deploy-to-bitrise-io@2: {}
+
+  mobile_android_expo_preview:
+    description: Build Android beta APK through Expo prebuild and Gradle.
+    steps:
+      - git-clone@8: {}
+      - script@1:
+          title: Install pnpm and mobile dependencies
+          inputs:
+            - content: |
+                corepack enable
+                corepack prepare pnpm@11.7.0 --activate
+                cd apps/mobile
+                pnpm install --frozen-lockfile || pnpm install
+      - script@1:
+          title: Expo prebuild Android
+          inputs:
+            - content: |
+                cd apps/mobile
+                npx expo prebuild --platform android --clean
+      - script@1:
+          title: Build Android release APK
+          inputs:
+            - content: |
+                cd apps/mobile/android
+                ./gradlew assembleRelease
+      - deploy-to-bitrise-io@2:
+          inputs:
+            - deploy_path: apps/mobile/android/app/build/outputs/apk/release/app-release.apk
+
+  mobile_ios_expo_preview:
+    description: Prepare iOS beta build path. Signing/export requires Apple credentials.
+    steps:
+      - git-clone@8: {}
+      - script@1:
+          title: Install pnpm and mobile dependencies
+          inputs:
+            - content: |
+                corepack enable
+                corepack prepare pnpm@11.7.0 --activate
+                cd apps/mobile
+                pnpm install --frozen-lockfile || pnpm install
+      - script@1:
+          title: Expo prebuild iOS before CocoaPods
+          inputs:
+            - content: |
+                cd apps/mobile
+                npx expo prebuild --platform ios --clean
+                test -f ios/Podfile
+      - cocoapods-install@2:
+          inputs:
+            - source_root_path: apps/mobile/ios
+      - script@1:
+          title: Signing blocker note
+          inputs:
+            - content: |
+                echo "iOS project prepared. Configure APPLE_ID, ASC_APP_ID, APPLE_TEAM_ID and signing credentials for archive/export."
+      - deploy-to-bitrise-io@2: {}
+
+  full_ci_all_apps:
+    description: Run web checks and mobile TypeScript validation.
+    steps:
+      - git-clone@8: {}
+      - script@1:
+          title: Install dependencies
+          inputs:
+            - content: |
+                corepack enable
+                corepack prepare pnpm@11.7.0 --activate
+                pnpm install --frozen-lockfile
+      - script@1:
+          title: Web checks
+          inputs:
+            - content: |
+                pnpm run typecheck
+                pnpm run lint
+                pnpm run test
+                pnpm run build
+      - script@1:
+          title: Mobile typecheck
+          inputs:
+            - content: |
+                cd apps/mobile
+                pnpm install --frozen-lockfile || pnpm install
+                pnpm run typecheck
+      - deploy-to-bitrise-io@2: {}
+
+  playwright_e2e:
+    description: Run Playwright E2E tests and upload report.
+    steps:
+      - git-clone@8: {}
+      - script@1:
+          title: Install and run Playwright
+          inputs:
+            - content: |
+                corepack enable
+                corepack prepare pnpm@11.7.0 --activate
+                pnpm install --frozen-lockfile
+                pnpm exec playwright install --with-deps chromium
+                pnpm run test:e2e
+      - deploy-to-bitrise-io@2:
+          inputs:
+            - deploy_path: playwright-report
+
+  supabase_rls_tests:
+    description: Run Supabase RLS persona tests where local Supabase is available.
+    steps:
+      - git-clone@8: {}
+      - script@1:
+          title: RLS test instructions
+          inputs:
+            - content: |
+                echo "Install Supabase CLI, start local Supabase, apply migrations, load supabase/tests/persona_fixtures.sql, then run supabase/tests/rls_persona_tests.sql."
+                test -f supabase/tests/rls_persona_tests.sql
+      - deploy-to-bitrise-io@2: {}

@@ -44,3 +44,20 @@ Routes and feature controls read the authenticated `UserContext`. Organization b
 - Server-only service-role keys must remain outside `NEXT_PUBLIC_*` variables.
 - Demo login is isolated to the seeded preview tenant.
 - Production deployments should move session validation fully to httpOnly cookie-backed server checks.
+
+## Sprint 13 Auth Readiness
+
+Sprint 13 adds route surfaces for:
+
+- `/auth/sign-up`
+- `/auth/login`
+- `/auth/forgot-password`
+- `/auth/reset-password`
+- `/auth/mfa/enroll`
+- `/auth/mfa/challenge`
+- `/auth/security`
+- `/settings/security`
+- `/settings/account/delete`
+- `/settings/privacy`
+
+Email/password sign-up and password recovery call Supabase Auth when public Supabase settings are configured. MFA, OAuth, and passkeys remain provider-gated until the Supabase project enables the required factors/providers.
