@@ -31,7 +31,17 @@ export type AnalyticsEventName =
   | "error_boundary_triggered"
   | "form_validation_failed"
   | "empty_state_viewed"
-  | "onboarding_step_completed";
+  | "onboarding_step_completed"
+  | "feature_adopted"
+  | "dashboard_widget_loaded"
+  | "ai_query_submitted"
+  | "ai_answer_reviewed"
+  | "document_retrieved"
+  | "api_latency_recorded"
+  | "route_performance_recorded"
+  | "security_event_recorded"
+  | "retention_checkpoint_reached"
+  | "crash_reported";
 
 export type AnalyticsEventSource = "client" | "server" | "test";
 export type SafeAnalyticsPrimitive = string | number | boolean | null;
