@@ -16,7 +16,8 @@
     "ignoreDeprecations": "6.0",
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@axxess/shared": ["./packages/shared/src/index.ts"]
     },
     "plugins": [
       {
@@ -25,5 +26,5 @@
     ]
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules", "src/main.tsx", "vite.config.ts"]
+  "exclude": ["node_modules", "apps/mobile", "src/main.tsx", "vite.config.ts"]
 }
