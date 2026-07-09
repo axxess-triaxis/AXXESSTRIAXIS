@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { MockAnalyticsProvider } from "./MockAnalyticsProvider";
 import { MixpanelAnalyticsProvider } from "./MixpanelAnalyticsProvider";
 import { PostHogAnalyticsProvider } from "./PostHogAnalyticsProvider";
+import { normalizeAnalyticsProvider } from "./providers";
 import { sanitizeAnalyticsPayload, sanitizeAnalyticsProperties } from "./sanitize";
 
 vi.mock("mixpanel-browser", () => ({
@@ -42,9 +43,16 @@ describe("analytics service contracts", () => {
   });
 
   it("initializes the PostHog adapter without requiring an SDK dependency", () => {
-    const provider = new PostHogAnalyticsProvider("phx_public_project_token", "https://us.i.posthog.com");
+    const provider = new PostHogAnalyticsProvider("posthog_public_project_token", "https://us.i.posthog.com");
     expect(provider.enabled).toBe(true);
     expect(provider.name).toBe("posthog");
+  });
+
+  it("defaults analytics provider selection to noop unless explicitly configured", () => {
+    expect(normalizeAnalyticsProvider(undefined)).toBe("noop");
+    expect(normalizeAnalyticsProvider("posthog")).toBe("posthog");
+    expect(normalizeAnalyticsProvider("mixpanel")).toBe("mixpanel");
+    expect(normalizeAnalyticsProvider("unexpected")).toBe("noop");
   });
 
   it("removes sensitive event properties before analytics dispatch", () => {
