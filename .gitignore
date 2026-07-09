@@ -8,6 +8,7 @@ out/
 # Build and coverage output
 dist/
 coverage/
+backups/
 playwright-report/
 test-results/
 *.tsbuildinfo
