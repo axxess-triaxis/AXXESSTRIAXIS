@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
-import { ASSETS } from "@/lib/brand";
+import { ASSETS, LINKS } from "@/lib/brand";
 
 const links = [
   { label: "Products", href: "#products" },
-  { label: "Thesis", href: "#thesis" },
+  { label: "Beta", href: "#beta" },
   { label: "Pricing", href: "#pricing" },
   { label: "Traction", href: "#traction" },
   { label: "Team", href: "#team" },
@@ -74,6 +74,22 @@ export default function Nav() {
         </nav>
 
         <div className="flex items-center gap-3">
+          <a
+            href={LINKS.github}
+            target="_blank"
+            rel="noreferrer"
+            data-testid="nav-github"
+            aria-label="GitHub repository"
+            className={`hidden sm:inline-flex items-center justify-center w-9 h-9 border transition-colors rounded-sm ${
+              scrolled
+                ? "border-[color:var(--tx-line)] hover:border-[color:var(--tx-ink)] text-[color:var(--tx-ink)]"
+                : "border-white/25 hover:border-white text-white"
+            }`}
+          >
+            <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
+              <path d="M12 .5C5.65.5.5 5.65.5 12c0 5.09 3.29 9.4 7.86 10.93.58.11.79-.25.79-.56 0-.27-.01-1.16-.02-2.11-3.2.7-3.87-1.36-3.87-1.36-.52-1.32-1.28-1.67-1.28-1.67-1.05-.72.08-.71.08-.71 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.71 1.26 3.37.96.11-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.68 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.18 1.18a11.05 11.05 0 0 1 5.79 0c2.21-1.49 3.18-1.18 3.18-1.18.63 1.59.23 2.76.12 3.05.74.81 1.18 1.84 1.18 3.09 0 4.41-2.7 5.38-5.26 5.67.41.36.78 1.06.78 2.14 0 1.55-.01 2.79-.01 3.17 0 .31.21.68.79.56A11.5 11.5 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5z" />
+            </svg>
+          </a>
           <a
             href="#contact"
             data-testid="nav-cta"
