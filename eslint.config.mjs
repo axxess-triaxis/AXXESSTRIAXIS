@@ -18,6 +18,13 @@ const eslintConfig = [
     ],
   },
   ...compat.extends("next/core-web-vitals", "next/typescript"),
+  {
+    settings: {
+      react: {
+        version: "18.3.1",
+      },
+    },
+  },
 ];
 
 export default eslintConfig;
