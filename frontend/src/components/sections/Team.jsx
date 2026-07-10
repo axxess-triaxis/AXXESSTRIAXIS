@@ -26,8 +26,11 @@ const team = [
     focus:
       "Compliance · Regulated Verticals · Public Health",
     bullets: [
-      "Masters in Community Health · 2× published",
-      "6+ years — research · NGO · compliance · public health",
+      "2× published · 2× event convenor",
+      "University examiner, checker & scrutinizer",
+      "Masters in Community Health",
+      "6+ years public healthcare across 4 Indian states",
+      "Hospitals · community health · NGOs · academics · research · administration",
       "Domain lead for regulated healthcare & social sector",
       "Clinical: ICU · CCU · Critical Care",
     ],
