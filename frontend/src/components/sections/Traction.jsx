@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 
 const metrics = [
   { value: "15+", label: "Enterprise discovery interviews · < 6 months to signal" },
-  { value: "06", label: "Design partners · one paying enterprise anchor secured" },
+  { value: "Multiple", label: "Incubator, accelerator & partnership discussions ongoing" },
   { value: "15+", label: "Expert networks empaneled · GLG · AlphaSense · Catalant" },
   { value: "20+", label: "Senior stakeholder meetings · govt · CXO · promoter groups" },
   { value: "04", label: "Strategic partnerships · access to 200–300 target enterprises" },
@@ -12,10 +12,9 @@ const metrics = [
 const accelerators = [
   "AXXESS · Enterprise beta shipped",
   "iOS & Android — releasing July 2026",
-  "Founder Institute · Hyderabad 2026",
-  "iCreate Idea Catalyst Residency",
-  "Innopreneurs S13 · Top 100",
-  "DGEMS Select 200 · Forbes India",
+  "Founder Institute · Dubai 2026 · Finalist (ongoing)",
+  "DGEMS Select 200 · Founders' Call stage",
+  "Innopreneurs Season 13 · Top 500",
 ];
 
 export default function Traction() {
@@ -30,7 +29,7 @@ export default function Traction() {
           <div className="md:col-span-8">
             <div className="eyebrow mb-6">08 · Signal</div>
             <h2 className="font-serif text-[38px] md:text-[56px] leading-[1.04] tracking-tight">
-              Incorporation to design partners.
+              From incorporation to institutional signal.
               <br />
               <span className="italic">Under $1,000 in burn.</span>
             </h2>
@@ -55,7 +54,13 @@ export default function Traction() {
               data-testid={`traction-metric-${i + 1}`}
               className="border-r border-b border-[color:var(--tx-line)] p-8 md:p-10 hover:bg-[color:var(--tx-cream)] transition-colors"
             >
-              <div className="font-serif text-[56px] md:text-[68px] leading-none tracking-tighter">
+              <div
+                className={`font-serif leading-none tracking-tighter ${
+                  m.value.length > 4
+                    ? "text-[34px] md:text-[42px]"
+                    : "text-[56px] md:text-[68px]"
+                }`}
+              >
                 {m.value}
               </div>
               <p className="mt-5 text-[14px] leading-relaxed text-[color:var(--tx-ink)]/70">
