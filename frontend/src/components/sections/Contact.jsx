@@ -2,12 +2,13 @@ import { useState } from "react";
 import axios from "axios";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
+import { ASSETS } from "@/lib/brand";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
 const inquiryTypes = [
-  { value: "investor", label: "Investor / LP" },
+  { value: "investor", label: "Investor / VC" },
   { value: "enterprise", label: "Enterprise / Institution" },
   { value: "partner", label: "Strategic partner" },
   { value: "press", label: "Press & media" },
@@ -62,9 +63,15 @@ export default function Contact() {
         className="absolute inset-0"
         style={{
           background:
-            "radial-gradient(900px 500px at 90% 10%, rgba(201,95,59,0.14), transparent 60%)",
+            "radial-gradient(900px 500px at 90% 10%, rgba(59,130,246,0.14), transparent 60%)",
         }}
         aria-hidden
+      />
+      <img
+        src={ASSETS.axxessIcon}
+        alt=""
+        aria-hidden
+        className="pointer-events-none select-none absolute -left-32 -bottom-32 w-[440px] opacity-[0.08]"
       />
       <div className="noise-overlay" aria-hidden />
 
@@ -78,32 +85,46 @@ export default function Contact() {
             transition={{ duration: 0.7 }}
             className="font-serif font-light text-[38px] md:text-[56px] leading-[1.04] tracking-tight"
           >
-            Build with us.<br />
-            <span className="italic text-white/85">Or invest with us.</span>
+            Build with us.
+            <br />
+            <span className="italic text-white/85">Or back us.</span>
           </motion.h2>
 
           <div className="mt-10 space-y-6 text-[14.5px] text-white/70">
             <div>
-              <div className="eyebrow-dark mb-2">Institutions & partners</div>
-              <a
-                href="mailto:hello@triaxisventures.com"
-                className="text-white hover:text-[color:var(--tx-warm)] transition-colors"
-              >
-                hello@triaxisventures.com
-              </a>
-            </div>
-            <div>
               <div className="eyebrow-dark mb-2">Investors</div>
               <a
                 href="mailto:investors@triaxisventures.com"
-                className="text-white hover:text-[color:var(--tx-warm)] transition-colors"
+                className="text-white hover:text-[color:var(--tx-blue)] transition-colors"
               >
                 investors@triaxisventures.com
               </a>
             </div>
             <div>
-              <div className="eyebrow-dark mb-2">Registered address</div>
-              <div className="text-white/80">TriAxis Group · Guwahati, Assam · India</div>
+              <div className="eyebrow-dark mb-2">Enterprise & regulators</div>
+              <a
+                href="mailto:enterprise@triaxisventures.com"
+                className="text-white hover:text-[color:var(--tx-blue)] transition-colors"
+              >
+                enterprise@triaxisventures.com
+              </a>
+            </div>
+            <div>
+              <div className="eyebrow-dark mb-2">Press</div>
+              <a
+                href="mailto:press@triaxisventures.com"
+                className="text-white hover:text-[color:var(--tx-blue)] transition-colors"
+              >
+                press@triaxisventures.com
+              </a>
+            </div>
+            <div>
+              <div className="eyebrow-dark mb-2">Registered</div>
+              <div className="text-white/80">
+                Triaxis Ventures · Guwahati, Assam · India
+                <br />
+                <span className="text-white/50">Establishing DIFC & ADGM presence · 2026</span>
+              </div>
             </div>
           </div>
         </div>
@@ -112,6 +133,7 @@ export default function Contact() {
           <form
             onSubmit={submit}
             data-testid="contact-form"
+            noValidate
             className="border border-white/12 bg-black/40 backdrop-blur-sm p-6 md:p-10"
           >
             <div className="grid md:grid-cols-2 gap-6">
@@ -130,12 +152,11 @@ export default function Contact() {
                 <input
                   id="c-email"
                   type="email"
-                  required
                   value={form.email}
                   onChange={update("email")}
                   data-testid="contact-input-email"
                   className={inputClass}
-                  placeholder="you@institution.org"
+                  placeholder="you@fund.com"
                 />
               </Field>
               <Field label="Organization" htmlFor="c-org">
@@ -146,7 +167,7 @@ export default function Contact() {
                   onChange={update("organization")}
                   data-testid="contact-input-org"
                   className={inputClass}
-                  placeholder="Institution / Firm"
+                  placeholder="Fund / Enterprise"
                 />
               </Field>
               <Field label="Inquiry type" htmlFor="c-type">
@@ -175,12 +196,11 @@ export default function Contact() {
                 <textarea
                   id="c-msg"
                   rows={5}
-                  required
                   value={form.message}
                   onChange={update("message")}
                   data-testid="contact-input-message"
                   className={`${inputClass} resize-none`}
-                  placeholder="Tell us about your mandate, thesis, or how we can be useful."
+                  placeholder="Fund thesis, enterprise mandate, or how we can be useful."
                 />
               </Field>
             </div>

@@ -3,21 +3,21 @@ import { motion } from "framer-motion";
 const problems = [
   {
     n: "I",
-    title: "Coordination Overload",
+    title: "Off-the-shelf SaaS breaks at the sovereign perimeter",
     body:
-      "Fragmented stakeholders across languages, regulations, and informal networks. No unified operating layer exists.",
+      "Regulated enterprises in DIFC, ADGM, GIFT City and the Global South can't buy US-cloud SaaS without governance, residency, and audit gaps that kill deals.",
   },
   {
     n: "II",
-    title: "No Safe AI for Context",
+    title: "Generic LLMs fail in high-stakes institutional work",
     body:
-      "Enterprise AI fails in multilingual, semi-formal, politically sensitive environments where nuance is non-negotiable.",
+      "Enterprise AI hallucinates, leaks context across tenants, and can't reason through multilingual, semi-formal, politically sensitive workflows.",
   },
   {
     n: "III",
-    title: "Scaling Destroys Trust",
+    title: "No AI-native operator has built for this wedge",
     body:
-      "Traditional consulting layers erode discretion and institutional continuity as mandates grow in complexity.",
+      "The world's fastest-growing regulated markets are still buying 2010-era workflow tools stitched with email. The category is unbuilt — and category-defining.",
   },
 ];
 
@@ -30,8 +30,8 @@ export default function Problem() {
     >
       <div className="max-w-[1400px] mx-auto px-6 md:px-10 py-24 md:py-36">
         <div className="grid md:grid-cols-12 gap-10">
-          <div className="md:col-span-4">
-            <div className="eyebrow mb-6">02 · The Problem</div>
+          <div className="md:col-span-5">
+            <div className="eyebrow mb-6">02 · The Category</div>
             <motion.h2
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -39,18 +39,20 @@ export default function Problem() {
               transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
               className="font-serif text-[38px] md:text-[52px] leading-[1.04] tracking-tight"
             >
-              Institutional India is{" "}
-              <span className="italic">operationally complex</span> and{" "}
-              <span className="text-[color:var(--tx-accent)]">dangerously underserved.</span>
+              Sovereign enterprise is a{" "}
+              <span className="italic">$300B+ software market</span>{" "}
+              nobody has shipped for.
             </motion.h2>
           </div>
 
-          <div className="md:col-span-7 md:col-start-6">
+          <div className="md:col-span-6 md:col-start-7">
             <p className="text-[16.5px] leading-relaxed text-[color:var(--tx-ink)]/75 max-w-xl">
-              A generation of institutions — ministries, hospitals, NGOs, family
-              offices, PPPs, promoter groups — run on WhatsApp threads, PDFs and
-              tribal knowledge. Off-the-shelf enterprise AI wasn&apos;t built for
-              their reality.
+              Financial free zones, sovereign wealth vehicles, ministries and
+              regulated enterprises across DIFC · ADGM · GIFT City · Riyadh ·
+              Doha · Nairobi · Singapore run mission-critical workflows on
+              WhatsApp, PDFs and Excel. They can&apos;t buy off-the-shelf SaaS.
+              They will pay for software that is AI-native, governed and
+              sovereign by design.
             </p>
 
             <div className="mt-12 grid gap-6">

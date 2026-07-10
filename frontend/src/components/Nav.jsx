@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
+import { ASSETS } from "@/lib/brand";
 
 const links = [
-  { label: "Framework", href: "#framework" },
+  { label: "Products", href: "#products" },
   { label: "Platform", href: "#platform" },
-  { label: "Market", href: "#market" },
+  { label: "Thesis", href: "#thesis" },
+  { label: "Traction", href: "#traction" },
   { label: "Team", href: "#team" },
-  { label: "Contact", href: "#contact" },
 ];
 
 export default function Nav() {
@@ -32,18 +33,26 @@ export default function Nav() {
         <a
           href="#top"
           data-testid="nav-logo"
-          className="flex items-center gap-2.5 group"
+          className="flex items-center gap-3 group"
         >
-          <span className="relative inline-flex items-center justify-center w-7 h-7">
-            <svg viewBox="0 0 28 28" className="w-7 h-7" fill="none">
-              <path d="M14 3 L25 22 L3 22 Z" stroke="currentColor" strokeWidth="1.4" />
-              <path d="M14 3 L14 22" stroke="currentColor" strokeWidth="1" opacity="0.5" />
-              <path d="M25 22 L3 22" stroke="currentColor" strokeWidth="0" />
-              <circle cx="14" cy="22" r="1.6" fill="currentColor" />
-            </svg>
-          </span>
+          <span
+            className={`relative inline-flex w-9 h-9 rounded-md overflow-hidden ${
+              scrolled ? "bg-white" : "bg-white"
+            }`}
+            style={{
+              backgroundImage: `url(${ASSETS.brandTriaxis})`,
+              backgroundSize: "auto 260%",
+              backgroundPosition: "18% 50%",
+              backgroundRepeat: "no-repeat",
+            }}
+            aria-label="Triaxis Ventures"
+          />
           <span className="font-serif text-[19px] tracking-tight leading-none">
-            Triaxis<span className={scrolled ? "text-[color:var(--tx-muted)]" : "text-white/55"}> Ventures</span>
+            Triaxis
+            <span className={scrolled ? "text-[color:var(--tx-muted)]" : "text-white/55"}>
+              {" "}
+              Ventures
+            </span>
           </span>
         </a>
 
@@ -66,17 +75,15 @@ export default function Nav() {
 
         <div className="flex items-center gap-3">
           <a
-            href="https://axxesstriaxis.vercel.app"
-            target="_blank"
-            rel="noreferrer"
-            data-testid="nav-axxess-cta"
+            href="#contact"
+            data-testid="nav-cta"
             className={`hidden sm:inline-flex items-center gap-2 text-[13px] font-medium px-3.5 py-2 border transition-colors rounded-sm ${
               scrolled
-                ? "text-[color:var(--tx-ink)] border-[color:var(--tx-line)] hover:border-[color:var(--tx-ink)]"
-                : "text-white border-white/30 hover:border-white"
+                ? "text-[color:var(--tx-ink)] border-[color:var(--tx-line)] hover:border-[color:var(--tx-ink)] bg-white"
+                : "text-black border-white bg-white hover:bg-white/90"
             }`}
           >
-            Enter AXXESS
+            Talk to us
             <span aria-hidden>→</span>
           </a>
           <button
@@ -93,7 +100,7 @@ export default function Nav() {
       </div>
 
       {open && (
-        <div className="md:hidden border-t border-[color:var(--tx-line)] bg-[color:var(--tx-cream)]">
+        <div className="md:hidden border-t border-[color:var(--tx-line)] bg-[color:var(--tx-cream)] text-[color:var(--tx-ink)]">
           <div className="px-6 py-4 flex flex-col gap-3">
             {links.map((l) => (
               <a
@@ -106,6 +113,13 @@ export default function Nav() {
                 {l.label}
               </a>
             ))}
+            <a
+              href="#contact"
+              onClick={() => setOpen(false)}
+              className="mt-2 inline-flex items-center justify-center bg-black text-white px-4 py-3 rounded-sm text-[14px] font-medium"
+            >
+              Talk to us
+            </a>
           </div>
         </div>
       )}

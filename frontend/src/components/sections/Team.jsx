@@ -3,38 +3,38 @@ import { motion } from "framer-motion";
 const team = [
   {
     name: "Sudipta Koushik Sarmah",
-    role: "Founder & Managing Director",
+    role: "Founder & CEO",
     portrait:
       "https://images.pexels.com/photos/7580994/pexels-photo-7580994.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
     bullets: [
-      "9 years banking · SBI · HDFC · across 8 states",
+      "9 years enterprise banking · SBI · HDFC · 8 states",
+      "Founder — NEPDSI-C · 865K+ views · 12K+ followers",
       "15+ expert networks · 8 AI partnerships",
-      "Founder, NEPDSI-C · 865K+ views",
       "Mentor · Startup World Cup · ADPlist",
     ],
   },
   {
     name: "Ritashree Mahanta",
-    role: "Co-Founder & Executive Director",
+    role: "Co-Founder & COO",
     portrait:
       "https://images.unsplash.com/photo-1655249493799-9cee4fe983bb?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NzF8MHwxfHNlYXJjaHwyfHxwcm9mZXNzaW9uYWwlMjBwb3J0cmFpdCUyMGluZGlhbiUyMHdvbWFufGVufDB8fHx8MTc4MzY1ODI1OHww&ixlib=rb-4.1.0&q=85",
     bullets: [
       "Masters in Community Health · 2× published",
-      "6+ years — academics, research, NGO, compliance",
+      "6+ years — research · NGO · compliance · public health",
+      "Domain lead for regulated healthcare & social sector",
       "Clinical: ICU · CCU · Critical Care",
-      "Public healthcare systems specialist",
     ],
   },
   {
     name: "Ananya Singhal",
-    role: "Core Team · Strategy Lead",
+    role: "Head of Strategy",
     portrait:
       "https://images.unsplash.com/photo-1581065178047-8ee15951ede6?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NzF8MHwxfHNlYXJjaHwxfHxwcm9mZXNzaW9uYWwlMjBwb3J0cmFpdCUyMGluZGlhbiUyMHdvbWFufGVufDB8fHx8MTc4MzY1ODI1OHww&ixlib=rb-4.1.0&q=85",
     bullets: [
-      "BBA LLB · NLU Odisha",
-      "MBA · MDI Gurgaon (Tier 1)",
-      "8+ years — law, startups, treasury advisory",
-      "120+ EdTech teaching materials",
+      "BBA LLB · NLU Odisha · MBA · MDI Gurgaon",
+      "8+ years — regulatory · treasury · startup strategy",
+      "GTM design & partnerships",
+      "120+ enterprise EdTech materials shipped",
     ],
   },
 ];
@@ -51,13 +51,15 @@ export default function Team() {
           <div className="md:col-span-8">
             <div className="eyebrow mb-6">09 · Team</div>
             <h2 className="font-serif text-[38px] md:text-[56px] leading-[1.04] tracking-tight">
-              A <span className="italic">founder-couple</span> operating architecture.
+              Operators who <span className="italic">shipped inside</span> the
+              buyer.
             </h2>
           </div>
           <div className="md:col-span-4">
             <p className="text-[15.5px] leading-relaxed text-[color:var(--tx-ink)]/70">
-              Every aspect of Triaxis is founder-built. Zero salaries, no
-              employees, no consultants, no outsourcing.
+              Every founding team member has run high-trust programs inside the
+              exact institutions we now sell to. Zero salaries, no consultants,
+              no outsourcing — founder-built.
             </p>
           </div>
         </div>
@@ -92,7 +94,7 @@ export default function Team() {
                 <ul className="mt-5 space-y-2 text-[13.5px] text-[color:var(--tx-ink)]/75">
                   {t.bullets.map((b) => (
                     <li key={b} className="flex gap-2.5">
-                      <span className="mt-2 w-1 h-1 bg-[color:var(--tx-accent)] shrink-0" />
+                      <span className="mt-2 w-1 h-1 bg-[color:var(--tx-blue)] shrink-0" />
                       <span>{b}</span>
                     </li>
                   ))}
@@ -106,8 +108,9 @@ export default function Team() {
           <div className="eyebrow">Advisers · pre-formalized</div>
           <div className="text-[14.5px] text-[color:var(--tx-ink)]/75 max-w-2xl">
             Retired senior IAS officer · ESSEC Ph.D tech professor (Australian
-            University Dubai campus) — with 4 strategic partnerships providing
-            access to 200–300 institutional customers.
+            University Dubai campus) — with strategic partners providing warm
+            access to 200–300 target enterprises in DIFC/ADGM and adjacent
+            markets.
           </div>
         </div>
       </div>

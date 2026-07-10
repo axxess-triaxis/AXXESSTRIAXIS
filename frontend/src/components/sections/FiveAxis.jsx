@@ -1,83 +1,84 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 
-const axes = [
+const pillars = [
   {
     id: 1,
-    label: "Axis I",
-    title: "Political Policy & Regulatory Risk",
+    label: "Pillar I",
+    title: "Sovereign by design",
     body:
-      "Statecraft-adjacent intelligence. Read the room across ministries, party structures and regulators.",
-    incumbent: "Political consultants stop here.",
+      "Tenant-isolated architecture, jurisdiction-aware data residency, and Bring-Your-Own-Cloud deployment for DIFC, ADGM, GIFT City and regulated buyers.",
+    metric: "SOC2 · ISO 27001 · GDPR · DIFC/ADGM ready",
   },
   {
     id: 2,
-    label: "Axis II",
-    title: "Complex Mandate Execution & Advisory",
+    label: "Pillar II",
+    title: "Governed AI, not raw LLMs",
     body:
-      "Program management for high-stakes cross-border and cross-ministry mandates. Discretion by default.",
-    incumbent: "Traditional consulting covers II & III.",
+      "Permission-aware retrieval, immutable audit trails, prompt governance and a human-in-the-loop layer on every high-stakes action.",
+    metric: "Audit-hashing · RBAC · HITL escalation",
   },
   {
     id: 3,
-    label: "Axis III",
-    title: "Financial & Capital Structure Advisory",
+    label: "Pillar III",
+    title: "Multilingual, multi-script native",
     body:
-      "Blended finance, grants, credit and equity — engineered for emerging-market realities.",
-    incumbent: "Traditional consulting covers II & III.",
+      "Arabic · Hindi · Bengali · Assamese · Nepali · Swahili · English — plus hybrid-code. Built for the buyer, not translated for the buyer.",
+    metric: "12+ languages · hybrid-code support",
   },
   {
     id: 4,
-    label: "Axis IV",
-    title: "Healthcare, Social Sector & Institutional Systems",
+    label: "Pillar IV",
+    title: "Vertical + horizontal wedge",
     body:
-      "Public health infrastructure, CSR, trusts and PPPs — designed for measurable social outcomes.",
-    incumbent: "No incumbent operates here at scale.",
+      "Each product is a vertical wedge (GovTech, family offices, healthcare institutions) that plugs into a shared horizontal platform (identity, memory, governance).",
+    metric: "Shared kernel · vertical revenue",
   },
   {
     id: 5,
-    label: "Axis V",
-    title: "Strategic Communications & Stakeholder Management",
+    label: "Pillar V",
+    title: "Distribution via institutional trust",
     body:
-      "Narrative craft, crisis response and multilingual stakeholder coordination — engineered as a system.",
-    incumbent: "No incumbent operates across all five.",
+      "We sell the way regulated enterprises buy — via senior relationships, structured pilots and reference architectures. Not via demand-gen funnels.",
+    metric: "Direct + partner-led · 30-day pilots",
   },
 ];
 
 export default function FiveAxis() {
   const [active, setActive] = useState(1);
-  const current = axes.find((a) => a.id === active);
+  const current = pillars.find((a) => a.id === active);
 
   return (
     <section
-      id="framework"
+      id="thesis"
       data-testid="five-axis-section"
       className="relative bg-white text-[color:var(--tx-ink)] border-y border-[color:var(--tx-line)]"
     >
       <div className="max-w-[1400px] mx-auto px-6 md:px-10 py-24 md:py-36">
         <div className="grid md:grid-cols-12 gap-10 mb-14 md:mb-20">
           <div className="md:col-span-7">
-            <div className="eyebrow mb-6">03 · Competitive Moat</div>
+            <div className="eyebrow mb-6">03 · The Thesis</div>
             <h2 className="font-serif text-[38px] md:text-[56px] leading-[1.04] tracking-tight">
-              The <span className="italic">Five-Axis Framework.</span>
+              Five pillars.{" "}
+              <span className="italic">One operating stack.</span>
               <br />
-              No competitor operates across all five.
+              Every Triaxis product is built on all five.
             </h2>
           </div>
           <div className="md:col-span-4 md:col-start-9">
             <p className="text-[15.5px] leading-relaxed text-[color:var(--tx-ink)]/70">
-              Political consultants cover Axis I. Traditional consulting covers
-              Axes II–III. Triaxis operates across all five simultaneously — a
-              structural moat no incumbent can replicate quickly.
+              These pillars are our shared kernel. Any vertical product we ship
+              inherits sovereignty, governance, multilinguality, wedge design
+              and institutional distribution — day one.
             </p>
           </div>
         </div>
 
         {/* Interactive framework */}
         <div className="grid md:grid-cols-12 gap-6">
-          {/* left axis list */}
+          {/* left list */}
           <div className="md:col-span-6 lg:col-span-5 flex flex-col border border-[color:var(--tx-line)] bg-white">
-            {axes.map((a) => {
+            {pillars.map((a) => {
               const isActive = a.id === active;
               return (
                 <button
@@ -120,13 +121,13 @@ export default function FiveAxis() {
             })}
           </div>
 
-          {/* right detail panel with visual */}
+          {/* right detail panel */}
           <div className="md:col-span-6 lg:col-span-7 relative border border-[color:var(--tx-line)] bg-[color:var(--tx-cream)] overflow-hidden">
             <div className="absolute inset-0 bg-grid-light opacity-60" />
             <div className="relative p-8 md:p-12 h-full min-h-[420px] flex flex-col justify-between">
               <div className="flex items-center justify-between">
                 <div className="font-mono text-[11px] tracking-widest text-[color:var(--tx-muted)] uppercase">
-                  Framework · {current.label}
+                  Thesis · {current.label}
                 </div>
                 <div className="font-mono text-[11px] tracking-widest text-[color:var(--tx-muted)] uppercase">
                   {current.id} / 5
@@ -152,9 +153,9 @@ export default function FiveAxis() {
                 </p>
                 <div className="mt-6 pt-6 border-t border-[color:var(--tx-line)] flex items-center justify-between text-[12.5px] text-[color:var(--tx-muted)]">
                   <span className="font-mono uppercase tracking-widest">
-                    Incumbent gap
+                    Built-in
                   </span>
-                  <span>{current.incumbent}</span>
+                  <span className="font-mono">{current.metric}</span>
                 </div>
               </motion.div>
             </div>
@@ -178,7 +179,6 @@ function PentagonAxis({ active }) {
 
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-      {/* concentric rings */}
       {[0.35, 0.6, 0.85, 1].map((k) => (
         <polygon
           key={k}
@@ -195,7 +195,6 @@ function PentagonAxis({ active }) {
           strokeWidth={1}
         />
       ))}
-      {/* spokes */}
       {points.map((p) => (
         <line
           key={`spoke-${p.i}`}
@@ -208,9 +207,7 @@ function PentagonAxis({ active }) {
           strokeWidth={1}
         />
       ))}
-      {/* outer path */}
       <path d={path} fill="none" stroke="#0A0A0A" strokeOpacity={0.3} strokeWidth={1.2} />
-      {/* nodes */}
       {points.map((p) => {
         const isActive = p.i === active;
         return (
@@ -219,7 +216,7 @@ function PentagonAxis({ active }) {
               cx={p.x}
               cy={p.y}
               r={isActive ? 8 : 4}
-              fill={isActive ? "#C95F3B" : "#0A0A0A"}
+              fill={isActive ? "#3B82F6" : "#0A0A0A"}
               opacity={isActive ? 1 : 0.65}
             />
             {isActive && (
@@ -228,7 +225,7 @@ function PentagonAxis({ active }) {
                 cy={p.y}
                 r={14}
                 fill="none"
-                stroke="#C95F3B"
+                stroke="#3B82F6"
                 strokeOpacity={0.35}
               />
             )}

@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { ASSETS } from "@/lib/brand";
 
 const layers = [
   {
@@ -11,13 +12,13 @@ const layers = [
     code: "L05",
     id: "SIMA",
     name: "Segregated Institutional Memory",
-    role: "Prevents memory bleed across stakeholders.",
+    role: "Prevents memory bleed across tenants.",
   },
   {
     code: "L04",
     id: "AGLAE",
     name: "Adaptive Governance-Layered AI",
-    role: "Adapts to local laws and political sensitivities.",
+    role: "Adapts to local law and regulator posture.",
   },
   {
     code: "L03",
@@ -29,7 +30,7 @@ const layers = [
     code: "L02",
     id: "SSIA",
     name: "Sovereign Sandbox Intelligence",
-    role: "Localized operational logic for each jurisdiction.",
+    role: "Localized operational logic per jurisdiction.",
   },
   {
     code: "L01",
@@ -39,14 +40,25 @@ const layers = [
   },
 ];
 
-const languages = [
-  "Assamese",
-  "Bengali",
-  "Hindi",
-  "Nepali",
-  "Marwari",
-  "English",
-  "Hybrid-Code",
+const upcoming = [
+  {
+    code: "P-02",
+    name: "SOVEREIGN LEDGER",
+    tag: "IN R&D",
+    body: "Regulator-facing AI for financial free zones. Live reporting, filings, exemptions.",
+  },
+  {
+    code: "P-03",
+    name: "TRIAXIS HEALTH OS",
+    tag: "DESIGN",
+    body: "Institutional operating system for public-sector healthcare and CSR trusts.",
+  },
+  {
+    code: "P-04",
+    name: "CONFIDENTIAL COPILOT",
+    tag: "CONCEPT",
+    body: "On-prem LLM copilot for sovereign wealth vehicles and family offices.",
+  },
 ];
 
 export default function AxxessPlatform() {
@@ -61,40 +73,67 @@ export default function AxxessPlatform() {
         className="absolute inset-0"
         style={{
           background:
-            "radial-gradient(1000px 500px at 20% 10%, rgba(59,130,246,0.14), transparent 60%)",
+            "radial-gradient(1000px 500px at 20% 10%, rgba(59,130,246,0.16), transparent 60%)",
         }}
         aria-hidden
       />
+      {/* Watermark AXXESS icon */}
+      <img
+        src={ASSETS.axxessIcon}
+        alt=""
+        aria-hidden
+        className="pointer-events-none select-none absolute -right-40 top-24 w-[520px] opacity-[0.07]"
+      />
       <div className="noise-overlay" aria-hidden />
 
-      <div className="relative max-w-[1400px] mx-auto px-6 md:px-10 py-24 md:py-36">
+      <div id="products" className="relative max-w-[1400px] mx-auto px-6 md:px-10 py-24 md:py-36">
         <div className="grid md:grid-cols-12 gap-10 mb-14 md:mb-20">
           <div className="md:col-span-7">
-            <div className="eyebrow-dark mb-6">05 · The Platform</div>
+            <div className="eyebrow-dark mb-6">05 · Product 01 · Shipping</div>
+            <div className="flex items-center gap-4 mb-6">
+              <img
+                src={ASSETS.axxessIcon}
+                alt="AXXESS"
+                className="w-14 h-14 rounded-lg"
+              />
+              <span className="font-mono text-[11px] tracking-widest text-white/50 uppercase">
+                axxess.triaxis · v0.8
+              </span>
+            </div>
             <h2 className="font-serif font-light text-[40px] md:text-[60px] leading-[1.04] tracking-tight text-white">
-              AXXESS — six-layer{" "}
-              <span className="italic text-white/85">institutional intelligence</span>{" "}
-              engine.
+              AXXESS — the{" "}
+              <span className="italic text-white/85">sovereign AI workspace</span>{" "}
+              for regulated enterprises.
             </h2>
           </div>
           <div className="md:col-span-4 md:col-start-9">
             <p className="text-[15.5px] leading-relaxed text-white/70">
-              Purpose-built for emerging-market institutional realities — not
-              OECD workflows. Each layer is independent, permissioned and
-              auditable.
+              A six-layer governed AI operating system for enterprise,
+              government and healthcare institutions. Purpose-built for
+              DIFC/ADGM-grade sovereignty. Live investor prototype.
             </p>
+            <a
+              href="https://axxesstriaxis.vercel.app"
+              target="_blank"
+              rel="noreferrer"
+              data-testid="platform-open-axxess"
+              className="mt-6 inline-flex items-center gap-2 text-[14px] font-medium text-white border border-white/25 hover:border-white transition-colors px-4 py-2.5"
+            >
+              Open live prototype
+              <span aria-hidden>↗</span>
+            </a>
           </div>
         </div>
 
         <div className="grid md:grid-cols-12 gap-8">
-          {/* left: stacked layers */}
+          {/* Six-layer stack */}
           <div className="md:col-span-8">
             <div className="border border-white/12 bg-black/30 backdrop-blur-sm">
               <div className="flex items-center justify-between px-5 py-3 border-b border-white/12">
                 <div className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-emerald-400 live-dot" />
                   <span className="font-mono text-[11px] tracking-widest text-white/60 uppercase">
-                    axxess.triaxis / architecture
+                    axxess / architecture
                   </span>
                 </div>
                 <div className="font-mono text-[11px] tracking-widest text-white/40 uppercase">
@@ -134,48 +173,34 @@ export default function AxxessPlatform() {
             </div>
           </div>
 
-          {/* right: languages + tags */}
-          <div className="md:col-span-4 space-y-6">
-            <div className="border border-white/12 bg-black/30 p-6">
-              <div className="eyebrow-dark mb-4">Language coverage</div>
-              <div className="flex flex-wrap gap-2">
-                {languages.map((lang) => (
-                  <span
-                    key={lang}
-                    data-testid={`language-tag-${lang.toLowerCase()}`}
-                    className="font-mono text-[12px] px-2.5 py-1 border border-white/20 text-white/85 rounded-sm"
-                  >
-                    {lang}
+          {/* Portfolio pipeline */}
+          <div className="md:col-span-4 space-y-4">
+            <div className="eyebrow-dark">Product pipeline</div>
+            {upcoming.map((u) => (
+              <div
+                key={u.code}
+                data-testid={`pipeline-${u.code.toLowerCase()}`}
+                className="border border-white/12 bg-black/30 p-5 hover:border-white/30 transition-colors group"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-mono text-[11px] tracking-widest text-white/40 uppercase">
+                    {u.code}
                   </span>
-                ))}
-              </div>
-            </div>
-            <div className="border border-white/12 bg-black/30 p-6">
-              <div className="eyebrow-dark mb-3">Design philosophy</div>
-              <p className="text-[14px] leading-relaxed text-white/75">
-                Each layer operates independently yet cohesively — so no
-                stakeholder context bleeds into another. A non-negotiable
-                requirement in politically sensitive, multilingual institutional
-                environments.
-              </p>
-            </div>
-            <a
-              href="https://axxesstriaxis.vercel.app"
-              target="_blank"
-              rel="noreferrer"
-              data-testid="platform-open-axxess"
-              className="flex items-center justify-between border border-white/25 hover:border-white transition-colors p-5 group"
-            >
-              <div>
-                <div className="eyebrow-dark">Investor preview</div>
-                <div className="font-serif text-[22px] mt-2 text-white">
-                  Open AXXESS live →
+                  <span className="font-mono text-[10.5px] tracking-widest uppercase text-[color:var(--tx-blue)] border border-[color:var(--tx-blue)]/50 px-2 py-0.5 rounded-sm">
+                    {u.tag}
+                  </span>
                 </div>
+                <div className="mt-4 font-serif text-[20px] tracking-tight text-white">
+                  {u.name}
+                </div>
+                <p className="mt-2 text-[13px] leading-relaxed text-white/60">
+                  {u.body}
+                </p>
               </div>
-              <span className="font-mono text-[11px] text-white/50 group-hover:text-white/80 transition-colors uppercase tracking-widest">
-                v0.8
-              </span>
-            </a>
+            ))}
+            <div className="border-t border-white/10 pt-4 mt-2 font-mono text-[10.5px] tracking-widest uppercase text-white/40">
+              Triaxis Ventures ships one governed AI product per year.
+            </div>
           </div>
         </div>
       </div>
