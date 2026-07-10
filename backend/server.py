@@ -1,8 +1,11 @@
-from fastapi import FastAPI, APIRouter, HTTPException
+from fastapi import FastAPI, APIRouter, HTTPException, Query, Header
+from fastapi.responses import PlainTextResponse
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
+import io
+import csv
 import logging
 from pathlib import Path
 from pydantic import BaseModel, Field, ConfigDict, EmailStr
@@ -14,6 +17,8 @@ from datetime import datetime, timezone
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
+from email_service import send_email, render_waitlist_confirmation  # noqa: E402
+
 # MongoDB connection
 mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
@@ -21,6 +26,15 @@ db = client[os.environ['DB_NAME']]
 
 app = FastAPI(title="TriAxis Ventures API")
 api_router = APIRouter(prefix="/api")
+
+
+def _require_admin(token: Optional[str], header_token: Optional[str]) -> None:
+    expected = os.environ.get("ADMIN_TOKEN", "").strip()
+    if not expected:
+        raise HTTPException(status_code=503, detail="admin_token_not_configured")
+    provided = (token or header_token or "").strip()
+    if provided != expected:
+        raise HTTPException(status_code=401, detail="invalid_admin_token")
 
 
 # ---------- Models ----------
@@ -130,6 +144,14 @@ async def join_waitlist(entry: WaitlistCreate):
     except Exception as e:
         logging.exception("Failed to persist waitlist entry")
         raise HTTPException(status_code=500, detail="Failed to join waitlist") from e
+
+    # Fire-and-forget confirmation email (no-op if RESEND_API_KEY is empty).
+    subject, html, text = render_waitlist_confirmation(obj.email, obj.platform)
+    try:
+        await send_email(to=obj.email, subject=subject, html=html, text=text)
+    except Exception:  # never let email failures break the API
+        logging.exception("Confirmation email dispatch failed for %s", obj.email)
+
     return obj
 
 
@@ -140,12 +162,44 @@ async def waitlist_count():
 
 
 @api_router.get("/waitlist", response_model=List[WaitlistEntry])
-async def list_waitlist(limit: int = 500):
+async def list_waitlist(
+    limit: int = 500,
+    token: Optional[str] = Query(default=None),
+    x_admin_token: Optional[str] = Header(default=None, alias="X-Admin-Token"),
+):
+    _require_admin(token, x_admin_token)
     docs = await db.waitlist.find({}, {"_id": 0}).sort("created_at", -1).to_list(limit)
     for d in docs:
         if isinstance(d.get('created_at'), str):
             d['created_at'] = datetime.fromisoformat(d['created_at'])
     return docs
+
+
+@api_router.get("/waitlist/export.csv", response_class=PlainTextResponse)
+async def export_waitlist_csv(
+    token: Optional[str] = Query(default=None),
+    x_admin_token: Optional[str] = Header(default=None, alias="X-Admin-Token"),
+):
+    _require_admin(token, x_admin_token)
+    docs = await db.waitlist.find({}, {"_id": 0}).sort("created_at", -1).to_list(10000)
+    buf = io.StringIO()
+    writer = csv.writer(buf)
+    writer.writerow(["email", "platform", "source", "created_at", "id"])
+    for d in docs:
+        writer.writerow([
+            d.get("email", ""),
+            d.get("platform", ""),
+            d.get("source", ""),
+            d.get("created_at", ""),
+            d.get("id", ""),
+        ])
+    return PlainTextResponse(
+        content=buf.getvalue(),
+        headers={
+            "Content-Type": "text/csv; charset=utf-8",
+            "Content-Disposition": 'attachment; filename="triaxis-waitlist.csv"',
+        },
+    )
 
 
 app.include_router(api_router)
