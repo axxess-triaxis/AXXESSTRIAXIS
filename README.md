@@ -175,6 +175,7 @@ Screenshot slots are reserved for production-approved imagery:
 - Run Android preview EAS/Bitrise build and prepare iOS signing credentials.
 - In the Expo dashboard, set GitHub build Base directory to `apps/mobile`; see `docs/EXPO_GITHUB_BUILD.md`.
 - Configure iOS and Android signing through Expo-managed EAS credentials; see `docs/EAS_MANAGED_CREDENTIALS.md`.
+- Preview EAS builds auto-run on mobile-relevant pushes to `main`; production EAS builds are manually triggered. See `docs/EXPO_AUTO_BUILDS.md`.
 - Launch production Android/iOS mobile builds from `apps/mobile/.eas/workflows/create-production-builds.yml`.
 - Use `pnpm mobile:eas:workflow:production` or `pnpm mobile:eas:build:production:all` to trigger Expo production builds from the repository root.
 - In Wix setup, use `https://github.com/axxess-triaxis/AXXESSTRIAXIS.git`; see `docs/WIX_SETUP.md`.
@@ -186,6 +187,7 @@ Screenshot slots are reserved for production-approved imagery:
 - `docs/RAG.md`
 - `docs/NLP.md`
 - `docs/DEPLOYMENT.md`
+- `docs/EXPO_AUTO_BUILDS.md`
 - `docs/SECURITY_ARCHITECTURE.md`
 - `docs/COMPLIANCE_ENGINE.md`
 - `docs/PRIVACY_ENGINEERING.md`
