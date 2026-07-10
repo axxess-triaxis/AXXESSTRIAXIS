@@ -2,6 +2,7 @@ import "@/App.css";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Toaster } from "sonner";
 import Home from "@/pages/Home";
+import AdminWaitlist from "@/pages/AdminWaitlist";
 
 function App() {
   return (
@@ -9,6 +10,7 @@ function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/admin/waitlist" element={<AdminWaitlist />} />
           <Route path="*" element={<Home />} />
         </Routes>
       </BrowserRouter>
