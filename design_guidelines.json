@@ -1,115 +1,131 @@
 {
-  "theme": "dark",
+  "theme_strategy": "Hybrid Anthropic-Stripe and Palantir-Vercel",
+  "design_philosophy": "A sophisticated B2B deep-tech venture aesthetic. Interleaves warm, editorial, human-centric sections (Anthropic/Notion) with cold, precise, data-dense technical sections (Palantir/Vercel/Stripe). The synthesis builds high institutional trust while showcasing cutting-edge AI infrastructure.",
   "typography": {
-    "font_pairing_strategy": "The 'Old Money Tech' (Editorial Serif Head + Sterile Mono Body/Labels). Breaks the generic 'SaaS' look to establish high-trust institutional gravitas.",
-    "primary_heading_font": "Cormorant Garamond",
-    "secondary_heading_font": "Cormorant Garamond",
-    "body_font": "IBM Plex Sans",
-    "mono_font": "JetBrains Mono",
+    "fonts": {
+      "heading": "'Fraunces', serif",
+      "body": "'Manrope', sans-serif",
+      "mono": "'JetBrains Mono', monospace"
+    },
+    "google_fonts_url": "https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600&family=JetBrains+Mono:wght@400;500&family=Manrope:wght@400;500;600;700&display=swap",
     "rules": [
-      "H1s must use tight letter spacing: tracking-tight or tracking-tighter, and tight line height: leading-none. Max size clamp text-6xl.",
-      "Overlines, tags, and data labels MUST use JetBrains Mono, uppercase, wide spacing: tracking-[0.2em], text-xs or text-sm.",
-      "Body text must use leading-relaxed with IBM Plex Sans for maximum legibility.",
-      "Never center-align large blocks of text. Left-align for editorial precision."
+      "Use Fraunces (light/regular/medium) for massive section headers. It brings editorial gravitas.",
+      "Use Manrope for all body copy for clean, humanist readability.",
+      "Use JetBrains Mono exclusively for uppercase overlines, data tags, and technical UI elements (e.g., '01 / THE PROBLEM', 'STATUS: ACTIVE').",
+      "Never center-align large paragraphs. Always left-align for editorial feel.",
+      "Track out (letter-spacing) monospaced overlines tightly with tracking-widest."
     ]
   },
-  "colors": {
-    "background": "#050505",
-    "surface": "#0C0C0E",
-    "surface_elevated": "#121215",
-    "border": "rgba(255, 255, 255, 0.08)",
-    "border_hover": "rgba(212, 175, 55, 0.5)",
-    "primary": "#D4AF37",
-    "primary_hover": "#E5C865",
-    "secondary": "#1A1A1A",
-    "text_primary": "#FFFFFF",
-    "text_secondary": "#A3A3A6",
-    "accent_signal": "#F2542D",
-    "accent_data": "#0F3B40"
-  },
-  "visual_enhancers": {
-    "surfaces": "Grid Borders ('Technical' Look). Use border-collapse style layouts with 1px subtle borders (border-white/10). No soft shadows on cards. Flat matte surfaces with sharp inner contrasts.",
-    "textures": "MANDATORY: Subtle SVG noise filter or grain overlay (opacity 2-4%) across the entire page background to make the black feel physical, like cartographic paper or an intelligence terminal.",
-    "effects": "Aceternity style 'Tracing Beam' for the AXXESS Platform cards to show data flow. Use glassy overlays (backdrop-blur-xl bg-black/70 border-b border-white/10) for sticky headers."
-  },
-  "layouts": {
-    "hero": "Full screen (min-h-screen). Background: Subtle dark topography image. Content: Left-aligned, extremely large Serif H1 ('AI-Enabled Human-in-the-Loop...'). JetBrains Mono overline. Two CTAs: Primary Gold sharp-edge button, Secondary transparent with 1px border.",
-    "problem_section": "Bento Grid Mode B (High Density Grid). 1px grid borders exposing the skeleton. Emphasize text contrast. Highlight 'Coordination Overload', 'No Safe AI', 'Scaling Destroys Trust'.",
-    "five_axis_framework": "The centerpiece. Interactive grid diagram with 5 distinct nodes. Use an F-shaped hierarchical layout or a staggered bento box. Each axis is a sharp-edged card. Hovering on a card highlights its path using a glowing topographic gold border effect.",
-    "solution_metrics": "Massive typography for metrics ('80% Automation', '20% Human Judgment', '100% Institutional Trust'). text-6xl to 8xl. Use asymmetrical spacing.",
-    "axxess_platform": "Stacked layers visualization. 6 distinct horizontal or vertical slabs representing the 'Six-Layer Institutional Intelligence' (CICE, SSIA, CHLIS, AGLAE, SIMA, CCAF). Display language support (Assamese, Bengali, etc.) as mono-spaced terminal tags.",
-    "revenue_model": "3-column CSS Grid. 'Triple-Funnel Model'. Use geometric sans for numbers, serif for titles, sharp borders.",
-    "market_opportunity": "Dark, sophisticated. Use text-heavy descriptions with subtle map cues. Focus on 'NE India → BBIN/BIMSTEC → Pan India → Global South'.",
-    "traction": "Marquee strategy: 'The Editorial Ribbon'. Slow drifting logos/metrics/accelerator names (Forbes DGEMS, iCreate) with serif font, massive gaps, pale text on dark background.",
-    "team": "3-column grid. Monocolor/dark portraits. Name in Serif, Role in Mono.",
-    "contact_and_footer": "Contact form with raw Shadcn inputs customized with 1px borders. Footer: Massive bottom space (py-32). Huge logo/text at the bottom."
-  },
-  "motion": {
-    "philosophy": "Subtle, controlled, precise. Absolute zero bouncy or playful animations. Think 'unlocking classified data'.",
-    "page_load": "Staggered fade-in (framer-motion). Blur-to-focus reveals.",
-    "scroll": "Lenis smooth scroll is MANDATORY for premium momentum feel. Use subtle parallax on background topography.",
-    "hover": "Border color shift to Gold. Text color brightens. No heavy scaling (max 1.01x)."
-  },
-  "accessibility": {
-    "contrast": "Ensure pure white text on deep black backgrounds. Gold accents must be tested for 4.5:1 ratio against black for text.",
-    "focus": "focus:ring-1 focus:ring-[#D4AF37] focus:outline-none focus:border-[#D4AF37]"
-  },
-  "media": {
-    "images": [
-      {
-        "url": "https://images.unsplash.com/photo-1536138746221-2c489206ff6c?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1MTN8MHwxfHNlYXJjaHw0fHxkYXJrJTIwYWJzdHJhY3QlMjB0b3BvZ3JhcGh5JTIwbWFwJTIwbGluZXN8ZW58MHx8fHwxNzgzNjU4MTAxfDA&ixlib=rb-4.1.0&q=85",
-        "category": "Hero Background / Topography",
-        "description": "Dark abstract topography map lines"
+  "color_palette": {
+    "css_variables": {
+      "light": {
+        "background": "#FAFAF7",
+        "foreground": "#0A0A0A",
+        "card": "#FFFFFF",
+        "card_border": "#E5E5DF",
+        "accent": "#C95F3B",
+        "accent_foreground": "#FFFFFF",
+        "muted": "#F3F3EF",
+        "muted_foreground": "#73736F"
       },
-      {
-        "url": "https://images.unsplash.com/photo-1767175620484-1ed37931a0d1?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1NTJ8MHwxfHNlYXJjaHwxfHxjb3Jwb3JhdGUlMjBidXNpbmVzcyUyMHByb2Zlc3Npb25hbCUyMHBvcnRyYWl0JTIwZGFyayUyMGJhY2tncm91bmR8ZW58MHx8fHwxNzgzNjU4MTAxfDA&ixlib=rb-4.1.0&q=85",
-        "category": "Team Placeholder - Sudipta Koushik Sarmah",
-        "description": "Professional dark portrait"
-      },
-      {
-        "url": "https://images.unsplash.com/photo-1764546899196-b53061b1b609?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1NTJ8MHwxfHNlYXJjaHwyfHxjb3Jwb3JhdGUlMjBidXNpbmVzcyUyMHByb2Zlc3Npb25hbCUyMHBvcnRyYWl0JTIwZGFyayUyMGJhY2tncm91bmR8ZW58MHx8fHwxNzgzNjU4MTAxfDA&ixlib=rb-4.1.0&q=85",
-        "category": "Team Placeholder - Ritashree Mahanta",
-        "description": "Professional dark portrait"
-      },
-      {
-        "url": "https://images.unsplash.com/photo-1633366147060-ce9e1a9fd39c?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1NTJ8MHwxfHNlYXJjaHwzfHxjb3Jwb3JhdGUlMjBidXNpbmVzcyUyMHByb2Zlc3Npb25hbCUyMHBvcnRyYWl0JTIwZGFyayUyMGJhY2tncm91bmR8ZW58MHx8fHwxNzgzNjU4MTAxfDA&ixlib=rb-4.1.0&q=85",
-        "category": "Team Placeholder - Ananya Singhal",
-        "description": "Professional dark portrait"
+      "dark_section": {
+        "background": "#050505",
+        "foreground": "#F5F5F5",
+        "card": "#111111",
+        "card_border": "#222222",
+        "accent": "#3B82F6",
+        "accent_foreground": "#FFFFFF",
+        "muted": "#1A1A1A",
+        "muted_foreground": "#888888"
       }
-    ]
+    },
+    "guidance": "The app should primarily run in the light theme (Anthropic/Notion warm cream #FAFAF7) for human narrative, but switch to a strict '.dark-section' (Palantir/Vercel #050505) for the Hero and AXXESS Platform technical displays. The light accent is a terracotta/ochre, while the dark accent is a sharp stripe/palantir blue."
   },
-  "3d_libraries": {
-    "recommendation": "Use framer-motion for 2D choreography and crisp reveals. Optional: TSParticles for a very subtle, slowly moving background mesh/network in the 'Market Opportunity' or 'AXXESS' layer. Do not over-index on 3D; clarity is king for this demographic.",
-    "rationale": "High-trust institutional pitches don't need heavy 3D gimmicks. They need fast, precise, and highly legible visual metaphors."
+  "section_specifications": {
+    "hero": {
+      "theme": "dark-section (Vercel/Palantir)",
+      "layout": "Grid-based, asymmetric. Large Fraunces heading with high contrast. Use abstract 3D dark network background.",
+      "features": "Monospace system status tags, highly technical."
+    },
+    "problem": {
+      "theme": "light-theme (Anthropic)",
+      "layout": "Editorial 2-column. Massive '01 / THE PROBLEM' mono overline, huge serif heading.",
+      "features": "Generous whitespace, warm cream background, human-centric copy."
+    },
+    "five_axis_framework": {
+      "theme": "light or dark (Stripe)",
+      "layout": "Animated diagrammatic bento-grid. 5 specific axes detailed with precision.",
+      "features": "Stripe-quality hover reveals and polished micro-interactions. Layered cards with subtle shadows."
+    },
+    "axxess_platform": {
+      "theme": "dark-section (Palantir)",
+      "layout": "Dense data-confidence UI. Six layers (CICE, SSIA, CHLIS, AGLAE, SIMA, CCAF) presented like an operating system interface.",
+      "features": "JetBrains Mono labels, hairline 1px borders, subtle blue glowing accents."
+    },
+    "solution_and_revenue": {
+      "theme": "light-theme (OpenAI / Anthropic)",
+      "layout": "Structured grids, bold typography for large solution numbers (80% / 20% / 100%), clean minimal cards for Triple-Funnel revenue.",
+      "features": "Focus on content and crisp layout with 1px hairline dividers."
+    },
+    "market_and_traction": {
+      "theme": "light-theme",
+      "layout": "Minimalist numbers, large serif typography, clean timeline or phased expansion grid.",
+      "features": "Generous vertical rhythm (py-24 or py-32)."
+    },
+    "team": {
+      "theme": "light-theme",
+      "layout": "3-column grid for Sudipta Koushik Sarmah, Ritashree Mahanta, Ananya Singhal. Clean portraits, minimal text.",
+      "features": "Anthropic-style precise layouts, no heavy shadows."
+    }
+  },
+  "motion_interactions": {
+    "philosophy": "Stripe-quality. Deliberate, technical, smooth. NO bouncing or playful jiggles.",
+    "framer_motion_config": {
+      "initial": { "opacity": 0, "y": 20 },
+      "whileInView": { "opacity": 1, "y": 0 },
+      "viewport": { "once": true, "margin": "-100px" },
+      "transition": { "duration": 0.6, "ease": [0.16, 1, 0.3, 1] }
+    }
   },
   "testing": {
-    "data-testid_rules": "All interactive and key informational elements MUST include a data-testid attribute to facilitate robust automated testing.",
-    "examples": "hero-cta-primary, framework-card-execution, axxess-layer-1, contact-submit-button, team-member-1"
+    "data_testid_convention": "All interactive elements (buttons, links, form inputs) and key informational nodes (section wrappers, cards) must have a kebab-case data-testid attribute based on role. e.g., 'hero-cta-button', 'axxess-layer-card'."
   },
-  "instructions_to_main_agent": [
-    "You are building a high-trust, deep-tech institutional website for TriAxis Ventures. Think Palantir × Bloomberg Terminal. DO NOT use generic SaaS templates.",
-    "Enforce Dark Mode strictly.",
-    "Use pure HTML/Tailwind for marketing layout structures, with raw div and section for precise 1px grid borders (border-white/10).",
-    "Implement a persistent subtle noise overlay via a fixed div with a base64 SVG noise pattern to give the site a 'classified document/terminal' feel.",
-    "Typography MUST be implemented: Cormorant Garamond (or similar editorial serif) for H1/H2, IBM Plex Sans (or generic sans-serif fallback) for body, and JetBrains Mono (or ui-monospace) for tags/metadata. Import these from Google Fonts.",
-    "The Five-Axis Framework must be a 5-card bento grid with high contrast borders. No soft shadows.",
-    "The AXXESS Platform layers should be stacked visually, utilizing 'group' and 'group-hover' in Tailwind to highlight specific layers.",
-    "Do NOT center-align paragraphs. Use left-alignment to maintain the editorial/institutional aesthetic.",
-    "DO NOT use clear/transparent backgrounds for the navbar; use a strong backdrop-blur with a dark base.",
-    "For icons, use lucide-react with thin stroke widths."
+  "image_urls": [
+    {
+      "url": "https://images.pexels.com/photos/30766684/pexels-photo-30766684.png?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+      "description": "3D abstract geometric structure with gold lines and black polygons on a dark background. (Palantir vibe)",
+      "category": "Hero Background / Platform Abstract"
+    },
+    {
+      "url": "https://images.unsplash.com/photo-1750969185331-e03829f72c7d?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDQ2Mzl8MHwxfHNlYXJjaHwyfHxhYnN0cmFjdCUyMG5ldHdvcmslMjBub2RlcyUyMGRhcmt8ZW58MHx8fHwxNzgzNjU4MjU4fDA&ixlib=rb-4.1.0&q=85",
+      "description": "Abstract blue lines and dots on black background.",
+      "category": "AXXESS Platform Background / Technical Overlay"
+    },
+    {
+      "url": "https://images.pexels.com/photos/7580994/pexels-photo-7580994.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+      "description": "Portrait of a confident man in black long sleeves",
+      "category": "Team - Sudipta Koushik Sarmah"
+    },
+    {
+      "url": "https://images.unsplash.com/photo-1655249493799-9cee4fe983bb?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NzF8MHwxfHNlYXJjaHwyfHxwcm9mZXNzaW9uYWwlMjBwb3J0cmFpdCUyMGluZGlhbiUyMHdvbWFufGVufDB8fHx8MTc4MzY1ODI1OHww&ixlib=rb-4.1.0&q=85",
+      "description": "A professional person (Professional Indian Woman)",
+      "category": "Team - Ritashree Mahanta"
+    },
+    {
+      "url": "https://images.unsplash.com/photo-1581065178047-8ee15951ede6?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NzF8MHwxfHNlYXJjaHwxfHxwcm9mZXNzaW9uYWwlMjBwb3J0cmFpdCUyMGluZGlhbiUyMHdvbWFufGVufDB8fHx8MTc4MzY1ODI1OHww&ixlib=rb-4.1.0&q=85",
+      "description": "Woman in black blazer smiling (Professional Indian Woman)",
+      "category": "Team - Ananya Singhal"
+    }
   ],
-  "UNIVERSAL GUIDELINES FOR MAIN AGENT": [
-    "Dark colors look good when used independently without gradients. DO NOT use dark colors as gradients.",
-    "Don't make generic centered layouts, simplistic gradients, and uniform styling.",
-    "Create depth through layered design elements with z-index hierarchy and crisp 1px borders.",
-    "Use glass-morphism effects with backdrop filters (12-24px blur) for sticky/floating elements.",
-    "You MUST NOT apply universal transition (transition: all). Always add transitions for specific interactive elements like button, input excluding transforms.",
-    "You MUST NOT center align the app container, i.e., do not add .App { text-align: center; }.",
-    "Always use modern button styles like sharp, rectangular buttons with 1px borders and interaction animations relevant to the institutional style.",
-    "NEVER use AI assistant Emoji characters like 🤖🧠💭💡🔮🎯 etc for icons. Use precise geometric SVGs.",
-    "Every interaction needs micro-animations - hover states, transitions. Static = dead.",
-    "Use 2-3x more spacing than feels comfortable. Cramped designs look cheap.",
-    "Subtle grain textures, custom selection states (e.g., gold background, black text), and precise loading animations are required.",
-    "Prioritize using pre-existing components from src/components/ui when applicable, but customize them aggressively to remove the 'Vercel-look'."
+  "universal_guidelines_for_main_agent": [
+    "Do not use generic centered layouts or simplistic gradients.",
+    "Implement the 'dark-section' UI carefully to invert foreground/background colors. Use deep black/gray (#050505) for dark sections and warm cream (#FAFAF7) for light sections.",
+    "Add 'transition-colors duration-500' when switching between light and dark backgrounds for smooth scrolling experience.",
+    "Never use AI emoji characters.",
+    "Ensure all interactive elements have rich hover states (Stripe-like subtle lifts and shadow shifts).",
+    "Use generous padding (py-24 or py-32) for sections to maintain an editorial 'Anthropic' feel.",
+    "Use purely geometric 1px borders in the technical sections (Vercel style), but avoid rounded borders in dark sections to increase the authoritative Palantir aesthetic.",
+    "Ensure the Five-Axis framework uses a bento-grid or layered diagram layout.",
+    "Use Fraunces (serif) purely for display impact and JetBrains Mono for system tags/labels."
   ]
 }
