@@ -25,6 +25,12 @@ export const ASSETS = {
     "https://customer-assets.emergentagent.com/job_triaxis-preview/artifacts/h5tirazw_IMG_6824.png",
   betaShotProjects:
     "https://customer-assets.emergentagent.com/job_triaxis-preview/artifacts/m8om32b6_IMG_6825.png",
+  // Demo video (mp4) — plays inline in BetaShowcase
+  demoVideo:
+    "https://customer-assets.emergentagent.com/job_triaxis-preview/artifacts/jd0wcg4v_Demo%20video.mp4",
+  // Feedback QR (points to SurveyMars)
+  feedbackQr:
+    "https://customer-assets.emergentagent.com/job_triaxis-preview/artifacts/hxnpfvaa_5e2b917b-9f08-4366-909a-f276c8b38c7d.jpeg",
 };
 
 // External URLs (production)
