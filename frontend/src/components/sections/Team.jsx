@@ -9,10 +9,14 @@ const team = [
     focus:
       "Product · Enterprise Sales · Institutional Distribution",
     bullets: [
+      "Ex IIM Shillong (dropout)",
+      "SBI Probationary Officer, 2016 batch",
       "9 years enterprise banking · SBI · HDFC · 8 states",
+      "Member — Hexa Venture Studio founder network",
+      "ADPlist · Top 10 Business Transformation Mentor · Apr–Jun 2026",
       "Founder — NEPDSI-C · 865K+ views · 12K+ followers",
       "15+ expert networks empanelled · GLG · AlphaSense",
-      "Mentor · Startup World Cup · ADPlist",
+      "Policy hobbyist · 10+ concept papers",
     ],
   },
   {
