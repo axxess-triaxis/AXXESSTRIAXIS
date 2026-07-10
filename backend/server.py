@@ -11,7 +11,7 @@ from pathlib import Path
 from pydantic import BaseModel, Field, ConfigDict, EmailStr
 from typing import List, Optional
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 
 ROOT_DIR = Path(__file__).parent
@@ -81,6 +81,16 @@ class WaitlistEntry(BaseModel):
     platform: str = "both"
     source: str = "hero"
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class AnalyticsEventCreate(BaseModel):
+    type: str = Field(pattern="^(pageview|dwell|section_view)$")
+    session_id: str = Field(min_length=6, max_length=64)
+    path: str = Field(default="/", max_length=250)
+    referrer: Optional[str] = Field(default=None, max_length=500)
+    device: Optional[str] = Field(default=None, pattern="^(mobile|tablet|desktop)$")
+    section: Optional[str] = Field(default=None, max_length=80)
+    dwell_ms: Optional[int] = Field(default=None, ge=0, le=6 * 60 * 60 * 1000)
 
 
 # ---------- Routes ----------
@@ -200,6 +210,165 @@ async def export_waitlist_csv(
             "Content-Disposition": 'attachment; filename="triaxis-waitlist.csv"',
         },
     )
+
+
+# ---------- Analytics endpoints ----------
+def _norm_referrer(ref: Optional[str]) -> str:
+    if not ref:
+        return "direct"
+    try:
+        from urllib.parse import urlparse
+        host = urlparse(ref).netloc.lower()
+        if not host:
+            return "direct"
+        # strip common trackers
+        if host.startswith("www."):
+            host = host[4:]
+        return host
+    except Exception:
+        return "direct"
+
+
+@api_router.post("/analytics/event")
+async def create_analytics_event(event: AnalyticsEventCreate):
+    doc = event.model_dump()
+    doc["id"] = str(uuid.uuid4())
+    doc["ts"] = datetime.now(timezone.utc).isoformat()
+    doc["referrer_host"] = _norm_referrer(event.referrer)
+    try:
+        await db.analytics_events.insert_one(doc)
+    except Exception:
+        logging.exception("Failed to persist analytics event")
+        # never break the beacon
+        return {"ok": False}
+    return {"ok": True}
+
+
+@api_router.get("/analytics/summary")
+async def analytics_summary(
+    days: int = Query(default=7, ge=1, le=90),
+    token: Optional[str] = Query(default=None),
+    x_admin_token: Optional[str] = Header(default=None, alias="X-Admin-Token"),
+):
+    _require_admin(token, x_admin_token)
+    now = datetime.now(timezone.utc)
+
+    # ---------- helpers ----------
+    def _iso_days_ago(n: int) -> str:
+        return (now - timedelta(days=n)).isoformat()
+
+    def _iso_minutes_ago(n: int) -> str:
+        return (now - timedelta(minutes=n)).isoformat()
+
+    since_iso = _iso_days_ago(days)
+
+    # Total pageviews (all time)
+    total_pageviews = await db.analytics_events.count_documents({"type": "pageview"})
+    total_pageviews_window = await db.analytics_events.count_documents(
+        {"type": "pageview", "ts": {"$gte": since_iso}}
+    )
+
+    # Unique sessions in window
+    unique_sessions_pipeline = [
+        {"$match": {"type": "pageview", "ts": {"$gte": since_iso}}},
+        {"$group": {"_id": "$session_id"}},
+        {"$count": "n"},
+    ]
+    us_res = await db.analytics_events.aggregate(unique_sessions_pipeline).to_list(1)
+    unique_sessions_window = us_res[0]["n"] if us_res else 0
+
+    # Live (last 5 min)
+    active_5m_pipeline = [
+        {"$match": {"ts": {"$gte": _iso_minutes_ago(5)}}},
+        {"$group": {"_id": "$session_id"}},
+        {"$count": "n"},
+    ]
+    live_res = await db.analytics_events.aggregate(active_5m_pipeline).to_list(1)
+    active_now = live_res[0]["n"] if live_res else 0
+
+    # Avg dwell (window, seconds)
+    dwell_pipeline = [
+        {"$match": {"type": "dwell", "ts": {"$gte": since_iso}}},
+        {"$group": {"_id": None, "avg": {"$avg": "$dwell_ms"}, "n": {"$sum": 1}}},
+    ]
+    d_res = await db.analytics_events.aggregate(dwell_pipeline).to_list(1)
+    avg_dwell_seconds = round((d_res[0]["avg"] / 1000.0), 1) if d_res and d_res[0].get("avg") else 0
+
+    # Device breakdown (window)
+    device_pipeline = [
+        {"$match": {"type": "pageview", "ts": {"$gte": since_iso}}},
+        {"$group": {"_id": {"$ifNull": ["$device", "desktop"]}, "n": {"$sum": 1}}},
+    ]
+    devices = {"mobile": 0, "tablet": 0, "desktop": 0}
+    async for row in db.analytics_events.aggregate(device_pipeline):
+        key = row.get("_id") or "desktop"
+        if key in devices:
+            devices[key] = row["n"]
+
+    # Top referrers (window)
+    ref_pipeline = [
+        {"$match": {"type": "pageview", "ts": {"$gte": since_iso}}},
+        {"$group": {"_id": "$referrer_host", "n": {"$sum": 1}}},
+        {"$sort": {"n": -1}},
+        {"$limit": 8},
+    ]
+    top_referrers = []
+    async for row in db.analytics_events.aggregate(ref_pipeline):
+        top_referrers.append({"referrer": row.get("_id") or "direct", "count": row["n"]})
+
+    # Top sections (window)
+    section_pipeline = [
+        {"$match": {"type": "section_view", "ts": {"$gte": since_iso}, "section": {"$ne": None}}},
+        {"$group": {"_id": "$section", "n": {"$sum": 1}}},
+        {"$sort": {"n": -1}},
+        {"$limit": 12},
+    ]
+    top_sections = []
+    async for row in db.analytics_events.aggregate(section_pipeline):
+        top_sections.append({"section": row["_id"], "count": row["n"]})
+
+    # Daily time series (window)
+    daily_pipeline = [
+        {"$match": {"type": "pageview", "ts": {"$gte": since_iso}}},
+        {
+            "$group": {
+                "_id": {"$substrBytes": ["$ts", 0, 10]},  # YYYY-MM-DD
+                "pageviews": {"$sum": 1},
+                "sessions_set": {"$addToSet": "$session_id"},
+            }
+        },
+        {
+            "$project": {
+                "_id": 0,
+                "date": "$_id",
+                "pageviews": 1,
+                "sessions": {"$size": "$sessions_set"},
+            }
+        },
+        {"$sort": {"date": 1}},
+    ]
+    by_day_map = {row["date"]: row async for row in db.analytics_events.aggregate(daily_pipeline)}
+
+    # Fill zero-days so the chart is contiguous
+    by_day: list[dict] = []
+    for i in range(days - 1, -1, -1):
+        d = (now - timedelta(days=i)).strftime("%Y-%m-%d")
+        row = by_day_map.get(d) or {"date": d, "pageviews": 0, "sessions": 0}
+        by_day.append({"date": d, "pageviews": row.get("pageviews", 0), "sessions": row.get("sessions", 0)})
+
+    return {
+        "window_days": days,
+        "total_pageviews_all_time": total_pageviews,
+        "total_pageviews": total_pageviews_window,
+        "unique_sessions": unique_sessions_window,
+        "active_now": active_now,
+        "avg_dwell_seconds": avg_dwell_seconds,
+        "devices": devices,
+        "top_referrers": top_referrers,
+        "top_sections": top_sections,
+        "by_day": by_day,
+        "generated_at": now.isoformat(),
+    }
 
 
 app.include_router(api_router)
