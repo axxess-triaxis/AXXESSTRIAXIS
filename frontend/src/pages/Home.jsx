@@ -5,6 +5,7 @@ import Problem from "@/components/sections/Problem";
 import FiveAxis from "@/components/sections/FiveAxis";
 import Solution from "@/components/sections/Solution";
 import AxxessPlatform from "@/components/sections/AxxessPlatform";
+import BetaShowcase from "@/components/sections/BetaShowcase";
 import RevenueModel from "@/components/sections/RevenueModel";
 import Market from "@/components/sections/Market";
 import Traction from "@/components/sections/Traction";
@@ -22,6 +23,7 @@ export default function Home() {
       <FiveAxis />
       <Solution />
       <AxxessPlatform />
+      <BetaShowcase />
       <RevenueModel />
       <Market />
       <Traction />

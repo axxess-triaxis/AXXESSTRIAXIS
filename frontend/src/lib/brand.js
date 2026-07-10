@@ -14,4 +14,22 @@ export const ASSETS = {
     "https://customer-assets.emergentagent.com/job_triaxis-preview/artifacts/m89ltgkj_45507ce6-2cfc-462a-b427-0802b822798f.jpeg",
   sudipta:
     "https://customer-assets.emergentagent.com/job_triaxis-preview/artifacts/a5sukt2t_3f7c1852-3a72-4864-a7c6-ba03c55a04d6.webp",
+  // AXXESS beta live screenshots
+  betaShotAiWorkspace:
+    "https://customer-assets.emergentagent.com/job_triaxis-preview/artifacts/t58p6ib4_IMG_6819.png",
+  betaShotMeetings:
+    "https://customer-assets.emergentagent.com/job_triaxis-preview/artifacts/oomvpi7y_IMG_6822.png",
+  betaShotAnalytics:
+    "https://customer-assets.emergentagent.com/job_triaxis-preview/artifacts/mil4mymg_IMG_6823.png",
+  betaShotDashboard:
+    "https://customer-assets.emergentagent.com/job_triaxis-preview/artifacts/h5tirazw_IMG_6824.png",
+  betaShotProjects:
+    "https://customer-assets.emergentagent.com/job_triaxis-preview/artifacts/m8om32b6_IMG_6825.png",
+};
+
+// External URLs (production)
+export const LINKS = {
+  betaApp: "https://axxesstriaxis-k9n4pptpe.vercel.app/",
+  github: "https://github.com/axxess-triaxis/AXXESSTRIAXIS",
+  feedbackSurvey: "https://ap.surveymars.com/q/NAgaQ43fM",
 };

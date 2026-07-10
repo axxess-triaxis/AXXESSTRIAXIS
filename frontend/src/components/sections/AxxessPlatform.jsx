@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { ASSETS } from "@/lib/brand";
+import { ASSETS, LINKS } from "@/lib/brand";
 
 const layers = [
   {
@@ -114,7 +114,7 @@ export default function AxxessPlatform() {
               iOS and Android releasing July 2026.
             </p>
             <a
-              href="https://axxesstriaxis.vercel.app"
+              href={LINKS.betaApp}
               target="_blank"
               rel="noreferrer"
               data-testid="platform-open-axxess"
