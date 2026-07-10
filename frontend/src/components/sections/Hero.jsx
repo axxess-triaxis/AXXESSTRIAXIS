@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { ASSETS } from "@/lib/brand";
+import WaitlistCard from "@/components/WaitlistCard";
 
 export default function Hero() {
   return (
@@ -94,6 +95,10 @@ export default function Hero() {
               >
                 Investor deck ↗
               </a>
+            </div>
+
+            <div className="mt-6">
+              <WaitlistCard />
             </div>
           </motion.div>
         </div>
