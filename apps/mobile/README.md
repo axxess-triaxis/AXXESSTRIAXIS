@@ -32,6 +32,33 @@ pnpm eas:build:all
 
 Android preview is configured to produce an APK. iOS preview requires Apple credentials and will stop at signing if those are not configured.
 
+Production Android and iOS builds can also be launched from Expo Workflows:
+
+```text
+apps/mobile/.eas/workflows/create-production-builds.yml
+```
+
+The workflow is named **Create Production Builds** and runs `production` profile builds for Android and iOS.
+
+You can launch production builds directly:
+
+```bash
+npx eas-cli@latest build --platform all --profile production
+```
+
+Or run the checked-in EAS workflow:
+
+```bash
+npx eas-cli@latest workflow:run create-production-builds.yml
+```
+
+From the repository root, use:
+
+```bash
+pnpm mobile:eas:build:production:all
+pnpm mobile:eas:workflow:production
+```
+
 For GitHub-triggered builds, use:
 
 ```text
