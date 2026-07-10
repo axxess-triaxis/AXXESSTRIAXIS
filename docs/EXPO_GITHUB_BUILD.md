@@ -33,6 +33,42 @@ Android application ID: com.triaxis.axxess
 
 This matches Expo's monorepo guidance: run EAS commands from the app directory and keep `eas.json` at that app root.
 
+## Production Workflow
+
+The production EAS workflow lives beside `eas.json`:
+
+```text
+apps/mobile/.eas/workflows/create-production-builds.yml
+```
+
+It exposes a manual Expo workflow named **Create Production Builds** with two jobs:
+
+- `build_android`: Android production build
+- `build_ios`: iOS production build
+
+Both jobs use the `production` EAS profile and Expo-managed remote credentials.
+
+Run the workflow from the Expo app root:
+
+```bash
+cd apps/mobile
+npx eas-cli@latest workflow:run create-production-builds.yml
+```
+
+Or launch both production platform builds directly:
+
+```bash
+cd apps/mobile
+npx eas-cli@latest build --platform all --profile production
+```
+
+Equivalent repository-root scripts are:
+
+```bash
+pnpm mobile:eas:workflow:production
+pnpm mobile:eas:build:production:all
+```
+
 ## Credentials
 
 The warning about missing EAS credentials is expected until Android and iOS signing are configured in Expo. AXXESS build profiles use EAS remote credentials, so Expo should create or store the certificates, provisioning profiles, and Android upload keystore.
