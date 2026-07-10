@@ -6,6 +6,8 @@ All notable changes to AXXESS are documented here. This project follows the spir
 
 - Fixed Expo GitHub build readiness by adding required EAS GitHub build images and documenting the correct `apps/mobile` base directory.
 - Configured Expo mobile builds to use EAS-managed remote credentials for iOS and Android app signing, with explicit app identifiers and credential safety docs.
+- Added Expo EAS workflow for manual Android and iOS production builds.
+- Added root and mobile scripts for direct all-platform EAS production builds and EAS workflow runs.
 - Added Wix setup correction docs so local setup points to `axxess-triaxis/AXXESSTRIAXIS` instead of stale repository instructions.
 - Added Sprint 13 audit document, onboarding route family, sign-up/password recovery/MFA/passkey-ready route surfaces, account deletion and privacy request initiation.
 - Added Sprint 13 admin readiness pages for organization, departments, workspaces, users, roles, invitations, privacy, compliance, AI governance, prompt approvals, audit logs, and backups.
