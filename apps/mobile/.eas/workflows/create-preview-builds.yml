@@ -1,0 +1,26 @@
+name: Create Preview Builds
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "apps/mobile/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+
+jobs:
+  build_android_preview:
+    type: build
+    environment: preview
+    params:
+      platform: android
+      profile: preview
+
+  build_ios_preview:
+    type: build
+    environment: preview
+    params:
+      platform: ios
+      profile: preview
