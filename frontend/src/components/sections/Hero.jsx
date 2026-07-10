@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { ASSETS } from "@/lib/brand";
 
 export default function Hero() {
   return (
@@ -14,10 +15,25 @@ export default function Hero() {
         className="absolute inset-0"
         style={{
           background:
-            "radial-gradient(1200px 600px at 80% 20%, rgba(59,130,246,0.14), transparent 60%), radial-gradient(900px 500px at 10% 90%, rgba(201,95,59,0.12), transparent 60%)",
+            "radial-gradient(1200px 600px at 80% 20%, rgba(59,130,246,0.18), transparent 60%), radial-gradient(900px 500px at 10% 90%, rgba(59,130,246,0.10), transparent 60%)",
         }}
         aria-hidden
       />
+
+      {/* Watermark — AXXESS icon */}
+      <img
+        src={ASSETS.axxessIcon}
+        alt=""
+        aria-hidden
+        className="pointer-events-none select-none absolute -right-24 -top-24 w-[560px] opacity-[0.10] blur-[1px]"
+      />
+      <img
+        src={ASSETS.axxessIcon}
+        alt=""
+        aria-hidden
+        className="pointer-events-none select-none absolute -left-40 bottom-[-160px] w-[420px] opacity-[0.06] rotate-12"
+      />
+
       <div className="noise-overlay" aria-hidden />
 
       <div className="relative max-w-[1400px] mx-auto px-6 md:px-10 pt-36 md:pt-40 pb-24 md:pb-32">
@@ -25,10 +41,10 @@ export default function Hero() {
         <div className="flex items-center justify-between mb-14 md:mb-20">
           <div className="flex items-center gap-3 font-mono text-[11px] tracking-widest text-white/60 uppercase">
             <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full live-dot" />
-            AXXESS · Live prototype · Guwahati, Assam
+            AI-Native Venture Studio · DIFC · ADGM · Global South
           </div>
           <div className="hidden md:block font-mono text-[11px] tracking-widest text-white/50 uppercase">
-            FY 2026 — 2029
+            FY 2026 — 2029 · Product-First
           </div>
         </div>
 
@@ -40,13 +56,13 @@ export default function Hero() {
             className="md:col-span-8"
           >
             <div className="eyebrow-dark mb-6">
-              01 · Institutional Infrastructure for Emerging Markets
+              01 · The venture studio for sovereign-grade AI software
             </div>
             <h1 className="font-serif font-light text-white text-[46px] leading-[1.02] sm:text-[64px] lg:text-[84px] tracking-tight">
-              AI-Enabled,{" "}
-              <span className="italic text-white/90">Human-in-the-Loop</span>{" "}
-              operating infrastructure for the{" "}
-              <span className="text-[color:var(--tx-warm)]">Global South.</span>
+              Building the{" "}
+              <span className="italic text-white/95">AI operating stack</span>{" "}
+              for regulated enterprises and{" "}
+              <span className="text-[color:var(--tx-blue)]">sovereign institutions.</span>
             </h1>
           </motion.div>
 
@@ -57,28 +73,26 @@ export default function Hero() {
             className="md:col-span-4"
           >
             <p className="text-[15.5px] leading-relaxed text-white/70 max-w-md">
-              Triaxis Ventures builds AXXESS — a governed AI workspace that turns
-              projects, documents, decisions, stakeholders, meetings, risks and
-              approvals into an auditable execution layer for enterprise,
-              government, healthcare and consulting institutions.
+              Triaxis Ventures is a product-first venture studio building AI
+              Enterprise SaaS and GovTech for high-trust jurisdictions — DIFC,
+              ADGM and the emerging sovereign markets that traditional SaaS
+              can&apos;t serve.
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-3">
               <a
-                href="#framework"
+                href="#products"
                 data-testid="hero-cta-primary"
                 className="inline-flex items-center gap-2 text-[14px] font-medium bg-white text-black px-5 py-3 hover:bg-white/90 transition-colors rounded-sm"
               >
-                Explore the framework
+                See our products
                 <span aria-hidden>→</span>
               </a>
               <a
-                href="https://axxesstriaxis.vercel.app"
-                target="_blank"
-                rel="noreferrer"
+                href="#contact"
                 data-testid="hero-cta-secondary"
                 className="inline-flex items-center gap-2 text-[14px] font-medium text-white/90 px-5 py-3 border border-white/25 hover:border-white transition-colors rounded-sm"
               >
-                See AXXESS in action ↗
+                Investor deck ↗
               </a>
             </div>
           </motion.div>
@@ -95,10 +109,13 @@ export default function Hero() {
             {[
               ["Automation", "80%"],
               ["Human judgment", "20%"],
-              ["Institutional trust", "100%"],
-              ["Founder burn", "< $1K"],
+              ["Enterprise trust", "100%"],
+              ["Burn to validation", "< $1K"],
             ].map(([label, value]) => (
-              <div key={label} data-testid={`hero-metric-${label.toLowerCase().replace(/\s/g, "-")}`}>
+              <div
+                key={label}
+                data-testid={`hero-metric-${label.toLowerCase().replace(/\s/g, "-")}`}
+              >
                 <div className="eyebrow-dark">{label}</div>
                 <div className="mt-3 font-serif text-white text-[40px] md:text-[54px] leading-none tracking-tight">
                   {value}
@@ -107,6 +124,21 @@ export default function Hero() {
             ))}
           </div>
         </motion.div>
+
+        {/* Investor / backer strip */}
+        <div className="mt-16 flex flex-wrap items-center gap-x-8 gap-y-3 text-white/40">
+          <span className="font-mono text-[10.5px] tracking-widest uppercase">
+            In conversation with
+          </span>
+          {["Y Combinator", "Antler", "a16z", "Sequoia", "Founder Institute", "Web Summit"].map((n) => (
+            <span
+              key={n}
+              className="font-serif text-[15px] md:text-[17px] tracking-tight text-white/55"
+            >
+              {n}
+            </span>
+          ))}
+        </div>
       </div>
 
       {/* bottom scanline */}

@@ -3,32 +3,32 @@ import { motion } from "framer-motion";
 const pillars = [
   {
     pct: "80%",
-    tag: "AUTOMATED BY AXXESS",
+    tag: "MACHINE-EXECUTED",
     color: "text-[color:var(--tx-ink)]",
     items: [
-      "Workflow coordination & scheduling",
-      "Multilingual communication drafting",
-      "Reporting, compliance & documentation",
+      "Workflow orchestration & routing",
+      "Multilingual generation & reporting",
+      "Retrieval, compliance & audit trails",
     ],
   },
   {
     pct: "20%",
-    tag: "HUMAN-LED, ALWAYS",
-    color: "text-[color:var(--tx-accent)]",
+    tag: "HUMAN-OWNED, ALWAYS",
+    color: "text-[color:var(--tx-blue)]",
     items: [
-      "Strategic negotiation & positioning",
-      "Political coordination & judgment",
-      "Crisis management & escalation",
+      "Every high-stakes decision surface",
+      "Escalation & override on every layer",
+      "Trust-critical stakeholder judgment",
     ],
   },
   {
     pct: "100%",
-    tag: "INSTITUTIONAL TRUST",
+    tag: "ENTERPRISE TRUST",
     color: "text-[color:var(--tx-ink)]",
     items: [
-      "Auditable, permissioned execution",
-      "Discretion preserved across mandates",
-      "Continuity across leadership cycles",
+      "Auditable & permissioned by default",
+      "Tenant-isolated across every workspace",
+      "Deployable in customer VPC / region",
     ],
   },
 ];
@@ -43,18 +43,18 @@ export default function Solution() {
       <div className="max-w-[1400px] mx-auto px-6 md:px-10 py-24 md:py-36">
         <div className="grid md:grid-cols-12 gap-10 mb-16 md:mb-24">
           <div className="md:col-span-8">
-            <div className="eyebrow mb-6">04 · The Solution</div>
+            <div className="eyebrow mb-6">04 · Our Product Principle</div>
             <h2 className="font-serif text-[40px] md:text-[64px] leading-[1.02] tracking-tight">
-              80% automation.{" "}
-              <span className="italic">20% human judgment.</span>{" "}
-              <span className="text-[color:var(--tx-accent)]">100% institutional trust.</span>
+              80% machine-executed.{" "}
+              <span className="italic">20% human-owned.</span>{" "}
+              <span className="text-[color:var(--tx-blue)]">100% enterprise trust.</span>
             </h2>
           </div>
           <div className="md:col-span-4 md:pt-4">
             <p className="text-[15.5px] leading-relaxed text-[color:var(--tx-ink)]/70">
-              We don&apos;t sell autonomous agents to institutions that can&apos;t
-              afford to be wrong. AXXESS automates the volume; humans own the
-              judgment. Every escalation is auditable.
+              We don&apos;t ship autonomous agents to institutions that can&apos;t
+              afford to be wrong. Our products automate the volume; humans own
+              the judgment. Every override is auditable.
             </p>
           </div>
         </div>

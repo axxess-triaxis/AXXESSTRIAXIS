@@ -1,26 +1,29 @@
 import { motion } from "framer-motion";
 
-const funnels = [
+const engines = [
   {
-    code: "F-01",
-    title: "Advisory Projects",
-    subtitle: "Revenue / Volume",
-    clients: "NGOs · Healthcare · CSR · Trusts · PPPs · MSMEs · Startups",
-    offering: "Advisory mandates, grant proposals, blended finance.",
+    code: "M-01",
+    title: "SaaS ARR",
+    subtitle: "Product · Recurring",
+    clients: "Enterprises · Free-zone regulators · Sovereign institutions",
+    offering:
+      "Seat-based and tenant-based subscriptions with usage-tiered AI compute. Bring-Your-Own-Cloud pricing for sovereign deployments.",
   },
   {
-    code: "F-02",
-    title: "High-Discretion Retainers",
-    subtitle: "Intelligence",
-    clients: "Political principals · CXOs · Promoter groups",
-    offering: "Strategic retainerships, crisis management, GovTech access.",
+    code: "M-02",
+    title: "GovTech Contracts",
+    subtitle: "Government · Multi-year",
+    clients: "DIFC · ADGM · GIFT City regulators · Ministries · PPPs",
+    offering:
+      "Multi-year platform contracts anchored to regulator mandates. Long procurement cycles, low churn, defensible moat.",
   },
   {
-    code: "F-03",
-    title: "AI-Native Workflows",
-    subtitle: "Platform",
-    clients: "MSMEs · Early-stage startups · Smaller NGOs",
-    offering: "One-off grant structuring, credit proposals, HITL AI delivery.",
+    code: "M-03",
+    title: "Platform Extensions",
+    subtitle: "Ecosystem · Compounding",
+    clients: "Systems integrators · Big-4 · Regional cloud providers",
+    offering:
+      "Marketplace of governed AI modules on top of the shared kernel. Every new Triaxis product compounds distribution.",
   },
 ];
 
@@ -34,23 +37,24 @@ export default function RevenueModel() {
       <div className="max-w-[1400px] mx-auto px-6 md:px-10 py-24 md:py-36">
         <div className="grid md:grid-cols-12 gap-10 mb-14 md:mb-20">
           <div className="md:col-span-7">
-            <div className="eyebrow mb-6">06 · Revenue Model</div>
+            <div className="eyebrow mb-6">06 · Business Model</div>
             <h2 className="font-serif text-[38px] md:text-[56px] leading-[1.04] tracking-tight">
-              A <span className="italic">triple-funnel</span> model.
+              A <span className="italic">three-engine</span> product business.
               <br />
-              Services fund. Access unlocks. Platform scales.
+              SaaS scales. GovTech anchors. Platform compounds.
             </h2>
           </div>
           <div className="md:col-span-4 md:col-start-9">
             <p className="text-[15.5px] leading-relaxed text-[color:var(--tx-ink)]/70">
-              Funnel I converges with Funnel III over time. In 3–4 years, the
-              platform layer is expected to generate 80% of firm revenue.
+              Each Triaxis product is monetized across three engines. By year
+              three, platform ARR is the majority of firm revenue and every new
+              product raises the ceiling.
             </p>
           </div>
         </div>
 
         <div className="grid md:grid-cols-3 gap-0 border border-[color:var(--tx-line)]">
-          {funnels.map((f, i) => (
+          {engines.map((f, i) => (
             <motion.div
               key={f.code}
               initial={{ opacity: 0, y: 24 }}
@@ -66,7 +70,7 @@ export default function RevenueModel() {
                 <span className="font-mono text-[11px] tracking-widest uppercase text-[color:var(--tx-muted)]">
                   {f.code}
                 </span>
-                <span className="font-mono text-[11px] tracking-widest uppercase text-[color:var(--tx-accent)]">
+                <span className="font-mono text-[11px] tracking-widest uppercase text-[color:var(--tx-blue)]">
                   {f.subtitle}
                 </span>
               </div>
@@ -74,13 +78,13 @@ export default function RevenueModel() {
                 {f.title}
               </h3>
               <div className="mt-8 pt-6 border-t border-[color:var(--tx-line)]">
-                <div className="eyebrow mb-2">Clients</div>
+                <div className="eyebrow mb-2">Buyers</div>
                 <p className="text-[13.5px] leading-relaxed text-[color:var(--tx-ink)]/75">
                   {f.clients}
                 </p>
               </div>
               <div className="mt-6">
-                <div className="eyebrow mb-2">Offerings</div>
+                <div className="eyebrow mb-2">Contract shape</div>
                 <p className="text-[13.5px] leading-relaxed text-[color:var(--tx-ink)]/75">
                   {f.offering}
                 </p>

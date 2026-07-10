@@ -3,27 +3,31 @@ import { motion } from "framer-motion";
 const phases = [
   {
     code: "01",
-    label: "Phase I",
-    region: "Assam & Northeast India",
-    detail: "1,487+ startup ecosystem entry point. Ground-truth institutional pilots.",
+    label: "Beachhead",
+    region: "DIFC & ADGM",
+    detail:
+      "Sovereign free zones with common-law rails, deep enterprise budgets and regulator appetite for AI-native infrastructure.",
   },
   {
     code: "02",
-    label: "Phase II",
-    region: "BBIN & BIMSTEC",
-    detail: "Trade-corridor expansion across Bangladesh, Bhutan, India, Nepal + BIMSTEC.",
+    label: "Adjacent",
+    region: "GIFT City · Riyadh · Doha · Singapore",
+    detail:
+      "Copy-paste the regulatory playbook — every free zone is a fresh, high-ACV market with the same buyer archetype.",
   },
   {
     code: "03",
-    label: "Phase III",
-    region: "Pan-India",
-    detail: "Semi-formal markets, promoter groups, PPPs, healthcare systems.",
+    label: "Global South",
+    region: "India · SEA · MENA · Africa · LATAM",
+    detail:
+      "Sovereign markets that skipped legacy SaaS entirely. Multilingual, mobile-first, governance-native by default.",
   },
   {
     code: "04",
-    label: "Phase IV",
-    region: "Global South",
-    detail: "South Asia · SEA · Middle East · Africa · LATAM · Eastern Europe.",
+    label: "Category",
+    region: "Sovereign Enterprise AI",
+    detail:
+      "By product 03, Triaxis is the default AI operating stack for the world's regulated markets — a new software category.",
   },
 ];
 
@@ -37,17 +41,17 @@ export default function Market() {
       <div className="max-w-[1400px] mx-auto px-6 md:px-10 py-24 md:py-36">
         <div className="grid md:grid-cols-12 gap-10 mb-14 md:mb-20">
           <div className="md:col-span-7">
-            <div className="eyebrow mb-6">07 · Market Opportunity</div>
+            <div className="eyebrow mb-6">07 · Go-To-Market</div>
             <h2 className="font-serif text-[38px] md:text-[56px] leading-[1.04] tracking-tight">
-              Starting in Northeast India.
+              DIFC and ADGM first.
               <br />
-              <span className="italic">Scaling to the Global South.</span>
+              <span className="italic">Sovereign enterprise, everywhere next.</span>
             </h2>
           </div>
           <div className="md:col-span-4 md:col-start-9">
             <p className="text-[15.5px] leading-relaxed text-[color:var(--tx-ink)]/70">
-              Every phase is a live proving ground for the next. The playbook
-              hardens with each corridor.
+              Every phase is a proving ground for the next. The regulatory
+              playbook hardens with each jurisdiction — that&apos;s the moat.
             </p>
           </div>
         </div>
@@ -63,7 +67,7 @@ export default function Market() {
               data-testid={`market-phase-${i + 1}`}
               className="grid md:grid-cols-12 gap-6 py-8 md:py-10 border-b border-[color:var(--tx-line)] items-baseline group"
             >
-              <div className="md:col-span-1 font-mono text-[12px] tracking-widest uppercase text-[color:var(--tx-muted)] group-hover:text-[color:var(--tx-accent)] transition-colors">
+              <div className="md:col-span-1 font-mono text-[12px] tracking-widest uppercase text-[color:var(--tx-muted)] group-hover:text-[color:var(--tx-blue)] transition-colors">
                 {p.code}
               </div>
               <div className="md:col-span-2 eyebrow">{p.label}</div>
