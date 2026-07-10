@@ -54,6 +54,21 @@ class ContactInquiry(BaseModel):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
+class WaitlistCreate(BaseModel):
+    email: EmailStr
+    platform: str = Field(default="both", pattern="^(ios|android|both)$")
+    source: str = Field(default="hero", max_length=40)
+
+
+class WaitlistEntry(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    email: str
+    platform: str = "both"
+    source: str = "hero"
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
 # ---------- Routes ----------
 @api_router.get("/")
 async def root():
@@ -94,6 +109,39 @@ async def create_contact(inquiry: ContactInquiryCreate):
 @api_router.get("/contact", response_model=List[ContactInquiry])
 async def list_contacts(limit: int = 100):
     docs = await db.contact_inquiries.find({}, {"_id": 0}).sort("created_at", -1).to_list(limit)
+    for d in docs:
+        if isinstance(d.get('created_at'), str):
+            d['created_at'] = datetime.fromisoformat(d['created_at'])
+    return docs
+
+
+@api_router.post("/waitlist", response_model=WaitlistEntry)
+async def join_waitlist(entry: WaitlistCreate):
+    obj = WaitlistEntry(**entry.model_dump())
+    doc = obj.model_dump()
+    doc['created_at'] = doc['created_at'].isoformat()
+    try:
+        # dedupe by email — update or insert
+        await db.waitlist.update_one(
+            {"email": obj.email},
+            {"$set": doc},
+            upsert=True,
+        )
+    except Exception as e:
+        logging.exception("Failed to persist waitlist entry")
+        raise HTTPException(status_code=500, detail="Failed to join waitlist") from e
+    return obj
+
+
+@api_router.get("/waitlist/count")
+async def waitlist_count():
+    total = await db.waitlist.count_documents({})
+    return {"total": total}
+
+
+@api_router.get("/waitlist", response_model=List[WaitlistEntry])
+async def list_waitlist(limit: int = 500):
+    docs = await db.waitlist.find({}, {"_id": 0}).sort("created_at", -1).to_list(limit)
     for d in docs:
         if isinstance(d.get('created_at'), str):
             d['created_at'] = datetime.fromisoformat(d['created_at'])
