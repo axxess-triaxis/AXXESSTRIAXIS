@@ -87,6 +87,12 @@ export default function AdminWaitlist() {
             </h1>
           </div>
           <a
+            href={`/admin/analytics${token ? `?token=${encodeURIComponent(token)}` : ""}`}
+            className="font-mono text-[11px] tracking-widest uppercase text-[color:var(--tx-muted)] hover:text-[color:var(--tx-ink)] link-underline mr-6"
+          >
+            Analytics ↗
+          </a>
+          <a
             href="/"
             className="font-mono text-[11px] tracking-widest uppercase text-[color:var(--tx-muted)] hover:text-[color:var(--tx-ink)] link-underline"
           >

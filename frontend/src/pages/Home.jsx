@@ -10,8 +10,10 @@ import Market from "@/components/sections/Market";
 import Traction from "@/components/sections/Traction";
 import Team from "@/components/sections/Team";
 import Contact from "@/components/sections/Contact";
+import useAnalytics from "@/hooks/useAnalytics";
 
 export default function Home() {
+  useAnalytics();
   return (
     <main data-testid="home-page" className="relative">
       <Nav />
