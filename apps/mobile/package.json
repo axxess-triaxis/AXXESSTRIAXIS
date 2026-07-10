@@ -13,6 +13,7 @@
     "eas:credentials": "eas credentials",
     "eas:credentials:android": "eas credentials --platform android",
     "eas:credentials:ios": "eas credentials --platform ios",
+    "eas:workflow:preview": "npx eas-cli@latest workflow:run create-preview-builds.yml",
     "eas:workflow:production": "npx eas-cli@latest workflow:run create-production-builds.yml",
     "ios:preview": "eas build --platform ios --profile preview --non-interactive",
     "lint": "expo lint",
