@@ -1,96 +1,201 @@
 import { motion } from "framer-motion";
 
-const engines = [
+const tiers = [
   {
-    code: "M-01",
-    title: "SaaS ARR",
-    subtitle: "Product · Recurring",
-    clients: "Enterprises · Free-zone regulators · Sovereign institutions",
-    offering:
-      "Seat-based and tenant-based subscriptions with usage-tiered AI compute. Bring-Your-Own-Cloud pricing for sovereign deployments.",
+    code: "T-01",
+    label: "Micro",
+    price: "$50 – $100",
+    unit: "per year",
+    customers: [
+      "Startups",
+      "Micro & small enterprises",
+      "Single-location educational institutes",
+      "Nursing homes & small healthcare",
+      "Local NGOs",
+    ],
+    tag: "SELF-SERVE",
   },
   {
-    code: "M-02",
-    title: "GovTech Contracts",
-    subtitle: "Government · Multi-year",
-    clients: "DIFC · ADGM · GIFT City regulators · Ministries · PPPs",
-    offering:
-      "Multi-year platform contracts anchored to regulator mandates. Long procurement cycles, low churn, defensible moat.",
+    code: "T-02",
+    label: "Regional",
+    price: "$500 – $1,000",
+    unit: "per year",
+    customers: [
+      "Mid-corporates",
+      "Regional NGOs",
+      "District administrations",
+      "Multi-location educational institutes",
+      "Universities",
+      "Regional healthcare groups",
+    ],
+    tag: "TEAM",
   },
   {
-    code: "M-03",
-    title: "Platform Extensions",
-    subtitle: "Ecosystem · Compounding",
-    clients: "Systems integrators · Big-4 · Regional cloud providers",
-    offering:
-      "Marketplace of governed AI modules on top of the shared kernel. Every new Triaxis product compounds distribution.",
+    code: "T-03",
+    label: "National",
+    price: "$2,000 – $10,000",
+    unit: "per year",
+    customers: [
+      "National NGOs",
+      "State administrations & PSUs",
+      "National corporates",
+      "Multi-region education & healthcare groups",
+      "Large contractors",
+    ],
+    tag: "SCALE",
+  },
+  {
+    code: "T-04",
+    label: "Sovereign",
+    price: "Bespoke",
+    unit: "sandboxed enterprise",
+    customers: [
+      "INGOs · national bodies",
+      "National PSUs · national government",
+      "Large associations · large corporates",
+      "IIT / NIT-type networks",
+      "AIIMS / Apollo-type healthcare",
+    ],
+    tag: "SANDBOXED",
+    dark: true,
+  },
+  {
+    code: "T-05",
+    label: "Sovereign+",
+    price: "Bespoke",
+    unit: "tailored specs & pricing",
+    customers: [
+      "Global corporations",
+      "Sovereign bodies · major governments",
+      "Defence · intelligence",
+      "Multilateral organizations",
+    ],
+    tag: "SANDBOXED",
+    dark: true,
   },
 ];
 
 export default function RevenueModel() {
   return (
     <section
-      id="revenue"
+      id="pricing"
       data-testid="revenue-section"
       className="relative bg-white text-[color:var(--tx-ink)] border-t border-[color:var(--tx-line)]"
     >
       <div className="max-w-[1400px] mx-auto px-6 md:px-10 py-24 md:py-36">
         <div className="grid md:grid-cols-12 gap-10 mb-14 md:mb-20">
           <div className="md:col-span-7">
-            <div className="eyebrow mb-6">06 · Business Model</div>
+            <div className="eyebrow mb-6">06 · Customers & Pricing</div>
             <h2 className="font-serif text-[38px] md:text-[56px] leading-[1.04] tracking-tight">
-              A <span className="italic">three-engine</span> product business.
+              A <span className="italic">five-tier</span> enterprise model.
               <br />
-              SaaS scales. GovTech anchors. Platform compounds.
+              From $50 to sovereign-scale bespoke.
             </h2>
           </div>
           <div className="md:col-span-4 md:col-start-9">
             <p className="text-[15.5px] leading-relaxed text-[color:var(--tx-ink)]/70">
-              Each Triaxis product is monetized across three engines. By year
-              three, platform ARR is the majority of firm revenue and every new
-              product raises the ceiling.
+              Every tier runs on the same governed AI kernel. Distribution is
+              land-and-expand: Tier 1 seeds proof; Tier 4–5 anchors the moat.
             </p>
           </div>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-0 border border-[color:var(--tx-line)]">
-          {engines.map((f, i) => (
+        {/* Tier table */}
+        <div className="border border-[color:var(--tx-line)] overflow-hidden">
+          {tiers.map((t, i) => (
             <motion.div
-              key={f.code}
-              initial={{ opacity: 0, y: 24 }}
+              key={t.code}
+              initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-80px" }}
-              transition={{ duration: 0.6, delay: i * 0.1, ease: [0.16, 1, 0.3, 1] }}
-              data-testid={`revenue-funnel-${i + 1}`}
-              className={`p-8 md:p-10 bg-white group hover:bg-[color:var(--tx-cream)] transition-colors ${
-                i > 0 ? "border-t md:border-t-0 md:border-l border-[color:var(--tx-line)]" : ""
+              viewport={{ once: true, margin: "-60px" }}
+              transition={{ duration: 0.55, delay: i * 0.06 }}
+              data-testid={`pricing-tier-${i + 1}`}
+              className={`grid md:grid-cols-12 gap-6 p-6 md:p-8 border-b border-[color:var(--tx-line)] last:border-b-0 transition-colors ${
+                t.dark
+                  ? "bg-[color:var(--tx-ink-2)] text-white hover:bg-[color:#0d0d0d]"
+                  : "bg-white hover:bg-[color:var(--tx-cream)]"
               }`}
             >
-              <div className="flex items-center justify-between">
-                <span className="font-mono text-[11px] tracking-widest uppercase text-[color:var(--tx-muted)]">
-                  {f.code}
-                </span>
-                <span className="font-mono text-[11px] tracking-widest uppercase text-[color:var(--tx-blue)]">
-                  {f.subtitle}
+              <div className="md:col-span-1 flex md:block items-center gap-3">
+                <span
+                  className={`font-mono text-[11px] tracking-widest uppercase ${
+                    t.dark ? "text-white/50" : "text-[color:var(--tx-muted)]"
+                  }`}
+                >
+                  {t.code}
                 </span>
               </div>
-              <h3 className="mt-8 font-serif text-[28px] md:text-[34px] leading-tight tracking-tight">
-                {f.title}
-              </h3>
-              <div className="mt-8 pt-6 border-t border-[color:var(--tx-line)]">
-                <div className="eyebrow mb-2">Buyers</div>
-                <p className="text-[13.5px] leading-relaxed text-[color:var(--tx-ink)]/75">
-                  {f.clients}
-                </p>
+
+              <div className="md:col-span-3">
+                <div
+                  className={`font-mono text-[10.5px] tracking-widest uppercase mb-2 ${
+                    t.dark ? "text-[color:var(--tx-blue)]" : "text-[color:var(--tx-blue)]"
+                  }`}
+                >
+                  {t.tag}
+                </div>
+                <div className="font-serif text-[26px] md:text-[32px] tracking-tight leading-tight">
+                  {t.label}
+                </div>
               </div>
-              <div className="mt-6">
-                <div className="eyebrow mb-2">Contract shape</div>
-                <p className="text-[13.5px] leading-relaxed text-[color:var(--tx-ink)]/75">
-                  {f.offering}
-                </p>
+
+              <div className="md:col-span-3">
+                <div
+                  className={`font-serif text-[34px] md:text-[44px] leading-none tracking-tight ${
+                    t.dark ? "text-white" : "text-[color:var(--tx-ink)]"
+                  }`}
+                >
+                  {t.price}
+                </div>
+                <div
+                  className={`mt-2 text-[12px] font-mono uppercase tracking-widest ${
+                    t.dark ? "text-white/50" : "text-[color:var(--tx-muted)]"
+                  }`}
+                >
+                  {t.unit}
+                </div>
+              </div>
+
+              <div className="md:col-span-5">
+                <div
+                  className={`text-[10.5px] font-mono uppercase tracking-widest mb-3 ${
+                    t.dark ? "text-white/50" : "text-[color:var(--tx-muted)]"
+                  }`}
+                >
+                  Buyer archetypes
+                </div>
+                <ul className="flex flex-wrap gap-x-4 gap-y-2 text-[13.5px] leading-snug">
+                  {t.customers.map((c) => (
+                    <li
+                      key={c}
+                      className={`flex items-center gap-2 ${
+                        t.dark ? "text-white/85" : "text-[color:var(--tx-ink)]/80"
+                      }`}
+                    >
+                      <span
+                        className={`w-1 h-1 ${
+                          t.dark ? "bg-[color:var(--tx-blue)]" : "bg-[color:var(--tx-ink)]"
+                        }`}
+                      />
+                      {c}
+                    </li>
+                  ))}
+                </ul>
               </div>
             </motion.div>
           ))}
+        </div>
+
+        <div className="mt-10 flex flex-col md:flex-row md:items-center md:justify-between gap-4 text-[13px] text-[color:var(--tx-ink)]/60">
+          <div className="font-mono uppercase tracking-widest text-[11px]">
+            One kernel · Five tiers · One governance model
+          </div>
+          <a
+            href="#contact"
+            className="inline-flex items-center gap-2 text-[color:var(--tx-ink)] link-underline"
+          >
+            Request enterprise pricing →
+          </a>
         </div>
       </div>
     </section>

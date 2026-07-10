@@ -80,7 +80,7 @@ export default function Footer() {
                 Open AXXESS ↗
               </span>
               <span className="mt-1 font-mono text-[10.5px] tracking-widest uppercase text-white/50">
-                Sovereign AI workspace · v0.8
+                Enterprise beta · iOS + Android · Jul 2026
               </span>
             </div>
           </a>
