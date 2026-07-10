@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ASSETS, LINKS } from "@/lib/brand";
 
@@ -53,6 +53,16 @@ const shots = [
 export default function BetaShowcase() {
   const [active, setActive] = useState(shots[0].id);
   const current = shots.find((s) => s.id === active) || shots[0];
+  const videoRef = useRef(null);
+  const [videoPlaying, setVideoPlaying] = useState(false);
+
+  const playVideo = () => {
+    if (!videoRef.current) return;
+    videoRef.current.muted = false;
+    videoRef.current.currentTime = 0;
+    videoRef.current.play();
+    setVideoPlaying(true);
+  };
 
   return (
     <section
@@ -68,15 +78,79 @@ export default function BetaShowcase() {
             <h2 className="font-serif text-[38px] md:text-[56px] leading-[1.04] tracking-tight">
               AXXESS is <span className="italic">shipping</span>.
               <br />
-              Look inside the enterprise beta.
+              Watch the demo. Explore the beta.
             </h2>
           </div>
           <div className="md:col-span-4 md:col-start-9">
             <p className="text-[15.5px] leading-relaxed text-[color:var(--tx-ink)]/70">
-              Real screens from the public enterprise beta — running today on
-              North East Health Mission data. Open source is coming; pilot
-              conversations are open.
+              Real product · real data · shipping today on North East Health
+              Mission workflows. Open source is coming; pilot conversations are
+              open.
             </p>
+          </div>
+        </div>
+
+        {/* Prominent demo video */}
+        <div
+          data-testid="beta-demo-video-frame"
+          className="relative border border-[color:var(--tx-ink)] bg-[color:var(--tx-ink-2)] overflow-hidden rounded-sm mb-14 md:mb-20 shadow-[0_50px_120px_-40px_rgba(0,0,0,0.35)]"
+        >
+          <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/10 bg-black/60 backdrop-blur-sm">
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#ff5f57]" />
+              <span className="w-2.5 h-2.5 rounded-full bg-[#febc2e]" />
+              <span className="w-2.5 h-2.5 rounded-full bg-[#28c840]" />
+              <span className="ml-3 font-mono text-[11px] tracking-widest uppercase text-white/60">
+                AXXESS · Product demo
+              </span>
+            </div>
+            <span className="font-mono text-[10.5px] tracking-widest uppercase text-emerald-400 flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full live-dot" />
+              Featured
+            </span>
+          </div>
+          <div className="relative aspect-[16/9] bg-black group">
+            <video
+              ref={videoRef}
+              data-testid="beta-demo-video"
+              src={ASSETS.demoVideo}
+              className="absolute inset-0 w-full h-full object-contain bg-black"
+              controls
+              controlsList="nodownload"
+              preload="metadata"
+              playsInline
+              onPlay={() => setVideoPlaying(true)}
+              onPause={() => setVideoPlaying(false)}
+              onEnded={() => setVideoPlaying(false)}
+            />
+            {!videoPlaying && (
+              <button
+                onClick={playVideo}
+                data-testid="beta-demo-play"
+                aria-label="Play demo video"
+                className="absolute inset-0 flex items-center justify-center bg-black/25 hover:bg-black/15 transition-colors z-10"
+              >
+                <span className="relative flex items-center justify-center">
+                  <span className="absolute w-24 h-24 rounded-full bg-white/10 group-hover:bg-white/15 animate-pulse" />
+                  <span className="relative w-20 h-20 rounded-full bg-white text-[color:var(--tx-ink)] flex items-center justify-center shadow-2xl">
+                    <svg viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8 ml-1">
+                      <path d="M8 5v14l11-7z" />
+                    </svg>
+                  </span>
+                </span>
+                <span className="absolute bottom-6 left-6 text-left">
+                  <div className="font-mono text-[10.5px] tracking-widest uppercase text-white/70">
+                    Watch the demo
+                  </div>
+                  <div className="font-serif text-white text-[22px] md:text-[28px] tracking-tight leading-tight mt-1">
+                    AXXESS in ~90 seconds
+                  </div>
+                </span>
+                <span className="absolute bottom-6 right-6 font-mono text-[10.5px] tracking-widest uppercase text-white/60">
+                  Sound · on click
+                </span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -120,7 +194,6 @@ export default function BetaShowcase() {
           {/* Screenshot mock frame */}
           <div className="md:col-span-8 relative">
             <div className="border border-[color:var(--tx-line)] bg-[color:var(--tx-ink-2)] overflow-hidden rounded-sm">
-              {/* mac-style title bar */}
               <div className="flex items-center gap-2 px-4 py-2.5 border-b border-white/10 bg-black/50 backdrop-blur-sm">
                 <span className="w-2.5 h-2.5 rounded-full bg-[#ff5f57]" />
                 <span className="w-2.5 h-2.5 rounded-full bg-[#febc2e]" />
@@ -223,28 +296,55 @@ export default function BetaShowcase() {
               </ul>
             </div>
 
-            {/* feedback CTA */}
-            <a
-              href={LINKS.feedbackSurvey}
-              target="_blank"
-              rel="noreferrer"
-              data-testid="beta-feedback-cta"
-              className="group relative block border border-[color:var(--tx-ink)] bg-[color:var(--tx-ink-2)] text-white p-6 hover:bg-black transition-colors overflow-hidden"
+            {/* Feedback CTA with QR */}
+            <div
+              data-testid="beta-feedback-card"
+              className="relative border border-[color:var(--tx-ink)] bg-[color:var(--tx-ink-2)] text-white p-6 overflow-hidden"
             >
               <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[color:var(--tx-blue)] to-transparent opacity-60" />
-              <div className="eyebrow-dark mb-3">Send beta feedback</div>
-              <div className="font-serif text-[24px] md:text-[26px] tracking-tight leading-tight">
+              <div className="eyebrow-dark mb-3">Beta feedback</div>
+              <div className="font-serif text-[22px] md:text-[24px] tracking-tight leading-tight">
                 3,000+ feedback datapoints target
               </div>
-              <p className="mt-3 text-[13.5px] text-white/70 leading-relaxed">
-                Pilot conversations open. Every response shapes the enterprise
-                release. Takes ~3 minutes.
+              <p className="mt-2 text-[13px] text-white/70 leading-relaxed">
+                Pilot conversations open. Scan or tap — takes ~3 minutes.
               </p>
-              <div className="mt-5 flex items-center gap-2 font-mono text-[11px] tracking-widest uppercase text-white group-hover:text-[color:var(--tx-blue)] transition-colors">
-                Open survey
-                <span aria-hidden>↗</span>
+
+              <div className="mt-5 flex items-center gap-4">
+                <a
+                  href={LINKS.feedbackSurvey}
+                  target="_blank"
+                  rel="noreferrer"
+                  data-testid="beta-feedback-qr"
+                  aria-label="Scan or tap to open AXXESS Enterprise Beta feedback survey"
+                  className="shrink-0 block bg-white p-2 rounded-sm hover:scale-[1.03] transition-transform"
+                >
+                  <img
+                    src={ASSETS.feedbackQr}
+                    alt="Scan for beta feedback survey"
+                    className="w-[104px] h-[104px] object-contain"
+                  />
+                </a>
+                <div className="min-w-0">
+                  <div className="font-mono text-[10.5px] tracking-widest uppercase text-white/50 mb-1">
+                    Scan on mobile
+                  </div>
+                  <div className="text-[12.5px] text-white/75 leading-snug break-words">
+                    ap.surveymars.com<br />/q/NAgaQ43fM
+                  </div>
+                  <a
+                    href={LINKS.feedbackSurvey}
+                    target="_blank"
+                    rel="noreferrer"
+                    data-testid="beta-feedback-cta"
+                    className="mt-3 inline-flex items-center gap-1.5 font-mono text-[11px] tracking-widest uppercase text-white group hover:text-[color:var(--tx-blue)] transition-colors"
+                  >
+                    Open survey
+                    <span aria-hidden>↗</span>
+                  </a>
+                </div>
               </div>
-            </a>
+            </div>
 
             {/* GitHub link */}
             <a
