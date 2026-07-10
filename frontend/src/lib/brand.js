@@ -9,4 +9,9 @@ export const ASSETS = {
   // AXXESS TriAxis — full wordmark (gold/red/steel "AXXESS")
   axxessWordmark:
     "https://customer-assets.emergentagent.com/job_triaxis-preview/artifacts/rhp4ht97_3103F252-01C7-4A4A-9A32-5E185D72124D.png",
+  // Founder portraits
+  ritashree:
+    "https://customer-assets.emergentagent.com/job_triaxis-preview/artifacts/m89ltgkj_45507ce6-2cfc-462a-b427-0802b822798f.jpeg",
+  sudipta:
+    "https://customer-assets.emergentagent.com/job_triaxis-preview/artifacts/a5sukt2t_3f7c1852-3a72-4864-a7c6-ba03c55a04d6.webp",
 };

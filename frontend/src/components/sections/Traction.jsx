@@ -10,12 +10,12 @@ const metrics = [
 ];
 
 const accelerators = [
+  "AXXESS · Enterprise beta shipped",
+  "iOS & Android — releasing July 2026",
   "Founder Institute · Hyderabad 2026",
   "iCreate Idea Catalyst Residency",
   "Innopreneurs S13 · Top 100",
   "DGEMS Select 200 · Forbes India",
-  "Web Summit · investor track",
-  "In active conversation · YC · Antler · a16z",
 ];
 
 export default function Traction() {
@@ -67,7 +67,7 @@ export default function Traction() {
 
         {/* Program selections */}
         <div className="mt-16">
-          <div className="eyebrow mb-6">Program selections & investor conversations</div>
+          <div className="eyebrow mb-6">Product & program milestones</div>
           <div className="grid md:grid-cols-2 gap-x-10 gap-y-4">
             {accelerators.map((a) => (
               <div

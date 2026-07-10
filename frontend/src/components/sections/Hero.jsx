@@ -41,7 +41,7 @@ export default function Hero() {
         <div className="flex items-center justify-between mb-14 md:mb-20">
           <div className="flex items-center gap-3 font-mono text-[11px] tracking-widest text-white/60 uppercase">
             <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full live-dot" />
-            AI-Native Venture Studio · DIFC · ADGM · Global South
+            Public enterprise beta · Live now · iOS & Android · July 2026
           </div>
           <div className="hidden md:block font-mono text-[11px] tracking-widest text-white/50 uppercase">
             FY 2026 — 2029 · Product-First
@@ -125,12 +125,18 @@ export default function Hero() {
           </div>
         </motion.div>
 
-        {/* Investor / backer strip */}
+        {/* Distribution / product strip */}
         <div className="mt-16 flex flex-wrap items-center gap-x-8 gap-y-3 text-white/40">
           <span className="font-mono text-[10.5px] tracking-widest uppercase">
-            In conversation with
+            Shipping now
           </span>
-          {["Y Combinator", "Antler", "a16z", "Sequoia", "Founder Institute", "Web Summit"].map((n) => (
+          {[
+            "AXXESS · Enterprise beta",
+            "iOS · July 2026",
+            "Android · July 2026",
+            "DIFC & ADGM · Onboarding",
+            "5-Tier Enterprise Model",
+          ].map((n) => (
             <span
               key={n}
               className="font-serif text-[15px] md:text-[17px] tracking-tight text-white/55"

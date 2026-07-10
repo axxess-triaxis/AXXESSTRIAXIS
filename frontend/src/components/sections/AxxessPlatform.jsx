@@ -97,7 +97,7 @@ export default function AxxessPlatform() {
                 className="w-14 h-14 rounded-lg"
               />
               <span className="font-mono text-[11px] tracking-widest text-white/50 uppercase">
-                axxess.triaxis · v0.8
+                axxess.triaxis · enterprise beta · live
               </span>
             </div>
             <h2 className="font-serif font-light text-[40px] md:text-[60px] leading-[1.04] tracking-tight text-white">
@@ -110,7 +110,8 @@ export default function AxxessPlatform() {
             <p className="text-[15.5px] leading-relaxed text-white/70">
               A six-layer governed AI operating system for enterprise,
               government and healthcare institutions. Purpose-built for
-              DIFC/ADGM-grade sovereignty. Live investor prototype.
+              DIFC/ADGM-grade sovereignty. Public enterprise beta shipping now;
+              iOS and Android releasing July 2026.
             </p>
             <a
               href="https://axxesstriaxis.vercel.app"
@@ -119,9 +120,20 @@ export default function AxxessPlatform() {
               data-testid="platform-open-axxess"
               className="mt-6 inline-flex items-center gap-2 text-[14px] font-medium text-white border border-white/25 hover:border-white transition-colors px-4 py-2.5"
             >
-              Open live prototype
+              Open the enterprise beta
               <span aria-hidden>↗</span>
             </a>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <span className="font-mono text-[10.5px] px-2 py-1 border border-white/20 text-white/75 rounded-sm tracking-widest uppercase">
+                iOS · Jul 2026
+              </span>
+              <span className="font-mono text-[10.5px] px-2 py-1 border border-white/20 text-white/75 rounded-sm tracking-widest uppercase">
+                Android · Jul 2026
+              </span>
+              <span className="font-mono text-[10.5px] px-2 py-1 border border-emerald-400/30 text-emerald-300 rounded-sm tracking-widest uppercase">
+                Web · Live
+              </span>
+            </div>
           </div>
         </div>
 
@@ -133,7 +145,7 @@ export default function AxxessPlatform() {
                 <div className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-emerald-400 live-dot" />
                   <span className="font-mono text-[11px] tracking-widest text-white/60 uppercase">
-                    axxess / architecture
+                    axxess / architecture · enterprise beta
                   </span>
                 </div>
                 <div className="font-mono text-[11px] tracking-widest text-white/40 uppercase">

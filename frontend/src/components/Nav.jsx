@@ -3,8 +3,8 @@ import { ASSETS } from "@/lib/brand";
 
 const links = [
   { label: "Products", href: "#products" },
-  { label: "Platform", href: "#platform" },
   { label: "Thesis", href: "#thesis" },
+  { label: "Pricing", href: "#pricing" },
   { label: "Traction", href: "#traction" },
   { label: "Team", href: "#team" },
 ];
