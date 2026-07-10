@@ -154,6 +154,16 @@ pnpm run build
 
 Production deployments should provide secrets through the hosting platform, enable Supabase row-level security before connecting real tenant data, and keep security headers enabled through `next.config.mjs`.
 
+## Mobile Beta / Expo
+
+AXXESS keeps Expo/EAS available, but Android beta delivery now has a parallel free path through GitHub Actions and Firebase App Distribution.
+
+- Trigger **Mobile Android Free Beta** manually from GitHub Actions, or let it run on pushes to `main` that touch `apps/mobile/**`, `package.json`, `pnpm-lock.yaml`, or `pnpm-workspace.yaml`.
+- Download the Android APK from the GitHub Actions artifact named `axxess-mobile-android-free-beta` when Firebase distribution is not configured.
+- Configure `FIREBASE_APP_ID_ANDROID`, `FIREBASE_TESTER_GROUPS`, and either `FIREBASE_TOKEN` or `GOOGLE_APPLICATION_CREDENTIALS_JSON` to send builds to Firebase testers.
+- iOS remains manual/deferred for the free path until Mac access, macOS minutes, sponsorship, or paid CI is available.
+- See `docs/FREE_MOBILE_CICD.md` and `docs/EXPO_DEPRECATION_PLAN.md`.
+
 ## Screenshots
 
 Screenshot slots are reserved for production-approved imagery:
@@ -172,7 +182,7 @@ Screenshot slots are reserved for production-approved imagery:
 - Apply Sprint 12 migration to staging and validate RLS across multiple tenant personas.
 - Apply Sprint 13 migration and run `supabase/tests/rls_persona_tests.sql` in staging.
 - Enable Supabase MFA, OAuth providers, passkeys/WebAuthn, branch protections, PostHog dashboards, and backup drills.
-- Run Android preview EAS/Bitrise build and prepare iOS signing credentials.
+- Monitor Android free beta builds and prepare a separate iOS signing and CI plan.
 - In the Expo dashboard, set GitHub build Base directory to `apps/mobile`; see `docs/EXPO_GITHUB_BUILD.md`.
 - Configure iOS and Android signing through Expo-managed EAS credentials; see `docs/EAS_MANAGED_CREDENTIALS.md`.
 - Launch production Android/iOS mobile builds from `apps/mobile/.eas/workflows/create-production-builds.yml`.
@@ -186,6 +196,8 @@ Screenshot slots are reserved for production-approved imagery:
 - `docs/RAG.md`
 - `docs/NLP.md`
 - `docs/DEPLOYMENT.md`
+- `docs/FREE_MOBILE_CICD.md`
+- `docs/EXPO_DEPRECATION_PLAN.md`
 - `docs/SECURITY_ARCHITECTURE.md`
 - `docs/COMPLIANCE_ENGINE.md`
 - `docs/PRIVACY_ENGINEERING.md`

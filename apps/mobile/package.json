@@ -5,6 +5,8 @@
   "main": "expo-router/entry",
   "scripts": {
     "android:preview": "eas build --platform android --profile preview --non-interactive",
+    "android:ci:build": "expo prebuild --platform android --clean --no-install && cd android && ./gradlew assembleDebug",
+    "android:firebase:distribute": "npx firebase-tools@latest appdistribution:distribute android/app/build/outputs/apk/debug/app-debug.apk --app \"$FIREBASE_APP_ID_ANDROID\" --groups \"$FIREBASE_TESTER_GROUPS\"",
     "eas:build:configure": "eas build:configure --platform all",
     "eas:build:all": "eas build --profile preview --non-interactive",
     "eas:build:android": "eas build --platform android --profile preview --non-interactive",
@@ -16,6 +18,7 @@
     "eas:workflow:production": "npx eas-cli@latest workflow:run create-production-builds.yml",
     "ios:preview": "eas build --platform ios --profile preview --non-interactive",
     "lint": "expo lint",
+    "mobile:free:android": "pnpm run android:ci:build && pnpm run android:firebase:distribute",
     "start": "expo start",
     "typecheck": "tsc --noEmit"
   },

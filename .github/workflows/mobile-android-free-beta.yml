@@ -1,0 +1,110 @@
+name: Mobile Android Free Beta
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "apps/mobile/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+
+permissions:
+  contents: read
+
+jobs:
+  build_android_beta:
+    name: Build Android beta artifact
+    runs-on: ubuntu-latest
+    env:
+      CI: true
+      EXPO_NO_TELEMETRY: "1"
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: "11"
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck mobile app
+        working-directory: apps/mobile
+        run: pnpm run typecheck
+
+      - name: Build Android preview APK
+        working-directory: apps/mobile
+        run: pnpm run android:ci:build
+
+      - name: Upload Android beta artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: axxess-mobile-android-free-beta
+          path: |
+            apps/mobile/android/app/build/outputs/apk/**/*.apk
+            apps/mobile/android/app/build/outputs/bundle/**/*.aab
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Check Firebase distribution configuration
+        id: firebase_config
+        shell: bash
+        env:
+          FIREBASE_APP_ID_ANDROID: ${{ secrets.FIREBASE_APP_ID_ANDROID }}
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+          GOOGLE_APPLICATION_CREDENTIALS_JSON: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS_JSON }}
+          FIREBASE_TESTER_GROUPS: ${{ secrets.FIREBASE_TESTER_GROUPS }}
+        run: |
+          if [[ -n "$FIREBASE_APP_ID_ANDROID" && -n "$FIREBASE_TESTER_GROUPS" && ( -n "$FIREBASE_TOKEN" || -n "$GOOGLE_APPLICATION_CREDENTIALS_JSON" ) ]]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "Firebase App Distribution secrets are incomplete. The APK artifact remains available in GitHub Actions."
+          fi
+
+      - name: Distribute Android beta to Firebase
+        if: steps.firebase_config.outputs.configured == 'true'
+        shell: bash
+        env:
+          FIREBASE_APP_ID_ANDROID: ${{ secrets.FIREBASE_APP_ID_ANDROID }}
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+          GOOGLE_APPLICATION_CREDENTIALS_JSON: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS_JSON }}
+          FIREBASE_TESTER_GROUPS: ${{ secrets.FIREBASE_TESTER_GROUPS }}
+          APK_PATH: android/app/build/outputs/apk/debug/app-debug.apk
+        working-directory: apps/mobile
+        run: |
+          auth_args=()
+          if [[ -n "$GOOGLE_APPLICATION_CREDENTIALS_JSON" ]]; then
+            credentials_path="$RUNNER_TEMP/firebase-service-account.json"
+            printf '%s' "$GOOGLE_APPLICATION_CREDENTIALS_JSON" > "$credentials_path"
+            export GOOGLE_APPLICATION_CREDENTIALS="$credentials_path"
+          fi
+
+          if [[ -n "$FIREBASE_TOKEN" ]]; then
+            auth_args=(--token "$FIREBASE_TOKEN")
+          fi
+
+          npx --yes firebase-tools@latest appdistribution:distribute "$APK_PATH" --app "$FIREBASE_APP_ID_ANDROID" --groups "$FIREBASE_TESTER_GROUPS" "${auth_args[@]}"
+
+      - name: Skip Firebase distribution
+        if: steps.firebase_config.outputs.configured != 'true'
+        run: echo "Firebase distribution skipped; Android beta artifact was uploaded for manual download."
