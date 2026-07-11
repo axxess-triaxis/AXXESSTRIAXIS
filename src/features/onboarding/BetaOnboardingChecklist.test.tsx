@@ -24,8 +24,10 @@ describe("BetaOnboardingChecklist", () => {
       </AnalyticsProviderShell>,
     );
 
-    expect(screen.getByText("Beta Onboarding")).toBeInTheDocument();
+    expect(screen.getByText("Pilot Onboarding")).toBeInTheDocument();
     expect(screen.getByText("Create first project")).toBeInTheDocument();
-    expect(screen.getByText("Send feedback")).toBeInTheDocument();
+    expect(screen.getByText("Ask first AI/RAG question")).toBeInTheDocument();
+    expect(screen.getByText("View audit trail")).toBeInTheDocument();
+    expect(screen.getByText("Send feedback / request support")).toBeInTheDocument();
   });
 });
