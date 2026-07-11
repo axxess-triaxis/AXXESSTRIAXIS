@@ -4,6 +4,10 @@
 
 AXXESS is a Next.js 15 enterprise SaaS beta with Supabase Auth/Database/Storage architecture, tenant-scoped repositories, private storage, governed RAG, local NLP, analytics abstraction, and an Expo mobile beta scaffold.
 
+Sprint 14 extends this into an AI-native platform layer with provider-gated AI routing, a RAG repository foundation, an open-source NLP model registry, productivity plugin registry, live dashboard hooks, social alert ingestion architecture, and Wix-safe public website exports.
+
+Sprint 15 adds enterprise frontend coherence with shared UI primitives, guided demo state, clean screenshot mode, live/demo/provider-gated labeling, and polished dashboard, AI Workspace, Knowledge Hub, approvals, CRM, projects, tasks, and analytics surfaces for investor and pilot demonstrations.
+
 ## Security Model
 
 The platform is designed with tenant isolation, RBAC, route protection, private storage, audit logs, immutable audit-chain utilities, and server-only privileged operations.
@@ -36,6 +40,8 @@ Analytics provider defaults to noop. PostHog and Mixpanel are selectable. Sensit
 
 RAG answers track citations, confidence, source ids, human review flags, prompt version readiness, and AI output audit metadata.
 
+Sprint 14 adds provider routing metadata including selected provider, routing reason, cost tier, latency, confidence, citations, and human review status.
+
 ## Prompt Approval Model
 
 Prompt versions support draft/pending/approved/rejected/retired review states in the Sprint 13 migration.
@@ -61,6 +67,7 @@ Readiness docs exist. Store submission requires icons, screenshots, privacy poli
 - Supabase MFA/OAuth/passkeys must be configured.
 - Staging migration must be applied and validated.
 - Mobile builds require provider credentials.
+- Some frontend states remain demo-seeded until production providers and pilot tenants are fully configured.
 - Compliance is an audit-ready foundation, not certification.
 
 ## Roadmap To SOC2/ISO27001 Readiness

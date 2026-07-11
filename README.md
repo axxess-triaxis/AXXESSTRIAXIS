@@ -24,6 +24,9 @@ Current runtime status: Sprint 13 enterprise beta readiness foundation with onbo
 - Supabase Auth, tenant repositories, CRUD workflows, notifications, invitations, audit logs, private storage, and RLS-ready metadata are in place.
 - Runtime Demo Mode loads the seeded North East Health Mission tenant for investor previews.
 - Production repository calls fall back to the demo repository layer when Supabase is unavailable, preventing investor-facing backend errors.
+- Sprint 15 consolidates frontend coherence through shared enterprise UI primitives, guided demo state, screenshot mode, and live/demo/provider-gated labels across the major demo screens.
+- Sprint 14 adds provider-gated AI routing for OpenAI, Anthropic, Google, xAI, Falcon, Jais, and local deterministic fallback.
+- Sprint 14 adds the RAG repository foundation, open-source NLP model registry, productivity plugin registry, live dashboard provider hooks, social alert ingestion architecture, and Wix-safe public website export.
 - Governed RAG provides document chunking, permission-aware retrieval, citations, confidence scoring, and answer audit logs.
 - Local NLP utilities provide deterministic keyword extraction, summaries, entity extraction, classification, tag suggestions, and lightweight regional language detection.
 - Sprint 12 security modules add enterprise IAM, tenant guardrails, immutable audit hashing, privacy request planning, compliance control mapping, prompt governance, and PostHog-ready observability.
@@ -58,10 +61,13 @@ Current runtime status: Sprint 13 enterprise beta readiness foundation with onbo
 |   |-- app/             Next App Router pages, shell layout, navigation, routing
 |   |-- auth/            Supabase auth facade, local profile helpers, session clients
 |   |-- components/      Shared layout, feedback, forms, and UI components
+|   |-- components/enterprise/ Shared Sprint 15 enterprise UI primitives
+|   |-- components/demo/ Guided demo and investor preview UI
 |   |-- config/          Feature flags
 |   |-- demo/            Investor-preview dataset, mode switch, and demo repositories
 |   |-- domain/          Core enterprise entity types
 |   |-- features/        Dashboard, projects, tasks, CRM, Knowledge Hub, AI workspace
+|   |-- lib/demo/        Sprint 15 frontend demo slices and guided workflow model
 |   |-- providers/       Dependency injection and resilient service provider wiring
 |   |-- repositories/    Repository interfaces and Supabase implementations
 |   |-- security/        RBAC, enterprise IAM, tenant guards, audit integrity
@@ -92,6 +98,8 @@ pnpm run dev
 ```
 
 Open `http://localhost:3000/dashboard`.
+
+For an investor walkthrough, open `http://localhost:3000/dashboard?demo=guided`. For clean product screenshots, append `?screenshot=true` to a product route.
 
 Useful scripts:
 
@@ -186,6 +194,11 @@ Screenshot slots are reserved for production-approved imagery:
 - `docs/RAG.md`
 - `docs/NLP.md`
 - `docs/DEPLOYMENT.md`
+- `docs/SPRINT_15_FRONTEND_AUDIT.md`
+- `docs/PRODUCT_WALKTHROUGH.md`
+- `docs/FRONTEND_ARCHITECTURE.md`
+- `docs/DEMO_SCREENSHOT_GUIDE.md`
+- `docs/SPRINT_LOG.md`
 - `docs/SECURITY_ARCHITECTURE.md`
 - `docs/COMPLIANCE_ENGINE.md`
 - `docs/PRIVACY_ENGINEERING.md`

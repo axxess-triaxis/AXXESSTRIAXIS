@@ -1,21 +1,65 @@
 import { useState } from "react";
-import { SectionHeader } from "../../components/layout/SectionHeader";
+import {
+  ApprovalCard,
+  DataStateBadge,
+  DemoDataNotice,
+  HumanReviewBadge,
+  ModuleHeader,
+  PageShell,
+  SectionCard,
+  TenantScopeBadge,
+} from "../../components/enterprise";
 import { Card } from "../../components/ui/Card";
 import { RiskBadge } from "../../components/ui/RiskBadge";
+import { demoApprovalQueue } from "../../lib/demo/demoApprovals";
 import { applicationServices } from "../../providers/serviceProvider";
 import { Check, CheckCircle2, ShieldCheck, X, XCircle } from "lucide-react";
 
 const approvals = applicationServices.institutionalRepository.getApprovals();
 
 export const ApprovalsSection = () => {
-  const [actioned, setActioned] = useState<Record<number, "approved" | "rejected">>({});
+  const [actioned, setActioned] = useState<Record<string, "approved" | "rejected" | "clarification">>({});
 
   return (
-    <div>
-      <SectionHeader
+    <PageShell>
+      <ModuleHeader
         title="Approvals & Governance"
-        subtitle={`${approvals.filter((approval) => approval.status === "Pending").length} pending approvals - 3 overdue SLA`}
+        eyebrow="80 percent machine, 20 percent human, 100 percent trust"
+        description={`${approvals.filter((approval) => approval.status === "Pending").length} pending approvals, 3 overdue SLA items, and human review required for high-trust institutional actions.`}
+        badges={[
+          <TenantScopeBadge key="tenant" />,
+          <DataStateBadge key="demo" state="Demo" />,
+          <HumanReviewBadge key="review" required />,
+        ]}
       />
+      <DemoDataNotice label="Approval decisions update local demo state, show AI recommendation context, and preserve audit-ready decision language." />
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
+        {demoApprovalQueue.map((approval) => (
+          <ApprovalCard key={approval.title} title={approval.title} requestor={approval.requestor} risk={approval.risk}>
+            <div className="space-y-3">
+              <div className="grid grid-cols-1 gap-2 text-xs text-[#5F6B73]">
+                <span><strong className="text-[#0F1117]">Project:</strong> {approval.linkedProject}</span>
+                <span><strong className="text-[#0F1117]">Document:</strong> {approval.linkedDocument}</span>
+                <span><strong className="text-[#0F1117]">Stakeholder:</strong> {approval.stakeholder}</span>
+              </div>
+              <p className="rounded-lg bg-[#F8F9FA] p-3 text-xs leading-relaxed text-[#5F6B73]"><strong className="text-[#0F1117]">AI recommendation:</strong> {approval.recommendation}</p>
+              <p className="text-xs leading-relaxed text-[#5F6B73]">{approval.policyNote}</p>
+              {actioned[approval.title] ? (
+                <div className="rounded-lg bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700">
+                  {actioned[approval.title] === "approved" ? "Approved - audit log written" : actioned[approval.title] === "rejected" ? "Rejected - requester notified" : "Clarification requested - SLA clock paused"}
+                </div>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  <button onClick={() => setActioned((prev) => ({ ...prev, [approval.title]: "approved" }))} className="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-700">Approve</button>
+                  <button onClick={() => setActioned((prev) => ({ ...prev, [approval.title]: "rejected" }))} className="rounded-lg border border-red-100 px-3 py-2 text-xs font-semibold text-red-700 hover:bg-red-50">Reject</button>
+                  <button onClick={() => setActioned((prev) => ({ ...prev, [approval.title]: "clarification" }))} className="rounded-lg border border-[rgba(15,17,23,0.1)] px-3 py-2 text-xs font-semibold text-[#5F6B73] hover:bg-[#F2F3F5]">Clarify</button>
+                </div>
+              )}
+            </div>
+          </ApprovalCard>
+        ))}
+      </div>
+      <SectionCard title="Operational approval queue" description="Repository-backed approval rows remain available below the guided governance examples.">
       <div className="space-y-4">
         {approvals.map((approval) => (
           <Card key={approval.id} className="p-5">
@@ -45,10 +89,10 @@ export const ApprovalsSection = () => {
               </div>
             </div>
             <p className="text-xs text-[#5F6B73] leading-relaxed mb-4 bg-[#F8F9FA] rounded-lg px-3 py-2.5">{approval.description}</p>
-            {actioned[approval.id] ? (
-              <div className={`flex items-center gap-2 text-sm font-semibold ${actioned[approval.id] === "approved" ? "text-emerald-600" : "text-red-600"}`}>
-                {actioned[approval.id] === "approved" ? <CheckCircle2 size={14} /> : <XCircle size={14} />}
-                {actioned[approval.id] === "approved" ? "Approved - audit log updated" : "Rejected - requester notified"}
+            {actioned[String(approval.id)] ? (
+              <div className={`flex items-center gap-2 text-sm font-semibold ${actioned[String(approval.id)] === "approved" ? "text-emerald-600" : "text-red-600"}`}>
+                {actioned[String(approval.id)] === "approved" ? <CheckCircle2 size={14} /> : <XCircle size={14} />}
+                {actioned[String(approval.id)] === "approved" ? "Approved - audit log updated" : "Rejected - requester notified"}
               </div>
             ) : (
               <div className="flex items-center gap-2">
@@ -69,7 +113,8 @@ export const ApprovalsSection = () => {
           </Card>
         ))}
       </div>
-    </div>
+      </SectionCard>
+    </PageShell>
   );
 };
 
