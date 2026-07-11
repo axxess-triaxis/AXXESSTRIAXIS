@@ -46,3 +46,20 @@ The language detector uses Unicode script ranges and deterministic heuristics. T
 - Add optional open-source embedding and NLP provider adapters.
 - Add evaluation datasets for multilingual records.
 - Add document ingestion hooks that call classification and tag suggestions on upload.
+
+## Sprint 14 Model Registry
+
+Sprint 14 adds an open-source model registry for:
+
+- IndicBERT / IndicBERT v2
+- MuRIL
+- IndicTrans2
+- LaBSE
+- XLM-RoBERTa
+- multilingual-e5
+- bge-m3
+- sentence-transformers multilingual models
+- fastText language identification
+- NLLB
+
+The registry records intended use, language coverage, provider mode, and implementation status without downloading models during build or deployment.

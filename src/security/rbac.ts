@@ -25,6 +25,7 @@ const sectionPermissions: Record<NavSection, RoleName[]> = {
   knowledge: ["Super Admin", "Organization Admin", "Executive", "Manager", "Employee", "Consultant", "Guest"],
   documents: ["Super Admin", "Organization Admin", "Executive", "Manager", "Employee", "Consultant", "Guest"],
   meetings: ["Super Admin", "Organization Admin", "Executive", "Manager", "Employee", "Consultant"],
+  alerts: ["Super Admin", "Organization Admin", "Executive", "Manager", "Employee", "Consultant"],
   approvals: ["Super Admin", "Organization Admin", "Executive", "Manager"],
   analytics: ["Super Admin", "Organization Admin", "Executive", "Manager"],
   "product-analytics": ["Super Admin", "Organization Admin"],

@@ -1,0 +1,16 @@
+{
+  "implemented": [
+    "AI router fallback",
+    "RAG contracts",
+    "NLP registry",
+    "human review flags"
+  ],
+  "providerGated": [
+    "OpenAI",
+    "Anthropic",
+    "Gemini",
+    "xAI",
+    "Falcon",
+    "Jais"
+  ]
+}

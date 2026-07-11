@@ -1,0 +1,9 @@
+{
+  "current": "Sprint 14 AI-native platform layer",
+  "next": [
+    "production provider keys",
+    "staging RLS validation",
+    "mobile store beta",
+    "live social alert ingestion"
+  ]
+}
