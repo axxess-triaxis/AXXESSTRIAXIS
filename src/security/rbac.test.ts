@@ -58,4 +58,24 @@ describe("mock RBAC route guards", () => {
     expect(canAccessRoute(mockCurrentUserContext, routeForPath("/admin/beta-readiness"))).toBe(true);
     expect(canAccessRoute(mockCurrentUserContext, routeForPath("/admin/product-analytics"))).toBe(true);
   });
+
+  it("restricts Sprint 16 tenant administration and audit logs to administrators", () => {
+    const employee: UserContext = {
+      id: "user_employee",
+      organizationId: "org_public_safety",
+      role: "Employee",
+    };
+    const manager: UserContext = {
+      id: "user_manager",
+      organizationId: "org_public_safety",
+      role: "Manager",
+    };
+
+    expect(canAccessRoute(mockCurrentUserContext, routeForPath("/admin/organization"))).toBe(true);
+    expect(canAccessRoute(mockCurrentUserContext, routeForPath("/admin/audit-logs"))).toBe(true);
+    expect(canAccessRoute(employee, routeForPath("/admin/organization"))).toBe(false);
+    expect(canAccessRoute(employee, routeForPath("/admin/audit-logs"))).toBe(false);
+    expect(canAccessRoute(manager, routeForPath("/admin/organization"))).toBe(false);
+    expect(canAccessRoute(manager, routeForPath("/admin/audit-logs"))).toBe(false);
+  });
 });
