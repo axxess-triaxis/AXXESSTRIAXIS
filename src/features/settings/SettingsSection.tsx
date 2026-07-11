@@ -12,7 +12,9 @@ import { isDemoModeEnabled, isDemoModeForcedByEnv, resetDemoEnvironment, setDemo
 import type { Invitation, RoleName, User } from "../../domain";
 import { applicationServices } from "../../providers/serviceProvider";
 import { tenantScopeFromUser } from "../../repositories/supabaseEnterpriseRepositories";
+import { getAiRouterStatusSnapshot } from "../../services/ai/router/aiRouter";
 import { useAnalytics } from "../../services/analytics";
+import { languageCoverage } from "../../services/nlp/modelRegistry";
 import { Building2, Check, CheckCircle2, Database, RotateCcw, Save, Send, Settings, ShieldCheck, Sparkles, UserPlus, X, XCircle } from "lucide-react";
 
 export const SettingsSection = () => {
@@ -139,12 +141,60 @@ export const SettingsSection = () => {
               ))}
             </div>
           </Card>
+          <AiRoutingProvidersPanel />
+          <LanguageCoveragePanel />
         </div>
       )}
 
     </div>
   );
 };
+
+function AiRoutingProvidersPanel() {
+  const status = getAiRouterStatusSnapshot();
+
+  return (
+    <Card className="p-5">
+      <div className="mb-4 flex items-center justify-between">
+        <h3 className="text-sm font-semibold text-[#0F1117]">AI Routing & Providers</h3>
+        <span className="rounded-full bg-[#8B1E2D]/8 px-2 py-0.5 text-[10px] font-semibold text-[#8B1E2D]">{status.mode}</span>
+      </div>
+      <div className="space-y-2">
+        {status.providers.map((provider) => (
+          <div key={provider.name} className="flex items-center justify-between rounded-lg bg-[#F8F9FA] p-3 text-xs">
+            <div>
+              <div className="font-semibold text-[#0F1117]">{provider.displayName}</div>
+              <div className="mt-0.5 font-mono text-[10px] uppercase text-[#5F6B73]">{provider.mode} - {provider.costTier} cost - {provider.latencyTier} latency</div>
+            </div>
+            <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${provider.configured ? "bg-emerald-50 text-emerald-700" : "bg-[#F2F3F5] text-[#5F6B73]"}`}>
+              {provider.status}
+            </span>
+          </div>
+        ))}
+      </div>
+      <p className="mt-3 text-[11px] leading-relaxed text-[#5F6B73]">Server-side keys are never shown here. Missing providers stay adapter-ready and fall back to local deterministic mode.</p>
+    </Card>
+  );
+}
+
+function LanguageCoveragePanel() {
+  return (
+    <Card className="p-5">
+      <h3 className="mb-4 text-sm font-semibold text-[#0F1117]">Language & NLP Coverage</h3>
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+        {languageCoverage.map((coverage) => (
+          <div key={coverage.language} className="rounded-lg bg-[#F8F9FA] p-3">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs font-semibold text-[#0F1117]">{coverage.language}</span>
+              <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-medium text-[#5F6B73]">{coverage.status}</span>
+            </div>
+            <p className="mt-1 text-[11px] leading-relaxed text-[#5F6B73]">{coverage.note}</p>
+          </div>
+        ))}
+      </div>
+    </Card>
+  );
+}
 
 const departmentOptions = [
   "Mission Secretariat",

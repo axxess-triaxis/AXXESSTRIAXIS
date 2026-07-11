@@ -28,8 +28,9 @@
     "mobile:eas:workflow:production": "pnpm --dir apps/mobile run eas:workflow:production",
     "mobile:ios:preview": "pnpm --dir apps/mobile run ios:preview",
     "mobile:typecheck": "pnpm --dir apps/mobile run typecheck",
+    "export:wix": "node scripts/export-wix.mjs",
     "start": "next start",
-    "test": "vitest run",
+    "test": "vitest run --config vitest.config.mjs",
     "test:e2e": "playwright test",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit"

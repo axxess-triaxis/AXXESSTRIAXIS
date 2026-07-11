@@ -1,0 +1,13 @@
+{
+  "categories": [
+    "email",
+    "calendar",
+    "storage",
+    "messaging",
+    "project-management",
+    "crm",
+    "document",
+    "finance"
+  ],
+  "providerGated": true
+}
