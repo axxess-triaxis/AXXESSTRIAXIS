@@ -1,5 +1,3 @@
-import { EnterpriseAdminPage } from "../../../features/admin/EnterpriseAdminPage";
+import WorkspacePage from "../../workspace-page";
 
-export default function AdminOrganizationPage() {
-  return <EnterpriseAdminPage panel="organization" />;
-}
+export default WorkspacePage;
