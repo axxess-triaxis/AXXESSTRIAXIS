@@ -14,6 +14,8 @@ Do not commit actual secret values to this repository. Store production and stag
 
 | Secret name | Value to paste | Required for |
 | --- | --- | --- |
+| `EXPO_TOKEN` | Expo access token with permission to run EAS builds | EAS Android/iOS builds |
+| `EAS_PROJECT_ID` | Expo EAS project ID for the mobile app | EAS Android/iOS builds |
 | `ANDROID_KEYSTORE_BASE64` | Base64 contents of the Android keystore file | Android signing |
 | `ANDROID_KEYSTORE_PASSWORD` | Keystore password | Android signing |
 | `ANDROID_KEY_ALIAS` | Keystore alias | Android signing |
@@ -27,6 +29,22 @@ Do not commit actual secret values to this repository. Store production and stag
 | `CAPACITOR_SERVER_URL` | Production or staging web URL, for example `https://app.axxess.dev` | Capacitor shell |
 | `CAPACITOR_ALLOWED_HOSTS` | Comma-separated allowed hosts, for example `app.axxess.dev,localhost,127.0.0.1` | Capacitor shell |
 | `NEXT_PUBLIC_APP_URL` | Web app URL | Web and mobile |
+
+## Build-Proof Workflow
+
+The first GitHub Actions proof point for mobile release readiness is:
+
+```text
+.github/workflows/mobile-eas-production-build.yml
+```
+
+Workflow name:
+
+```text
+Mobile EAS Production Build Proof
+```
+
+It validates the required build/signing secrets, typechecks `apps/mobile`, launches EAS Android/iOS builds, and uploads the EAS build output as a GitHub Actions artifact.
 
 ## Encoding Android Keystore
 
