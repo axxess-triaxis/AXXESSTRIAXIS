@@ -138,22 +138,39 @@ export function AuditLogsSection() {
       <div className="grid gap-4 xl:grid-cols-[1.35fr_0.65fr]">
         <SectionCard title="Tenant audit trail" description="Each row must remain scoped to the active organization and user role.">
           {filteredLogs.length ? (
-            <div className="overflow-hidden rounded-lg border border-[rgba(15,17,23,0.08)]">
-              <div className="grid grid-cols-[0.8fr_1.1fr_0.9fr_0.8fr] gap-3 bg-[#F8F9FA] px-3 py-2 text-[11px] font-semibold uppercase tracking-wide text-[#5F6B73]">
-                <span>Time</span>
-                <span>Action</span>
-                <span>Resource</span>
-                <span>Evidence</span>
-              </div>
-              {filteredLogs.slice(0, 30).map((log) => (
-                <div key={log.id} className="grid grid-cols-[0.8fr_1.1fr_0.9fr_0.8fr] gap-3 border-t border-[rgba(15,17,23,0.06)] px-3 py-2 text-xs">
-                  <span className="font-mono text-[#5F6B73]">{log.createdAt.slice(0, 16).replace("T", " ")}</span>
-                  <span className="font-semibold text-[#0F1117]">{log.action}</span>
-                  <span className="text-[#5F6B73]">{log.resourceType}</span>
-                  <span className="truncate text-[#5F6B73]">{log.requestId ?? log.id}</span>
+            <>
+              <div className="hidden overflow-hidden rounded-lg border border-[rgba(15,17,23,0.08)] md:block">
+                <div className="grid grid-cols-[0.8fr_1.1fr_0.9fr_0.8fr] gap-3 bg-[#F8F9FA] px-3 py-2 text-[11px] font-semibold uppercase tracking-wide text-[#5F6B73]">
+                  <span>Time</span>
+                  <span>Action</span>
+                  <span>Resource</span>
+                  <span>Evidence</span>
                 </div>
-              ))}
-            </div>
+                {filteredLogs.slice(0, 30).map((log) => (
+                  <div key={log.id} className="grid grid-cols-[0.8fr_1.1fr_0.9fr_0.8fr] gap-3 border-t border-[rgba(15,17,23,0.06)] px-3 py-2 text-xs">
+                    <span className="font-mono text-[#5F6B73]">{log.createdAt.slice(0, 16).replace("T", " ")}</span>
+                    <span className="font-semibold text-[#0F1117]">{log.action}</span>
+                    <span className="text-[#5F6B73]">{log.resourceType}</span>
+                    <span className="truncate text-[#5F6B73]">{log.requestId ?? log.id}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="space-y-3 md:hidden">
+                {filteredLogs.slice(0, 30).map((log) => (
+                  <div key={log.id} className="rounded-lg border border-[rgba(15,17,23,0.08)] bg-white p-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <p className="min-w-0 text-sm font-semibold text-[#0F1117]">{log.action}</p>
+                      <StatusBadge status={log.category ?? "system"} />
+                    </div>
+                    <div className="mt-3 grid grid-cols-2 gap-2 text-[11px]">
+                      <span className="rounded bg-[#F8F9FA] p-2 text-[#5F6B73]"><strong className="block text-[#0F1117]">Time</strong>{log.createdAt.slice(0, 16).replace("T", " ")}</span>
+                      <span className="rounded bg-[#F8F9FA] p-2 text-[#5F6B73]"><strong className="block text-[#0F1117]">Resource</strong>{log.resourceType}</span>
+                    </div>
+                    <p className="mt-2 truncate font-mono text-[10px] text-[#5F6B73]">{log.requestId ?? log.id}</p>
+                  </div>
+                ))}
+              </div>
+            </>
           ) : (
             <EmptyState title={exportReady ? "No records for this filter" : "No audit logs loaded"} message="Audit records appear here after auth, AI, document, approval, task, feedback, or admin actions." />
           )}

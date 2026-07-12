@@ -1,5 +1,40 @@
 # Sprint Log
 
+## Sprint 17 - Pilot Event Persistence, Mobile Admin Review, And Invitation Delivery
+
+Sprint 17 completes the immediate follow-up items from Sprint 16 by moving pilot onboarding completion into a server route, adding optional real invitation email delivery, and improving mobile review of administrator and audit surfaces.
+
+### Completed
+
+- Added `/api/pilot-readiness-events` for tenant-scoped pilot onboarding event persistence.
+- Ensured pilot readiness inserts use the signed-in user's Supabase access token so RLS remains active.
+- Sanitized pilot event metadata and added lightweight audit logging for event capture.
+- Added optional Resend-compatible invitation email delivery with idempotent provider calls.
+- Preserved manual invitation acceptance URL fallback when email delivery is not configured.
+- Added mobile card layouts for Organization Admin and Audit Logs review surfaces.
+- Added unit/source tests for pilot events, invitation email delivery, onboarding persistence, and route metadata.
+- Added seed-gated Playwright coverage for Sprint 17 admin/audit/onboarding flows.
+
+### Live
+
+- Pilot onboarding completion now attempts server persistence.
+- Invitation creation can send real transactional emails when `RESEND_API_KEY` is configured.
+- Admin and audit surfaces have phone-friendly review layouts.
+
+### Provider-Gated
+
+- Email delivery requires `RESEND_API_KEY` and a verified/allowed sender.
+- Pilot event persistence requires the Sprint 16 migration to be applied to Supabase.
+- Playwright Sprint 17 flows require seeded Supabase data.
+
+### Sprint 18 Recommendations
+
+- Add a Pilot Conversion dashboard powered by `pilot_readiness_events`.
+- Add signed server-side audit exports with immutable export records.
+- Add invitation delivery webhooks for delivered/bounced/suppressed states.
+- Add organization-level pilot health scoring and account-owner notes.
+- Add visual regression screenshots for mobile admin/audit views in CI.
+
 ## Sprint 16 - Pilot Readiness, Admin Hardening, And Tenant Workflows
 
 Sprint 16 turns the polished enterprise demo surface into a stronger pilot-readiness path for real institutions. It focuses on first-tenant setup, administrator confidence, audit review, and clean handoff between investor preview and live pilot use.

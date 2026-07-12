@@ -4,6 +4,9 @@ All notable changes to AXXESS are documented here. This project follows the spir
 
 ## Unreleased
 
+- Added Sprint 17 pilot readiness event API with authenticated Supabase writes, sanitized metadata, and audit logging.
+- Added optional Resend-compatible invitation email delivery with manual acceptance URL fallback when email is not configured.
+- Added mobile card fallbacks for Organization Admin and Audit Logs tables plus seed-gated Playwright coverage.
 - Added Sprint 16 pilot readiness hardening with tenant administration, audit-log review/export, expanded first-tenant onboarding, and admin navigation entries.
 - Added Sprint 16 Supabase migration for tenant-scoped pilot readiness events plus audit-log indexes for review and export workflows.
 - Added Sprint 16 routing, RBAC, onboarding, and RLS tests for pilot admin and audit surfaces.

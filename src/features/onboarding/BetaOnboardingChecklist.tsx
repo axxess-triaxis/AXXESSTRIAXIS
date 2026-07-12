@@ -53,6 +53,20 @@ export function BetaOnboardingChecklist({ user, projectCount }: BetaOnboardingCh
       const nextValue = !current[id];
       const next = { ...current, [id]: nextValue };
       if (nextValue) {
+        void fetch("/api/pilot-readiness-events", {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            stepId: id,
+            eventType: "step_completed",
+            source: "web",
+            metadata: {
+              project_count: projectCount,
+              completed_count: steps.filter((step) => next[step.id]).length,
+            },
+          }),
+        }).catch(() => undefined);
         analytics.trackEvent("pilot_onboarding_step_completed", { step_id: id }, {
           organization_id: user.organizationId,
           user_id: user.id,
