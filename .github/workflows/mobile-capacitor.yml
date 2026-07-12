@@ -36,15 +36,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 11.7.0
-          run_install: false
-
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: pnpm
 
       - uses: actions/setup-java@v4
         with:
@@ -52,6 +46,8 @@ jobs:
           java-version: 17
 
       - uses: android-actions/setup-android@v3
+        with:
+          packages: "tools platform-tools platforms;android-35 build-tools;35.0.0"
 
       - name: Report preview runtime configuration
         shell: bash
@@ -116,13 +112,6 @@ jobs:
         working-directory: capacitor-shell
         run: npx cap sync android
 
-      - name: Install Android SDK packages
-        shell: bash
-        run: |
-          set -euo pipefail
-          sdkmanager --install "platform-tools" "platforms;android-35" "build-tools;35.0.0"
-          yes | sdkmanager --licenses >/dev/null
-
       - name: Build Android debug APK
         working-directory: capacitor-shell/android
         shell: bash
@@ -154,15 +143,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 11.7.0
-          run_install: false
-
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: pnpm
 
       - name: Report preview runtime configuration
         shell: bash
