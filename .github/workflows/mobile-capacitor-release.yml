@@ -130,6 +130,18 @@ jobs:
 
 
 
+      - name: Ensure iOS project exists
+
+        run: |
+
+          if [ ! -d apps/mobile-capacitor/ios ]; then
+
+            pnpm --dir apps/mobile-capacitor exec cap add ios
+
+          fi
+
+
+
       - name: Sync Capacitor
 
         run: pnpm run mobile:capacitor:sync
