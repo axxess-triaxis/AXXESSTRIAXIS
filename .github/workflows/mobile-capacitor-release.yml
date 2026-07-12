@@ -53,7 +53,11 @@ jobs:
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 17
+          java-version: 21
+
+      - uses: android-actions/setup-android@v3
+        with:
+          packages: "tools platform-tools platforms;android-35 build-tools;35.0.0"
 
       - name: Validate Android release secrets
         shell: bash
@@ -145,7 +149,11 @@ jobs:
 
       - name: Build signed Android release
         working-directory: capacitor-shell/android
-        run: ./gradlew assembleRelease bundleRelease
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x ./gradlew
+          ./gradlew assembleRelease bundleRelease --stacktrace --no-daemon --console=plain
 
       - name: Upload signed Android artifacts
         uses: actions/upload-artifact@v4
