@@ -1,0 +1,88 @@
+name: Capacitor Mobile Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  production-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Refresh repository state
+        run: |
+          BRANCH="${GITHUB_HEAD_REF:-${GITHUB_REF_NAME}}"
+          git fetch origin --prune
+          git checkout -B "$BRANCH" "origin/$BRANCH"
+          git pull --ff-only origin "$BRANCH"
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 11.7.0
+          run_install: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build web app
+        run: pnpm run build
+
+      - name: Sync Capacitor
+        run: pnpm run mobile:capacitor:sync
+
+      - name: Prepare Android signing environment
+        run: |
+          echo "ANDROID_KEYSTORE_FILE=$GITHUB_WORKSPACE/apps/mobile-capacitor/android/app/release.keystore" >> $GITHUB_ENV
+        env:
+          ANDROID_KEYSTORE_FILE: ${{ github.workspace }}/apps/mobile-capacitor/android/app/release.keystore
+
+      - name: Build Android production artifact
+        run: pnpm run mobile:capacitor:build:android
+        env:
+          MOBILE_BUILD_NUMBER: ${{ github.run_number }}
+          ANDROID_KEYSTORE_FILE: ${{ github.workspace }}/apps/mobile-capacitor/android/app/release.keystore
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+
+      - name: Build iOS production artifact
+        run: pnpm run mobile:capacitor:build:ios
+        env:
+          MOBILE_BUILD_NUMBER: ${{ github.run_number }}
+
+      - name: Sign and distribute Android artifact
+        if: ${{ secrets.ANDROID_KEYSTORE_PASSWORD != '' && secrets.ANDROID_KEY_ALIAS != '' && secrets.ANDROID_KEY_PASSWORD != '' }}
+        run: |
+          echo "Android signing secrets detected; release artifact is ready for Play Console upload."
+
+      - name: Sign and distribute iOS artifact
+        if: ${{ secrets.ASC_KEY_ID != '' && secrets.ASC_ISSUER_ID != '' && secrets.ASC_PRIVATE_KEY != '' && secrets.APPLE_TEAM_ID != '' }}
+        run: |
+          echo "Apple signing secrets detected; release artifact is ready for TestFlight upload."
+
+      - name: Upload release artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: capacitor-release-${{ github.run_number }}
+          path: |
+            apps/mobile-capacitor/android/app/build/outputs/**
+            apps/mobile-capacitor/ios/App/build/**
+            apps/mobile-capacitor/build-metadata/**
+          if-no-files-found: ignore

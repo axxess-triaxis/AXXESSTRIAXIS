@@ -42,6 +42,7 @@ Current runtime status: Sprint 13 enterprise beta readiness foundation with onbo
 - PostHog capture adapter through a dependency-free analytics provider
 - Mixpanel browser client, disabled unless configured
 - Expo/EAS mobile beta scaffold under `apps/mobile`
+- Capacitor/Webnative native shell under `apps/mobile-capacitor`
 - Vitest and React Testing Library
 - pnpm
 
@@ -101,6 +102,7 @@ pnpm run lint
 pnpm run test
 pnpm run build
 pnpm run ci
+pnpm run mobile:capacitor:doctor
 ```
 
 ## Environment Variables
@@ -208,6 +210,9 @@ Screenshot slots are reserved for production-approved imagery:
 - `docs/EXPO_GITHUB_BUILD.md`
 - `docs/EAS_MANAGED_CREDENTIALS.md`
 - `docs/WIX_SETUP.md`
+- `docs/WEBNATIVE_CAPACITOR_AUDIT.md`
+- `docs/WEBNATIVE_ENVIRONMENT_MATRIX.md`
+- `docs/MOBILE_RELEASE_RUNBOOK.md`
 - `docs/ENVIRONMENT_VARIABLES.md`
 - `docs/APP_STORE_READINESS.md`
 - `docs/PLAY_STORE_READINESS.md`
