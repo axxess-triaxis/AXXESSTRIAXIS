@@ -4,6 +4,7 @@ All notable changes to AXXESS are documented here. This project follows the spir
 
 ## Unreleased
 
+- Added a Capacitor/Webnative mobile shell under `apps/mobile-capacitor` with Android/iOS build scripts, signing placeholders, environment validation, versioning metadata, and release documentation.
 - Fixed Expo GitHub build readiness by adding required EAS GitHub build images and documenting the correct `apps/mobile` base directory.
 - Configured Expo mobile builds to use EAS-managed remote credentials for iOS and Android app signing, with explicit app identifiers and credential safety docs.
 - Added Expo EAS workflow for manual Android and iOS production builds.
