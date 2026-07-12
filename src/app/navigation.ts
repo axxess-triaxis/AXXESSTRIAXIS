@@ -1,9 +1,9 @@
-import { BarChart3, BellRing, BookOpen, Brain, Building2, CalendarDays, CheckSquare, ClipboardCheck, FileText, FolderKanban, LayoutDashboard, Plug, ScrollText, Settings, ShieldCheck, Users } from "lucide-react";
+import { BarChart3, BellRing, BookOpen, Brain, Building2, CalendarDays, CheckSquare, ClipboardCheck, FileText, FolderKanban, LayoutDashboard, Plug, ScrollText, Settings, ShieldCheck, TrendingUp, Users } from "lucide-react";
 
 export type NavSection =
   | "dashboard" | "ai-workspace" | "projects" | "tasks"
   | "stakeholders" | "knowledge" | "documents" | "meetings"
-  | "approvals" | "audit-logs" | "analytics" | "product-analytics" | "alerts" | "organization-admin" | "integrations" | "settings" | "beta-readiness";
+  | "approvals" | "audit-logs" | "analytics" | "product-analytics" | "pilot-conversion" | "alerts" | "organization-admin" | "integrations" | "settings" | "beta-readiness";
 
 export type NavItem = {
   id: NavSection;
@@ -52,6 +52,7 @@ export const navGroups: NavGroup[] = [
       { id: "approvals" as NavSection, label: "Approvals & Governance", icon: ShieldCheck, badge: "23" },
       { id: "audit-logs" as NavSection, label: "Audit Logs", icon: ScrollText },
       { id: "product-analytics" as NavSection, label: "Product Analytics", icon: BarChart3 },
+      { id: "pilot-conversion" as NavSection, label: "Pilot Conversion", icon: TrendingUp },
     ],
   },
   {
