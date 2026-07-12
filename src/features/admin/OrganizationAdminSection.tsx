@@ -139,7 +139,7 @@ export function OrganizationAdminSection() {
       </div>
 
       <SectionCard title="Pilot team access" description="Role and department review for the first tenant users.">
-        <div className="overflow-hidden rounded-lg border border-[rgba(15,17,23,0.08)]">
+        <div className="hidden overflow-hidden rounded-lg border border-[rgba(15,17,23,0.08)] md:block">
           <div className="grid grid-cols-[1.2fr_0.8fr_0.8fr_0.7fr] gap-3 bg-[#F8F9FA] px-3 py-2 text-[11px] font-semibold uppercase tracking-wide text-[#5F6B73]">
             <span>User</span>
             <span>Role</span>
@@ -159,6 +159,24 @@ export function OrganizationAdminSection() {
               <EmptyState title="No users loaded" message="Invite the pilot sponsor, department owner, and first workflow users to activate the tenant." />
             </div>
           )}
+        </div>
+        <div className="space-y-3 md:hidden">
+          {state.users.slice(0, 8).map((row) => (
+            <div key={row.id} className="rounded-lg border border-[rgba(15,17,23,0.08)] bg-white p-3">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold text-[#0F1117]">{row.displayName}</p>
+                  <p className="mt-1 text-xs text-[#5F6B73]">{row.department ?? "Unassigned department"}</p>
+                </div>
+                <StatusBadge status={row.status} />
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2 text-[11px]">
+                <span className="rounded bg-[#F2F3F5] px-2 py-1 font-semibold text-[#5F6B73]">{row.role}</span>
+                <span className="inline-flex items-center gap-1 rounded bg-emerald-50 px-2 py-1 font-semibold text-emerald-700"><CheckCircle2 size={12} /> access scoped</span>
+              </div>
+            </div>
+          ))}
+          {!state.users.length && <EmptyState title="No users loaded" message="Invite the pilot sponsor, department owner, and first workflow users to activate the tenant." />}
         </div>
       </SectionCard>
 
