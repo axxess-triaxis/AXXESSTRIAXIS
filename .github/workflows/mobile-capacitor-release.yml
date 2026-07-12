@@ -1,185 +1,370 @@
 name: Capacitor Mobile Release
 
+
+
 on:
+
   push:
+
     tags:
+
       - 'v*'
+
   workflow_dispatch:
 
+
+
 permissions:
+
   contents: read
 
+
+
 jobs:
+
   android-production-release:
+
     runs-on: ubuntu-latest
+
     env:
+
       NEXT_TELEMETRY_DISABLED: '1'
+
       MOBILE_BUILD_NUMBER: ${{ github.run_number }}
+
       ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+
       ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+
       ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+
       ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+
     steps:
+
       - name: Checkout
+
         uses: actions/checkout@v4
+
         with:
+
           fetch-depth: 0
 
+
+
       - name: Refresh repository state
+
         run: |
+
           BRANCH="${GITHUB_HEAD_REF:-${GITHUB_REF_NAME}}"
+
           git fetch origin --prune
+
           if git show-ref --verify --quiet "refs/remotes/origin/${BRANCH}"; then
+
             git checkout -B "$BRANCH" "origin/$BRANCH"
+
             git pull --ff-only origin "$BRANCH"
+
           else
+
             echo "[mobile] No matching origin branch for ${BRANCH}; continuing with checked-out ref."
+
           fi
 
+
+
       - name: Setup pnpm
+
         uses: pnpm/action-setup@v4
+
         with:
+
           version: 11.7.0
+
           run_install: false
 
+
+
       - name: Setup Node
+
         uses: actions/setup-node@v4
+
         with:
+
           node-version: 22
+
           cache: pnpm
 
+
+
       - name: Install dependencies
+
         run: pnpm install --frozen-lockfile
 
+
+
       - name: Build web app
+
         run: pnpm run build
+
+
 
       - name: Ensure Android project exists
+
         run: |
+
           if [ ! -d apps/mobile-capacitor/android ]; then
+
             pnpm --dir apps/mobile-capacitor exec cap add android
+
           fi
+
+
 
       - name: Ensure Android assets path exists
+
         run: |
+
           mkdir -p apps/mobile-capacitor/android/app/src/main/assets/public
 
+
+
       - name: Sync Capacitor
+
         run: pnpm run mobile:capacitor:sync
+
+
 
       - name: Verify Android signing secrets
+
         run: |
+
           missing=0
+
           for key in ANDROID_KEYSTORE_BASE64 ANDROID_KEYSTORE_PASSWORD ANDROID_KEY_ALIAS ANDROID_KEY_PASSWORD; do
+
             if [ -z "${!key}" ]; then
+
               echo "::error::Missing required secret: $key"
+
               missing=1
+
             fi
+
           done
+
           if [ "$missing" -ne 0 ]; then
+
             exit 1
+
           fi
+
+
 
       - name: Prepare Android signing path
+
         run: |
+
           echo "ANDROID_KEYSTORE_FILE=$GITHUB_WORKSPACE/apps/mobile-capacitor/android/app/release.keystore" >> $GITHUB_ENV
 
+
+
       - name: Build Android production artifact
+
         run: pnpm run mobile:capacitor:build:android
 
+
+
       - name: Android release readiness marker
+
         run: |
+
           echo "Android signed artifact is ready for Play Console upload."
 
+
+
       - name: Upload Android release artifacts
+
         uses: actions/upload-artifact@v4
+
         if: always()
+
         with:
+
           name: capacitor-android-release-${{ github.run_number }}
+
           path: |
+
             apps/mobile-capacitor/android/app/build/outputs/**
+
             apps/mobile-capacitor/build-metadata/**
+
           if-no-files-found: ignore
+
+
 
   ios-production-release:
+
     runs-on: macos-13
+
     env:
+
       NEXT_TELEMETRY_DISABLED: '1'
+
       MOBILE_BUILD_NUMBER: ${{ github.run_number }}
+
       APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+
       ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+
       ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+
       ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
+
     steps:
+
       - name: Checkout
+
         uses: actions/checkout@v4
+
         with:
+
           fetch-depth: 0
 
+
+
       - name: Refresh repository state
+
         run: |
+
           BRANCH="${GITHUB_HEAD_REF:-${GITHUB_REF_NAME}}"
+
           git fetch origin --prune
+
           if git show-ref --verify --quiet "refs/remotes/origin/${BRANCH}"; then
+
             git checkout -B "$BRANCH" "origin/$BRANCH"
+
             git pull --ff-only origin "$BRANCH"
+
           else
+
             echo "[mobile] No matching origin branch for ${BRANCH}; continuing with checked-out ref."
+
           fi
+
+
 
       - name: Setup pnpm
+
         uses: pnpm/action-setup@v4
+
         with:
+
           version: 11.7.0
+
           run_install: false
 
+
+
       - name: Setup Node
+
         uses: actions/setup-node@v4
+
         with:
+
           node-version: 22
+
           cache: pnpm
 
+
+
       - name: Install dependencies
+
         run: pnpm install --frozen-lockfile
 
+
+
       - name: Build web app
+
         run: pnpm run build
 
+
+
       - name: Ensure iOS project exists
+
         run: |
+
           if [ ! -d apps/mobile-capacitor/ios ]; then
+
             pnpm --dir apps/mobile-capacitor exec cap add ios
+
           fi
+
+
 
       - name: Sync Capacitor
+
         run: pnpm run mobile:capacitor:sync
 
+
+
       - name: Verify Apple signing secrets
+
         run: |
+
           missing=0
+
           for key in APPLE_TEAM_ID ASC_KEY_ID ASC_ISSUER_ID ASC_PRIVATE_KEY; do
+
             if [ -z "${!key}" ]; then
+
               echo "::error::Missing required secret: $key"
+
               missing=1
+
             fi
+
           done
+
           if [ "$missing" -ne 0 ]; then
+
             exit 1
+
           fi
 
+
+
       - name: Build iOS production artifact
+
         run: pnpm run mobile:capacitor:build:ios
 
+
+
       - name: iOS release readiness marker
+
         run: |
+
           echo "iOS artifact is ready for signing/TestFlight upload."
 
+
+
       - name: Upload iOS release artifacts
+
         uses: actions/upload-artifact@v4
+
         if: always()
+
         with:
+
           name: capacitor-ios-release-${{ github.run_number }}
+
           path: |
+
             apps/mobile-capacitor/ios/App/build/**
+
             apps/mobile-capacitor/build-metadata/**
+
           if-no-files-found: ignore
+
