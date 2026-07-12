@@ -60,6 +60,10 @@ jobs:
             pnpm --dir apps/mobile-capacitor exec cap add android
           fi
 
+      - name: Ensure Android assets path exists
+        run: |
+          mkdir -p apps/mobile-capacitor/android/app/src/main/assets/public
+
       - name: Sync Capacitor
         run: pnpm run mobile:capacitor:sync
 
