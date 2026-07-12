@@ -27,6 +27,17 @@ apps/mobile/*.p8
 apps/mobile/*.p12
 apps/mobile/*.cer
 apps/mobile/*.mobileprovision
+apps/mobile-capacitor/*.jks
+apps/mobile-capacitor/*.keystore
+apps/mobile-capacitor/*.p8
+apps/mobile-capacitor/*.p12
+apps/mobile-capacitor/*.cer
+apps/mobile-capacitor/*.mobileprovision
+apps/mobile-capacitor/android/app/build/
+apps/mobile-capacitor/android/.gradle/
+apps/mobile-capacitor/ios/App/build/
+apps/mobile-capacitor/ios/Pods/
+apps/mobile-capacitor/ios/App/Pods/
 
 # Logs
 *.log
