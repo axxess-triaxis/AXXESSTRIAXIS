@@ -92,7 +92,7 @@ jobs:
           if-no-files-found: ignore
 
   ios-production-release:
-    runs-on: macos-latest
+    runs-on: macos-13
     env:
       NEXT_TELEMETRY_DISABLED: '1'
       MOBILE_BUILD_NUMBER: ${{ github.run_number }}
