@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerAuthSession } from "../../../auth/serverSession";
 import { auditLogsRepository, tenantScopeFromUser } from "../../../repositories/supabaseEnterpriseRepositories";
 import { sanitizeAnalyticsProperties } from "../../../services/analytics/sanitize";
+import type { RepositoryQuery } from "../../../repositories/interfaces";
 
 const pilotStepIds = [
   "organization",
@@ -31,6 +32,8 @@ type PilotReadinessEventRow = {
   metadata: Record<string, unknown>;
   created_at: string;
 };
+
+const adminRoles = ["Super Admin", "Organization Admin"];
 
 function getSupabaseConfig() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, "");
@@ -82,6 +85,70 @@ async function insertPilotReadinessEvent(accessToken: string, row: Record<string
   return rows[0];
 }
 
+function repositoryQueryFromUrl(url: URL): RepositoryQuery {
+  const page = Number(url.searchParams.get("page") ?? "1");
+  const pageSize = Number(url.searchParams.get("pageSize") ?? "100");
+  return {
+    page: Number.isFinite(page) ? page : 1,
+    pageSize: Number.isFinite(pageSize) ? pageSize : 100,
+  };
+}
+
+async function listPilotReadinessEvents(accessToken: string, organizationId: string, query: RepositoryQuery) {
+  const { url, anonKey } = getSupabaseConfig();
+  const pageSize = Math.min(Math.max(query.pageSize ?? 100, 1), 200);
+  const page = Math.max(query.page ?? 1, 1);
+  const params = new URLSearchParams({
+    select: "id,organization_id,user_id,step_id,event_type,source,metadata,created_at",
+    organization_id: `eq.${organizationId}`,
+    order: "created_at.desc",
+    limit: String(pageSize),
+    offset: String((page - 1) * pageSize),
+  });
+
+  const response = await fetch(`${url}/rest/v1/pilot_readiness_events?${params.toString()}`, {
+    headers: {
+      apikey: anonKey,
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    const message = await response.text().catch(() => "");
+    throw new Error(`Pilot readiness event list failed: ${response.status} ${message}`);
+  }
+
+  return await response.json() as PilotReadinessEventRow[];
+}
+
+function mapPilotReadinessEvent(row: PilotReadinessEventRow) {
+  return {
+    id: row.id,
+    organizationId: row.organization_id,
+    userId: row.user_id ?? undefined,
+    stepId: row.step_id,
+    eventType: row.event_type,
+    source: row.source,
+    metadata: row.metadata,
+    createdAt: row.created_at,
+  };
+}
+
+export async function GET(request: Request) {
+  const session = await getServerAuthSession(true);
+  if (!session) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+  if (!adminRoles.includes(session.user.role)) return NextResponse.json({ error: "Forbidden." }, { status: 403 });
+
+  const rows = await listPilotReadinessEvents(
+    session.accessToken,
+    session.user.organizationId,
+    repositoryQueryFromUrl(new URL(request.url)),
+  );
+  return NextResponse.json(rows.map(mapPilotReadinessEvent));
+}
+
 export async function POST(request: Request) {
   const session = await getServerAuthSession(true);
   if (!session) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
@@ -116,14 +183,5 @@ export async function POST(request: Request) {
     },
   }).catch(() => undefined);
 
-  return NextResponse.json({
-    id: event.id,
-    organizationId: event.organization_id,
-    userId: event.user_id ?? undefined,
-    stepId: event.step_id,
-    eventType: event.event_type,
-    source: event.source,
-    metadata: event.metadata,
-    createdAt: event.created_at,
-  }, { status: 201 });
+  return NextResponse.json(mapPilotReadinessEvent(event), { status: 201 });
 }

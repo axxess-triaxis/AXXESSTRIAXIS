@@ -35,11 +35,15 @@ Do not expose service-role or provider secrets through `NEXT_PUBLIC_*` variables
 
 ```text
 RESEND_API_KEY
+RESEND_WEBHOOK_SECRET
 AXXESS_INVITATION_EMAIL_FROM
 AXXESS_INVITATION_EMAIL_REPLY_TO
+AXXESS_AUDIT_EXPORT_TTL_MINUTES
 ```
 
 When `RESEND_API_KEY` is present, `/api/invitations` sends invitation emails through Resend's HTTP API. Without it, invitations still persist and return a manual acceptance URL to the inviting administrator.
+
+`RESEND_WEBHOOK_SECRET` enables signed invitation delivery evidence through `/api/webhooks/resend`. `AXXESS_AUDIT_EXPORT_TTL_MINUTES` controls the short-lived audit export token window and defaults to 60 minutes.
 
 ## Investor Preview Deployment
 
@@ -70,3 +74,5 @@ Apply Supabase migrations, configure RLS, provide Auth credentials, and verify t
 - Verify protected routes after every deployment.
 - Review audit-log writes for authentication, invitations, business actions, and RAG answers.
 - Verify `pilot_readiness_events` is migrated before relying on pilot conversion analytics.
+- Verify `audit_exports` and `invitation_delivery_events` are migrated before enabling Sprint 18 pilot conversion review.
+- Upload mobile visual regression artifacts from CI when reviewing admin/audit/conversion UI changes.

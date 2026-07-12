@@ -73,9 +73,12 @@ describe("mock RBAC route guards", () => {
 
     expect(canAccessRoute(mockCurrentUserContext, routeForPath("/admin/organization"))).toBe(true);
     expect(canAccessRoute(mockCurrentUserContext, routeForPath("/admin/audit-logs"))).toBe(true);
+    expect(canAccessRoute(mockCurrentUserContext, routeForPath("/admin/pilot-conversion"))).toBe(true);
     expect(canAccessRoute(employee, routeForPath("/admin/organization"))).toBe(false);
     expect(canAccessRoute(employee, routeForPath("/admin/audit-logs"))).toBe(false);
+    expect(canAccessRoute(employee, routeForPath("/admin/pilot-conversion"))).toBe(false);
     expect(canAccessRoute(manager, routeForPath("/admin/organization"))).toBe(false);
     expect(canAccessRoute(manager, routeForPath("/admin/audit-logs"))).toBe(false);
+    expect(canAccessRoute(manager, routeForPath("/admin/pilot-conversion"))).toBe(false);
   });
 });

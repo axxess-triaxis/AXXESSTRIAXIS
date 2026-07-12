@@ -21,12 +21,26 @@ import { tenantScopeFromUser } from "../../repositories/supabaseEnterpriseReposi
 import { useAnalytics } from "../../services/analytics";
 
 type AuditFilter = "all" | "auth" | "ai" | "document" | "approval" | "security" | "workflow";
+type AuditExportState = {
+  status: "idle" | "exporting" | "ready" | "fallback" | "failed";
+  message?: string;
+};
 
 const filters: AuditFilter[] = ["all", "auth", "ai", "document", "approval", "security", "workflow"];
 
 function csvEscape(value: unknown) {
   const text = String(value ?? "");
   return `"${text.replace(/"/g, '""')}"`;
+}
+
+function downloadCsv(fileName: string, csv: string) {
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = fileName;
+  anchor.click();
+  URL.revokeObjectURL(url);
 }
 
 export function AuditLogsSection() {
@@ -37,6 +51,7 @@ export function AuditLogsSection() {
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<AuditFilter>("all");
+  const [exportState, setExportState] = useState<AuditExportState>({ status: "idle" });
 
   const loadAuditLogs = useCallback(async () => {
     if (!scope) return;
@@ -68,7 +83,7 @@ export function AuditLogsSection() {
   const aiEvents = logs.filter((log) => log.category === "ai" || log.resourceType === "ai_answer").length;
   const exportReady = filteredLogs.length > 0;
 
-  const exportCsv = () => {
+  const exportCsv = async () => {
     analytics.trackEvent("audit_export_requested", { filter, result_count: filteredLogs.length }, {
       organization_id: user.organizationId,
       user_id: user.id,
@@ -77,6 +92,24 @@ export function AuditLogsSection() {
       route: "/admin/audit-logs",
     });
     if (!filteredLogs.length) return;
+    setExportState({ status: "exporting", message: "Creating governed export" });
+
+    try {
+      const response = await fetch("/api/audit-exports", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ filter }),
+      });
+      const payload = await response.json().catch(() => ({})) as { csv?: string; fileName?: string; exportId?: string };
+      if (!response.ok || !payload.csv || !payload.fileName) throw new Error("Server export was unavailable.");
+      downloadCsv(payload.fileName, payload.csv);
+      setExportState({ status: "ready", message: payload.exportId ? `Export record ${payload.exportId.slice(0, 8)}` : "Governed export created" });
+      return;
+    } catch {
+      setExportState({ status: "fallback", message: "Downloaded local CSV; server record unavailable" });
+    }
+
     const header = ["created_at", "category", "action", "resource_type", "resource_id", "actor_role", "request_id"];
     const rows = filteredLogs.map((log) => [
       log.createdAt,
@@ -87,13 +120,7 @@ export function AuditLogsSection() {
       log.actorRole ?? "",
       log.requestId ?? "",
     ].map(csvEscape).join(","));
-    const blob = new Blob([[header.join(","), ...rows].join("\n")], { type: "text/csv;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = `axxess-audit-${filter}-${new Date().toISOString().slice(0, 10)}.csv`;
-    anchor.click();
-    URL.revokeObjectURL(url);
+    downloadCsv(`axxess-audit-${filter}-${new Date().toISOString().slice(0, 10)}.csv`, [header.join(","), ...rows].join("\n"));
   };
 
   return (
@@ -106,10 +133,15 @@ export function AuditLogsSection() {
           <TenantScopeBadge key="tenant" label="No cross-organization data" />,
           <DataStateBadge key="state" state={loading ? "Provider-gated" : "Live"} />,
           <StatusBadge key="hash" status="Integrity review ready" />,
+          exportState.message ? <StatusBadge key="export" status={exportState.message} /> : null,
         ]}
         actions={
-          <button onClick={exportCsv} className="inline-flex items-center gap-2 rounded-lg bg-[#8B1E2D] px-3 py-2 text-xs font-semibold text-white">
-            <Download size={14} /> Export CSV
+          <button
+            onClick={() => void exportCsv()}
+            disabled={exportState.status === "exporting" || !exportReady}
+            className="inline-flex items-center gap-2 rounded-lg bg-[#8B1E2D] px-3 py-2 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <Download size={14} /> {exportState.status === "exporting" ? "Exporting..." : "Export CSV"}
           </button>
         }
       />

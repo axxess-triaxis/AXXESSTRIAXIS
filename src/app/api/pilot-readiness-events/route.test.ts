@@ -19,6 +19,13 @@ describe("pilot readiness events API", () => {
     expect(routeSource).not.toContain("SUPABASE_SERVICE_ROLE_KEY");
   });
 
+  it("lists tenant-scoped events for the pilot conversion dashboard", () => {
+    expect(routeSource).toContain("export async function GET");
+    expect(routeSource).toContain("organization_id: `eq.${organizationId}`");
+    expect(routeSource).toContain("order: \"created_at.desc\"");
+    expect(routeSource).toContain("mapPilotReadinessEvent");
+  });
+
   it("writes a lightweight audit event without raw metadata", () => {
     expect(routeSource).toContain("pilot_readiness.event_recorded");
     expect(routeSource).toContain("resourceType: \"pilot_readiness_event\"");
