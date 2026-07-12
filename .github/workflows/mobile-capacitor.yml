@@ -22,11 +22,12 @@ env:
   NEXT_TELEMETRY_DISABLED: "1"
   CAPACITOR_APP_ID: com.triaxis.axxess
   CAPACITOR_APP_NAME: AXXESS TRIAXIS
-  CAPACITOR_SERVER_URL: ${{ secrets.CAPACITOR_SERVER_URL || secrets.NEXT_PUBLIC_APP_URL }}
-  CAPACITOR_ALLOWED_HOSTS: ${{ secrets.CAPACITOR_ALLOWED_HOSTS }}
-  NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
-  NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-  NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+  CAPACITOR_SERVER_URL: ${{ secrets.CAPACITOR_SERVER_URL || secrets.NEXT_PUBLIC_APP_URL || vars.CAPACITOR_SERVER_URL || vars.NEXT_PUBLIC_APP_URL || 'https://axxess-triaxis.vercel.app' }}
+  CAPACITOR_ALLOWED_HOSTS: ${{ secrets.CAPACITOR_ALLOWED_HOSTS || vars.CAPACITOR_ALLOWED_HOSTS || 'axxess-triaxis.vercel.app,localhost,127.0.0.1' }}
+  NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL || vars.NEXT_PUBLIC_APP_URL || 'https://axxess-triaxis.vercel.app' }}
+  NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || vars.NEXT_PUBLIC_SUPABASE_URL || 'https://example.supabase.co' }}
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || vars.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'preview-anon-key' }}
+  NEXT_PUBLIC_AXXESS_DEMO_MODE: "true"
 
 jobs:
   android:
@@ -50,19 +51,17 @@ jobs:
           distribution: temurin
           java-version: 17
 
-      - name: Validate runtime secrets
+      - name: Report preview runtime configuration
         shell: bash
         run: |
           set -euo pipefail
-          missing=()
-          [[ -n "${CAPACITOR_SERVER_URL:-}" ]] || missing+=("CAPACITOR_SERVER_URL or NEXT_PUBLIC_APP_URL")
-          [[ -n "${CAPACITOR_ALLOWED_HOSTS:-}" ]] || missing+=("CAPACITOR_ALLOWED_HOSTS")
-          [[ -n "${NEXT_PUBLIC_SUPABASE_URL:-}" ]] || missing+=("NEXT_PUBLIC_SUPABASE_URL")
-          [[ -n "${NEXT_PUBLIC_SUPABASE_ANON_KEY:-}" ]] || missing+=("NEXT_PUBLIC_SUPABASE_ANON_KEY")
-          if [[ "${#missing[@]}" -gt 0 ]]; then
-            printf 'Missing required GitHub Actions secrets:\n'
-            printf ' - %s\n' "${missing[@]}"
-            exit 1
+          echo "Capacitor preview server URL: ${CAPACITOR_SERVER_URL}"
+          echo "Capacitor allowed hosts: ${CAPACITOR_ALLOWED_HOSTS}"
+          if [[ "${NEXT_PUBLIC_SUPABASE_URL}" == "https://example.supabase.co" ]]; then
+            echo "::warning::NEXT_PUBLIC_SUPABASE_URL is not configured; using a build-only preview placeholder. Configure repository secrets before signed release builds."
+          fi
+          if [[ "${NEXT_PUBLIC_SUPABASE_ANON_KEY}" == "preview-anon-key" ]]; then
+            echo "::warning::NEXT_PUBLIC_SUPABASE_ANON_KEY is not configured; using a build-only preview placeholder. Configure repository secrets before signed release builds."
           fi
 
       - name: Install web dependencies
@@ -149,19 +148,17 @@ jobs:
           node-version: 22
           cache: pnpm
 
-      - name: Validate runtime secrets
+      - name: Report preview runtime configuration
         shell: bash
         run: |
           set -euo pipefail
-          missing=()
-          [[ -n "${CAPACITOR_SERVER_URL:-}" ]] || missing+=("CAPACITOR_SERVER_URL or NEXT_PUBLIC_APP_URL")
-          [[ -n "${CAPACITOR_ALLOWED_HOSTS:-}" ]] || missing+=("CAPACITOR_ALLOWED_HOSTS")
-          [[ -n "${NEXT_PUBLIC_SUPABASE_URL:-}" ]] || missing+=("NEXT_PUBLIC_SUPABASE_URL")
-          [[ -n "${NEXT_PUBLIC_SUPABASE_ANON_KEY:-}" ]] || missing+=("NEXT_PUBLIC_SUPABASE_ANON_KEY")
-          if [[ "${#missing[@]}" -gt 0 ]]; then
-            printf 'Missing required GitHub Actions secrets:\n'
-            printf ' - %s\n' "${missing[@]}"
-            exit 1
+          echo "Capacitor preview server URL: ${CAPACITOR_SERVER_URL}"
+          echo "Capacitor allowed hosts: ${CAPACITOR_ALLOWED_HOSTS}"
+          if [[ "${NEXT_PUBLIC_SUPABASE_URL}" == "https://example.supabase.co" ]]; then
+            echo "::warning::NEXT_PUBLIC_SUPABASE_URL is not configured; using a build-only preview placeholder. Configure repository secrets before signed release builds."
+          fi
+          if [[ "${NEXT_PUBLIC_SUPABASE_ANON_KEY}" == "preview-anon-key" ]]; then
+            echo "::warning::NEXT_PUBLIC_SUPABASE_ANON_KEY is not configured; using a build-only preview placeholder. Configure repository secrets before signed release builds."
           fi
 
       - name: Install web dependencies
