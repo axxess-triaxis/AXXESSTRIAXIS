@@ -176,7 +176,8 @@ Screenshot slots are reserved for production-approved imagery:
 
 - Replace lexical local retrieval with production embedding providers while preserving permission filters.
 - Add department/team mappings to document permissions.
-- Add invitation email delivery provider and audit-reviewed provisioning flows.
+- Connect verified sender domain for invitation email delivery and audit-reviewed provisioning flows.
+- Persist pilot readiness completion events in Supabase and review conversion analytics.
 - Expand browser E2E coverage for investor preview and protected routes.
 - Apply Sprint 12 migration to staging and validate RLS across multiple tenant personas.
 - Apply Sprint 13 migration and run `supabase/tests/rls_persona_tests.sql` in staging.
@@ -195,6 +196,7 @@ Screenshot slots are reserved for production-approved imagery:
 - `docs/RAG.md`
 - `docs/NLP.md`
 - `docs/DEPLOYMENT.md`
+- `docs/SPRINT_17_PILOT_OPERATIONS.md`
 - `docs/SPRINT_16_PILOT_READINESS.md`
 - `docs/SPRINT_15_FRONTEND_AUDIT.md`
 - `docs/PRODUCT_WALKTHROUGH.md`

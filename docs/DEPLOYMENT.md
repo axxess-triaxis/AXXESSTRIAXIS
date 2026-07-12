@@ -31,6 +31,16 @@ SUPABASE_SERVICE_ROLE_KEY
 
 Do not expose service-role or provider secrets through `NEXT_PUBLIC_*` variables.
 
+## Optional Server Variables
+
+```text
+RESEND_API_KEY
+AXXESS_INVITATION_EMAIL_FROM
+AXXESS_INVITATION_EMAIL_REPLY_TO
+```
+
+When `RESEND_API_KEY` is present, `/api/invitations` sends invitation emails through Resend's HTTP API. Without it, invitations still persist and return a manual acceptance URL to the inviting administrator.
+
 ## Investor Preview Deployment
 
 For investor or sales demo deployments:
@@ -59,3 +69,4 @@ Apply Supabase migrations, configure RLS, provide Auth credentials, and verify t
 - Confirm RLS policies before connecting real tenant data.
 - Verify protected routes after every deployment.
 - Review audit-log writes for authentication, invitations, business actions, and RAG answers.
+- Verify `pilot_readiness_events` is migrated before relying on pilot conversion analytics.
