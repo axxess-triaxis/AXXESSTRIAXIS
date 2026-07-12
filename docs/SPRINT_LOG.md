@@ -1,5 +1,41 @@
 # Sprint Log
 
+## Sprint 18 - Pilot Conversion, Audit Exports, And Delivery Evidence
+
+Sprint 18 converts the Sprint 17 pilot operations foundation into a sponsor-review workflow. It adds pilot health scoring, governed export records, invitation delivery evidence, and mobile screenshot automation while preserving the existing AXXESS UI architecture.
+
+### Completed
+
+- Added Pilot Conversion as an admin-only governance route.
+- Added pilot health scoring from `pilot_readiness_events` with demo fallback for investor preview continuity.
+- Added `GET /api/pilot-readiness-events` for tenant-scoped conversion dashboards.
+- Added `POST /api/audit-exports` for server-generated CSV exports with hashed tokens, CSV hashes, immutable metadata, and audit logging.
+- Added `POST /api/webhooks/resend` for signed invitation delivery event ingestion.
+- Added non-sensitive Resend tags to invitation emails for tenant and invitation correlation.
+- Added Supabase migration for `audit_exports` and `invitation_delivery_events` with admin-scoped RLS.
+- Added mobile visual regression screenshot workflow for Organization Admin, Audit Logs, and Pilot Conversion.
+- Added unit/source tests for scoring, routes, webhook verification, RLS policy expectations, RBAC, and route metadata.
+
+### Live
+
+- Admins can review pilot conversion health from a dedicated route.
+- Audit CSV export now attempts a governed server export before falling back to the previous local CSV.
+- Invitation email delivery can be joined back to a tenant when signed webhooks are configured.
+
+### Provider-Gated
+
+- `audit_exports` and `invitation_delivery_events` require the Sprint 18 migration.
+- Resend delivery evidence requires `RESEND_WEBHOOK_SECRET` and provider webhook configuration.
+- Mobile screenshot artifacts require the GitHub Actions workflow to run.
+
+### Sprint 19 Recommendations
+
+- Add customer-facing pilot account-owner notes and sponsor decision records.
+- Add export download endpoint that validates the short-lived export token before retrieval.
+- Add dashboard cards for invitation delivery status and bounce triage.
+- Add screenshot baseline comparison once approved reference images are captured.
+- Expand pilot health scoring with usage frequency, stakeholder engagement, and AI/RAG value signals.
+
 ## Sprint 17 - Pilot Event Persistence, Mobile Admin Review, And Invitation Delivery
 
 Sprint 17 completes the immediate follow-up items from Sprint 16 by moving pilot onboarding completion into a server route, adding optional real invitation email delivery, and improving mobile review of administrator and audit surfaces.

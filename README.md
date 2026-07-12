@@ -18,13 +18,14 @@ Core principles:
 
 ## Architecture
 
-Current runtime status: Sprint 16 pilot readiness foundation with guided onboarding, tenant admin, audit-log review, Supabase RLS hardening, analytics event coverage, auth route surfaces, and mobile beta scaffolding.
+Current runtime status: Sprint 18 pilot conversion operations with guided onboarding, tenant admin, audit-log review, governed audit exports, invitation delivery evidence, Supabase RLS hardening, analytics event coverage, auth route surfaces, and mobile beta scaffolding.
 
 - Next.js App Router powers the application shell, protected pages, and server routes.
 - Supabase Auth, tenant repositories, CRUD workflows, notifications, invitations, audit logs, private storage, and RLS-ready metadata are in place.
 - Runtime Demo Mode loads the seeded North East Health Mission tenant for investor previews.
 - Production repository calls fall back to the demo repository layer when Supabase is unavailable, preventing investor-facing backend errors.
-- Sprint 16 adds pilot-ready tenant administration, audit-log export review, expanded first-tenant onboarding, and a tenant-scoped pilot readiness event table.
+- Sprint 18 adds a Pilot Conversion dashboard, server-side audit export records, invitation delivery webhook capture, and mobile admin screenshot CI.
+- Sprint 16 adds pilot-ready tenant administration, audit-log review, expanded first-tenant onboarding, and a tenant-scoped pilot readiness event table.
 - Sprint 15 consolidates frontend coherence through shared enterprise UI primitives, guided demo state, screenshot mode, and live/demo/provider-gated labels across the major demo screens.
 - Sprint 14 adds provider-gated AI routing for OpenAI, Anthropic, Google, xAI, Falcon, Jais, and local deterministic fallback.
 - Sprint 14 adds the RAG repository foundation, open-source NLP model registry, productivity plugin registry, live dashboard provider hooks, social alert ingestion architecture, and Wix-safe public website export.
@@ -130,6 +131,8 @@ NEXT_PUBLIC_MIXPANEL_TOKEN=
 NEXT_PUBLIC_ANALYTICS_DISABLED=false
 NEXT_PUBLIC_BETA_FEEDBACK_FORM_URL=
 SUPABASE_SERVICE_ROLE_KEY=
+RESEND_WEBHOOK_SECRET=
+AXXESS_AUDIT_EXPORT_TTL_MINUTES=60
 AXXESS_KMS_KEY_ALIAS=
 AXXESS_SECRET_ROTATION_DAYS=90
 AXXESS_AUDIT_HASH_SALT=
@@ -176,8 +179,8 @@ Screenshot slots are reserved for production-approved imagery:
 
 - Replace lexical local retrieval with production embedding providers while preserving permission filters.
 - Add department/team mappings to document permissions.
-- Connect verified sender domain for invitation email delivery and audit-reviewed provisioning flows.
-- Persist pilot readiness completion events in Supabase and review conversion analytics.
+- Connect verified sender domain for invitation email delivery and monitor webhook delivery outcomes.
+- Apply Sprint 18 migration in staging before relying on governed audit export records and delivery evidence.
 - Expand browser E2E coverage for investor preview and protected routes.
 - Apply Sprint 12 migration to staging and validate RLS across multiple tenant personas.
 - Apply Sprint 13 migration and run `supabase/tests/rls_persona_tests.sql` in staging.
@@ -196,6 +199,7 @@ Screenshot slots are reserved for production-approved imagery:
 - `docs/RAG.md`
 - `docs/NLP.md`
 - `docs/DEPLOYMENT.md`
+- `docs/SPRINT_18_PILOT_CONVERSION.md`
 - `docs/SPRINT_17_PILOT_OPERATIONS.md`
 - `docs/SPRINT_16_PILOT_READINESS.md`
 - `docs/SPRINT_15_FRONTEND_AUDIT.md`

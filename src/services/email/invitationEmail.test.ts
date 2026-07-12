@@ -71,5 +71,12 @@ describe("invitation email", () => {
         "Idempotency-Key": "axxess-invitation-invitation_1",
       }),
     }));
+    const requestInit = fetchMock.mock.calls[0]?.[1] as RequestInit;
+    expect(JSON.parse(String(requestInit.body))).toEqual(expect.objectContaining({
+      tags: [
+        { name: "organization_id", value: "org_1" },
+        { name: "invitation_id", value: "invitation_1" },
+      ],
+    }));
   });
 });

@@ -24,9 +24,12 @@ describe("enterprise route metadata", () => {
   it("maps Sprint 16 pilot admin and audit pages to protected routes", () => {
     expect(routeForSection("organization-admin").path).toBe("admin/organization");
     expect(routeForSection("audit-logs").path).toBe("admin/audit-logs");
+    expect(routeForSection("pilot-conversion").path).toBe("admin/pilot-conversion");
     expect(sectionFromPath("/admin/organization")).toBe("organization-admin");
     expect(sectionFromPath("/admin/audit-logs")).toBe("audit-logs");
+    expect(sectionFromPath("/admin/pilot-conversion")).toBe("pilot-conversion");
     expect(routeForPath("/admin/organization").requiredRoles).toEqual(["Super Admin", "Organization Admin"]);
     expect(routeForPath("/admin/audit-logs").requiredRoles).toEqual(["Super Admin", "Organization Admin"]);
+    expect(routeForPath("/admin/pilot-conversion").requiredRoles).toEqual(["Super Admin", "Organization Admin"]);
   });
 });

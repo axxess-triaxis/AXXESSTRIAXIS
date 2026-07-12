@@ -83,6 +83,10 @@ export async function sendInvitationEmail(input: InvitationEmailInput): Promise<
       html: rendered.html,
       text: rendered.text,
       reply_to: process.env.AXXESS_INVITATION_EMAIL_REPLY_TO || undefined,
+      tags: [
+        { name: "organization_id", value: input.invitation.organizationId },
+        { name: "invitation_id", value: input.invitation.id },
+      ],
     }),
     cache: "no-store",
   });

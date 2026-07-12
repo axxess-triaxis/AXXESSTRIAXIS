@@ -4,6 +4,11 @@ All notable changes to AXXESS are documented here. This project follows the spir
 
 ## Unreleased
 
+- Added Sprint 18 Pilot Conversion dashboard with tenant-scoped pilot health scoring and demo fallback.
+- Added governed server-side audit exports with immutable export metadata and short-lived export tokens.
+- Added signed Resend invitation delivery webhook ingestion with hashed recipient evidence.
+- Added Sprint 18 Supabase migration for `audit_exports` and `invitation_delivery_events` with admin-scoped RLS.
+- Added mobile admin visual regression workflow and screenshots for organization admin, audit logs, and pilot conversion.
 - Added Sprint 17 pilot readiness event API with authenticated Supabase writes, sanitized metadata, and audit logging.
 - Added optional Resend-compatible invitation email delivery with manual acceptance URL fallback when email is not configured.
 - Added mobile card fallbacks for Organization Admin and Audit Logs tables plus seed-gated Playwright coverage.
