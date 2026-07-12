@@ -134,7 +134,9 @@ jobs:
 
         run: |
 
-          if [ ! -d apps/mobile-capacitor/ios ]; then
+          if [ ! -d apps/mobile-capacitor/ios/App/App ]; then
+
+            rm -rf apps/mobile-capacitor/ios
 
             pnpm --dir apps/mobile-capacitor exec cap add ios
 
@@ -308,7 +310,9 @@ jobs:
 
         run: |
 
-          if [ ! -d apps/mobile-capacitor/ios ]; then
+          if [ ! -d apps/mobile-capacitor/ios/App/App ]; then
+
+            rm -rf apps/mobile-capacitor/ios
 
             pnpm --dir apps/mobile-capacitor exec cap add ios
 
