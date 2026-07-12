@@ -199,6 +199,7 @@ Screenshot slots are reserved for production-approved imagery:
 - `docs/RAG.md`
 - `docs/NLP.md`
 - `docs/DEPLOYMENT.md`
+- `docs/GITHUB_ACTIONS_SECRETS.md`
 - `docs/SPRINT_18_PILOT_CONVERSION.md`
 - `docs/SPRINT_17_PILOT_OPERATIONS.md`
 - `docs/SPRINT_16_PILOT_READINESS.md`
