@@ -7,7 +7,6 @@ const config: CapacitorConfig = {
   appId: process.env.ANDROID_APPLICATION_ID || 'com.triaxis.axxess',
   appName: 'AXXESS TRIaxis',
   webDir: '../../dist',
-  bundledWebRuntime: false,
   server: {
     url: appUrl,
     cleartext: false,
