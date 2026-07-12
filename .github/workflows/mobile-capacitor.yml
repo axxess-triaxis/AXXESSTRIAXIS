@@ -64,12 +64,6 @@ jobs:
             echo "::warning::NEXT_PUBLIC_SUPABASE_ANON_KEY is not configured; using a build-only preview placeholder. Configure repository secrets before signed release builds."
           fi
 
-      - name: Install web dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Build web app
-        run: pnpm run build
-
       - name: Create Capacitor shell
         shell: bash
         run: |
@@ -122,7 +116,9 @@ jobs:
 
       - name: Build Android debug APK
         working-directory: capacitor-shell/android
-        run: ./gradlew assembleDebug
+        run: |
+          chmod +x ./gradlew
+          ./gradlew assembleDebug --stacktrace
 
       - name: Upload Android artifact
         uses: actions/upload-artifact@v4
@@ -160,12 +156,6 @@ jobs:
           if [[ "${NEXT_PUBLIC_SUPABASE_ANON_KEY}" == "preview-anon-key" ]]; then
             echo "::warning::NEXT_PUBLIC_SUPABASE_ANON_KEY is not configured; using a build-only preview placeholder. Configure repository secrets before signed release builds."
           fi
-
-      - name: Install web dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Build web app
-        run: pnpm run build
 
       - name: Create Capacitor shell
         shell: bash
