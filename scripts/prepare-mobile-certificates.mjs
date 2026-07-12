@@ -2,8 +2,9 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const root = process.cwd();
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const mobileDir = path.join(root, 'apps', 'mobile-capacitor');
 const keystorePath = path.join(mobileDir, 'android', 'app', 'release.keystore');
 const gradlePropertiesPath = path.join(mobileDir, 'android', 'gradle.properties');
