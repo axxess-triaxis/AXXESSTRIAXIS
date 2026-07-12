@@ -35,8 +35,6 @@ const config: CapacitorConfig = {
     Preferences: {},
     Share: {},
     Haptics: {},
-    SplashScreen: {},
-    StatusBar: {},
   },
 };
 
