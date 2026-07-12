@@ -51,6 +51,8 @@ jobs:
           distribution: temurin
           java-version: 17
 
+      - uses: android-actions/setup-android@v3
+
       - name: Report preview runtime configuration
         shell: bash
         run: |
@@ -114,11 +116,20 @@ jobs:
         working-directory: capacitor-shell
         run: npx cap sync android
 
+      - name: Install Android SDK packages
+        shell: bash
+        run: |
+          set -euo pipefail
+          sdkmanager --install "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+          yes | sdkmanager --licenses >/dev/null
+
       - name: Build Android debug APK
         working-directory: capacitor-shell/android
+        shell: bash
         run: |
+          set -euo pipefail
           chmod +x ./gradlew
-          ./gradlew assembleDebug --stacktrace
+          ./gradlew assembleDebug --stacktrace --no-daemon --console=plain 2>&1 | tee android-gradle-build.log
 
       - name: Upload Android artifact
         uses: actions/upload-artifact@v4
@@ -126,6 +137,15 @@ jobs:
           name: axxess-capacitor-android-debug
           path: capacitor-shell/android/app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload Android Gradle diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: axxess-capacitor-android-gradle-log
+          path: capacitor-shell/android/android-gradle-build.log
+          if-no-files-found: ignore
           retention-days: 14
 
   ios:
