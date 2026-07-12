@@ -1,0 +1,240 @@
+name: Mobile Capacitor Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - sprint-18-pilot-conversion-audit-exports-webhooks
+    paths:
+      - ".github/workflows/mobile-capacitor.yml"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "src/**"
+      - "public/**"
+      - "next.config.mjs"
+
+permissions:
+  contents: read
+
+env:
+  CI: "true"
+  NEXT_TELEMETRY_DISABLED: "1"
+  CAPACITOR_APP_ID: com.triaxis.axxess
+  CAPACITOR_APP_NAME: AXXESS TRIAXIS
+  CAPACITOR_SERVER_URL: ${{ secrets.CAPACITOR_SERVER_URL || secrets.NEXT_PUBLIC_APP_URL }}
+  CAPACITOR_ALLOWED_HOSTS: ${{ secrets.CAPACITOR_ALLOWED_HOSTS }}
+  NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
+  NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+
+jobs:
+  android:
+    name: Android Capacitor debug artifact
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+          run_install: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Validate runtime secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          missing=()
+          [[ -n "${CAPACITOR_SERVER_URL:-}" ]] || missing+=("CAPACITOR_SERVER_URL or NEXT_PUBLIC_APP_URL")
+          [[ -n "${CAPACITOR_ALLOWED_HOSTS:-}" ]] || missing+=("CAPACITOR_ALLOWED_HOSTS")
+          [[ -n "${NEXT_PUBLIC_SUPABASE_URL:-}" ]] || missing+=("NEXT_PUBLIC_SUPABASE_URL")
+          [[ -n "${NEXT_PUBLIC_SUPABASE_ANON_KEY:-}" ]] || missing+=("NEXT_PUBLIC_SUPABASE_ANON_KEY")
+          if [[ "${#missing[@]}" -gt 0 ]]; then
+            printf 'Missing required GitHub Actions secrets:\n'
+            printf ' - %s\n' "${missing[@]}"
+            exit 1
+          fi
+
+      - name: Install web dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build web app
+        run: pnpm run build
+
+      - name: Create Capacitor shell
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p capacitor-shell/www
+          printf '<!doctype html><html><head><meta charset="utf-8"><title>AXXESS TRIAXIS</title></head><body><p>AXXESS mobile shell</p></body></html>' > capacitor-shell/www/index.html
+          cat > capacitor-shell/package.json <<'JSON'
+          {
+            "private": true,
+            "scripts": {
+              "cap": "cap"
+            },
+            "dependencies": {
+              "@capacitor/android": "^7.0.0",
+              "@capacitor/cli": "^7.0.0",
+              "@capacitor/core": "^7.0.0"
+            }
+          }
+          JSON
+          node - <<'NODE'
+          const fs = require("fs");
+          const allowedHosts = (process.env.CAPACITOR_ALLOWED_HOSTS || "")
+            .split(",")
+            .map((item) => item.trim())
+            .filter(Boolean);
+          const config = {
+            appId: process.env.CAPACITOR_APP_ID,
+            appName: process.env.CAPACITOR_APP_NAME,
+            webDir: "www",
+            server: {
+              url: process.env.CAPACITOR_SERVER_URL,
+              cleartext: false,
+              allowNavigation: allowedHosts,
+            },
+          };
+          fs.writeFileSync("capacitor-shell/capacitor.config.json", JSON.stringify(config, null, 2));
+          NODE
+
+      - name: Install Capacitor Android
+        working-directory: capacitor-shell
+        run: npm install
+
+      - name: Generate Android project
+        working-directory: capacitor-shell
+        run: npx cap add android
+
+      - name: Sync Android project
+        working-directory: capacitor-shell
+        run: npx cap sync android
+
+      - name: Build Android debug APK
+        working-directory: capacitor-shell/android
+        run: ./gradlew assembleDebug
+
+      - name: Upload Android artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: axxess-capacitor-android-debug
+          path: capacitor-shell/android/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+          retention-days: 14
+
+  ios:
+    name: iOS Capacitor simulator artifact
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+          run_install: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Validate runtime secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          missing=()
+          [[ -n "${CAPACITOR_SERVER_URL:-}" ]] || missing+=("CAPACITOR_SERVER_URL or NEXT_PUBLIC_APP_URL")
+          [[ -n "${CAPACITOR_ALLOWED_HOSTS:-}" ]] || missing+=("CAPACITOR_ALLOWED_HOSTS")
+          [[ -n "${NEXT_PUBLIC_SUPABASE_URL:-}" ]] || missing+=("NEXT_PUBLIC_SUPABASE_URL")
+          [[ -n "${NEXT_PUBLIC_SUPABASE_ANON_KEY:-}" ]] || missing+=("NEXT_PUBLIC_SUPABASE_ANON_KEY")
+          if [[ "${#missing[@]}" -gt 0 ]]; then
+            printf 'Missing required GitHub Actions secrets:\n'
+            printf ' - %s\n' "${missing[@]}"
+            exit 1
+          fi
+
+      - name: Install web dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build web app
+        run: pnpm run build
+
+      - name: Create Capacitor shell
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p capacitor-shell/www
+          printf '<!doctype html><html><head><meta charset="utf-8"><title>AXXESS TRIAXIS</title></head><body><p>AXXESS mobile shell</p></body></html>' > capacitor-shell/www/index.html
+          cat > capacitor-shell/package.json <<'JSON'
+          {
+            "private": true,
+            "scripts": {
+              "cap": "cap"
+            },
+            "dependencies": {
+              "@capacitor/cli": "^7.0.0",
+              "@capacitor/core": "^7.0.0",
+              "@capacitor/ios": "^7.0.0"
+            }
+          }
+          JSON
+          node - <<'NODE'
+          const fs = require("fs");
+          const allowedHosts = (process.env.CAPACITOR_ALLOWED_HOSTS || "")
+            .split(",")
+            .map((item) => item.trim())
+            .filter(Boolean);
+          const config = {
+            appId: process.env.CAPACITOR_APP_ID,
+            appName: process.env.CAPACITOR_APP_NAME,
+            webDir: "www",
+            server: {
+              url: process.env.CAPACITOR_SERVER_URL,
+              cleartext: false,
+              allowNavigation: allowedHosts,
+            },
+          };
+          fs.writeFileSync("capacitor-shell/capacitor.config.json", JSON.stringify(config, null, 2));
+          NODE
+
+      - name: Install Capacitor iOS
+        working-directory: capacitor-shell
+        run: npm install
+
+      - name: Generate iOS project
+        working-directory: capacitor-shell
+        run: npx cap add ios
+
+      - name: Sync iOS project
+        working-directory: capacitor-shell
+        run: npx cap sync ios
+
+      - name: Build iOS simulator app
+        working-directory: capacitor-shell/ios/App
+        run: xcodebuild -workspace App.xcworkspace -scheme App -configuration Debug -sdk iphonesimulator -derivedDataPath build CODE_SIGNING_ALLOWED=NO build
+
+      - name: Package iOS simulator artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+          ditto -c -k --sequesterRsrc --keepParent capacitor-shell/ios/App/build/Build/Products/Debug-iphonesimulator/App.app artifacts/axxess-capacitor-ios-simulator.zip
+
+      - name: Upload iOS artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: axxess-capacitor-ios-simulator
+          path: artifacts/axxess-capacitor-ios-simulator.zip
+          if-no-files-found: error
+          retention-days: 14
