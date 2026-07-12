@@ -130,23 +130,17 @@ jobs:
 
 
 
-      - name: Ensure iOS project exists
+      - name: Sync Capacitor
 
         run: |
 
-          if [ ! -d apps/mobile-capacitor/ios/App/App ]; then
+          node scripts/prepare-mobile-certificates.mjs
 
-            rm -rf apps/mobile-capacitor/ios
+          node scripts/sync-repo-state.mjs
 
-            pnpm --dir apps/mobile-capacitor exec cap add ios
+          node scripts/validate-mobile-env.mjs
 
-          fi
-
-
-
-      - name: Sync Capacitor
-
-        run: pnpm run mobile:capacitor:sync
+          pnpm --dir apps/mobile-capacitor exec cap sync android
 
 
 
@@ -303,26 +297,25 @@ jobs:
       - name: Build web app
 
         run: pnpm run build
-
-
-
-      - name: Ensure iOS project exists
+      - name: Ensure iOS app path exists
 
         run: |
 
-          if [ ! -d apps/mobile-capacitor/ios/App/App ]; then
-
-            rm -rf apps/mobile-capacitor/ios
-
-            pnpm --dir apps/mobile-capacitor exec cap add ios
-
-          fi
+          mkdir -p apps/mobile-capacitor/ios/App/App/public
 
 
 
       - name: Sync Capacitor
 
-        run: pnpm run mobile:capacitor:sync
+        run: |
+
+          node scripts/prepare-mobile-certificates.mjs
+
+          node scripts/sync-repo-state.mjs
+
+          node scripts/validate-mobile-env.mjs
+
+          pnpm --dir apps/mobile-capacitor exec cap sync ios
 
 
 
