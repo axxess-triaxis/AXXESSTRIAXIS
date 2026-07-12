@@ -16,6 +16,22 @@ Core principles:
 - A quiet, precise interface suitable for executive and operational users.
 - Open-source-quality repository standards for long-term collaborative development.
 
+## Published GitHub Status
+
+Latest active development branch:
+
+```text
+sprint-18-pilot-conversion-audit-exports-webhooks
+```
+
+Published Sprint stack:
+
+- Sprint 18: Pilot Conversion dashboard, governed audit exports, invitation delivery evidence, Supabase migration, mobile screenshot workflow, and GitHub Actions release secrets checklist.
+- Sprint 17: Pilot event persistence, mobile admin review, and invitation delivery.
+- Sprint 16: Pilot readiness, tenant admin hardening, audit review, and first-tenant onboarding.
+
+Repository practice: keep this README current after each product, release, or deployment-readiness commit that changes the GitHub-facing project status.
+
 ## Architecture
 
 Current runtime status: Sprint 18 pilot conversion operations with guided onboarding, tenant admin, audit-log review, governed audit exports, invitation delivery evidence, Supabase RLS hardening, analytics event coverage, auth route surfaces, and mobile beta scaffolding.
