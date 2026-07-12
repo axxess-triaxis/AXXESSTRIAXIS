@@ -26,7 +26,7 @@ sprint-18-pilot-conversion-audit-exports-webhooks
 
 Published Sprint stack:
 
-- Sprint 18: Pilot Conversion dashboard, governed audit exports, invitation delivery evidence, Supabase migration, mobile screenshot workflow, and GitHub Actions release secrets checklist.
+- Sprint 18: Pilot Conversion dashboard, governed audit exports, invitation delivery evidence, Supabase migration, mobile screenshot workflow, GitHub Actions release secrets checklist, and mobile EAS production build-proof workflow.
 - Sprint 17: Pilot event persistence, mobile admin review, and invitation delivery.
 - Sprint 16: Pilot readiness, tenant admin hardening, audit review, and first-tenant onboarding.
 
