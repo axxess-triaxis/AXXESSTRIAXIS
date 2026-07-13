@@ -15,6 +15,7 @@ All notable changes to AXXESS are documented here. This project follows the spir
 - Added Sprint 16 pilot readiness hardening with tenant administration, audit-log review/export, expanded first-tenant onboarding, and admin navigation entries.
 - Added Sprint 16 Supabase migration for tenant-scoped pilot readiness events plus audit-log indexes for review and export workflows.
 - Added Sprint 16 routing, RBAC, onboarding, and RLS tests for pilot admin and audit surfaces.
+- Added a Capacitor/Webnative mobile shell under `apps/mobile-capacitor` with Android/iOS build scripts, signing placeholders, environment validation, versioning metadata, and release documentation.
 - Added Sprint 15 enterprise frontend coherence pass with shared module headers, metrics, data-state badges, confidence/human-review/audit badges, activity feeds, workflow cards, and demo notices.
 - Added guided investor demo state, progress banner, dashboard start CTA, clean screenshot mode, and coherent demo seed slices for metrics, activity, documents, stakeholders, approvals, and workflows.
 - Polished Executive Dashboard, AI Workspace, Knowledge Hub, Approvals, CRM, Projects, Tasks, and Analytics with live/demo/provider-gated labels and cross-screen workflow context.
