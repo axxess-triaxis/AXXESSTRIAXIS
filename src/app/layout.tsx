@@ -7,6 +7,22 @@ import "../styles/index.css";
 export const metadata: Metadata = {
   title: "AXXESS by Triaxis",
   description: "AI-enabled human-in-the-loop institutional intelligence platform.",
+  icons: {
+    icon: "/triaxis-cover.png",
+    apple: "/triaxis-cover.png",
+    shortcut: "/triaxis-cover.png",
+  },
+  openGraph: {
+    images: [
+      {
+        url: "/triaxis-cover.png",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    images: ["/triaxis-cover.png"],
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
