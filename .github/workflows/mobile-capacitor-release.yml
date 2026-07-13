@@ -241,8 +241,6 @@ jobs:
 
   ios-production-release:
 
-    if: ${{ secrets.APPLE_TEAM_ID != '' && secrets.ASC_KEY_ID != '' && secrets.ASC_ISSUER_ID != '' && secrets.ASC_PRIVATE_KEY != '' }}
-
     runs-on: macos-latest
 
     env:
@@ -261,7 +259,27 @@ jobs:
 
     steps:
 
+      - name: Determine iOS release eligibility
+
+        id: ios_eligibility
+
+        run: |
+
+          if [ -n "$APPLE_TEAM_ID" ] && [ -n "$ASC_KEY_ID" ] && [ -n "$ASC_ISSUER_ID" ] && [ -n "$ASC_PRIVATE_KEY" ]; then
+
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+
+          else
+
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+
+            echo "[mobile] Apple signing secrets are incomplete; skipping iOS release job."
+
+          fi
+
       - name: Checkout
+
+        if: steps.ios_eligibility.outputs.enabled == 'true'
 
         uses: actions/checkout@v4
 
@@ -272,6 +290,8 @@ jobs:
 
 
       - name: Refresh repository state
+
+        if: steps.ios_eligibility.outputs.enabled == 'true'
 
         run: |
 
@@ -295,6 +315,8 @@ jobs:
 
       - name: Setup pnpm
 
+        if: steps.ios_eligibility.outputs.enabled == 'true'
+
         uses: pnpm/action-setup@v4
 
         with:
@@ -306,6 +328,8 @@ jobs:
 
 
       - name: Setup Node
+
+        if: steps.ios_eligibility.outputs.enabled == 'true'
 
         uses: actions/setup-node@v4
 
@@ -319,6 +343,8 @@ jobs:
 
       - name: Install dependencies
 
+        if: steps.ios_eligibility.outputs.enabled == 'true'
+
         run: |
 
           pnpm install --frozen-lockfile
@@ -329,10 +355,14 @@ jobs:
 
       - name: Build web app
 
+        if: steps.ios_eligibility.outputs.enabled == 'true'
+
         run: |
 
           echo "[mobile] Skipping iOS web build in this job; Android job already validates web build."
       - name: Ensure iOS project exists
+
+        if: steps.ios_eligibility.outputs.enabled == 'true'
 
         run: |
 
@@ -352,6 +382,8 @@ jobs:
 
       - name: Sync Capacitor
 
+        if: steps.ios_eligibility.outputs.enabled == 'true'
+
         run: |
 
           node scripts/prepare-mobile-certificates.mjs
@@ -365,6 +397,8 @@ jobs:
 
 
       - name: Verify Apple signing secrets
+
+        if: steps.ios_eligibility.outputs.enabled == 'true'
 
         run: |
 
@@ -392,11 +426,15 @@ jobs:
 
       - name: Build iOS production artifact
 
+        if: steps.ios_eligibility.outputs.enabled == 'true'
+
         run: pnpm run mobile:capacitor:build:ios
 
 
 
       - name: iOS release readiness marker
+
+        if: steps.ios_eligibility.outputs.enabled == 'true'
 
         run: |
 
@@ -405,6 +443,8 @@ jobs:
 
 
       - name: Upload iOS release artifacts
+
+        if: steps.ios_eligibility.outputs.enabled == 'true'
 
         uses: actions/upload-artifact@v4
 
