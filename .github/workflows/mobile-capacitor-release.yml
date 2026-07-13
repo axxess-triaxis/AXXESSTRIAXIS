@@ -81,7 +81,7 @@ jobs:
         run: RELEASE_PLATFORM=all node scripts/generate-release-checklist.mjs
 
       - name: Upload release checklist artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: release-checklist-${{ github.run_number }}
           path: |
@@ -180,7 +180,7 @@ jobs:
         run: RELEASE_PLATFORM=android node scripts/generate-release-checklist.mjs
 
       - name: Upload Android release artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: capacitor-android-release-${{ github.run_number }}
@@ -269,7 +269,7 @@ jobs:
         run: RELEASE_PLATFORM=ios node scripts/generate-release-checklist.mjs
 
       - name: Upload iOS release artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: capacitor-ios-release-${{ github.run_number }}
@@ -459,7 +459,7 @@ jobs:
             --output=apps/mobile-capacitor/build-metadata/release-manifest.json
 
       - name: Upload release manifest artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: release-manifest-${{ github.run_number }}
           path: apps/mobile-capacitor/build-metadata/release-manifest.json
