@@ -1,212 +1,169 @@
-name: Mobile Capacitor Release
+name: Capacitor Mobile Release
 
 on:
+  push:
+    tags:
+      - 'v*'
   workflow_dispatch:
-    inputs:
-      platform:
-        description: "Release platform"
-        required: true
-        default: android
-        type: choice
-        options:
-          - android
-          - ios
-          - all
 
 permissions:
   contents: read
 
-env:
-  CI: "true"
-  NEXT_TELEMETRY_DISABLED: "1"
-  CAPACITOR_APP_ID: com.triaxis.axxess
-  CAPACITOR_APP_NAME: AXXESS TRIAXIS
-  CAPACITOR_SERVER_URL: ${{ secrets.CAPACITOR_SERVER_URL || secrets.NEXT_PUBLIC_APP_URL }}
-  CAPACITOR_ALLOWED_HOSTS: ${{ secrets.CAPACITOR_ALLOWED_HOSTS }}
-  NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
-  NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-  NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-
 jobs:
-  android_release:
-    name: Android signed release artifact
-    if: ${{ github.event.inputs.platform == 'android' || github.event.inputs.platform == 'all' }}
+  android-production-release:
     runs-on: ubuntu-latest
     env:
+      NEXT_TELEMETRY_DISABLED: '1'
+      MOBILE_BUILD_NUMBER: ${{ github.run_number }}
       ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
       ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
       ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
       ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - uses: pnpm/action-setup@v4
+      - name: Refresh repository state
+        run: |
+          BRANCH="${GITHUB_HEAD_REF:-${GITHUB_REF_NAME}}"
+          git fetch origin --prune
+          if git show-ref --verify --quiet "refs/remotes/origin/${BRANCH}"; then
+            git checkout -B "$BRANCH" "origin/$BRANCH"
+            git pull --ff-only origin "$BRANCH"
+          else
+            echo "[mobile] No matching origin branch for ${BRANCH}; continuing with checked-out ref."
+          fi
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
         with:
           version: 11.7.0
           run_install: false
 
-      - uses: actions/setup-node@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: pnpm
 
-      - uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: 21
-
-      - uses: android-actions/setup-android@v3
-        with:
-          packages: "tools platform-tools platforms;android-35 build-tools;35.0.0"
-
-      - name: Validate Android release secrets
-        shell: bash
-        run: |
-          set -euo pipefail
-          missing=()
-          for name in CAPACITOR_SERVER_URL CAPACITOR_ALLOWED_HOSTS NEXT_PUBLIC_SUPABASE_URL NEXT_PUBLIC_SUPABASE_ANON_KEY ANDROID_KEYSTORE_BASE64 ANDROID_KEYSTORE_PASSWORD ANDROID_KEY_ALIAS ANDROID_KEY_PASSWORD; do
-            [[ -n "${!name:-}" ]] || missing+=("$name")
-          done
-          if [[ "${#missing[@]}" -gt 0 ]]; then
-            printf 'Missing required GitHub Actions secrets:\n'
-            printf ' - %s\n' "${missing[@]}"
-            exit 1
-          fi
-
-      - name: Install web dependencies
+      - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
       - name: Build web app
         run: pnpm run build
 
-      - name: Create Capacitor Android shell
-        shell: bash
+      - name: Sync Capacitor
+        run: pnpm run mobile:capacitor:sync
+
+      - name: Verify Android signing secrets
         run: |
-          set -euo pipefail
-          mkdir -p capacitor-shell/www
-          printf '<!doctype html><html><head><meta charset="utf-8"><title>AXXESS TRIAXIS</title></head><body><p>AXXESS mobile shell</p></body></html>' > capacitor-shell/www/index.html
-          cat > capacitor-shell/package.json <<'JSON'
-          {
-            "private": true,
-            "dependencies": {
-              "@capacitor/android": "^7.0.0",
-              "@capacitor/cli": "^7.0.0",
-              "@capacitor/core": "^7.0.0"
-            }
-          }
-          JSON
-          node - <<'NODE'
-          const fs = require("fs");
-          const allowedHosts = (process.env.CAPACITOR_ALLOWED_HOSTS || "")
-            .split(",")
-            .map((item) => item.trim())
-            .filter(Boolean);
-          fs.writeFileSync("capacitor-shell/capacitor.config.json", JSON.stringify({
-            appId: process.env.CAPACITOR_APP_ID,
-            appName: process.env.CAPACITOR_APP_NAME,
-            webDir: "www",
-            server: {
-              url: process.env.CAPACITOR_SERVER_URL,
-              cleartext: false,
-              allowNavigation: allowedHosts,
-            },
-          }, null, 2));
-          NODE
+          missing=0
+          for key in ANDROID_KEYSTORE_BASE64 ANDROID_KEYSTORE_PASSWORD ANDROID_KEY_ALIAS ANDROID_KEY_PASSWORD; do
+            if [ -z "${!key}" ]; then
+              echo "::error::Missing required secret: $key"
+              missing=1
+            fi
+          done
+          if [ "$missing" -ne 0 ]; then
+            exit 1
+          fi
 
-      - name: Generate Android project
-        working-directory: capacitor-shell
-        run: npm install && npx cap add android && npx cap sync android
-
-      - name: Decode Android keystore
-        shell: bash
+      - name: Prepare Android signing path
         run: |
-          set -euo pipefail
-          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > capacitor-shell/android/app/axxess-release.keystore
-          cat >> capacitor-shell/android/gradle.properties <<EOF
-          AXXESS_UPLOAD_STORE_FILE=axxess-release.keystore
-          AXXESS_UPLOAD_STORE_PASSWORD=$ANDROID_KEYSTORE_PASSWORD
-          AXXESS_UPLOAD_KEY_ALIAS=$ANDROID_KEY_ALIAS
-          AXXESS_UPLOAD_KEY_PASSWORD=$ANDROID_KEY_PASSWORD
-          EOF
-          cat > capacitor-shell/android/app/axxess-signing.gradle <<'EOF'
-          android {
-              signingConfigs {
-                  release {
-                      storeFile file(AXXESS_UPLOAD_STORE_FILE)
-                      storePassword AXXESS_UPLOAD_STORE_PASSWORD
-                      keyAlias AXXESS_UPLOAD_KEY_ALIAS
-                      keyPassword AXXESS_UPLOAD_KEY_PASSWORD
-                  }
-              }
-              buildTypes {
-                  release {
-                      signingConfig signingConfigs.release
-                  }
-              }
-          }
-          EOF
-          printf '\napply from: "axxess-signing.gradle"\n' >> capacitor-shell/android/app/build.gradle
+          echo "ANDROID_KEYSTORE_FILE=$GITHUB_WORKSPACE/apps/mobile-capacitor/android/app/release.keystore" >> $GITHUB_ENV
 
-      - name: Build signed Android release
-        working-directory: capacitor-shell/android
-        shell: bash
+      - name: Build Android production artifact
+        run: pnpm run mobile:capacitor:build:android
+
+      - name: Android release readiness marker
         run: |
-          set -euo pipefail
-          chmod +x ./gradlew
-          ./gradlew assembleRelease bundleRelease --stacktrace --no-daemon --console=plain
+          echo "Android signed artifact is ready for Play Console upload."
 
-      - name: Upload signed Android artifacts
+      - name: Upload Android release artifacts
         uses: actions/upload-artifact@v4
+        if: always()
         with:
-          name: axxess-capacitor-android-release
+          name: capacitor-android-release-${{ github.run_number }}
           path: |
-            capacitor-shell/android/app/build/outputs/apk/release/*.apk
-            capacitor-shell/android/app/build/outputs/bundle/release/*.aab
-          if-no-files-found: error
-          retention-days: 14
+            apps/mobile-capacitor/android/app/build/outputs/**
+            apps/mobile-capacitor/build-metadata/**
+          if-no-files-found: ignore
 
-  ios_release:
-    name: iOS signed archive environment check
-    if: ${{ github.event.inputs.platform == 'ios' || github.event.inputs.platform == 'all' }}
-    runs-on: macos-latest
+  ios-production-release:
+    runs-on: macos-13
     env:
+      NEXT_TELEMETRY_DISABLED: '1'
+      MOBILE_BUILD_NUMBER: ${{ github.run_number }}
+      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
       ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
       ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
       ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
-      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Validate iOS signing secrets
-        shell: bash
+      - name: Refresh repository state
         run: |
-          set -euo pipefail
-          missing=()
-          for name in CAPACITOR_SERVER_URL CAPACITOR_ALLOWED_HOSTS NEXT_PUBLIC_SUPABASE_URL NEXT_PUBLIC_SUPABASE_ANON_KEY ASC_KEY_ID ASC_ISSUER_ID ASC_PRIVATE_KEY APPLE_TEAM_ID; do
-            [[ -n "${!name:-}" ]] || missing+=("$name")
+          BRANCH="${GITHUB_HEAD_REF:-${GITHUB_REF_NAME}}"
+          git fetch origin --prune
+          if git show-ref --verify --quiet "refs/remotes/origin/${BRANCH}"; then
+            git checkout -B "$BRANCH" "origin/$BRANCH"
+            git pull --ff-only origin "$BRANCH"
+          else
+            echo "[mobile] No matching origin branch for ${BRANCH}; continuing with checked-out ref."
+          fi
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+          run_install: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build web app
+        run: pnpm run build
+
+      - name: Sync Capacitor
+        run: pnpm run mobile:capacitor:sync
+
+      - name: Verify Apple signing secrets
+        run: |
+          missing=0
+          for key in APPLE_TEAM_ID ASC_KEY_ID ASC_ISSUER_ID ASC_PRIVATE_KEY; do
+            if [ -z "${!key}" ]; then
+              echo "::error::Missing required secret: $key"
+              missing=1
+            fi
           done
-          if [[ "${#missing[@]}" -gt 0 ]]; then
-            printf 'Missing required GitHub Actions secrets:\n'
-            printf ' - %s\n' "${missing[@]}"
+          if [ "$missing" -ne 0 ]; then
             exit 1
           fi
-          mkdir -p "$RUNNER_TEMP/app-store-connect"
-          printf '%s' "$ASC_PRIVATE_KEY" > "$RUNNER_TEMP/app-store-connect/AuthKey_$ASC_KEY_ID.p8"
-          {
-            echo "ios_signing_environment=present"
-            echo "asc_key_id=${ASC_KEY_ID}"
-            echo "asc_issuer_id_length=${#ASC_ISSUER_ID}"
-            echo "apple_team_id=${APPLE_TEAM_ID}"
-            echo "private_key_file_created=true"
-            echo "private_key_uploaded=false"
-          } > "$RUNNER_TEMP/app-store-connect/signing-proof.txt"
-          rm -f "$RUNNER_TEMP/app-store-connect/AuthKey_$ASC_KEY_ID.p8"
-          echo "iOS signing secret environment is present. Certificate/profile installation remains provider-gated."
 
-      - name: Upload iOS signing environment proof
+      - name: Build iOS production artifact
+        run: pnpm run mobile:capacitor:build:ios
+
+      - name: iOS release readiness marker
+        run: |
+          echo "iOS artifact is ready for signing/TestFlight upload."
+
+      - name: Upload iOS release artifacts
         uses: actions/upload-artifact@v4
+        if: always()
         with:
-          name: axxess-capacitor-ios-signing-proof
-          path: ${{ runner.temp }}/app-store-connect/signing-proof.txt
-          if-no-files-found: error
-          retention-days: 14
+          name: capacitor-ios-release-${{ github.run_number }}
+          path: |
+            apps/mobile-capacitor/ios/App/build/**
+            apps/mobile-capacitor/build-metadata/**
+          if-no-files-found: ignore
