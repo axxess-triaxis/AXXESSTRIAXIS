@@ -1,107 +1,189 @@
 # AXXESS by Triaxis Ventures
 
-AXXESS is an AI-enabled, human-in-the-loop institutional intelligence platform for enterprise, government, healthcare, NGO, and consulting organizations.
+AXXESS is an AI-enabled, human-in-the-loop institutional execution platform for MSMEs, startups, enterprise, government, healthcare, NGO, and consulting organizations.
 
-The product helps complex organizations turn projects, documents, decisions, stakeholders, meetings, risks, and approvals into a governed execution workspace. This repository contains the production-oriented Next.js implementation migrated from earlier Figma-generated Codex sprints while preserving the existing AXXESS visual language and feature surface.
+The platform converts projects, documents, decisions, stakeholders, meetings, risks, and approvals into a governed execution workspace with auditability, role-aware workflows, and decision-grade AI support.
+
+## Investor Snapshot
+
+### The Problem
+
+Large institutions still run critical execution across fragmented tools, manual reviews, and weak audit trails. Generic AI copilots do not meet governance, accountability, and compliance expectations for decision-heavy environments.
+
+### Our Solution
+
+AXXESS is an institutional execution layer with human-in-the-loop AI, governed retrieval, and role-aware workflows that connect projects, documents, risks, approvals, and decisions in one auditable system.
+
+### Why We Can Win
+
+- Architecture moat: tenant-aware, audit-first platform built for regulated operations.
+- Product moat: AI integrated into governed workflows, not bolted on as chat.
+- Delivery moat: web, Android, and iOS release pipelines already operational.
+- Trust moat: privacy, compliance, and security design embedded from core sprints.
+
+## Current Build and Release Status
+
+As of 2026-07-13:
+
+- Web production website is live on https://www.triaxisventures.com.
+- Beta web experience is hosted separately on beta.triaxisventures.com.
+- Beta and website architectures are intentionally separated.
+- Android build pipeline is active in CI/CD.
+- iOS build pipeline is active in CI/CD.
+- Web build and deployment pipeline is active in CI/CD.
 
 ## Product Philosophy
 
-AXXESS is built for institutional execution rather than generic content generation. The application favors structured intelligence, auditability, role-aware workflows, and human review over opaque automation.
+AXXESS is built for institutional execution rather than generic content generation. The application prioritizes structured intelligence, governance controls, role-aware workflows, and human review over opaque automation.
 
-Core principles:
+- Human-in-the-loop AI for high-impact workflows.
+- Enterprise-grade tenant boundaries, RBAC enforcement, and audit-first records.
+- Predictable repository contracts with graceful fallback behavior.
+- Quiet, precise interface patterns for executive and operational usage.
+- Open-source-quality repository standards for maintainable long-term development.
 
-- Human-in-the-loop AI for high-impact actions.
-- Enterprise-grade tenant, RBAC, and audit boundaries.
-- Repository contracts that can fall back gracefully without exposing backend errors.
-- A quiet, precise interface suitable for executive and operational users.
-- Open-source-quality repository standards for long-term collaborative development.
+## Who AXXESS Is For
+
+- MSMEs scaling from founder-led execution to institutional processes.
+- Startups preparing for operational maturity and investor diligence.
+- Enterprise teams requiring structured approvals and auditable decision flows.
+- Public-sector institutions with governance-heavy operations.
+- Healthcare and NGO programs requiring controlled data handling.
+- Consulting and advisory firms coordinating multi-stakeholder execution.
+
+## Current Delivery Baseline
+
+Implemented platform baseline includes:
+
+- Next.js App Router application shell with protected route surfaces.
+- Supabase-first repository model for auth, tenant entities, storage, and audit trails.
+- Demo Mode for controlled preview environments with seeded institutional data.
+- Graceful fallback repository behavior when backing services are unavailable.
+- Governed RAG with permission-aware retrieval, citation handling, and answer audit logs.
+- Local deterministic NLP utilities for extraction, summarization, and classification workflows.
+- Governance modules for IAM controls, audit integrity, privacy planning, and compliance mapping.
+- Operational delivery assets for CI, testing, release checks, and mobile scaffolds.
 
 ## Architecture
 
-Current runtime status: Sprint 13 enterprise beta readiness foundation with onboarding, auth route surfaces, admin readiness pages, Supabase RLS persona artifacts, analytics provider selection, and Expo mobile scaffold.
+AXXESS follows a modular, service-oriented front-end and server architecture with clear domain and control boundaries.
 
-- Next.js App Router powers the application shell, protected pages, and server routes.
-- Supabase Auth, tenant repositories, CRUD workflows, notifications, invitations, audit logs, private storage, and RLS-ready metadata are in place.
-- Runtime Demo Mode loads the seeded North East Health Mission tenant for investor previews.
-- Production repository calls fall back to the demo repository layer when Supabase is unavailable, preventing investor-facing backend errors.
-- Sprint 15 consolidates frontend coherence through shared enterprise UI primitives, guided demo state, screenshot mode, and live/demo/provider-gated labels across the major demo screens.
-- Sprint 14 adds provider-gated AI routing for OpenAI, Anthropic, Google, xAI, Falcon, Jais, and local deterministic fallback.
-- Sprint 14 adds the RAG repository foundation, open-source NLP model registry, productivity plugin registry, live dashboard provider hooks, social alert ingestion architecture, and Wix-safe public website export.
-- Governed RAG provides document chunking, permission-aware retrieval, citations, confidence scoring, and answer audit logs.
-- Local NLP utilities provide deterministic keyword extraction, summaries, entity extraction, classification, tag suggestions, and lightweight regional language detection.
-- Sprint 12 security modules add enterprise IAM, tenant guardrails, immutable audit hashing, privacy request planning, compliance control mapping, prompt governance, and PostHog-ready observability.
-- Sprint 13 adds clean-tenant onboarding routes, sign-up/password-recovery/MFA/passkey-ready routes, account deletion initiation, admin governance pages, Expo/EAS mobile scaffold, Bitrise workflows, and due-diligence documentation.
+### Application Layer
+
+- Next.js App Router drives route structure, shells, protected views, and server routes.
+- React and TypeScript support strongly typed UI and domain boundaries.
+- Tailwind and component primitives provide a consistent design system foundation.
+
+### Domain and Repository Layer
+
+- Domain entities model organizations, programs, projects, approvals, documents, and stakeholders.
+- Repository interfaces abstract provider implementations.
+- Supabase-backed implementations are used when configured; fallback repositories preserve controlled UX continuity.
+
+### Auth and Access Model
+
+- Supabase Auth integration with route-aware auth surfaces.
+- MFA and passkey-ready route patterns and recovery flows.
+- Tenant-aware access patterns and role-oriented control boundaries.
+
+### Knowledge and Intelligence Layer
+
+- Governed RAG pipeline with document chunking, permission-aware retrieval, citation-enriched responses, confidence metadata, and answer audit logs.
+- Local NLP utilities for keyword extraction, summary generation, entity extraction, classification, and tag suggestions.
+
+## Governance, Observability, and Auditability
+
+- Tenant isolation and role-aware boundaries are explicit platform concerns.
+- Analytics adapter supports dependency-safe provider selection.
+- PostHog and Mixpanel integrations are optional and configuration-gated.
+- CI gates and test suites contribute to observable release hygiene.
+- Governance and compliance artifacts are maintained in versioned docs.
+
+## Security and Compliance Posture
+
+Current commercial focus is DIFC, ADGM, and Singapore, with EU readiness as a parallel track.
+
+AXXESS is mapped to policy and control patterns aligned with DIFC DP Law, ADGM data protection expectations, and Singapore PDPA-style accountability, while maintaining GDPR-aligned engineering patterns (data minimization, purpose limitation support, auditability, deletion workflows, access controls, and tenant isolation).
+
+This is an engineering readiness posture and should be finalized per customer engagement through legal and compliance review.
+
+## Delivery and Release Pipeline Status
+
+AXXESS currently runs a multi-surface CI/CD delivery pipeline for web, iOS, and Android builds.
+
+- Web deployment is active.
+- Mobile iOS and Android build and release workflows are active.
+- Public beta release preparation is tracked through runbooks and gates.
+- Delivery tooling includes Codex, Capacitor, GitHub, VS Code, and Webnative with repository-level traceability.
+
+## Runtime Modes
+
+### Production Mode
+
+- Uses configured Supabase services and tenant-aware repositories.
+- Intended for live organization onboarding and operational usage.
+- Requires secure secret provisioning and RLS policy readiness.
+
+### Demo Mode
+
+- Loads a seeded preview tenant for controlled demos.
+- Can be enabled via settings, preview login, or environment configuration.
+- Keep disabled for live customer environments.
 
 ## Tech Stack
 
 - Next.js 15 App Router
-- React 18
-- TypeScript
+- React + TypeScript
 - Tailwind CSS 4
-- Radix UI primitives and shadcn-style components
-- Lucide React icons
-- Recharts
+- Radix UI and shadcn-style components
+- Lucide React icons and Recharts
 - Supabase Auth, Database, and Storage architecture
-- PostHog capture adapter through a dependency-free analytics provider
-- Mixpanel browser client, disabled unless configured
-- Expo/EAS mobile beta scaffold under `apps/mobile`
-- Vitest and React Testing Library
-- pnpm
+- PostHog and Mixpanel provider pathways
+- Expo/EAS mobile scaffold under apps/mobile
+- Capacitor native shell under apps/mobile-capacitor
+- Vitest, React Testing Library, and Playwright
+- pnpm workspace tooling
 
-## Folder Structure
+## Repository Structure
 
 ```text
 .
-|-- .github/             GitHub templates, CI workflows, Dependabot
-|-- apps/mobile/         Expo React Native beta scaffold for iOS and Android
-|-- docs/                Engineering, auth, demo, RAG, NLP, deployment notes
-|-- packages/shared/     Shared Sprint 13 constants for roles, sectors, notices, events
-|-- public/              Static public assets
+|-- .github/
+|-- apps/mobile/
+|-- apps/mobile-capacitor/
+|-- docs/
+|-- guidelines/
+|-- packages/shared/
+|-- plans/
+|-- public/
+|-- scripts/
 |-- src/
-|   |-- app/             Next App Router pages, shell layout, navigation, routing
-|   |-- auth/            Supabase auth facade, local profile helpers, session clients
-|   |-- components/      Shared layout, feedback, forms, and UI components
-|   |-- components/enterprise/ Shared Sprint 15 enterprise UI primitives
-|   |-- components/demo/ Guided demo and investor preview UI
-|   |-- config/          Feature flags
-|   |-- demo/            Investor-preview dataset, mode switch, and demo repositories
-|   |-- domain/          Core enterprise entity types
-|   |-- features/        Dashboard, projects, tasks, CRM, Knowledge Hub, AI workspace
-|   |-- lib/demo/        Sprint 15 frontend demo slices and guided workflow model
-|   |-- providers/       Dependency injection and resilient service provider wiring
-|   |-- repositories/    Repository interfaces and Supabase implementations
-|   |-- security/        RBAC, enterprise IAM, tenant guards, audit integrity
-|   |-- privacy/         Privacy request planning, masking, tokenization
-|   |-- compliance/      Configurable compliance control resolver
-|   |-- services/        Analytics, observability, storage, local NLP, governed RAG
-|   |-- styles/          Fonts, theme, Tailwind, globals, design tokens
-|   |-- test/            Test setup
-|   `-- utils/           Pure utilities
-`-- supabase/            Migrations, local seed data, and fixtures
+|-- supabase/
+`-- tests/
 ```
 
-## Installation
+## Getting Started
 
-Prerequisites:
+### Prerequisites
 
 - Node.js 22 or newer
 - pnpm 11 or newer
+
+### Install
 
 ```bash
 pnpm install
 ```
 
-## Local Development
+### Run locally
 
 ```bash
 pnpm run dev
 ```
 
-Open `http://localhost:3000/dashboard`.
+Open http://localhost:3000/dashboard
 
-For an investor walkthrough, open `http://localhost:3000/dashboard?demo=guided`. For clean product screenshots, append `?screenshot=true` to a product route.
-
-Useful scripts:
+### Useful commands
 
 ```bash
 pnpm run typecheck
@@ -109,135 +191,22 @@ pnpm run lint
 pnpm run test
 pnpm run build
 pnpm run ci
+pnpm run mobile:capacitor:doctor
 ```
 
 ## Environment Variables
 
-Copy `.env.example` to `.env.local` and fill in values as services are connected.
+Copy .env.example to .env.local and populate values for connected services.
 
-```bash
-NEXT_PUBLIC_APP_URL=http://localhost:3000
-NEXT_PUBLIC_AXXESS_AUTH_SHELL=false
-NEXT_PUBLIC_AXXESS_DEMO_MODE=false
-NEXT_PUBLIC_AXXESS_APP_VERSION=0.8.0
-NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
-NEXT_PUBLIC_ANALYTICS_PROVIDER=noop
-NEXT_PUBLIC_POSTHOG_KEY=
-NEXT_PUBLIC_POSTHOG_HOST=https://us.i.posthog.com
-NEXT_PUBLIC_MIXPANEL_TOKEN=
-NEXT_PUBLIC_ANALYTICS_DISABLED=false
-NEXT_PUBLIC_BETA_FEEDBACK_FORM_URL=
-SUPABASE_SERVICE_ROLE_KEY=
-AXXESS_KMS_KEY_ALIAS=
-AXXESS_SECRET_ROTATION_DAYS=90
-AXXESS_AUDIT_HASH_SALT=
-```
+Important handling rules:
 
-Only `NEXT_PUBLIC_*` values are safe to expose to the browser. Server-side keys must stay in local environment files or managed deployment secrets.
+- Only NEXT_PUBLIC_* values are safe for browser exposure.
+- Server-side keys must remain in secure environment stores.
+- Do not commit real secrets to version control.
 
-`NEXT_PUBLIC_AXXESS_DEMO_MODE=true` opens the seeded North East Health Mission investor-preview tenant. Keep it `false` for live customers so new organizations start as clean tenants.
+## Quality Gates and CI Expectations
 
-Investor preview login:
-
-```text
-Email: investor.preview@axxess.demo
-Password: preview
-```
-
-## Demo Mode
-
-Demo Mode can be enabled from Settings, through the investor preview login, or by setting `NEXT_PUBLIC_AXXESS_DEMO_MODE=true` in a deployment environment. It loads a coherent fictional institution with populated dashboards, programs, projects, approvals, Knowledge Hub records, notifications, recent activity, search data, and audit history.
-
-When Demo Mode is off, the application uses Supabase repositories when configured and otherwise presents a clean tenant.
-
-## Deployment
-
-The app is prepared for Vercel and container-based deployment.
-
-```bash
-pnpm install --frozen-lockfile
-pnpm run build
-```
-
-Production deployments should provide secrets through the hosting platform, enable Supabase row-level security before connecting real tenant data, and keep security headers enabled through `next.config.mjs`.
-
-## Screenshots
-
-Screenshot slots are reserved for production-approved imagery:
-
-- Executive Dashboard: `docs/screenshots/dashboard.png`
-- AI Workspace: `docs/screenshots/ai-workspace.png`
-- Projects and Programs: `docs/screenshots/projects.png`
-- Knowledge Hub: `docs/screenshots/knowledge-hub.png`
-
-## Roadmap
-
-- Replace lexical local retrieval with production embedding providers while preserving permission filters.
-- Add department/team mappings to document permissions.
-- Add invitation email delivery provider and audit-reviewed provisioning flows.
-- Expand browser E2E coverage for investor preview and protected routes.
-- Apply Sprint 12 migration to staging and validate RLS across multiple tenant personas.
-- Apply Sprint 13 migration and run `supabase/tests/rls_persona_tests.sql` in staging.
-- Enable Supabase MFA, OAuth providers, passkeys/WebAuthn, branch protections, PostHog dashboards, and backup drills.
-- Run Android preview EAS/Bitrise build and prepare iOS signing credentials.
-- In the Expo dashboard, set GitHub build Base directory to `apps/mobile`; see `docs/EXPO_GITHUB_BUILD.md`.
-- Configure iOS and Android signing through Expo-managed EAS credentials; see `docs/EAS_MANAGED_CREDENTIALS.md`.
-- Launch production Android/iOS mobile builds from `apps/mobile/.eas/workflows/create-production-builds.yml`.
-- Use `pnpm mobile:eas:workflow:production` or `pnpm mobile:eas:build:production:all` to trigger Expo production builds from the repository root.
-- In Wix setup, use `https://github.com/axxess-triaxis/AXXESSTRIAXIS.git`; see `docs/WIX_SETUP.md`.
-
-## Documentation
-
-- `docs/AUTH.md`
-- `docs/DEMO_MODE.md`
-- `docs/RAG.md`
-- `docs/NLP.md`
-- `docs/DEPLOYMENT.md`
-- `docs/SPRINT_15_FRONTEND_AUDIT.md`
-- `docs/PRODUCT_WALKTHROUGH.md`
-- `docs/FRONTEND_ARCHITECTURE.md`
-- `docs/DEMO_SCREENSHOT_GUIDE.md`
-- `docs/SPRINT_LOG.md`
-- `docs/SECURITY_ARCHITECTURE.md`
-- `docs/COMPLIANCE_ENGINE.md`
-- `docs/PRIVACY_ENGINEERING.md`
-- `docs/AI_GOVERNANCE.md`
-- `docs/OBSERVABILITY.md`
-- `docs/DEVSECOPS.md`
-- `docs/BACKUP_DR.md`
-- `docs/MOBILE_RELEASE.md`
-- `docs/SPRINT_13_AUDIT.md`
-- `docs/VERCEL_DEPLOYMENT.md`
-- `docs/SUPABASE_STAGING.md`
-- `docs/RLS_PERSONA_TESTS.md`
-- `docs/BITRISE.md`
-- `docs/MIXPANEL.md`
-- `docs/POSTHOG.md`
-- `docs/POSTHOG_DASHBOARDS.md`
-- `docs/PLAYWRIGHT.md`
-- `docs/EXPO_GITHUB_BUILD.md`
-- `docs/EAS_MANAGED_CREDENTIALS.md`
-- `docs/WIX_SETUP.md`
-- `docs/ENVIRONMENT_VARIABLES.md`
-- `docs/APP_STORE_READINESS.md`
-- `docs/PLAY_STORE_READINESS.md`
-- `docs/PRIVACY_DATA_MAP.md`
-- `docs/ACCOUNT_DELETION.md`
-- `docs/DUE_DILIGENCE_PACK.md`
-- `docs/SPRINT_12_RELEASE_READINESS.md`
-- `docs/API.md`
-- `docs/SCHEMA.md`
-- `docs/ADMIN_OPERATIONS.md`
-- `docs/DOCUMENTS.md`
-- `docs/STORAGE.md`
-- `docs/SEARCH.md`
-
-## Contributing
-
-Please read `CONTRIBUTING.md` before opening a pull request. All changes should preserve the existing UI language unless an approved design task explicitly changes it.
-
-Required local checks before pull requests:
+Run before creating or merging changes:
 
 ```bash
 pnpm run typecheck
@@ -246,6 +215,59 @@ pnpm run test
 pnpm run build
 ```
 
+## Deployment
+
+Recommended production build flow:
+
+```bash
+pnpm install --frozen-lockfile
+pnpm run build
+```
+
+Production deployment checklist:
+
+- Configure secrets in hosting platforms.
+- Apply and verify Supabase RLS before onboarding live tenant data.
+- Preserve security headers via next.config.mjs.
+- Validate observability hooks and rollback paths.
+- Verify environment segregation (preview, staging, production).
+
+## Mobile Delivery Notes
+
+- Expo scaffold is available under apps/mobile.
+- Capacitor shell is available under apps/mobile-capacitor.
+- Build and release operations should follow runbooks for repeatability and auditability.
+
+## Documentation Index
+
+Key references:
+
+- docs/DEPLOYMENT.md
+- docs/VERCEL_DEPLOYMENT.md
+- docs/MOBILE_RELEASE.md
+- docs/MOBILE_RELEASE_RUNBOOK.md
+- docs/SECURITY_ARCHITECTURE.md
+- docs/COMPLIANCE_ENGINE.md
+- docs/PRIVACY_ENGINEERING.md
+- docs/AI_GOVERNANCE.md
+- docs/DEVSECOPS.md
+- docs/RLS_PERSONA_TESTS.md
+- docs/DUE_DILIGENCE_PACK.md
+- docs/API.md
+- docs/SCHEMA.md
+
+## Contributing
+
+Please read CONTRIBUTING.md before opening a pull request.
+
+Expected contribution standards:
+
+- Preserve UI language unless an approved design task requires changes.
+- Maintain domain and repository boundary discipline.
+- Keep configuration and security assumptions explicit.
+- Update docs with implementation changes, especially for controls and runbooks.
+- Pass local quality gates before opening a PR.
+
 ## License
 
-Licensed under the Apache License, Version 2.0. See `LICENSE`.
+Licensed under the Apache License, Version 2.0. See LICENSE.

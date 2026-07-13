@@ -1,0 +1,209 @@
+name: Capacitor Mobile Build
+
+on:
+  pull_request:
+    paths:
+      - 'src/**'
+      - 'app/**'
+      - 'public/**'
+      - 'apps/mobile-capacitor/**'
+      - 'apps/mobile/**'
+      - 'packages/shared/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - 'capacitor.config.*'
+      - 'next.config.*'
+      - 'tsconfig*.json'
+      - 'supabase/**'
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/**'
+      - 'app/**'
+      - 'public/**'
+      - 'apps/mobile-capacitor/**'
+      - 'apps/mobile/**'
+      - 'packages/shared/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - 'capacitor.config.*'
+      - 'next.config.*'
+      - 'tsconfig*.json'
+      - 'supabase/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: capacitor-mobile-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    env:
+      NEXT_TELEMETRY_DISABLED: '1'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Refresh repository state
+        run: |
+          BRANCH="${GITHUB_HEAD_REF:-${GITHUB_REF_NAME}}"
+          git fetch origin --prune
+          if git show-ref --verify --quiet "refs/remotes/origin/${BRANCH}"; then
+            git checkout -B "$BRANCH" "origin/$BRANCH"
+            git pull --ff-only origin "$BRANCH"
+          else
+            echo "[mobile] No matching origin branch for ${BRANCH}; continuing with checked-out ref."
+          fi
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+          run_install: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm run typecheck
+
+      - name: Test
+        run: pnpm run test
+
+      - name: Build web app
+        run: pnpm run build
+
+      - name: Release preflight (CI)
+        run: pnpm run release:preflight -- --mode=ci --target=all
+
+      - name: Capacitor doctor
+        run: pnpm run mobile:capacitor:doctor
+
+  android-preview:
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    needs: validate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Refresh repository state
+        run: |
+          BRANCH="${GITHUB_HEAD_REF:-${GITHUB_REF_NAME}}"
+          git fetch origin --prune
+          if git show-ref --verify --quiet "refs/remotes/origin/${BRANCH}"; then
+            git checkout -B "$BRANCH" "origin/$BRANCH"
+            git pull --ff-only origin "$BRANCH"
+          else
+            echo "[mobile] No matching origin branch for ${BRANCH}; continuing with checked-out ref."
+          fi
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+          run_install: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Release preflight (Android)
+        run: pnpm run release:preflight -- --mode=ci --target=android
+
+      - name: Sync Capacitor
+        run: pnpm run mobile:capacitor:sync
+
+      - name: Build Android preview artifact
+        run: pnpm run mobile:capacitor:build:android
+        env:
+          MOBILE_BUILD_NUMBER: ${{ github.run_number }}
+
+      - name: Upload Android build artifacts
+        uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: android-capacitor-build-${{ github.run_number }}
+          path: |
+            apps/mobile-capacitor/android/app/build/outputs/**
+            apps/mobile-capacitor/build-metadata/**
+          if-no-files-found: ignore
+
+  ios-preview:
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    needs: validate
+    runs-on: macos-13
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Refresh repository state
+        run: |
+          BRANCH="${GITHUB_HEAD_REF:-${GITHUB_REF_NAME}}"
+          git fetch origin --prune
+          if git show-ref --verify --quiet "refs/remotes/origin/${BRANCH}"; then
+            git checkout -B "$BRANCH" "origin/$BRANCH"
+            git pull --ff-only origin "$BRANCH"
+          else
+            echo "[mobile] No matching origin branch for ${BRANCH}; continuing with checked-out ref."
+          fi
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+          run_install: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Release preflight (iOS)
+        run: pnpm run release:preflight -- --mode=ci --target=ios
+
+      - name: Sync Capacitor
+        run: pnpm run mobile:capacitor:sync
+
+      - name: Build iOS preview artifact
+        run: pnpm run mobile:capacitor:build:ios
+        env:
+          MOBILE_BUILD_NUMBER: ${{ github.run_number }}
+
+      - name: Upload iOS build artifacts
+        uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: ios-capacitor-build-${{ github.run_number }}
+          path: |
+            apps/mobile-capacitor/ios/App/build/**
+            apps/mobile-capacitor/build-metadata/**
+          if-no-files-found: ignore
