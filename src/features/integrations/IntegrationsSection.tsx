@@ -1,4 +1,4 @@
-﻿import { SectionHeader } from "../../components/layout/SectionHeader";
+import { SectionHeader } from "../../components/layout/SectionHeader";
 import { Card } from "../../components/ui/Card";
 import { applicationServices } from "../../providers/serviceProvider";
 import { getIntegrationHealth, getProductivityPluginRegistry } from "../../services/integrations/pluginRegistry";
