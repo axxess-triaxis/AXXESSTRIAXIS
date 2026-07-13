@@ -22,6 +22,35 @@ type ChartContextProps = {
   config: ChartConfig;
 };
 
+type ChartPayloadRecord = Record<string, unknown>;
+
+type ChartTooltipPayloadItem = {
+  color?: string;
+  dataKey?: string | number;
+  name?: string | number;
+  payload?: ChartPayloadRecord;
+  value?: string | number | Array<string | number>;
+};
+
+type ChartTooltipFormatter = (
+  value: NonNullable<ChartTooltipPayloadItem["value"]>,
+  name: NonNullable<ChartTooltipPayloadItem["name"]>,
+  item: ChartTooltipPayloadItem,
+  index: number,
+  payload: ChartPayloadRecord | undefined,
+) => React.ReactNode;
+
+type ChartTooltipLabelFormatter = (
+  value: React.ReactNode,
+  payload: ChartTooltipPayloadItem[],
+) => React.ReactNode;
+
+type ChartLegendPayloadItem = {
+  color?: string;
+  dataKey?: string | number;
+  value?: string | number;
+};
+
 const ChartContext = React.createContext<ChartContextProps | null>(null);
 
 function useChart() {
@@ -118,12 +147,18 @@ function ChartTooltipContent({
   color,
   nameKey,
   labelKey,
-}: React.ComponentProps<typeof RechartsPrimitive.Tooltip> &
-  React.ComponentProps<"div"> & {
+}: React.ComponentProps<"div"> & {
+    active?: boolean;
+    color?: string;
+    formatter?: ChartTooltipFormatter;
     hideLabel?: boolean;
     hideIndicator?: boolean;
     indicator?: "line" | "dot" | "dashed";
+    label?: React.ReactNode;
+    labelClassName?: string;
+    labelFormatter?: ChartTooltipLabelFormatter;
     nameKey?: string;
+    payload?: ChartTooltipPayloadItem[];
     labelKey?: string;
   }) {
   const { config } = useChart();
@@ -182,11 +217,13 @@ function ChartTooltipContent({
         {payload.map((item, index) => {
           const key = `${nameKey || item.name || item.dataKey || "value"}`;
           const itemConfig = getPayloadConfigFromPayload(config, item, key);
-          const indicatorColor = color || item.payload.fill || item.color;
+          const payloadFill =
+            typeof item.payload?.fill === "string" ? item.payload.fill : undefined;
+          const indicatorColor = color || payloadFill || item.color;
 
           return (
             <div
-              key={item.dataKey}
+              key={`${item.dataKey ?? item.name ?? index}`}
               className={cn(
                 "[&>svg]:text-muted-foreground flex w-full flex-wrap items-stretch gap-2 [&>svg]:h-2.5 [&>svg]:w-2.5",
                 indicator === "dot" && "items-center",
@@ -257,9 +294,11 @@ function ChartLegendContent({
   verticalAlign = "bottom",
   nameKey,
 }: React.ComponentProps<"div"> &
-  Pick<RechartsPrimitive.LegendProps, "payload" | "verticalAlign"> & {
+  {
     hideIcon?: boolean;
     nameKey?: string;
+    payload?: ChartLegendPayloadItem[];
+    verticalAlign?: "top" | "bottom" | "middle";
   }) {
   const { config } = useChart();
 
