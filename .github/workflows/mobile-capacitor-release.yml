@@ -2,6 +2,9 @@ name: Capacitor Mobile Release
 
 
 
+
+            npm --prefix apps/mobile-capacitor install --no-save @capacitor/ios@^7.0.0
+
 on:
 
   push:
@@ -334,6 +337,8 @@ jobs:
           if [ ! -f apps/mobile-capacitor/ios/App/App.xcodeproj/project.pbxproj ]; then
 
             rm -rf apps/mobile-capacitor/ios
+
+            npm --prefix apps/mobile-capacitor install --no-save @capacitor/ios@^7.0.0
 
             pnpm --dir apps/mobile-capacitor exec cap add ios
 
