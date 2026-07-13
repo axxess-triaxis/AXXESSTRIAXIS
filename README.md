@@ -1,6 +1,6 @@
 # AXXESS by Triaxis Ventures
 
-AXXESS is an AI-enabled, human-in-the-loop institutional intelligence platform for enterprise, government, healthcare, NGO, and consulting organizations.
+AXXESS is an AI-enabled, human-in-the-loop institutional intelligence platform for MSMEs, startups, enterprise, government, healthcare, NGO, and consulting organizations.
 
 The product helps complex organizations turn projects, documents, decisions, stakeholders, meetings, risks, and approvals into a governed execution workspace. This repository contains the production-oriented Next.js implementation migrated from earlier Figma-generated Codex sprints while preserving the existing AXXESS visual language and feature surface.
 
