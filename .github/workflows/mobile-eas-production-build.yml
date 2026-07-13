@@ -90,6 +90,7 @@ jobs:
         run: pnpm run typecheck
 
       - name: Validate build and signing secrets
+        id: eas-secrets
         shell: bash
         run: |
           set -euo pipefail
@@ -128,12 +129,19 @@ jobs:
           if [[ "${#missing[@]}" -gt 0 ]]; then
             printf 'Missing required GitHub Actions secrets:\n'
             printf ' - %s\n' "${missing[@]}"
+            if [[ "${GITHUB_EVENT_NAME:-}" == "push" ]]; then
+              echo "::warning::Skipping automatic EAS production proof because release secrets are not fully configured."
+              echo "should_launch=false" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
             exit 1
           fi
 
+          echo "should_launch=true" >> "$GITHUB_OUTPUT"
           echo "Required mobile build and signing secrets are present."
 
       - name: Launch EAS build
+        if: steps.eas-secrets.outputs.should_launch == 'true'
         working-directory: apps/mobile
         shell: bash
         run: |
