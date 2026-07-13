@@ -232,7 +232,7 @@ jobs:
 
   ios-production-release:
 
-    runs-on: macos-13
+    runs-on: macos-latest
 
     env:
 
