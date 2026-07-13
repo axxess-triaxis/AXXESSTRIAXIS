@@ -10,6 +10,14 @@ const keystorePath = path.join(mobileDir, 'android', 'app', 'release.keystore');
 const gradlePropertiesPath = path.join(mobileDir, 'android', 'gradle.properties');
 
 const env = process.env;
+const SIGNING_PROP_PREFIXES = [
+  'android.injected.signing.store.file=',
+  'android.injected.signing.store.password=',
+  'android.injected.signing.key.alias=',
+  'android.injected.signing.key.password=',
+  'android.useAndroidX=',
+  'android.enableJetifier=',
+];
 
 function ensureDir(dir) {
   fs.mkdirSync(dir, { recursive: true });
@@ -29,7 +37,21 @@ const props = [
   `android.injected.signing.store.password=${env.ANDROID_KEYSTORE_PASSWORD || ''}`,
   `android.injected.signing.key.alias=${env.ANDROID_KEY_ALIAS || ''}`,
   `android.injected.signing.key.password=${env.ANDROID_KEY_PASSWORD || ''}`,
-].join('\n');
+  'android.useAndroidX=true',
+  'android.enableJetifier=true',
+];
 
-fs.writeFileSync(gradlePropertiesPath, props + '\n', { flag: 'w' });
+ensureDir(path.dirname(gradlePropertiesPath));
+const existingProps = fs.existsSync(gradlePropertiesPath)
+  ? fs
+      .readFileSync(gradlePropertiesPath, 'utf8')
+      .split(/\r?\n/)
+      .filter(Boolean)
+  : [];
+const retainedProps = existingProps.filter(
+  (line) => !SIGNING_PROP_PREFIXES.some((prefix) => line.startsWith(prefix)),
+);
+const finalProps = [...retainedProps, ...props].join('\n');
+
+fs.writeFileSync(gradlePropertiesPath, finalProps + '\n', { flag: 'w' });
 console.log('[mobile] Wrote Android signing properties.');
