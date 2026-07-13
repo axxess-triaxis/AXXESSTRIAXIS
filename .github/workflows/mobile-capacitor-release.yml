@@ -241,6 +241,8 @@ jobs:
 
   ios-production-release:
 
+    if: ${{ secrets.APPLE_TEAM_ID != '' && secrets.ASC_KEY_ID != '' && secrets.ASC_ISSUER_ID != '' && secrets.ASC_PRIVATE_KEY != '' }}
+
     runs-on: macos-latest
 
     env:
