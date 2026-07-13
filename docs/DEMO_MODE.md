@@ -29,6 +29,23 @@ The dataset uses one coherent fictional institution, North East Health Mission, 
 
 When Supabase is unavailable in a demo deployment, the service provider falls back to demo repositories rather than showing backend errors. Investor-facing dashboards and Knowledge Hub views continue rendering with seeded data and an `Investor Preview` badge.
 
+## Guided Demo
+
+Sprint 15 adds a guided investor/customer walkthrough that runs on the normal app shell:
+
+- Start from the Executive Dashboard.
+- Inspect a governed Knowledge Hub document.
+- Ask an AI Workspace question with cited RAG-style sources.
+- Create or inspect follow-through tasks.
+- Review approvals with human decisioning and audit language.
+- Close on analytics and pilot/request-feedback CTAs.
+
+Use `/dashboard?demo=guided` to activate the walkthrough. The guided state is stored locally and survives navigation between major screens.
+
+## Screenshot Mode
+
+Use `?screenshot=true` on product routes to hide guided-demo chrome and capture clean product screenshots. Recommended routes are documented in `docs/DEMO_SCREENSHOT_GUIDE.md`.
+
 ## Normal Mode
 
 When Demo Mode is off, new tenants do not receive seeded demo data. If Supabase is connected, the application uses production repositories. If Supabase is not connected, the shell presents a clean tenant.

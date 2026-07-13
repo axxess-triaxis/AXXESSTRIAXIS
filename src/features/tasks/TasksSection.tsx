@@ -4,7 +4,7 @@ import { useAuth } from "../../auth/AuthProvider";
 import { InlineToast } from "../../components/forms/InlineToast";
 import { SelectField, TextAreaField, TextField } from "../../components/forms/FormField";
 import { LoadingState } from "../../components/feedback/LoadingState";
-import { SectionHeader } from "../../components/layout/SectionHeader";
+import { DataStateBadge, DemoDataNotice, ModuleHeader, PageShell, TenantScopeBadge, WorkflowStepCard } from "../../components/enterprise";
 import { Avatar } from "../../components/ui/Avatar";
 import { Card } from "../../components/ui/Card";
 import { RiskBadge } from "../../components/ui/RiskBadge";
@@ -13,6 +13,7 @@ import type { Program, Project, Task, User } from "../../domain";
 import { applicationServices } from "../../providers/serviceProvider";
 import { tenantScopeFromUser } from "../../repositories/supabaseEnterpriseRepositories";
 import { useAnalytics } from "../../services/analytics";
+import { demoAuditTimeline } from "../../lib/demo/demoActivity";
 
 type TaskFormState = {
   title: string;
@@ -215,11 +216,16 @@ export const TasksSection = () => {
   if (loading) return <LoadingState label="Loading task workflows" />;
 
   return (
-    <div className="h-full min-h-0">
-      <SectionHeader
+    <PageShell className="h-full min-h-0">
+      <ModuleHeader
         title="Tasks & Workflow"
-        subtitle={`${tasks.length} active tasks across ${projects.length} projects`}
-        action={
+        eyebrow="Accountable follow-through"
+        description={`${tasks.length} active tasks across ${projects.length} projects. Tasks can be created from AI answers, linked to documents, escalated to approvals, and reflected in activity history.`}
+        badges={[
+          <TenantScopeBadge key="tenant" />,
+          <DataStateBadge key="demo" state={tasks.length > 0 ? "Live" : "Demo"} />,
+        ]}
+        actions={
           <div className="flex items-center gap-2">
             <button className="flex items-center gap-1.5 rounded-lg border border-[rgba(0,0,0,0.1)] px-3 py-1.5 text-xs text-[#5F6B73] hover:bg-[#F2F3F5]">
               <Filter size={12} /> Filter
@@ -234,6 +240,13 @@ export const TasksSection = () => {
           </div>
         }
       />
+
+      <DemoDataNotice label="The workflow surface demonstrates how AI output becomes assigned work, approval requests, and audit history rather than static analysis." />
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
+        {demoAuditTimeline.map((item, index) => (
+          <WorkflowStepCard key={item.title} index={index + 1} title={item.title} description={item.description ?? ""} status={item.tone === "warning" ? "Human Review" : "Complete"} />
+        ))}
+      </div>
 
       <div className="grid min-h-[520px] grid-cols-1 gap-4 xl:grid-cols-[1fr_360px]">
         <div className="min-w-0">
@@ -330,7 +343,7 @@ export const TasksSection = () => {
           )}
         </Card>
       </div>
-    </div>
+    </PageShell>
   );
 };
 

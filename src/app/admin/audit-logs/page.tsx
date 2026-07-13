@@ -1,5 +1,3 @@
-import { EnterpriseAdminPage } from "../../../features/admin/EnterpriseAdminPage";
+import WorkspacePage from "../../workspace-page";
 
-export default function AdminAuditLogsPage() {
-  return <EnterpriseAdminPage panel="audit-logs" />;
-}
+export default WorkspacePage;

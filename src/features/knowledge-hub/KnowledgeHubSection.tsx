@@ -23,10 +23,11 @@ import { EmptyState } from "../../components/feedback/EmptyState";
 import { LoadingState } from "../../components/feedback/LoadingState";
 import { InlineToast } from "../../components/forms/InlineToast";
 import { SelectField, TextAreaField, TextField } from "../../components/forms/FormField";
-import { SectionHeader } from "../../components/layout/SectionHeader";
+import { DataStateBadge, DemoDataNotice, ModuleHeader, TenantScopeBadge, WorkflowStepCard } from "../../components/enterprise";
 import { Card } from "../../components/ui/Card";
 import { isDemoModeEnabled } from "../../demo/demoMode";
 import type { Document, DocumentActivity, DocumentCategory, DocumentTag, DocumentVisibility, KnowledgeArticle } from "../../domain";
+import { ragIndexStages } from "../../lib/demo/demoDocuments";
 import { applicationServices } from "../../providers/serviceProvider";
 import { tenantScopeFromUser } from "../../repositories/supabaseEnterpriseRepositories";
 import {
@@ -34,6 +35,7 @@ import {
   inferDocumentKind,
   validateDocumentUpload,
 } from "../../services/storage/documentStorage";
+import { buildRagIngestionRecord } from "../../services/rag/ingestion/ingestionPipeline";
 import {
   fallbackDocumentActivity,
   fallbackDocumentCategories,
@@ -194,6 +196,17 @@ export const KnowledgeHubSection = () => {
   }, [activeTab, documents, query]);
 
   const searchResults = useMemo(() => localDocumentSearch(documents, articles, query), [articles, documents, query]);
+  const ingestionStatus = useMemo(() => {
+    const records = documents.slice(0, 250).map((document) => buildRagIngestionRecord(document, document.description));
+    return {
+      uploaded: documents.length,
+      classified: records.length,
+      chunked: records.reduce((sum, record) => sum + record.chunkCount, 0),
+      indexed: records.filter((record) => record.stage === "ready").length,
+      ready: records.filter((record) => record.stage === "ready" && !record.humanReviewRequired).length,
+      review: records.filter((record) => record.humanReviewRequired).length,
+    };
+  }, [documents]);
 
   const selectDocument = async (document: Document) => {
     setSelectedDocument(document);
@@ -394,27 +407,35 @@ export const KnowledgeHubSection = () => {
 
   return (
     <div className="h-full min-h-0">
-      <SectionHeader
+      <ModuleHeader
         title="Knowledge Hub"
-        subtitle={`${documents.length} documents, ${articles.length} articles, ${categories.length} categories`}
-        action={
+        eyebrow="Permission-aware document intelligence"
+        description={`${documents.length} documents, ${articles.length} knowledge articles, ${categories.length} categories. Upload, classify, govern, search, and retrieve institutional memory with tenant permissions.`}
+        badges={[
+          <TenantScopeBadge key="tenant" />,
+          <DataStateBadge key="demo" state={isDemoModeEnabled() ? "Demo" : documents.length > 0 ? "Live" : "Empty"} />,
+          <DataStateBadge key="provider" state="Provider-gated" />,
+        ]}
+        actions={
           <div className="flex items-center gap-2">
             <button
               onClick={() => void loadKnowledgeHub()}
-              className="flex items-center gap-1.5 rounded-lg border border-[rgba(0,0,0,0.1)] px-3 py-1.5 text-xs text-[#5F6B73] hover:bg-[#F2F3F5]"
+              className="flex items-center gap-1.5 rounded-lg border border-[rgba(0,0,0,0.1)] px-3 py-2 text-xs text-[#5F6B73] hover:bg-[#F2F3F5]"
             >
               <RefreshCw size={12} /> Refresh
             </button>
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={!canWrite || saving}
-              className="flex items-center gap-1.5 rounded-lg bg-[#8B1E2D] px-3 py-1.5 text-xs text-white hover:bg-[#7a1a27] disabled:cursor-not-allowed disabled:opacity-60"
+              className="flex items-center gap-1.5 rounded-lg bg-[#8B1E2D] px-3 py-2 text-xs text-white hover:bg-[#7a1a27] disabled:cursor-not-allowed disabled:opacity-60"
             >
               <UploadCloud size={12} /> Upload
             </button>
           </div>
         }
       />
+
+      <DemoDataNotice label="Knowledge Hub shows seeded policies, SOPs, review notes, and risk documents with metadata, permissions, version posture, and RAG indexing state." />
 
       <input
         ref={fileInputRef}
@@ -428,6 +449,22 @@ export const KnowledgeHubSection = () => {
       />
 
       {toast && <div className="mb-3"><InlineToast tone={toast.tone} message={toast.message} /></div>}
+
+      <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-6">
+        {[
+          ["Uploaded", ingestionStatus.uploaded],
+          ["Classified", ingestionStatus.classified],
+          ["Chunked", ingestionStatus.chunked],
+          ["Indexed", ingestionStatus.indexed],
+          ["Ready", ingestionStatus.ready],
+          ["Review", ingestionStatus.review],
+        ].map(([label, value]) => (
+          <Card key={label} className="p-3">
+            <div className="font-mono text-lg font-semibold text-[#0F1117]">{value}</div>
+            <div className="mt-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#5F6B73]">{label}</div>
+          </Card>
+        ))}
+      </div>
 
       <div className="mb-4 flex flex-wrap gap-2">
         {tabs.map((tab) => (
@@ -451,6 +488,14 @@ export const KnowledgeHubSection = () => {
               placeholder="Search title, filename, category, tags, owner, or article body"
               className="flex-1 bg-transparent text-sm text-[#0F1117] outline-none placeholder:text-[#5F6B73]"
             />
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            {["Category", "Tag", "Owner", "Status", "Permission", "Date"].map((filter) => (
+              <button key={filter} className="rounded-lg border border-[rgba(15,17,23,0.1)] bg-white px-3 py-1.5 text-xs font-semibold text-[#5F6B73] hover:bg-[#F2F3F5]">
+                {filter}
+              </button>
+            ))}
           </div>
 
           {activeTab === "documents" || activeTab === "shared" || activeTab === "favorites" || activeTab === "archived" ? (
@@ -612,6 +657,14 @@ export const KnowledgeHubSection = () => {
         </div>
 
         <Card className="h-full overflow-y-auto p-4">
+          <div className="mb-4 rounded-lg border border-[rgba(15,17,23,0.08)] bg-[#F8F9FA] p-3">
+            <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-[#0F1117]">RAG indexing pipeline</h3>
+            <div className="space-y-2">
+              {ragIndexStages.map((stage, index) => (
+                <WorkflowStepCard key={stage.title} index={index + 1} title={stage.title} description={stage.description} status={stage.status} />
+              ))}
+            </div>
+          </div>
           {selectedDocument ? (
             <div className="space-y-4">
               <div className="flex items-start justify-between gap-3">

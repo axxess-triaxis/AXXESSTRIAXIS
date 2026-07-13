@@ -1,0 +1,32 @@
+export const demoApprovalQueue = [
+  {
+    title: "Biomedical maintenance variance approval",
+    requestor: "Public Health Operations",
+    risk: "High risk",
+    linkedProject: "Dibrugarh Oxygen Resilience Upgrade",
+    linkedDocument: "Dibrugarh Oxygen Risk Register",
+    stakeholder: "State Health Directorate",
+    recommendation: "Approve with weekly maintenance evidence and district-level audit logging.",
+    policyNote: "Human approval required because this changes external operating commitments.",
+  },
+  {
+    title: "Night transfer SLA exception",
+    requestor: "Cachar District Hospital",
+    risk: "Medium risk",
+    linkedProject: "Cachar Maternal Referral Network",
+    linkedDocument: "Maternal Referral Review Note",
+    stakeholder: "Director Lalthansangi",
+    recommendation: "Request clarification on ambulance escalation owner before approval.",
+    policyNote: "Clinical pathway changes must preserve human review and audit traceability.",
+  },
+  {
+    title: "Pilot data-sharing review",
+    requestor: "NEDFi Innovation Cell",
+    risk: "Medium risk",
+    linkedProject: "MSME Credit Workflow Pilot",
+    linkedDocument: "MSME Credit Triage SOP",
+    stakeholder: "Rupam Hazarika",
+    recommendation: "Approve internal sandbox only; external sharing remains provider-gated.",
+    policyNote: "Data sharing must remain tenant-scoped until legal approval is recorded.",
+  },
+];

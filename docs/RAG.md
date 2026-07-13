@@ -52,3 +52,16 @@ Each generated answer attempts to record:
 - Persist chunk indexes per tenant.
 - Add document-level department mappings.
 - Add evaluation fixtures for answer quality and citation grounding.
+
+## Sprint 14 Repository Foundation
+
+Sprint 14 adds ingestion, embedding, vector store, evaluation, and repository modules under `src/services/rag` and `src/repositories/rag`.
+
+The Supabase migration `202607100001_sprint14_rag_integrations_alerts.sql` introduces:
+
+- RAG ingestion runs
+- RAG document chunks
+- Embedding metadata
+- Organization-scoped policies
+
+The runtime remains safe when remote model providers are unavailable because deterministic local embeddings and in-memory vector storage are available for tests, investor preview, and clean development tenants.
