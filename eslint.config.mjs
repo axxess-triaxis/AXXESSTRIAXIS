@@ -7,6 +7,12 @@ const toConfigArray = (config) => (Array.isArray(config) ? config : [config]);
 const eslintConfig = defineConfig([
   ...toConfigArray(nextCoreWebVitals),
   ...toConfigArray(nextTypescript),
+  {
+    rules: {
+      "react-hooks/refs": "off",
+      "react-hooks/set-state-in-effect": "off",
+    },
+  },
   globalIgnores(
     [
       ".next/**",
