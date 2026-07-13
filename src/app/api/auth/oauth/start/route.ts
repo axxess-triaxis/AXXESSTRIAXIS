@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { authProviderEnabled } from "../../../../../../auth/authApi";
+import { authProviderEnabled } from "../../../../../auth/authApi";
 
 type Provider = "google" | "microsoft" | "apple";
 
