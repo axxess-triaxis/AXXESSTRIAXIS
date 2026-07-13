@@ -1,230 +1,209 @@
-name: Mobile Capacitor Build
+name: Capacitor Mobile Build
 
 on:
-  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'src/**'
+      - 'app/**'
+      - 'public/**'
+      - 'apps/mobile-capacitor/**'
+      - 'apps/mobile/**'
+      - 'packages/shared/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - 'capacitor.config.*'
+      - 'next.config.*'
+      - 'tsconfig*.json'
+      - 'supabase/**'
   push:
     branches:
-      - sprint-18-pilot-conversion-audit-exports-webhooks
+      - main
     paths:
-      - ".github/workflows/mobile-capacitor.yml"
-      - "package.json"
-      - "pnpm-lock.yaml"
-      - "pnpm-workspace.yaml"
-      - "src/**"
-      - "public/**"
-      - "next.config.mjs"
+      - 'src/**'
+      - 'app/**'
+      - 'public/**'
+      - 'apps/mobile-capacitor/**'
+      - 'apps/mobile/**'
+      - 'packages/shared/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - 'capacitor.config.*'
+      - 'next.config.*'
+      - 'tsconfig*.json'
+      - 'supabase/**'
+  workflow_dispatch:
 
 permissions:
   contents: read
 
-env:
-  CI: "true"
-  NEXT_TELEMETRY_DISABLED: "1"
-  CAPACITOR_APP_ID: com.triaxis.axxess
-  CAPACITOR_APP_NAME: AXXESS TRIAXIS
-  CAPACITOR_SERVER_URL: ${{ secrets.CAPACITOR_SERVER_URL || secrets.NEXT_PUBLIC_APP_URL || vars.CAPACITOR_SERVER_URL || vars.NEXT_PUBLIC_APP_URL || 'https://axxess-triaxis.vercel.app' }}
-  CAPACITOR_ALLOWED_HOSTS: ${{ secrets.CAPACITOR_ALLOWED_HOSTS || vars.CAPACITOR_ALLOWED_HOSTS || 'axxess-triaxis.vercel.app,localhost,127.0.0.1' }}
-  NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL || vars.NEXT_PUBLIC_APP_URL || 'https://axxess-triaxis.vercel.app' }}
-  NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || vars.NEXT_PUBLIC_SUPABASE_URL || 'https://example.supabase.co' }}
-  NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || vars.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'preview-anon-key' }}
-  NEXT_PUBLIC_AXXESS_DEMO_MODE: "true"
+concurrency:
+  group: capacitor-mobile-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  android:
-    name: Android Capacitor debug artifact
+  validate:
+    runs-on: ubuntu-latest
+    env:
+      NEXT_TELEMETRY_DISABLED: '1'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Refresh repository state
+        run: |
+          BRANCH="${GITHUB_HEAD_REF:-${GITHUB_REF_NAME}}"
+          git fetch origin --prune
+          if git show-ref --verify --quiet "refs/remotes/origin/${BRANCH}"; then
+            git checkout -B "$BRANCH" "origin/$BRANCH"
+            git pull --ff-only origin "$BRANCH"
+          else
+            echo "[mobile] No matching origin branch for ${BRANCH}; continuing with checked-out ref."
+          fi
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+          run_install: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm run typecheck
+
+      - name: Test
+        run: pnpm run test
+
+      - name: Build web app
+        run: pnpm run build
+
+      - name: Release preflight (CI)
+        run: pnpm run release:preflight -- --mode=ci --target=all
+
+      - name: Capacitor doctor
+        run: pnpm run mobile:capacitor:doctor
+
+  android-preview:
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    needs: validate
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - uses: actions/setup-node@v4
+      - name: Refresh repository state
+        run: |
+          BRANCH="${GITHUB_HEAD_REF:-${GITHUB_REF_NAME}}"
+          git fetch origin --prune
+          if git show-ref --verify --quiet "refs/remotes/origin/${BRANCH}"; then
+            git checkout -B "$BRANCH" "origin/$BRANCH"
+            git pull --ff-only origin "$BRANCH"
+          else
+            echo "[mobile] No matching origin branch for ${BRANCH}; continuing with checked-out ref."
+          fi
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+          run_install: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
         with:
           node-version: 22
+          cache: pnpm
 
-      - uses: actions/setup-java@v4
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Release preflight (Android)
+        run: pnpm run release:preflight -- --mode=ci --target=android
+
+      - name: Sync Capacitor
+        run: pnpm run mobile:capacitor:sync
+
+      - name: Build Android preview artifact
+        run: pnpm run mobile:capacitor:build:android
+        env:
+          MOBILE_BUILD_NUMBER: ${{ github.run_number }}
+
+      - name: Upload Android build artifacts
+        uses: actions/upload-artifact@v7
+        if: always()
         with:
-          distribution: temurin
-          java-version: 21
-
-      - uses: android-actions/setup-android@v3
-        with:
-          packages: "tools platform-tools platforms;android-35 build-tools;35.0.0"
-
-      - name: Report preview runtime configuration
-        shell: bash
-        run: |
-          set -euo pipefail
-          echo "Capacitor preview server URL: ${CAPACITOR_SERVER_URL}"
-          echo "Capacitor allowed hosts: ${CAPACITOR_ALLOWED_HOSTS}"
-          if [[ "${NEXT_PUBLIC_SUPABASE_URL}" == "https://example.supabase.co" ]]; then
-            echo "::warning::NEXT_PUBLIC_SUPABASE_URL is not configured; using a build-only preview placeholder. Configure repository secrets before signed release builds."
-          fi
-          if [[ "${NEXT_PUBLIC_SUPABASE_ANON_KEY}" == "preview-anon-key" ]]; then
-            echo "::warning::NEXT_PUBLIC_SUPABASE_ANON_KEY is not configured; using a build-only preview placeholder. Configure repository secrets before signed release builds."
-          fi
-
-      - name: Create Capacitor shell
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p capacitor-shell/www
-          printf '<!doctype html><html><head><meta charset="utf-8"><title>AXXESS TRIAXIS</title></head><body><p>AXXESS mobile shell</p></body></html>' > capacitor-shell/www/index.html
-          cat > capacitor-shell/package.json <<'JSON'
-          {
-            "private": true,
-            "scripts": {
-              "cap": "cap"
-            },
-            "dependencies": {
-              "@capacitor/android": "^7.0.0",
-              "@capacitor/cli": "^7.0.0",
-              "@capacitor/core": "^7.0.0"
-            }
-          }
-          JSON
-          node - <<'NODE'
-          const fs = require("fs");
-          const allowedHosts = (process.env.CAPACITOR_ALLOWED_HOSTS || "")
-            .split(",")
-            .map((item) => item.trim())
-            .filter(Boolean);
-          const config = {
-            appId: process.env.CAPACITOR_APP_ID,
-            appName: process.env.CAPACITOR_APP_NAME,
-            webDir: "www",
-            server: {
-              url: process.env.CAPACITOR_SERVER_URL,
-              cleartext: false,
-              allowNavigation: allowedHosts,
-            },
-          };
-          fs.writeFileSync("capacitor-shell/capacitor.config.json", JSON.stringify(config, null, 2));
-          NODE
-
-      - name: Install Capacitor Android
-        working-directory: capacitor-shell
-        run: npm install
-
-      - name: Generate Android project
-        working-directory: capacitor-shell
-        run: npx cap add android
-
-      - name: Sync Android project
-        working-directory: capacitor-shell
-        run: npx cap sync android
-
-      - name: Build Android debug APK
-        working-directory: capacitor-shell/android
-        shell: bash
-        run: |
-          set -euo pipefail
-          chmod +x ./gradlew
-          ./gradlew assembleDebug --stacktrace --no-daemon --console=plain 2>&1 | tee android-gradle-build.log
-
-      - name: Upload Android artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: axxess-capacitor-android-debug
-          path: capacitor-shell/android/app/build/outputs/apk/debug/*.apk
-          if-no-files-found: error
-          retention-days: 14
-
-      - name: Upload Android Gradle diagnostics
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: axxess-capacitor-android-gradle-log
-          path: capacitor-shell/android/android-gradle-build.log
+          name: android-capacitor-build-${{ github.run_number }}
+          path: |
+            apps/mobile-capacitor/android/app/build/outputs/**
+            apps/mobile-capacitor/build-metadata/**
           if-no-files-found: ignore
-          retention-days: 14
 
-  ios:
-    name: iOS Capacitor simulator artifact
-    runs-on: macos-latest
+  ios-preview:
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    needs: validate
+    runs-on: macos-13
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - uses: actions/setup-node@v4
+      - name: Refresh repository state
+        run: |
+          BRANCH="${GITHUB_HEAD_REF:-${GITHUB_REF_NAME}}"
+          git fetch origin --prune
+          if git show-ref --verify --quiet "refs/remotes/origin/${BRANCH}"; then
+            git checkout -B "$BRANCH" "origin/$BRANCH"
+            git pull --ff-only origin "$BRANCH"
+          else
+            echo "[mobile] No matching origin branch for ${BRANCH}; continuing with checked-out ref."
+          fi
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+          run_install: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
         with:
           node-version: 22
+          cache: pnpm
 
-      - name: Report preview runtime configuration
-        shell: bash
-        run: |
-          set -euo pipefail
-          echo "Capacitor preview server URL: ${CAPACITOR_SERVER_URL}"
-          echo "Capacitor allowed hosts: ${CAPACITOR_ALLOWED_HOSTS}"
-          if [[ "${NEXT_PUBLIC_SUPABASE_URL}" == "https://example.supabase.co" ]]; then
-            echo "::warning::NEXT_PUBLIC_SUPABASE_URL is not configured; using a build-only preview placeholder. Configure repository secrets before signed release builds."
-          fi
-          if [[ "${NEXT_PUBLIC_SUPABASE_ANON_KEY}" == "preview-anon-key" ]]; then
-            echo "::warning::NEXT_PUBLIC_SUPABASE_ANON_KEY is not configured; using a build-only preview placeholder. Configure repository secrets before signed release builds."
-          fi
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
 
-      - name: Create Capacitor shell
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p capacitor-shell/www
-          printf '<!doctype html><html><head><meta charset="utf-8"><title>AXXESS TRIAXIS</title></head><body><p>AXXESS mobile shell</p></body></html>' > capacitor-shell/www/index.html
-          cat > capacitor-shell/package.json <<'JSON'
-          {
-            "private": true,
-            "scripts": {
-              "cap": "cap"
-            },
-            "dependencies": {
-              "@capacitor/cli": "^7.0.0",
-              "@capacitor/core": "^7.0.0",
-              "@capacitor/ios": "^7.0.0"
-            }
-          }
-          JSON
-          node - <<'NODE'
-          const fs = require("fs");
-          const allowedHosts = (process.env.CAPACITOR_ALLOWED_HOSTS || "")
-            .split(",")
-            .map((item) => item.trim())
-            .filter(Boolean);
-          const config = {
-            appId: process.env.CAPACITOR_APP_ID,
-            appName: process.env.CAPACITOR_APP_NAME,
-            webDir: "www",
-            server: {
-              url: process.env.CAPACITOR_SERVER_URL,
-              cleartext: false,
-              allowNavigation: allowedHosts,
-            },
-          };
-          fs.writeFileSync("capacitor-shell/capacitor.config.json", JSON.stringify(config, null, 2));
-          NODE
+      - name: Release preflight (iOS)
+        run: pnpm run release:preflight -- --mode=ci --target=ios
 
-      - name: Install Capacitor iOS
-        working-directory: capacitor-shell
-        run: npm install
+      - name: Sync Capacitor
+        run: pnpm run mobile:capacitor:sync
 
-      - name: Generate iOS project
-        working-directory: capacitor-shell
-        run: npx cap add ios
+      - name: Build iOS preview artifact
+        run: pnpm run mobile:capacitor:build:ios
+        env:
+          MOBILE_BUILD_NUMBER: ${{ github.run_number }}
 
-      - name: Sync iOS project
-        working-directory: capacitor-shell
-        run: npx cap sync ios
-
-      - name: Build iOS simulator app
-        working-directory: capacitor-shell/ios/App
-        run: xcodebuild -workspace App.xcworkspace -scheme App -configuration Debug -sdk iphonesimulator -derivedDataPath build CODE_SIGNING_ALLOWED=NO build
-
-      - name: Package iOS simulator artifact
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p artifacts
-          ditto -c -k --sequesterRsrc --keepParent capacitor-shell/ios/App/build/Build/Products/Debug-iphonesimulator/App.app artifacts/axxess-capacitor-ios-simulator.zip
-
-      - name: Upload iOS artifact
-        uses: actions/upload-artifact@v4
+      - name: Upload iOS build artifacts
+        uses: actions/upload-artifact@v7
+        if: always()
         with:
-          name: axxess-capacitor-ios-simulator
-          path: artifacts/axxess-capacitor-ios-simulator.zip
-          if-no-files-found: error
-          retention-days: 14
+          name: ios-capacitor-build-${{ github.run_number }}
+          path: |
+            apps/mobile-capacitor/ios/App/build/**
+            apps/mobile-capacitor/build-metadata/**
+          if-no-files-found: ignore
