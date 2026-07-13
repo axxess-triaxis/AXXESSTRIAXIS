@@ -143,7 +143,7 @@ export default function BetaShowcase() {
                     Watch the demo
                   </div>
                   <div className="font-serif text-white text-[22px] md:text-[28px] tracking-tight leading-tight mt-1">
-                    AXXESS in ~90 seconds
+                    AXXESS in 5 mins
                   </div>
                 </span>
                 <span className="absolute bottom-6 right-6 font-mono text-[10.5px] tracking-widest uppercase text-white/60">
