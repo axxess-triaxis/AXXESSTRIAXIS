@@ -194,7 +194,11 @@ jobs:
 
       - name: Build Android production artifact
 
-        run: pnpm run mobile:capacitor:build:android
+        run: |
+
+          cd apps/mobile-capacitor/android
+
+          ./gradlew bundleRelease
 
 
 
