@@ -26,5 +26,5 @@
     ]
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules", "apps/mobile", "src/main.tsx", "vite.config.ts"]
+  "exclude": ["node_modules", "apps/mobile", "apps/mobile-capacitor", "src/main.tsx", "vite.config.ts"]
 }
