@@ -314,13 +314,19 @@ jobs:
 
       - name: Install dependencies
 
-        run: pnpm install --frozen-lockfile
+        run: |
+
+          pnpm install --frozen-lockfile
+
+          pnpm rebuild @swc/core lightningcss
 
 
 
       - name: Build web app
 
-        run: pnpm run build
+        run: |
+
+          echo "[mobile] Skipping iOS web build in this job; Android job already validates web build."
       - name: Ensure iOS project exists
 
         run: |
