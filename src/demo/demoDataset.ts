@@ -32,6 +32,7 @@ import type {
   TaskView,
   WorkloadMetricView,
 } from "../services/contracts";
+import { defaultProductivityPlugins } from "@axxess/shared";
 import { demoOrganization } from "./demoMode";
 
 const baseDate = new Date("2026-07-04T08:30:00.000Z");
@@ -626,14 +627,13 @@ export function createDemoDataset(): DemoDataset {
     { name: "Audit Readiness", progress: 88, target: 100 },
   ];
 
-  const integrations: IntegrationView[] = [
-    { name: "Microsoft 365", category: "Productivity", status: "connected", lastSync: "2 min ago", icon: "M" },
-    { name: "DHIS2", category: "Health Data", status: "connected", lastSync: "6 min ago", icon: "D2" },
-    { name: "OpenMRS", category: "Clinical", status: "connected", lastSync: "11 min ago", icon: "OM" },
-    { name: "Power BI", category: "Analytics", status: "connected", lastSync: "24 min ago", icon: "PB" },
-    { name: "SAP Grants", category: "Finance", status: "connected", lastSync: "1 hr ago", icon: "SA" },
-    { name: "DocuSign", category: "Approvals", status: "connected", lastSync: "18 min ago", icon: "DS" },
-  ];
+  const integrations: IntegrationView[] = defaultProductivityPlugins.map((plugin, index) => ({
+    name: plugin.name,
+    category: plugin.category,
+    status: "connected",
+    lastSync: index < 4 ? `${2 + index * 3} min ago` : `${1 + (index % 3)} hr ago`,
+    icon: plugin.icon,
+  }));
 
   const aiMessages: AiMessageView[] = [
     { role: "user", content: "Summarize the current operational risk across oxygen resilience, maternal referrals, and district stockouts." },

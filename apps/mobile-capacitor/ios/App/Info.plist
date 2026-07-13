@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>CFBundleDisplayName</key>
+  <string>AXXESS TRIaxis</string>
+  <key>CFBundleIdentifier</key>
+  <string>com.triaxis.axxess</string>
+  <key>CFBundleShortVersionString</key>
+  <string>0.6.0-beta</string>
+  <key>CFBundleVersion</key>
+  <string>1</string>
+  <key>LSApplicationQueriesSchemes</key>
+  <array>
+    <string>mailto</string>
+    <string>tel</string>
+  </array>
+  <key>CFBundleURLTypes</key>
+  <array>
+    <string>axxess</string>
+  </array>
+</dict>
+</plist>
