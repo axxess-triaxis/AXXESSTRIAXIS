@@ -114,8 +114,8 @@ jobs:
 
         run: |
 
-          if [ ! -d apps/mobile-capacitor/android ]; then
-
+          if [ ! -f apps/mobile-capacitor/android/gradlew ]; then
+            rm -rf apps/mobile-capacitor/android
             pnpm --dir apps/mobile-capacitor exec cap add android
 
           fi
@@ -297,9 +297,17 @@ jobs:
       - name: Build web app
 
         run: pnpm run build
-      - name: Ensure iOS app path exists
+      - name: Ensure iOS project exists
 
         run: |
+
+          if [ ! -f apps/mobile-capacitor/ios/App/App.xcodeproj/project.pbxproj ]; then
+
+            rm -rf apps/mobile-capacitor/ios
+
+            pnpm --dir apps/mobile-capacitor exec cap add ios
+
+          fi
 
           mkdir -p apps/mobile-capacitor/ios/App/App/public
 
