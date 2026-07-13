@@ -58,7 +58,7 @@ const panelContent: Record<AdminPanelId, { title: string; description: string; a
     title: "Privacy Controls",
     description: "Review access export, deletion, consent withdrawal, and retention workflows.",
     actions: ["Review privacy request", "Approve export", "Approve erasure plan"],
-    evidence: ["privacy_request", "erasure certificate placeholder", "retention policy"],
+    evidence: ["privacy_request", "erasure certificate workflow", "retention policy"],
   },
   compliance: {
     title: "Compliance Checklist",

@@ -24,6 +24,7 @@ import {
   usersRepository,
 } from "../repositories/supabaseEnterpriseRepositories";
 import { documentStorageRepository } from "../services/storage/documentStorage";
+import { routeAiRequest } from "../services/ai/router/aiRouter";
 import type {
   InstitutionalRepository,
   AuditLogsRepository,
@@ -60,8 +61,20 @@ const authService: AuthenticationService = {
 };
 
 const aiService: AiProviderService = {
-  async completeWithContext() {
-    throw new Error("AI provider is not connected in Sprint 4.");
+  async completeWithContext(prompt, contextIds) {
+    const user = authService.getCurrentUser() ?? demoUserContext;
+    const result = await routeAiRequest({
+      prompt,
+      task: "rag_answer",
+      context: {
+        organizationId: user.organizationId,
+        userId: user.id,
+        userRole: user.role,
+        documentIds: contextIds,
+        requiresCitation: contextIds.length > 0,
+      },
+    });
+    return result.answer;
   },
 };
 

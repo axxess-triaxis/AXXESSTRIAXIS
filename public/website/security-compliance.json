@@ -1,0 +1,10 @@
+{
+  "posture": "tenant-aware, RLS-ready, audit-aware, human-in-the-loop",
+  "neverExport": [
+    "secrets",
+    "tenant data",
+    "audit logs",
+    "private RAG documents",
+    "service-role keys"
+  ]
+}

@@ -5,6 +5,7 @@ import { useAuth } from "../auth/AuthProvider";
 import { EmptyState } from "../components/feedback/EmptyState";
 import { LoadingState } from "../components/feedback/LoadingState";
 import { Card } from "../components/ui/Card";
+import { GuidedDemoBanner } from "../components/demo/GuidedDemoBanner";
 import { AppShell } from "./layout/AppShell";
 import { navGroups } from "./navigation";
 import { lazyRouteComponents } from "./routing/lazyRoutes";
@@ -22,6 +23,7 @@ export default function App() {
   const analytics = useAnalytics();
   const currentUser = session.user;
   const routePath = `/${activeRoute.path}`;
+  const screenshotMode = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("screenshot") === "true";
 
   useEffect(() => {
     if (!currentUser || session.status !== "authenticated") return;
@@ -124,6 +126,7 @@ export default function App() {
       onLogout={handleLogout}
       user={currentUser}
     >
+      {!screenshotMode && <GuidedDemoBanner activeSection={active} onNavigate={handleSelectSection} />}
       <RouteBoundary route={activeRoute} hasAccess={hasRouteAccess}>
         <ActiveSection />
       </RouteBoundary>

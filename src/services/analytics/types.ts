@@ -58,7 +58,20 @@ export type AnalyticsEventName =
   | "route_performance_recorded"
   | "security_event_recorded"
   | "retention_checkpoint_reached"
-  | "crash_reported";
+  | "crash_reported"
+  | "ai_request_routed"
+  | "ai_provider_selected"
+  | "rag_ingestion_started"
+  | "rag_ingestion_completed"
+  | "integration_event_recorded"
+  | "alert_ingested"
+  | "plugin_connection_started"
+  | "workflow_action_completed"
+  | "admin_surface_viewed"
+  | "audit_log_viewed"
+  | "audit_export_requested"
+  | "pilot_onboarding_step_completed"
+  | "pilot_interest_captured";
 
 export type AnalyticsEventSource = "client" | "server" | "test";
 export type SafeAnalyticsPrimitive = string | number | boolean | null;

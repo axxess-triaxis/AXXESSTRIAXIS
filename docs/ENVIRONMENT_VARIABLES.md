@@ -12,6 +12,7 @@ Never expose:
 
 - `SUPABASE_SERVICE_ROLE_KEY`
 - `SUPABASE_DB_URL`
+- `RESEND_WEBHOOK_SECRET`
 - AI provider secret keys
 - Apple/Google signing credentials
 - KMS or audit salts
@@ -33,3 +34,12 @@ NEXT_PUBLIC_AXXESS_DEMO_MODE=true
 ```
 
 Production customer tenants should keep Demo Mode disabled.
+
+## Sprint 18 Operations
+
+```text
+RESEND_WEBHOOK_SECRET=
+AXXESS_AUDIT_EXPORT_TTL_MINUTES=60
+```
+
+Use `RESEND_WEBHOOK_SECRET` only on the server to verify invitation delivery webhooks. `AXXESS_AUDIT_EXPORT_TTL_MINUTES` controls the short-lived server export token window for governed audit CSV exports.

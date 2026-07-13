@@ -1,11 +1,23 @@
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../../auth/AuthProvider";
-import { SectionHeader } from "../../components/layout/SectionHeader";
+import {
+  AuditTrailBadge,
+  ConfidenceBadge,
+  DataStateBadge,
+  DemoDataNotice,
+  HumanReviewBadge,
+  ModuleHeader,
+  PageShell,
+  TenantScopeBadge,
+} from "../../components/enterprise";
 import { Avatar } from "../../components/ui/Avatar";
 import { Card } from "../../components/ui/Card";
 import { applicationServices } from "../../providers/serviceProvider";
 import { tenantScopeFromUser } from "../../repositories/supabaseEnterpriseRepositories";
+import { getAiRouterStatusSnapshot } from "../../services/ai/router/aiRouter";
+import { languageCoverage } from "../../services/nlp/modelRegistry";
 import { answerWithGovernedRag, type RagAnswer } from "../../services/rag/governedRag";
+import { createInstitutionalDemoWorkflow } from "../../services/workflows/institutionalWorkflow";
 import {
   AlertTriangle,
   ArrowUpRight,
@@ -25,6 +37,8 @@ import {
 } from "lucide-react";
 
 const aiMessages = applicationServices.institutionalRepository.getAiMessages();
+const aiRouterStatus = getAiRouterStatusSnapshot();
+const workflowSteps = createInstitutionalDemoWorkflow();
 
 const fallbackRagAnswer: RagAnswer = {
   answer: "District evidence indicates the highest current operational exposure sits in oxygen resilience, maternal referral handoff, and pharmacy stockout variance. Escalation should prioritize Dibrugarh biomedical maintenance, Cachar referral transfer turnaround, and Dhubri stock reconciliation before the next Mission Secretariat review.",
@@ -84,11 +98,26 @@ export const AIWorkspaceSection = () => {
   }, [tenantScope]);
 
   return (
-    <div className="h-full flex flex-col">
-      <SectionHeader
+    <PageShell className="h-full flex flex-col">
+      <ModuleHeader
         title="AI Workspace"
-        subtitle="Governed institutional intelligence with cited sources and human review"
+        eyebrow="Governed Institutional Intelligence"
+        description="Ask questions across tenant-scoped documents, projects, approvals, stakeholders, and audit history with citations, confidence, routing status, and human review."
+        badges={[
+          <TenantScopeBadge key="tenant" />,
+          <DataStateBadge key="demo" state="Demo" />,
+          <DataStateBadge key="provider" state="Provider-gated" />,
+          <HumanReviewBadge key="review" required={ragAnswer.humanReviewRequired} />,
+        ]}
+        actions={
+          <>
+            <a href="/tasks" className="rounded-lg border border-[rgba(15,17,23,0.1)] px-3 py-2 text-xs font-semibold text-[#5F6B73] hover:bg-[#F2F3F5]">Create task from answer</a>
+            <a href="/approvals" className="rounded-lg border border-[rgba(15,17,23,0.1)] px-3 py-2 text-xs font-semibold text-[#5F6B73] hover:bg-[#F2F3F5]">Request approval</a>
+            <a href="mailto:founders@triaxis.ventures?subject=AXXESS%20AI%20Workspace%20feedback" className="rounded-lg bg-[#8B1E2D] px-3 py-2 text-xs font-semibold text-white hover:bg-[#7a1a27]">Send feedback</a>
+          </>
+        }
       />
+      <DemoDataNotice label="AI answers use governed demo context, cited sources, confidence signals, and audit preview records when provider keys are not configured." />
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-4 min-h-0">
         <div className="lg:col-span-2 flex flex-col">
           <Card className="flex-1 flex flex-col overflow-hidden">
@@ -184,12 +213,9 @@ export const AIWorkspaceSection = () => {
                     {ragAnswer.answer}
                   </div>
                   <div className="mt-2 flex flex-wrap items-center gap-2 text-[10px]">
-                    <span className="rounded-full bg-emerald-50 px-2 py-1 font-semibold text-emerald-700">
-                      Confidence {Math.round(ragAnswer.confidence * 100)}%
-                    </span>
-                    <span className={`rounded-full px-2 py-1 font-semibold ${ragAnswer.humanReviewRequired ? "bg-amber-50 text-amber-700" : "bg-[#F2F3F5] text-[#5F6B73]"}`}>
-                      {ragAnswer.humanReviewRequired ? "Human review flagged" : "Human review optional"}
-                    </span>
+                    <ConfidenceBadge score={ragAnswer.confidence} />
+                    <HumanReviewBadge required={ragAnswer.humanReviewRequired} />
+                    <AuditTrailBadge eventId="ai-audit-demo-0843" />
                   </div>
                 </div>
               </div>
@@ -197,7 +223,14 @@ export const AIWorkspaceSection = () => {
 
             <div className="px-4 pb-4">
               <div className="flex items-center gap-2 mb-3 flex-wrap">
-                {["Summarize weekly approvals", "Find district SLA breaches", "Draft Mission Secretariat brief", "Identify stockout risks"].map((suggestion) => (
+                {[
+                  "Summarize operational risk",
+                  "Find pending approvals",
+                  "Draft stakeholder brief",
+                  "Compare district performance",
+                  "Identify missing documents",
+                  "Generate board note",
+                ].map((suggestion) => (
                   <button key={suggestion} className="text-[11px] text-[#5F6B73] border border-[rgba(0,0,0,0.1)] px-2.5 py-1 rounded-full hover:border-[#8B1E2D] hover:text-[#8B1E2D] transition-colors">
                     {suggestion}
                   </button>
@@ -220,6 +253,55 @@ export const AIWorkspaceSection = () => {
         </div>
 
         <div className="space-y-4">
+          <Card className="p-4">
+            <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-[#0F1117]">AI Router</h3>
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                ["Mode", aiRouterStatus.mode],
+                ["Default", aiRouterStatus.defaultProvider],
+                ["Remote", aiRouterStatus.configuredCount],
+                ["Providers", aiRouterStatus.providers.length],
+              ].map(([label, value]) => (
+                <div key={label} className="rounded-lg bg-[#F8F9FA] p-2">
+                  <div className="font-mono text-[10px] uppercase text-[#5F6B73]">{label}</div>
+                  <div className="mt-1 text-sm font-semibold text-[#0F1117]">{value}</div>
+                </div>
+              ))}
+            </div>
+            <div className="mt-3 space-y-1.5">
+              {aiRouterStatus.providers.slice(0, 4).map((provider) => (
+                <div key={provider.name} className="flex items-center justify-between text-[11px]">
+                  <span className="font-medium text-[#0F1117]">{provider.displayName}</span>
+                  <span className={provider.configured ? "text-emerald-700" : "text-[#5F6B73]"}>{provider.status}</span>
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          <Card className="p-4">
+            <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-[#0F1117]">Language Coverage</h3>
+            <div className="space-y-1.5">
+              {languageCoverage.slice(0, 5).map((coverage) => (
+                <div key={coverage.language} className="flex items-center justify-between gap-2 text-[11px]">
+                  <span className="font-medium text-[#0F1117]">{coverage.language}</span>
+                  <span className="rounded-full bg-[#F2F3F5] px-2 py-0.5 text-[#5F6B73]">{coverage.status}</span>
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          <Card className="p-4">
+            <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-[#0F1117]">Workflow Demo</h3>
+            <div className="space-y-2">
+              {workflowSteps.slice(0, 5).map((step) => (
+                <div key={step.id} className="flex items-start gap-2 text-[11px]">
+                  <span className={`mt-1 h-2 w-2 rounded-full ${step.status === "completed" ? "bg-emerald-500" : step.status === "requires-human-review" ? "bg-amber-500" : "bg-[#5F6B73]"}`} />
+                  <span className="leading-relaxed text-[#0F1117]">{step.title}</span>
+                </div>
+              ))}
+            </div>
+          </Card>
+
           <Card className="p-4">
             <h3 className="text-xs font-semibold text-[#0F1117] uppercase tracking-wider mb-3">Context Window</h3>
             <div className="space-y-2">
@@ -298,7 +380,7 @@ export const AIWorkspaceSection = () => {
           </Card>
         </div>
       </div>
-    </div>
+    </PageShell>
   );
 };
 
