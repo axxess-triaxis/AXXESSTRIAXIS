@@ -54,3 +54,30 @@ export const requiredOnboardingNotices = [
 ] as const;
 
 export type RequiredOnboardingNotice = (typeof requiredOnboardingNotices)[number];
+
+export const authCapabilityConfig = {
+  twoFactorAuthEnabled: true,
+  oauthEnabled: true,
+  oauthProviders: ["google", "microsoft", "apple"] as const,
+} as const;
+
+export type OauthProvider = (typeof authCapabilityConfig.oauthProviders)[number];
+
+export type ProductivityPlugin = {
+  name: string;
+  category: string;
+  icon: string;
+};
+
+export const defaultProductivityPlugins: ProductivityPlugin[] = [
+  { name: "Slack", category: "Communication", icon: "SL" },
+  { name: "Microsoft Teams", category: "Communication", icon: "MT" },
+  { name: "Google Workspace", category: "Productivity", icon: "GW" },
+  { name: "Notion", category: "Knowledge", icon: "NO" },
+  { name: "Jira", category: "Project Management", icon: "JR" },
+  { name: "Asana", category: "Project Management", icon: "AS" },
+  { name: "Trello", category: "Project Management", icon: "TR" },
+  { name: "Zoom", category: "Meetings", icon: "ZM" },
+  { name: "DocuSign", category: "Approvals", icon: "DS" },
+  { name: "Dropbox", category: "Storage", icon: "DB" },
+];
