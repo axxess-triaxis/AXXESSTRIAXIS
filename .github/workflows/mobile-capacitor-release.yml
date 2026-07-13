@@ -1,462 +1,495 @@
 name: Capacitor Mobile Release
 
-
-
-
-            npm --prefix apps/mobile-capacitor install --no-save @capacitor/ios@^7.0.0
-
 on:
-
   push:
-
     tags:
-
-      - 'v*'
-
+      - "v*"
   workflow_dispatch:
-
-
+    inputs:
+      app_version:
+        description: "Release app version (e.g. 0.9.1). Uses package version if empty."
+        required: false
+        type: string
+      ios_build_number:
+        description: "iOS build number for App Store submission"
+        required: true
+        type: string
+      android_version_code:
+        description: "Android version code for Play Store submission"
+        required: true
+        type: string
 
 permissions:
-
   contents: read
 
-
-
 jobs:
-
-  android-production-release:
-
+  release-checklist:
     runs-on: ubuntu-latest
-
+    environment: production-mobile
     env:
-
-      NEXT_TELEMETRY_DISABLED: '1'
-
-      MOBILE_BUILD_NUMBER: ${{ github.run_number }}
-
+      NEXT_TELEMETRY_DISABLED: "1"
+      NEXT_PUBLIC_APP_URL: ${{ vars.NEXT_PUBLIC_APP_URL }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      EXPO_PUBLIC_APP_URL: ${{ vars.EXPO_PUBLIC_APP_URL }}
+      EXPO_PUBLIC_SUPABASE_URL: ${{ vars.EXPO_PUBLIC_SUPABASE_URL }}
+      EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
+      CAPACITOR_SERVER_URL: ${{ vars.CAPACITOR_SERVER_URL }}
+      CAPACITOR_ALLOWED_HOSTS: ${{ vars.CAPACITOR_ALLOWED_HOSTS }}
+      ANDROID_APPLICATION_ID: ${{ vars.ANDROID_APPLICATION_ID }}
+      IOS_BUNDLE_IDENTIFIER: ${{ vars.IOS_BUNDLE_IDENTIFIER }}
       ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-
       ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-
       ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-
       ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-
+      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+      ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
     steps:
-
       - name: Checkout
-
         uses: actions/checkout@v4
-
         with:
-
           fetch-depth: 0
 
-
-
-      - name: Refresh repository state
-
-        run: |
-
-          BRANCH="${GITHUB_HEAD_REF:-${GITHUB_REF_NAME}}"
-
-          git fetch origin --prune
-
-          if git show-ref --verify --quiet "refs/remotes/origin/${BRANCH}"; then
-
-            git checkout -B "$BRANCH" "origin/$BRANCH"
-
-            git pull --ff-only origin "$BRANCH"
-
-          else
-
-            echo "[mobile] No matching origin branch for ${BRANCH}; continuing with checked-out ref."
-
-          fi
-
-
-
       - name: Setup pnpm
-
         uses: pnpm/action-setup@v4
-
         with:
-
           version: 11.7.0
-
           run_install: false
 
-
-
       - name: Setup Node
-
         uses: actions/setup-node@v4
-
         with:
-
           node-version: 22
-
           cache: pnpm
 
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
 
+      - name: Resolve release values
+        run: node scripts/resolve-release-values.mjs
+        env:
+          INPUT_APP_VERSION: ${{ inputs.app_version }}
+          INPUT_IOS_BUILD_NUMBER: ${{ inputs.ios_build_number }}
+          INPUT_ANDROID_VERSION_CODE: ${{ inputs.android_version_code }}
+
+      - name: Release preflight (strict)
+        run: pnpm run release:preflight -- --mode=release --target=all
+
+      - name: Generate release checklist artifact
+        run: RELEASE_PLATFORM=all node scripts/generate-release-checklist.mjs
+
+      - name: Upload release checklist artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-checklist-${{ github.run_number }}
+          path: |
+            apps/mobile-capacitor/build-metadata/release-checklist-all.json
+            apps/mobile-capacitor/build-metadata/release-checklist-all.md
+          if-no-files-found: error
+
+  android-production-release:
+    needs: release-checklist
+    runs-on: ubuntu-latest
+    environment: production-mobile
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
+      MOBILE_BUILD_NUMBER: ${{ github.run_number }}
+      NEXT_PUBLIC_APP_URL: ${{ vars.NEXT_PUBLIC_APP_URL }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      EXPO_PUBLIC_APP_URL: ${{ vars.EXPO_PUBLIC_APP_URL }}
+      EXPO_PUBLIC_SUPABASE_URL: ${{ vars.EXPO_PUBLIC_SUPABASE_URL }}
+      EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
+      CAPACITOR_SERVER_URL: ${{ vars.CAPACITOR_SERVER_URL }}
+      CAPACITOR_ALLOWED_HOSTS: ${{ vars.CAPACITOR_ALLOWED_HOSTS }}
+      ANDROID_APPLICATION_ID: ${{ vars.ANDROID_APPLICATION_ID }}
+      IOS_BUNDLE_IDENTIFIER: ${{ vars.IOS_BUNDLE_IDENTIFIER }}
+      ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+      ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+      ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+      ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+          run_install: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
 
       - name: Setup Java
-
         uses: actions/setup-java@v4
-
         with:
-
           distribution: temurin
-
-          java-version: '21'
-
+          java-version: "21"
           cache: gradle
 
-
-
       - name: Install dependencies
-
         run: |
-
           pnpm install --frozen-lockfile
-
           pnpm rebuild @swc/core lightningcss
 
+      - name: Resolve release values
+        run: node scripts/resolve-release-values.mjs
+        env:
+          INPUT_APP_VERSION: ${{ inputs.app_version }}
+          INPUT_IOS_BUILD_NUMBER: ${{ inputs.ios_build_number }}
+          INPUT_ANDROID_VERSION_CODE: ${{ inputs.android_version_code }}
 
+      - name: Release preflight (Android production)
+        run: pnpm run release:preflight -- --mode=release --target=android
 
       - name: Build web app
-
-        run: |
-
-          echo "[mobile] Skipping iOS web build in this job; Android job already validates web build."
-
-
+        run: pnpm run build
 
       - name: Ensure Android project exists
-
         run: |
-
           if [ ! -f apps/mobile-capacitor/android/gradlew ]; then
             rm -rf apps/mobile-capacitor/android
             pnpm --dir apps/mobile-capacitor exec cap add android
-
           fi
-
-
 
       - name: Ensure Android assets path exists
-
-        run: |
-
-          mkdir -p apps/mobile-capacitor/android/app/src/main/assets/public
-
-
+        run: mkdir -p apps/mobile-capacitor/android/app/src/main/assets/public
 
       - name: Sync Capacitor
-
         run: |
-
           node scripts/prepare-mobile-certificates.mjs
-
           node scripts/sync-repo-state.mjs
-
           node scripts/validate-mobile-env.mjs
-
           pnpm --dir apps/mobile-capacitor exec cap sync android
 
-
-
-      - name: Verify Android signing secrets
-
-        run: |
-
-          missing=0
-
-          for key in ANDROID_KEYSTORE_BASE64 ANDROID_KEYSTORE_PASSWORD ANDROID_KEY_ALIAS ANDROID_KEY_PASSWORD; do
-
-            if [ -z "${!key}" ]; then
-
-              echo "::error::Missing required secret: $key"
-
-              missing=1
-
-            fi
-
-          done
-
-          if [ "$missing" -ne 0 ]; then
-
-            exit 1
-
-          fi
-
-
-
       - name: Prepare Android signing path
-
-        run: |
-
-          echo "ANDROID_KEYSTORE_FILE=$GITHUB_WORKSPACE/apps/mobile-capacitor/android/app/release.keystore" >> $GITHUB_ENV
-
-
+        run: echo "ANDROID_KEYSTORE_FILE=$GITHUB_WORKSPACE/apps/mobile-capacitor/android/app/release.keystore" >> "$GITHUB_ENV"
 
       - name: Build Android production artifact
+        run: pnpm run mobile:capacitor:build:android
 
-        run: |
-
-          cd apps/mobile-capacitor/android
-
-          ./gradlew bundleRelease
-
-
-
-      - name: Android release readiness marker
-
-        run: |
-
-          echo "Android signed artifact is ready for Play Console upload."
-
-
+      - name: Generate Android release checklist
+        run: RELEASE_PLATFORM=android node scripts/generate-release-checklist.mjs
 
       - name: Upload Android release artifacts
-
         uses: actions/upload-artifact@v4
-
         if: always()
-
         with:
-
           name: capacitor-android-release-${{ github.run_number }}
-
           path: |
-
             apps/mobile-capacitor/android/app/build/outputs/**
-
             apps/mobile-capacitor/build-metadata/**
-
           if-no-files-found: ignore
-
-
 
   ios-production-release:
-
+    needs: release-checklist
     runs-on: macos-latest
-
+    environment: production-mobile
     env:
-
-      NEXT_TELEMETRY_DISABLED: '1'
-
+      NEXT_TELEMETRY_DISABLED: "1"
       MOBILE_BUILD_NUMBER: ${{ github.run_number }}
-
+      NEXT_PUBLIC_APP_URL: ${{ vars.NEXT_PUBLIC_APP_URL }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      EXPO_PUBLIC_APP_URL: ${{ vars.EXPO_PUBLIC_APP_URL }}
+      EXPO_PUBLIC_SUPABASE_URL: ${{ vars.EXPO_PUBLIC_SUPABASE_URL }}
+      EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
+      CAPACITOR_SERVER_URL: ${{ vars.CAPACITOR_SERVER_URL }}
+      CAPACITOR_ALLOWED_HOSTS: ${{ vars.CAPACITOR_ALLOWED_HOSTS }}
+      ANDROID_APPLICATION_ID: ${{ vars.ANDROID_APPLICATION_ID }}
+      IOS_BUNDLE_IDENTIFIER: ${{ vars.IOS_BUNDLE_IDENTIFIER }}
       APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-
       ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
-
       ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
-
       ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
-
     steps:
-
-      - name: Determine iOS release eligibility
-
-        id: ios_eligibility
-
-        run: |
-
-          if [ -n "$APPLE_TEAM_ID" ] && [ -n "$ASC_KEY_ID" ] && [ -n "$ASC_ISSUER_ID" ] && [ -n "$ASC_PRIVATE_KEY" ]; then
-
-            echo "enabled=true" >> "$GITHUB_OUTPUT"
-
-          else
-
-            echo "enabled=false" >> "$GITHUB_OUTPUT"
-
-            echo "[mobile] Apple signing secrets are incomplete; skipping iOS release job."
-
-          fi
-
       - name: Checkout
-
-        if: steps.ios_eligibility.outputs.enabled == 'true'
-
         uses: actions/checkout@v4
-
         with:
-
           fetch-depth: 0
 
-
-
-      - name: Refresh repository state
-
-        if: steps.ios_eligibility.outputs.enabled == 'true'
-
-        run: |
-
-          BRANCH="${GITHUB_HEAD_REF:-${GITHUB_REF_NAME}}"
-
-          git fetch origin --prune
-
-          if git show-ref --verify --quiet "refs/remotes/origin/${BRANCH}"; then
-
-            git checkout -B "$BRANCH" "origin/$BRANCH"
-
-            git pull --ff-only origin "$BRANCH"
-
-          else
-
-            echo "[mobile] No matching origin branch for ${BRANCH}; continuing with checked-out ref."
-
-          fi
-
-
-
       - name: Setup pnpm
-
-        if: steps.ios_eligibility.outputs.enabled == 'true'
-
         uses: pnpm/action-setup@v4
-
         with:
-
           version: 11.7.0
-
           run_install: false
 
-
-
       - name: Setup Node
-
-        if: steps.ios_eligibility.outputs.enabled == 'true'
-
         uses: actions/setup-node@v4
-
         with:
-
           node-version: 22
-
           cache: pnpm
 
-
-
       - name: Install dependencies
-
-        if: steps.ios_eligibility.outputs.enabled == 'true'
-
         run: |
-
           pnpm install --frozen-lockfile
-
           pnpm rebuild @swc/core lightningcss
 
+      - name: Resolve release values
+        run: node scripts/resolve-release-values.mjs
+        env:
+          INPUT_APP_VERSION: ${{ inputs.app_version }}
+          INPUT_IOS_BUILD_NUMBER: ${{ inputs.ios_build_number }}
+          INPUT_ANDROID_VERSION_CODE: ${{ inputs.android_version_code }}
 
+      - name: Release preflight (iOS production)
+        run: pnpm run release:preflight -- --mode=release --target=ios
 
       - name: Build web app
+        run: echo "[mobile] Skipping iOS web build in this job; Android job already validates web build."
 
-        if: steps.ios_eligibility.outputs.enabled == 'true'
-
-        run: |
-
-          echo "[mobile] Skipping iOS web build in this job; Android job already validates web build."
       - name: Ensure iOS project exists
-
-        if: steps.ios_eligibility.outputs.enabled == 'true'
-
         run: |
-
           if [ ! -f apps/mobile-capacitor/ios/App/App.xcodeproj/project.pbxproj ]; then
-
             rm -rf apps/mobile-capacitor/ios
-
             npm --prefix apps/mobile-capacitor install --no-save @capacitor/ios@^7.0.0
-
             pnpm --dir apps/mobile-capacitor exec cap add ios
-
           fi
-
           mkdir -p apps/mobile-capacitor/ios/App/App/public
 
-
-
       - name: Sync Capacitor
-
-        if: steps.ios_eligibility.outputs.enabled == 'true'
-
         run: |
-
           node scripts/prepare-mobile-certificates.mjs
-
           node scripts/sync-repo-state.mjs
-
           node scripts/validate-mobile-env.mjs
-
           pnpm --dir apps/mobile-capacitor exec cap sync ios
 
-
-
-      - name: Verify Apple signing secrets
-
-        if: steps.ios_eligibility.outputs.enabled == 'true'
-
-        run: |
-
-          missing=0
-
-          for key in APPLE_TEAM_ID ASC_KEY_ID ASC_ISSUER_ID ASC_PRIVATE_KEY; do
-
-            if [ -z "${!key}" ]; then
-
-              echo "::error::Missing required secret: $key"
-
-              missing=1
-
-            fi
-
-          done
-
-          if [ "$missing" -ne 0 ]; then
-
-            exit 1
-
-          fi
-
-
-
       - name: Build iOS production artifact
-
-        if: steps.ios_eligibility.outputs.enabled == 'true'
-
         run: pnpm run mobile:capacitor:build:ios
 
-
-
-      - name: iOS release readiness marker
-
-        if: steps.ios_eligibility.outputs.enabled == 'true'
-
-        run: |
-
-          echo "iOS artifact is ready for signing/TestFlight upload."
-
-
+      - name: Generate iOS release checklist
+        run: RELEASE_PLATFORM=ios node scripts/generate-release-checklist.mjs
 
       - name: Upload iOS release artifacts
-
-        if: ${{ always() && steps.ios_eligibility.outputs.enabled == 'true' }}
-
         uses: actions/upload-artifact@v4
-
+        if: always()
         with:
-
           name: capacitor-ios-release-${{ github.run_number }}
-
           path: |
-
             apps/mobile-capacitor/ios/App/build/**
-
             apps/mobile-capacitor/build-metadata/**
-
           if-no-files-found: ignore
 
+  release-signoff:
+    needs:
+      - release-checklist
+      - android-production-release
+      - ios-production-release
+    runs-on: ubuntu-latest
+    if: always()
+    env:
+      MIN_ANDROID_BINARY_BYTES: "1000000"
+      MIN_IOS_BINARY_BYTES: "2000000"
+    steps:
+      - name: Download all-platform checklist artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: release-checklist-${{ github.run_number }}
+          path: artifacts/release-checklist
+
+      - name: Download Android release artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: capacitor-android-release-${{ github.run_number }}
+          path: artifacts/android
+
+      - name: Download iOS release artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: capacitor-ios-release-${{ github.run_number }}
+          path: artifacts/ios
+
+      - name: Verify release artifacts and checklists
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ "${{ needs.release-checklist.result }}" != "success" ] || [ "${{ needs.android-production-release.result }}" != "success" ] || [ "${{ needs.ios-production-release.result }}" != "success" ]; then
+            echo "::error::One or more prerequisite jobs failed."
+            exit 1
+          fi
+
+          required_files=(
+            "artifacts/release-checklist/release-checklist-all.json"
+            "artifacts/release-checklist/release-checklist-all.md"
+          )
+
+          for file in "${required_files[@]}"; do
+            if [ ! -f "$file" ]; then
+              echo "::error::Missing required checklist artifact: $file"
+              exit 1
+            fi
+          done
+
+          if ! find artifacts/android -type f -name "release-checklist-android.json" | grep -q .; then
+            echo "::error::Missing Android checklist JSON artifact."
+            exit 1
+          fi
+
+          if ! find artifacts/android -type f -name "release-checklist-android.md" | grep -q .; then
+            echo "::error::Missing Android checklist Markdown artifact."
+            exit 1
+          fi
+
+          if ! find artifacts/ios -type f -name "release-checklist-ios.json" | grep -q .; then
+            echo "::error::Missing iOS checklist JSON artifact."
+            exit 1
+          fi
+
+          if ! find artifacts/ios -type f -name "release-checklist-ios.md" | grep -q .; then
+            echo "::error::Missing iOS checklist Markdown artifact."
+            exit 1
+          fi
+
+          if ! find artifacts/android -type f | grep -q .; then
+            echo "::error::Android artifact archive is empty."
+            exit 1
+          fi
+
+          if ! find artifacts/ios -type f | grep -q .; then
+            echo "::error::iOS artifact archive is empty."
+            exit 1
+          fi
+
+          if ! find artifacts/android -type f \( -name "*.aab" -o -name "*.apk" \) | grep -q .; then
+            echo "::error::Android artifacts must include at least one .aab or .apk file."
+            exit 1
+          fi
+
+          if ! find artifacts/ios \( -type f -name "*.ipa" -o -type d -name "*.xcarchive" \) | grep -q .; then
+            echo "::error::iOS artifacts must include at least one .ipa or .xcarchive output."
+            exit 1
+          fi
+
+          ANDROID_BIN=$(find artifacts/android -type f \( -name "*.aab" -o -name "*.apk" \) | head -n 1)
+          IOS_IPA=$(find artifacts/ios -type f -name "*.ipa" | head -n 1 || true)
+          IOS_ARCHIVE_DIR=$(find artifacts/ios -type d -name "*.xcarchive" | head -n 1 || true)
+
+          ANDROID_SIZE=$(stat -c%s "$ANDROID_BIN")
+          if [ "$ANDROID_SIZE" -lt "$MIN_ANDROID_BINARY_BYTES" ]; then
+            echo "::error::Android binary size ${ANDROID_SIZE}B is below threshold ${MIN_ANDROID_BINARY_BYTES}B."
+            exit 1
+          fi
+
+          if [ -n "$IOS_IPA" ]; then
+            IOS_SIZE=$(stat -c%s "$IOS_IPA")
+          else
+            IOS_SIZE=$(find "$IOS_ARCHIVE_DIR" -type f -exec stat -c%s {} \; | awk '{sum += $1} END {print sum + 0}')
+          fi
+
+          if [ "$IOS_SIZE" -lt "$MIN_IOS_BINARY_BYTES" ]; then
+            echo "::error::iOS binary size ${IOS_SIZE}B is below threshold ${MIN_IOS_BINARY_BYTES}B."
+            exit 1
+          fi
+
+          echo "Release sign-off gate passed: required platform artifacts and checklist files are present."
+
+      - name: Validate checklist content
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          ALL_JSON="artifacts/release-checklist/release-checklist-all.json"
+          ANDROID_JSON=$(find artifacts/android -type f -name "release-checklist-android.json" | head -n 1)
+          IOS_JSON=$(find artifacts/ios -type f -name "release-checklist-ios.json" | head -n 1)
+
+          node - "$ALL_JSON" "$ANDROID_JSON" "$IOS_JSON" <<'NODE'
+          const fs = require("node:fs");
+
+          const [allPath, androidPath, iosPath] = process.argv.slice(2);
+          const inputs = [
+            ["all", allPath],
+            ["android", androidPath],
+            ["ios", iosPath],
+          ];
+
+          for (const [label, filePath] of inputs) {
+            if (!filePath || !fs.existsSync(filePath)) {
+              console.error(`Missing checklist JSON for ${label}: ${filePath || "<empty path>"}`);
+              process.exit(1);
+            }
+
+            const parsed = JSON.parse(fs.readFileSync(filePath, "utf8"));
+            const readiness = parsed.readiness || {};
+            if (!readiness.preflightPassed || !readiness.twoFactorEnabled || !readiness.oauthEnabled) {
+              console.error(`Readiness flags invalid in ${label} checklist.`);
+              process.exit(1);
+            }
+
+            if ((readiness.productivityPluginCount ?? 0) < 10) {
+              console.error(`Plugin count below threshold in ${label} checklist.`);
+              process.exit(1);
+            }
+
+            const envChecks = parsed.envChecks || {};
+            for (const [platform, checks] of Object.entries(envChecks)) {
+              for (const [key, present] of Object.entries(checks || {})) {
+                if (!present) {
+                  console.error(`Missing required env '${key}' for ${platform} in ${label} checklist.`);
+                  process.exit(1);
+                }
+              }
+            }
+          }
+
+          console.log("Checklist content validation passed.");
+          NODE
+
+      - name: Generate release manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          ANDROID_JSON=$(find artifacts/android -type f -name "release-checklist-android.json" | head -n 1)
+          IOS_JSON=$(find artifacts/ios -type f -name "release-checklist-ios.json" | head -n 1)
+
+          node scripts/generate-release-manifest.mjs \
+            --androidDir=artifacts/android \
+            --iosDir=artifacts/ios \
+            --checklistAll=artifacts/release-checklist/release-checklist-all.json \
+            --checklistAndroid="$ANDROID_JSON" \
+            --checklistIos="$IOS_JSON" \
+            --output=apps/mobile-capacitor/build-metadata/release-manifest.json
+
+      - name: Upload release manifest artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-manifest-${{ github.run_number }}
+          path: apps/mobile-capacitor/build-metadata/release-manifest.json
+          if-no-files-found: error
+
+      - name: Publish release summary
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          ANDROID_BIN=$(find artifacts/android -type f \( -name "*.aab" -o -name "*.apk" \) | head -n 1)
+          IOS_BIN_FILE=$(find artifacts/ios -type f -name "*.ipa" | head -n 1 || true)
+          IOS_BIN_ARCHIVE=$(find artifacts/ios -type d -name "*.xcarchive" | head -n 1 || true)
+          IOS_BIN=${IOS_BIN_FILE:-$IOS_BIN_ARCHIVE}
+          ANDROID_SIZE=$(stat -c%s "$ANDROID_BIN")
+          if [ -n "$IOS_BIN_FILE" ]; then
+            IOS_SIZE=$(stat -c%s "$IOS_BIN_FILE")
+          else
+            IOS_SIZE=$(find "$IOS_BIN_ARCHIVE" -type f -exec stat -c%s {} \; | awk '{sum += $1} END {print sum + 0}')
+          fi
+
+          {
+            echo "## Release Sign-off Summary"
+            echo ""
+            echo "- Workflow run: ${{ github.run_number }}"
+            echo "- Release checklist: PASS"
+            echo "- Android binary detected: ${ANDROID_BIN}"
+            echo "- Android binary size: ${ANDROID_SIZE} bytes (threshold ${MIN_ANDROID_BINARY_BYTES})"
+            echo "- iOS binary detected: ${IOS_BIN}"
+            echo "- iOS binary size: ${IOS_SIZE} bytes (threshold ${MIN_IOS_BINARY_BYTES})"
+            echo "- Release manifest artifact: release-manifest-${{ github.run_number }}"
+            echo "- Final gate: PASS"
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Pressable, Text, TextInput, View } from "react-native";
 import { Screen } from "../src/components/screen";
 import { signInMobile } from "../src/lib/mobile-auth";
+import { authCapabilityConfig } from "@axxess/shared";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -25,6 +26,12 @@ export default function Login() {
         <Pressable onPress={() => void submit()} style={{ padding: 14, borderRadius: 12, backgroundColor: "#8B1E2D" }}>
           <Text style={{ color: "#FFFFFF", textAlign: "center", fontWeight: "800" }}>Sign in</Text>
         </Pressable>
+        <Text style={{ color: "#233238", fontWeight: "700" }}>
+          2FA status: {authCapabilityConfig.twoFactorAuthEnabled ? "enabled" : "disabled"}
+        </Text>
+        <Text style={{ color: "#5F6B73" }}>
+          OAuth providers available: {authCapabilityConfig.oauthProviders.join(", ")}
+        </Text>
         <Text selectable style={{ color: "#5F6B73" }}>{message}</Text>
       </View>
     </Screen>
