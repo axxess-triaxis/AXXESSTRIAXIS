@@ -1,7 +1,8 @@
-import { SectionHeader } from "../../components/layout/SectionHeader";
+import { DataStateBadge, DemoDataNotice, MetricCard, ModuleHeader, PageShell, TenantScopeBadge } from "../../components/enterprise";
 import { Card } from "../../components/ui/Card";
+import { analyticsDemoInsights } from "../../lib/demo/demoMetrics";
 import { applicationServices } from "../../providers/serviceProvider";
-import { Download } from "lucide-react";
+import { BarChart3, Clock3, Download, ShieldCheck, TrendingUp } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 const okrData = applicationServices.institutionalRepository.getOkrData();
@@ -9,16 +10,34 @@ const performanceData = applicationServices.institutionalRepository.getPerforman
 const projects = applicationServices.institutionalRepository.getProjects();
 
 export const AnalyticsSection = () => (
-  <div>
-    <SectionHeader
+  <PageShell>
+    <ModuleHeader
       title="Analytics & Reports"
-      subtitle="Executive intelligence for the FY2026 mission cycle"
-      action={
-        <button className="text-xs bg-[#8B1E2D] text-white px-3 py-1.5 rounded-lg flex items-center gap-1.5 hover:bg-[#7a1a27]">
+      eyebrow="Enterprise command center"
+      description="OKRs, delivery trends, budget utilization, risk distribution, approval cycle time, and AI-generated executive insights with screenshot-ready reporting."
+      badges={[
+        <TenantScopeBadge key="tenant" />,
+        <DataStateBadge key="demo" state="Demo" />,
+        <DataStateBadge key="provider" state="Provider-gated" />,
+      ]}
+      actions={
+        <button className="text-xs bg-[#8B1E2D] text-white px-3 py-2 rounded-lg flex items-center gap-1.5 hover:bg-[#7a1a27]">
           <Download size={12} /> Export Report
         </button>
       }
     />
+    <DemoDataNotice label="Analytics are seeded to show investor-ready operational insight while live tenant metrics remain isolated behind repository and provider configuration." />
+    <div className="flex flex-wrap gap-2">
+      {["Organization", "Project", "Time period", "Risk level", "Department"].map((filter) => (
+        <button key={filter} className="rounded-lg border border-[rgba(15,17,23,0.1)] bg-white px-3 py-1.5 text-xs font-semibold text-[#5F6B73] hover:bg-[#F2F3F5]">{filter}</button>
+      ))}
+    </div>
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <MetricCard label="OKR performance" value="86%" detail="Mission-cycle composite" icon={TrendingUp} href="/analytics" />
+      <MetricCard label="Approval cycle time" value="2.7d" detail="18% faster with AI packets" icon={Clock3} href="/approvals" />
+      <MetricCard label="Risk distribution" value="14/42" detail="High-risk governance items" icon={ShieldCheck} href="/approvals" />
+      <MetricCard label="Budget utilization" value="72%" detail="Variance flagged for Q4" icon={BarChart3} href="/analytics" />
+    </div>
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
       <Card className="p-5">
         <h3 className="text-sm font-semibold text-[#0F1117] mb-4">OKR Performance</h3>
@@ -72,24 +91,19 @@ export const AnalyticsSection = () => (
       <Card className="p-5">
         <h3 className="text-sm font-semibold text-[#0F1117] mb-4">AI-Generated Insights</h3>
         <div className="space-y-3">
-          {[
-            { insight: "Portfolio burn rate is 7% above benchmark; Q4 spending acceleration detected in cold-chain and oxygen workstreams", type: "Financial", severity: "medium" },
-            { insight: "Maternal referral and oxygen resilience programs have 91% correlated operational risk patterns", type: "Risk", severity: "high" },
-            { insight: "Stakeholder engagement dropped 18% across two district review cycles; Finance & Grants contacts need reactivation", type: "Relationship", severity: "medium" },
-            { insight: "11 Mission Secretariat decisions have no linked action owner; accountability follow-up is required", type: "Governance", severity: "low" },
-          ].map((insight, index) => (
+          {analyticsDemoInsights.map((insight, index) => (
             <div key={index} className="flex items-start gap-3 p-3 bg-[#F8F9FA] rounded-lg">
-              <div className={`w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0 ${insight.severity === "high" ? "bg-red-500" : insight.severity === "medium" ? "bg-amber-500" : "bg-blue-500"}`} />
+              <div className={`w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0 ${index === 1 ? "bg-red-500" : index < 3 ? "bg-amber-500" : "bg-blue-500"}`} />
               <div>
-                <p className="text-xs text-[#0F1117] leading-relaxed">{insight.insight}</p>
-                <span className="text-[10px] font-mono text-[#5F6B73] mt-1 inline-block">{insight.type}</span>
+                <p className="text-xs text-[#0F1117] leading-relaxed">{insight}</p>
+                <span className="text-[10px] font-mono text-[#5F6B73] mt-1 inline-block">AI insight</span>
               </div>
             </div>
           ))}
         </div>
       </Card>
     </div>
-  </div>
+  </PageShell>
 );
 
 export default AnalyticsSection;

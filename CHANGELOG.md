@@ -4,7 +4,26 @@ All notable changes to AXXESS are documented here. This project follows the spir
 
 ## Unreleased
 
+- Added Sprint 18 Pilot Conversion dashboard with tenant-scoped pilot health scoring and demo fallback.
+- Added governed server-side audit exports with immutable export metadata and short-lived export tokens.
+- Added signed Resend invitation delivery webhook ingestion with hashed recipient evidence.
+- Added Sprint 18 Supabase migration for `audit_exports` and `invitation_delivery_events` with admin-scoped RLS.
+- Added mobile admin visual regression workflow and screenshots for organization admin, audit logs, and pilot conversion.
+- Added Sprint 17 pilot readiness event API with authenticated Supabase writes, sanitized metadata, and audit logging.
+- Added optional Resend-compatible invitation email delivery with manual acceptance URL fallback when email is not configured.
+- Added mobile card fallbacks for Organization Admin and Audit Logs tables plus seed-gated Playwright coverage.
+- Added Sprint 16 pilot readiness hardening with tenant administration, audit-log review/export, expanded first-tenant onboarding, and admin navigation entries.
+- Added Sprint 16 Supabase migration for tenant-scoped pilot readiness events plus audit-log indexes for review and export workflows.
+- Added Sprint 16 routing, RBAC, onboarding, and RLS tests for pilot admin and audit surfaces.
 - Added a Capacitor/Webnative mobile shell under `apps/mobile-capacitor` with Android/iOS build scripts, signing placeholders, environment validation, versioning metadata, and release documentation.
+- Added Sprint 15 enterprise frontend coherence pass with shared module headers, metrics, data-state badges, confidence/human-review/audit badges, activity feeds, workflow cards, and demo notices.
+- Added guided investor demo state, progress banner, dashboard start CTA, clean screenshot mode, and coherent demo seed slices for metrics, activity, documents, stakeholders, approvals, and workflows.
+- Polished Executive Dashboard, AI Workspace, Knowledge Hub, Approvals, CRM, Projects, Tasks, and Analytics with live/demo/provider-gated labels and cross-screen workflow context.
+- Added Sprint 15 frontend audit, product walkthrough, frontend architecture, screenshot guide, and sprint log documentation.
+- Added Sprint 14 AI-native platform layer with provider-gated routing for OpenAI, Anthropic, Google, xAI, Falcon, Jais, and local fallback.
+- Added Sprint 14 RAG ingestion, embedding, vector store, evaluation, repository foundation, and Supabase migration for RAG chunks, ingestion runs, integration connections, and social alert events.
+- Added open-source NLP model registry covering IndicBERT, MuRIL, IndicTrans2, LaBSE, XLM-R, multilingual-e5, bge-m3, sentence-transformers, fastText, and NLLB.
+- Added productivity plugin registry, integration health cards, live dashboard provider hooks, social alerts screen, cross-screen workflow demo service, and Wix-safe public website export.
 - Fixed Expo GitHub build readiness by adding required EAS GitHub build images and documenting the correct `apps/mobile` base directory.
 - Configured Expo mobile builds to use EAS-managed remote credentials for iOS and Android app signing, with explicit app identifiers and credential safety docs.
 - Added Expo EAS workflow for manual Android and iOS production builds.

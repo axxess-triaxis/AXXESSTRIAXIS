@@ -1,0 +1,43 @@
+name: Mobile Visual Regression
+
+on:
+  pull_request:
+    paths:
+      - "src/app/**"
+      - "src/components/**"
+      - "src/features/admin/**"
+      - "src/features/onboarding/**"
+      - "tests/e2e/visual-mobile-admin.spec.ts"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "playwright.config.ts"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  mobile-screenshots:
+    runs-on: ubuntu-latest
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
+      NEXT_PUBLIC_AXXESS_AUTH_SHELL: "true"
+      NEXT_PUBLIC_AXXESS_DEMO_MODE: "true"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm exec playwright test tests/e2e/visual-mobile-admin.spec.ts
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mobile-admin-screenshots
+          path: test-results/mobile-admin-screenshots

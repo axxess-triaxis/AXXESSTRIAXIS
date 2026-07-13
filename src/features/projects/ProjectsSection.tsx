@@ -4,7 +4,7 @@ import { useAuth } from "../../auth/AuthProvider";
 import { InlineToast } from "../../components/forms/InlineToast";
 import { SelectField, TextAreaField, TextField } from "../../components/forms/FormField";
 import { LoadingState } from "../../components/feedback/LoadingState";
-import { SectionHeader } from "../../components/layout/SectionHeader";
+import { DataStateBadge, DemoDataNotice, ModuleHeader, PageShell, TenantScopeBadge, WorkflowStepCard } from "../../components/enterprise";
 import { Avatar } from "../../components/ui/Avatar";
 import { Card } from "../../components/ui/Card";
 import { RiskBadge } from "../../components/ui/RiskBadge";
@@ -13,6 +13,7 @@ import type { Organization, Program, Project, User } from "../../domain";
 import { applicationServices } from "../../providers/serviceProvider";
 import { ownerInitialsForProject, projectDepartment, tenantScopeFromUser } from "../../repositories/supabaseEnterpriseRepositories";
 import { useAnalytics } from "../../services/analytics";
+import { demoProjects } from "../../lib/demo/seedData";
 
 type ProjectFormState = {
   organizationId: string;
@@ -200,11 +201,16 @@ export const ProjectsSection = () => {
   if (loading) return <LoadingState label="Loading project workflows" />;
 
   return (
-    <div className="h-full min-h-0">
-      <SectionHeader
+    <PageShell className="h-full min-h-0">
+      <ModuleHeader
         title="Projects & Programs"
-        subtitle={`${projects.length} active initiatives across ${organizations.length || 1} organization${organizations.length === 1 ? "" : "s"}`}
-        action={
+        eyebrow="Execution system"
+        description={`${projects.length} active initiatives across ${organizations.length || 1} organization${organizations.length === 1 ? "" : "s"}. Projects connect stakeholders, documents, approvals, AI actions, and operational timelines.`}
+        badges={[
+          <TenantScopeBadge key="tenant" />,
+          <DataStateBadge key="demo" state={projects.length > 0 ? "Live" : "Demo"} />,
+        ]}
+        actions={
           <div className="flex items-center gap-2">
             <div className="flex overflow-hidden rounded-lg border border-[rgba(0,0,0,0.08)]">
               {(["kanban", "list"] as const).map((value) => (
@@ -227,6 +233,19 @@ export const ProjectsSection = () => {
           </div>
         }
       />
+
+      <DemoDataNotice label="Project cards and side panels show linked stakeholder, document, approval, task, and escalation context for demo storytelling." />
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-4">
+        {demoProjects.map((project, index) => (
+          <WorkflowStepCard
+            key={project.name}
+            index={index + 1}
+            title={project.name}
+            description={`${project.stakeholder} - ${project.document} - ${project.approval}`}
+            status={project.risk}
+          />
+        ))}
+      </div>
 
       <div className="grid h-[calc(100%-72px)] min-h-[520px] grid-cols-1 gap-4 xl:grid-cols-[1fr_360px]">
         <div className="min-w-0 overflow-hidden">
@@ -388,7 +407,7 @@ export const ProjectsSection = () => {
           )}
         </Card>
       </div>
-    </div>
+    </PageShell>
   );
 };
 

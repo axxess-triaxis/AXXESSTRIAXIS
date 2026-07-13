@@ -17,6 +17,19 @@ Sprint 12 documents the mobile production path for Expo, TestFlight, Google Play
 - Crash reporting configured.
 - Release channel separation for dev, staging, and production.
 - App signing credentials stored in Expo/EAS or Bitrise secrets.
+- GitHub Actions release secrets configured when using repository-driven app builds; see `docs/GITHUB_ACTIONS_SECRETS.md`.
+
+## GitHub Actions Release Secrets
+
+Before running app build or release workflows from GitHub Actions, configure the required Android, iOS, Supabase, app URL, and Capacitor shell values in repository secrets.
+
+Canonical checklist:
+
+```text
+docs/GITHUB_ACTIONS_SECRETS.md
+```
+
+Do not add service-role keys, raw keystore files, App Store Connect `.p8` files, or private signing material to the repository.
 
 ## Release Flow
 

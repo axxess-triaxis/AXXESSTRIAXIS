@@ -49,6 +49,9 @@ jobs:
 
       - name: Review dependencies
         uses: actions/dependency-review-action@v5
+        # Dependency Review requires GitHub Dependency Graph to be enabled in repository settings.
+        # Keep pnpm audit, CodeQL, and secret scanning blocking while this repository setting is off.
+        continue-on-error: true
         with:
           fail-on-severity: critical
 

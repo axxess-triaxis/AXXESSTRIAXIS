@@ -1,27 +1,39 @@
-import { Download, RefreshCw, Sparkles } from "lucide-react";
+import { Download, PlayCircle, RefreshCw, Sparkles } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { useAuth } from "../../auth/AuthProvider";
-import { SectionHeader } from "../../components/layout/SectionHeader";
+import {
+  ActivityFeed,
+  CommandSearchPlaceholder,
+  DataStateBadge,
+  DemoDataNotice,
+  MetricCard,
+  ModuleHeader,
+  PageShell,
+  SectionCard,
+  TenantScopeBadge,
+} from "../../components/enterprise";
 import { Avatar } from "../../components/ui/Avatar";
 import { Card } from "../../components/ui/Card";
 import { RiskBadge } from "../../components/ui/RiskBadge";
 import { StatusBadge } from "../../components/ui/StatusBadge";
+import { useGuidedDemo } from "../../hooks/useGuidedDemo";
+import { useLiveRagHealth } from "../../hooks/useLiveRagHealth";
+import { useLiveWorkspaceMetrics } from "../../hooks/useLiveWorkspaceMetrics";
+import { demoRecentActivity } from "../../lib/demo/demoActivity";
+import { demoInstitution } from "../../lib/demo/seedData";
+import { executiveDemoMetrics } from "../../lib/demo/demoMetrics";
 import { BetaOnboardingChecklist } from "../onboarding/BetaOnboardingChecklist";
-import { KpiCard } from "./components/KpiCard";
 import {
   dashboardAiRecommendations,
   dashboardObjectives,
   dashboardScopeForUser,
-  getDashboardFallbackKpis,
   getDashboardFallbackProjects,
-  getDashboardKpis,
   getDashboardProjects,
   governanceAlerts,
   performanceData,
   workloadData,
 } from "./data";
-import type { DashboardKpi } from "./types";
 
 type DashboardProject = Awaited<ReturnType<typeof getDashboardProjects>>[number];
 
@@ -40,22 +52,22 @@ const heatmap = [
 export function DashboardSection() {
   const { session } = useAuth();
   const tenantScope = useMemo(() => session.user ? dashboardScopeForUser(session.user) : undefined, [session.user]);
-  const [dashboardKpis, setDashboardKpis] = useState<DashboardKpi[]>(() => getDashboardFallbackKpis());
   const [projects, setProjects] = useState<DashboardProject[]>(() => getDashboardFallbackProjects());
+  const guidedDemo = useGuidedDemo("dashboard");
+  const liveMetrics = useLiveWorkspaceMetrics(tenantScope);
+  const ragHealth = useLiveRagHealth(tenantScope);
 
   useEffect(() => {
     if (!tenantScope) return;
 
     let isMounted = true;
-    Promise.all([getDashboardKpis(tenantScope), getDashboardProjects(tenantScope)])
-      .then(([kpis, projectRows]) => {
+    getDashboardProjects(tenantScope)
+      .then((projectRows) => {
         if (!isMounted) return;
-        setDashboardKpis(kpis);
         setProjects(projectRows);
       })
       .catch(() => {
         if (!isMounted) return;
-        setDashboardKpis(getDashboardFallbackKpis());
         setProjects(getDashboardFallbackProjects());
       });
 
@@ -65,28 +77,71 @@ export function DashboardSection() {
   }, [tenantScope]);
 
   return (
-    <div className="space-y-6">
-      <SectionHeader
+    <PageShell>
+      <ModuleHeader
         title="Executive Dashboard"
-        subtitle="North East Health Mission portfolio intelligence as of July 4, 2026"
-        action={
+        eyebrow={demoInstitution.organizationName}
+        description="Portfolio command center for executive risk, approvals, RAG readiness, budget variance, stakeholder follow-ups, and guided investor walkthroughs."
+        badges={[
+          <TenantScopeBadge key="tenant" label="North East Health Mission tenant" />,
+          <DataStateBadge key="demo" state="Demo" />,
+          <DataStateBadge key="live" state="Live" />,
+          <DataStateBadge key="provider" state="Provider-gated" />,
+        ]}
+        actions={
           <div className="flex items-center gap-2">
+            <button onClick={guidedDemo.startDemo} className="flex items-center gap-1.5 rounded-lg bg-[#0F1117] px-3 py-2 text-xs font-semibold text-white hover:bg-[#1D2430]">
+              <PlayCircle size={13} /> Start guided demo
+            </button>
+            <a href="mailto:founders@triaxis.ventures?subject=AXXESS%20feedback" className="flex items-center gap-1.5 rounded-lg border border-[rgba(15,17,23,0.1)] px-3 py-2 text-xs font-semibold text-[#5F6B73] hover:bg-[#F2F3F5]">
+              Send feedback
+            </a>
             <button className="text-xs text-[#5F6B73] flex items-center gap-1.5 hover:text-[#0F1117] transition-colors">
               <RefreshCw size={12} /> Refresh
             </button>
-            <button className="text-xs bg-[#8B1E2D] text-white px-3 py-1.5 rounded-lg flex items-center gap-1.5 hover:bg-[#7a1a27] transition-colors">
+            <button className="text-xs bg-[#8B1E2D] text-white px-3 py-2 rounded-lg flex items-center gap-1.5 hover:bg-[#7a1a27] transition-colors">
               <Download size={12} /> Export Briefing
             </button>
           </div>
         }
       />
 
+      <DemoDataNotice label="The dashboard is preloaded to look like a 6-12 month institutional operating environment while live repositories remain tenant-isolated." />
+      <CommandSearchPlaceholder />
+
       {session.user && <BetaOnboardingChecklist user={session.user} projectCount={projects.length} />}
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {dashboardKpis.map((kpi) => (
-          <KpiCard key={kpi.label} metric={kpi} />
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {executiveDemoMetrics.map((metric) => (
+          <MetricCard key={metric.label} {...metric} state="Demo" />
         ))}
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <Card className="p-4 transition-shadow hover:shadow-md">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-semibold uppercase tracking-wide text-[#5F6B73]">AI Router</span>
+            <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">Fallback Ready</span>
+          </div>
+          <div className="mt-3 font-mono text-2xl font-semibold text-[#0F1117]">{ragHealth.readyDocuments}</div>
+          <p className="mt-1 text-xs leading-relaxed text-[#5F6B73]">RAG-ready documents with local deterministic retrieval when provider keys are not configured.</p>
+        </Card>
+        <Card className="p-4 transition-shadow hover:shadow-md">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-semibold uppercase tracking-wide text-[#5F6B73]">Live Ops</span>
+            <span className="rounded-full bg-[#8B1E2D]/8 px-2 py-0.5 text-[10px] font-semibold text-[#8B1E2D]">Tenant Scoped</span>
+          </div>
+          <div className="mt-3 font-mono text-2xl font-semibold text-[#0F1117]">{liveMetrics.openTasks}</div>
+          <p className="mt-1 text-xs leading-relaxed text-[#5F6B73]">Open tasks across active mission projects, refreshed through repository hooks.</p>
+        </Card>
+        <Card className="p-4 transition-shadow hover:shadow-md">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-semibold uppercase tracking-wide text-[#5F6B73]">External Signals</span>
+            <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700">Review First</span>
+          </div>
+          <div className="mt-3 font-mono text-2xl font-semibold text-[#0F1117]">{liveMetrics.socialAlerts}</div>
+          <p className="mt-1 text-xs leading-relaxed text-[#5F6B73]">Social, RSS, and manual alerts queued for human-approved workflow actions.</p>
+        </Card>
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
@@ -100,6 +155,27 @@ export function DashboardSection() {
             <p className="mt-1 text-xs leading-relaxed text-[#5F6B73]">{alert.detail}</p>
           </Card>
         ))}
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_360px]">
+        <SectionCard title="Recent institutional activity" description="Seeded activity mirrors a live operating environment and ties AI, approvals, documents, and stakeholder follow-ups together.">
+          <ActivityFeed items={demoRecentActivity} />
+        </SectionCard>
+        <SectionCard title="Priority actions" description="Next actions for a screenshot-ready investor walkthrough.">
+          <div className="space-y-2">
+            {[
+              { label: "Generate executive briefing", href: "/ai-workspace" },
+              { label: "Review pending approval", href: "/approvals" },
+              { label: "Open governed document", href: "/knowledge" },
+              { label: "Request pilot conversation", href: "mailto:founders@triaxis.ventures?subject=AXXESS%20pilot%20request" },
+            ].map((action) => (
+              <a key={action.label} href={action.href} className="flex items-center justify-between rounded-lg border border-[rgba(15,17,23,0.08)] px-3 py-2 text-xs font-semibold text-[#0F1117] hover:bg-[#F8F9FA]">
+                {action.label}
+                <span className="text-[#8B1E2D]">Open</span>
+              </a>
+            ))}
+          </div>
+        </SectionCard>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
@@ -236,6 +312,6 @@ export function DashboardSection() {
           </ResponsiveContainer>
         </Card>
       </div>
-    </div>
+    </PageShell>
   );
 }
