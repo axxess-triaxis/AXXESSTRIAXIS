@@ -12,6 +12,7 @@ All notable changes to AXXESS are documented here. This project follows the spir
 - Added Sprint 14 RAG ingestion, embedding, vector store, evaluation, repository foundation, and Supabase migration for RAG chunks, ingestion runs, integration connections, and social alert events.
 - Added open-source NLP model registry covering IndicBERT, MuRIL, IndicTrans2, LaBSE, XLM-R, multilingual-e5, bge-m3, sentence-transformers, fastText, and NLLB.
 - Added productivity plugin registry, integration health cards, live dashboard provider hooks, social alerts screen, cross-screen workflow demo service, and Wix-safe public website export.
+- Added a Capacitor/Webnative mobile shell under `apps/mobile-capacitor` with Android/iOS build scripts, signing placeholders, environment validation, versioning metadata, and release documentation.
 - Fixed Expo GitHub build readiness by adding required EAS GitHub build images and documenting the correct `apps/mobile` base directory.
 - Configured Expo mobile builds to use EAS-managed remote credentials for iOS and Android app signing, with explicit app identifiers and credential safety docs.
 - Added Expo EAS workflow for manual Android and iOS production builds.

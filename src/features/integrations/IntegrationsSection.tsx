@@ -1,4 +1,4 @@
-import { SectionHeader } from "../../components/layout/SectionHeader";
+﻿import { SectionHeader } from "../../components/layout/SectionHeader";
 import { Card } from "../../components/ui/Card";
 import { applicationServices } from "../../providers/serviceProvider";
 import { getIntegrationHealth, getProductivityPluginRegistry } from "../../services/integrations/pluginRegistry";
@@ -7,9 +7,12 @@ const integrations = applicationServices.institutionalRepository.getIntegrations
 const pluginRegistry = getProductivityPluginRegistry();
 const pluginHealth = getIntegrationHealth();
 
+const connectedCount = integrations.filter((integration) => integration.status === "connected").length;
+const disconnectedCount = integrations.length - connectedCount;
+
 export const IntegrationsSection = () => (
   <div className="space-y-5">
-    <SectionHeader title="Integrations" subtitle={`${pluginHealth.total} plugin adapters - ${pluginHealth.webhookReady} webhook-ready - provider-gated for production credentials`} />
+    <SectionHeader title="Integrations" subtitle={`${pluginHealth.total} plugin adapters - ${pluginHealth.webhookReady} webhook-ready - ${connectedCount} connected - ${disconnectedCount} disconnected - provider-gated for production credentials`} />
 
     <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
       {[
