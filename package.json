@@ -25,7 +25,7 @@
     "mobile:capacitor:build:android": "node scripts/mobile-version.mjs && pnpm --dir apps/mobile-capacitor run build:android",
     "mobile:capacitor:build:ios": "node scripts/mobile-version.mjs && pnpm --dir apps/mobile-capacitor run build:ios",
     "mobile:capacitor:build:all": "node scripts/mobile-version.mjs && pnpm --dir apps/mobile-capacitor run build:all",
-    "mobile:capacitor:doctor": "pnpm --dir apps/mobile-capacitor run doctor",
+    "mobile:capacitor:doctor": "node scripts/validate-mobile-env.mjs",
     "mobile:capacitor:version": "node scripts/mobile-version.mjs",
     "mobile:capacitor:release:android": "pnpm run mobile:capacitor:build:android",
     "mobile:capacitor:release:ios": "pnpm run mobile:capacitor:build:ios",
