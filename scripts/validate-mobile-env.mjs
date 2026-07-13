@@ -3,7 +3,6 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const root = process.cwd();
-const envFile = path.join(root, '.env.local');
 const required = [
   'NEXT_PUBLIC_APP_URL',
   'NEXT_PUBLIC_SUPABASE_URL',
