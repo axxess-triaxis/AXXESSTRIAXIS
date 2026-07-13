@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getCanonicalHostRedirectUrl, isProtectedRoutePath } from "./middleware";
+import { getBetaRootRedirectUrl, getCanonicalHostRedirectUrl, isProtectedRoutePath } from "./middleware";
 
 describe("route middleware helpers", () => {
   it("identifies protected workspace paths", () => {
@@ -30,5 +30,32 @@ describe("route middleware helpers", () => {
     );
 
     expect(redirectUrl).toBeNull();
+  });
+
+  it("redirects beta root host to dashboard", () => {
+    const redirectUrl = getBetaRootRedirectUrl(
+      new URL("https://beta.triaxisventures.com/"),
+      "beta.triaxisventures.com",
+    );
+
+    expect(redirectUrl?.toString()).toBe("https://beta.triaxisventures.com/dashboard");
+  });
+
+  it("does not redirect non-root beta routes", () => {
+    const redirectUrl = getBetaRootRedirectUrl(
+      new URL("https://beta.triaxisventures.com/auth"),
+      "beta.triaxisventures.com",
+    );
+
+    expect(redirectUrl).toBeNull();
+  });
+
+  it("normalizes hosts with ports before canonical checks", () => {
+    const redirectUrl = getCanonicalHostRedirectUrl(
+      new URL("https://triaxisventures.com/dashboard"),
+      "triaxisventures.com:443",
+    );
+
+    expect(redirectUrl?.toString()).toBe("https://www.triaxisventures.com/dashboard");
   });
 });

@@ -21,17 +21,26 @@ const protectedRoutePrefixes = [
 const sessionCookieName = "axxess-access-token";
 const apexProductionHost = "triaxisventures.com";
 const canonicalProductionHost = "www.triaxisventures.com";
+const betaProductionHost = "beta.triaxisventures.com";
+
+function normalizeHost(host: string | null) {
+  if (!host) {
+    return null;
+  }
+
+  return host.toLowerCase().split(":")[0] ?? null;
+}
 
 export function isProtectedRoutePath(pathname: string) {
   return protectedRoutePrefixes.some((prefix) => pathname.startsWith(prefix));
 }
 
 export function getCanonicalHostRedirectUrl(url: URL, host: string | null) {
-  if (!host) {
+  const normalizedHost = normalizeHost(host);
+  if (!normalizedHost) {
     return null;
   }
 
-  const normalizedHost = host.toLowerCase();
   if (normalizedHost !== apexProductionHost) {
     return null;
   }
@@ -42,14 +51,34 @@ export function getCanonicalHostRedirectUrl(url: URL, host: string | null) {
   return redirectUrl;
 }
 
+export function getBetaRootRedirectUrl(url: URL, host: string | null) {
+  const normalizedHost = normalizeHost(host);
+  if (!normalizedHost || normalizedHost !== betaProductionHost || url.pathname !== "/") {
+    return null;
+  }
+
+  const redirectUrl = new URL(url.toString());
+  redirectUrl.protocol = "https:";
+  redirectUrl.host = betaProductionHost;
+  redirectUrl.pathname = "/dashboard";
+  return redirectUrl;
+}
+
 export function middleware(request: NextRequest) {
+  const requestHost = request.headers.get("x-forwarded-host") ?? request.headers.get("host");
+
   const canonicalHostRedirectUrl = getCanonicalHostRedirectUrl(
     request.nextUrl,
-    request.headers.get("x-forwarded-host") ?? request.headers.get("host"),
+    requestHost,
   );
 
   if (canonicalHostRedirectUrl) {
     return NextResponse.redirect(canonicalHostRedirectUrl, 308);
+  }
+
+  const betaRootRedirectUrl = getBetaRootRedirectUrl(request.nextUrl, requestHost);
+  if (betaRootRedirectUrl) {
+    return NextResponse.redirect(betaRootRedirectUrl, 307);
   }
 
   const isAuthShellEnabled = process.env.NEXT_PUBLIC_AXXESS_AUTH_SHELL === "true";
