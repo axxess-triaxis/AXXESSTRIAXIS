@@ -41,6 +41,8 @@
     "mobile:eas:workflow:production": "pnpm --dir apps/mobile run eas:workflow:production",
     "mobile:ios:preview": "pnpm --dir apps/mobile run ios:preview",
     "mobile:typecheck": "pnpm --dir apps/mobile run typecheck",
+    "release:preflight": "node scripts/release-preflight.mjs",
+    "release:ready": "pnpm run ci && pnpm run release:preflight -- --mode=ci && pnpm run mobile:capacitor:doctor",
     "start": "next start",
     "test": "vitest run",
     "test:e2e": "playwright test",

@@ -88,6 +88,9 @@ jobs:
       - name: Build web app
         run: pnpm run build
 
+      - name: Release preflight (CI)
+        run: pnpm run release:preflight -- --mode=ci --target=all
+
       - name: Capacitor doctor
         run: pnpm run mobile:capacitor:doctor
 
@@ -126,6 +129,9 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Release preflight (Android)
+        run: pnpm run release:preflight -- --mode=ci --target=android
 
       - name: Sync Capacitor
         run: pnpm run mobile:capacitor:sync
@@ -180,6 +186,9 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Release preflight (iOS)
+        run: pnpm run release:preflight -- --mode=ci --target=ios
 
       - name: Sync Capacitor
         run: pnpm run mobile:capacitor:sync

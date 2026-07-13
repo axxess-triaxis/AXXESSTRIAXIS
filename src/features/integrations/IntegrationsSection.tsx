@@ -4,9 +4,12 @@ import { applicationServices } from "../../providers/serviceProvider";
 
 const integrations = applicationServices.institutionalRepository.getIntegrations();
 
+const connectedCount = integrations.filter((integration) => integration.status === "connected").length;
+const disconnectedCount = integrations.length - connectedCount;
+
 export const IntegrationsSection = () => (
   <div>
-    <SectionHeader title="Integrations" subtitle="12 connected systems · 2 disconnected" />
+    <SectionHeader title="Integrations" subtitle={`${connectedCount} connected systems · ${disconnectedCount} disconnected`} />
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
       {integrations.map((int) => (
         <Card key={int.name} className="p-4 hover:shadow-md transition-shadow cursor-pointer">
