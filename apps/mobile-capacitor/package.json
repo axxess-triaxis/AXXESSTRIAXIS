@@ -1,0 +1,37 @@
+{
+  "name": "@axxess/mobile-capacitor",
+  "private": true,
+  "version": "0.6.0-beta",
+  "type": "module",
+  "scripts": {
+    "prepare:web-assets": "node scripts/ensure-web-assets.mjs",
+    "sync": "pnpm run prepare:web-assets && cap sync",
+    "sync:android": "pnpm run prepare:web-assets && cap sync android",
+    "sync:ios": "pnpm run prepare:web-assets && cap sync ios",
+    "copy": "pnpm run prepare:web-assets && cap copy",
+    "android": "cap open android",
+    "ios": "cap open ios",
+    "build:android": "node scripts/build-android.mjs",
+    "build:ios": "node scripts/build-ios.mjs",
+    "build:all": "pnpm run build:android && pnpm run build:ios"
+  },
+  "dependencies": {
+    "@capacitor/android": "7.0.0",
+    "@capacitor/app": "7.0.0",
+    "@capacitor/browser": "7.0.0",
+    "@capacitor/core": "7.0.0",
+    "@capacitor/device": "7.0.0",
+    "@capacitor/filesystem": "7.0.0",
+    "@capacitor/haptics": "7.0.0",
+    "@capacitor/ios": "7.0.0",
+    "@capacitor/keyboard": "7.0.0",
+    "@capacitor/network": "7.0.0",
+    "@capacitor/preferences": "7.0.0",
+    "@capacitor/share": "7.0.0",
+    "@capacitor/splash-screen": "7.0.0",
+    "@capacitor/status-bar": "7.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "7.0.0"
+  }
+}
