@@ -81,4 +81,20 @@ describe("mock RBAC route guards", () => {
     expect(canAccessRoute(manager, routeForPath("/admin/audit-logs"))).toBe(false);
     expect(canAccessRoute(manager, routeForPath("/admin/pilot-conversion"))).toBe(false);
   });
+
+  it("restricts Sprint 20 and 21 platform control routes to administrators", () => {
+    const manager: UserContext = {
+      id: "user_manager",
+      organizationId: "org_public_safety",
+      role: "Manager",
+    };
+
+    expect(canAccessRoute(mockCurrentUserContext, routeForPath("/admin/plugin-runtime"))).toBe(true);
+    expect(canAccessRoute(mockCurrentUserContext, routeForPath("/admin/model-policy"))).toBe(true);
+    expect(canAccessRoute(mockCurrentUserContext, routeForPath("/admin/execution-runs"))).toBe(true);
+    expect(canAccessRoute(mockCurrentUserContext, routeForPath("/admin/usage-limits"))).toBe(true);
+    expect(canAccessRoute(mockCurrentUserContext, routeForPath("/admin/support-ops"))).toBe(true);
+    expect(canAccessRoute(manager, routeForPath("/admin/plugin-runtime"))).toBe(false);
+    expect(canAccessRoute(manager, routeForPath("/admin/model-policy"))).toBe(false);
+  });
 });

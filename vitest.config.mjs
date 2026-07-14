@@ -1,4 +1,7 @@
 import { defineConfig } from "vitest/config";
+import { fileURLToPath } from "node:url";
+
+const fromRoot = (path) => fileURLToPath(new URL(path, import.meta.url));
 
 export default defineConfig({
   esbuild: {
@@ -8,13 +11,15 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     exclude: ["tests/e2e/**", "**/node_modules/**", "node_modules/**", "dist/**", ".next/**"],
+    fileParallelism: false,
     globals: true,
+    pool: "threads",
     setupFiles: ["./src/test/setup.ts"],
   },
   resolve: {
     alias: {
-      "@": new URL("./src", import.meta.url).pathname,
-      "@axxess/shared": new URL("./packages/shared/src/index.ts", import.meta.url).pathname,
+      "@": fromRoot("./src"),
+      "@axxess/shared": fromRoot("./packages/shared/src/index.ts"),
     },
   },
 });

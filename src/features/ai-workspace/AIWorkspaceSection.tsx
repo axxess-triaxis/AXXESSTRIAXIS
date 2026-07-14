@@ -70,12 +70,23 @@ const fallbackRagAnswer: RagAnswer = {
   ],
 };
 
+type LiveRagAnswer = RagAnswer & {
+  aiOutputAuditId?: string;
+  modelUsed?: string;
+  providerUsed?: string;
+  latencyMs?: number;
+  costTier?: string;
+};
+
 export const AIWorkspaceSection = () => {
   const { session } = useAuth();
   const tenantScope = useMemo(() => session.user ? tenantScopeFromUser(session.user) : undefined, [session.user]);
   const [input, setInput] = useState("");
   const [approved, setApproved] = useState(false);
-  const [ragAnswer, setRagAnswer] = useState<RagAnswer>(fallbackRagAnswer);
+  const [querying, setQuerying] = useState(false);
+  const [reviewing, setReviewing] = useState(false);
+  const [reviewMessage, setReviewMessage] = useState<string | null>(null);
+  const [ragAnswer, setRagAnswer] = useState<LiveRagAnswer>(fallbackRagAnswer);
 
   useEffect(() => {
     if (!tenantScope) return;
@@ -96,6 +107,63 @@ export const AIWorkspaceSection = () => {
       isMounted = false;
     };
   }, [tenantScope]);
+
+  async function askGovernedQuestion() {
+    const question = input.trim();
+    if (!question) return;
+
+    setQuerying(true);
+    setReviewMessage(null);
+    try {
+      const response = await fetch("/api/rag/query", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question, limit: 5 }),
+      });
+      const result = await response.json().catch(() => ({} as { error?: string }));
+      if (!response.ok) throw new Error(result.error ?? "AXXESS could not complete the governed question.");
+      setRagAnswer(result as LiveRagAnswer);
+      setInput("");
+      setApproved(false);
+    } catch (error) {
+      setReviewMessage(error instanceof Error ? error.message : "AXXESS could not complete the governed question.");
+    } finally {
+      setQuerying(false);
+    }
+  }
+
+  async function reviewAnswer(decision: "approved" | "rejected") {
+    if (!ragAnswer.aiOutputAuditId) {
+      setReviewMessage("This answer was generated from local demo context and has no live audit id to review.");
+      return;
+    }
+
+    setReviewing(true);
+    setReviewMessage(null);
+    try {
+      const response = await fetch("/api/rag/review", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          aiOutputAuditId: ragAnswer.aiOutputAuditId,
+          decision,
+          createTask: decision === "approved",
+          taskTitle: "Review and execute governed AXXESS recommendation",
+          notes: decision === "approved" ? "Approved from AI Workspace with cited sources." : "Rejected from AI Workspace pending revision.",
+        }),
+      });
+      const result = await response.json().catch(() => ({} as { error?: string; task?: { id?: string } }));
+      if (!response.ok) throw new Error(result.error ?? "Review could not be recorded.");
+      setApproved(decision === "approved");
+      setReviewMessage(decision === "approved" ? `Approved and audit logged${result.task?.id ? " with a follow-up task." : "."}` : "Rejected and audit logged.");
+    } catch (error) {
+      setReviewMessage(error instanceof Error ? error.message : "Review could not be recorded.");
+    } finally {
+      setReviewing(false);
+    }
+  }
 
   return (
     <PageShell className="h-full flex flex-col">
@@ -215,7 +283,17 @@ export const AIWorkspaceSection = () => {
                   <div className="mt-2 flex flex-wrap items-center gap-2 text-[10px]">
                     <ConfidenceBadge score={ragAnswer.confidence} />
                     <HumanReviewBadge required={ragAnswer.humanReviewRequired} />
-                    <AuditTrailBadge eventId="ai-audit-demo-0843" />
+                    <AuditTrailBadge eventId={ragAnswer.aiOutputAuditId ?? "ai-audit-demo-0843"} />
+                    {ragAnswer.providerUsed && <span className="rounded-full bg-[#F2F3F5] px-2 py-0.5 text-[10px] font-semibold text-[#5F6B73]">{ragAnswer.providerUsed} - {ragAnswer.costTier ?? "cost logged"}</span>}
+                  </div>
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                    <button onClick={() => void reviewAnswer("approved")} disabled={reviewing || !ragAnswer.aiOutputAuditId} className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60">
+                      {reviewing ? "Recording..." : "Approve action"}
+                    </button>
+                    <button onClick={() => void reviewAnswer("rejected")} disabled={reviewing || !ragAnswer.aiOutputAuditId} className="rounded-lg border border-[rgba(0,0,0,0.12)] bg-white px-3 py-1.5 text-xs font-semibold text-[#0F1117] hover:bg-[#F2F3F5] disabled:cursor-not-allowed disabled:opacity-60">
+                      Reject
+                    </button>
+                    {reviewMessage && <span className="text-[11px] font-medium text-[#5F6B73]">{reviewMessage}</span>}
                   </div>
                 </div>
               </div>
@@ -244,7 +322,7 @@ export const AIWorkspaceSection = () => {
                   placeholder="Ask AXXESS about portfolios, approvals, risks, or cited institutional documents"
                   className="flex-1 bg-transparent text-sm text-[#0F1117] placeholder:text-[#5F6B73] outline-none"
                 />
-                <button className="w-7 h-7 bg-[#8B1E2D] rounded-lg flex items-center justify-center hover:bg-[#7a1a27] transition-colors">
+                <button type="button" aria-label="Send governed question" onClick={() => void askGovernedQuestion()} disabled={querying} className="w-7 h-7 bg-[#8B1E2D] rounded-lg flex items-center justify-center hover:bg-[#7a1a27] transition-colors disabled:cursor-not-allowed disabled:opacity-60">
                   <Send size={12} className="text-white" />
                 </button>
               </div>
