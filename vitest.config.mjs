@@ -1,4 +1,7 @@
 import { defineConfig } from "vitest/config";
+import { fileURLToPath } from "node:url";
+
+const fromRoot = (path) => fileURLToPath(new URL(path, import.meta.url));
 
 export default defineConfig({
   esbuild: {
@@ -13,8 +16,8 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      "@": new URL("./src", import.meta.url).pathname,
-      "@axxess/shared": new URL("./packages/shared/src/index.ts", import.meta.url).pathname,
+      "@": fromRoot("./src"),
+      "@axxess/shared": fromRoot("./packages/shared/src/index.ts"),
     },
   },
 });
