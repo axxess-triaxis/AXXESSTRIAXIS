@@ -344,9 +344,24 @@ Enterprise AI operating platform for regulated deployments across GCC, Singapore
 
 ## 11) Honest limitations
 
-- Current known bottlenecks: [list]
-- Non-goals in current phase: [list]
-- Technical debt tracked in: [link to issues/project]
+- Pre-SOC2 and no external compliance certifications yet; architecture is comply-by-design but can't bypass infosec vendor questionnaires without third-party attestations
+- Single-region deployment only; no active-active failover or cross-region DR
+- BYOK/HSM integration still in progress; customers can't bring their own keys today
+- No automated certification evidence mapping; compliance artifacts are manual exports
+- Localized NLP for Arabic and Indic languages is foundational, not production-ready
+- Single-dev codebase (88.5% TypeScript); engineering redundancy is the first hire, not a luxury
+- No enterprise SLA or SLO guarantees until multi-region and observability hardening complete
+
+*Non-goals in current phase*
+
+- Not building a consumer-friendly prompt UI or ChatGPT wrapper; this is infrastructure for governed workloads only
+- Not supporting unregulated or low-compliance workloads; if you don't need audit trails, we're too heavy
+- Not optimizing for demo speed or time-to-first-token over governance depth
+- Not pursuing SOC2/ISO certification until first paid enterprise design partner validates the control surface
+- Not building multi-model fine-tuning pipelines; we orchestrate and govern, we don't train
+- Not targeting SMB or self-serve PLG motion outside India tier; GCC/Singapore/EU is enterprise sales only
+
+  
 
 ### Website
 [https://axxesstriaxis.vercel.app](https://axxesstriaxis.vercel.app)
