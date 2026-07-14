@@ -17,6 +17,8 @@ describe("AI router", () => {
     expect(result.providerUsed).toBe("local");
     expect(result.answer).toContain("deterministic local provider");
     expect(result.routingReason).toContain("local fallback");
+    expect(result.fallbackChain).toContain("local");
+    expect(result.policyId).toBe("tenant-default-ai-routing-policy");
   });
 
   it("reports configured provider health", () => {
