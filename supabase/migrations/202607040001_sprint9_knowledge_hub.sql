@@ -64,8 +64,7 @@ alter table public.documents
       coalesce(title, '') || ' ' ||
       coalesce(description, '') || ' ' ||
       coalesce(file_name, '') || ' ' ||
-      coalesce(mime_type, '') || ' ' ||
-      coalesce(array_to_string(tags, ' '), '')
+      coalesce(mime_type, '')
     )
   ) stored;
 
@@ -146,8 +145,7 @@ alter table public.knowledge_articles
       'english',
       coalesce(title, '') || ' ' ||
       coalesce(summary, '') || ' ' ||
-      coalesce(body_markdown, '') || ' ' ||
-      coalesce(array_to_string(tags, ' '), '')
+      coalesce(body_markdown, '')
     )
   ) stored;
 
