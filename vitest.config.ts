@@ -1,7 +1,6 @@
-import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react-swc";
 
-export default defineConfig({
+const vitestConfig = {
   plugins: [react()],
   test: {
     environment: "jsdom",
@@ -14,4 +13,6 @@ export default defineConfig({
       "@": new URL("./src", import.meta.url).pathname,
     },
   },
-});
+};
+
+export default vitestConfig;
