@@ -15,7 +15,9 @@ import {
 import type { UserContext } from "../security/rbac";
 import { createUserProfile, loadStoredUserProfile, mergeUserProfile, saveStoredUserProfile, type LocalUserProfile } from "./localProfile";
 import {
+  createServerProfile,
   fetchServerSession,
+  saveServerProfile,
   signInWithPassword,
   signOutOfSupabase,
 } from "./supabaseAuthClient";
@@ -137,6 +139,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (session.status !== "authenticated") {
       throw new Error("Profile updates require an authenticated session.");
     }
+    if (featureFlags.enableAuthShell && session.source === "supabase-auth" && !isDemoModeEnabled()) {
+      const authState = await saveServerProfile(input);
+      const updatedUser = mergeUserProfile(authState.user, input);
+      saveStoredUserProfile(updatedUser, {
+        displayName: updatedUser.displayName,
+        email: updatedUser.email,
+        avatarInitials: updatedUser.avatarInitials,
+        department: updatedUser.department,
+        title: updatedUser.title,
+        timezone: updatedUser.timezone,
+      });
+      setSession({ ...session, user: updatedUser });
+      return updatedUser;
+    }
     const updatedUser = mergeUserProfile(session.user, input);
     saveStoredUserProfile(updatedUser, {
       displayName: updatedUser.displayName,
@@ -153,6 +169,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const createProfile = useCallback(async (input: LocalUserProfile) => {
     if (session.status !== "authenticated") {
       throw new Error("Profile creation requires an authenticated session.");
+    }
+    if (featureFlags.enableAuthShell && session.source === "supabase-auth" && !isDemoModeEnabled()) {
+      const authState = await createServerProfile(input);
+      const createdUser = mergeUserProfile(authState.user, input);
+      saveStoredUserProfile(createdUser, {
+        displayName: createdUser.displayName,
+        email: createdUser.email,
+        avatarInitials: createdUser.avatarInitials,
+        department: createdUser.department,
+        title: createdUser.title,
+        timezone: createdUser.timezone,
+      });
+      setSession({ ...session, user: createdUser });
+      return createdUser;
     }
     const createdUser = createUserProfile(session.user, input);
     saveStoredUserProfile(createdUser, {

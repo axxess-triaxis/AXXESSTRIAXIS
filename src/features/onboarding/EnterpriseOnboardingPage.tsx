@@ -34,6 +34,8 @@ type EnterpriseOnboardingPageProps = {
 export function EnterpriseOnboardingPage({ step }: EnterpriseOnboardingPageProps) {
   const router = useRouter();
   const [state, setState] = useState<EnterpriseOnboardingState>(() => createDefaultOnboardingState());
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState<{ tone: "success" | "error" | "info"; text: string } | null>(null);
 
   useEffect(() => {
     setState(loadState());
@@ -44,7 +46,35 @@ export function EnterpriseOnboardingPage({ step }: EnterpriseOnboardingPageProps
     saveState(nextState);
   }
 
-  function continueFlow() {
+  async function continueFlow() {
+    if (step === "complete") {
+      if (!isOnboardingComplete(state)) {
+        setMessage({ tone: "error", text: "Complete organization, role, workspace and notice steps before provisioning." });
+        return;
+      }
+
+      setBusy(true);
+      setMessage(null);
+      try {
+        const response = await fetch("/api/onboarding/provision", {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(state),
+        });
+        const result = await response.json().catch(() => ({} as { error?: string }));
+        if (!response.ok) throw new Error(result.error ?? "Tenant provisioning failed.");
+        window.localStorage.removeItem(storageKey);
+        trackEvent("organization_created", { sector: state.sector, role: state.role }, { module_name: "onboarding", route: "/onboarding/complete" });
+        router.push("/dashboard");
+      } catch (error) {
+        setMessage({ tone: "error", text: error instanceof Error ? error.message : "Tenant provisioning failed." });
+      } finally {
+        setBusy(false);
+      }
+      return;
+    }
+
     const nextPath = nextOnboardingPath(step, state);
     if (step === "security") {
       trackEvent("onboarding_step_completed", { step, notices_accepted: state.acceptedNotices.length }, { module_name: "onboarding", route: "/onboarding/security" });
@@ -165,9 +195,15 @@ export function EnterpriseOnboardingPage({ step }: EnterpriseOnboardingPageProps
               </div>
             )}
 
+            {message && (
+              <div className={`mt-5 rounded-lg px-3 py-2 text-xs font-medium ${message.tone === "error" ? "bg-red-50 text-red-700" : message.tone === "success" ? "bg-emerald-50 text-emerald-700" : "bg-[#F8F9FA] text-[#0F1117]"}`}>
+                {message.text}
+              </div>
+            )}
+
             <div className="mt-6 flex flex-wrap gap-3">
-              <button onClick={continueFlow} className="rounded-lg bg-[#8B1E2D] px-4 py-2 text-sm font-semibold text-white hover:bg-[#7a1a27]">
-                {step === "complete" ? "Enter dashboard" : "Continue"}
+              <button onClick={() => void continueFlow()} disabled={busy} className="rounded-lg bg-[#8B1E2D] px-4 py-2 text-sm font-semibold text-white hover:bg-[#7a1a27] disabled:cursor-not-allowed disabled:opacity-60">
+                {busy ? "Provisioning..." : step === "complete" ? "Provision tenant" : "Continue"}
               </button>
               <Link href="/auth" className="rounded-lg border border-[rgba(0,0,0,0.12)] px-4 py-2 text-sm font-semibold text-[#0F1117]">
                 Back to auth

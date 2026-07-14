@@ -1,5 +1,41 @@
 # Sprint Log
 
+## Sprint 19 - Functional Enterprise AI Journey
+
+Sprint 19 converts the polished enterprise beta into a usable external-organization workflow. It preserves the existing UI and architecture while adding live onboarding, profile persistence, tenant selection, document ingestion, governed RAG, human review, and selected-email import.
+
+### Completed
+
+- Added live profile read/update and tenant provisioning APIs backed by Supabase service-role server routes.
+- Added reset-password finalization through a verified Supabase recovery token.
+- Added tenant selection API that verifies organization membership before switching the active tenant.
+- Added document text ingestion from the Documents screen with metadata, document version, activity, chunking, local embeddings, persistent RAG chunks, and audit events.
+- Added governed RAG query and review APIs with permission-aware retrieval, citations, AI output audit records, and approve/reject workflow action records.
+- Hardened the generic AI API so tenant context comes from the server session instead of a client-supplied organization id.
+- Added Gmail/Microsoft connector contract, OAuth start route, selected email import preview, confirmation-before-create behavior, and audit logging.
+- Added Sprint 19 Supabase migration for user profile metadata, AI conversations, workflow action reviews, connector sync logs, and RAG chunk metadata.
+- Added focused tests for provisioning helpers, connector preview logic, and tenant RAG ingestion/query behavior.
+
+### Live
+
+- A signed-in user can create a clean tenant from onboarding.
+- A user can paste document text, index it, ask a cited tenant-scoped question, and approve or reject the answer.
+- A selected email can be previewed for tasks, decisions, stakeholders, and then confirmed into workspace records.
+
+### Provider-Gated
+
+- OAuth callback and token exchange require Gmail/Microsoft credentials.
+- Full binary file parsing requires a storage extraction worker.
+- Production-grade remote embeddings require provider keys and vector search configuration.
+
+### Sprint 20 Recommendations
+
+- Complete OAuth callback/token exchange and encrypted token storage.
+- Add binary document extraction for PDF, DOCX, XLSX, and email attachments.
+- Add persistent stakeholder and approval repositories.
+- Add active tenant session cookie instead of updating the primary user tenant row.
+- Add E2E tests for sign-up to RAG approval journey against a seeded Supabase branch.
+
 ## Sprint 18 - Pilot Conversion, Audit Exports, And Delivery Evidence
 
 Sprint 18 converts the Sprint 17 pilot operations foundation into a sponsor-review workflow. It adds pilot health scoring, governed export records, invitation delivery evidence, and mobile screenshot automation while preserving the existing AXXESS UI architecture.

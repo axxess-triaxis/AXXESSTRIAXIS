@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import type { Route } from "next";
 import { Card } from "../../components/ui/Card";
@@ -67,9 +67,17 @@ export function EnterpriseAuthFlowPage({ kind }: { kind: AuthFlowKind }) {
   const copy = flowCopy[kind];
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [recoveryToken, setRecoveryToken] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (kind !== "reset-password" || typeof window === "undefined") return;
+    const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+    const token = hashParams.get("access_token") ?? hashParams.get("token") ?? "";
+    if (token) setRecoveryToken(token);
+  }, [kind]);
 
   async function submit() {
     if (kind === "login") {
@@ -91,7 +99,7 @@ export function EnterpriseAuthFlowPage({ kind }: { kind: AuthFlowKind }) {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, displayName }),
+        body: JSON.stringify({ email, password, displayName, accessToken: recoveryToken }),
       });
       const body = await response.json().catch(() => ({} as { message?: string; error?: string; blocker?: string }));
       setMessage(body.message ?? body.blocker ?? body.error ?? (response.ok ? "Request accepted." : "Request could not be completed."));
@@ -124,6 +132,19 @@ export function EnterpriseAuthFlowPage({ kind }: { kind: AuthFlowKind }) {
             </label>
             <label className="mt-3 block">
               <span className="mb-1.5 block text-xs font-semibold text-[#0F1117]">Password</span>
+              <input value={password} onChange={(event) => setPassword(event.target.value)} type="password" className="w-full rounded-lg border border-[rgba(0,0,0,0.12)] bg-white px-3 py-2 text-sm outline-none focus:border-[#8B1E2D]" />
+            </label>
+          </>
+        )}
+
+        {kind === "reset-password" && (
+          <>
+            <label className="mt-5 block">
+              <span className="mb-1.5 block text-xs font-semibold text-[#0F1117]">Recovery token</span>
+              <input value={recoveryToken} onChange={(event) => setRecoveryToken(event.target.value)} className="w-full rounded-lg border border-[rgba(0,0,0,0.12)] bg-white px-3 py-2 text-sm outline-none focus:border-[#8B1E2D]" />
+            </label>
+            <label className="mt-3 block">
+              <span className="mb-1.5 block text-xs font-semibold text-[#0F1117]">New password</span>
               <input value={password} onChange={(event) => setPassword(event.target.value)} type="password" className="w-full rounded-lg border border-[rgba(0,0,0,0.12)] bg-white px-3 py-2 text-sm outline-none focus:border-[#8B1E2D]" />
             </label>
           </>
