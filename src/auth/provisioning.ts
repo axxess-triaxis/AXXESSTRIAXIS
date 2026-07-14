@@ -147,7 +147,8 @@ export async function updateTenantProfile(user: UserContext, input: ProfileInput
   ensureAdminRuntime();
   const displayName = input.displayName?.trim() || user.displayName || input.email || user.email || "AXXESS User";
   const email = input.email?.trim().toLowerCase() || user.email || "";
-  const avatarInitials = initialsForName(input.avatarInitials || displayName);
+  const cleanedInitials = input.avatarInitials?.replace(/[^a-z]/gi, "").slice(0, 3).toUpperCase();
+  const avatarInitials = (cleanedInitials && cleanedInitials.length > 0 ? cleanedInitials : undefined) ?? user.avatarInitials ?? initialsForName(displayName);
 
   await supabaseAdminRest("profiles", {
     method: "POST",
