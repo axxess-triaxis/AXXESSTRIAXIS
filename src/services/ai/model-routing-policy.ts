@@ -74,7 +74,7 @@ export function getAiProviderConfigurations(env: NodeJS.ProcessEnv = process.env
     xai: Boolean(env.XAI_API_KEY),
     falcon: Boolean(env.FALCON_API_BASE_URL && env.FALCON_API_KEY),
     jais: Boolean(env.JAIS_API_BASE_URL && env.JAIS_API_KEY),
-    local: env.LOCAL_AI_PROVIDER_ENABLED === "true" || env.AXXESS_AI_ROUTING_MODE === "demo" || !env.AXXESS_AI_ROUTING_MODE,
+    local: true,
   };
 
   return (Object.keys(providerCapabilities) as AiProviderName[]).map((name) => ({
