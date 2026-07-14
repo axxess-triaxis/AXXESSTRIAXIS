@@ -13,7 +13,12 @@ type AdminPanelId =
   | "privacy"
   | "compliance"
   | "ai-governance"
+  | "model-policy"
   | "prompt-approvals"
+  | "plugin-runtime"
+  | "execution-runs"
+  | "usage-limits"
+  | "support-ops"
   | "audit-logs"
   | "backups";
 
@@ -72,11 +77,41 @@ const panelContent: Record<AdminPanelId, { title: string; description: string; a
     actions: ["Set human review threshold", "Review RAG permissions", "Inspect AI output audit"],
     evidence: ["ai_output_audit", "source citations", "confidence score"],
   },
+  "model-policy": {
+    title: "Model Policy",
+    description: "Review provider-neutral AI routing, fallback chains, spend posture, and human approval rules.",
+    actions: ["Preview routing", "Review provider allowlist", "Inspect usage ledger"],
+    evidence: ["tenant_model_policies", "ai_usage_ledger", "gateway tags"],
+  },
   "prompt-approvals": {
     title: "Prompt Approvals",
     description: "Approve, reject, retire, and review prompt templates before production AI use.",
     actions: ["Approve prompt", "Reject prompt", "Retire prompt"],
     evidence: ["prompt version", "approval timestamp", "review owner"],
+  },
+  "plugin-runtime": {
+    title: "Plugin Runtime",
+    description: "Manage tenant-owned connector contracts, OAuth scope posture, sync status, revocation, and write approvals.",
+    actions: ["Review plugin scopes", "Approve connector action", "Revoke provider access"],
+    evidence: ["plugin_installations", "plugin_action_requests", "plugin_sync_runs"],
+  },
+  "execution-runs": {
+    title: "Execution Runs",
+    description: "Prepare governed sandbox jobs for plugin sync, AI tools, document extraction, webhooks, and report exports.",
+    actions: ["Create dry-run job", "Review sandbox policy", "Inspect Kubernetes spec"],
+    evidence: ["execution_jobs", "execution_runs", "execution_artifacts"],
+  },
+  "usage-limits": {
+    title: "Usage Limits",
+    description: "Track tenant plan limits for AI, RAG, document ingestion, plugin actions, sandbox runs, and audit exports.",
+    actions: ["Review current usage", "Adjust pilot cap", "Escalate limit warning"],
+    evidence: ["tenant_usage_limits", "usage window", "hard-stop policy"],
+  },
+  "support-ops": {
+    title: "Support Operations",
+    description: "Monitor incidents, readiness controls, and customer-support signals before expanding live pilots.",
+    actions: ["Triage incident", "Open readiness review", "Record resolution"],
+    evidence: ["support_incidents", "platform readiness score", "incident audit trail"],
   },
   "audit-logs": {
     title: "Audit Logs",
@@ -133,7 +168,7 @@ export function EnterpriseAdminPage({ panel }: { panel: AdminPanelId }) {
             <Card className="p-5">
               <h2 className="text-sm font-semibold text-[#0F1117]">Beta readiness note</h2>
               <p className="mt-2 text-sm leading-relaxed text-[#5F6B73]">
-                This admin surface is wired for Sprint 13 review and tenant readiness. Live mutation paths must use server-only routes and Supabase RLS policies before paid pilot use.
+                This admin surface is wired for Sprint 20 and Sprint 21 enterprise readiness. Live mutation paths use server-only routes, tenant-scoped policies, and audit records before autonomous workflow execution is enabled.
               </p>
             </Card>
           </div>

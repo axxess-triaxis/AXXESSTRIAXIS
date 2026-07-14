@@ -28,6 +28,19 @@ export type AiReasoningLevel = "low" | "medium" | "high";
 export type AiCostPreference = "low" | "balanced" | "premium";
 export type AiLatencyPreference = "instant" | "balanced" | "thorough";
 
+export type AiTenantRoutingPolicyInput = {
+  policyId?: string;
+  allowedProviders?: AiProviderName[];
+  blockedProviders?: AiProviderName[];
+  preferredProviders?: Partial<Record<AiTaskCategory, AiProviderName>>;
+  fallbackProviders?: AiProviderName[];
+  maxEstimatedCostPerRequestUsd?: number;
+  requireHumanApprovalFor?: AiTaskCategory[];
+  restrictedDataExternalProviders?: boolean;
+  zeroDataRetentionRequired?: boolean;
+  gatewayTags?: string[];
+};
+
 export type AiRoutingContext = {
   organizationId: string;
   userId: string;
@@ -40,6 +53,7 @@ export type AiRoutingContext = {
   costPreference?: AiCostPreference;
   latencyPreference?: AiLatencyPreference;
   requiresCitation?: boolean;
+  tenantModelPolicy?: AiTenantRoutingPolicyInput;
 };
 
 export type AiPromptRequest = {
@@ -90,11 +104,16 @@ export type AiRouteResult = {
   modelUsed: string;
   providerUsed: AiProviderName;
   routingReason: string;
+  fallbackChain: AiProviderName[];
   confidence: number;
   humanReviewRequired: boolean;
   citations: RagCitation[];
   auditId: string;
   latencyMs: number;
   costTier: AiProviderConfig["costTier"];
+  estimatedCostUsd: number;
+  policyId: string;
+  gatewayTags: string[];
+  approvalReason?: string;
 };
 
