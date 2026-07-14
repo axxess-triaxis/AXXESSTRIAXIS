@@ -1,4 +1,8 @@
+"use client";
+
+import { useState } from "react";
 import { SectionHeader } from "../../components/layout/SectionHeader";
+import { InlineToast } from "../../components/forms/InlineToast";
 import { Card } from "../../components/ui/Card";
 import { applicationServices } from "../../providers/serviceProvider";
 import { getIntegrationHealth, getProductivityPluginRegistry } from "../../services/integrations/pluginRegistry";
@@ -10,9 +14,93 @@ const pluginHealth = getIntegrationHealth();
 const connectedCount = integrations.filter((integration) => integration.status === "connected").length;
 const disconnectedCount = integrations.length - connectedCount;
 
-export const IntegrationsSection = () => (
+export const IntegrationsSection = () => {
+  const [emailForm, setEmailForm] = useState({
+    providerId: "gmail",
+    from: "",
+    subject: "",
+    sourceLink: "",
+    bodyText: "",
+  });
+  const [preview, setPreview] = useState<{ summary: string; tasks: string[]; decisions: string[]; stakeholders: string[]; tags: string[] } | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [toast, setToast] = useState<{ tone: "success" | "error" | "info"; message: string } | null>(null);
+
+  async function importEmail(confirm: boolean) {
+    setSaving(true);
+    setToast(null);
+    try {
+      const response = await fetch("/api/connectors/email/import", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...emailForm, confirm }),
+      });
+      const result = await response.json().catch(() => ({} as { error?: string; preview?: typeof preview; tasks?: unknown[] }));
+      if (!response.ok) throw new Error(result.error ?? "Email import failed.");
+      if (!confirm) {
+        setPreview(result.preview ?? null);
+        setToast({ tone: "info", message: "Review extracted tasks, decisions and stakeholders before creating records." });
+      } else {
+        setToast({ tone: "success", message: `Email imported with ${(result.tasks ?? []).length} confirmed task record(s).` });
+        setPreview(null);
+      }
+    } catch (error) {
+      setToast({ tone: "error", message: error instanceof Error ? error.message : "Email import failed." });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
   <div className="space-y-5">
     <SectionHeader title="Integrations" subtitle={`${pluginHealth.total} plugin adapters - ${pluginHealth.webhookReady} webhook-ready - ${connectedCount} connected - ${disconnectedCount} disconnected - provider-gated for production credentials`} />
+
+    <Card className="p-5">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div>
+          <h3 className="text-sm font-semibold text-[#0F1117]">Email Connector Pilot</h3>
+          <p className="mt-1 max-w-2xl text-xs leading-relaxed text-[#5F6B73]">Start OAuth for Gmail or Microsoft, then import only a selected email into the workspace. AXXESS previews tasks, decisions and stakeholders before any records are created.</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <a href="/api/connectors/oauth/start?provider=gmail" className="rounded-lg border border-[rgba(139,30,45,0.22)] bg-white px-3 py-2 text-xs font-semibold text-[#8B1E2D] hover:bg-[#8B1E2D]/5">Connect Gmail</a>
+            <a href="/api/connectors/oauth/start?provider=microsoft" className="rounded-lg border border-[rgba(139,30,45,0.22)] bg-white px-3 py-2 text-xs font-semibold text-[#8B1E2D] hover:bg-[#8B1E2D]/5">Connect Microsoft</a>
+          </div>
+        </div>
+        <div className="grid w-full gap-2 lg:max-w-md">
+          <div className="grid grid-cols-2 gap-2">
+            <select value={emailForm.providerId} onChange={(event) => setEmailForm({ ...emailForm, providerId: event.target.value })} className="rounded-lg border border-[rgba(0,0,0,0.12)] bg-white px-3 py-2 text-xs outline-none">
+              <option value="gmail">Gmail</option>
+              <option value="microsoft">Microsoft</option>
+            </select>
+            <input value={emailForm.from} onChange={(event) => setEmailForm({ ...emailForm, from: event.target.value })} placeholder="Sender" className="rounded-lg border border-[rgba(0,0,0,0.12)] bg-white px-3 py-2 text-xs outline-none" />
+          </div>
+          <input value={emailForm.subject} onChange={(event) => setEmailForm({ ...emailForm, subject: event.target.value })} placeholder="Subject" className="rounded-lg border border-[rgba(0,0,0,0.12)] bg-white px-3 py-2 text-xs outline-none" />
+          <input value={emailForm.sourceLink} onChange={(event) => setEmailForm({ ...emailForm, sourceLink: event.target.value })} placeholder="Source link" className="rounded-lg border border-[rgba(0,0,0,0.12)] bg-white px-3 py-2 text-xs outline-none" />
+          <textarea value={emailForm.bodyText} onChange={(event) => setEmailForm({ ...emailForm, bodyText: event.target.value })} placeholder="Paste selected email text" rows={4} className="rounded-lg border border-[rgba(0,0,0,0.12)] bg-white px-3 py-2 text-xs outline-none" />
+          <div className="flex flex-wrap gap-2">
+            <button onClick={() => void importEmail(false)} disabled={saving} className="rounded-lg border border-[rgba(0,0,0,0.12)] px-3 py-2 text-xs font-semibold text-[#0F1117] hover:bg-[#F2F3F5] disabled:opacity-60">Preview extraction</button>
+            <button onClick={() => void importEmail(true)} disabled={saving || !preview} className="rounded-lg bg-[#8B1E2D] px-3 py-2 text-xs font-semibold text-white hover:bg-[#7a1a27] disabled:opacity-60">Confirm import</button>
+          </div>
+        </div>
+      </div>
+      {toast && <div className="mt-4"><InlineToast tone={toast.tone} message={toast.message} /></div>}
+      {preview && (
+        <div className="mt-4 grid gap-3 md:grid-cols-4">
+          {[
+            ["Summary", [preview.summary]],
+            ["Tasks", preview.tasks],
+            ["Decisions", preview.decisions],
+            ["Stakeholders", preview.stakeholders],
+          ].map(([label, values]) => (
+            <div key={label as string} className="rounded-lg bg-[#F8F9FA] p-3">
+              <div className="mb-2 text-[10px] font-semibold uppercase text-[#5F6B73]">{label as string}</div>
+              {(values as string[]).slice(0, 3).map((value) => <p key={value} className="mb-1 text-[11px] leading-relaxed text-[#0F1117]">{value}</p>)}
+              {(values as string[]).length === 0 && <p className="text-[11px] text-[#5F6B73]">No candidate detected</p>}
+            </div>
+          ))}
+        </div>
+      )}
+    </Card>
 
     <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
       {[
@@ -72,6 +160,7 @@ export const IntegrationsSection = () => (
       </div>
     </Card>
   </div>
-);
+  );
+};
 
 export default IntegrationsSection;
