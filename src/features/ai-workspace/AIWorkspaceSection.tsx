@@ -322,7 +322,7 @@ export const AIWorkspaceSection = () => {
                   placeholder="Ask AXXESS about portfolios, approvals, risks, or cited institutional documents"
                   className="flex-1 bg-transparent text-sm text-[#0F1117] placeholder:text-[#5F6B73] outline-none"
                 />
-                <button onClick={() => void askGovernedQuestion()} disabled={querying} className="w-7 h-7 bg-[#8B1E2D] rounded-lg flex items-center justify-center hover:bg-[#7a1a27] transition-colors disabled:cursor-not-allowed disabled:opacity-60">
+                <button type="button" aria-label="Send governed question" onClick={() => void askGovernedQuestion()} disabled={querying} className="w-7 h-7 bg-[#8B1E2D] rounded-lg flex items-center justify-center hover:bg-[#7a1a27] transition-colors disabled:cursor-not-allowed disabled:opacity-60">
                   <Send size={12} className="text-white" />
                 </button>
               </div>
