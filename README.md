@@ -167,5 +167,186 @@ Our ambition is not just distribution—it is **durable, compliant, explainable 
 
 Website - www.triaxisventures.com
 
+# AXXESS by Triaxis
+
+Enterprise AI operating platform for regulated deployments across GCC, Singapore, India, and Europe.
+
+> **Status:** Active development  
+> **Maturity:** [Prototype / Alpha / Beta / Production]  
+> **Last updated:** 2026-07-14
+
+---
+
+## 1) What is actually built today
+
+### Core platform modules (implemented)
+- [ ] **Identity & Access**: SSO/OIDC, RBAC, tenant-scoped permissions
+- [ ] **Policy Engine**: request-time policy checks, model/data guardrails
+- [ ] **Inference Gateway**: provider abstraction, retries, routing, quotas
+- [ ] **Prompt/Workflow Runtime**: versioned prompts, deterministic run configs
+- [ ] **Observability**: request tracing, model call logs, latency/cost metrics
+- [ ] **Audit & Evidence**: immutable audit events, exportable evidence bundles
+- [ ] **Data Residency Controls**: region pinning, data boundary enforcement
+- [ ] **Admin Console/API**: tenant management, policy config, audit queries
+
+### In-progress
+- [ ] BYOK/HSM integration
+- [ ] Jurisdiction-specific compliance packs
+- [ ] Regional model adaptation pipelines
+
+### Not built yet
+- [ ] Automated certification evidence mapping
+- [ ] Cross-region active-active failover
+
+---
+
+## 2) Architecture (current)
+
+```text
+[Client Apps]
+   │
+   ▼
+[API Gateway / AuthN/AuthZ]
+   │
+   ├──► [Policy Decision Point + Guardrails]
+   │
+   ├──► [AI Runtime / Orchestrator]
+   │         ├──► [Model Providers: Open/Closed]
+   │         ├──► [Prompt Registry]
+   │         └──► [Tool Connectors / Enterprise Systems]
+   │
+   ├──► [Observability Pipeline]
+   │         ├── traces
+   │         ├── metrics
+   │         └── structured logs
+   │
+   └──► [Audit Log + Evidence Store]
+             └──► [Compliance Reports / Exports]
+```
+
+### Multi-tenant isolation model
+- Tenant boundary at auth token + data schema + policy scope
+- No cross-tenant data path in runtime
+- Per-tenant keys/secrets and config domains
+
+### Regionalization model (80/20)
+- **80% Common kernel:** runtime, policy, observability, audit
+- **20% Jurisdiction layer:** residency constraints, local integrations, language/regulatory adapters
+
+---
+
+## 3) Tech stack (actual)
+
+### Backend
+- **TypeScript** (primary)
+- Node.js runtime
+- PostgreSQL (+ **PL/pgSQL** procedures for policy/audit workflows)
+
+### Frontend/Admin
+- TypeScript + JavaScript
+- CSS/HTML
+
+### Infra/DevOps
+- Shell scripts for CI/CD/deploy automation
+- [Add: cloud provider, container runtime, IaC tool, secrets manager]
+
+> Repo language profile: TypeScript 89.7%, PLpgSQL 7.0%, JavaScript 2.4%, CSS 0.7%, Shell 0.1%, HTML 0.1%
+
+---
+
+## 4) Data & control plane design
+
+### Request lifecycle
+1. AuthN/AuthZ validates tenant + principal
+2. Policy engine evaluates request against controls
+3. Runtime executes model/tool workflow
+4. Full trace + audit event persisted
+5. Evidence artifacts available for export
+
+### Audit event schema (minimum)
+- request_id, tenant_id, actor_id
+- policy_version, model_version, prompt_version
+- decision outcome + rationale reference
+- timestamps, region, data classification tags
+- cryptographic integrity marker (hash/signature)
+
+---
+
+## 5) Security & compliance controls (implemented vs planned)
+
+| Control Area | Implemented | Planned | Evidence Location |
+|---|---:|---:|---|
+| Tenant isolation | ✅ |  | `/docs/security/tenant-isolation.md` |
+| Immutable audit trail | ✅ |  | `/docs/compliance/audit-trail.md` |
+| Region pinning | ✅ |  | `/docs/compliance/data-residency.md` |
+| BYOK/HSM |  | 🚧 | `/docs/security/key-management.md` |
+| DSR workflows |  | 🚧 | `/docs/compliance/privacy-ops.md` |
+
+---
+
+## 6) Repository structure
+
+```text
+/apps
+  /admin-console
+  /api
+/packages
+  /policy-engine
+  /runtime
+  /observability
+  /audit
+/db
+  /migrations
+  /functions
+/docs
+  /architecture
+  /security
+  /compliance
+```
+
+---
+
+## 7) Environments & deployment
+
+- **Environments:** dev / staging / prod
+- **Deployment model:** [single-region per tenant | regional cluster]
+- **Release strategy:** [blue/green | rolling]
+- **SLOs:** [availability], [p95 latency], [error budget]
+- **Backups/DR:** [RPO], [RTO], restore test cadence
+
+---
+
+## 8) APIs & integration surface
+
+- REST/GraphQL endpoints: [link]
+- Webhook events: [link]
+- Connector framework: [link]
+- Auth methods: OIDC/SAML/API keys (tenant-scoped)
+
+---
+
+## 9) Engineering quality gates
+
+- Unit/integration/e2e coverage targets
+- Static analysis + type checks
+- Migration rollback checks
+- Security scans (SAST/dependency/container)
+- Policy regression test suite
+
+---
+
+## 10) Roadmap (next 2 quarters)
+
+- Q3: policy simulation mode, evidence automation v1, region pack A
+- Q4: BYOK GA, compliance mapping v2, connector SDK stabilization
+
+---
+
+## 11) Honest limitations
+
+- Current known bottlenecks: [list]
+- Non-goals in current phase: [list]
+- Technical debt tracked in: [link to issues/project]
+
 ### Website
 [https://axxesstriaxis.vercel.app](https://axxesstriaxis.vercel.app)
