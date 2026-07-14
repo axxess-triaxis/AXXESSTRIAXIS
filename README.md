@@ -165,7 +165,7 @@ Our ambition is not just distribution—it is **durable, compliant, explainable 
 
 **AXXESS is a sovereignty-aware, observability-first, governance-native AI platform built so future scale is value-additive—not debt-driven.**
 
----
+Website - www.triaxisventures.com
 
 ### Website
 [https://axxesstriaxis.vercel.app](https://axxesstriaxis.vercel.app)
