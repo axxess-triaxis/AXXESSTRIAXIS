@@ -1,5 +1,60 @@
 # Sprint Log
 
+## Sprint 21 - Enterprise Usage, Readiness, And Support Operations
+
+Sprint 21 adds live-platform operating controls on top of Sprint 20. It introduces usage limits, readiness scoring, support incident primitives, and admin panels for platform review.
+
+### Completed
+
+- Added tenant usage limits for AI requests, document ingestion, plugin actions, sandbox runs, RAG queries, and audit exports.
+- Added readiness scoring across auth, tenant, AI, plugin, sandbox, audit, and support controls.
+- Added support incident primitives for auth, AI, RAG, integrations, mobile, and deployment operations.
+- Added Organization Admin panels for Usage Limits and Support Operations.
+- Added `GET /api/admin/platform-readiness` for admin-only readiness snapshots.
+- Added focused tests for usage-limit evaluation, route metadata, and admin RBAC.
+
+### Live
+
+- Organization administrators can inspect platform readiness controls without modifying tenant data.
+- Usage-limit and support-control primitives are ready for Supabase persistence.
+
+### Provider-Gated
+
+- Customer-facing SLA automation requires support workflow configuration.
+- Usage writebacks require production traffic from AI, plugin, RAG, and sandbox routes.
+
+### Sprint 22 Recommendations
+
+- Add support ticket creation and SLA timers.
+- Persist readiness snapshots from daily scheduled jobs.
+- Add customer-facing usage dashboard and billing-plan mapping.
+
+## Sprint 20 - Plugin Runtime, Multi-Model Routing, And Sandbox Readiness
+
+Sprint 20 adds the governed platform layer for live plugins, provider-neutral AI routing, and controlled execution environments.
+
+### Completed
+
+- Added tenant model policy selection with provider allowlists, fallback chains, cost estimates, gateway tags, and human-review reasons.
+- Extended the AI router output with policy id, fallback chain, estimated cost, and approval metadata.
+- Added a reusable plugin runtime contract with tenant ownership, OAuth scopes, sync mode, webhook posture, write approval, retry policy, revocation, and audit metadata.
+- Added controlled execution job services with dry-run output, policy blocking, and Kubernetes-ready specs.
+- Added authenticated API routes for plugin runtime, model-policy preview, and execution job preparation.
+- Added Supabase migration for plugin runtime, model policies, usage ledger, execution jobs, readiness controls, usage limits, and support incidents.
+- Added tests for model policy, plugin runtime, sandbox execution, and route protection.
+
+### Live
+
+- A tenant can evaluate plugin actions before execution.
+- A tenant can preview model routing and human-review policy.
+- A tenant can prepare sandbox execution specs without running untrusted work.
+
+### Provider-Gated
+
+- Live OAuth sync workers require provider credentials and encrypted token references.
+- Live external model calls require provider or gateway credentials.
+- Real sandbox execution requires approved runner integration.
+
 ## Sprint 19 - Functional Enterprise AI Journey
 
 Sprint 19 converts the polished enterprise beta into a usable external-organization workflow. It preserves the existing UI and architecture while adding live onboarding, profile persistence, tenant selection, document ingestion, governed RAG, human review, and selected-email import.

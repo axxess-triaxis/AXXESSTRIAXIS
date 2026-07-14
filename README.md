@@ -32,6 +32,8 @@ As of 2026-07-14:
 - iOS build pipeline is active in CI/CD.
 - Web build and deployment pipeline is active in CI/CD.
 - Sprint 19 adds the first live external-organization journey: sign-up/login, tenant provisioning, document ingestion, governed RAG, human review, audit logging, and selected-email import.
+- Sprint 20 adds plugin runtime contracts, tenant model policy, AI fallback chains, and controlled execution specs.
+- Sprint 21 adds usage limits, enterprise readiness scoring, and support operations controls.
 
 ## Product Philosophy
 
@@ -63,7 +65,11 @@ Implemented platform baseline includes:
 - Graceful fallback repository behavior when backing services are unavailable.
 - Governed RAG with document ingestion, persistent chunks, permission-aware retrieval, citation handling, answer audit logs, and human approval/rejection records.
 - Provider-neutral AI routing with cost, latency, model, confidence, and human-review metadata.
+- Tenant model policy for provider allowlists, fallback chains, estimated cost controls, gateway tags, and restricted-data routing posture.
 - Connector framework for OAuth-owned integrations, selected email import, confirmation-before-create extraction, sync logs, retry/error posture, revocation readiness, and audit trail.
+- Plugin runtime contracts for OAuth scope management, webhook readiness, write approvals, retry policy, revocation, and tenant-owned sync state.
+- Controlled execution abstraction for plugin sync, AI tools, document extraction, webhooks, report exports, and Kubernetes-ready sandbox specs.
+- Tenant usage limits and readiness scoring for live pilot operations.
 - Local deterministic NLP utilities for extraction, summarization, and classification workflows.
 - Governance modules for IAM controls, audit integrity, privacy planning, and compliance mapping.
 - Operational delivery assets for CI, testing, release checks, and mobile scaffolds.
@@ -96,6 +102,13 @@ AXXESS follows a modular, service-oriented front-end and server architecture wit
 - Governed RAG pipeline with document upload/text ingestion, chunking, local deterministic embeddings, permission-aware retrieval, citation-enriched responses, confidence metadata, and answer audit logs.
 - Human review path records approved/rejected AI answers and can create a follow-up task from an approved recommendation.
 - Local NLP utilities for keyword extraction, summary generation, entity extraction, classification, and tag suggestions.
+- Tenant model policy routes AI work by task, sensitivity, configured providers, cost posture, fallback chain, and human-review requirement.
+
+### Integration and Execution Layer
+
+- Plugin runtime contracts standardize provider scopes, sync posture, webhook support, write approvals, revocation, and audit trail.
+- Controlled execution jobs produce sandbox and Kubernetes-ready specs before plugin sync, AI tools, document extraction, webhooks, or report exports run.
+- Usage limits and support operations prepare AXXESS for live pilot management.
 
 ## Governance, Observability, and Auditability
 
@@ -262,6 +275,10 @@ Key references:
 - docs/API.md
 - docs/SCHEMA.md
 - docs/SPRINT_19_FUNCTIONAL_ENTERPRISE_AI.md
+- docs/SPRINT_20_21_LIVE_AI_PLATFORM.md
+- docs/PLUGIN_RUNTIME.md
+- docs/MODEL_ROUTING.md
+- docs/SANDBOX_EXECUTION.md
 
 ## Contributing
 

@@ -1,6 +1,6 @@
 import { classifyAiPrompt } from "../prompt-classifier";
-import { selectAiProvider } from "../model-routing-policy";
 import { buildAiProviderAdapters } from "../providers";
+import { selectTenantModelRoute } from "../tenantModelPolicy";
 import type { AiPromptRequest, AiRouteResult } from "../types";
 
 function makeAuditId() {
@@ -11,22 +11,33 @@ export async function routeAiRequest(request: AiPromptRequest, env: NodeJS.Proce
   const startedAt = Date.now();
   const classification = classifyAiPrompt(request);
   const adapters = buildAiProviderAdapters(env);
-  const { provider, reason } = selectAiProvider(classification, request.context, adapters.map((adapter) => adapter.config));
+  const routeDecision = selectTenantModelRoute(
+    request.prompt,
+    classification,
+    request.context,
+    adapters.map((adapter) => adapter.config),
+  );
+  const provider = routeDecision.provider;
   const adapter = adapters.find((candidate) => candidate.config.name === provider.name) ?? adapters.find((candidate) => candidate.config.name === "local")!;
   const completion = await adapter.complete(request, classification);
-  const humanReviewRequired = classification.humanReviewRequired || completion.confidence < 0.62 || classification.sensitivity === "restricted";
+  const humanReviewRequired = routeDecision.requiresHumanApproval || completion.confidence < 0.62 || classification.sensitivity === "restricted";
 
   return {
     answer: completion.text,
     modelUsed: provider.name === "local" ? "local-deterministic-v1" : `${provider.name}-adapter`,
     providerUsed: provider.name,
-    routingReason: reason,
+    routingReason: routeDecision.reason,
+    fallbackChain: routeDecision.fallbackChain,
     confidence: Math.min(classification.confidence, completion.confidence),
     humanReviewRequired,
     citations: completion.citations ?? [],
     auditId: makeAuditId(),
     latencyMs: completion.latencyMs ?? Date.now() - startedAt,
     costTier: provider.costTier,
+    estimatedCostUsd: routeDecision.estimatedCostUsd,
+    policyId: routeDecision.policy.policyId,
+    gatewayTags: routeDecision.gatewayTags,
+    approvalReason: routeDecision.approvalReason,
   };
 }
 
