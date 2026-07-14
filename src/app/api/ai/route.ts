@@ -8,7 +8,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "prompt and tenant context are required" }, { status: 400 });
   }
 
-  const result = await routeAiRequest(body as AiPromptRequest);
-  return NextResponse.json(result);
+  try {
+    const result = await routeAiRequest(body as AiPromptRequest);
+    return NextResponse.json(result);
+  } catch {
+    return NextResponse.json({ error: "AI routing failed" }, { status: 500 });
+  }
 }
 
