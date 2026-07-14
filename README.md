@@ -23,7 +23,7 @@ AXXESS is an institutional execution layer with human-in-the-loop AI, governed r
 
 ## Current Build and Release Status
 
-As of 2026-07-13:
+As of 2026-07-14:
 
 - Web production website is live on https://www.triaxisventures.com.
 - Beta web experience is hosted separately on beta.triaxisventures.com.
@@ -31,6 +31,9 @@ As of 2026-07-13:
 - Android build pipeline is active in CI/CD.
 - iOS build pipeline is active in CI/CD.
 - Web build and deployment pipeline is active in CI/CD.
+- Sprint 19 adds the first live external-organization journey: sign-up/login, tenant provisioning, document ingestion, governed RAG, human review, audit logging, and selected-email import.
+- Sprint 20 adds plugin runtime contracts, tenant model policy, AI fallback chains, and controlled execution specs.
+- Sprint 21 adds usage limits, enterprise readiness scoring, and support operations controls.
 
 ## Product Philosophy
 
@@ -57,9 +60,16 @@ Implemented platform baseline includes:
 
 - Next.js App Router application shell with protected route surfaces.
 - Supabase-first repository model for auth, tenant entities, storage, and audit trails.
+- Live onboarding route for clean organization creation, profile persistence, role provisioning, workspace setup, and tenant selection.
 - Demo Mode for controlled preview environments with seeded institutional data.
 - Graceful fallback repository behavior when backing services are unavailable.
-- Governed RAG with permission-aware retrieval, citation handling, and answer audit logs.
+- Governed RAG with document ingestion, persistent chunks, permission-aware retrieval, citation handling, answer audit logs, and human approval/rejection records.
+- Provider-neutral AI routing with cost, latency, model, confidence, and human-review metadata.
+- Tenant model policy for provider allowlists, fallback chains, estimated cost controls, gateway tags, and restricted-data routing posture.
+- Connector framework for OAuth-owned integrations, selected email import, confirmation-before-create extraction, sync logs, retry/error posture, revocation readiness, and audit trail.
+- Plugin runtime contracts for OAuth scope management, webhook readiness, write approvals, retry policy, revocation, and tenant-owned sync state.
+- Controlled execution abstraction for plugin sync, AI tools, document extraction, webhooks, report exports, and Kubernetes-ready sandbox specs.
+- Tenant usage limits and readiness scoring for live pilot operations.
 - Local deterministic NLP utilities for extraction, summarization, and classification workflows.
 - Governance modules for IAM controls, audit integrity, privacy planning, and compliance mapping.
 - Operational delivery assets for CI, testing, release checks, and mobile scaffolds.
@@ -83,13 +93,22 @@ AXXESS follows a modular, service-oriented front-end and server architecture wit
 ### Auth and Access Model
 
 - Supabase Auth integration with route-aware auth surfaces.
+- Email/password sign-up, login, logout, session persistence, password recovery, reset finalization, live profile update, organization creation, invitation acceptance, and tenant selection routes.
 - MFA and passkey-ready route patterns and recovery flows.
 - Tenant-aware access patterns and role-oriented control boundaries.
 
 ### Knowledge and Intelligence Layer
 
-- Governed RAG pipeline with document chunking, permission-aware retrieval, citation-enriched responses, confidence metadata, and answer audit logs.
+- Governed RAG pipeline with document upload/text ingestion, chunking, local deterministic embeddings, permission-aware retrieval, citation-enriched responses, confidence metadata, and answer audit logs.
+- Human review path records approved/rejected AI answers and can create a follow-up task from an approved recommendation.
 - Local NLP utilities for keyword extraction, summary generation, entity extraction, classification, and tag suggestions.
+- Tenant model policy routes AI work by task, sensitivity, configured providers, cost posture, fallback chain, and human-review requirement.
+
+### Integration and Execution Layer
+
+- Plugin runtime contracts standardize provider scopes, sync posture, webhook support, write approvals, revocation, and audit trail.
+- Controlled execution jobs produce sandbox and Kubernetes-ready specs before plugin sync, AI tools, document extraction, webhooks, or report exports run.
+- Usage limits and support operations prepare AXXESS for live pilot management.
 
 ## Governance, Observability, and Auditability
 
@@ -121,7 +140,7 @@ AXXESS currently runs a multi-surface CI/CD delivery pipeline for web, iOS, and 
 ### Production Mode
 
 - Uses configured Supabase services and tenant-aware repositories.
-- Intended for live organization onboarding and operational usage.
+- Intended for live organization onboarding, profile management, document ingestion, grounded AI questions, email-import review, and operational usage.
 - Requires secure secret provisioning and RLS policy readiness.
 
 ### Demo Mode
@@ -255,6 +274,11 @@ Key references:
 - docs/DUE_DILIGENCE_PACK.md
 - docs/API.md
 - docs/SCHEMA.md
+- docs/SPRINT_19_FUNCTIONAL_ENTERPRISE_AI.md
+- docs/SPRINT_20_21_LIVE_AI_PLATFORM.md
+- docs/PLUGIN_RUNTIME.md
+- docs/MODEL_ROUTING.md
+- docs/SANDBOX_EXECUTION.md
 
 ## Contributing
 

@@ -32,4 +32,14 @@ describe("enterprise route metadata", () => {
     expect(routeForPath("/admin/audit-logs").requiredRoles).toEqual(["Super Admin", "Organization Admin"]);
     expect(routeForPath("/admin/pilot-conversion").requiredRoles).toEqual(["Super Admin", "Organization Admin"]);
   });
+
+  it("maps Sprint 20 and 21 platform controls to admin-protected routes", () => {
+    expect(routeForPath("/admin/plugin-runtime").requiredRoles).toEqual(["Super Admin", "Organization Admin"]);
+    expect(routeForPath("/admin/model-policy").requiredRoles).toEqual(["Super Admin", "Organization Admin"]);
+    expect(routeForPath("/admin/execution-runs").requiredRoles).toEqual(["Super Admin", "Organization Admin"]);
+    expect(routeForPath("/admin/usage-limits").requiredRoles).toEqual(["Super Admin", "Organization Admin"]);
+    expect(routeForPath("/admin/support-ops").requiredRoles).toEqual(["Super Admin", "Organization Admin"]);
+    expect(sectionFromPath("/admin/plugin-runtime")).toBe("integrations");
+    expect(sectionFromPath("/admin/model-policy")).toBe("ai-workspace");
+  });
 });
