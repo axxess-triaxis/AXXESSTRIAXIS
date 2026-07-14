@@ -25,7 +25,7 @@ export async function getLiveWorkspaceMetrics(services: ApplicationServices, sco
     openTasks: tasks.filter((task) => !["completed", "archived"].includes(task.status)).length,
     pendingApprovals: services.institutionalRepository.getApprovals().filter((approval) => approval.status !== "Completed").length,
     unreadNotifications: notifications.filter((notification) => !notification.readAt).length,
-    ragReadyDocuments: documents.filter((document) => document.status !== "deleted").length,
+    ragReadyDocuments: documents.filter((document) => (document.status ?? "active") === "active").length,
     integrationConfigured: getIntegrationHealth().configured,
     socialAlerts: 4,
   };
