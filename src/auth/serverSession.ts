@@ -101,7 +101,7 @@ async function supabaseRestRequest<TResponse>(path: string, accessToken: string)
 
 async function resolveUser(accessToken: string, authUser: SupabasePasswordResponse["user"]) {
   const rows = await supabaseRestRequest<SupabaseUserRow[]>(
-    `users?id=eq.${encodeURIComponent(authUser.id)}&select=id,organization_id,email,display_name,avatar_initials,role&limit=1`,
+    `users?id=eq.${encodeURIComponent(authUser.id)}&select=id,organization_id,email,display_name,avatar_initials,role,department_name,title,timezone&limit=1`,
     accessToken,
   );
 

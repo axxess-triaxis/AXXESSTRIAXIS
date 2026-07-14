@@ -34,6 +34,30 @@ export async function callSupabaseAuth(path: string, body: Record<string, unknow
   return text ? JSON.parse(text) as SupabaseAuthResponse : undefined;
 }
 
+export async function updateSupabasePassword(accessToken: string, password: string): Promise<SupabaseAuthResponse> {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, "");
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !anonKey) throw new Error("Supabase Auth is not configured.");
+
+  const response = await fetch(`${url}/auth/v1/user`, {
+    method: "PUT",
+    headers: {
+      apikey: anonKey,
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ password }),
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error(`Supabase password update failed: ${response.status}`);
+  }
+
+  const text = await response.text();
+  return text ? JSON.parse(text) as SupabaseAuthResponse : undefined;
+}
+
 export function authProviderEnabled(provider: "google" | "microsoft" | "apple") {
   const key = `NEXT_PUBLIC_AUTH_${provider.toUpperCase()}_ENABLED`;
   return process.env[key] === "true";

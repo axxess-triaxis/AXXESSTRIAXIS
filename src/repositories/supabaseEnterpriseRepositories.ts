@@ -95,6 +95,9 @@ type UserRow = {
   avatar_initials: string;
   role: string;
   status: User["status"];
+  department_name: string | null;
+  title: string | null;
+  timezone: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -889,6 +892,9 @@ function userUpdateMutation(_scope: TenantScope, input: Record<string, unknown>)
   return compactMutation({
     display_name: input.displayName === undefined ? undefined : nullableString(input.displayName),
     avatar_initials: input.avatarInitials === undefined ? undefined : nullableString(input.avatarInitials),
+    department_name: input.department === undefined ? undefined : nullableString(input.department),
+    title: input.title === undefined ? undefined : nullableString(input.title),
+    timezone: input.timezone === undefined ? undefined : nullableString(input.timezone),
     role: input.role,
     status: input.status,
   });
@@ -925,7 +931,7 @@ const organizationConfig: ResourceConfig<OrganizationRow, Organization> = {
 
 const userConfig: ResourceConfig<UserRow, User> = {
   table: "users",
-  select: "id,organization_id,email,display_name,avatar_initials,role,status,created_at,updated_at",
+  select: "id,organization_id,email,display_name,avatar_initials,role,status,department_name,title,timezone,created_at,updated_at",
   searchColumns: ["email", "display_name"],
   defaultOrder: "display_name.asc",
   map: (row) => ({
@@ -936,6 +942,9 @@ const userConfig: ResourceConfig<UserRow, User> = {
     avatarInitials: row.avatar_initials,
     role: normalizeRole(row.role),
     roleIds: [],
+    department: row.department_name ?? undefined,
+    title: row.title ?? undefined,
+    timezone: row.timezone ?? undefined,
     status: row.status,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
