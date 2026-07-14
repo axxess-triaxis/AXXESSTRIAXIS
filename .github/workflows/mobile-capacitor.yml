@@ -127,14 +127,33 @@ jobs:
           node-version: 22
           cache: pnpm
 
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
       - name: Release preflight (Android)
         run: pnpm run release:preflight -- --mode=ci --target=android
 
+      - name: Ensure Android project exists
+        run: |
+          pnpm --dir apps/mobile-capacitor run prepare:web-assets
+          if [ ! -f apps/mobile-capacitor/android/gradlew ]; then
+            rm -rf apps/mobile-capacitor/android
+            pnpm --dir apps/mobile-capacitor exec cap add android
+          fi
+
       - name: Sync Capacitor
-        run: pnpm run mobile:capacitor:sync
+        run: |
+          node scripts/prepare-mobile-certificates.mjs
+          node scripts/sync-repo-state.mjs
+          node scripts/validate-mobile-env.mjs
+          pnpm --dir apps/mobile-capacitor run sync:android
 
       - name: Build Android preview artifact
         run: pnpm run mobile:capacitor:build:android
@@ -190,8 +209,21 @@ jobs:
       - name: Release preflight (iOS)
         run: pnpm run release:preflight -- --mode=ci --target=ios
 
+      - name: Ensure iOS project exists
+        run: |
+          pnpm --dir apps/mobile-capacitor run prepare:web-assets
+          if [ ! -f apps/mobile-capacitor/ios/App/App.xcodeproj/project.pbxproj ]; then
+            rm -rf apps/mobile-capacitor/ios
+            pnpm --dir apps/mobile-capacitor exec cap add ios
+          fi
+          mkdir -p apps/mobile-capacitor/ios/App/App/public
+
       - name: Sync Capacitor
-        run: pnpm run mobile:capacitor:sync
+        run: |
+          node scripts/prepare-mobile-certificates.mjs
+          node scripts/sync-repo-state.mjs
+          node scripts/validate-mobile-env.mjs
+          pnpm --dir apps/mobile-capacitor run sync:ios
 
       - name: Build iOS preview artifact
         run: pnpm run mobile:capacitor:build:ios
