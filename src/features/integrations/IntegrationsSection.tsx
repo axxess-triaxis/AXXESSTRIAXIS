@@ -68,11 +68,11 @@ export const IntegrationsSection = () => {
         </div>
         <div className="grid w-full gap-2 lg:max-w-md">
           <div className="grid grid-cols-2 gap-2">
-            <select value={emailForm.providerId} onChange={(event) => setEmailForm({ ...emailForm, providerId: event.target.value })} className="rounded-lg border border-[rgba(0,0,0,0.12)] bg-white px-3 py-2 text-xs outline-none">
+            <select aria-label="Email provider" value={emailForm.providerId} onChange={(event) => setEmailForm({ ...emailForm, providerId: event.target.value })} className="rounded-lg border border-[rgba(0,0,0,0.12)] bg-white px-3 py-2 text-xs outline-none">
               <option value="gmail">Gmail</option>
               <option value="microsoft">Microsoft</option>
             </select>
-            <input value={emailForm.from} onChange={(event) => setEmailForm({ ...emailForm, from: event.target.value })} placeholder="Sender" className="rounded-lg border border-[rgba(0,0,0,0.12)] bg-white px-3 py-2 text-xs outline-none" />
+            <input aria-label="Sender" value={emailForm.from} onChange={(event) => setEmailForm({ ...emailForm, from: event.target.value })} placeholder="Sender" className="rounded-lg border border-[rgba(0,0,0,0.12)] bg-white px-3 py-2 text-xs outline-none" />
           </div>
           <input value={emailForm.subject} onChange={(event) => setEmailForm({ ...emailForm, subject: event.target.value })} placeholder="Subject" className="rounded-lg border border-[rgba(0,0,0,0.12)] bg-white px-3 py-2 text-xs outline-none" />
           <input value={emailForm.sourceLink} onChange={(event) => setEmailForm({ ...emailForm, sourceLink: event.target.value })} placeholder="Source link" className="rounded-lg border border-[rgba(0,0,0,0.12)] bg-white px-3 py-2 text-xs outline-none" />
