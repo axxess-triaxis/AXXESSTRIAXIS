@@ -16,6 +16,9 @@ export type SupabaseUserRow = {
   display_name: string;
   avatar_initials: string;
   role: string;
+  department_name?: string | null;
+  title?: string | null;
+  timezone?: string | null;
 };
 
 function readMetadataString(metadata: Record<string, unknown> | undefined, key: string) {
@@ -35,6 +38,9 @@ export function userContextFromSupabaseRow(row: SupabaseUserRow): UserContext {
     email: row.email,
     displayName: row.display_name,
     avatarInitials: row.avatar_initials,
+    department: row.department_name ?? undefined,
+    title: row.title ?? undefined,
+    timezone: row.timezone ?? undefined,
   };
 }
 

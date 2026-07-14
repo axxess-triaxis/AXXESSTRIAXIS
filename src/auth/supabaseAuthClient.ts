@@ -1,4 +1,5 @@
 import type { UserContext } from "../security/rbac";
+import type { LocalUserProfile } from "./localProfile";
 
 export type ClientAuthState = {
   user: UserContext;
@@ -41,4 +42,26 @@ export async function signOutOfSupabase() {
     method: "POST",
     credentials: "include",
   });
+}
+
+export async function saveServerProfile(input: LocalUserProfile): Promise<ClientAuthState> {
+  const response = await fetch("/api/profile", {
+    method: "PATCH",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+
+  return parseAuthResponse(response);
+}
+
+export async function createServerProfile(input: LocalUserProfile): Promise<ClientAuthState> {
+  const response = await fetch("/api/profile", {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+
+  return parseAuthResponse(response);
 }
