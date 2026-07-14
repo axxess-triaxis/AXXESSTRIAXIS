@@ -115,9 +115,9 @@ $$;
 
 do $$
 declare
-  table_name text;
+  target_table_name text;
 begin
-  foreach table_name in array array[
+  foreach target_table_name in array array[
     'programs',
     'projects',
     'tasks',
@@ -134,19 +134,19 @@ begin
       select 1
       from information_schema.tables existing_table
       where existing_table.table_schema = 'public'
-        and existing_table.table_name = table_name
+        and existing_table.table_name = target_table_name
     ) then
-      execute format('alter table public.%I add column if not exists tenant_id uuid', table_name);
-      execute format('update public.%I set tenant_id = organization_id where tenant_id is null', table_name);
-      execute format('alter table public.%I alter column tenant_id set not null', table_name);
-      execute format('alter table public.%I add column if not exists workspace_id uuid references public.workspaces(id) on delete set null', table_name);
-      execute format('alter table public.%I add column if not exists department_id uuid references public.departments(id) on delete set null', table_name);
-      execute format('alter table public.%I add column if not exists updated_by uuid references public.users(id) on delete set null', table_name);
-      execute format('alter table public.%I add column if not exists deleted_at timestamptz', table_name);
-      execute format('create index if not exists %I on public.%I (tenant_id, organization_id)', table_name || '_sprint13_tenant_idx', table_name);
-      execute format('create index if not exists %I on public.%I (organization_id, workspace_id)', table_name || '_sprint13_workspace_idx', table_name);
-      execute format('create index if not exists %I on public.%I (organization_id, department_id)', table_name || '_sprint13_department_idx', table_name);
-      execute format('alter table public.%I enable row level security', table_name);
+      execute format('alter table public.%I add column if not exists tenant_id uuid', target_table_name);
+      execute format('update public.%I set tenant_id = organization_id where tenant_id is null', target_table_name);
+      execute format('alter table public.%I alter column tenant_id set not null', target_table_name);
+      execute format('alter table public.%I add column if not exists workspace_id uuid references public.workspaces(id) on delete set null', target_table_name);
+      execute format('alter table public.%I add column if not exists department_id uuid references public.departments(id) on delete set null', target_table_name);
+      execute format('alter table public.%I add column if not exists updated_by uuid references public.users(id) on delete set null', target_table_name);
+      execute format('alter table public.%I add column if not exists deleted_at timestamptz', target_table_name);
+      execute format('create index if not exists %I on public.%I (tenant_id, organization_id)', target_table_name || '_sprint13_tenant_idx', target_table_name);
+      execute format('create index if not exists %I on public.%I (organization_id, workspace_id)', target_table_name || '_sprint13_workspace_idx', target_table_name);
+      execute format('create index if not exists %I on public.%I (organization_id, department_id)', target_table_name || '_sprint13_department_idx', target_table_name);
+      execute format('alter table public.%I enable row level security', target_table_name);
     end if;
   end loop;
 end $$;
