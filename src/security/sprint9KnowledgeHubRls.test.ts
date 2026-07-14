@@ -20,6 +20,7 @@ describe("Sprint 9 Knowledge Hub migration", () => {
     expect(migration).toContain("add column if not exists search_vector tsvector generated always as");
     expect(migration).toContain("documents_sprint9_search_idx");
     expect(migration).toContain("knowledge_articles_sprint9_search_idx");
+    expect(migration).not.toContain("array_to_string(tags, ' ')");
   });
 
   it("keeps Supabase Storage private with signed URL-ready policies", () => {
