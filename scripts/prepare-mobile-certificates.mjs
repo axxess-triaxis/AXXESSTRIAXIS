@@ -22,7 +22,10 @@ function ensureDir(dir) {
   fs.mkdirSync(dir, { recursive: true });
 }
 
-if (env.ANDROID_KEYSTORE_BASE64 && env.ANDROID_KEYSTORE_PASSWORD && env.ANDROID_KEY_ALIAS && env.ANDROID_KEY_PASSWORD) {
+const hasAndroidSigningSecrets =
+  env.ANDROID_KEYSTORE_BASE64 && env.ANDROID_KEYSTORE_PASSWORD && env.ANDROID_KEY_ALIAS && env.ANDROID_KEY_PASSWORD;
+
+if (hasAndroidSigningSecrets) {
   ensureDir(path.dirname(keystorePath));
   const buffer = Buffer.from(env.ANDROID_KEYSTORE_BASE64, 'base64');
   fs.writeFileSync(keystorePath, buffer);
@@ -32,25 +35,34 @@ if (env.ANDROID_KEYSTORE_BASE64 && env.ANDROID_KEYSTORE_PASSWORD && env.ANDROID_
 }
 
 const props = [
-  `android.injected.signing.store.file=${keystorePath}`,
-  `android.injected.signing.store.password=${env.ANDROID_KEYSTORE_PASSWORD || ''}`,
-  `android.injected.signing.key.alias=${env.ANDROID_KEY_ALIAS || ''}`,
-  `android.injected.signing.key.password=${env.ANDROID_KEY_PASSWORD || ''}`,
   'android.useAndroidX=true',
   'android.enableJetifier=true',
 ];
 
+if (hasAndroidSigningSecrets) {
+  props.unshift(
+    `android.injected.signing.store.file=${keystorePath}`,
+    `android.injected.signing.store.password=${env.ANDROID_KEYSTORE_PASSWORD}`,
+    `android.injected.signing.key.alias=${env.ANDROID_KEY_ALIAS}`,
+    `android.injected.signing.key.password=${env.ANDROID_KEY_PASSWORD}`,
+  );
+}
+
 ensureDir(path.dirname(gradlePropertiesPath));
-const existingProps = fs.existsSync(gradlePropertiesPath)
-  ? fs
-      .readFileSync(gradlePropertiesPath, 'utf8')
-      .split(/\r?\n/)
-      .filter(Boolean)
-  : [];
+let existingProps = [];
+
+try {
+  existingProps = fs.readFileSync(gradlePropertiesPath, 'utf8').split(/\r?\n/).filter(Boolean);
+} catch (error) {
+  if (error?.code !== 'ENOENT') {
+    throw error;
+  }
+}
+
 const retainedProps = existingProps.filter(
   (line) => !SIGNING_PROP_PREFIXES.some((prefix) => line.startsWith(prefix)),
 );
 const finalProps = [...retainedProps, ...props].join('\n');
 
 fs.writeFileSync(gradlePropertiesPath, finalProps + '\n', { flag: 'w' });
-console.log('[mobile] Wrote Android signing properties.');
+console.log(`[mobile] Wrote Android ${hasAndroidSigningSecrets ? 'signing and build' : 'build'} properties.`);
