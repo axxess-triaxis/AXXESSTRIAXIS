@@ -42,6 +42,10 @@ export async function POST(request: Request) {
       humanReviewRequired: result.humanReviewRequired,
       latencyMs: result.latencyMs,
       costTier: result.costTier,
+      estimatedCostUsd: result.estimatedCostUsd,
+      policyId: result.policyId,
+      fallbackChain: result.fallbackChain,
+      gatewayTags: result.gatewayTags,
     },
   }).catch(() => undefined);
 
