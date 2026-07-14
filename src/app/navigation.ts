@@ -20,8 +20,8 @@ import {
 export type NavSection =
   | "dashboard" | "ai-workspace" | "projects" | "tasks"
   | "stakeholders" | "knowledge" | "documents" | "meetings"
-
-
+  | "approvals" | "audit-logs" | "analytics" | "product-analytics" | "pilot-conversion"
+  | "alerts" | "organization-admin" | "integrations" | "settings" | "beta-readiness";
 export type NavItem = {
   id: NavSection;
   label: string;
