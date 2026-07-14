@@ -1,9 +1,13 @@
 export type OnboardingStepId =
   | "organization"
-  | "first_project"
-  | "first_task"
-  | "first_meeting"
   | "invite_team_member"
+  | "role_assignment"
+  | "first_project"
+  | "upload_document"
+  | "first_ai_question"
+  | "first_task"
+  | "first_approval"
+  | "view_audit_trail"
   | "send_feedback";
 
 export type OnboardingProgress = Record<OnboardingStepId, boolean>;
@@ -15,10 +19,14 @@ export interface OnboardingProgressRepository {
 
 export const defaultOnboardingProgress: OnboardingProgress = {
   organization: false,
-  first_project: false,
-  first_task: false,
-  first_meeting: false,
   invite_team_member: false,
+  role_assignment: false,
+  first_project: false,
+  upload_document: false,
+  first_ai_question: false,
+  first_task: false,
+  first_approval: false,
+  view_audit_trail: false,
   send_feedback: false,
 };
 

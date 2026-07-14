@@ -1,13 +1,20 @@
-import { dirname } from "node:path";
-import { fileURLToPath } from "node:url";
-import { FlatCompat } from "@eslint/eslintrc";
+import { defineConfig, globalIgnores } from "eslint/config";
+import nextCoreWebVitals from "eslint-config-next/core-web-vitals";
+import nextTypescript from "eslint-config-next/typescript";
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const compat = new FlatCompat({ baseDirectory: __dirname });
+const toConfigArray = (config) => (Array.isArray(config) ? config : [config]);
 
-const eslintConfig = [
+const eslintConfig = defineConfig([
+  ...toConfigArray(nextCoreWebVitals),
+  ...toConfigArray(nextTypescript),
   {
-    ignores: [
+    rules: {
+      "react-hooks/refs": "off",
+      "react-hooks/set-state-in-effect": "off",
+    },
+  },
+  globalIgnores(
+    [
       ".next/**",
       "dist/**",
       "node_modules/**",
@@ -16,8 +23,8 @@ const eslintConfig = [
       "src/app/components/figma/**",
       "src/app/components/ui/**",
     ],
-  },
-  ...compat.extends("next/core-web-vitals", "next/typescript"),
-];
+    "AXXESS generated and build outputs",
+  ),
+]);
 
 export default eslintConfig;
