@@ -133,14 +133,6 @@ ${colorConfig
 
 const ChartTooltip = RechartsPrimitive.Tooltip;
 
-type ChartTooltipFormatter = (
-  value: RechartsPrimitive.TooltipValueType | undefined,
-  name: React.ReactNode,
-  item: RechartsPrimitive.TooltipPayloadEntry,
-  index: number,
-  payload: unknown,
-) => React.ReactNode;
-
 type ChartTooltipContentProps = React.ComponentProps<"div"> &
   Omit<RechartsPrimitive.TooltipContentProps, "formatter"> & {
     formatter?: ChartTooltipFormatter;
