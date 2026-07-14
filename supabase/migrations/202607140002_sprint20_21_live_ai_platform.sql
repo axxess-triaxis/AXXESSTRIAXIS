@@ -163,12 +163,12 @@ create table if not exists public.tenant_usage_limits (
   metric text not null check (metric in ('ai_requests', 'document_ingestions', 'plugin_actions', 'sandbox_runs', 'rag_queries', 'audit_exports')),
   limit_value integer not null check (limit_value >= 0),
   used_value integer not null default 0 check (used_value >= 0),
-  window text not null default 'monthly' check (window in ('daily', 'monthly')),
+  usage_window text not null default 'monthly' check (usage_window in ('daily', 'monthly')),
   hard_stop boolean not null default false,
   reset_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
-  unique (organization_id, metric, window)
+  unique (organization_id, metric, usage_window)
 );
 
 create table if not exists public.support_incidents (
