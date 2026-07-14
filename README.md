@@ -1,297 +1,171 @@
-# AXXESS by Triaxis Ventures
+# AXXESS by Triaxis  
+**An enterprise AI operating platform built for regulated scale across GCC, Singapore, India, and Europe**
 
-AXXESS is an AI-enabled, human-in-the-loop institutional execution platform for MSMEs, startups, enterprise, government, healthcare, NGO, and consulting organizations.
+---
 
-The platform converts projects, documents, decisions, stakeholders, meetings, risks, and approvals into a governed execution workspace with auditability, role-aware workflows, and decision-grade AI support.
+## Why We Are Building AXXESS
 
-## Investor Snapshot
+AI adoption in regulated and high-trust industries is accelerating, but most products in market are built for speed-to-demo, not speed-to-durable enterprise deployment.
 
-### The Problem
+That creates a predictable failure point: once customers move from pilot to production, requirements around governance, auditability, model controls, jurisdictional data boundaries, and legal defensibility force expensive rework.
 
-Large institutions still run critical execution across fragmented tools, manual reviews, and weak audit trails. Generic AI copilots do not meet governance, accountability, and compliance expectations for decision-heavy environments.
+**AXXESS is built to eliminate that rework cycle.**  
+We are engineering the platform from Day 1 for organizations that need to scale AI under serious compliance and sovereignty expectations—especially across **DIFC/ADGM, Singapore, EU, India, and wider GCC expansion paths**.
 
-### Our Solution
+---
 
-AXXESS is an institutional execution layer with human-in-the-loop AI, governed retrieval, and role-aware workflows that connect projects, documents, risks, approvals, and decisions in one auditable system.
+## The Gap We Fill
 
-### Why We Can Win
+### What enterprises need
+- Explainable, auditable AI operations
+- Region-aware data and deployment controls
+- Governance and policy enforcement by design
+- Multi-tenant isolation with enterprise-grade security posture
+- Reliable documentation and evidence for procurement, risk, and legal teams
 
-- Architecture moat: tenant-aware, audit-first platform built for regulated operations.
-- Product moat: AI integrated into governed workflows, not bolted on as chat.
-- Delivery moat: web, Android, and iOS release pipelines already operational.
-- Trust moat: privacy, compliance, and security design embedded from core sprints.
+### What most tools provide
+- Wrapper-style orchestration with limited control depth
+- Compliance “add-ons” after initial traction
+- Thin abstractions that break under enterprise due diligence
+- Architecture debt when expanding into new jurisdictions
 
-## Current Build and Release Status
+### What AXXESS provides
+- A platform architecture intentionally designed for regulated environments
+- Embedded observability, governance, and auditability from inception
+- A repeatable expansion model that minimizes future reengineering risk
 
-As of 2026-07-14:
+---
 
-- Web production website is live on https://www.triaxisventures.com.
-- Beta web experience is hosted separately on beta.triaxisventures.com.
-- Beta and website architectures are intentionally separated.
-- Android build pipeline is active in CI/CD.
-- iOS build pipeline is active in CI/CD.
-- Web build and deployment pipeline is active in CI/CD.
-- Sprint 19 adds the first live external-organization journey: sign-up/login, tenant provisioning, document ingestion, governed RAG, human review, audit logging, and selected-email import.
-- Sprint 20 adds plugin runtime contracts, tenant model policy, AI fallback chains, and controlled execution specs.
-- Sprint 21 adds usage limits, enterprise readiness scoring, and support operations controls.
+## Our Product Thesis: Day-1 Controls Are Not Overengineering
 
-## Product Philosophy
+For our target market, **observability, governance, auditability, and documentation are not optional features**—they are core product primitives.
 
-AXXESS is built for institutional execution rather than generic content generation. The application prioritizes structured intelligence, governance controls, role-aware workflows, and human review over opaque automation.
+These capabilities are what make enterprise AI deployable in jurisdictions where:
+- data handling obligations are strict,
+- accountability is non-negotiable,
+- and contract values justify deep technical and legal review.
 
-- Human-in-the-loop AI for high-impact workflows.
-- Enterprise-grade tenant boundaries, RBAC enforcement, and audit-first records.
-- Predictable repository contracts with graceful fallback behavior.
-- Quiet, precise interface patterns for executive and operational usage.
-- Open-source-quality repository standards for maintainable long-term development.
+By integrating these foundations early, AXXESS avoids the common “rebuild at scale” trap and preserves engineering capacity for value-creating roadmap work.
 
-## Who AXXESS Is For
+---
 
-- MSMEs scaling from founder-led execution to institutional processes.
-- Startups preparing for operational maturity and investor diligence.
-- Enterprise teams requiring structured approvals and auditable decision flows.
-- Public-sector institutions with governance-heavy operations.
-- Healthcare and NGO programs requiring controlled data handling.
-- Consulting and advisory firms coordinating multi-stakeholder execution.
+## Architecture Strategy: 80% Common Kernel, 20% Jurisdictional Intelligence
 
-## Current Delivery Baseline
+AXXESS is designed around an expansion-efficient model:
 
-Implemented platform baseline includes:
+### 80% Common Kernel
+A reusable platform core across markets:
+- Governance and policy control planes
+- Observability and end-to-end traceability primitives
+- Audit logging and operational evidence architecture
+- Shared orchestration/runtime and security baseline
+- Common enterprise integration backbone
 
-- Next.js App Router application shell with protected route surfaces.
-- Supabase-first repository model for auth, tenant entities, storage, and audit trails.
-- Live onboarding route for clean organization creation, profile persistence, role provisioning, workspace setup, and tenant selection.
-- Demo Mode for controlled preview environments with seeded institutional data.
-- Graceful fallback repository behavior when backing services are unavailable.
-- Governed RAG with document ingestion, persistent chunks, permission-aware retrieval, citation handling, answer audit logs, and human approval/rejection records.
-- Provider-neutral AI routing with cost, latency, model, confidence, and human-review metadata.
-- Tenant model policy for provider allowlists, fallback chains, estimated cost controls, gateway tags, and restricted-data routing posture.
-- Connector framework for OAuth-owned integrations, selected email import, confirmation-before-create extraction, sync logs, retry/error posture, revocation readiness, and audit trail.
-- Plugin runtime contracts for OAuth scope management, webhook readiness, write approvals, retry policy, revocation, and tenant-owned sync state.
-- Controlled execution abstraction for plugin sync, AI tools, document extraction, webhooks, report exports, and Kubernetes-ready sandbox specs.
-- Tenant usage limits and readiness scoring for live pilot operations.
-- Local deterministic NLP utilities for extraction, summarization, and classification workflows.
-- Governance modules for IAM controls, audit integrity, privacy planning, and compliance mapping.
-- Operational delivery assets for CI, testing, release checks, and mobile scaffolds.
+### 20% Market/Jurisdiction Layer
+Localized capabilities for deployment reality:
+- Sovereignty-aware deployment and data boundary patterns
+- Multi-tenancy sandboxing and isolation controls
+- Local-language NLP and regional context adaptation
+- Independence from shallow wrapper routing architectures
+- Localized data/model adaptation pathways for scale
 
-## Architecture
+This allows growth into new regulatory environments without breaking core system design.
 
-AXXESS follows a modular, service-oriented front-end and server architecture with clear domain and control boundaries.
+---
 
-### Application Layer
+## Compliance & Regulatory Readiness
 
-- Next.js App Router drives route structure, shells, protected views, and server routes.
-- React and TypeScript support strongly typed UI and domain boundaries.
-- Tailwind and component primitives provide a consistent design system foundation.
+> **Scope note:** This section describes AXXESS’s current **engineering compliance posture** based on platform design and implementation direction. It is not a substitute for legal advice, external certification, or jurisdiction-specific counsel interpretation.
 
-### Domain and Repository Layer
+### Current posture summary
+- **Status:** Compliance-ready architecture and controls implementation in progress
+- **Positioning:** Readiness and evidentiary maturity first; formal attestations/certifications as customer and jurisdiction requirements mature
+- **Approach:** Comply-by-design engineering to reduce future remediation and legal-technical debt
 
-- Domain entities model organizations, programs, projects, approvals, documents, and stakeholders.
-- Repository interfaces abstract provider implementations.
-- Supabase-backed implementations are used when configured; fallback repositories preserve controlled UX continuity.
+### Jurisdiction & framework alignment snapshot
 
-### Auth and Access Model
+| Framework / Region | Current Posture | What AXXESS Is Built To Support | Status Label |
+|---|---|---|---|
+| **EU AI Act** | Architecture aligned to high-accountability AI operations | Risk controls, traceability, governance evidence, human oversight patterns where required by use case | **Partial (Advancing)** |
+| **GDPR (EU/EEA)** | Privacy-by-design direction embedded at platform layer | Data governance, accountability evidence, controllable processing boundaries, audit support for enterprise privacy programs | **Partial (Advancing)** |
+| **Singapore PDPA + AI governance expectations** | Designed for accountable enterprise AI operations | Operational control evidence, policy-aware workflows, auditable process design | **Partial (Advancing)** |
+| **UAE (incl. DIFC/ADGM enterprise expectations)** | Strong strategic alignment for regulated deployments | Governance-first architecture, traceable operations, security and control-readiness posture | **Partial (Advancing)** |
+| **Saudi / broader GCC enterprise regulatory context** | Sovereignty-conscious design path established | Data boundary options, tenancy isolation patterns, enterprise control evidence model | **Foundational → Partial** |
+| **India (enterprise/regulatory trajectory)** | Localization and scale-readiness built into roadmap | Local-language adaptation, localized model/data pathways, governance-compatible scaling | **Foundational → Partial** |
 
-- Supabase Auth integration with route-aware auth surfaces.
-- Email/password sign-up, login, logout, session persistence, password recovery, reset finalization, live profile update, organization creation, invitation acceptance, and tenant selection routes.
-- MFA and passkey-ready route patterns and recovery flows.
-- Tenant-aware access patterns and role-oriented control boundaries.
+> **Interpretation:** “Partial (Advancing)” means controls are being engineered and integrated, with maturity increasing sprint by sprint; formal legal compliance depends on deployment context, legal interpretation, and customer-specific obligations.
 
-### Knowledge and Intelligence Layer
+### Control-domain maturity
 
-- Governed RAG pipeline with document upload/text ingestion, chunking, local deterministic embeddings, permission-aware retrieval, citation-enriched responses, confidence metadata, and answer audit logs.
-- Human review path records approved/rejected AI answers and can create a follow-up task from an approved recommendation.
-- Local NLP utilities for keyword extraction, summary generation, entity extraction, classification, and tag suggestions.
-- Tenant model policy routes AI work by task, sensitivity, configured providers, cost posture, fallback chain, and human-review requirement.
+| Control Domain | Current Maturity | Posture Summary |
+|---|---|---|
+| **Governance** | **Partial (Advancing)** | Governance and policy-oriented architecture is core to platform direction, not an add-on. |
+| **Observability** | **Partial (Advancing)** | System is being built with operational traceability as a first-class capability. |
+| **Auditability** | **Partial (Advancing)** | Audit evidence generation and documentation discipline are embedded from early stages. |
+| **Documentation** | **Advanced (relative to stage)** | Documentation is treated as product infrastructure to support enterprise diligence and future certifications. |
+| **Sovereignty & Data Boundary Readiness** | **Foundational → Partial** | 80/20 architecture supports jurisdiction-specific controls without core re-platforming. |
+| **Multi-Tenancy & Sandboxing** | **Foundational → Partial** | Isolation and tenancy separation are recognized as core scaling requirements for enterprise deployment. |
+| **Localized NLP / Regional Adaptation** | **Foundational → Partial** | Local language and localized model/data adaptation are explicit in platform strategy. |
+| **Wrapper Independence / Platform Depth** | **Advanced (strategy + architecture direction)** | Product is intentionally architected beyond thin wrapper routing to enable enterprise durability. |
 
-### Integration and Execution Layer
+### Disclosure boundaries
+AXXESS does **not** present this section as:
+- a blanket legal compliance claim across all jurisdictions,
+- a substitute for customer legal review,
+- or a statement of completed external certification unless explicitly declared.
 
-- Plugin runtime contracts standardize provider scopes, sync posture, webhook support, write approvals, revocation, and audit trail.
-- Controlled execution jobs produce sandbox and Kubernetes-ready specs before plugin sync, AI tools, document extraction, webhooks, or report exports run.
-- Usage limits and support operations prepare AXXESS for live pilot management.
+AXXESS presents this section as:
+- a transparent current engineering posture,
+- a roadmap-compatible control architecture,
+- and a strategy to convert future compliance effort into **incremental value-add**, not structural rework.
 
-## Governance, Observability, and Auditability
+---
 
-- Tenant isolation and role-aware boundaries are explicit platform concerns.
-- Analytics adapter supports dependency-safe provider selection.
-- PostHog and Mixpanel integrations are optional and configuration-gated.
-- CI gates and test suites contribute to observable release hygiene.
-- Governance and compliance artifacts are maintained in versioned docs.
+## Why This Matters Commercially
 
-## Security and Compliance Posture
+AXXESS is designed to improve long-term economics of enterprise AI delivery:
 
-Current commercial focus is DIFC, ADGM, and Singapore, with EU readiness as a parallel track.
+- Lower probability of large-scale reengineering before major upmarket expansion
+- Better conversion path from pilot use to governed production workloads
+- Stronger procurement confidence in regulated sectors
+- Higher engineering leverage: future work compounds into product value rather than debt repayment
 
-AXXESS is mapped to policy and control patterns aligned with DIFC DP Law, ADGM data protection expectations, and Singapore PDPA-style accountability, while maintaining GDPR-aligned engineering patterns (data minimization, purpose limitation support, auditability, deletion workflows, access controls, and tenant isolation).
+This is central to our roadmap toward **high-value enterprise contracts and million-USD ACV opportunities** in GCC, Singapore, and similar markets.
 
-This is an engineering readiness posture and should be finalized per customer engagement through legal and compliance review.
+---
 
-## Delivery and Release Pipeline Status
+## Post Sprint 19–21 Direction
 
-AXXESS currently runs a multi-surface CI/CD delivery pipeline for web, iOS, and Android builds.
+Recent sprint progress reinforces the same strategic arc:
 
-- Web deployment is active.
-- Mobile iOS and Android build and release workflows are active.
-- Public beta release preparation is tracked through runbooks and gates.
-- Delivery tooling includes Codex, Capacitor, GitHub, VS Code, and Webnative with repository-level traceability.
+- Deeper operational readiness for governed AI execution
+- Increased auditability and documentation discipline
+- Continued architecture hardening for multi-jurisdiction expansion
+- Ongoing focus on scalable controls rather than retrofit controls
 
-## Runtime Modes
+In short: the platform is being shaped for durable enterprise adoption, not short-lived experimentation.
 
-### Production Mode
+---
 
-- Uses configured Supabase services and tenant-aware repositories.
-- Intended for live organization onboarding, profile management, document ingestion, grounded AI questions, email-import review, and operational usage.
-- Requires secure secret provisioning and RLS policy readiness.
+## Long-Term Vision (3–5 Years)
 
-### Demo Mode
+AXXESS aims to become a trusted AI operating layer for regulated enterprises across:
 
-- Loads a seeded preview tenant for controlled demos.
-- Can be enabled via settings, preview login, or environment configuration.
-- Keep disabled for live customer environments.
+- **GCC** (including DIFC/ADGM-led ecosystems),
+- **Singapore**,
+- **Europe**,
+- **India**,
+- and additional jurisdictions with strong governance requirements.
 
-## Tech Stack
+Our ambition is not just distribution—it is **durable, compliant, explainable AI operations at enterprise scale**.
 
-- Next.js 15 App Router
-- React + TypeScript
-- Tailwind CSS 4
-- Radix UI and shadcn-style components
-- Lucide React icons and Recharts
-- Supabase Auth, Database, and Storage architecture
-- PostHog and Mixpanel provider pathways
-- Expo/EAS mobile scaffold under apps/mobile
-- Capacitor native shell under apps/mobile-capacitor
-- Vitest, React Testing Library, and Playwright
-- pnpm workspace tooling
+---
 
-## Repository Structure
+## AXXESS in One Line
 
-```text
-.
-|-- .github/
-|-- apps/mobile/
-|-- apps/mobile-capacitor/
-|-- docs/
-|-- guidelines/
-|-- packages/shared/
-|-- plans/
-|-- public/
-|-- scripts/
-|-- src/
-|-- supabase/
-`-- tests/
-```
+**AXXESS is a sovereignty-aware, observability-first, governance-native AI platform built so future scale is value-additive—not debt-driven.**
 
-## Getting Started
+---
 
-### Prerequisites
-
-- Node.js 22 or newer
-- pnpm 11 or newer
-
-### Install
-
-```bash
-pnpm install
-```
-
-### Run locally
-
-```bash
-pnpm run dev
-```
-
-Open http://localhost:3000/dashboard
-
-### Useful commands
-
-```bash
-pnpm run typecheck
-pnpm run lint
-pnpm run test
-pnpm run build
-pnpm run ci
-pnpm run mobile:capacitor:doctor
-```
-
-## Environment Variables
-
-Copy .env.example to .env.local and populate values for connected services.
-
-Important handling rules:
-
-- Only NEXT_PUBLIC_* values are safe for browser exposure.
-- Server-side keys must remain in secure environment stores.
-- Do not commit real secrets to version control.
-
-## Quality Gates and CI Expectations
-
-Run before creating or merging changes:
-
-```bash
-pnpm run typecheck
-pnpm run lint
-pnpm run test
-pnpm run build
-```
-
-## Deployment
-
-Recommended production build flow:
-
-```bash
-pnpm install --frozen-lockfile
-pnpm run build
-```
-
-Production deployment checklist:
-
-- Configure secrets in hosting platforms.
-- Apply and verify Supabase RLS before onboarding live tenant data.
-- Preserve security headers via next.config.mjs.
-- Validate observability hooks and rollback paths.
-- Verify environment segregation (preview, staging, production).
-
-## Mobile Delivery Notes
-
-- Expo scaffold is available under apps/mobile.
-- Capacitor shell is available under apps/mobile-capacitor.
-- Build and release operations should follow runbooks for repeatability and auditability.
-
-## Documentation Index
-
-Key references:
-
-- docs/DEPLOYMENT.md
-- docs/VERCEL_DEPLOYMENT.md
-- docs/MOBILE_RELEASE.md
-- docs/MOBILE_RELEASE_RUNBOOK.md
-- docs/SECURITY_ARCHITECTURE.md
-- docs/COMPLIANCE_ENGINE.md
-- docs/PRIVACY_ENGINEERING.md
-- docs/AI_GOVERNANCE.md
-- docs/DEVSECOPS.md
-- docs/RLS_PERSONA_TESTS.md
-- docs/DUE_DILIGENCE_PACK.md
-- docs/API.md
-- docs/SCHEMA.md
-- docs/SPRINT_19_FUNCTIONAL_ENTERPRISE_AI.md
-- docs/SPRINT_20_21_LIVE_AI_PLATFORM.md
-- docs/PLUGIN_RUNTIME.md
-- docs/MODEL_ROUTING.md
-- docs/SANDBOX_EXECUTION.md
-
-## Contributing
-
-Please read CONTRIBUTING.md before opening a pull request.
-
-Expected contribution standards:
-
-- Preserve UI language unless an approved design task requires changes.
-- Maintain domain and repository boundary discipline.
-- Keep configuration and security assumptions explicit.
-- Update docs with implementation changes, especially for controls and runbooks.
-- Pass local quality gates before opening a PR.
-
-## License
-
-Licensed under the Apache License, Version 2.0. See LICENSE.
+### Website
+[https://axxesstriaxis.vercel.app](https://axxesstriaxis.vercel.app)
