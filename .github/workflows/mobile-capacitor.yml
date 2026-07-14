@@ -169,7 +169,8 @@ jobs:
           if-no-files-found: ignore
 
   ios-preview:
-    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    # Keep iOS preview manual so production web deploys are not gated by macOS runner queues.
+    if: github.event_name == 'workflow_dispatch'
     needs: validate
     runs-on: macos-13
     steps:
