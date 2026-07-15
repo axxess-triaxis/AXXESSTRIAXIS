@@ -9,6 +9,10 @@ function providerId(value: string | null): ConnectorProviderId | undefined {
   return value === "gmail" || value === "microsoft" ? value : undefined;
 }
 
+type IntegrationConnectionRow = {
+  id: string;
+};
+
 export async function GET(request: Request) {
   const session = await getServerAuthSession(true);
   if (!session) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
@@ -37,12 +41,42 @@ export async function GET(request: Request) {
     }, { status: 400 });
   }
 
-  const exchange = await exchangeOAuthCode({ providerId: provider, code, redirectUri: config.redirectUri });
+  const exchange = await exchangeOAuthCode({
+    providerId: provider,
+    organizationId: session.user.organizationId,
+    userId: session.user.id,
+    code,
+    redirectUri: config.redirectUri,
+  });
   const scope = tenantScopeFromUser(session.user, session.accessToken);
   const stateHash = hashOAuthState(state);
 
   if (isSupabaseAdminConfigured()) {
-    await supabaseAdminRest("integration_connections", {
+    await supabaseAdminRest("oauth_token_vault", {
+      method: "POST",
+      query: new URLSearchParams({ on_conflict: "token_reference" }),
+      prefer: "resolution=merge-duplicates,return=representation",
+      body: {
+        organization_id: session.user.organizationId,
+        user_id: session.user.id,
+        provider_id: provider,
+        token_reference: exchange.vaultRecord.tokenReference,
+        encrypted_payload: exchange.vaultRecord.encryptedPayload,
+        algorithm: exchange.vaultRecord.algorithm,
+        key_id: exchange.vaultRecord.keyId,
+        access_token_hash: exchange.vaultRecord.accessTokenHash,
+        refresh_token_hash: exchange.vaultRecord.refreshTokenHash ?? null,
+        scopes: exchange.vaultRecord.scope,
+        expires_at: exchange.vaultRecord.expiresAt ?? null,
+        status: "active",
+        metadata: {
+          oauthSubject: exchange.vaultRecord.oauthSubject,
+          sealedBy: "oauth_callback",
+        },
+      },
+    });
+
+    const connectionRows = await supabaseAdminRest<IntegrationConnectionRow[]>("integration_connections", {
       method: "POST",
       query: new URLSearchParams({ on_conflict: "organization_id,provider_id" }),
       prefer: "resolution=merge-duplicates,return=representation",
@@ -52,7 +86,19 @@ export async function GET(request: Request) {
         exchange,
         stateHash,
       }),
-    }).catch(() => undefined);
+    });
+    const connectionId = connectionRows?.[0]?.id;
+    if (connectionId) {
+      await supabaseAdminRest("oauth_token_vault", {
+        method: "PATCH",
+        query: new URLSearchParams({
+          token_reference: `eq.${exchange.vaultRecord.tokenReference}`,
+          organization_id: `eq.${session.user.organizationId}`,
+        }),
+        body: { connection_id: connectionId },
+      }).catch(() => undefined);
+    }
+
     await supabaseAdminRest("oauth_connection_states", {
       method: "PATCH",
       query: new URLSearchParams({ state_hash: `eq.${stateHash}`, organization_id: `eq.${session.user.organizationId}` }),
