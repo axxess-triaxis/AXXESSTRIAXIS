@@ -5,6 +5,7 @@ describe("enterprise route metadata", () => {
   it("maps canonical sections to Next paths", () => {
     expect(routeForSection("dashboard").path).toBe("dashboard");
     expect(routeForSection("projects").path).toBe("projects");
+    expect(routeForPath("/ai-workspace/review-inbox").requiresAuth).toBe(true);
   });
 
   it("maps enterprise aliases to preserved feature sections", () => {

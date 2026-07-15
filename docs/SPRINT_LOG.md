@@ -1,5 +1,39 @@
 # Sprint Log
 
+## Sprint 24 - Live AI Review, OAuth, Sandbox Runner, And RAG Release Gates
+
+Sprint 24 closes the loop from the Pilot Command Center into tenant-facing operations. It adds a real review inbox, OAuth callback/token exchange, scheduled snapshot persistence, approved sandbox execution evidence, and RAG release gates.
+
+### Completed
+
+- Added tenant-facing AI Review Inbox at `/ai-workspace/review-inbox`.
+- Added AI review APIs for queue reads and approve/edit/reject/escalate decisions.
+- Added signed OAuth state, callback verification, token exchange, connection upsert, and token-reference storage.
+- Added daily Vercel Cron route for command-center snapshots.
+- Added approved sandbox runner API behind policy attestation.
+- Added RAG release gate evaluator and persistence API.
+- Added Sprint 24 migration for OAuth states, sandbox invocations, and RAG release gates with RLS.
+
+### Live
+
+- Tenants can review governed AI outputs before consequential workflow actions.
+- Gmail/Microsoft OAuth callback path can complete when provider secrets are configured.
+- Admins can persist command-center snapshots manually or through Vercel Cron.
+- Sandbox jobs can move from attestation to approved dry-run invocation.
+
+### Provider-Gated
+
+- OAuth token vault storage requires a managed secret store.
+- Live Gmail message import requires provider API credentials and selected-message sync workers.
+- Non-dry-run sandbox execution requires an approved runner integration.
+
+### Sprint 25 Recommendations
+
+- Add encrypted token vault integration.
+- Complete Gmail selected-message import from live provider APIs.
+- Add all-tenant scheduled snapshot fan-out.
+- Promote RAG gates into required release checks.
+
 ## Sprint 23 - Governed AI Operations, Sandbox Evidence, And RAG Evaluation
 
 Sprint 23 hardens the AI operating layer by turning cited AI outputs, sandbox policy attestations, and RAG evaluation fixtures into reviewable pilot evidence.

@@ -4,6 +4,12 @@ All notable changes to AXXESS are documented here. This project follows the spir
 
 ## Unreleased
 
+- Added Sprint 24 tenant-facing AI Review Inbox with review read/decision APIs.
+- Added Sprint 24 OAuth callback/token exchange path with signed state verification and token-reference connection upserts.
+- Added daily Vercel Cron route for command-center snapshot persistence.
+- Added approved sandbox runner invocation path behind policy attestation.
+- Added RAG release gate evaluator and persistence API.
+- Added Sprint 24 Supabase migration for OAuth state records, sandbox runner invocations, and RAG release gates with RLS.
 - Added Sprint 22/23 Pilot Command Center for readiness, connector execution, governed AI review, sandbox policy, RAG evaluation, and audit evidence.
 - Added `GET /api/admin/pilot-command-center` and a role-protected `/admin/pilot-command-center` admin surface.
 - Added Sprint 22/23 Supabase migration for command-center snapshots, AI operation reviews, connector execution queue, sandbox attestations, and RAG evaluation runs with tenant-scoped RLS.
