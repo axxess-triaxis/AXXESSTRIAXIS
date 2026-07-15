@@ -1,5 +1,50 @@
 # Sprint Log
 
+## Sprint 23 - Governed AI Operations, Sandbox Evidence, And RAG Evaluation
+
+Sprint 23 hardens the AI operating layer by turning cited AI outputs, sandbox policy attestations, and RAG evaluation fixtures into reviewable pilot evidence.
+
+### Completed
+
+- Added governed AI operation review evidence for restricted or consequential AI outputs.
+- Added sandbox policy attestation primitives for Kubernetes-grade, Vercel Sandbox, Docker, CI, and local execution environments.
+- Added RAG evaluation run persistence for source coverage, confidence thresholds, and permission regression checks.
+- Added focused tests for command-center behavior and RLS expectations.
+
+### Live
+
+- Admins can inspect AI review, sandbox, and RAG evaluation readiness from the Pilot Command Center.
+
+### Provider-Gated
+
+- Actual sandbox execution still requires a configured runner and approved tenant policy.
+- Persistent RAG evaluation runs require the Sprint 22/23 migration in Supabase.
+
+### Sprint 24 Recommendations
+
+- Add a tenant-facing AI review inbox.
+- Connect one real sandbox runner behind attestation approval.
+- Convert RAG evaluation fixtures into CI and release gates.
+
+## Sprint 22 - Pilot Command Center And Connector Execution Queue
+
+Sprint 22 creates a unified operating surface for pilot readiness by composing existing readiness, usage, plugin, connector, sandbox, RAG, and audit primitives.
+
+### Completed
+
+- Added Pilot Command Center service and admin API.
+- Added role-protected `/admin/pilot-command-center` route using the existing enterprise admin layout.
+- Added connector execution queue semantics for tenant-owned plugin actions and approval-gated writes.
+- Added Supabase migration for command-center snapshots and connector execution evidence with tenant-scoped RLS.
+
+### Live
+
+- Organization administrators can review pilot command score, queued connector actions, governed AI review state, sandbox policy posture, RAG evaluation evidence, and next actions.
+
+### Provider-Gated
+
+- Live connector execution requires OAuth credentials, encrypted token references, and provider sync workers.
+
 ## Sprint 21 - Enterprise Usage, Readiness, And Support Operations
 
 Sprint 21 adds live-platform operating controls on top of Sprint 20. It introduces usage limits, readiness scoring, support incident primitives, and admin panels for platform review.
