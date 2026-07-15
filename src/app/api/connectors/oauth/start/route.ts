@@ -4,7 +4,7 @@ import { getServerAuthSession } from "../../../../../auth/serverSession";
 import { auditLogsRepository, tenantScopeFromUser } from "../../../../../repositories/supabaseEnterpriseRepositories";
 import { isSupabaseAdminConfigured, supabaseAdminRest } from "../../../../../repositories/supabaseAdmin";
 import { buildConnectorOAuthUrl, getConnectorContract } from "../../../../../services/integrations/connectorContract";
-import { createOAuthState, hashOAuthState } from "../../../../../services/integrations/oauthProvider";
+import { createOAuthState, getOAuthProviderConfiguration, hashOAuthState } from "../../../../../services/integrations/oauthProvider";
 
 export async function GET(request: Request) {
   const session = await getServerAuthSession(true);
@@ -14,6 +14,16 @@ export async function GET(request: Request) {
   const provider = url.searchParams.get("provider") ?? "";
   const contract = getConnectorContract(provider);
   if (!contract) return NextResponse.json({ error: "Unsupported connector provider." }, { status: 400 });
+  const config = getOAuthProviderConfiguration(contract.providerId);
+  if (!config.configured) {
+    return NextResponse.json({
+      status: "provider_gated",
+      providerId: contract.providerId,
+      requiredScopes: contract.requiredScopes,
+      missing: config.missing,
+      message: "OAuth credentials and encrypted token vault settings must be configured before connecting this provider.",
+    });
+  }
 
   const state = createOAuthState({
     organizationId: session.user.organizationId,

@@ -1,15 +1,10 @@
 import { defineConfig, globalIgnores } from "eslint/config";
-import { createRequire } from "node:module";
-
-const require = createRequire(import.meta.url);
-const nextCoreWebVitals = require("eslint-config-next/core-web-vitals");
-const nextTypescript = require("eslint-config-next/typescript");
-
-const toConfigArray = (config) => (Array.isArray(config) ? config : [config]);
+import nextCoreWebVitals from "./node_modules/eslint-config-next/dist/core-web-vitals.js";
+import nextTypescript from "./node_modules/eslint-config-next/dist/typescript.js";
 
 const eslintConfig = defineConfig([
-  ...toConfigArray(nextCoreWebVitals),
-  ...toConfigArray(nextTypescript),
+  ...nextCoreWebVitals,
+  ...nextTypescript,
   {
     rules: {
       "react-hooks/refs": "off",
