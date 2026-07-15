@@ -1,4 +1,4 @@
-import { createHash, createHmac, timingSafeEqual } from "node:crypto";
+import { scryptSync, timingSafeEqual } from "node:crypto";
 import type { ConnectorProviderId } from "./connectorContract";
 import { getConnectorContract } from "./connectorContract";
 
@@ -44,12 +44,12 @@ function oauthStateSecret(env: NodeJS.ProcessEnv = process.env) {
   return env.AXXESS_OAUTH_STATE_SECRET ?? env.NEXTAUTH_SECRET ?? env.SUPABASE_JWT_SECRET ?? "axxess-local-oauth-state-secret";
 }
 
-function digest(value: string) {
-  return createHash("sha256").update(value).digest("hex");
+function fingerprint(value: string, env: NodeJS.ProcessEnv = process.env) {
+  return scryptSync(value, oauthStateSecret(env), 32).toString("hex");
 }
 
 function signatureFor(payload: string, env: NodeJS.ProcessEnv = process.env) {
-  return createHmac("sha256", oauthStateSecret(env)).update(payload).digest("base64url");
+  return scryptSync(`oauth-state:${payload}`, oauthStateSecret(env), 32).toString("base64url");
 }
 
 function providerClient(providerId: ConnectorProviderId, env: NodeJS.ProcessEnv = process.env) {
@@ -96,8 +96,8 @@ export function createOAuthState(input: {
   return `${encodedPayload}.${signatureFor(encodedPayload, input.env)}`;
 }
 
-export function hashOAuthState(state: string) {
-  return digest(state);
+export function hashOAuthState(state: string, env: NodeJS.ProcessEnv = process.env) {
+  return fingerprint(`oauth-state-hash:${state}`, env);
 }
 
 export function verifyOAuthState(state: string, providerId: ConnectorProviderId, options: {
@@ -124,7 +124,7 @@ export function verifyOAuthState(state: string, providerId: ConnectorProviderId,
   const age = (options.now ?? Date.now()) - parsed.issuedAt;
   if (parsed.providerId !== providerId) return { ok: false as const, reason: "OAuth state provider does not match callback provider." };
   if (age < 0 || age > (options.maxAgeMs ?? 15 * 60 * 1000)) return { ok: false as const, reason: "OAuth state has expired." };
-  return { ok: true as const, payload: parsed, stateHash: hashOAuthState(state) };
+  return { ok: true as const, payload: parsed, stateHash: hashOAuthState(state, options.env) };
 }
 
 export function getOAuthProviderConfiguration(providerId: ConnectorProviderId, env: NodeJS.ProcessEnv = process.env) {
@@ -176,7 +176,7 @@ export async function exchangeOAuthCode(input: {
     throw new Error(payload.error_description ?? payload.error ?? `OAuth token exchange failed with status ${response.status}.`);
   }
 
-  const tokenFingerprint = digest(`${input.providerId}:${payload.access_token}:${payload.refresh_token ?? ""}`);
+  const tokenFingerprint = fingerprint(`${input.providerId}:${payload.access_token}:${payload.refresh_token ?? ""}`, input.env);
   const expiresAt = payload.expires_in
     ? new Date((input.now ?? Date.now()) + payload.expires_in * 1000).toISOString()
     : undefined;
@@ -184,8 +184,8 @@ export async function exchangeOAuthCode(input: {
   return {
     providerId: input.providerId,
     tokenReference: `oauth:${input.providerId}:${tokenFingerprint.slice(0, 20)}`,
-    accessTokenHash: digest(payload.access_token),
-    refreshTokenHash: payload.refresh_token ? digest(payload.refresh_token) : undefined,
+    accessTokenHash: fingerprint(`oauth-access-token:${payload.access_token}`, input.env),
+    refreshTokenHash: payload.refresh_token ? fingerprint(`oauth-refresh-token:${payload.refresh_token}`, input.env) : undefined,
     scope: payload.scope?.split(/\s+/).filter(Boolean) ?? contract.requiredScopes,
     expiresAt,
     oauthSubject: decodeJwtSubject(payload.id_token),
