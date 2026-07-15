@@ -18,6 +18,7 @@ type AdminPanelId =
   | "plugin-runtime"
   | "execution-runs"
   | "usage-limits"
+  | "pilot-command-center"
   | "support-ops"
   | "audit-logs"
   | "backups";
@@ -107,6 +108,12 @@ const panelContent: Record<AdminPanelId, { title: string; description: string; a
     actions: ["Review current usage", "Adjust pilot cap", "Escalate limit warning"],
     evidence: ["tenant_usage_limits", "usage window", "hard-stop policy"],
   },
+  "pilot-command-center": {
+    title: "Pilot Command Center",
+    description: "Operate live pilot readiness, connector execution, governed AI review, sandbox policy, RAG evaluation, and audit evidence from one control surface.",
+    actions: ["Review command score", "Approve queued action", "Inspect sandbox attestation"],
+    evidence: ["pilot_command_center_snapshots", "connector_execution_queue", "ai_operation_reviews"],
+  },
   "support-ops": {
     title: "Support Operations",
     description: "Monitor incidents, readiness controls, and customer-support signals before expanding live pilots.",
@@ -168,7 +175,7 @@ export function EnterpriseAdminPage({ panel }: { panel: AdminPanelId }) {
             <Card className="p-5">
               <h2 className="text-sm font-semibold text-[#0F1117]">Beta readiness note</h2>
               <p className="mt-2 text-sm leading-relaxed text-[#5F6B73]">
-                This admin surface is wired for Sprint 20 and Sprint 21 enterprise readiness. Live mutation paths use server-only routes, tenant-scoped policies, and audit records before autonomous workflow execution is enabled.
+                This admin surface is wired for Sprint 22 and Sprint 23 enterprise readiness. Live mutation paths use server-only routes, tenant-scoped policies, and audit records before autonomous workflow execution is enabled.
               </p>
             </Card>
           </div>
