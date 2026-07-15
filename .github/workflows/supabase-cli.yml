@@ -1,0 +1,97 @@
+name: Supabase CLI Integration
+
+on:
+  pull_request:
+    paths:
+      - "supabase/**"
+      - "scripts/verify-supabase-migrations.mjs"
+      - ".github/workflows/supabase-cli.yml"
+      - "package.json"
+      - "pnpm-lock.yaml"
+  push:
+    branches:
+      - main
+    paths:
+      - "supabase/**"
+      - "scripts/verify-supabase-migrations.mjs"
+      - ".github/workflows/supabase-cli.yml"
+      - "package.json"
+      - "pnpm-lock.yaml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  supabase-static-verify:
+    name: Supabase CLI And Migration Static Verify
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 11.7.0
+          run_install: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Supabase CLI version
+        run: pnpm run supabase:version
+
+      - name: Verify Supabase migrations
+        run: pnpm run supabase:verify
+
+  supabase-local-drill:
+    name: Manual Local Supabase Migration Drill
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 11.7.0
+          run_install: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Start local Supabase
+        run: pnpm exec supabase start
+
+      - name: Reset local database through migrations
+        run: pnpm run supabase:db:reset
+
+      - name: Lint local database
+        run: pnpm run supabase:db:lint
+
+      - name: Run pgTAP RLS tests
+        run: pnpm run supabase:test:rls
+
+      - name: Stop local Supabase
+        if: always()
+        run: pnpm exec supabase stop --no-backup

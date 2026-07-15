@@ -13,6 +13,7 @@ Sprint 25 hardens Sprint 24 live operations by securing connector token storage,
 - Added all-tenant scheduled Pilot Command Center snapshot fan-out and `command_center_snapshot_runs` evidence.
 - Added AI Workspace link to the tenant AI Review Inbox.
 - Added `pnpm run rag:release-gate` and GitHub Actions `RAG Release Gate` workflow.
+- Added repo-local Supabase CLI integration with pinned CLI, config, migration verification script, package scripts, CI workflow, and local database drill runbook.
 - Added focused tests for token vault, Gmail import parsing/fetching, scheduler fan-out, OAuth vault handoff, and Sprint 25 RLS expectations.
 
 ### Live
@@ -21,6 +22,7 @@ Sprint 25 hardens Sprint 24 live operations by securing connector token storage,
 - Tenants can import a selected Gmail message into AXXESS only after preview and confirmation.
 - Scheduled snapshots can fan out across all active tenants instead of one configured tenant.
 - RAG release checks can run in CI without external model credentials.
+- Supabase migration verification can run in CI without a globally installed CLI.
 
 ### Provider-Gated
 
