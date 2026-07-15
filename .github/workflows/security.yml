@@ -42,18 +42,23 @@ jobs:
   dependency-review:
     name: dependency-review
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
     steps:
       - name: Checkout
+        if: github.event_name == 'pull_request'
         uses: actions/checkout@v4
 
       - name: Review dependencies
+        if: github.event_name == 'pull_request'
         uses: actions/dependency-review-action@v5
         # Dependency Review requires GitHub Dependency Graph to be enabled in repository settings.
         # Keep pnpm audit, CodeQL, and secret scanning blocking while this repository setting is off.
         continue-on-error: true
         with:
           fail-on-severity: critical
+
+      - name: Mark dependency review as not applicable on push
+        if: github.event_name != 'pull_request'
+        run: echo "Dependency Review runs on pull requests; push commits are covered by pnpm audit, CodeQL, and secret scanning."
 
   pnpm-audit:
     name: pnpm Critical Vulnerability Gate
