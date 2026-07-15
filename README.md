@@ -146,6 +146,7 @@ Recent sprint progress reinforces the same strategic arc:
 - Governed AI operations that require human approval before consequential workflow actions
 - Tenant-facing AI Review Inbox, OAuth callback/token exchange, scheduled command-center snapshots, sandbox runner attestations, and RAG release gates
 - Encrypted connector token vault, live selected Gmail import, all-tenant command-center snapshot fan-out, and required RAG release checks
+- Repo-local Supabase CLI integration for migration creation, verification, dry-runs, local database drills, and CI enforcement
 
 In short: the platform is being shaped for durable enterprise adoption, not short-lived experimentation.
 
