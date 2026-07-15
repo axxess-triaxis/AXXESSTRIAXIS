@@ -4,6 +4,7 @@ All notable changes to AXXESS are documented here. This project follows the spir
 
 ## Unreleased
 
+- Added repo-local Supabase CLI integration with pinned `supabase@2.109.1`, committed `supabase/config.toml`, migration verification script, package scripts, docs, and GitHub Actions coverage.
 - Added Sprint 25 encrypted OAuth token vault with AES-GCM sealed token bundles, keyed fingerprints, and service-role-only Supabase storage.
 - Added live Gmail selected-message import endpoint that fetches one authorized message, previews extracted tasks/decisions/stakeholders, and requires confirmation before creating records.
 - Added all-tenant scheduled Pilot Command Center snapshot fan-out with run evidence.

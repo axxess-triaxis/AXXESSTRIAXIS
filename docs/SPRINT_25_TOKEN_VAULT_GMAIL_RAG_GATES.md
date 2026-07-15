@@ -10,6 +10,7 @@ Sprint 25 hardens the Sprint 24 operating layer so live connectors and release q
 - AI Workspace navigation entry to the AI Review Inbox.
 - Required RAG release gate script and GitHub Actions workflow.
 - Supabase migration for token vault, Gmail import evidence, and fan-out run evidence.
+- Repo-local Supabase CLI integration with pinned CLI, config, migration verifier, scripts, and CI.
 
 ## Encrypted Token Vault
 
@@ -81,3 +82,12 @@ Sprint 25 adds tests for:
 - OAuth token exchange vault handoff.
 - Command-center fan-out provider-gated behavior.
 - Supabase RLS expectations for Sprint 25 tables.
+
+Supabase integration verification:
+
+```bash
+pnpm run supabase:version
+pnpm run supabase:verify
+```
+
+See `docs/SUPABASE_CLI.md` for local reset, dry-run, linked project, and manual migration drill instructions.

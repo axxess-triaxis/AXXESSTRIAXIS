@@ -1,6 +1,6 @@
 # Supabase Staging
 
-Sprint 13 adds staging-ready migration and RLS persona test artifacts.
+AXXESS uses a repo-local Supabase CLI. See `docs/SUPABASE_CLI.md` before applying or creating migrations.
 
 ## Migration Order
 
@@ -24,9 +24,14 @@ The service-role key is server-only. It must never be used in browser or mobile 
 
 ## Staging Checks
 
-1. Apply migrations.
-2. Load persona fixtures.
-3. Run `supabase/tests/rls_persona_tests.sql`.
-4. Validate private storage signed URL flow.
-5. Validate onboarding tenant creation with a disposable organization.
-6. Validate audit logs for provisioning, auth, document, and AI actions.
+1. Run `pnpm install`.
+2. Run `pnpm run supabase:version`.
+3. Run `pnpm run supabase:verify`.
+4. Link the target project with `pnpm run supabase:link -- --project-ref <project-ref>`.
+5. Run `pnpm run supabase:db:dry-run`.
+6. Apply migrations only after dry-run review.
+7. Load persona fixtures.
+8. Run `supabase/tests/rls_persona_tests.sql` or `pnpm run supabase:test:rls` against a local stack.
+9. Validate private storage signed URL flow.
+10. Validate onboarding tenant creation with a disposable organization.
+11. Validate audit logs for provisioning, auth, document, and AI actions.
