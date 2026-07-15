@@ -44,6 +44,7 @@
     "export:wix": "node scripts/export-wix.mjs",
     "release:preflight": "node scripts/release-preflight.mjs",
     "release:ready": "pnpm run ci && pnpm run release:preflight -- --mode=ci && pnpm run mobile:capacitor:doctor",
+    "rag:release-gate": "node scripts/rag-release-gate.mjs",
     "start": "next start",
     "test": "vitest run --config vitest.config.mjs",
     "test:e2e": "playwright test",
