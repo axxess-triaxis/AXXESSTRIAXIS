@@ -7,6 +7,7 @@ describe("OAuth provider flow", () => {
     GOOGLE_CLIENT_ID: "google-client",
     GOOGLE_CLIENT_SECRET: "google-secret",
     NEXT_PUBLIC_APP_URL: "https://app.axxess.test",
+    AXXESS_TOKEN_VAULT_KEY: "test-token-vault-key-with-at-least-32-characters",
   } as unknown as NodeJS.ProcessEnv;
 
   it("creates and verifies signed tenant-bound OAuth state", () => {
@@ -39,6 +40,8 @@ describe("OAuth provider flow", () => {
 
     const exchange = await exchangeOAuthCode({
       providerId: "gmail",
+      organizationId: "org-1",
+      userId: "user-1",
       code: "code-1",
       redirectUri: "https://app.axxess.test/api/connectors/oauth/callback?provider=gmail",
       env,
@@ -53,9 +56,11 @@ describe("OAuth provider flow", () => {
     });
 
     expect(fetcher).toHaveBeenCalledOnce();
-    expect(exchange.tokenReference).toMatch(/^oauth:gmail:/);
+    expect(exchange.tokenReference).toMatch(/^vault:gmail:/);
+    expect(exchange.vaultRecord.encryptedPayload.ciphertext).toBeTruthy();
     expect(JSON.stringify(upsert)).not.toContain("access-token");
     expect(JSON.stringify(upsert)).not.toContain("refresh-token");
     expect(upsert.status).toBe("connected");
+    expect(upsert.metadata.tokenStorage).toBe("encrypted-token-vault");
   });
 });
