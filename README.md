@@ -134,7 +134,7 @@ This is central to our roadmap toward **high-value enterprise contracts and mill
 
 ---
 
-## Post Sprint 19-23 Direction
+## Post Sprint 19-25 Direction
 
 Recent sprint progress reinforces the same strategic arc:
 
@@ -144,6 +144,8 @@ Recent sprint progress reinforces the same strategic arc:
 - Ongoing focus on scalable controls rather than retrofit controls
 - Pilot Command Center for live readiness, connector execution, AI review, sandbox policy, RAG evaluation, and audit evidence
 - Governed AI operations that require human approval before consequential workflow actions
+- Tenant-facing AI Review Inbox, OAuth callback/token exchange, scheduled command-center snapshots, sandbox runner attestations, and RAG release gates
+- Encrypted connector token vault, live selected Gmail import, all-tenant command-center snapshot fan-out, and required RAG release checks
 
 In short: the platform is being shaped for durable enterprise adoption, not short-lived experimentation.
 
