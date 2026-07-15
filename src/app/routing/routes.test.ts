@@ -39,7 +39,9 @@ describe("enterprise route metadata", () => {
     expect(routeForPath("/admin/execution-runs").requiredRoles).toEqual(["Super Admin", "Organization Admin"]);
     expect(routeForPath("/admin/usage-limits").requiredRoles).toEqual(["Super Admin", "Organization Admin"]);
     expect(routeForPath("/admin/support-ops").requiredRoles).toEqual(["Super Admin", "Organization Admin"]);
+    expect(routeForPath("/admin/pilot-command-center").requiredRoles).toEqual(["Super Admin", "Organization Admin"]);
     expect(sectionFromPath("/admin/plugin-runtime")).toBe("integrations");
     expect(sectionFromPath("/admin/model-policy")).toBe("ai-workspace");
+    expect(sectionFromPath("/admin/pilot-command-center")).toBe("organization-admin");
   });
 });

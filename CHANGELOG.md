@@ -4,6 +4,10 @@ All notable changes to AXXESS are documented here. This project follows the spir
 
 ## Unreleased
 
+- Added Sprint 22/23 Pilot Command Center for readiness, connector execution, governed AI review, sandbox policy, RAG evaluation, and audit evidence.
+- Added `GET /api/admin/pilot-command-center` and a role-protected `/admin/pilot-command-center` admin surface.
+- Added Sprint 22/23 Supabase migration for command-center snapshots, AI operation reviews, connector execution queue, sandbox attestations, and RAG evaluation runs with tenant-scoped RLS.
+- Added tests for Pilot Command Center scoring, route metadata, and Sprint 22/23 RLS policy expectations.
 - Added Sprint 18 Pilot Conversion dashboard with tenant-scoped pilot health scoring and demo fallback.
 - Added governed server-side audit exports with immutable export metadata and short-lived export tokens.
 - Added signed Resend invitation delivery webhook ingestion with hashed recipient evidence.
