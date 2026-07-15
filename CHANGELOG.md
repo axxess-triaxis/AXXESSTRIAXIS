@@ -4,6 +4,12 @@ All notable changes to AXXESS are documented here. This project follows the spir
 
 ## Unreleased
 
+- Added Sprint 25 encrypted OAuth token vault with AES-GCM sealed token bundles, keyed fingerprints, and service-role-only Supabase storage.
+- Added live Gmail selected-message import endpoint that fetches one authorized message, previews extracted tasks/decisions/stakeholders, and requires confirmation before creating records.
+- Added all-tenant scheduled Pilot Command Center snapshot fan-out with run evidence.
+- Added AI Workspace navigation entry to the tenant AI Review Inbox.
+- Added required RAG release gate script and GitHub Actions workflow for citation, confidence, human-review, and permission regression checks.
+- Added Sprint 25 Supabase migration for `oauth_token_vault`, `gmail_selected_message_imports`, and `command_center_snapshot_runs` with RLS.
 - Added Sprint 24 tenant-facing AI Review Inbox with review read/decision APIs.
 - Added Sprint 24 OAuth callback/token exchange path with signed state verification and token-reference connection upserts.
 - Added daily Vercel Cron route for command-center snapshot persistence.
