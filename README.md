@@ -134,7 +134,7 @@ This is central to our roadmap toward **high-value enterprise contracts and mill
 
 ---
 
-## Post Sprint 19–21 Direction
+## Post Sprint 19-23 Direction
 
 Recent sprint progress reinforces the same strategic arc:
 
@@ -142,6 +142,8 @@ Recent sprint progress reinforces the same strategic arc:
 - Increased auditability and documentation discipline
 - Continued architecture hardening for multi-jurisdiction expansion
 - Ongoing focus on scalable controls rather than retrofit controls
+- Pilot Command Center for live readiness, connector execution, AI review, sandbox policy, RAG evaluation, and audit evidence
+- Governed AI operations that require human approval before consequential workflow actions
 
 In short: the platform is being shaped for durable enterprise adoption, not short-lived experimentation.
 
@@ -173,7 +175,7 @@ Enterprise AI operating platform for regulated deployments across GCC, Singapore
 
 > **Status:** Active development  
 > **Maturity:** [Prototype / Alpha / Beta / Production]  
-> **Last updated:** 2026-07-14
+> **Last updated:** 2026-07-15
 
 ---
 
