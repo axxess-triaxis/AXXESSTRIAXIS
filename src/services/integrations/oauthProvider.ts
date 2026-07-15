@@ -1,6 +1,11 @@
 import { scryptSync, timingSafeEqual } from "node:crypto";
 import type { ConnectorProviderId } from "./connectorContract";
 import { getConnectorContract } from "./connectorContract";
+import {
+  getTokenVaultMissingConfiguration,
+  sealTokenBundle,
+  type OAuthTokenVaultRecord,
+} from "./tokenVault";
 
 export type OAuthStatePayload = {
   organizationId: string;
@@ -19,6 +24,7 @@ export type OAuthTokenExchangeResult = {
   expiresAt?: string;
   oauthSubject?: string;
   rawTokenType?: string;
+  vaultRecord: OAuthTokenVaultRecord;
 };
 
 type OAuthTokenResponse = {
@@ -131,8 +137,9 @@ export function getOAuthProviderConfiguration(providerId: ConnectorProviderId, e
   const contract = getConnectorContract(providerId);
   const client = providerClient(providerId, env);
   const appUrl = env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "");
+  const tokenVaultMissing = getTokenVaultMissingConfiguration(env);
   return {
-    configured: Boolean(contract && client.clientId && client.clientSecret && appUrl),
+    configured: Boolean(contract && client.clientId && client.clientSecret && appUrl && tokenVaultMissing.length === 0),
     providerId,
     contract,
     client,
@@ -141,12 +148,15 @@ export function getOAuthProviderConfiguration(providerId: ConnectorProviderId, e
       !client.clientId ? `${providerId === "gmail" ? "GOOGLE" : "MICROSOFT"}_CLIENT_ID` : undefined,
       !client.clientSecret ? `${providerId === "gmail" ? "GOOGLE" : "MICROSOFT"}_CLIENT_SECRET` : undefined,
       !appUrl ? "NEXT_PUBLIC_APP_URL" : undefined,
+      ...tokenVaultMissing,
     ].filter((item): item is string => Boolean(item)),
   };
 }
 
 export async function exchangeOAuthCode(input: {
   providerId: ConnectorProviderId;
+  organizationId: string;
+  userId: string;
   code: string;
   redirectUri: string;
   env?: NodeJS.ProcessEnv;
@@ -176,20 +186,33 @@ export async function exchangeOAuthCode(input: {
     throw new Error(payload.error_description ?? payload.error ?? `OAuth token exchange failed with status ${response.status}.`);
   }
 
-  const tokenFingerprint = fingerprint(`${input.providerId}:${payload.access_token}:${payload.refresh_token ?? ""}`, input.env);
   const expiresAt = payload.expires_in
     ? new Date((input.now ?? Date.now()) + payload.expires_in * 1000).toISOString()
     : undefined;
+  const scope = payload.scope?.split(/\s+/).filter(Boolean) ?? contract.requiredScopes;
+  const oauthSubject = decodeJwtSubject(payload.id_token);
+  const vaultRecord = sealTokenBundle({
+    providerId: input.providerId,
+    organizationId: input.organizationId,
+    userId: input.userId,
+    accessToken: payload.access_token,
+    refreshToken: payload.refresh_token,
+    scope,
+    expiresAt,
+    oauthSubject,
+    rawTokenType: payload.token_type,
+  }, input.env);
 
   return {
     providerId: input.providerId,
-    tokenReference: `oauth:${input.providerId}:${tokenFingerprint.slice(0, 20)}`,
-    accessTokenHash: fingerprint(`oauth-access-token:${payload.access_token}`, input.env),
-    refreshTokenHash: payload.refresh_token ? fingerprint(`oauth-refresh-token:${payload.refresh_token}`, input.env) : undefined,
-    scope: payload.scope?.split(/\s+/).filter(Boolean) ?? contract.requiredScopes,
+    tokenReference: vaultRecord.tokenReference,
+    accessTokenHash: vaultRecord.accessTokenHash,
+    refreshTokenHash: vaultRecord.refreshTokenHash,
+    scope,
     expiresAt,
-    oauthSubject: decodeJwtSubject(payload.id_token),
+    oauthSubject,
     rawTokenType: payload.token_type,
+    vaultRecord,
   };
 }
 
@@ -216,7 +239,8 @@ export function buildIntegrationConnectionUpsert(input: {
       tokenType: input.exchange.rawTokenType,
       accessTokenHash: input.exchange.accessTokenHash,
       refreshTokenHash: input.exchange.refreshTokenHash,
-      tokenStorage: "external-secret-reference-required",
+      tokenStorage: "encrypted-token-vault",
+      tokenVaultKeyId: input.exchange.vaultRecord.keyId,
     },
   };
 }
