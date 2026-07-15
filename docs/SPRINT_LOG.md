@@ -1,5 +1,40 @@
 # Sprint Log
 
+## Sprint 25 - Token Vault, Gmail Import, Snapshot Fan-Out, And RAG Release Gates
+
+Sprint 25 hardens Sprint 24 live operations by securing connector token storage, making selected Gmail import real, expanding scheduled snapshot persistence across tenants, and turning RAG evaluation into a production release check.
+
+### Completed
+
+- Added encrypted OAuth token vault service with AES-GCM sealed bundles and keyed token fingerprints.
+- Added service-role-only `oauth_token_vault` table with no authenticated grant.
+- Added live Gmail selected-message import API that fetches exactly one Gmail message and reuses the preview/confirm workflow.
+- Added `gmail_selected_message_imports` evidence table with tenant-scoped RLS.
+- Added all-tenant scheduled Pilot Command Center snapshot fan-out and `command_center_snapshot_runs` evidence.
+- Added AI Workspace link to the tenant AI Review Inbox.
+- Added `pnpm run rag:release-gate` and GitHub Actions `RAG Release Gate` workflow.
+- Added focused tests for token vault, Gmail import parsing/fetching, scheduler fan-out, OAuth vault handoff, and Sprint 25 RLS expectations.
+
+### Live
+
+- Gmail OAuth connections can store token material in an encrypted server-only vault when provider credentials and `AXXESS_TOKEN_VAULT_KEY` are configured.
+- Tenants can import a selected Gmail message into AXXESS only after preview and confirmation.
+- Scheduled snapshots can fan out across all active tenants instead of one configured tenant.
+- RAG release checks can run in CI without external model credentials.
+
+### Provider-Gated
+
+- Production Gmail import requires Google OAuth credentials, Supabase service-role runtime, and token vault key material.
+- Branch protection must mark `Required RAG Release Gate` required after GitHub observes the workflow.
+- Token rotation and refresh-token renewal are ready for follow-up hardening but are not yet automated.
+
+### Sprint 26 Recommendations
+
+- Add OAuth token refresh/rotation jobs and vault key rotation runbooks.
+- Add Gmail message picker UI and Microsoft Graph selected-message parity.
+- Persist command-center snapshot fan-out health to admin dashboards.
+- Add production RAG fixture corpus backed by tenant-safe golden documents.
+
 ## Sprint 24 - Live AI Review, OAuth, Sandbox Runner, And RAG Release Gates
 
 Sprint 24 closes the loop from the Pilot Command Center into tenant-facing operations. It adds a real review inbox, OAuth callback/token exchange, scheduled snapshot persistence, approved sandbox execution evidence, and RAG release gates.
