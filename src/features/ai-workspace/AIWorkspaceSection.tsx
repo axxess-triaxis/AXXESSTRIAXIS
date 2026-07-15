@@ -179,6 +179,7 @@ export const AIWorkspaceSection = () => {
         ]}
         actions={
           <>
+            <a href="/ai-workspace/review-inbox" className="rounded-lg border border-[rgba(15,17,23,0.1)] px-3 py-2 text-xs font-semibold text-[#5F6B73] hover:bg-[#F2F3F5]">Review inbox</a>
             <a href="/tasks" className="rounded-lg border border-[rgba(15,17,23,0.1)] px-3 py-2 text-xs font-semibold text-[#5F6B73] hover:bg-[#F2F3F5]">Create task from answer</a>
             <a href="/approvals" className="rounded-lg border border-[rgba(15,17,23,0.1)] px-3 py-2 text-xs font-semibold text-[#5F6B73] hover:bg-[#F2F3F5]">Request approval</a>
             <a href="mailto:founders@triaxis.ventures?subject=AXXESS%20AI%20Workspace%20feedback" className="rounded-lg bg-[#8B1E2D] px-3 py-2 text-xs font-semibold text-white hover:bg-[#7a1a27]">Send feedback</a>
