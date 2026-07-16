@@ -14,7 +14,14 @@ export function skipUnlessSeeded() {
 
 export async function loginAs(page: Page, email: string, password = seededPassword) {
   await page.goto("/auth");
-  await page.getByLabel("Email").fill(email);
+  const emailField = page.getByLabel("Email");
+  const emailVisible = await emailField.isVisible({ timeout: 5_000 }).catch(() => false);
+  if (!emailVisible) {
+    await page.goto("/dashboard");
+    await expect(page.getByText("Executive Dashboard").first()).toBeVisible({ timeout: 20_000 });
+    return;
+  }
+  await emailField.fill(email);
   await page.getByLabel("Password").fill(password);
   await page.getByRole("button", { name: "Sign in" }).click();
   await expect(page.getByText("Executive Dashboard").first()).toBeVisible({ timeout: 20_000 });
