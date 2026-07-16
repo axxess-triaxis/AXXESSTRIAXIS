@@ -1492,7 +1492,7 @@ AXXESS is developed using a structured, sprint-based engineering methodology foc
 
 Rather than optimizing for rapid feature accumulation, the engineering process prioritizes maintainability, operational transparency and production readiness. Every sprint aims to introduce meaningful platform capabilities while preserving architectural consistency and code quality.
 
-As of **Sprint 25**, AXXESS has evolved through more than twenty-five structured engineering iterations covering identity, governance, enterprise workflows, AI orchestration, connector infrastructure, operational controls and release automation.
+As of **Sprint 26**, AXXESS has evolved through more than twenty-six structured engineering iterations covering identity, governance, enterprise workflows, AI orchestration, connector infrastructure, operational controls, release automation and production UX hardening.
 
 ---
 
@@ -1907,6 +1907,31 @@ Verification:
 
 ---
 
+## Sprint 26
+
+Enterprise workflow unification and production UX hardening.
+
+Implemented:
+
+- Shared enterprise golden-path workflow service
+- Reusable Enterprise Workflow Journey component
+- Readiness score and completion percentage for tenant journey state
+- Role-aware workflow locks and next-best action queue
+- Executive Dashboard golden-path command surface
+- AI Workspace workflow journey side rail
+- Dashboard priority actions derived from workflow state
+- Tests for sequencing, RBAC-aware action visibility, blocked prerequisites and rendering
+- Sprint documentation
+
+Verification:
+
+- TypeScript
+- ESLint
+- Unit tests
+- Production build
+
+---
+
 # Repo-Local Supabase Integration
 
 Following Sprint 25, AXXESS adopted a repository-managed Supabase workflow.
@@ -1965,7 +1990,7 @@ Engineering changes are expected to satisfy all quality gates before merge.
 
 # Current Engineering Status
 
-As of Sprint 25:
+As of Sprint 26:
 
 - Governance runtime implemented
 - Provider routing implemented
@@ -1978,8 +2003,9 @@ As of Sprint 25:
 - Sandbox policy attestation implemented
 - RAG release gates implemented
 - Repository-managed Supabase integration implemented
+- Enterprise golden-path UX implemented
 
-The engineering focus now shifts from establishing foundational capabilities to expanding enterprise integrations, deployment maturity and production operations.
+The engineering focus now shifts from establishing foundational capabilities to deepening live integrations, tenant workflow persistence, deployment maturity and production operations.
 # Deployment, Operations & Product Roadmap
 
 AXXESS is designed to support enterprise deployments that evolve from early design-partner environments to production-grade regulated workloads. The deployment philosophy emphasizes repeatability, governance, operational visibility and gradual hardening rather than maximizing deployment speed at the expense of long-term maintainability.
@@ -2343,20 +2369,20 @@ The roadmap reflects current engineering priorities rather than fixed delivery c
 
 ---
 
-## Sprint 26
+## Sprint 27
 
 Primary objectives:
 
-- Automated OAuth token refresh
-- Credential rotation
-- Connector health monitoring
-- Retry management
-- Dead-letter handling
-- Enhanced operational evidence
+- Persist golden-path progress per tenant
+- Add workflow timelines to projects, tasks, approvals and documents
+- Add Gmail and Microsoft selected-message picker UI
+- Create reviewed workflow actions from imported messages
+- Add customer-facing tenant health and usage command center
+- Expand E2E coverage for the full sign-up to approved AI action journey
 
 ---
 
-## Sprint 27
+## Sprint 28
 
 Focus areas:
 
@@ -2368,7 +2394,7 @@ Focus areas:
 
 ---
 
-## Sprint 28
+## Sprint 29
 
 Focus areas:
 
@@ -2379,7 +2405,7 @@ Focus areas:
 
 ---
 
-## Sprint 29
+## Sprint 30
 
 Focus areas:
 
@@ -2390,7 +2416,7 @@ Focus areas:
 
 ---
 
-## Sprint 30+
+## Sprint 31+
 
 Future priorities include:
 

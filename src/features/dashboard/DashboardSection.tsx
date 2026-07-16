@@ -13,10 +13,12 @@ import {
   SectionCard,
   TenantScopeBadge,
 } from "../../components/enterprise";
+import { EnterpriseWorkflowJourney } from "../../components/enterprise/EnterpriseWorkflowJourney";
 import { Avatar } from "../../components/ui/Avatar";
 import { Card } from "../../components/ui/Card";
 import { RiskBadge } from "../../components/ui/RiskBadge";
 import { StatusBadge } from "../../components/ui/StatusBadge";
+import { useEnterpriseGoldenPath } from "../../hooks/useEnterpriseGoldenPath";
 import { useGuidedDemo } from "../../hooks/useGuidedDemo";
 import { useLiveRagHealth } from "../../hooks/useLiveRagHealth";
 import { useLiveWorkspaceMetrics } from "../../hooks/useLiveWorkspaceMetrics";
@@ -56,6 +58,7 @@ export function DashboardSection() {
   const guidedDemo = useGuidedDemo("dashboard");
   const liveMetrics = useLiveWorkspaceMetrics(tenantScope);
   const ragHealth = useLiveRagHealth(tenantScope);
+  const enterpriseJourney = useEnterpriseGoldenPath(tenantScope, session.user);
 
   useEffect(() => {
     if (!tenantScope) return;
@@ -111,6 +114,8 @@ export function DashboardSection() {
 
       {session.user && <BetaOnboardingChecklist user={session.user} projectCount={projects.length} />}
 
+      <EnterpriseWorkflowJourney snapshot={enterpriseJourney} />
+
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {executiveDemoMetrics.map((metric) => (
           <MetricCard key={metric.label} {...metric} state="Demo" />
@@ -161,19 +166,18 @@ export function DashboardSection() {
         <SectionCard title="Recent institutional activity" description="Seeded activity mirrors a live operating environment and ties AI, approvals, documents, and stakeholder follow-ups together.">
           <ActivityFeed items={demoRecentActivity} />
         </SectionCard>
-        <SectionCard title="Priority actions" description="Next actions for a screenshot-ready investor walkthrough.">
+        <SectionCard title="Priority actions" description="Workflow-aware next steps from the tenant golden path.">
           <div className="space-y-2">
-            {[
-              { label: "Generate executive briefing", href: "/ai-workspace" },
-              { label: "Review pending approval", href: "/approvals" },
-              { label: "Open governed document", href: "/knowledge" },
-              { label: "Request pilot conversation", href: "mailto:founders@triaxis.ventures?subject=AXXESS%20pilot%20request" },
-            ].map((action) => (
-              <a key={action.label} href={action.href} className="flex items-center justify-between rounded-lg border border-[rgba(15,17,23,0.08)] px-3 py-2 text-xs font-semibold text-[#0F1117] hover:bg-[#F8F9FA]">
+            {enterpriseJourney.actionQueue.map((action) => (
+              <a key={action.stepId} href={action.route} className="flex items-center justify-between rounded-lg border border-[rgba(15,17,23,0.08)] px-3 py-2 text-xs font-semibold text-[#0F1117] hover:bg-[#F8F9FA]">
                 {action.label}
                 <span className="text-[#8B1E2D]">Open</span>
               </a>
             ))}
+            <a href="mailto:founders@triaxis.ventures?subject=AXXESS%20pilot%20request" className="flex items-center justify-between rounded-lg border border-[rgba(15,17,23,0.08)] px-3 py-2 text-xs font-semibold text-[#0F1117] hover:bg-[#F8F9FA]">
+              Request pilot conversation
+              <span className="text-[#8B1E2D]">Open</span>
+            </a>
           </div>
         </SectionCard>
       </div>
