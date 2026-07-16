@@ -4,6 +4,12 @@ All notable changes to AXXESS are documented here. This project follows the spir
 
 ## Unreleased
 
+- Added Sprint 28 pilot release hardening with first-class approval request, stakeholder note, and project update repositories for reviewed AI actions.
+- Added live Microsoft Graph selected-message import parity with preview/confirm workflow, token vault access, document ingestion, task creation, timeline evidence, and audit events.
+- Added dashboard snapshot deltas for persisted Pilot Command Center snapshots, linked back to workflow timeline events.
+- Added audit export timeline linkage so governed exports can reference workflow provenance evidence.
+- Added dedicated Pilot Golden Path Release Gate GitHub Actions workflow for the Sprint 27 golden-path Playwright spec.
+- Added Sprint 28 Supabase migration for `approval_requests`, `stakeholder_notes`, `project_updates`, `microsoft_selected_message_imports`, `dashboard_snapshot_deltas`, and `audit_export_timeline_links` with tenant-scoped RLS.
 - Added Sprint 27 live tenant workflow execution with tenant-scoped golden-path progress persistence and workflow timeline evidence.
 - Added AI Review Inbox “approve and create” workflow action path that creates work through existing repositories, writes audit evidence, sends notification intent, and updates progress.
 - Added tenant health command center plus workflow timeline panels across Dashboard, AI Review Inbox, Projects, Tasks, Documents, and Approvals.

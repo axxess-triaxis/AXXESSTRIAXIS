@@ -19,7 +19,10 @@ export type WorkflowTimelineResourceType =
   | "stakeholder"
   | "meeting"
   | "dashboard"
-  | "audit";
+  | "audit"
+  | "approval_request"
+  | "stakeholder_note"
+  | "project_update";
 
 export type WorkflowTimelineEventType =
   | "tenant_created"

@@ -1,0 +1,41 @@
+name: Pilot Golden Path Release Gate
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pilot-golden-path:
+    name: Sprint 27 Golden Path Gate
+    runs-on: ubuntu-latest
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
+      NEXT_PUBLIC_AXXESS_AUTH_SHELL: "true"
+      NEXT_PUBLIC_AXXESS_DEMO_MODE: "true"
+      E2E_RUN_SEEDED: "true"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.7.0
+          run_install: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm exec playwright test tests/e2e/sprint27-golden-path.spec.ts
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: pilot-golden-path-report
+          path: playwright-report

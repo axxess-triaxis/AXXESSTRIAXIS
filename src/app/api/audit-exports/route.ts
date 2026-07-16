@@ -24,6 +24,15 @@ type AuditExportRow = {
   created_at: string;
 };
 
+type WorkflowTimelineRow = {
+  id: string;
+  organization_id: string;
+  audit_log_id: string | null;
+  event_type: string;
+  title: string;
+  created_at: string;
+};
+
 function getSupabaseConfig() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, "");
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -33,6 +42,10 @@ function getSupabaseConfig() {
 
 function sha256(value: string) {
   return createHash("sha256").update(value).digest("hex");
+}
+
+function isUuid(value?: string) {
+  return Boolean(value && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{12}$/i.test(value));
 }
 
 function csvEscape(value: unknown) {
@@ -88,6 +101,62 @@ async function insertAuditExport(accessToken: string, row: Record<string, unknow
   return rows[0];
 }
 
+async function listTimelineEventsForAuditLogs(accessToken: string, organizationId: string, auditLogIds: string[]) {
+  const ids = auditLogIds.filter(isUuid);
+  if (ids.length === 0) return [];
+
+  const { url, anonKey } = getSupabaseConfig();
+  const query = new URLSearchParams({
+    organization_id: `eq.${organizationId}`,
+    audit_log_id: `in.(${ids.join(",")})`,
+    select: "id,organization_id,audit_log_id,event_type,title,created_at",
+    order: "created_at.desc",
+    limit: "100",
+  });
+  const response = await fetch(`${url}/rest/v1/workflow_timeline_events?${query.toString()}`, {
+    headers: {
+      apikey: anonKey,
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    cache: "no-store",
+  });
+  if (!response.ok) return [];
+  return await response.json() as WorkflowTimelineRow[];
+}
+
+async function insertAuditExportTimelineLinks(
+  accessToken: string,
+  input: { organizationId: string; exportId: string; timelineEvents: WorkflowTimelineRow[] },
+) {
+  if (input.timelineEvents.length === 0) return [];
+  const { url, anonKey } = getSupabaseConfig();
+  const response = await fetch(`${url}/rest/v1/audit_export_timeline_links`, {
+    method: "POST",
+    headers: {
+      apikey: anonKey,
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+      Prefer: "return=representation",
+    },
+    body: JSON.stringify(input.timelineEvents.map((event) => ({
+      organization_id: input.organizationId,
+      audit_export_id: input.exportId,
+      timeline_event_id: event.id,
+      audit_log_id: event.audit_log_id,
+      link_reason: "export_includes_timeline_evidence",
+      metadata: {
+        eventType: event.event_type,
+        title: event.title,
+        createdAt: event.created_at,
+      },
+    }))),
+    cache: "no-store",
+  });
+  if (!response.ok) return [];
+  return await response.json().catch(() => []) as unknown[];
+}
+
 export async function POST(request: Request) {
   const session = await getServerAuthSession(true);
   if (!session) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
@@ -129,6 +198,12 @@ export async function POST(request: Request) {
       csv_sha256: sha256(csv),
     },
   }).catch(() => undefined);
+  const timelineEvents = await listTimelineEventsForAuditLogs(session.accessToken, scope.organizationId, logs.map((log) => log.id));
+  const timelineLinks = await insertAuditExportTimelineLinks(session.accessToken, {
+    organizationId: scope.organizationId,
+    exportId: exportRecord.id,
+    timelineEvents,
+  });
 
   return NextResponse.json({
     exportId: exportRecord.id,
@@ -136,6 +211,7 @@ export async function POST(request: Request) {
     token,
     expiresAt,
     recordCount: logs.length,
+    timelineLinkCount: timelineLinks.length,
     csvSha256: sha256(csv),
     csv,
   }, { status: 201 });
