@@ -5,6 +5,7 @@ import { InlineToast } from "../../components/forms/InlineToast";
 import { SelectField, TextAreaField, TextField } from "../../components/forms/FormField";
 import { LoadingState } from "../../components/feedback/LoadingState";
 import { DataStateBadge, DemoDataNotice, ModuleHeader, PageShell, TenantScopeBadge, WorkflowStepCard } from "../../components/enterprise";
+import { WorkflowTimelinePanel } from "../../components/enterprise/WorkflowTimelinePanel";
 import { Avatar } from "../../components/ui/Avatar";
 import { Card } from "../../components/ui/Card";
 import { RiskBadge } from "../../components/ui/RiskBadge";
@@ -14,6 +15,7 @@ import { applicationServices } from "../../providers/serviceProvider";
 import { ownerInitialsForProject, projectDepartment, tenantScopeFromUser } from "../../repositories/supabaseEnterpriseRepositories";
 import { useAnalytics } from "../../services/analytics";
 import { demoProjects } from "../../lib/demo/seedData";
+import { useWorkflowTimeline } from "../../hooks/useWorkflowTimeline";
 
 type ProjectFormState = {
   organizationId: string;
@@ -84,6 +86,7 @@ export const ProjectsSection = () => {
   const [form, setForm] = useState<ProjectFormState>(() => projectForm(undefined, user?.organizationId ?? "", user?.id ?? ""));
   const [toast, setToast] = useState<{ tone: "success" | "error" | "info"; message: string } | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const projectTimeline = useWorkflowTimeline(scope, { limit: 5, resourceType: selectedProject ? "project" : undefined, resourceId: selectedProject?.id });
 
   const canManageProjects = Boolean(user && ["Super Admin", "Organization Admin", "Executive", "Manager"].includes(user.role));
 
@@ -403,6 +406,13 @@ export const ProjectsSection = () => {
                   <span key={tag} className="rounded-full bg-[#F2F3F5] px-2 py-1 text-[10px] font-medium text-[#5F6B73]">{tag}</span>
                 ))}
               </div>
+              <WorkflowTimelinePanel
+                title="Project timeline"
+                description="Knowledge, approvals, task creation, project updates and audit evidence for this project."
+                events={projectTimeline.timeline}
+                compact
+                framed={false}
+              />
             </div>
           )}
         </Card>

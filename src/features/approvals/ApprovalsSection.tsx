@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useAuth } from "../../auth/AuthProvider";
 import {
   ApprovalCard,
   DataStateBadge,
@@ -9,16 +10,22 @@ import {
   SectionCard,
   TenantScopeBadge,
 } from "../../components/enterprise";
+import { WorkflowTimelinePanel } from "../../components/enterprise/WorkflowTimelinePanel";
 import { Card } from "../../components/ui/Card";
 import { RiskBadge } from "../../components/ui/RiskBadge";
 import { demoApprovalQueue } from "../../lib/demo/demoApprovals";
 import { applicationServices } from "../../providers/serviceProvider";
+import { tenantScopeFromUser } from "../../repositories/supabaseEnterpriseRepositories";
+import { useWorkflowTimeline } from "../../hooks/useWorkflowTimeline";
 import { Check, CheckCircle2, ShieldCheck, X, XCircle } from "lucide-react";
 
 const approvals = applicationServices.institutionalRepository.getApprovals();
 
 export const ApprovalsSection = () => {
+  const { session } = useAuth();
+  const scope = session.user ? tenantScopeFromUser(session.user) : undefined;
   const [actioned, setActioned] = useState<Record<string, "approved" | "rejected" | "clarification">>({});
+  const approvalTimeline = useWorkflowTimeline(scope, { limit: 5, resourceType: "approval" });
 
   return (
     <PageShell>
@@ -33,6 +40,12 @@ export const ApprovalsSection = () => {
         ]}
       />
       <DemoDataNotice label="Approval decisions update local demo state, show AI recommendation context, and preserve audit-ready decision language." />
+      <WorkflowTimelinePanel
+        title="Approval timeline"
+        description="Human decisions, SLA-sensitive approval actions, and audit records across governed workflow execution."
+        events={approvalTimeline.timeline}
+        compact
+      />
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
         {demoApprovalQueue.map((approval) => (
           <ApprovalCard key={approval.title} title={approval.title} requestor={approval.requestor} risk={approval.risk}>
