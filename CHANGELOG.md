@@ -4,6 +4,8 @@ All notable changes to AXXESS are documented here. This project follows the spir
 
 ## Unreleased
 
+- Added Sprint 26 enterprise golden-path workflow service and reusable journey UX tying onboarding, Knowledge Hub, AI Workspace, AI Review Inbox, Tasks, Dashboard, and Audit Logs into one role-aware customer journey.
+- Added Sprint 26 dashboard and AI Workspace journey surfaces with readiness score, next-best action, workflow-aware action queue, and tests for sequencing, RBAC locks, and rendering.
 - Added repo-local Supabase CLI integration with pinned `supabase@2.109.1`, committed `supabase/config.toml`, migration verification script, package scripts, docs, and GitHub Actions coverage.
 - Added Sprint 25 encrypted OAuth token vault with AES-GCM sealed token bundles, keyed fingerprints, and service-role-only Supabase storage.
 - Added live Gmail selected-message import endpoint that fetches one authorized message, previews extracted tasks/decisions/stakeholders, and requires confirmation before creating records.
