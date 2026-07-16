@@ -1134,9 +1134,10 @@ Current engineering quality includes:
 - Dependency review
 - Playwright validation
 - Required RAG Release Gate
+- Pilot Golden Path Release Gate
 - Vercel Preview validation
 
-Sprint 27 expanded the automated validation pipeline to **70 test files** and **187 passing tests**.
+Sprint 28 adds a dedicated pilot golden-path release gate on top of the broader type, lint, unit, build, security, Supabase, RAG and Playwright validation pipeline.
 
 ---
 
@@ -1495,7 +1496,7 @@ AXXESS is developed using a structured, sprint-based engineering methodology foc
 
 Rather than optimizing for rapid feature accumulation, the engineering process prioritizes maintainability, operational transparency and production readiness. Every sprint aims to introduce meaningful platform capabilities while preserving architectural consistency and code quality.
 
-As of **Sprint 27**, AXXESS has evolved through more than twenty-seven structured engineering iterations covering identity, governance, enterprise workflows, AI orchestration, connector infrastructure, operational controls, release automation, production UX hardening and executable pilot workflow evidence.
+As of **Sprint 28**, AXXESS has evolved through more than twenty-eight structured engineering iterations covering identity, governance, enterprise workflows, AI orchestration, connector infrastructure, operational controls, release automation, production UX hardening, executable pilot workflow evidence and release-gated golden-path validation.
 
 ---
 
@@ -1961,6 +1962,30 @@ Verification:
 
 ---
 
+## Sprint 28
+
+Pilot release gates, Microsoft import parity and timeline evidence.
+
+Implemented:
+
+- Dedicated approval request, stakeholder note and project update repositories
+- Review-to-record creation for approved AI outputs across tasks, approvals, stakeholders, projects and meetings
+- Live Microsoft Graph selected-message import parity with Gmail
+- Dashboard snapshot deltas for persisted Pilot Command Center snapshots
+- Audit export linkage to workflow timeline events
+- Supabase migration for `approval_requests`, `stakeholder_notes`, `project_updates`, `microsoft_selected_message_imports`, `dashboard_snapshot_deltas` and `audit_export_timeline_links`
+- Dedicated Pilot Golden Path Release Gate GitHub Actions workflow
+- Focused tests for Microsoft Graph import, dashboard deltas, Sprint 28 RLS, audit export linkage and review action records
+
+Verification:
+
+- TypeScript
+- Focused unit tests
+- Supabase migration verification
+- Pilot golden-path release gate workflow
+
+---
+
 # Repo-Local Supabase Integration
 
 Following Sprint 25, AXXESS adopted a repository-managed Supabase workflow.
@@ -2019,7 +2044,7 @@ Engineering changes are expected to satisfy all quality gates before merge.
 
 # Current Engineering Status
 
-As of Sprint 27:
+As of Sprint 28:
 
 - Governance runtime implemented
 - Provider routing implemented
@@ -2036,6 +2061,11 @@ As of Sprint 27:
 - Live tenant workflow progress implemented
 - Workflow timeline evidence implemented
 - Review-to-work execution implemented
+- Dedicated approval request, stakeholder note and project update records implemented
+- Microsoft Graph selected-message live import implemented
+- Dashboard snapshot deltas implemented
+- Audit export timeline linkage implemented
+- Pilot golden-path release gate implemented
 
 The engineering focus now shifts from establishing executable pilot workflows to deepening live integrations, dedicated approval/stakeholder/project action repositories, deployment maturity and production operations.
 # Deployment, Operations & Product Roadmap
@@ -2416,9 +2446,9 @@ Completed:
 
 ## Sprint 28
 
-Focus areas:
+Completed:
 
-- Dedicated approval request and stakeholder note repositories
+- Dedicated approval request, stakeholder note and project update repositories
 - Microsoft Graph selected-message live import parity
 - Timeline-backed dashboard snapshot deltas
 - Audit export linkage for workflow timeline events
