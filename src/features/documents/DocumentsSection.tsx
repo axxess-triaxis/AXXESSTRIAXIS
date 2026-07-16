@@ -1,14 +1,20 @@
 "use client";
 
 import { useState } from "react";
+import { useAuth } from "../../auth/AuthProvider";
 import { SectionHeader } from "../../components/layout/SectionHeader";
+import { WorkflowTimelinePanel } from "../../components/enterprise/WorkflowTimelinePanel";
 import { Card } from "../../components/ui/Card";
 import { applicationServices } from "../../providers/serviceProvider";
+import { tenantScopeFromUser } from "../../repositories/supabaseEnterpriseRepositories";
+import { useWorkflowTimeline } from "../../hooks/useWorkflowTimeline";
 import { Filter, Plus, Sparkles } from "lucide-react";
 
 const documents = applicationServices.institutionalRepository.getDocuments();
 
 export const DocumentsSection = () => {
+  const { session } = useAuth();
+  const scope = session.user ? tenantScopeFromUser(session.user) : undefined;
   const [showIngest, setShowIngest] = useState(false);
   const [ingesting, setIngesting] = useState(false);
   const [message, setMessage] = useState<{ tone: "success" | "error" | "info"; text: string } | null>(null);
@@ -18,6 +24,7 @@ export const DocumentsSection = () => {
     classification: "internal",
     visibility: "organization",
   });
+  const documentTimeline = useWorkflowTimeline(scope, { limit: 5, resourceType: "document" });
 
   async function ingestDocument() {
     setIngesting(true);
@@ -93,6 +100,15 @@ export const DocumentsSection = () => {
           </button>
         </Card>
       )}
+
+      <div className="mb-4">
+        <WorkflowTimelinePanel
+          title="Document workflow timeline"
+          description="Uploads, selected-message imports, indexing, RAG use and audit evidence for the tenant knowledge base."
+          events={documentTimeline.timeline}
+          compact
+        />
+      </div>
 
       <div className="space-y-3">
         {documents.map((document) => (

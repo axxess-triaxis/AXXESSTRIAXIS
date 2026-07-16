@@ -11,6 +11,7 @@ import {
 } from "../../../../../repositories/supabaseEnterpriseRepositories";
 import { getConnectorContract, previewSelectedEmailImport, type SelectedEmailImport } from "../../../../../services/integrations/connectorContract";
 import { ingestTenantDocument } from "../../../../../services/rag/tenantRagWorkflow";
+import { recordWorkflowTimelineEvent, upsertWorkflowProgressRecords } from "../../../../../services/workflows/liveTenantWorkflow";
 
 export async function POST(request: Request) {
   const session = await getServerAuthSession(true);
@@ -37,13 +38,31 @@ export async function POST(request: Request) {
   const scope = tenantScopeFromUser(session.user, session.accessToken);
 
   if (!body.confirm) {
-    await auditLogsRepository.record(scope, {
+    const auditLog = await auditLogsRepository.record(scope, {
       action: `connector.${contract.providerId}.email.previewed`,
       resourceType: "email",
       category: "integrations",
       metadata: {
         subject: selectedEmail.subject,
         sourceLink: selectedEmail.sourceLink,
+        tasks: preview.tasks.length,
+        decisions: preview.decisions.length,
+        stakeholders: preview.stakeholders.length,
+      },
+    }).catch(() => undefined);
+    await recordWorkflowTimelineEvent({
+      organizationId: scope.organizationId,
+      resourceType: "email",
+      eventType: "source_imported",
+      title: `${contract.displayName} message previewed`,
+      description: selectedEmail.subject,
+      actorUserId: scope.userId,
+      actorLabel: scope.role,
+      sourceType: contract.providerId,
+      sourceId: selectedEmail.messageId ?? selectedEmail.sourceLink ?? selectedEmail.subject,
+      auditLogId: auditLog?.id,
+      metadata: {
+        requiresConfirmation: true,
         tasks: preview.tasks.length,
         decisions: preview.decisions.length,
         stakeholders: preview.stakeholders.length,
@@ -79,7 +98,7 @@ export async function POST(request: Request) {
     tags: ["email-import", contract.providerId],
   }).catch(() => undefined)));
 
-  await auditLogsRepository.record(scope, {
+  const auditLog = await auditLogsRepository.record(scope, {
     action: `connector.${contract.providerId}.email.imported`,
     resourceType: "document",
     resourceId: document.document.id,
@@ -92,10 +111,72 @@ export async function POST(request: Request) {
       createdTaskIds: tasks.filter(Boolean).map((task) => task?.id),
     },
   }).catch(() => undefined);
+  const createdTasks = tasks.filter((task): task is NonNullable<typeof task> => Boolean(task));
+  const sourceId = selectedEmail.messageId ?? selectedEmail.sourceLink ?? selectedEmail.subject;
+  const importedEvent = await recordWorkflowTimelineEvent({
+    organizationId: scope.organizationId,
+    resourceType: "document",
+    resourceId: document.document.id,
+    eventType: "document_indexed",
+    title: `${contract.displayName} message indexed`,
+    description: selectedEmail.subject,
+    actorUserId: scope.userId,
+    actorLabel: scope.role,
+    sourceType: contract.providerId,
+    sourceId,
+    auditLogId: auditLog?.id,
+    metadata: {
+      chunkCount: document.chunkCount,
+      tags: document.tags,
+      decisions: preview.decisions,
+      stakeholders: preview.stakeholders,
+    },
+  }).catch(() => undefined);
+  const actionEvent = createdTasks[0]
+    ? await recordWorkflowTimelineEvent({
+      organizationId: scope.organizationId,
+      resourceType: "task",
+      resourceId: createdTasks[0]?.id,
+      eventType: "workflow_action_created",
+      title: "Email import created confirmed task",
+      description: createdTasks[0]?.title,
+      actorUserId: scope.userId,
+      actorLabel: scope.role,
+      sourceType: contract.providerId,
+      sourceId,
+      auditLogId: auditLog?.id,
+      metadata: { createdTaskIds: createdTasks.map((task) => task.id) },
+    }).catch(() => undefined)
+    : undefined;
+  await upsertWorkflowProgressRecords([
+    {
+      organizationId: scope.organizationId,
+      stepId: "knowledge-ingestion",
+      status: "complete",
+      lastEventId: importedEvent?.id,
+      completedAt: new Date().toISOString(),
+      metadata: { providerId: contract.providerId, documentId: document.document.id, sourceId },
+    },
+    {
+      organizationId: scope.organizationId,
+      stepId: "workflow-action",
+      status: createdTasks.length > 0 ? "complete" : "ready",
+      lastEventId: actionEvent?.id ?? importedEvent?.id,
+      completedAt: createdTasks.length > 0 ? new Date().toISOString() : undefined,
+      metadata: { providerId: contract.providerId, createdTaskIds: createdTasks.map((task) => task.id) },
+    },
+    {
+      organizationId: scope.organizationId,
+      stepId: "audit-evidence",
+      status: "needs_review",
+      lastEventId: actionEvent?.id ?? importedEvent?.id,
+      metadata: { auditLogId: auditLog?.id, providerId: contract.providerId },
+    },
+  ]).catch(() => undefined);
 
   return NextResponse.json({
     preview,
     document,
-    tasks: tasks.filter(Boolean),
+    tasks: createdTasks,
   }, { status: 201 });
 }

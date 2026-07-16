@@ -14,6 +14,36 @@ const pluginHealth = getIntegrationHealth();
 const connectedCount = integrations.filter((integration) => integration.status === "connected").length;
 const disconnectedCount = integrations.length - connectedCount;
 
+const selectedMailboxMessages = [
+  {
+    id: "msg-dibrugarh-referral-review",
+    providerId: "gmail",
+    from: "district.programme.manager@nemh.example",
+    subject: "Dibrugarh referral SLA review and ambulance escalation",
+    sourceLink: "https://mail.google.com/mail/u/0/#inbox/msg-dibrugarh-referral-review",
+    receivedAt: "2026-07-15T08:10:00.000Z",
+    bodyText: "Please confirm the referral SLA variance for Dibrugarh District Hospital. Action required: assign ambulance turnaround review to the district transport coordinator by Friday. Decision required: whether to escalate the biomedical oxygen dependency risk to the Mission Secretariat. Stakeholders: District Programme Manager, Hospital Superintendent, Transport Coordinator.",
+  },
+  {
+    id: "msg-kamrup-procurement-variance",
+    providerId: "microsoft",
+    from: "finance.controller@nemh.example",
+    subject: "Kamrup procurement variance note for approval packet",
+    sourceLink: "https://outlook.office.com/mail/inbox/id/msg-kamrup-procurement-variance",
+    receivedAt: "2026-07-15T10:40:00.000Z",
+    bodyText: "Budget variance for Kamrup public health procurement requires review before the next approval committee. Action required: prepare vendor clarification note and attach delivery receipts. Decision required: approve conditional release after finance verification. Stakeholders: Finance Controller, Procurement Lead, Vendor Onboarding Cell.",
+  },
+  {
+    id: "msg-barpeta-csr-oxygen",
+    providerId: "gmail",
+    from: "csr.partnerships@nemh.example",
+    subject: "CSR oxygen resilience proposal follow-up",
+    sourceLink: "https://mail.google.com/mail/u/0/#inbox/msg-barpeta-csr-oxygen",
+    receivedAt: "2026-07-15T12:20:00.000Z",
+    bodyText: "CSR partner requested a consolidated implementation plan for Barpeta oxygen resilience. Action required: create follow-up task for district facility assessment and prepare a short stakeholder brief. Decision required: whether the proposal should enter governance review this week. Stakeholders: CSR Lead, District Biomedical Engineer, Mission Secretariat.",
+  },
+];
+
 export const IntegrationsSection = () => {
   const [emailForm, setEmailForm] = useState({
     providerId: "gmail",
@@ -25,6 +55,18 @@ export const IntegrationsSection = () => {
   const [preview, setPreview] = useState<{ summary: string; tasks: string[]; decisions: string[]; stakeholders: string[]; tags: string[] } | null>(null);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<{ tone: "success" | "error" | "info"; message: string } | null>(null);
+
+  function selectMailboxMessage(message: typeof selectedMailboxMessages[number]) {
+    setEmailForm({
+      providerId: message.providerId,
+      from: message.from,
+      subject: message.subject,
+      sourceLink: message.sourceLink,
+      bodyText: message.bodyText,
+    });
+    setPreview(null);
+    setToast({ tone: "info", message: "Selected mailbox message loaded. Preview extraction before creating tenant records." });
+  }
 
   async function importEmail(confirm: boolean) {
     setSaving(true);
@@ -67,6 +109,21 @@ export const IntegrationsSection = () => {
           </div>
         </div>
         <div className="grid w-full gap-2 lg:max-w-md">
+          <div className="rounded-lg border border-[rgba(15,17,23,0.08)] bg-[#F8F9FA] p-2">
+            <div className="mb-2 text-[10px] font-semibold uppercase text-[#5F6B73]">Selected mailbox messages</div>
+            <div className="grid gap-2">
+              {selectedMailboxMessages.map((message) => (
+                <button
+                  key={message.id}
+                  onClick={() => selectMailboxMessage(message)}
+                  className="rounded-lg bg-white px-3 py-2 text-left text-xs hover:bg-[#F2F3F5]"
+                >
+                  <span className="block font-semibold text-[#0F1117]">{message.subject}</span>
+                  <span className="mt-0.5 block text-[11px] text-[#5F6B73]">{message.from}</span>
+                </button>
+              ))}
+            </div>
+          </div>
           <div className="grid grid-cols-2 gap-2">
             <select aria-label="Email provider" value={emailForm.providerId} onChange={(event) => setEmailForm({ ...emailForm, providerId: event.target.value })} className="rounded-lg border border-[rgba(0,0,0,0.12)] bg-white px-3 py-2 text-xs outline-none">
               <option value="gmail">Gmail</option>
