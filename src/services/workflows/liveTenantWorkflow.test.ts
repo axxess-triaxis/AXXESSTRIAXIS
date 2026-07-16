@@ -8,6 +8,7 @@ import type {
   TenantScope,
 } from "../../repositories/interfaces";
 import { createWorkflowActionFromAiReview } from "./liveTenantWorkflow";
+import type { ApprovalRequest, ProjectUpdate, StakeholderNote } from "./workflowActionRecords";
 
 const scope: TenantScope = {
   organizationId: "org-live-pilot",
@@ -144,5 +145,112 @@ describe("live tenant workflow execution", () => {
     expect(result.timelineEvents.map((event) => event.eventType)).toEqual(["human_decision", "audit_recorded"]);
     expect(result.progress.find((step) => step.stepId === "workflow-action")?.status).toBe("ready");
     expect(repositories.tasksRepository.create).not.toHaveBeenCalled();
+  });
+
+  it("creates dedicated approval, stakeholder, and project records from approved reviews", async () => {
+    const repositories = createRepositories();
+    const approvalRequests: ApprovalRequest[] = [];
+    const stakeholderNotes: StakeholderNote[] = [];
+    const projectUpdates: ProjectUpdate[] = [];
+
+    const approvalResult = await createWorkflowActionFromAiReview({
+      ...repositories,
+      approvalRequestsRepository: {
+        list: vi.fn(async () => approvalRequests),
+        create: vi.fn(async (tenantScope, input) => {
+          const record: ApprovalRequest = {
+            id: "approval-1",
+            organizationId: tenantScope.organizationId,
+            requestedByUserId: input.requestedByUserId,
+            reviewerUserId: input.reviewerUserId,
+            sourceAiReviewId: input.sourceAiReviewId,
+            title: input.title,
+            description: input.description,
+            priority: input.priority ?? "high",
+            status: "pending",
+            dueAt: input.dueAt,
+            metadata: input.metadata ?? {},
+            createdAt: "2026-07-16T09:00:00.000Z",
+            updatedAt: "2026-07-16T09:00:00.000Z",
+          };
+          approvalRequests.push(record);
+          return record;
+        }),
+      },
+    }, scope, {
+      review,
+      decision: "approved",
+      actionType: "approval_request",
+      actionTitle: "Approve oxygen resilience escalation",
+    });
+
+    const stakeholderResult = await createWorkflowActionFromAiReview({
+      ...repositories,
+      stakeholderNotesRepository: {
+        list: vi.fn(async () => stakeholderNotes),
+        create: vi.fn(async (tenantScope, input) => {
+          const record: StakeholderNote = {
+            id: "stakeholder-note-1",
+            organizationId: tenantScope.organizationId,
+            createdByUserId: input.createdByUserId,
+            sourceAiReviewId: input.sourceAiReviewId,
+            title: input.title,
+            body: input.body,
+            sentiment: input.sentiment ?? "neutral",
+            visibility: input.visibility ?? "organization",
+            tags: input.tags ?? [],
+            metadata: input.metadata ?? {},
+            createdAt: "2026-07-16T09:00:00.000Z",
+            updatedAt: "2026-07-16T09:00:00.000Z",
+          };
+          stakeholderNotes.push(record);
+          return record;
+        }),
+      },
+    }, scope, {
+      review,
+      decision: "approved",
+      actionType: "stakeholder_note",
+      actionTitle: "Record stakeholder context",
+    });
+
+    const projectResult = await createWorkflowActionFromAiReview({
+      ...repositories,
+      projectUpdatesRepository: {
+        list: vi.fn(async () => projectUpdates),
+        create: vi.fn(async (tenantScope, input) => {
+          const record: ProjectUpdate = {
+            id: "project-update-1",
+            organizationId: tenantScope.organizationId,
+            createdByUserId: input.createdByUserId,
+            sourceAiReviewId: input.sourceAiReviewId,
+            title: input.title,
+            body: input.body,
+            updateType: input.updateType ?? "ai_review",
+            status: input.status ?? "recorded",
+            progressDelta: input.progressDelta ?? 0,
+            riskLevel: input.riskLevel,
+            tags: input.tags ?? [],
+            metadata: input.metadata ?? {},
+            createdAt: "2026-07-16T09:00:00.000Z",
+            updatedAt: "2026-07-16T09:00:00.000Z",
+          };
+          projectUpdates.push(record);
+          return record;
+        }),
+      },
+    }, scope, {
+      review,
+      decision: "approved",
+      actionType: "project_update",
+      actionTitle: "Update district oxygen resilience project",
+    });
+
+    expect(approvalResult.createdApprovalRequest?.title).toBe("Approve oxygen resilience escalation");
+    expect(stakeholderResult.createdStakeholderNote?.tags).toContain("stakeholder-intelligence");
+    expect(projectResult.createdProjectUpdate?.updateType).toBe("ai_review");
+    expect(approvalResult.timelineEvents[1]?.resourceType).toBe("approval_request");
+    expect(stakeholderResult.timelineEvents[1]?.resourceType).toBe("stakeholder_note");
+    expect(projectResult.timelineEvents[1]?.resourceType).toBe("project_update");
   });
 });
