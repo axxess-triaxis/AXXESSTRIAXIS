@@ -1,5 +1,41 @@
 # Sprint Log
 
+## Sprint 28 - Pilot Release Gates, Microsoft Import Parity, And Timeline Evidence
+
+Sprint 28 hardens the Sprint 27 golden path for pilot release review. It gives approved AI actions their own business records, brings Microsoft Graph selected-message import to parity with Gmail, links command-center dashboard movement to timeline evidence, and makes the golden-path E2E a dedicated release gate.
+
+### Completed
+
+- Added `approval_requests`, `stakeholder_notes`, and `project_updates` Supabase tables with tenant-scoped RLS.
+- Added workflow action repositories for approval requests, stakeholder notes, and project updates.
+- Updated AI Review Inbox action creation so approved outputs can create dedicated records instead of routing every action through tasks.
+- Added live Microsoft Graph selected-message import API with encrypted token vault access, preview/confirm workflow, document ingestion, task creation, audit events, and workflow timeline writes.
+- Added `microsoft_selected_message_imports` evidence table with RLS.
+- Added dashboard snapshot delta persistence for Pilot Command Center snapshots and linked each delta to workflow timeline evidence.
+- Added audit-export timeline link persistence through `audit_export_timeline_links`.
+- Added a dedicated `Pilot Golden Path Release Gate` GitHub Actions workflow for `tests/e2e/sprint27-golden-path.spec.ts`.
+- Added focused tests for Microsoft selected-message parsing/fetching, dashboard delta math, dedicated review action records, audit export linkage source checks, and Sprint 28 RLS expectations.
+
+### Live
+
+- A reviewed AI answer can now create an approval request, stakeholder note, project update, task, or meeting follow-up.
+- Microsoft selected-message import follows the same governed pattern as Gmail: connect, select one message, preview extraction, confirm, then create tenant records.
+- Command-center snapshots now produce delta evidence that can be shown in release reviews and customer-success operations.
+- Audit exports can link exported logs to the workflow timeline evidence that explains how the action happened.
+
+### Provider-Gated
+
+- Microsoft Graph import requires Microsoft OAuth credentials, Supabase service-role runtime, and `AXXESS_TOKEN_VAULT_KEY`.
+- Dashboard delta persistence requires Supabase service-role runtime on snapshot routes.
+- GitHub branch protection must mark `Pilot Golden Path Release Gate / Sprint 27 Golden Path Gate` as required after the workflow lands on `main`.
+
+### Recommended Sprint 29
+
+- Add customer-success views for stuck golden-path steps and timeline deltas.
+- Add BYOK/KMS key hierarchy and regional tenant key policy foundations.
+- Add Microsoft mailbox message picker UI backed by live Graph message listing.
+- Add approval-request, stakeholder-note, and project-update list/detail pages.
+
 ## Sprint 27 - Live Tenant Workflow Execution And Pilot Usability
 
 Sprint 27 makes the golden path executable for a real pilot organization. It turns Sprint 26’s unified journey into tenant progress persistence, review-to-work execution, selected-message import UX, workflow timelines, and customer-facing tenant health.

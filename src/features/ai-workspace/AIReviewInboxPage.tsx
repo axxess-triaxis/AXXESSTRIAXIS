@@ -32,6 +32,7 @@ const statusStyle: Record<AiReviewInboxItem["status"], string> = {
 };
 
 const actionTypes = Object.entries(workflowActionLabels) as Array<[ReviewWorkflowActionType, string]>;
+const isDemoReviewFallbackEnabled = process.env.NEXT_PUBLIC_AXXESS_DEMO_MODE === "true" || process.env.NEXT_PUBLIC_AXXESS_AUTH_SHELL === "true";
 
 export function AIReviewInboxPage() {
   const [reviews, setReviews] = useState<AiReviewInboxItem[]>([]);
@@ -42,13 +43,20 @@ export function AIReviewInboxPage() {
   const workflowTimeline = useWorkflowTimeline(undefined, { limit: 6 });
 
   async function loadReviews() {
-    const response = await fetch("/api/ai/reviews", { credentials: "include" });
-    const payload = await response.json().catch(() => ({})) as ReviewResponse;
-    if (!response.ok) {
-      setMessage(payload.error ?? "AI review inbox could not be loaded.");
-      return;
+    try {
+      const response = await fetch("/api/ai/reviews", { credentials: "include" });
+      const payload = await response.json().catch(() => ({})) as ReviewResponse;
+      if (!response.ok) throw new Error(payload.error ?? "AI review inbox could not be loaded.");
+      setReviews(withPendingDemoReview(payload.reviews ?? []));
+      setMessage(null);
+    } catch (error) {
+      if (isDemoReviewFallbackEnabled) {
+        setReviews(withPendingDemoReview([]));
+        setMessage(null);
+        return;
+      }
+      setMessage(error instanceof Error ? error.message : "AI review inbox could not be loaded.");
     }
-    setReviews(payload.reviews ?? []);
   }
 
   async function decide(reviewId: string, decision: "approved" | "edited" | "rejected" | "escalated", createAction = false) {
@@ -174,4 +182,31 @@ export function AIReviewInboxPage() {
       </div>
     </main>
   );
+}
+
+function withPendingDemoReview(reviews: AiReviewInboxItem[]) {
+  if (!isDemoReviewFallbackEnabled || reviews.some((review) => review.status === "pending")) return reviews;
+  const demoReview: AiReviewInboxItem = {
+    id: "review-dibrugarh-referral-sla",
+    organizationId: "demo-north-east-health-mission",
+    sourceAuditId: "demo-email-import-dibrugarh-referral-sla",
+    taskCategory: "workflow_execution",
+    status: "pending",
+    confidence: 0.82,
+    humanReviewFlag: true,
+    answerExcerpt: "Dibrugarh referral SLA variance should be converted into a district ambulance turnaround review task with audit evidence attached.",
+    citations: [
+      {
+        title: "Dibrugarh Referral SLA Review",
+        sourceId: "msg-dibrugarh-referral-review",
+        excerpt: "Action required: assign ambulance turnaround review to the district transport coordinator by Friday.",
+        score: 0.88,
+      },
+    ],
+    createdAt: "2026-07-15T08:10:00.000Z",
+  };
+  return [
+    demoReview,
+    ...reviews,
+  ];
 }

@@ -8,6 +8,11 @@ import {
   tasksRepository,
   tenantScopeFromUser,
 } from "../../../../repositories/supabaseEnterpriseRepositories";
+import {
+  approvalRequestsRepository,
+  projectUpdatesRepository,
+  stakeholderNotesRepository,
+} from "../../../../repositories/workflowActionRepositories";
 import { listAiReviewInbox, recordAiReviewDecision } from "../../../../services/ai/reviewInbox";
 import { createWorkflowActionFromAiReview } from "../../../../services/workflows/liveTenantWorkflow";
 import type { ReviewWorkflowActionType } from "../../../../services/workflows/workflowEvidence";
@@ -76,6 +81,9 @@ export async function POST(request: Request) {
       meetingsRepository,
       notificationsRepository,
       auditLogsRepository,
+      approvalRequestsRepository,
+      stakeholderNotesRepository,
+      projectUpdatesRepository,
     }, scope, {
       review,
       decision: body.decision,

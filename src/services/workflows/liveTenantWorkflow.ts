@@ -1,5 +1,13 @@
 import type { AuditLog, Meeting, Task } from "../../domain";
 import type {
+  ApprovalRequest,
+  ProjectUpdate,
+  StakeholderNote,
+} from "./workflowActionRecords";
+import type {
+  WorkflowActionRepository,
+} from "../../repositories/workflowActionRepositories";
+import type {
   AuditLogsRepository,
   MeetingsRepository,
   NotificationsRepository,
@@ -28,6 +36,46 @@ export type LiveTenantWorkflowRepositories = {
   meetingsRepository?: MeetingsRepository;
   notificationsRepository?: NotificationsRepository;
   auditLogsRepository?: AuditLogsRepository;
+  approvalRequestsRepository?: WorkflowActionRepository<ApprovalRequest, {
+    organizationId?: string;
+    requestedByUserId?: string;
+    reviewerUserId?: string;
+    sourceAiReviewId?: string;
+    sourceAuditLogId?: string;
+    title: string;
+    description?: string;
+    priority?: "low" | "medium" | "high" | "urgent";
+    dueAt?: string;
+    metadata?: Record<string, unknown>;
+  }>;
+  stakeholderNotesRepository?: WorkflowActionRepository<StakeholderNote, {
+    organizationId?: string;
+    stakeholderId?: string;
+    createdByUserId?: string;
+    sourceAiReviewId?: string;
+    sourceAuditLogId?: string;
+    title: string;
+    body: string;
+    sentiment?: "positive" | "neutral" | "risk" | "urgent";
+    visibility?: "private" | "team" | "department" | "organization";
+    tags?: string[];
+    metadata?: Record<string, unknown>;
+  }>;
+  projectUpdatesRepository?: WorkflowActionRepository<ProjectUpdate, {
+    organizationId?: string;
+    projectId?: string;
+    createdByUserId?: string;
+    sourceAiReviewId?: string;
+    sourceAuditLogId?: string;
+    title: string;
+    body: string;
+    updateType?: "status" | "risk" | "budget" | "scope" | "ai_review" | "meeting_follow_up";
+    status?: "draft" | "recorded" | "applied" | "superseded";
+    progressDelta?: number;
+    riskLevel?: "low" | "medium" | "high" | "urgent";
+    tags?: string[];
+    metadata?: Record<string, unknown>;
+  }>;
 };
 
 export type AiReviewWorkflowActionInput = {
@@ -43,6 +91,9 @@ export type AiReviewWorkflowActionResult = {
   actionType?: ReviewWorkflowActionType;
   createdTask?: Task;
   createdMeeting?: Meeting;
+  createdApprovalRequest?: ApprovalRequest;
+  createdStakeholderNote?: StakeholderNote;
+  createdProjectUpdate?: ProjectUpdate;
   auditLog?: AuditLog;
   timelineEvents: WorkflowTimelineEvent[];
   progress: EnterpriseWorkflowProgressRecord[];
@@ -216,6 +267,59 @@ async function createApprovedAction(
     input.notes ? `Reviewer notes: ${input.notes}` : undefined,
     input.review.citations.length ? `Sources: ${input.review.citations.map((citation) => citation.title ?? citation.sourceId).filter(Boolean).join(", ")}` : undefined,
   ].filter(Boolean).join("\n\n");
+  const metadata = {
+    source: "ai_review",
+    reviewId: input.review.id,
+    sourceAuditId: input.review.sourceAuditId,
+    confidence: input.review.confidence,
+    citations: input.review.citations,
+    decisionNotes: input.notes,
+  };
+
+  if (input.actionType === "approval_request" && repositories.approvalRequestsRepository) {
+    const approvalRequest = await repositories.approvalRequestsRepository.create(scope, {
+      organizationId: scope.organizationId,
+      requestedByUserId: scope.userId,
+      sourceAiReviewId: input.review.id,
+      title,
+      description,
+      priority: "high",
+      dueAt: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
+      metadata,
+    });
+    return { resourceType: "approval_request" as const, approvalRequest };
+  }
+
+  if (input.actionType === "stakeholder_note" && repositories.stakeholderNotesRepository) {
+    const stakeholderNote = await repositories.stakeholderNotesRepository.create(scope, {
+      organizationId: scope.organizationId,
+      createdByUserId: scope.userId,
+      sourceAiReviewId: input.review.id,
+      title,
+      body: description,
+      sentiment: input.review.confidence < 0.7 ? "risk" : "neutral",
+      visibility: "organization",
+      tags: ["ai-review", "stakeholder-intelligence"],
+      metadata,
+    });
+    return { resourceType: "stakeholder_note" as const, stakeholderNote };
+  }
+
+  if (input.actionType === "project_update" && repositories.projectUpdatesRepository) {
+    const projectUpdate = await repositories.projectUpdatesRepository.create(scope, {
+      organizationId: scope.organizationId,
+      createdByUserId: scope.userId,
+      sourceAiReviewId: input.review.id,
+      title,
+      body: description,
+      updateType: "ai_review",
+      status: "recorded",
+      riskLevel: input.review.confidence < 0.7 ? "high" : "medium",
+      tags: ["ai-review", "project-update"],
+      metadata,
+    });
+    return { resourceType: "project_update" as const, projectUpdate };
+  }
 
   if (input.actionType === "meeting_follow_up" && repositories.meetingsRepository) {
     const startsAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
@@ -254,6 +358,9 @@ export async function createWorkflowActionFromAiReview(
   const actionType = input.actionType ?? "task";
   let createdTask: Task | undefined;
   let createdMeeting: Meeting | undefined;
+  let createdApprovalRequest: ApprovalRequest | undefined;
+  let createdStakeholderNote: StakeholderNote | undefined;
+  let createdProjectUpdate: ProjectUpdate | undefined;
   let resourceType: WorkflowTimelineResourceType = "ai_review";
   let resourceId: string | undefined;
 
@@ -261,8 +368,11 @@ export async function createWorkflowActionFromAiReview(
     const created = await createApprovedAction(repositories, scope, { ...input, actionType });
     createdTask = "task" in created ? created.task : undefined;
     createdMeeting = "meeting" in created ? created.meeting : undefined;
+    createdApprovalRequest = "approvalRequest" in created ? created.approvalRequest : undefined;
+    createdStakeholderNote = "stakeholderNote" in created ? created.stakeholderNote : undefined;
+    createdProjectUpdate = "projectUpdate" in created ? created.projectUpdate : undefined;
     resourceType = created.resourceType;
-    resourceId = createdTask?.id ?? createdMeeting?.id;
+    resourceId = createdTask?.id ?? createdMeeting?.id ?? createdApprovalRequest?.id ?? createdStakeholderNote?.id ?? createdProjectUpdate?.id;
   }
 
   const auditLog = await repositories.auditLogsRepository?.record(scope, {
@@ -320,7 +430,12 @@ export async function createWorkflowActionFromAiReview(
       resourceId,
       eventType: "workflow_action_created",
       title: workflowActionLabels[actionType],
-      description: createdTask?.title ?? createdMeeting?.title ?? input.review.answerExcerpt,
+      description: createdTask?.title
+        ?? createdMeeting?.title
+        ?? createdApprovalRequest?.title
+        ?? createdStakeholderNote?.title
+        ?? createdProjectUpdate?.title
+        ?? input.review.answerExcerpt,
       actorUserId: scope.userId,
       actorLabel: scope.role,
       sourceType: "ai_review",
@@ -392,6 +507,9 @@ export async function createWorkflowActionFromAiReview(
     actionType: input.decision === "approved" ? actionType : undefined,
     createdTask,
     createdMeeting,
+    createdApprovalRequest,
+    createdStakeholderNote,
+    createdProjectUpdate,
     auditLog,
     timelineEvents: [decisionEvent, actionEvent, auditEvent].filter((event): event is WorkflowTimelineEvent => Boolean(event)),
     progress,
