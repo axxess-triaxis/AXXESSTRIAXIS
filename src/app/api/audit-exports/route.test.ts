@@ -22,4 +22,10 @@ describe("audit export API", () => {
     expect(routeSource).toContain("audit_export.created");
     expect(routeSource).not.toContain("SUPABASE_SERVICE_ROLE_KEY");
   });
+
+  it("links exported audit records back to workflow timeline evidence", () => {
+    expect(routeSource).toContain("listTimelineEventsForAuditLogs");
+    expect(routeSource).toContain("audit_export_timeline_links");
+    expect(routeSource).toContain("timelineLinkCount");
+  });
 });
