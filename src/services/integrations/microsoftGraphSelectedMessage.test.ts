@@ -25,6 +25,27 @@ describe("Microsoft Graph selected-message import", () => {
     expect(selectedEmail.sourceLink).toContain("outlook.office.com");
   });
 
+  it("renders Microsoft HTML bodies without executable blocks or double-unescaped markup", () => {
+    const selectedEmail = parseMicrosoftGraphSelectedMessage({
+      id: "AAMkSAFE",
+      subject: "District compliance note",
+      body: {
+        contentType: "html",
+        content: [
+          "<style>.hidden { display: none; }</style >",
+          "<script>alert('unsafe')</script >",
+          "<p>Review PHC readiness &amp; oxygen stock.</p>",
+          "<p>Keep encoded risk marker: &lt;restricted&gt;</p>",
+        ].join(""),
+      },
+    });
+
+    expect(selectedEmail.bodyText).toContain("PHC readiness & oxygen stock");
+    expect(selectedEmail.bodyText).toContain("&lt;restricted&gt;");
+    expect(selectedEmail.bodyText).not.toContain("alert");
+    expect(selectedEmail.bodyText).not.toContain("display: none");
+  });
+
   it("fetches exactly one Microsoft Graph message with the readonly bearer token", async () => {
     const fetcher = vi.fn(async () => new Response(JSON.stringify({
       id: "graph-msg-1",
