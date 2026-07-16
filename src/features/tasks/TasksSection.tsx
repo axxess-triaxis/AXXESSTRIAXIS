@@ -5,6 +5,7 @@ import { InlineToast } from "../../components/forms/InlineToast";
 import { SelectField, TextAreaField, TextField } from "../../components/forms/FormField";
 import { LoadingState } from "../../components/feedback/LoadingState";
 import { DataStateBadge, DemoDataNotice, ModuleHeader, PageShell, TenantScopeBadge, WorkflowStepCard } from "../../components/enterprise";
+import { WorkflowTimelinePanel } from "../../components/enterprise/WorkflowTimelinePanel";
 import { Avatar } from "../../components/ui/Avatar";
 import { Card } from "../../components/ui/Card";
 import { RiskBadge } from "../../components/ui/RiskBadge";
@@ -14,6 +15,7 @@ import { applicationServices } from "../../providers/serviceProvider";
 import { tenantScopeFromUser } from "../../repositories/supabaseEnterpriseRepositories";
 import { useAnalytics } from "../../services/analytics";
 import { demoAuditTimeline } from "../../lib/demo/demoActivity";
+import { useWorkflowTimeline } from "../../hooks/useWorkflowTimeline";
 
 type TaskFormState = {
   title: string;
@@ -77,6 +79,7 @@ export const TasksSection = () => {
   const [form, setForm] = useState<TaskFormState>(() => taskForm());
   const [toast, setToast] = useState<{ tone: "success" | "error" | "info"; message: string } | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const taskTimeline = useWorkflowTimeline(scope, { limit: 5, resourceType: selectedTask ? "task" : undefined, resourceId: selectedTask?.id });
 
   const canManageTasks = Boolean(user && ["Super Admin", "Organization Admin", "Executive", "Manager", "Employee"].includes(user.role));
 
@@ -339,6 +342,13 @@ export const TasksSection = () => {
                   <span key={tag} className="rounded-full bg-[#F2F3F5] px-2 py-1 text-[10px] font-medium text-[#5F6B73]">{tag}</span>
                 ))}
               </div>
+              <WorkflowTimelinePanel
+                title="Task timeline"
+                description="Source, approval, work update, and audit evidence linked to this task."
+                events={taskTimeline.timeline}
+                compact
+                framed={false}
+              />
             </div>
           )}
         </Card>

@@ -233,7 +233,7 @@ These organizations increasingly require AI systems capable of operating within 
 
 **Enterprise Beta Candidate**
 
-Current implementation includes more than twenty-five structured engineering sprints covering governance, orchestration, operational controls, enterprise administration, connector infrastructure, audit evidence, observability and Human-in-the-Loop workflows.
+Current implementation includes more than twenty-seven structured engineering sprints covering governance, orchestration, operational controls, enterprise administration, connector infrastructure, audit evidence, observability, Human-in-the-Loop workflows and live tenant workflow execution.
 
 The platform currently supports:
 
@@ -249,6 +249,9 @@ The platform currently supports:
 - Encrypted OAuth Token Vault
 - Gmail Integration
 - RAG Release Gates
+- Persisted Golden-Path Progress
+- Workflow Timeline Evidence
+- Review-to-Work Action Creation
 - Multi-tenant Administration
 - Usage Controls
 - Enterprise Readiness Scoring
@@ -545,7 +548,7 @@ Sprint 25 added:
 - tenant isolation
 - governance integration
 
-Automated refresh and rotation remain part of Sprint 26.
+Automated refresh and rotation remain part of future connector hardening.
 
 ---
 
@@ -1133,7 +1136,7 @@ Current engineering quality includes:
 - Required RAG Release Gate
 - Vercel Preview validation
 
-Sprint 25 expanded the automated validation pipeline to **67 test files** and **177 passing tests**.
+Sprint 27 expanded the automated validation pipeline to **70 test files** and **187 passing tests**.
 
 ---
 
@@ -1492,7 +1495,7 @@ AXXESS is developed using a structured, sprint-based engineering methodology foc
 
 Rather than optimizing for rapid feature accumulation, the engineering process prioritizes maintainability, operational transparency and production readiness. Every sprint aims to introduce meaningful platform capabilities while preserving architectural consistency and code quality.
 
-As of **Sprint 26**, AXXESS has evolved through more than twenty-six structured engineering iterations covering identity, governance, enterprise workflows, AI orchestration, connector infrastructure, operational controls, release automation and production UX hardening.
+As of **Sprint 27**, AXXESS has evolved through more than twenty-seven structured engineering iterations covering identity, governance, enterprise workflows, AI orchestration, connector infrastructure, operational controls, release automation, production UX hardening and executable pilot workflow evidence.
 
 ---
 
@@ -1932,6 +1935,32 @@ Verification:
 
 ---
 
+## Sprint 27
+
+Live tenant workflow execution and pilot usability.
+
+Implemented:
+
+- Tenant-scoped golden-path progress persistence
+- Tenant-scoped workflow timeline evidence
+- Review-to-work creation from approved AI outputs
+- Dashboard Tenant Health Command Center
+- Workflow timeline panels on Dashboard, AI Review Inbox, Projects, Tasks, Documents and Approvals
+- Selected Gmail/Microsoft mailbox message picker UI
+- Document ingestion, selected email import and RAG review progress updates
+- Supabase migration for `enterprise_workflow_progress` and `workflow_timeline_events`
+- Unit, component and seed-gated Playwright golden-path coverage
+- Sprint documentation
+
+Verification:
+
+- TypeScript
+- Focused unit/component tests
+- Supabase migration verification
+- E2E smoke coverage for seeded pilot environments
+
+---
+
 # Repo-Local Supabase Integration
 
 Following Sprint 25, AXXESS adopted a repository-managed Supabase workflow.
@@ -1990,7 +2019,7 @@ Engineering changes are expected to satisfy all quality gates before merge.
 
 # Current Engineering Status
 
-As of Sprint 26:
+As of Sprint 27:
 
 - Governance runtime implemented
 - Provider routing implemented
@@ -2004,8 +2033,11 @@ As of Sprint 26:
 - RAG release gates implemented
 - Repository-managed Supabase integration implemented
 - Enterprise golden-path UX implemented
+- Live tenant workflow progress implemented
+- Workflow timeline evidence implemented
+- Review-to-work execution implemented
 
-The engineering focus now shifts from establishing foundational capabilities to deepening live integrations, tenant workflow persistence, deployment maturity and production operations.
+The engineering focus now shifts from establishing executable pilot workflows to deepening live integrations, dedicated approval/stakeholder/project action repositories, deployment maturity and production operations.
 # Deployment, Operations & Product Roadmap
 
 AXXESS is designed to support enterprise deployments that evolve from early design-partner environments to production-grade regulated workloads. The deployment philosophy emphasizes repeatability, governance, operational visibility and gradual hardening rather than maximizing deployment speed at the expense of long-term maintainability.
@@ -2371,14 +2403,14 @@ The roadmap reflects current engineering priorities rather than fixed delivery c
 
 ## Sprint 27
 
-Primary objectives:
+Completed:
 
-- Persist golden-path progress per tenant
-- Add workflow timelines to projects, tasks, approvals and documents
-- Add Gmail and Microsoft selected-message picker UI
-- Create reviewed workflow actions from imported messages
-- Add customer-facing tenant health and usage command center
-- Expand E2E coverage for the full sign-up to approved AI action journey
+- Persisted golden-path progress per tenant
+- Added workflow timelines to projects, tasks, approvals and documents
+- Added Gmail and Microsoft selected-message picker UI
+- Created reviewed workflow actions from approved AI answers and imported messages
+- Added customer-facing tenant health command center
+- Expanded unit, component and seed-gated E2E coverage for the pilot golden path
 
 ---
 
@@ -2386,11 +2418,11 @@ Primary objectives:
 
 Focus areas:
 
-- Outlook integration
-- Calendar integration
-- Expanded Review Inbox
-- Approval assignment
-- Operational dashboards
+- Dedicated approval request and stakeholder note repositories
+- Microsoft Graph selected-message live import parity
+- Timeline-backed dashboard snapshot deltas
+- Audit export linkage for workflow timeline events
+- Required golden-path release gate for pilot tenants
 
 ---
 

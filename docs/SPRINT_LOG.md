@@ -1,5 +1,40 @@
 # Sprint Log
 
+## Sprint 27 - Live Tenant Workflow Execution And Pilot Usability
+
+Sprint 27 makes the golden path executable for a real pilot organization. It turns Sprint 26’s unified journey into tenant progress persistence, review-to-work execution, selected-message import UX, workflow timelines, and customer-facing tenant health.
+
+### Completed
+
+- Added `enterprise_workflow_progress` and `workflow_timeline_events` Supabase tables with tenant-scoped RLS.
+- Added live tenant workflow services for progress persistence, timeline evidence, and approved AI review action creation.
+- Added “Approve and create” to AI Review Inbox so approved cited answers can create tasks or meeting follow-ups through existing repositories.
+- Added workflow timeline writes to document ingestion, selected email import, live Gmail import, RAG review, and AI review decisions.
+- Added Tenant Health Command Center to the Executive Dashboard.
+- Added workflow timeline panels to Dashboard, AI Review Inbox, Projects, Tasks, Documents, and Approvals.
+- Added selected Gmail/Microsoft mailbox message picker UI with preview and confirmation before records are created.
+- Added focused unit/component tests and a seed-gated Playwright golden-path smoke test.
+
+### Live
+
+- A pilot tenant can move from knowledge ingestion or selected-message import into reviewed AI output, approved work creation, dashboard health, timeline evidence, and audit trail.
+- The dashboard now shows onboarding completion, active users, documents indexed, pending AI reviews, open tasks, approval SLA risk, integration health, and audit coverage.
+- Core workflow pages no longer behave like isolated modules; each screen can show evidence of the source, answer, decision, action, actor, timestamp, and audit record.
+
+### Provider-Gated
+
+- Live Gmail import still requires Google OAuth credentials, Supabase service-role runtime, and token vault key material.
+- Production timeline persistence requires Supabase service-role availability on server routes.
+- Dedicated approval/stakeholder/project update repositories remain follow-up work; Sprint 27 routes these action types through existing task/meeting repositories.
+
+### Recommended Sprint 28
+
+- Add dedicated approval request, stakeholder note, and project update write repositories.
+- Add Microsoft Graph selected-message live import parity.
+- Promote Sprint 27 golden-path E2E into a required pilot release gate.
+- Add timeline-backed dashboard snapshot deltas and audit export linkage.
+- Add customer-success admin views for stuck golden-path steps.
+
 ## Sprint 26 - Enterprise Workflow Unification And Production UX Hardening
 
 Sprint 26 connects the strongest AXXESS modules into one visible enterprise operating journey. It focuses on production UX, real-life workflows, role-aware next actions, and a coherent path from tenant setup through governed AI review into work, dashboards, notifications, and audit evidence.

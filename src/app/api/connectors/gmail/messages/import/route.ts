@@ -14,6 +14,7 @@ import { previewSelectedEmailImport } from "../../../../../../services/integrati
 import { fetchGmailSelectedMessage } from "../../../../../../services/integrations/gmailSelectedMessage";
 import { isTokenVaultConfigured, openTokenBundle, type OAuthTokenVaultRecord, type TokenVaultEncryptedPayload } from "../../../../../../services/integrations/tokenVault";
 import { ingestTenantDocument } from "../../../../../../services/rag/tenantRagWorkflow";
+import { recordWorkflowTimelineEvent, upsertWorkflowProgressRecords } from "../../../../../../services/workflows/liveTenantWorkflow";
 
 type GmailImportRequest = {
   messageId?: string;
@@ -155,7 +156,7 @@ export async function POST(request: Request) {
         body_excerpt: selectedEmail.bodyText.slice(0, 500),
       },
     }).catch(() => undefined);
-    await auditLogsRepository.record(scope, {
+    const auditLog = await auditLogsRepository.record(scope, {
       action: "connector.gmail.email.previewed_live",
       resourceType: "email",
       category: "integrations",
@@ -163,6 +164,25 @@ export async function POST(request: Request) {
         messageId: selectedEmail.messageId,
         sourceLink: selectedEmail.sourceLink,
         subject: selectedEmail.subject,
+        tasks: preview.tasks.length,
+        decisions: preview.decisions.length,
+        stakeholders: preview.stakeholders.length,
+      },
+    }).catch(() => undefined);
+    await recordWorkflowTimelineEvent({
+      organizationId: scope.organizationId,
+      resourceType: "email",
+      eventType: "source_imported",
+      title: "Gmail message previewed",
+      description: selectedEmail.subject,
+      actorUserId: scope.userId,
+      actorLabel: scope.role,
+      sourceType: "gmail",
+      sourceId: selectedEmail.messageId,
+      auditLogId: auditLog?.id,
+      metadata: {
+        requiresConfirmation: true,
+        sourceLink: selectedEmail.sourceLink,
         tasks: preview.tasks.length,
         decisions: preview.decisions.length,
         stakeholders: preview.stakeholders.length,
@@ -210,7 +230,7 @@ export async function POST(request: Request) {
     tags: ["gmail-import", "selected-message"],
   }).catch(() => undefined)));
 
-  const createdTasks = tasks.filter(Boolean);
+  const createdTasks = tasks.filter((task): task is NonNullable<typeof task> => Boolean(task));
   await supabaseAdminRest("gmail_selected_message_imports", {
     method: "POST",
     body: {
@@ -231,7 +251,7 @@ export async function POST(request: Request) {
     },
   }).catch(() => undefined);
 
-  await auditLogsRepository.record(scope, {
+  const auditLog = await auditLogsRepository.record(scope, {
     action: "connector.gmail.email.imported_live",
     resourceType: "document",
     resourceId: document.document.id,
@@ -244,6 +264,67 @@ export async function POST(request: Request) {
       createdTaskIds: createdTasks.map((task) => task?.id),
     },
   }).catch(() => undefined);
+  const importedEvent = await recordWorkflowTimelineEvent({
+    organizationId: scope.organizationId,
+    resourceType: "document",
+    resourceId: document.document.id,
+    eventType: "document_indexed",
+    title: "Gmail message indexed",
+    description: selectedEmail.subject,
+    actorUserId: scope.userId,
+    actorLabel: scope.role,
+    sourceType: "gmail",
+    sourceId: selectedEmail.messageId,
+    auditLogId: auditLog?.id,
+    metadata: {
+      sourceLink: selectedEmail.sourceLink,
+      chunkCount: document.chunkCount,
+      tags: document.tags,
+      decisions: preview.decisions,
+      stakeholders: preview.stakeholders,
+    },
+  }).catch(() => undefined);
+  const actionEvent = createdTasks[0]
+    ? await recordWorkflowTimelineEvent({
+      organizationId: scope.organizationId,
+      resourceType: "task",
+      resourceId: createdTasks[0].id,
+      eventType: "workflow_action_created",
+      title: "Gmail import created confirmed task",
+      description: createdTasks[0].title,
+      actorUserId: scope.userId,
+      actorLabel: scope.role,
+      sourceType: "gmail",
+      sourceId: selectedEmail.messageId,
+      auditLogId: auditLog?.id,
+      metadata: { createdTaskIds: createdTasks.map((task) => task.id) },
+    }).catch(() => undefined)
+    : undefined;
+  await upsertWorkflowProgressRecords([
+    {
+      organizationId: scope.organizationId,
+      stepId: "knowledge-ingestion",
+      status: "complete",
+      lastEventId: importedEvent?.id,
+      completedAt: new Date().toISOString(),
+      metadata: { providerId: "gmail", documentId: document.document.id, messageId: selectedEmail.messageId },
+    },
+    {
+      organizationId: scope.organizationId,
+      stepId: "workflow-action",
+      status: createdTasks.length > 0 ? "complete" : "ready",
+      lastEventId: actionEvent?.id ?? importedEvent?.id,
+      completedAt: createdTasks.length > 0 ? new Date().toISOString() : undefined,
+      metadata: { providerId: "gmail", createdTaskIds: createdTasks.map((task) => task.id) },
+    },
+    {
+      organizationId: scope.organizationId,
+      stepId: "audit-evidence",
+      status: "needs_review",
+      lastEventId: actionEvent?.id ?? importedEvent?.id,
+      metadata: { auditLogId: auditLog?.id, providerId: "gmail" },
+    },
+  ]).catch(() => undefined);
 
   return NextResponse.json({
     preview,
