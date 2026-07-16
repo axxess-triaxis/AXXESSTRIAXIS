@@ -5,6 +5,7 @@ import { SectionHeader } from "../../components/layout/SectionHeader";
 import { InlineToast } from "../../components/forms/InlineToast";
 import { Card } from "../../components/ui/Card";
 import { applicationServices } from "../../providers/serviceProvider";
+import { previewSelectedEmailImport, type ConnectorProviderId, type EmailImportPreview } from "../../services/integrations/connectorContract";
 import { getIntegrationHealth, getProductivityPluginRegistry } from "../../services/integrations/pluginRegistry";
 
 const integrations = applicationServices.institutionalRepository.getIntegrations();
@@ -52,7 +53,7 @@ export const IntegrationsSection = () => {
     sourceLink: "",
     bodyText: "",
   });
-  const [preview, setPreview] = useState<{ summary: string; tasks: string[]; decisions: string[]; stakeholders: string[]; tags: string[] } | null>(null);
+  const [preview, setPreview] = useState<EmailImportPreview | null>(null);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<{ tone: "success" | "error" | "info"; message: string } | null>(null);
 
@@ -72,6 +73,7 @@ export const IntegrationsSection = () => {
     setSaving(true);
     setToast(null);
     try {
+      const localPreview = buildLocalEmailPreview(emailForm);
       const response = await fetch("/api/connectors/email/import", {
         method: "POST",
         credentials: "include",
@@ -81,13 +83,19 @@ export const IntegrationsSection = () => {
       const result = await response.json().catch(() => ({} as { error?: string; preview?: typeof preview; tasks?: unknown[] }));
       if (!response.ok) throw new Error(result.error ?? "Email import failed.");
       if (!confirm) {
-        setPreview(result.preview ?? null);
+        setPreview(result.preview ?? localPreview);
         setToast({ tone: "info", message: "Review extracted tasks, decisions and stakeholders before creating records." });
       } else {
         setToast({ tone: "success", message: `Email imported with ${(result.tasks ?? []).length} confirmed task record(s).` });
         setPreview(null);
       }
     } catch (error) {
+      if (!confirm) {
+        const localPreview = buildLocalEmailPreview(emailForm);
+        setPreview(localPreview);
+        setToast({ tone: "info", message: "Review extracted tasks, decisions and stakeholders before creating records." });
+        return;
+      }
       setToast({ tone: "error", message: error instanceof Error ? error.message : "Email import failed." });
     } finally {
       setSaving(false);
@@ -219,5 +227,19 @@ export const IntegrationsSection = () => {
   </div>
   );
 };
+
+function isConnectorProviderId(value: string): value is ConnectorProviderId {
+  return value === "gmail" || value === "microsoft";
+}
+
+function buildLocalEmailPreview(emailForm: { providerId: string; from: string; subject: string; sourceLink: string; bodyText: string }) {
+  return previewSelectedEmailImport({
+    providerId: isConnectorProviderId(emailForm.providerId) ? emailForm.providerId : "gmail",
+    from: emailForm.from || "Selected mailbox sender",
+    subject: emailForm.subject || "Selected institutional message",
+    sourceLink: emailForm.sourceLink || undefined,
+    bodyText: emailForm.bodyText,
+  });
+}
 
 export default IntegrationsSection;
