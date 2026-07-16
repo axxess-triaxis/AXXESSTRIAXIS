@@ -1,6 +1,7 @@
 import { isSupabaseAdminConfigured, supabaseAdminRest } from "../../repositories/supabaseAdmin";
 import type { RoleName } from "../../domain";
 import { buildPilotCommandCenterSnapshot, type PilotCommandCenterSnapshot } from "./pilotCommandCenter";
+import { persistDashboardSnapshotDelta, type DashboardSnapshotRow } from "./dashboardSnapshotDeltas";
 
 export type PersistCommandCenterSnapshotInput = {
   organizationId: string;
@@ -77,7 +78,7 @@ export async function persistCommandCenterSnapshot(input: PersistCommandCenterSn
     };
   }
 
-  await supabaseAdminRest("pilot_command_center_snapshots", {
+  const rows = await supabaseAdminRest<DashboardSnapshotRow[]>("pilot_command_center_snapshots", {
     method: "POST",
     body: {
       organization_id: snapshot.organizationId,
@@ -94,6 +95,9 @@ export async function persistCommandCenterSnapshot(input: PersistCommandCenterSn
       recommendations: snapshot.recommendations,
     },
   });
+  if (rows?.[0]) {
+    await persistDashboardSnapshotDelta({ current: rows[0], snapshot }).catch(() => undefined);
+  }
 
   return {
     persisted: true,
