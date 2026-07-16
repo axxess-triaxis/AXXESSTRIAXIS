@@ -14,6 +14,8 @@ import {
   TenantScopeBadge,
 } from "../../components/enterprise";
 import { EnterpriseWorkflowJourney } from "../../components/enterprise/EnterpriseWorkflowJourney";
+import { TenantHealthCommandCenter } from "../../components/enterprise/TenantHealthCommandCenter";
+import { WorkflowTimelinePanel } from "../../components/enterprise/WorkflowTimelinePanel";
 import { Avatar } from "../../components/ui/Avatar";
 import { Card } from "../../components/ui/Card";
 import { RiskBadge } from "../../components/ui/RiskBadge";
@@ -22,6 +24,7 @@ import { useEnterpriseGoldenPath } from "../../hooks/useEnterpriseGoldenPath";
 import { useGuidedDemo } from "../../hooks/useGuidedDemo";
 import { useLiveRagHealth } from "../../hooks/useLiveRagHealth";
 import { useLiveWorkspaceMetrics } from "../../hooks/useLiveWorkspaceMetrics";
+import { useWorkflowTimeline } from "../../hooks/useWorkflowTimeline";
 import { demoRecentActivity } from "../../lib/demo/demoActivity";
 import { demoInstitution } from "../../lib/demo/seedData";
 import { executiveDemoMetrics } from "../../lib/demo/demoMetrics";
@@ -59,6 +62,7 @@ export function DashboardSection() {
   const liveMetrics = useLiveWorkspaceMetrics(tenantScope);
   const ragHealth = useLiveRagHealth(tenantScope);
   const enterpriseJourney = useEnterpriseGoldenPath(tenantScope, session.user);
+  const workflowTimeline = useWorkflowTimeline(tenantScope, { limit: 6 });
 
   useEffect(() => {
     if (!tenantScope) return;
@@ -115,6 +119,7 @@ export function DashboardSection() {
       {session.user && <BetaOnboardingChecklist user={session.user} projectCount={projects.length} />}
 
       <EnterpriseWorkflowJourney snapshot={enterpriseJourney} />
+      <TenantHealthCommandCenter snapshot={enterpriseJourney} metrics={liveMetrics} />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {executiveDemoMetrics.map((metric) => (
@@ -162,25 +167,27 @@ export function DashboardSection() {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_360px]">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_420px]">
         <SectionCard title="Recent institutional activity" description="Seeded activity mirrors a live operating environment and ties AI, approvals, documents, and stakeholder follow-ups together.">
           <ActivityFeed items={demoRecentActivity} />
         </SectionCard>
-        <SectionCard title="Priority actions" description="Workflow-aware next steps from the tenant golden path.">
-          <div className="space-y-2">
-            {enterpriseJourney.actionQueue.map((action) => (
-              <a key={action.stepId} href={action.route} className="flex items-center justify-between rounded-lg border border-[rgba(15,17,23,0.08)] px-3 py-2 text-xs font-semibold text-[#0F1117] hover:bg-[#F8F9FA]">
-                {action.label}
-                <span className="text-[#8B1E2D]">Open</span>
-              </a>
-            ))}
-            <a href="mailto:founders@triaxis.ventures?subject=AXXESS%20pilot%20request" className="flex items-center justify-between rounded-lg border border-[rgba(15,17,23,0.08)] px-3 py-2 text-xs font-semibold text-[#0F1117] hover:bg-[#F8F9FA]">
-              Request pilot conversation
+        <WorkflowTimelinePanel events={workflowTimeline.timeline} compact />
+      </div>
+
+      <SectionCard title="Priority actions" description="Workflow-aware next steps from the tenant golden path.">
+        <div className="grid gap-2 md:grid-cols-2 xl:grid-cols-4">
+          {enterpriseJourney.actionQueue.map((action) => (
+            <a key={action.stepId} href={action.route} className="flex items-center justify-between rounded-lg border border-[rgba(15,17,23,0.08)] px-3 py-2 text-xs font-semibold text-[#0F1117] hover:bg-[#F8F9FA]">
+              {action.label}
               <span className="text-[#8B1E2D]">Open</span>
             </a>
-          </div>
-        </SectionCard>
-      </div>
+          ))}
+          <a href="mailto:founders@triaxis.ventures?subject=AXXESS%20pilot%20request" className="flex items-center justify-between rounded-lg border border-[rgba(15,17,23,0.08)] px-3 py-2 text-xs font-semibold text-[#0F1117] hover:bg-[#F8F9FA]">
+            Request pilot conversation
+            <span className="text-[#8B1E2D]">Open</span>
+          </a>
+        </div>
+      </SectionCard>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <Card className="lg:col-span-2 p-5">
