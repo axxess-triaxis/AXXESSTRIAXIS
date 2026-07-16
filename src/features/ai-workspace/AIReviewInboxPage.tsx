@@ -3,11 +3,24 @@
 import { useEffect, useState } from "react";
 import { Card } from "../../components/ui/Card";
 import { SectionHeader } from "../../components/layout/SectionHeader";
+import { WorkflowTimelinePanel } from "../../components/enterprise/WorkflowTimelinePanel";
 import type { AiReviewInboxItem } from "../../services/ai/reviewInbox";
+import { workflowActionLabels, type ReviewWorkflowActionType, type WorkflowTimelineEvent } from "../../services/workflows/workflowEvidence";
+import { useWorkflowTimeline } from "../../hooks/useWorkflowTimeline";
 
 type ReviewResponse = {
   reviews?: AiReviewInboxItem[];
   error?: string;
+};
+
+type DecisionResponse = {
+  error?: string;
+  workflowAction?: {
+    actionType?: ReviewWorkflowActionType;
+    createdTask?: { id: string; title: string };
+    createdMeeting?: { id: string; title: string };
+    timelineEvents?: WorkflowTimelineEvent[];
+  };
 };
 
 const statusStyle: Record<AiReviewInboxItem["status"], string> = {
@@ -18,9 +31,15 @@ const statusStyle: Record<AiReviewInboxItem["status"], string> = {
   escalated: "bg-purple-50 text-purple-700 border-purple-200",
 };
 
+const actionTypes = Object.entries(workflowActionLabels) as Array<[ReviewWorkflowActionType, string]>;
+
 export function AIReviewInboxPage() {
   const [reviews, setReviews] = useState<AiReviewInboxItem[]>([]);
   const [message, setMessage] = useState<string | null>(null);
+  const [actionType, setActionType] = useState<ReviewWorkflowActionType>("task");
+  const [actionTitles, setActionTitles] = useState<Record<string, string>>({});
+  const [localEvents, setLocalEvents] = useState<WorkflowTimelineEvent[]>([]);
+  const workflowTimeline = useWorkflowTimeline(undefined, { limit: 6 });
 
   async function loadReviews() {
     const response = await fetch("/api/ai/reviews", { credentials: "include" });
@@ -32,7 +51,7 @@ export function AIReviewInboxPage() {
     setReviews(payload.reviews ?? []);
   }
 
-  async function decide(reviewId: string, decision: "approved" | "edited" | "rejected" | "escalated") {
+  async function decide(reviewId: string, decision: "approved" | "edited" | "rejected" | "escalated", createAction = false) {
     setMessage(null);
     const response = await fetch("/api/ai/reviews", {
       method: "POST",
@@ -41,16 +60,23 @@ export function AIReviewInboxPage() {
       body: JSON.stringify({
         reviewId,
         decision,
-        decisionReason: `Marked ${decision} from tenant AI review inbox.`,
+        decisionReason: createAction ? `Approved from tenant AI review inbox and converted to ${workflowActionLabels[actionType].toLowerCase()}.` : `Marked ${decision} from tenant AI review inbox.`,
+        createAction,
+        actionType,
+        actionTitle: actionTitles[reviewId],
       }),
     });
-    const payload = await response.json().catch(() => ({})) as { error?: string };
+    const payload = await response.json().catch(() => ({})) as DecisionResponse;
     if (!response.ok) {
       setMessage(payload.error ?? "AI review decision could not be recorded.");
       return;
     }
     setReviews((current) => current.map((review) => review.id === reviewId ? { ...review, status: decision, reviewedAt: new Date().toISOString() } : review));
-    setMessage(`Review ${decision} and audit logging requested.`);
+    if (payload.workflowAction?.timelineEvents?.length) {
+      setLocalEvents((current) => [...payload.workflowAction!.timelineEvents!, ...current].slice(0, 8));
+    }
+    const createdTitle = payload.workflowAction?.createdTask?.title ?? payload.workflowAction?.createdMeeting?.title;
+    setMessage(createAction && createdTitle ? `Review approved and ${createdTitle} was created.` : `Review ${decision} and audit logging requested.`);
   }
 
   useEffect(() => {
@@ -69,13 +95,16 @@ export function AIReviewInboxPage() {
             {message}
           </Card>
         )}
-        <div className="grid gap-4">
+        <div className="grid gap-4 xl:grid-cols-[1fr_380px]">
+          <div className="grid gap-4">
           {reviews.length === 0 && (
             <Card className="p-5 text-sm text-[#5F6B73]">
               No AI outputs are waiting for review right now.
             </Card>
           )}
-          {reviews.map((review) => (
+          {reviews.map((review) => {
+            const decisionDisabled = review.status !== "pending";
+            return (
             <Card key={review.id} className="p-5">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
@@ -107,14 +136,40 @@ export function AIReviewInboxPage() {
                   </div>
                 ))}
               </div>
+              {review.status === "pending" && (
+                <div className="mt-4 grid gap-2 rounded-lg border border-[rgba(15,17,23,0.08)] bg-[#F8F9FA] p-3 md:grid-cols-[180px_1fr]">
+                  <select
+                    aria-label="Approved action type"
+                    value={actionType}
+                    onChange={(event) => setActionType(event.target.value as ReviewWorkflowActionType)}
+                    className="rounded-lg border border-[rgba(15,17,23,0.12)] bg-white px-3 py-2 text-xs font-semibold text-[#0F1117] outline-none"
+                  >
+                    {actionTypes.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                  </select>
+                  <input
+                    value={actionTitles[review.id] ?? ""}
+                    onChange={(event) => setActionTitles((current) => ({ ...current, [review.id]: event.target.value }))}
+                    placeholder="Optional action title"
+                    className="rounded-lg border border-[rgba(15,17,23,0.12)] bg-white px-3 py-2 text-xs outline-none"
+                  />
+                </div>
+              )}
               <div className="mt-4 flex flex-wrap gap-2">
-                <button onClick={() => void decide(review.id, "approved")} className="rounded-lg bg-[#8B1E2D] px-3 py-2 text-xs font-bold text-white">Approve</button>
-                <button onClick={() => void decide(review.id, "edited")} className="rounded-lg border border-[rgba(15,17,23,0.12)] bg-white px-3 py-2 text-xs font-bold text-[#0F1117]">Mark edited</button>
-                <button onClick={() => void decide(review.id, "escalated")} className="rounded-lg border border-[rgba(15,17,23,0.12)] bg-white px-3 py-2 text-xs font-bold text-[#0F1117]">Escalate</button>
-                <button onClick={() => void decide(review.id, "rejected")} className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700">Reject</button>
+                <button disabled={decisionDisabled} onClick={() => void decide(review.id, "approved", true)} className="rounded-lg bg-[#8B1E2D] px-3 py-2 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-50">Approve and create</button>
+                <button disabled={decisionDisabled} onClick={() => void decide(review.id, "approved")} className="rounded-lg border border-[rgba(15,17,23,0.12)] bg-white px-3 py-2 text-xs font-bold text-[#0F1117] disabled:cursor-not-allowed disabled:opacity-50">Approve only</button>
+                <button disabled={decisionDisabled} onClick={() => void decide(review.id, "edited")} className="rounded-lg border border-[rgba(15,17,23,0.12)] bg-white px-3 py-2 text-xs font-bold text-[#0F1117] disabled:cursor-not-allowed disabled:opacity-50">Mark edited</button>
+                <button disabled={decisionDisabled} onClick={() => void decide(review.id, "escalated")} className="rounded-lg border border-[rgba(15,17,23,0.12)] bg-white px-3 py-2 text-xs font-bold text-[#0F1117] disabled:cursor-not-allowed disabled:opacity-50">Escalate</button>
+                <button disabled={decisionDisabled} onClick={() => void decide(review.id, "rejected")} className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700 disabled:cursor-not-allowed disabled:opacity-50">Reject</button>
               </div>
             </Card>
-          ))}
+          );})}
+          </div>
+          <WorkflowTimelinePanel
+            title="Review-to-work timeline"
+            description="Approvals, created actions and audit events appear here as tenant workflow evidence."
+            events={[...localEvents, ...workflowTimeline.timeline]}
+            compact
+          />
         </div>
       </div>
     </main>

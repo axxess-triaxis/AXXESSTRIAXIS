@@ -10,8 +10,11 @@ import {
   ModuleHeader,
 } from "./index";
 import { EnterpriseWorkflowJourney } from "./EnterpriseWorkflowJourney";
+import { TenantHealthCommandCenter } from "./TenantHealthCommandCenter";
+import { WorkflowTimelinePanel } from "./WorkflowTimelinePanel";
 import { getFallbackLiveWorkspaceMetrics } from "../../services/live-platform/livePlatform";
 import { buildEnterpriseGoldenPathSnapshot } from "../../services/workflows/enterpriseGoldenPath";
+import { fallbackWorkflowTimelineEvents } from "../../services/workflows/workflowEvidence";
 
 describe("enterprise components", () => {
   it("renders module headers with state badges", () => {
@@ -61,5 +64,33 @@ describe("enterprise components", () => {
     expect(screen.getByText("Review AI output before action")).toBeInTheDocument();
     expect(screen.getByText("Next best action")).toBeInTheDocument();
     expect(screen.getByText("Review pending AI output")).toBeInTheDocument();
+  });
+
+  it("renders tenant health indicators for the pilot golden path", () => {
+    const metrics = getFallbackLiveWorkspaceMetrics();
+    const snapshot = buildEnterpriseGoldenPathSnapshot({
+      metrics,
+      userRole: "Organization Admin",
+      hasOrganization: true,
+      hasProfile: true,
+      pendingAiReviews: 1,
+    });
+
+    render(<TenantHealthCommandCenter snapshot={snapshot} metrics={metrics} />);
+
+    expect(screen.getByText("Tenant Health Command Center")).toBeInTheDocument();
+    expect(screen.getByText("Onboarding completion")).toBeInTheDocument();
+    expect(screen.getByText("Documents indexed")).toBeInTheDocument();
+    expect(screen.getByText("Pending AI reviews")).toBeInTheDocument();
+    expect(screen.getByText("Audit coverage")).toBeInTheDocument();
+  });
+
+  it("renders workflow timeline evidence", () => {
+    render(<WorkflowTimelinePanel events={fallbackWorkflowTimelineEvents("org-demo")} />);
+
+    expect(screen.getByText("Workflow timeline")).toBeInTheDocument();
+    expect(screen.getByText("District review note imported")).toBeInTheDocument();
+    expect(screen.getByText("Human reviewer approved action")).toBeInTheDocument();
+    expect(screen.getByText("Audit evidence recorded")).toBeInTheDocument();
   });
 });
