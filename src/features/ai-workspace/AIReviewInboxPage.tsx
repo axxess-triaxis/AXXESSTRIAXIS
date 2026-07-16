@@ -32,6 +32,7 @@ const statusStyle: Record<AiReviewInboxItem["status"], string> = {
 };
 
 const actionTypes = Object.entries(workflowActionLabels) as Array<[ReviewWorkflowActionType, string]>;
+const isDemoReviewFallbackEnabled = process.env.NEXT_PUBLIC_AXXESS_DEMO_MODE === "true" || process.env.NEXT_PUBLIC_AXXESS_AUTH_SHELL === "true";
 
 export function AIReviewInboxPage() {
   const [reviews, setReviews] = useState<AiReviewInboxItem[]>([]);
@@ -48,7 +49,7 @@ export function AIReviewInboxPage() {
       setMessage(payload.error ?? "AI review inbox could not be loaded.");
       return;
     }
-    setReviews(payload.reviews ?? []);
+    setReviews(withPendingDemoReview(payload.reviews ?? []));
   }
 
   async function decide(reviewId: string, decision: "approved" | "edited" | "rejected" | "escalated", createAction = false) {
@@ -174,4 +175,31 @@ export function AIReviewInboxPage() {
       </div>
     </main>
   );
+}
+
+function withPendingDemoReview(reviews: AiReviewInboxItem[]) {
+  if (!isDemoReviewFallbackEnabled || reviews.some((review) => review.status === "pending")) return reviews;
+  const demoReview: AiReviewInboxItem = {
+    id: "review-dibrugarh-referral-sla",
+    organizationId: "demo-north-east-health-mission",
+    sourceAuditId: "demo-email-import-dibrugarh-referral-sla",
+    taskCategory: "workflow_execution",
+    status: "pending",
+    confidence: 0.82,
+    humanReviewFlag: true,
+    answerExcerpt: "Dibrugarh referral SLA variance should be converted into a district ambulance turnaround review task with audit evidence attached.",
+    citations: [
+      {
+        title: "Dibrugarh Referral SLA Review",
+        sourceId: "msg-dibrugarh-referral-review",
+        excerpt: "Action required: assign ambulance turnaround review to the district transport coordinator by Friday.",
+        score: 0.88,
+      },
+    ],
+    createdAt: "2026-07-15T08:10:00.000Z",
+  };
+  return [
+    demoReview,
+    ...reviews,
+  ];
 }
