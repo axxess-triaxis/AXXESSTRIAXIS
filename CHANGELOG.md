@@ -4,6 +4,12 @@ All notable changes to AXXESS are documented here. This project follows the spir
 
 ## Unreleased
 
+- Added Sprint 27 live tenant workflow execution with tenant-scoped golden-path progress persistence and workflow timeline evidence.
+- Added AI Review Inbox “approve and create” workflow action path that creates work through existing repositories, writes audit evidence, sends notification intent, and updates progress.
+- Added tenant health command center plus workflow timeline panels across Dashboard, AI Review Inbox, Projects, Tasks, Documents, and Approvals.
+- Added selected Gmail/Microsoft message picker UI with preview/confirm flow for imported knowledge and created tasks.
+- Added Sprint 27 Supabase migration for `enterprise_workflow_progress` and `workflow_timeline_events` with RLS.
+- Added Sprint 27 tests for workflow evidence, review-to-work execution, tenant health/timeline rendering, and seed-gated Playwright golden-path coverage.
 - Added Sprint 26 enterprise golden-path workflow service and reusable journey UX tying onboarding, Knowledge Hub, AI Workspace, AI Review Inbox, Tasks, Dashboard, and Audit Logs into one role-aware customer journey.
 - Added Sprint 26 dashboard and AI Workspace journey surfaces with readiness score, next-best action, workflow-aware action queue, and tests for sequencing, RBAC locks, and rendering.
 - Added repo-local Supabase CLI integration with pinned `supabase@2.109.1`, committed `supabase/config.toml`, migration verification script, package scripts, docs, and GitHub Actions coverage.
