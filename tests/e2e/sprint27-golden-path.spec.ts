@@ -27,7 +27,7 @@ test.describe("Sprint 27 live tenant workflow execution", () => {
     await expect(page.getByRole("button", { name: "Approve and create" }).first()).toBeVisible();
 
     await page.goto("/tasks");
-    await expect(page.getByText("Tasks & Workflow")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Tasks & Workflow" })).toBeVisible();
     await expect(page.getByText(/Task timeline|No description recorded|New Task/i).first()).toBeVisible();
   });
 });
