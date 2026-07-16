@@ -9,6 +9,9 @@ import {
   MetricCard,
   ModuleHeader,
 } from "./index";
+import { EnterpriseWorkflowJourney } from "./EnterpriseWorkflowJourney";
+import { getFallbackLiveWorkspaceMetrics } from "../../services/live-platform/livePlatform";
+import { buildEnterpriseGoldenPathSnapshot } from "../../services/workflows/enterpriseGoldenPath";
 
 describe("enterprise components", () => {
   it("renders module headers with state badges", () => {
@@ -41,5 +44,22 @@ describe("enterprise components", () => {
     expect(screen.getByText("Biomedical variance")).toBeInTheDocument();
     expect(screen.getByText("Dibrugarh Oxygen Risk Register")).toBeInTheDocument();
     expect(screen.getByText(/Investor Preview/)).toBeInTheDocument();
+  });
+
+  it("renders the enterprise golden path journey with next actions", () => {
+    const snapshot = buildEnterpriseGoldenPathSnapshot({
+      metrics: getFallbackLiveWorkspaceMetrics(),
+      userRole: "Organization Admin",
+      hasOrganization: true,
+      hasProfile: true,
+      pendingAiReviews: 2,
+    });
+
+    render(<EnterpriseWorkflowJourney snapshot={snapshot} />);
+
+    expect(screen.getByText("Enterprise golden path")).toBeInTheDocument();
+    expect(screen.getByText("Review AI output before action")).toBeInTheDocument();
+    expect(screen.getByText("Next best action")).toBeInTheDocument();
+    expect(screen.getByText("Review pending AI output")).toBeInTheDocument();
   });
 });
