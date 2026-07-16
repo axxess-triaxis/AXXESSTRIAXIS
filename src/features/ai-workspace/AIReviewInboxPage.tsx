@@ -43,13 +43,20 @@ export function AIReviewInboxPage() {
   const workflowTimeline = useWorkflowTimeline(undefined, { limit: 6 });
 
   async function loadReviews() {
-    const response = await fetch("/api/ai/reviews", { credentials: "include" });
-    const payload = await response.json().catch(() => ({})) as ReviewResponse;
-    if (!response.ok) {
-      setMessage(payload.error ?? "AI review inbox could not be loaded.");
-      return;
+    try {
+      const response = await fetch("/api/ai/reviews", { credentials: "include" });
+      const payload = await response.json().catch(() => ({})) as ReviewResponse;
+      if (!response.ok) throw new Error(payload.error ?? "AI review inbox could not be loaded.");
+      setReviews(withPendingDemoReview(payload.reviews ?? []));
+      setMessage(null);
+    } catch (error) {
+      if (isDemoReviewFallbackEnabled) {
+        setReviews(withPendingDemoReview([]));
+        setMessage(null);
+        return;
+      }
+      setMessage(error instanceof Error ? error.message : "AI review inbox could not be loaded.");
     }
-    setReviews(withPendingDemoReview(payload.reviews ?? []));
   }
 
   async function decide(reviewId: string, decision: "approved" | "edited" | "rejected" | "escalated", createAction = false) {
