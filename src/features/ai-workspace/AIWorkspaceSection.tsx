@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../../auth/AuthProvider";
+import { EnterpriseWorkflowJourney } from "../../components/enterprise/EnterpriseWorkflowJourney";
 import {
   AuditTrailBadge,
   ConfidenceBadge,
@@ -12,12 +13,12 @@ import {
 } from "../../components/enterprise";
 import { Avatar } from "../../components/ui/Avatar";
 import { Card } from "../../components/ui/Card";
+import { useEnterpriseGoldenPath } from "../../hooks/useEnterpriseGoldenPath";
 import { applicationServices } from "../../providers/serviceProvider";
 import { tenantScopeFromUser } from "../../repositories/supabaseEnterpriseRepositories";
 import { getAiRouterStatusSnapshot } from "../../services/ai/router/aiRouter";
 import { languageCoverage } from "../../services/nlp/modelRegistry";
 import { answerWithGovernedRag, type RagAnswer } from "../../services/rag/governedRag";
-import { createInstitutionalDemoWorkflow } from "../../services/workflows/institutionalWorkflow";
 import {
   AlertTriangle,
   ArrowUpRight,
@@ -38,7 +39,6 @@ import {
 
 const aiMessages = applicationServices.institutionalRepository.getAiMessages();
 const aiRouterStatus = getAiRouterStatusSnapshot();
-const workflowSteps = createInstitutionalDemoWorkflow();
 
 const fallbackRagAnswer: RagAnswer = {
   answer: "District evidence indicates the highest current operational exposure sits in oxygen resilience, maternal referral handoff, and pharmacy stockout variance. Escalation should prioritize Dibrugarh biomedical maintenance, Cachar referral transfer turnaround, and Dhubri stock reconciliation before the next Mission Secretariat review.",
@@ -81,6 +81,7 @@ type LiveRagAnswer = RagAnswer & {
 export const AIWorkspaceSection = () => {
   const { session } = useAuth();
   const tenantScope = useMemo(() => session.user ? tenantScopeFromUser(session.user) : undefined, [session.user]);
+  const enterpriseJourney = useEnterpriseGoldenPath(tenantScope, session.user);
   const [input, setInput] = useState("");
   const [approved, setApproved] = useState(false);
   const [querying, setQuerying] = useState(false);
@@ -369,17 +370,7 @@ export const AIWorkspaceSection = () => {
             </div>
           </Card>
 
-          <Card className="p-4">
-            <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-[#0F1117]">Workflow Demo</h3>
-            <div className="space-y-2">
-              {workflowSteps.slice(0, 5).map((step) => (
-                <div key={step.id} className="flex items-start gap-2 text-[11px]">
-                  <span className={`mt-1 h-2 w-2 rounded-full ${step.status === "completed" ? "bg-emerald-500" : step.status === "requires-human-review" ? "bg-amber-500" : "bg-[#5F6B73]"}`} />
-                  <span className="leading-relaxed text-[#0F1117]">{step.title}</span>
-                </div>
-              ))}
-            </div>
-          </Card>
+          <EnterpriseWorkflowJourney snapshot={enterpriseJourney} compact />
 
           <Card className="p-4">
             <h3 className="text-xs font-semibold text-[#0F1117] uppercase tracking-wider mb-3">Context Window</h3>
