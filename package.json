@@ -31,6 +31,7 @@
     "mobile:capacitor:version": "node scripts/mobile-version.mjs",
     "mobile:capacitor:release:android": "node scripts/mobile-version.mjs && node scripts/apply-capacitor-store-config.mjs && node apps/mobile-capacitor/scripts/build-android.mjs --store",
     "mobile:capacitor:release:ios": "node scripts/mobile-version.mjs && node scripts/apply-capacitor-store-config.mjs && node apps/mobile-capacitor/scripts/build-ios.mjs --store",
+    "mobile:store:release-gate": "node scripts/mobile-store-release-gate.mjs",
     "mobile:dev": "pnpm --dir apps/mobile run start",
     "mobile:eas:build:all": "pnpm --dir apps/mobile run eas:build:all",
     "mobile:eas:build:android": "pnpm --dir apps/mobile run eas:build:android",

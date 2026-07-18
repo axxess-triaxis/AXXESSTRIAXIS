@@ -10,6 +10,35 @@
 - Tag-based store submissions must include build values in the tag name: `vX.Y.Z-ios<build>-android<code>`.
 - Example: `v0.9.1-ios42-android42` sets app version `0.9.1`, iOS build number `42`, and Android version code `42`.
 
+## Mobile Store Launch Console
+
+Organization Admins can review full-stack mobile launch readiness at `/admin/mobile-release`.
+
+The console covers:
+
+- Android and iOS signing posture.
+- Play Store and TestFlight upload posture.
+- Store listing packs.
+- Reviewer account readiness.
+- Screenshot manifest evidence.
+- Crash-free sessions, webview error rate and API latency posture.
+- Staged rollout tracks.
+- Release gates and operator actions.
+
+When Supabase service-role runtime is configured, release operators can record readiness snapshots, reviewer verification and rollout updates with tenant-scoped audit evidence.
+
+## Store submission pack
+
+Store review materials live under `docs/store`:
+
+- `apple-review-notes.md`
+- `google-play-notes.md`
+- `privacy-labels.md`
+- `data-safety.md`
+- `screenshot-manifest.json`
+
+Run `pnpm run mobile:store:release-gate` before submitting a store-bound release. The gate verifies that reviewer notes, privacy/data-safety drafts, screenshot manifest, admin route, API route and RLS migration remain present.
+
 ## Production environment setup (GitHub Actions)
 
 Create and use the GitHub Actions environment `production-mobile`.

@@ -1,0 +1,67 @@
+name: Mobile Store Release Readiness
+
+on:
+  pull_request:
+    paths:
+      - "src/features/admin/MobileStoreLaunchConsole.tsx"
+      - "src/services/mobile/**"
+      - "src/app/api/admin/mobile-release/**"
+      - "src/app/admin/mobile-release/**"
+      - "src/app/routing/routes.ts"
+      - "docs/store/**"
+      - "scripts/mobile-store-release-gate.mjs"
+      - "supabase/migrations/**"
+      - ".github/workflows/mobile-store-release-readiness.yml"
+      - "package.json"
+      - "pnpm-lock.yaml"
+  push:
+    branches:
+      - main
+    paths:
+      - "src/features/admin/MobileStoreLaunchConsole.tsx"
+      - "src/services/mobile/**"
+      - "src/app/api/admin/mobile-release/**"
+      - "src/app/admin/mobile-release/**"
+      - "src/app/routing/routes.ts"
+      - "docs/store/**"
+      - "scripts/mobile-store-release-gate.mjs"
+      - "supabase/migrations/**"
+      - ".github/workflows/mobile-store-release-readiness.yml"
+      - "package.json"
+      - "pnpm-lock.yaml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  mobile-store-release-readiness:
+    name: Store Listing, Reviewer, Screenshots, Health
+    runs-on: ubuntu-latest
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 11.7.0
+          run_install: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Mobile store release gate
+        run: pnpm run mobile:store:release-gate
