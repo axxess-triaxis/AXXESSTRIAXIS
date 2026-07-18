@@ -4,6 +4,11 @@ All notable changes to AXXESS are documented here. This project follows the spir
 
 ## Unreleased
 
+- Added Sprint 32 Mobile Store Launch Console for full-stack release readiness across Android, iOS, store metadata, reviewer access, screenshots, release health and staged rollout controls.
+- Added role-protected `GET /api/admin/mobile-release` and `POST /api/admin/mobile-release` for mobile release snapshots and audit-backed operator actions.
+- Added Sprint 32 Supabase migration for `mobile_release_runs`, `mobile_store_listings`, `mobile_reviewer_accounts`, `mobile_crash_events`, and `mobile_rollout_events` with tenant-scoped RLS.
+- Added Apple review notes, Google Play review notes, Apple privacy labels draft, Google Play Data Safety draft, and screenshot manifest under `docs/store`.
+- Added `pnpm run mobile:store:release-gate` plus Mobile Store Release Readiness GitHub Actions workflow for listing, reviewer, screenshot, health, route and RLS validation.
 - Added Sprint 31 Capacitor store-release certification with strict Android/iOS store readiness validation.
 - Added Android Play-ready release configuration with API 36, environment-driven application ID/versioning, signed AAB enforcement, hardened manifest settings, and optional Google Play internal testing upload.
 - Added iOS TestFlight-ready release configuration with environment-driven bundle/version/build settings, privacy manifest, export options, App Store Connect key handling, IPA export, validation, and optional TestFlight upload.
