@@ -46,6 +46,9 @@ jobs:
       ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
       ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
       ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
+      GOOGLE_PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+      ANDROID_UPLOAD_TO_PLAY: ${{ vars.ANDROID_UPLOAD_TO_PLAY }}
+      IOS_UPLOAD_TO_TESTFLIGHT: ${{ vars.IOS_UPLOAD_TO_TESTFLIGHT }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -76,6 +79,12 @@ jobs:
 
       - name: Release preflight (strict)
         run: pnpm run release:preflight -- --mode=release --target=all
+
+      - name: Apply Capacitor store config
+        run: pnpm run mobile:capacitor:store:apply
+
+      - name: Capacitor store readiness (strict)
+        run: pnpm run mobile:capacitor:store:doctor -- --mode=release --target=all
 
       - name: Generate release checklist artifact
         run: RELEASE_PLATFORM=all node scripts/generate-release-checklist.mjs
@@ -110,6 +119,8 @@ jobs:
       ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
       ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
       ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+      GOOGLE_PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+      ANDROID_UPLOAD_TO_PLAY: ${{ vars.ANDROID_UPLOAD_TO_PLAY }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -160,6 +171,12 @@ jobs:
             pnpm --dir apps/mobile-capacitor exec cap add android
           fi
 
+      - name: Apply Android store config
+        run: pnpm run mobile:capacitor:store:apply
+
+      - name: Capacitor Android store readiness
+        run: pnpm run mobile:capacitor:store:doctor -- --mode=release --target=android
+
       - name: Ensure Android assets path exists
         run: mkdir -p apps/mobile-capacitor/android/app/src/main/assets/public
 
@@ -168,13 +185,23 @@ jobs:
           node scripts/prepare-mobile-certificates.mjs
           node scripts/sync-repo-state.mjs
           node scripts/validate-mobile-env.mjs
-          pnpm --dir apps/mobile-capacitor exec cap sync android
+          pnpm --dir apps/mobile-capacitor run sync:android
 
       - name: Prepare Android signing path
         run: echo "ANDROID_KEYSTORE_FILE=$GITHUB_WORKSPACE/apps/mobile-capacitor/android/app/release.keystore" >> "$GITHUB_ENV"
 
       - name: Build Android production artifact
-        run: pnpm run mobile:capacitor:build:android
+        run: pnpm run mobile:capacitor:release:android
+
+      - name: Upload Android bundle to Google Play internal testing
+        if: ${{ env.ANDROID_UPLOAD_TO_PLAY == 'true' && env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON != '' }}
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: ${{ vars.ANDROID_APPLICATION_ID }}
+          releaseFiles: apps/mobile-capacitor/android/app/build/outputs/bundle/release/app-release.aab
+          track: internal
+          status: draft
 
       - name: Generate Android release checklist
         run: RELEASE_PLATFORM=android node scripts/generate-release-checklist.mjs
@@ -210,6 +237,9 @@ jobs:
       ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
       ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
       ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
+      IOS_UPLOAD_TO_TESTFLIGHT: ${{ vars.IOS_UPLOAD_TO_TESTFLIGHT }}
+      IOS_VALIDATE_UPLOAD: "true"
+      STORE_RELEASE: "true"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -233,6 +263,11 @@ jobs:
           pnpm install --frozen-lockfile
           pnpm rebuild @swc/core lightningcss
 
+      - name: Show Xcode version
+        run: |
+          xcodebuild -version
+          xcodebuild -showsdks
+
       - name: Resolve release values
         run: node scripts/resolve-release-values.mjs
         env:
@@ -250,20 +285,25 @@ jobs:
         run: |
           if [ ! -f apps/mobile-capacitor/ios/App/App.xcodeproj/project.pbxproj ]; then
             rm -rf apps/mobile-capacitor/ios
-            npm --prefix apps/mobile-capacitor install --no-save @capacitor/ios@^7.0.0
             pnpm --dir apps/mobile-capacitor exec cap add ios
           fi
           mkdir -p apps/mobile-capacitor/ios/App/App/public
+
+      - name: Apply iOS store config
+        run: pnpm run mobile:capacitor:store:apply
+
+      - name: Capacitor iOS store readiness
+        run: pnpm run mobile:capacitor:store:doctor -- --mode=release --target=ios
 
       - name: Sync Capacitor
         run: |
           node scripts/prepare-mobile-certificates.mjs
           node scripts/sync-repo-state.mjs
           node scripts/validate-mobile-env.mjs
-          pnpm --dir apps/mobile-capacitor exec cap sync ios
+          pnpm --dir apps/mobile-capacitor run sync:ios
 
       - name: Build iOS production artifact
-        run: pnpm run mobile:capacitor:build:ios
+        run: pnpm run mobile:capacitor:release:ios
 
       - name: Generate iOS release checklist
         run: RELEASE_PLATFORM=ios node scripts/generate-release-checklist.mjs
@@ -289,6 +329,9 @@ jobs:
       MIN_ANDROID_BINARY_BYTES: "1000000"
       MIN_IOS_BINARY_BYTES: "2000000"
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Download all-platform checklist artifact
         uses: actions/download-artifact@v4
         with:
@@ -364,14 +407,13 @@ jobs:
             exit 1
           fi
 
-          if ! find artifacts/ios \( -type f -name "*.ipa" -o -type d -name "*.xcarchive" \) | grep -q .; then
-            echo "::error::iOS artifacts must include at least one .ipa or .xcarchive output."
+          if ! find artifacts/ios -type f -name "*.ipa" | grep -q .; then
+            echo "::error::iOS artifacts must include an exported .ipa output."
             exit 1
           fi
 
           ANDROID_BIN=$(find artifacts/android -type f \( -name "*.aab" -o -name "*.apk" \) | head -n 1)
           IOS_IPA=$(find artifacts/ios -type f -name "*.ipa" | head -n 1 || true)
-          IOS_ARCHIVE_DIR=$(find artifacts/ios -type d -name "*.xcarchive" | head -n 1 || true)
 
           ANDROID_SIZE=$(stat -c%s "$ANDROID_BIN")
           if [ "$ANDROID_SIZE" -lt "$MIN_ANDROID_BINARY_BYTES" ]; then
@@ -379,11 +421,7 @@ jobs:
             exit 1
           fi
 
-          if [ -n "$IOS_IPA" ]; then
-            IOS_SIZE=$(stat -c%s "$IOS_IPA")
-          else
-            IOS_SIZE=$(find "$IOS_ARCHIVE_DIR" -type f -exec stat -c%s {} \; | awk '{sum += $1} END {print sum + 0}')
-          fi
+          IOS_SIZE=$(stat -c%s "$IOS_IPA")
 
           if [ "$IOS_SIZE" -lt "$MIN_IOS_BINARY_BYTES" ]; then
             echo "::error::iOS binary size ${IOS_SIZE}B is below threshold ${MIN_IOS_BINARY_BYTES}B."
@@ -471,15 +509,9 @@ jobs:
           set -euo pipefail
 
           ANDROID_BIN=$(find artifacts/android -type f \( -name "*.aab" -o -name "*.apk" \) | head -n 1)
-          IOS_BIN_FILE=$(find artifacts/ios -type f -name "*.ipa" | head -n 1 || true)
-          IOS_BIN_ARCHIVE=$(find artifacts/ios -type d -name "*.xcarchive" | head -n 1 || true)
-          IOS_BIN=${IOS_BIN_FILE:-$IOS_BIN_ARCHIVE}
+          IOS_BIN=$(find artifacts/ios -type f -name "*.ipa" | head -n 1)
           ANDROID_SIZE=$(stat -c%s "$ANDROID_BIN")
-          if [ -n "$IOS_BIN_FILE" ]; then
-            IOS_SIZE=$(stat -c%s "$IOS_BIN_FILE")
-          else
-            IOS_SIZE=$(find "$IOS_BIN_ARCHIVE" -type f -exec stat -c%s {} \; | awk '{sum += $1} END {print sum + 0}')
-          fi
+          IOS_SIZE=$(stat -c%s "$IOS_BIN")
 
           {
             echo "## Release Sign-off Summary"

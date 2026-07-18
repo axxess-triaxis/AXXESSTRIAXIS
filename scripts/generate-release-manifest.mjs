@@ -84,7 +84,6 @@ const allFiles = [...androidFiles, ...iosFiles];
 
 const androidBinary = findFirstBySuffix(androidFiles, [".aab", ".apk"]);
 const iosBinary = findFirstBySuffix(iosFiles, [".ipa"]);
-const iosArchive = findFirstBySuffix(iosFiles, [".xcarchive"]);
 
 const generatedAt = new Date().toISOString();
 const manifest = {
@@ -97,14 +96,13 @@ const manifest = {
     commitSha: process.env.GITHUB_SHA ?? "local",
   },
   release: {
-    appVersion: process.env.EXPO_PUBLIC_AXXESS_APP_VERSION ?? process.env.NEXT_PUBLIC_AXXESS_APP_VERSION ?? "unknown",
-    iosBuildNumber: process.env.EXPO_PUBLIC_IOS_BUILD_NUMBER ?? "unknown",
-    androidVersionCode: process.env.EXPO_PUBLIC_ANDROID_VERSION_CODE ?? "unknown",
+    appVersion: process.env.RELEASE_APP_VERSION ?? process.env.EXPO_PUBLIC_AXXESS_APP_VERSION ?? process.env.NEXT_PUBLIC_AXXESS_APP_VERSION ?? "unknown",
+    iosBuildNumber: process.env.IOS_BUILD_NUMBER ?? process.env.EXPO_PUBLIC_IOS_BUILD_NUMBER ?? "unknown",
+    androidVersionCode: process.env.ANDROID_VERSION_CODE ?? process.env.EXPO_PUBLIC_ANDROID_VERSION_CODE ?? "unknown",
   },
   checks: {
     androidBinaryPath: relativeNormalize(androidBinary || ""),
     iosBinaryPath: relativeNormalize(iosBinary || ""),
-    iosArchivePath: relativeNormalize(iosArchive || ""),
     allChecklistPresent: Boolean(checklistAll && checklistAndroid && checklistIos),
   },
   artifacts: {

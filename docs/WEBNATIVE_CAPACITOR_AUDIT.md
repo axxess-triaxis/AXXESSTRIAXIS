@@ -21,6 +21,8 @@ The current Next.js application is not a pure static export. It uses the App Rou
 
 Selected approach: Option B — use the deployed AXXESS web application as the app URL while retaining a Capacitor shell. This preserves authentication, Supabase access, API routes, RAG workflows, CRM, dashboards, approvals, Knowledge Hub, notifications, analytics and responsive navigation without forcing a full server-side rewrite.
 
+Sprint 31 promotes this shell into the primary store-bound mobile release lane. GitHub Actions now validates Capacitor store readiness, applies native store configuration after generated project creation, requires Android signed bundle output, requires an exported iOS `.ipa`, and exposes VS Code tasks for local release checks.
+
 ## Routes and features that can run in Capacitor
 
 The Capacitor app can host the same routes that are available on the deployed web app, including:

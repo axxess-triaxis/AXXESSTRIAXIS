@@ -45,6 +45,10 @@ function validateVersion() {
   }
 }
 
+function firstPresentEnv(keys) {
+  return keys.find((key) => (process.env[key] ?? "").trim());
+}
+
 function requireEnv(keys, strict) {
   const missing = keys.filter((key) => !(process.env[key] ?? "").trim());
   if (missing.length === 0) {
@@ -62,6 +66,21 @@ function validatePositiveIntegerEnv(key) {
   const raw = (process.env[key] ?? "").trim();
   if (!/^\d+$/.test(raw) || Number.parseInt(raw, 10) < 1) {
     throw new Error(`${key} must be a positive integer.`);
+  }
+}
+
+function validatePositiveIntegerAny(keys, label) {
+  const present = firstPresentEnv(keys);
+  if (!present) {
+    throw new Error(`${label} must be provided by one of: ${keys.join(", ")}.`);
+  }
+  validatePositiveIntegerEnv(present);
+}
+
+function validateStoreVersion() {
+  const appVersion = process.env.RELEASE_APP_VERSION ?? process.env.NEXT_PUBLIC_AXXESS_APP_VERSION ?? "";
+  if (appVersion && !/^\d+\.\d+\.\d+$/.test(appVersion)) {
+    throw new Error(`store app version '${appVersion}' must use X.Y.Z numeric format.`);
   }
 }
 
@@ -94,6 +113,7 @@ try {
 
   const androidEnv = [
     "ANDROID_APPLICATION_ID",
+    "ANDROID_VERSION_CODE",
     "EXPO_PUBLIC_ANDROID_VERSION_CODE",
     "ANDROID_KEYSTORE_BASE64",
     "ANDROID_KEYSTORE_PASSWORD",
@@ -103,6 +123,7 @@ try {
 
   const iosEnv = [
     "IOS_BUNDLE_IDENTIFIER",
+    "IOS_BUILD_NUMBER",
     "EXPO_PUBLIC_IOS_BUILD_NUMBER",
     "APPLE_TEAM_ID",
     "ASC_KEY_ID",
@@ -118,12 +139,18 @@ try {
 
   if (target === "all" || target === "android") {
     requireEnv(baseEnv.concat(androidEnv), strict);
-    if (strict) validatePositiveIntegerEnv("EXPO_PUBLIC_ANDROID_VERSION_CODE");
+    if (strict) {
+      validatePositiveIntegerAny(["ANDROID_VERSION_CODE", "EXPO_PUBLIC_ANDROID_VERSION_CODE"], "Android version code");
+      validateStoreVersion();
+    }
   }
 
   if (target === "all" || target === "ios") {
     requireEnv(baseEnv.concat(iosEnv), strict);
-    if (strict) validatePositiveIntegerEnv("EXPO_PUBLIC_IOS_BUILD_NUMBER");
+    if (strict) {
+      validatePositiveIntegerAny(["IOS_BUILD_NUMBER", "EXPO_PUBLIC_IOS_BUILD_NUMBER"], "iOS build number");
+      validateStoreVersion();
+    }
   }
 
   console.log(`[preflight] OK mode=${mode} target=${target}`);
