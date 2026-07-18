@@ -4,6 +4,12 @@ All notable changes to AXXESS are documented here. This project follows the spir
 
 ## Unreleased
 
+- Added Sprint 30 customer-success live-ops snapshot engine for stuck-step recovery, SLA timers, regional key policy posture, and operator recommendations.
+- Added role-protected `GET /api/admin/customer-success/live-ops` and `POST /api/admin/customer-success/live-ops` for reading and recording live-ops evidence.
+- Added Customer-Success Live Operations panel under `/admin/support-ops`.
+- Added Sprint 30 Supabase migration for `customer_success_live_ops_snapshots`, `customer_success_recovery_items`, `customer_success_sla_timers`, and `regional_key_policies` with tenant-scoped RLS.
+- Added workflow record list/detail pages for approval requests, stakeholder notes, and project updates.
+- Added live Microsoft Graph mailbox listing API and Integrations UI control for selected-message import.
 - Added Sprint 29 pilot tenant acceptance engine that converts golden-path, pilot health, command-center, and live workspace evidence into a customer-success acceptance score.
 - Added Pilot Command Center acceptance panel with checklist evidence, blockers, live-ops handoffs, and operator actions for recording acceptance or handoff.
 - Added `GET /api/admin/pilot-acceptance` and `POST /api/admin/pilot-acceptance` for role-protected acceptance reads and writes.

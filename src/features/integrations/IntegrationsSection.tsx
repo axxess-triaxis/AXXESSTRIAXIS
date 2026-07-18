@@ -6,6 +6,7 @@ import { InlineToast } from "../../components/forms/InlineToast";
 import { Card } from "../../components/ui/Card";
 import { applicationServices } from "../../providers/serviceProvider";
 import { previewSelectedEmailImport, type ConnectorProviderId, type EmailImportPreview } from "../../services/integrations/connectorContract";
+import type { MicrosoftGraphMailboxMessageSummary } from "../../services/integrations/microsoftGraphMailbox";
 import { getIntegrationHealth, getProductivityPluginRegistry } from "../../services/integrations/pluginRegistry";
 
 const integrations = applicationServices.institutionalRepository.getIntegrations();
@@ -14,6 +15,16 @@ const pluginHealth = getIntegrationHealth();
 
 const connectedCount = integrations.filter((integration) => integration.status === "connected").length;
 const disconnectedCount = integrations.length - connectedCount;
+
+type SelectedMailboxMessage = {
+  id: string;
+  providerId: ConnectorProviderId;
+  from: string;
+  subject: string;
+  sourceLink: string;
+  receivedAt: string;
+  bodyText: string;
+};
 
 const selectedMailboxMessages = [
   {
@@ -43,7 +54,7 @@ const selectedMailboxMessages = [
     receivedAt: "2026-07-15T12:20:00.000Z",
     bodyText: "CSR partner requested a consolidated implementation plan for Barpeta oxygen resilience. Action required: create follow-up task for district facility assessment and prepare a short stakeholder brief. Decision required: whether the proposal should enter governance review this week. Stakeholders: CSR Lead, District Biomedical Engineer, Mission Secretariat.",
   },
-];
+] satisfies SelectedMailboxMessage[];
 
 export const IntegrationsSection = () => {
   const [emailForm, setEmailForm] = useState({
@@ -55,9 +66,12 @@ export const IntegrationsSection = () => {
   });
   const [preview, setPreview] = useState<EmailImportPreview | null>(null);
   const [saving, setSaving] = useState(false);
+  const [loadingMailbox, setLoadingMailbox] = useState(false);
+  const [liveMailboxMessages, setLiveMailboxMessages] = useState<SelectedMailboxMessage[]>([]);
   const [toast, setToast] = useState<{ tone: "success" | "error" | "info"; message: string } | null>(null);
+  const mailboxMessages = liveMailboxMessages.length ? liveMailboxMessages : selectedMailboxMessages;
 
-  function selectMailboxMessage(message: typeof selectedMailboxMessages[number]) {
+  function selectMailboxMessage(message: SelectedMailboxMessage) {
     setEmailForm({
       providerId: message.providerId,
       from: message.from,
@@ -67,6 +81,38 @@ export const IntegrationsSection = () => {
     });
     setPreview(null);
     setToast({ tone: "info", message: "Selected mailbox message loaded. Preview extraction before creating tenant records." });
+  }
+
+  async function loadMicrosoftMailbox() {
+    setLoadingMailbox(true);
+    setToast(null);
+    try {
+      const response = await fetch("/api/connectors/microsoft/messages/list?limit=8", {
+        credentials: "include",
+        cache: "no-store",
+      });
+      const result = await response.json().catch(() => ({})) as { providerGated?: boolean; message?: string; messages?: MicrosoftGraphMailboxMessageSummary[] };
+      if (!response.ok) throw new Error(result.message ?? "Microsoft mailbox listing failed.");
+      const messages = (result.messages ?? []).map((message) => ({
+        id: message.messageId ?? message.sourceLink ?? message.subject,
+        providerId: "microsoft" as ConnectorProviderId,
+        from: message.from,
+        subject: message.subject,
+        sourceLink: message.sourceLink ?? "https://outlook.office.com/mail/",
+        receivedAt: message.receivedAt ?? new Date().toISOString(),
+        bodyText: message.bodyText || message.bodyPreview,
+      }));
+      if (!messages.length) {
+        setToast({ tone: "info", message: result.message ?? "Microsoft mailbox listing is provider-gated until OAuth and token vault credentials are connected." });
+        return;
+      }
+      setLiveMailboxMessages(messages);
+      setToast({ tone: "success", message: `Loaded ${messages.length} Microsoft mailbox message(s) for selected-message import.` });
+    } catch (error) {
+      setToast({ tone: "error", message: error instanceof Error ? error.message : "Microsoft mailbox listing failed." });
+    } finally {
+      setLoadingMailbox(false);
+    }
   }
 
   async function importEmail(confirm: boolean) {
@@ -114,13 +160,14 @@ export const IntegrationsSection = () => {
           <div className="mt-3 flex flex-wrap gap-2">
             <a href="/api/connectors/oauth/start?provider=gmail" className="rounded-lg border border-[rgba(139,30,45,0.22)] bg-white px-3 py-2 text-xs font-semibold text-[#8B1E2D] hover:bg-[#8B1E2D]/5">Connect Gmail</a>
             <a href="/api/connectors/oauth/start?provider=microsoft" className="rounded-lg border border-[rgba(139,30,45,0.22)] bg-white px-3 py-2 text-xs font-semibold text-[#8B1E2D] hover:bg-[#8B1E2D]/5">Connect Microsoft</a>
+            <button type="button" onClick={() => void loadMicrosoftMailbox()} disabled={loadingMailbox} className="rounded-lg bg-[#8B1E2D] px-3 py-2 text-xs font-semibold text-white hover:bg-[#7a1a27] disabled:opacity-60">Load Microsoft inbox</button>
           </div>
         </div>
         <div className="grid w-full gap-2 lg:max-w-md">
           <div className="rounded-lg border border-[rgba(15,17,23,0.08)] bg-[#F8F9FA] p-2">
-            <div className="mb-2 text-[10px] font-semibold uppercase text-[#5F6B73]">Selected mailbox messages</div>
+            <div className="mb-2 text-[10px] font-semibold uppercase text-[#5F6B73]">{liveMailboxMessages.length ? "Live Microsoft mailbox messages" : "Selected mailbox messages"}</div>
             <div className="grid gap-2">
-              {selectedMailboxMessages.map((message) => (
+              {mailboxMessages.map((message) => (
                 <button
                   key={message.id}
                   onClick={() => selectMailboxMessage(message)}
