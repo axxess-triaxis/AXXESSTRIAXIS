@@ -1,5 +1,40 @@
 # Sprint Log
 
+## Sprint 29 - Pilot Tenant Acceptance And Live Operations
+
+Sprint 29 converts the executable pilot workflow into a customer-success acceptance and live-operations process. The focus is making a real pilot tenant reviewable, sign-off ready, and operable after the first governed workflow is completed.
+
+### Completed
+
+- Added a pilot tenant acceptance engine that combines golden-path progress, pilot health, command-center evidence, and live workspace metrics.
+- Added a Pilot Command Center acceptance panel with score, checklist, blockers, evidence gaps, live-ops handoffs, and operator actions.
+- Added role-protected `GET /api/admin/pilot-acceptance` and `POST /api/admin/pilot-acceptance`.
+- Added `pilot_tenant_acceptance_runs`, `pilot_acceptance_checklist_items`, and `pilot_live_ops_events` Supabase tables with tenant-scoped RLS and explicit grants.
+- Added acceptance persistence that records runs, checklist rows, live-ops events, and audit evidence when Supabase admin runtime is configured.
+- Extended the Pilot Golden Path Release Gate to include Sprint 29 acceptance Playwright coverage.
+- Added focused unit, route, RLS, and seed-gated E2E coverage for pilot acceptance.
+
+### Live
+
+- Organization Admins can review pilot acceptance status from `/admin/pilot-command-center`.
+- Customer-success operators can see what evidence is accepted, ready, missing, or blocked before a pilot is marked live.
+- Operator handoffs connect sponsor review, stuck-step recovery, selected-message connector operations, AI review monitoring, RAG release gates, and audit evidence.
+- Demo and provider-gated environments still render a clean acceptance panel without leaking technical errors to users.
+
+### Provider-Gated
+
+- Acceptance persistence requires Supabase service-role runtime.
+- Live readiness event history requires the Sprint 16 pilot readiness migration.
+- Connector and token-vault evidence depends on OAuth provider credentials and encrypted token vault runtime.
+- Branch protection should require `Pilot Golden Path Release Gate / Sprint 27/29 Pilot Acceptance Gate` after the workflow is observed on `main`.
+
+### Recommended Sprint 30
+
+- Add customer-success stuck-step drilldowns with owner assignment and SLA timers.
+- Add approval-request, stakeholder-note, and project-update list/detail pages.
+- Add live Microsoft Graph mailbox message picker UI backed by provider message listing.
+- Add regional key policy/BYOK foundations for pilot tenants.
+
 ## Sprint 28 - Pilot Release Gates, Microsoft Import Parity, And Timeline Evidence
 
 Sprint 28 hardens the Sprint 27 golden path for pilot release review. It gives approved AI actions their own business records, brings Microsoft Graph selected-message import to parity with Gmail, links command-center dashboard movement to timeline evidence, and makes the golden-path E2E a dedicated release gate.
