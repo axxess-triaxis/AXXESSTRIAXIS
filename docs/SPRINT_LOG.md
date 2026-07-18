@@ -1,5 +1,40 @@
 # Sprint Log
 
+## Sprint 31 - Store-Ready Capacitor Release Certification
+
+Sprint 31 makes the Capacitor/Webnative mobile shell release-certifiable from the monorepo. It focuses on signed Android Play artifacts, iOS TestFlight-ready IPA export, strict release signoff, and VS Code-accessible mobile release tasks.
+
+### Completed
+
+- Added Capacitor store readiness validation for Android/iOS native release configuration.
+- Added store config application script so generated Capacitor projects retain bundle IDs, version inputs, signing configuration, hardened manifests, privacy metadata, and export options.
+- Updated Android to API 36 with environment-driven application ID, version code, version name, release signing, hardened backup and cleartext settings, and Play-ready AAB enforcement.
+- Updated iOS to environment-driven bundle identifier, marketing version, build number, valid URL scheme declaration, privacy manifest, App Store Connect key handling, archive export, IPA validation, and optional TestFlight upload.
+- Updated the production mobile release workflow with strict store-readiness gates, optional Google Play internal testing upload, optional TestFlight upload, release manifest evidence, and final signoff requiring an iOS `.ipa`.
+- Added VS Code tasks for mobile store readiness, Android store build, iOS TestFlight build, and combined release checks.
+- Added focused static tests for native store configuration and GitHub Actions release workflow gates.
+
+### Live
+
+- Release operators can run mobile store readiness from VS Code or GitHub Actions.
+- Android release workflow produces a signed `.aab` when Android keystore secrets are present.
+- iOS release workflow exports a TestFlight-ready `.ipa` on macOS when Apple/App Store Connect secrets are present.
+- Store uploads remain disabled by default and activate only through explicit environment variables.
+
+### Provider-Gated
+
+- Android Play internal testing upload requires `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` and `ANDROID_UPLOAD_TO_PLAY=true`.
+- TestFlight upload requires `ASC_KEY_ID`, `ASC_ISSUER_ID`, `ASC_PRIVATE_KEY`, `APPLE_TEAM_ID`, `IOS_BUNDLE_IDENTIFIER`, and `IOS_UPLOAD_TO_TESTFLIGHT=true`.
+- Final App Store and Play Store approval still require store listing metadata, screenshots, privacy labels, data-safety declarations, and account-level reviewer configuration.
+
+### Recommended Sprint 32
+
+- Add store metadata packs for Apple and Google review.
+- Add screenshot automation for phone/tablet store listings.
+- Add crash reporting and release health monitoring for mobile beta cohorts.
+- Add reviewer/demo account automation for App Review and Play review.
+- Add production mobile rollback and staged rollout controls.
+
 ## Sprint 30 - Customer-Success Live Operations And Workflow Records
 
 Sprint 30 turns pilot acceptance into an operator-ready customer-success layer. It focuses on stuck-step recovery, SLA timers, regional key policy posture, workflow action records, and live Microsoft mailbox selection.

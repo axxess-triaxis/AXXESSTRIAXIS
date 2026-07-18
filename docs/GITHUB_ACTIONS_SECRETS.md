@@ -24,15 +24,41 @@ Do not commit actual secret values to this repository. Store production and stag
 | `ASC_ISSUER_ID` | App Store Connect issuer ID | iOS signing |
 | `ASC_PRIVATE_KEY` | App Store Connect private key contents | iOS signing |
 | `APPLE_TEAM_ID` | Apple Developer Team ID | iOS signing |
+| `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` | Google Play Console service account JSON | Optional Android internal testing upload |
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL | Web and mobile |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon key | Web and mobile |
 | `CAPACITOR_SERVER_URL` | Production or staging web URL, for example `https://app.axxess.dev` | Capacitor shell |
 | `CAPACITOR_ALLOWED_HOSTS` | Comma-separated allowed hosts, for example `app.axxess.dev,localhost,127.0.0.1` | Capacitor shell |
 | `NEXT_PUBLIC_APP_URL` | Web app URL | Web and mobile |
 
-## Build-Proof Workflow
+## App Build And Release Variables
 
-The first GitHub Actions proof point for mobile release readiness is:
+Configure these under repository or `production-mobile` environment variables:
+
+| Variable name | Value | Required for |
+| --- | --- | --- |
+| `ANDROID_APPLICATION_ID` | Android package name, for example `com.triaxis.axxess` | Android signing and Play upload |
+| `IOS_BUNDLE_IDENTIFIER` | Apple bundle identifier, for example `com.triaxis.axxess` | iOS signing and TestFlight |
+| `ANDROID_UPLOAD_TO_PLAY` | `true` only when the workflow should upload to Play internal testing | Optional Play upload |
+| `IOS_UPLOAD_TO_TESTFLIGHT` | `true` only when the workflow should upload to TestFlight | Optional TestFlight upload |
+
+## Build-Proof Workflows
+
+The current primary store-bound proof point is:
+
+```text
+.github/workflows/mobile-capacitor-release.yml
+```
+
+Workflow name:
+
+```text
+Capacitor Mobile Release
+```
+
+It validates strict release environment values, applies Capacitor native store configuration, builds signed Android artifacts, exports iOS IPA artifacts, generates release checklists and produces a release manifest.
+
+The legacy Expo/EAS proof workflow remains available while Expo compatibility is retained:
 
 ```text
 .github/workflows/mobile-eas-production-build.yml
