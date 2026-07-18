@@ -1,0 +1,63 @@
+{
+  "generatedFor": "Sprint 32 Mobile Store Launch Console",
+  "app": "AXXESS by Triaxis",
+  "tenant": "North East Health Mission",
+  "screenshots": [
+    {
+      "id": "login",
+      "label": "Reviewer login",
+      "route": "/auth/login",
+      "platforms": ["android", "ios"],
+      "deviceClass": "phone",
+      "evidencePath": "artifacts/store-screenshots/login.png"
+    },
+    {
+      "id": "dashboard",
+      "label": "Executive dashboard",
+      "route": "/dashboard",
+      "platforms": ["android", "ios"],
+      "deviceClass": "phone",
+      "evidencePath": "artifacts/store-screenshots/dashboard.png"
+    },
+    {
+      "id": "ai-workspace",
+      "label": "AI Workspace and Review Inbox",
+      "route": "/ai-workspace/review-inbox",
+      "platforms": ["android", "ios"],
+      "deviceClass": "phone",
+      "evidencePath": "artifacts/store-screenshots/ai-review-inbox.png"
+    },
+    {
+      "id": "knowledge",
+      "label": "Knowledge Hub",
+      "route": "/knowledge",
+      "platforms": ["android", "ios"],
+      "deviceClass": "phone",
+      "evidencePath": "artifacts/store-screenshots/knowledge.png"
+    },
+    {
+      "id": "approvals",
+      "label": "Approvals and governance",
+      "route": "/approvals",
+      "platforms": ["android", "ios"],
+      "deviceClass": "phone",
+      "evidencePath": "artifacts/store-screenshots/approvals.png"
+    },
+    {
+      "id": "workflow-records",
+      "label": "Workflow records",
+      "route": "/workflow-records",
+      "platforms": ["android", "ios"],
+      "deviceClass": "tablet",
+      "evidencePath": "artifacts/store-screenshots/workflow-records.png"
+    },
+    {
+      "id": "mobile-release",
+      "label": "Mobile release console",
+      "route": "/admin/mobile-release",
+      "platforms": ["android", "ios"],
+      "deviceClass": "tablet",
+      "evidencePath": "artifacts/store-screenshots/mobile-release-console.png"
+    }
+  ]
+}

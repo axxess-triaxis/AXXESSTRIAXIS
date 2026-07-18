@@ -233,7 +233,7 @@ These organizations increasingly require AI systems capable of operating within 
 
 **Enterprise Beta Candidate**
 
-Current implementation includes thirty-one structured engineering sprints covering governance, orchestration, operational controls, enterprise administration, connector infrastructure, audit evidence, observability, Human-in-the-Loop workflows, live tenant workflow execution, pilot release gates, customer-success acceptance operations, live-ops recovery and store-ready mobile release certification.
+Current implementation includes thirty-two structured engineering sprints covering governance, orchestration, operational controls, enterprise administration, connector infrastructure, audit evidence, observability, Human-in-the-Loop workflows, live tenant workflow execution, pilot release gates, customer-success acceptance operations, live-ops recovery, store-ready mobile release certification and full-stack mobile store launch readiness.
 
 The platform currently supports:
 
@@ -263,6 +263,13 @@ The platform currently supports:
 - TestFlight-ready iOS IPA Export
 - Play Store-ready Android AAB Builds
 - VS Code Mobile Release Tasks
+- Mobile Store Launch Console
+- Store Listing Packs
+- Reviewer Account Automation
+- Screenshot Manifest
+- Crash and Release Health Monitoring
+- Staged Rollout Controls
+- Mobile Store Release Gate
 - Multi-tenant Administration
 - Usage Controls
 - Enterprise Readiness Scoring
@@ -1148,11 +1155,12 @@ Current engineering quality includes:
 - Capacitor store readiness
 - Android signed AAB verification
 - iOS IPA export verification
+- Mobile store release readiness gate
 - Required RAG Release Gate
 - Pilot Golden Path Release Gate
 - Vercel Preview validation
 
-Sprint 31 adds Capacitor store readiness, native release identifier/version validation, Android Play-ready AAB signoff, iOS TestFlight-ready IPA signoff, and VS Code mobile release tasks on top of the broader type, lint, unit, build, security, Supabase, RAG and Playwright validation pipeline.
+Sprint 32 adds a Mobile Store Launch Console, store listing packs, reviewer account readiness, screenshot manifest verification, release-health monitoring, staged rollout controls and a dedicated mobile store release gate on top of the broader type, lint, unit, build, security, Supabase, RAG, Playwright and mobile release validation pipeline.
 
 ---
 
@@ -1511,7 +1519,7 @@ AXXESS is developed using a structured, sprint-based engineering methodology foc
 
 Rather than optimizing for rapid feature accumulation, the engineering process prioritizes maintainability, operational transparency and production readiness. Every sprint aims to introduce meaningful platform capabilities while preserving architectural consistency and code quality.
 
-As of **Sprint 31**, AXXESS has evolved through thirty-one structured engineering iterations covering identity, governance, enterprise workflows, AI orchestration, connector infrastructure, operational controls, release automation, production UX hardening, executable pilot workflow evidence, release-gated golden-path validation, pilot tenant acceptance operations, customer-success live operations and store-ready mobile release certification.
+As of **Sprint 32**, AXXESS has evolved through thirty-two structured engineering iterations covering identity, governance, enterprise workflows, AI orchestration, connector infrastructure, operational controls, release automation, production UX hardening, executable pilot workflow evidence, release-gated golden-path validation, pilot tenant acceptance operations, customer-success live operations, store-ready mobile release certification and full-stack mobile store launch readiness.
 
 ---
 
@@ -1688,6 +1696,8 @@ The repository is organized around modular platform components, enabling indepen
 - Android Play-ready AAB release lane
 - iOS TestFlight-ready IPA release lane
 - VS Code mobile build tasks
+- Mobile Store Launch Console
+- Store listing, reviewer, screenshot, health and rollout readiness gate
 
 ---
 
@@ -2109,7 +2119,7 @@ Engineering changes are expected to satisfy all quality gates before merge.
 
 # Current Engineering Status
 
-As of Sprint 31:
+As of Sprint 32:
 
 - Governance runtime implemented
 - Provider routing implemented
@@ -2142,8 +2152,15 @@ As of Sprint 31:
 - Android signed AAB release signoff implemented
 - iOS IPA export and TestFlight upload gate implemented
 - VS Code mobile release tasks implemented
+- Mobile Store Launch Console implemented
+- Apple and Google store listing packs implemented
+- Reviewer account readiness implemented
+- Screenshot manifest implemented
+- Crash and release health monitoring implemented
+- Staged rollout controls implemented
+- Mobile store release readiness gate implemented
 
-The engineering focus now shifts from mobile store-release certification to editable recovery ownership, regional KMS/BYOK adapters, workflow record mutation paths, Microsoft import audit drilldowns, production tenant expansion and store metadata completion.
+The engineering focus now shifts from mobile store launch readiness to live store reviewer automation, automated screenshot capture artifacts, crash provider wiring, production support telemetry, staged rollout runbooks and production tenant expansion.
 # Deployment, Operations & Product Roadmap
 
 AXXESS is designed to support enterprise deployments that evolve from early design-partner environments to production-grade regulated workloads. The deployment philosophy emphasizes repeatability, governance, operational visibility and gradual hardening rather than maximizing deployment speed at the expense of long-term maintainability.
@@ -2573,6 +2590,20 @@ Completed:
 
 ---
 
+## Sprint 32
+
+Completed:
+
+- Mobile Store Launch Console under Organization Admin for release operators
+- Tenant-scoped mobile release snapshot API and persistence repository
+- Supabase migration for release runs, store listings, reviewer accounts, crash/release health events and rollout events
+- Apple review notes, Google Play notes, Apple privacy labels draft, Google Data Safety draft and screenshot manifest
+- Reviewer account readiness, release-health monitoring and staged rollout controls surfaced in the frontend
+- Dedicated Mobile Store Release Readiness GitHub Actions gate
+- Focused tests for release snapshot logic, admin API guards, route metadata and Sprint 32 RLS expectations
+
+---
+
 ## Sprint 32+
 
 Future priorities include:
@@ -2585,7 +2616,7 @@ Future priorities include:
 - Enterprise APIs
 - Sovereign deployment options
 - Additional regional language support
-- Store listing metadata, screenshots and privacy/data-safety submission packs
+- Live store reviewer account provisioning and automated screenshot artifact capture
 
 ---
 
