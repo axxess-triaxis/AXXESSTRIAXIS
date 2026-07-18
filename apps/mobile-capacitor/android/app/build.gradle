@@ -2,16 +2,20 @@ plugins {
     id 'com.android.application'
 }
 
+def resolvedApplicationId = System.getenv('ANDROID_APPLICATION_ID') ?: 'com.triaxis.axxess'
+def resolvedVersionName = System.getenv('RELEASE_APP_VERSION') ?: System.getenv('NEXT_PUBLIC_AXXESS_APP_VERSION') ?: '0.6.0'
+def resolvedVersionCode = (System.getenv('ANDROID_VERSION_CODE') ?: System.getenv('EXPO_PUBLIC_ANDROID_VERSION_CODE') ?: '1').toInteger()
+
 android {
-    namespace 'com.triaxis.axxess'
-    compileSdk 35
+    namespace resolvedApplicationId
+    compileSdk 36
 
     defaultConfig {
-        applicationId 'com.triaxis.axxess'
+        applicationId resolvedApplicationId
         minSdk 24
-        targetSdk 35
-        versionCode 1
-        versionName '0.6.0-beta'
+        targetSdk 36
+        versionCode resolvedVersionCode
+        versionName resolvedVersionName
     }
 
     signingConfigs {
