@@ -15,6 +15,7 @@ describe("enterprise route metadata", () => {
     expect(routeForPath("/admin").section).toBe("settings");
     expect(routeForPath("/admin/beta-readiness").section).toBe("beta-readiness");
     expect(routeForPath("/admin/product-analytics").section).toBe("product-analytics");
+    expect(routeForPath("/workflow-records/approval-requests").section).toBe("tasks");
   });
 
   it("maps Sprint 8 admin pages to role-protected routes", () => {
