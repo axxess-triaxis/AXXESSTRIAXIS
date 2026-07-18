@@ -25,6 +25,11 @@ function readPackageVersion() {
   return String(pkg.version ?? "").trim();
 }
 
+function coerceStoreVersion(version) {
+  const match = /^(\d+\.\d+\.\d+)/.exec(version);
+  return match ? match[1] : version;
+}
+
 function parseFromTag(tag) {
   const match = /^v(\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?)-ios(\d+)-android(\d+)$/.exec(tag);
   if (!match) {
@@ -42,7 +47,7 @@ let iosBuildNumber;
 let androidVersionCode;
 
 if (eventName === "workflow_dispatch") {
-  appVersion = inputAppVersion || readPackageVersion();
+  appVersion = inputAppVersion || coerceStoreVersion(readPackageVersion());
   iosBuildNumber = inputIosBuildNumber;
   androidVersionCode = inputAndroidVersionCode;
 
@@ -61,7 +66,7 @@ if (eventName === "workflow_dispatch") {
   fail(`unsupported event '${eventName}'.`);
 }
 
-if (!/^\d+\.\d+\.\d+(?:[-+][A-Za-z0-9.-]+)?$/.test(appVersion)) {
+if (!/^\d+\.\d+\.\d+$/.test(appVersion)) {
   fail(`invalid app version '${appVersion}'.`);
 }
 
@@ -79,7 +84,13 @@ if (!githubEnvFile) {
 
 fs.appendFileSync(githubEnvFile, `NEXT_PUBLIC_AXXESS_APP_VERSION=${appVersion}\n`);
 fs.appendFileSync(githubEnvFile, `EXPO_PUBLIC_AXXESS_APP_VERSION=${appVersion}\n`);
+fs.appendFileSync(githubEnvFile, `RELEASE_APP_VERSION=${appVersion}\n`);
 fs.appendFileSync(githubEnvFile, `EXPO_PUBLIC_IOS_BUILD_NUMBER=${iosBuildNumber}\n`);
+fs.appendFileSync(githubEnvFile, `IOS_BUILD_NUMBER=${iosBuildNumber}\n`);
+fs.appendFileSync(githubEnvFile, `CAPACITOR_IOS_BUILD_NUMBER=${iosBuildNumber}\n`);
 fs.appendFileSync(githubEnvFile, `EXPO_PUBLIC_ANDROID_VERSION_CODE=${androidVersionCode}\n`);
+fs.appendFileSync(githubEnvFile, `ANDROID_VERSION_CODE=${androidVersionCode}\n`);
+fs.appendFileSync(githubEnvFile, `CAPACITOR_ANDROID_VERSION_CODE=${androidVersionCode}\n`);
+fs.appendFileSync(githubEnvFile, `MOBILE_BUILD_NUMBER=${iosBuildNumber}\n`);
 
 console.log(`[release-values] app=${appVersion} ios=${iosBuildNumber} android=${androidVersionCode}`);

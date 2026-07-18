@@ -12,9 +12,10 @@ type CapacitorConfig = {
 
 const appUrl = process.env.CAPACITOR_SERVER_URL || process.env.NEXT_PUBLIC_APP_URL || 'https://app.axxess.dev';
 const allowedHosts = (process.env.CAPACITOR_ALLOWED_HOSTS || 'app.axxess.dev,localhost,127.0.0.1').split(',').map((host) => host.trim()).filter(Boolean);
+const nativeAppId = process.env.CAPACITOR_APP_ID || process.env.ANDROID_APPLICATION_ID || process.env.IOS_BUNDLE_IDENTIFIER || 'com.triaxis.axxess';
 
 const config: CapacitorConfig = {
-  appId: process.env.ANDROID_APPLICATION_ID || 'com.triaxis.axxess',
+  appId: nativeAppId,
   appName: 'AXXESS TRIaxis',
   webDir: '../../dist',
   server: {

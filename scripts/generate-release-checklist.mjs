@@ -8,8 +8,8 @@ fs.mkdirSync(outDir, { recursive: true });
 
 const platform = process.env.RELEASE_PLATFORM ?? "all";
 const appVersion = process.env.RELEASE_APP_VERSION ?? process.env.NEXT_PUBLIC_AXXESS_APP_VERSION ?? "unknown";
-const iosBuild = process.env.EXPO_PUBLIC_IOS_BUILD_NUMBER ?? "unset";
-const androidCode = process.env.EXPO_PUBLIC_ANDROID_VERSION_CODE ?? "unset";
+const iosBuild = process.env.IOS_BUILD_NUMBER ?? process.env.EXPO_PUBLIC_IOS_BUILD_NUMBER ?? "unset";
+const androidCode = process.env.ANDROID_VERSION_CODE ?? process.env.EXPO_PUBLIC_ANDROID_VERSION_CODE ?? "unset";
 const runId = process.env.GITHUB_RUN_ID ?? "local";
 const runNumber = process.env.GITHUB_RUN_NUMBER ?? "local";
 const sha = process.env.GITHUB_SHA ?? "local";

@@ -14,6 +14,12 @@ const required = [
 ];
 
 const values = {};
+for (const [key, value] of Object.entries(process.env)) {
+  if (typeof value === 'string' && value.trim()) {
+    values[key] = value.trim();
+  }
+}
+
 const envPath = path.join(root, '.env.local');
 if (fs.existsSync(envPath)) {
   for (const line of fs.readFileSync(envPath, 'utf8').split(/\r?\n/)) {

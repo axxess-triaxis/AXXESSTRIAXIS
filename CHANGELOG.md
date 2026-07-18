@@ -4,6 +4,11 @@ All notable changes to AXXESS are documented here. This project follows the spir
 
 ## Unreleased
 
+- Added Sprint 31 Capacitor store-release certification with strict Android/iOS store readiness validation.
+- Added Android Play-ready release configuration with API 36, environment-driven application ID/versioning, signed AAB enforcement, hardened manifest settings, and optional Google Play internal testing upload.
+- Added iOS TestFlight-ready release configuration with environment-driven bundle/version/build settings, privacy manifest, export options, App Store Connect key handling, IPA export, validation, and optional TestFlight upload.
+- Added VS Code mobile release tasks plus static tests for native store configuration and GitHub Actions release signoff gates.
+- Updated mobile release workflow signoff to require an exported iOS `.ipa` and release manifest evidence for store-bound builds.
 - Added Sprint 30 customer-success live-ops snapshot engine for stuck-step recovery, SLA timers, regional key policy posture, and operator recommendations.
 - Added role-protected `GET /api/admin/customer-success/live-ops` and `POST /api/admin/customer-success/live-ops` for reading and recording live-ops evidence.
 - Added Customer-Success Live Operations panel under `/admin/support-ops`.
