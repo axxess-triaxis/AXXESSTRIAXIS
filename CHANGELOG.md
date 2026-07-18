@@ -4,6 +4,11 @@ All notable changes to AXXESS are documented here. This project follows the spir
 
 ## Unreleased
 
+- Added Sprint 29 pilot tenant acceptance engine that converts golden-path, pilot health, command-center, and live workspace evidence into a customer-success acceptance score.
+- Added Pilot Command Center acceptance panel with checklist evidence, blockers, live-ops handoffs, and operator actions for recording acceptance or handoff.
+- Added `GET /api/admin/pilot-acceptance` and `POST /api/admin/pilot-acceptance` for role-protected acceptance reads and writes.
+- Added Sprint 29 Supabase migration for `pilot_tenant_acceptance_runs`, `pilot_acceptance_checklist_items`, and `pilot_live_ops_events` with tenant-scoped RLS.
+- Extended the Pilot Golden Path Release Gate to include Sprint 29 pilot acceptance Playwright coverage.
 - Added Sprint 28 pilot release hardening with first-class approval request, stakeholder note, and project update repositories for reviewed AI actions.
 - Added live Microsoft Graph selected-message import parity with preview/confirm workflow, token vault access, document ingestion, task creation, timeline evidence, and audit events.
 - Added dashboard snapshot deltas for persisted Pilot Command Center snapshots, linked back to workflow timeline events.
