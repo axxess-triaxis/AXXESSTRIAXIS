@@ -8,8 +8,11 @@ const requiredFiles = [
   "capacitor.config.ts",
   path.join("android", "app", "build.gradle"),
   path.join("android", "app", "src", "main", "AndroidManifest.xml"),
+  path.join("android", "app", "src", "main", "res", "xml", "network_security_config.xml"),
   path.join("ios", "App", "Info.plist"),
   path.join("ios", "App", "AppDelegate.swift"),
+  path.join("ios", "App", "ExportOptions.plist"),
+  path.join("ios", "App", "PrivacyInfo.xcprivacy"),
 ];
 
 const missing = requiredFiles.filter((relativePath) => !fs.existsSync(path.join(shellRoot, relativePath)));
