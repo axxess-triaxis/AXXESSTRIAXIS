@@ -233,7 +233,7 @@ These organizations increasingly require AI systems capable of operating within 
 
 **Enterprise Beta Candidate**
 
-Current implementation includes twenty-nine structured engineering sprints covering governance, orchestration, operational controls, enterprise administration, connector infrastructure, audit evidence, observability, Human-in-the-Loop workflows, live tenant workflow execution, pilot release gates and customer-success acceptance operations.
+Current implementation includes thirty structured engineering sprints covering governance, orchestration, operational controls, enterprise administration, connector infrastructure, audit evidence, observability, Human-in-the-Loop workflows, live tenant workflow execution, pilot release gates, customer-success acceptance operations and live-ops recovery.
 
 The platform currently supports:
 
@@ -254,6 +254,11 @@ The platform currently supports:
 - Review-to-Work Action Creation
 - Pilot Tenant Acceptance
 - Live-Ops Handoff Evidence
+- Customer-Success Live Operations
+- Stuck-Step Recovery
+- Workflow Record Drilldowns
+- Live Microsoft Mailbox Listing
+- Regional Key Policy Posture
 - Multi-tenant Administration
 - Usage Controls
 - Enterprise Readiness Scoring
@@ -1139,7 +1144,7 @@ Current engineering quality includes:
 - Pilot Golden Path Release Gate
 - Vercel Preview validation
 
-Sprint 29 extends the dedicated pilot golden-path release gate with pilot tenant acceptance coverage on top of the broader type, lint, unit, build, security, Supabase, RAG and Playwright validation pipeline.
+Sprint 30 adds customer-success live-ops, workflow-record, RLS, route and Microsoft mailbox coverage on top of the broader type, lint, unit, build, security, Supabase, RAG and Playwright validation pipeline.
 
 ---
 
@@ -1498,7 +1503,7 @@ AXXESS is developed using a structured, sprint-based engineering methodology foc
 
 Rather than optimizing for rapid feature accumulation, the engineering process prioritizes maintainability, operational transparency and production readiness. Every sprint aims to introduce meaningful platform capabilities while preserving architectural consistency and code quality.
 
-As of **Sprint 29**, AXXESS has evolved through twenty-nine structured engineering iterations covering identity, governance, enterprise workflows, AI orchestration, connector infrastructure, operational controls, release automation, production UX hardening, executable pilot workflow evidence, release-gated golden-path validation and pilot tenant acceptance operations.
+As of **Sprint 30**, AXXESS has evolved through thirty structured engineering iterations covering identity, governance, enterprise workflows, AI orchestration, connector infrastructure, operational controls, release automation, production UX hardening, executable pilot workflow evidence, release-gated golden-path validation, pilot tenant acceptance operations and customer-success live operations.
 
 ---
 
@@ -2010,6 +2015,30 @@ Verification:
 
 ---
 
+## Sprint 30
+
+Customer-success live operations and workflow record drilldowns.
+
+Implemented:
+
+- Customer-success live-ops snapshot engine using golden path, pilot acceptance, workspace metrics and regional key posture
+- Stuck-step recovery items with owner roles, severity, evidence and due dates
+- Live-ops SLA timers for sponsor review, connector operations, AI review, RAG/audit evidence and support handoff
+- Regional key policy posture for North East India tenant data, connector token vaults and investor preview isolation
+- Role-protected customer-success live-ops API and `/admin/support-ops` cockpit
+- Workflow record list/detail pages for approval requests, stakeholder notes and project updates
+- Live Microsoft Graph mailbox listing API and Integrations UI control for selected-message import
+- Sprint 30 Supabase migration with tenant-scoped RLS and explicit grants
+
+Verification:
+
+- TypeScript
+- Focused unit tests
+- Route and RLS tests
+- Supabase migration verification
+
+---
+
 # Repo-Local Supabase Integration
 
 Following Sprint 25, AXXESS adopted a repository-managed Supabase workflow.
@@ -2068,7 +2097,7 @@ Engineering changes are expected to satisfy all quality gates before merge.
 
 # Current Engineering Status
 
-As of Sprint 29:
+As of Sprint 30:
 
 - Governance runtime implemented
 - Provider routing implemented
@@ -2092,8 +2121,13 @@ As of Sprint 29:
 - Pilot golden-path release gate implemented
 - Pilot tenant acceptance implemented
 - Live-ops handoff evidence implemented
+- Customer-success live-ops snapshots implemented
+- Stuck-step recovery and SLA timers implemented
+- Workflow record drilldowns implemented
+- Microsoft mailbox listing implemented
+- Regional key policy posture implemented
 
-The engineering focus now shifts from proving pilot acceptance to deepening live customer-success operations, stuck-step recovery, dedicated workflow record pages, regional key policy foundations and production tenant expansion.
+The engineering focus now shifts from customer-success live-ops foundations to editable recovery ownership, regional KMS/BYOK adapters, workflow record mutation paths, Microsoft import audit drilldowns and production tenant expansion.
 # Deployment, Operations & Product Roadmap
 
 AXXESS is designed to support enterprise deployments that evolve from early design-partner environments to production-grade regulated workloads. The deployment philosophy emphasizes repeatability, governance, operational visibility and gradual hardening rather than maximizing deployment speed at the expense of long-term maintainability.
@@ -2496,16 +2530,16 @@ Completed:
 
 ## Sprint 30
 
-Focus areas:
+Completed:
 
 - Customer-success stuck-step drilldowns
 - Dedicated workflow record list/detail pages
-- Live Microsoft mailbox picker UI
-- BYOK and regional key policy foundation
-- Policy simulation
-- Governance analytics
-- AI quality dashboards
-- Operational KPIs
+- Live Microsoft mailbox picker UI backed by Graph listing
+- BYOK and regional key policy posture foundation
+- Live-ops SLA timers
+- Customer-success snapshot persistence path
+- Provider-gated Microsoft mailbox listing with stable UI fallback
+- Sprint 30 RLS, route and service tests
 
 ---
 

@@ -6,6 +6,7 @@ const protectedRoutePrefixes = [
   "/projects",
   "/programs",
   "/tasks",
+  "/workflow-records",
   "/crm",
   "/stakeholders",
   "/knowledge",
