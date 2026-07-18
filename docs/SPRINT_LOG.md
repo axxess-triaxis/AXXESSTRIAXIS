@@ -1,5 +1,40 @@
 # Sprint Log
 
+## Sprint 32 - Mobile Store Launch Console And Full-Stack Release Readiness
+
+Sprint 32 turns Sprint 31's store-ready Capacitor build lane into a product-facing release operations console. It covers store listing packs, reviewer access, screenshot evidence, release health monitoring, staged rollout controls, tenant-scoped persistence and a dedicated release readiness gate.
+
+### Completed
+
+- Added Mobile Store Launch Console under Organization Admin for Android/iOS release operators.
+- Added a mobile store launch snapshot service covering signed build posture, listing readiness, reviewer account posture, screenshots, release health, rollout plan, release gates and next actions.
+- Added role-protected `GET /api/admin/mobile-release` and `POST /api/admin/mobile-release`.
+- Added `mobile_release_runs`, `mobile_store_listings`, `mobile_reviewer_accounts`, `mobile_crash_events` and `mobile_rollout_events` Supabase tables with tenant-scoped RLS and explicit grants.
+- Added store review pack docs for Apple Review, Google Play Review, Apple privacy labels, Google Play Data Safety and screenshot manifest.
+- Added a Mobile Store Release Readiness GitHub Actions gate and repo-local `pnpm run mobile:store:release-gate` command.
+- Added focused tests for snapshot readiness, API source guards, route metadata and Sprint 32 RLS expectations.
+
+### Live
+
+- Organization Admins can review mobile release readiness from `/admin/mobile-release`.
+- Release operators can record a readiness snapshot, reviewer-account verification or staged-rollout update when Supabase service-role runtime is configured.
+- The UI remains populated without provider secrets and labels missing external credentials as provider-gated rather than broken.
+
+### Provider-Gated
+
+- Android Play upload requires Google Play service account credentials and `ANDROID_UPLOAD_TO_PLAY=true`.
+- TestFlight upload requires App Store Connect credentials, Apple team/bundle settings and `IOS_UPLOAD_TO_TESTFLIGHT=true`.
+- Final store submission still requires legal/product approval of privacy labels and data-safety declarations.
+- Automated screenshot image capture remains a follow-up; Sprint 32 defines the manifest and gate.
+
+### Recommended Sprint 33
+
+- Wire automated screenshot capture into the mobile visual regression pipeline and attach store-ready artifacts.
+- Provision and rotate reviewer accounts from the admin console with secure password handoff.
+- Connect crash/release health to the chosen monitoring provider.
+- Add live Play Console and App Store Connect submission status adapters.
+- Add production support telemetry and rollback runbooks for staged rollout operations.
+
 ## Sprint 31 - Store-Ready Capacitor Release Certification
 
 Sprint 31 makes the Capacitor/Webnative mobile shell release-certifiable from the monorepo. It focuses on signed Android Play artifacts, iOS TestFlight-ready IPA export, strict release signoff, and VS Code-accessible mobile release tasks.
