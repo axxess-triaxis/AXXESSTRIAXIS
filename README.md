@@ -266,7 +266,7 @@ https://www.triaxisventures.com
 
 **Enterprise Preview**
 
-https://axxesstriaxis.vercel.app
+https://www.triaxisventures.com/dashboard
 
 ---
 
