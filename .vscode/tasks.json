@@ -1,0 +1,33 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "AXXESS: Mobile Store Readiness",
+      "type": "shell",
+      "command": "pnpm run mobile:capacitor:store:doctor -- --mode=ci --target=all",
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "AXXESS: Android Store Build",
+      "type": "shell",
+      "command": "pnpm run mobile:capacitor:release:android",
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "AXXESS: iOS TestFlight Build",
+      "type": "shell",
+      "command": "pnpm run mobile:capacitor:release:ios",
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "AXXESS: Mobile Release Check",
+      "type": "shell",
+      "command": "pnpm run release:preflight -- --mode=ci --target=all && pnpm run mobile:capacitor:store:doctor -- --mode=ci --target=all",
+      "group": "test",
+      "problemMatcher": []
+    }
+  ]
+}

@@ -13,7 +13,9 @@
     "ios": "cap open ios",
     "build:android": "node scripts/build-android.mjs",
     "build:ios": "node scripts/build-ios.mjs",
-    "build:all": "pnpm run build:android && pnpm run build:ios"
+    "build:all": "pnpm run build:android && pnpm run build:ios",
+    "build:android:store": "node ../../scripts/apply-capacitor-store-config.mjs && node scripts/build-android.mjs --store",
+    "build:ios:store": "node ../../scripts/apply-capacitor-store-config.mjs && node scripts/build-ios.mjs --store"
   },
   "dependencies": {
     "@capacitor/android": "7.6.7",

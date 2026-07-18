@@ -34,6 +34,7 @@ apps/mobile-capacitor/*.p8
 apps/mobile-capacitor/*.p12
 apps/mobile-capacitor/*.cer
 apps/mobile-capacitor/*.mobileprovision
+apps/mobile-capacitor/build-metadata/
 apps/mobile-capacitor/android/app/build/
 apps/mobile-capacitor/android/.gradle/
 apps/mobile-capacitor/ios/App/build/
@@ -62,3 +63,4 @@ Thumbs.db
 .vscode/*
 !.vscode/extensions.json
 !.vscode/settings.json
+!.vscode/tasks.json

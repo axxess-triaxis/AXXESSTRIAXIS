@@ -5,11 +5,13 @@
   <key>CFBundleDisplayName</key>
   <string>AXXESS TRIaxis</string>
   <key>CFBundleIdentifier</key>
-  <string>com.triaxis.axxess</string>
+  <string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
   <key>CFBundleShortVersionString</key>
-  <string>0.6.0-beta</string>
+  <string>$(MARKETING_VERSION)</string>
   <key>CFBundleVersion</key>
-  <string>1</string>
+  <string>$(CURRENT_PROJECT_VERSION)</string>
+  <key>ITSAppUsesNonExemptEncryption</key>
+  <false/>
   <key>LSApplicationQueriesSchemes</key>
   <array>
     <string>mailto</string>
@@ -17,7 +19,14 @@
   </array>
   <key>CFBundleURLTypes</key>
   <array>
-    <string>axxess</string>
+    <dict>
+      <key>CFBundleURLName</key>
+      <string>com.triaxis.axxess</string>
+      <key>CFBundleURLSchemes</key>
+      <array>
+        <string>axxess</string>
+      </array>
+    </dict>
   </array>
 </dict>
 </plist>

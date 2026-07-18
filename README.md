@@ -233,7 +233,7 @@ These organizations increasingly require AI systems capable of operating within 
 
 **Enterprise Beta Candidate**
 
-Current implementation includes thirty structured engineering sprints covering governance, orchestration, operational controls, enterprise administration, connector infrastructure, audit evidence, observability, Human-in-the-Loop workflows, live tenant workflow execution, pilot release gates, customer-success acceptance operations and live-ops recovery.
+Current implementation includes thirty-one structured engineering sprints covering governance, orchestration, operational controls, enterprise administration, connector infrastructure, audit evidence, observability, Human-in-the-Loop workflows, live tenant workflow execution, pilot release gates, customer-success acceptance operations, live-ops recovery and store-ready mobile release certification.
 
 The platform currently supports:
 
@@ -259,6 +259,10 @@ The platform currently supports:
 - Workflow Record Drilldowns
 - Live Microsoft Mailbox Listing
 - Regional Key Policy Posture
+- Capacitor Store Release Certification
+- TestFlight-ready iOS IPA Export
+- Play Store-ready Android AAB Builds
+- VS Code Mobile Release Tasks
 - Multi-tenant Administration
 - Usage Controls
 - Enterprise Readiness Scoring
@@ -1140,11 +1144,15 @@ Current engineering quality includes:
 - Secret scanning
 - Dependency review
 - Playwright validation
+- Mobile validation
+- Capacitor store readiness
+- Android signed AAB verification
+- iOS IPA export verification
 - Required RAG Release Gate
 - Pilot Golden Path Release Gate
 - Vercel Preview validation
 
-Sprint 30 adds customer-success live-ops, workflow-record, RLS, route and Microsoft mailbox coverage on top of the broader type, lint, unit, build, security, Supabase, RAG and Playwright validation pipeline.
+Sprint 31 adds Capacitor store readiness, native release identifier/version validation, Android Play-ready AAB signoff, iOS TestFlight-ready IPA signoff, and VS Code mobile release tasks on top of the broader type, lint, unit, build, security, Supabase, RAG and Playwright validation pipeline.
 
 ---
 
@@ -1503,7 +1511,7 @@ AXXESS is developed using a structured, sprint-based engineering methodology foc
 
 Rather than optimizing for rapid feature accumulation, the engineering process prioritizes maintainability, operational transparency and production readiness. Every sprint aims to introduce meaningful platform capabilities while preserving architectural consistency and code quality.
 
-As of **Sprint 30**, AXXESS has evolved through thirty structured engineering iterations covering identity, governance, enterprise workflows, AI orchestration, connector infrastructure, operational controls, release automation, production UX hardening, executable pilot workflow evidence, release-gated golden-path validation, pilot tenant acceptance operations and customer-success live operations.
+As of **Sprint 31**, AXXESS has evolved through thirty-one structured engineering iterations covering identity, governance, enterprise workflows, AI orchestration, connector infrastructure, operational controls, release automation, production UX hardening, executable pilot workflow evidence, release-gated golden-path validation, pilot tenant acceptance operations, customer-success live operations and store-ready mobile release certification.
 
 ---
 
@@ -1676,6 +1684,10 @@ The repository is organized around modular platform components, enabling indepen
 
 - React Native
 - Expo
+- Capacitor/Webnative shell
+- Android Play-ready AAB release lane
+- iOS TestFlight-ready IPA release lane
+- VS Code mobile build tasks
 
 ---
 
@@ -2097,7 +2109,7 @@ Engineering changes are expected to satisfy all quality gates before merge.
 
 # Current Engineering Status
 
-As of Sprint 30:
+As of Sprint 31:
 
 - Governance runtime implemented
 - Provider routing implemented
@@ -2126,8 +2138,12 @@ As of Sprint 30:
 - Workflow record drilldowns implemented
 - Microsoft mailbox listing implemented
 - Regional key policy posture implemented
+- Capacitor store release certification implemented
+- Android signed AAB release signoff implemented
+- iOS IPA export and TestFlight upload gate implemented
+- VS Code mobile release tasks implemented
 
-The engineering focus now shifts from customer-success live-ops foundations to editable recovery ownership, regional KMS/BYOK adapters, workflow record mutation paths, Microsoft import audit drilldowns and production tenant expansion.
+The engineering focus now shifts from mobile store-release certification to editable recovery ownership, regional KMS/BYOK adapters, workflow record mutation paths, Microsoft import audit drilldowns, production tenant expansion and store metadata completion.
 # Deployment, Operations & Product Roadmap
 
 AXXESS is designed to support enterprise deployments that evolve from early design-partner environments to production-grade regulated workloads. The deployment philosophy emphasizes repeatability, governance, operational visibility and gradual hardening rather than maximizing deployment speed at the expense of long-term maintainability.
@@ -2543,7 +2559,21 @@ Completed:
 
 ---
 
-## Sprint 31+
+## Sprint 31
+
+Completed:
+
+- Capacitor store-release doctor for Android/iOS release readiness
+- Android API 36, signed AAB, environment-driven package/version configuration
+- iOS environment-driven bundle/version/build settings, privacy manifest and exported IPA workflow
+- Optional Google Play internal testing and TestFlight upload gates
+- Strict release signoff requiring Android binary output and an iOS `.ipa`
+- VS Code tasks for mobile release readiness and platform builds
+- Sprint 31 static tests for native store configuration and GitHub Actions release workflow gates
+
+---
+
+## Sprint 32+
 
 Future priorities include:
 
@@ -2555,6 +2585,7 @@ Future priorities include:
 - Enterprise APIs
 - Sovereign deployment options
 - Additional regional language support
+- Store listing metadata, screenshots and privacy/data-safety submission packs
 
 ---
 

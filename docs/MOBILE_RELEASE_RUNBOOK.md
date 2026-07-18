@@ -24,6 +24,8 @@ Set repository/environment variables:
 - `CAPACITOR_ALLOWED_HOSTS`
 - `ANDROID_APPLICATION_ID`
 - `IOS_BUNDLE_IDENTIFIER`
+- `ANDROID_UPLOAD_TO_PLAY` set to `true` only when Google Play internal testing upload should run
+- `IOS_UPLOAD_TO_TESTFLIGHT` set to `true` only when TestFlight upload should run
 
 Set repository/environment secrets:
 
@@ -37,15 +39,17 @@ Set repository/environment secrets:
 - `ASC_KEY_ID`
 - `ASC_ISSUER_ID`
 - `ASC_PRIVATE_KEY`
+- `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` when Play internal testing upload is enabled
 
-The release workflow blocks if these are missing.
+The release workflow blocks if required signing/runtime values are missing. Store upload credentials are required only when the corresponding upload variable is enabled.
 
 ## Per-release version controls
 
-- `EXPO_PUBLIC_IOS_BUILD_NUMBER` is set from workflow input `ios_build_number`.
-- `EXPO_PUBLIC_ANDROID_VERSION_CODE` is set from workflow input `android_version_code`.
-- `EXPO_PUBLIC_AXXESS_APP_VERSION` is set from workflow input `app_version`, or tag version (`vX.Y.Z`) when available.
+- `IOS_BUILD_NUMBER` and `EXPO_PUBLIC_IOS_BUILD_NUMBER` are set from workflow input `ios_build_number`.
+- `ANDROID_VERSION_CODE` and `EXPO_PUBLIC_ANDROID_VERSION_CODE` are set from workflow input `android_version_code`.
+- `RELEASE_APP_VERSION`, `NEXT_PUBLIC_AXXESS_APP_VERSION` and `EXPO_PUBLIC_AXXESS_APP_VERSION` are set from workflow input `app_version`, or tag version (`vX.Y.Z`) when available.
 - For tag-triggered runs, all three values are parsed from the tag format `vX.Y.Z-ios<build>-android<code>`.
+- If the manual `app_version` input is blank, the workflow strips any prerelease suffix from `package.json` before applying native store versions.
 
 Set a fresh iOS build number and Android version code for every store submission.
 
@@ -78,7 +82,7 @@ These artifacts are uploaded with build outputs for audit and sign-off.
 - It also fails if Android or iOS artifact archives are empty.
 - It also fails unless binary outputs are present:
 	- Android: at least one `.aab` or `.apk` file.
-	- iOS: at least one `.ipa` file or `.xcarchive` bundle.
+	- iOS: at least one exported `.ipa` file.
 - It enforces minimum binary size thresholds to reject placeholder builds:
 	- Android binary minimum: `1,000,000` bytes.
 	- iOS binary minimum: `2,000,000` bytes.
@@ -97,8 +101,20 @@ Disable or remove the workflow file or use repository settings to pause GitHub A
 
 ## Publishing
 
-- Android preview artifacts can be distributed through Firebase or Play Internal Testing after the credentials are configured.
-- iOS builds can be uploaded to TestFlight after the App Store Connect credentials are configured.
+- Android release artifacts can be uploaded to Google Play Internal Testing when `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` is configured and `ANDROID_UPLOAD_TO_PLAY=true`.
+- iOS release artifacts can be uploaded to TestFlight when App Store Connect credentials are configured and `IOS_UPLOAD_TO_TESTFLIGHT=true`.
+- If upload variables are not enabled, the workflow still produces store-bound artifacts and release evidence for manual upload.
+
+## VS Code release tasks
+
+Use `Terminal > Run Task`:
+
+- `AXXESS: Mobile Store Readiness`
+- `AXXESS: Android Store Build`
+- `AXXESS: iOS TestFlight Build`
+- `AXXESS: Mobile Release Check`
+
+The iOS build task requires macOS with Xcode. Windows operators should use GitHub Actions or a Mac to generate the IPA.
 
 ## Rollback
 
