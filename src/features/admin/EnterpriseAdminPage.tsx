@@ -2,6 +2,12 @@ import Link from "next/link";
 import type { Route } from "next";
 import { Card } from "../../components/ui/Card";
 import { SectionHeader } from "../../components/layout/SectionHeader";
+import { getFallbackLiveWorkspaceMetrics } from "../../services/live-platform/livePlatform";
+import { buildPilotCommandCenterSnapshot } from "../../services/platform/pilotCommandCenter";
+import { buildPilotTenantAcceptanceSnapshot } from "../../services/pilot/pilotAcceptance";
+import { computePilotHealth, createDemoPilotReadinessEvents } from "../../services/pilot/pilotHealth";
+import { buildEnterpriseGoldenPathSnapshot } from "../../services/workflows/enterpriseGoldenPath";
+import { PilotAcceptancePanel } from "./PilotAcceptancePanel";
 
 type AdminPanelId =
   | "organization"
@@ -136,6 +142,39 @@ const panelContent: Record<AdminPanelId, { title: string; description: string; a
 
 const panels = Object.keys(panelContent) as AdminPanelId[];
 
+function pilotAcceptancePreviewSnapshot() {
+  const organizationId = "org_north_east_health_mission";
+  const userId = "user_demo_executive";
+  const userRole = "Organization Admin";
+  const metrics = getFallbackLiveWorkspaceMetrics();
+  const goldenPath = buildEnterpriseGoldenPathSnapshot({
+    metrics,
+    userRole,
+    hasOrganization: true,
+    hasProfile: true,
+    pendingAiReviews: 3,
+    connectedIntegrations: 3,
+  });
+  const pilotHealth = computePilotHealth(createDemoPilotReadinessEvents(organizationId));
+  const commandCenter = buildPilotCommandCenterSnapshot({
+    organizationId,
+    userId,
+    userRole,
+    seededPilotEvidence: true,
+    generatedAt: "2026-07-18T00:00:00.000Z",
+  });
+
+  return buildPilotTenantAcceptanceSnapshot({
+    organizationId,
+    organizationName: "North East Health Mission",
+    generatedAt: "2026-07-18T00:00:00.000Z",
+    goldenPath,
+    pilotHealth,
+    commandCenter,
+    metrics,
+  });
+}
+
 export function EnterpriseAdminPage({ panel }: { panel: AdminPanelId }) {
   const content = panelContent[panel];
 
@@ -154,6 +193,7 @@ export function EnterpriseAdminPage({ panel }: { panel: AdminPanelId }) {
             </div>
           </Card>
           <div className="space-y-4">
+            {panel === "pilot-command-center" ? <PilotAcceptancePanel initialSnapshot={pilotAcceptancePreviewSnapshot()} /> : null}
             <Card className="p-5">
               <h2 className="text-sm font-semibold text-[#0F1117]">Admin actions</h2>
               <div className="mt-4 grid gap-3 md:grid-cols-3">
