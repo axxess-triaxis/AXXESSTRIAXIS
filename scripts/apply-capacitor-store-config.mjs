@@ -31,13 +31,24 @@ function writeFile(filePath, contents) {
   fs.writeFileSync(filePath, contents);
 }
 
+function readOptional(filePath) {
+  try {
+    return fs.readFileSync(filePath, "utf8");
+  } catch (error) {
+    if (error?.code === "ENOENT") {
+      console.warn(`[mobile-store] Skipping missing file: ${path.relative(root, filePath)}`);
+      return null;
+    }
+    throw error;
+  }
+}
+
 function replaceOrWarn(filePath, transforms) {
-  if (!fs.existsSync(filePath)) {
-    console.warn(`[mobile-store] Skipping missing file: ${path.relative(root, filePath)}`);
+  let source = readOptional(filePath);
+  if (source === null) {
     return;
   }
 
-  let source = fs.readFileSync(filePath, "utf8");
   for (const [pattern, replacement] of transforms) {
     source = source.replace(pattern, replacement);
   }
@@ -67,8 +78,9 @@ function applyAndroid() {
     [/versionName\s+['"][^'"]+['"]/, "versionName resolvedVersionName"],
   ]);
 
-  if (fs.existsSync(buildGradle)) {
-    let source = fs.readFileSync(buildGradle, "utf8");
+  const buildGradleSource = readOptional(buildGradle);
+  if (buildGradleSource !== null) {
+    let source = buildGradleSource;
     if (!source.includes("def resolvedApplicationId")) {
       source = source.replace(
         /plugins\s*\{[\s\S]*?\}\s*/,
@@ -109,8 +121,9 @@ function applyAndroid() {
     fs.writeFileSync(buildGradle, source);
   }
 
-  if (fs.existsSync(manifest)) {
-    let source = fs.readFileSync(manifest, "utf8");
+  const manifestSource = readOptional(manifest);
+  if (manifestSource !== null) {
+    let source = manifestSource;
     source = source.replace(/android:allowBackup="true"/g, 'android:allowBackup="false"');
     source = source.replace(/android:usesCleartextTraffic="true"/g, 'android:usesCleartextTraffic="false"');
 
