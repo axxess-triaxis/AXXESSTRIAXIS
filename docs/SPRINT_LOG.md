@@ -1,5 +1,40 @@
 # Sprint Log
 
+## Sprint 30 - Customer-Success Live Operations And Workflow Records
+
+Sprint 30 turns pilot acceptance into an operator-ready customer-success layer. It focuses on stuck-step recovery, SLA timers, regional key policy posture, workflow action records, and live Microsoft mailbox selection.
+
+### Completed
+
+- Added a customer-success live-ops snapshot service that combines golden-path, pilot acceptance, live workspace, SLA, and regional key evidence.
+- Added `customer_success_live_ops_snapshots`, `customer_success_recovery_items`, `customer_success_sla_timers`, and `regional_key_policies` Supabase tables with tenant-scoped RLS and explicit grants.
+- Added role-protected `GET /api/admin/customer-success/live-ops` and `POST /api/admin/customer-success/live-ops`.
+- Replaced the generic Support Operations panel with a Customer-Success Live Operations cockpit for recovery items, SLA timers, regional key posture, and snapshot recording.
+- Added workflow record list/detail pages for approval requests, stakeholder notes, and project updates at `/workflow-records`.
+- Added live Microsoft Graph mailbox listing service and API, then wired Integrations to load real Microsoft inbox summaries before selected-message import.
+- Added focused tests for customer-success scoring, RLS expectations, admin API source guards, Microsoft mailbox parsing/fetching, and workflow record routes.
+
+### Live
+
+- Organization Admins can review customer-success recovery items from `/admin/support-ops`.
+- Operators can record a live-ops snapshot when Supabase service-role runtime is configured.
+- Workflow action records are visible through direct list/detail pages with source AI review and audit metadata.
+- Microsoft mailbox listing remains provider-gated until OAuth, token vault, and Supabase admin runtime are configured, while the UI remains stable.
+
+### Provider-Gated
+
+- Live snapshot persistence requires Supabase service-role runtime.
+- Microsoft mailbox listing requires Microsoft OAuth credentials, an active encrypted token vault record, and `AXXESS_TOKEN_VAULT_KEY`.
+- Regional key policies are posture records; external KMS/BYOK automation remains a follow-up.
+
+### Recommended Sprint 31
+
+- Add editable owner assignment and resolution state for recovery items.
+- Add regional KMS/BYOK provider adapters behind the key policy posture.
+- Add workflow record mutations for approval decisioning, stakeholder note edits, and project update application.
+- Add Microsoft import audit timeline drilldowns from workflow record pages.
+- Promote customer-success live-ops checks into pilot release gates.
+
 ## Sprint 29 - Pilot Tenant Acceptance And Live Operations
 
 Sprint 29 converts the executable pilot workflow into a customer-success acceptance and live-operations process. The focus is making a real pilot tenant reviewable, sign-off ready, and operable after the first governed workflow is completed.

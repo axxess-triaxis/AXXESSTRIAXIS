@@ -5,8 +5,10 @@ import { SectionHeader } from "../../components/layout/SectionHeader";
 import { getFallbackLiveWorkspaceMetrics } from "../../services/live-platform/livePlatform";
 import { buildPilotCommandCenterSnapshot } from "../../services/platform/pilotCommandCenter";
 import { buildPilotTenantAcceptanceSnapshot } from "../../services/pilot/pilotAcceptance";
+import { buildCustomerSuccessLiveOpsSnapshot } from "../../services/pilot/customerSuccessLiveOps";
 import { computePilotHealth, createDemoPilotReadinessEvents } from "../../services/pilot/pilotHealth";
 import { buildEnterpriseGoldenPathSnapshot } from "../../services/workflows/enterpriseGoldenPath";
+import { CustomerSuccessLiveOpsPanel } from "./CustomerSuccessLiveOpsPanel";
 import { PilotAcceptancePanel } from "./PilotAcceptancePanel";
 
 type AdminPanelId =
@@ -121,10 +123,10 @@ const panelContent: Record<AdminPanelId, { title: string; description: string; a
     evidence: ["pilot_command_center_snapshots", "connector_execution_queue", "ai_operation_reviews"],
   },
   "support-ops": {
-    title: "Support Operations",
-    description: "Monitor incidents, readiness controls, and customer-support signals before expanding live pilots.",
-    actions: ["Triage incident", "Open readiness review", "Record resolution"],
-    evidence: ["support_incidents", "platform readiness score", "incident audit trail"],
+    title: "Customer-Success Live Operations",
+    description: "Operate stuck-step recovery, SLA timers, regional key posture, and customer-success evidence before expanding live pilots.",
+    actions: ["Record live-ops snapshot", "Open stuck-step recovery", "Review regional key posture"],
+    evidence: ["customer_success_live_ops_snapshots", "customer_success_sla_timers", "regional_key_policies"],
   },
   "audit-logs": {
     title: "Audit Logs",
@@ -175,6 +177,47 @@ function pilotAcceptancePreviewSnapshot() {
   });
 }
 
+function customerSuccessPreviewSnapshot() {
+  const organizationId = "org_north_east_health_mission";
+  const userId = "user_demo_executive";
+  const userRole = "Organization Admin";
+  const metrics = getFallbackLiveWorkspaceMetrics();
+  const goldenPath = buildEnterpriseGoldenPathSnapshot({
+    metrics,
+    userRole,
+    hasOrganization: true,
+    hasProfile: true,
+    pendingAiReviews: 3,
+    connectedIntegrations: 3,
+  });
+  const pilotHealth = computePilotHealth(createDemoPilotReadinessEvents(organizationId));
+  const commandCenter = buildPilotCommandCenterSnapshot({
+    organizationId,
+    userId,
+    userRole,
+    seededPilotEvidence: true,
+    generatedAt: "2026-07-18T00:00:00.000Z",
+  });
+  const acceptance = buildPilotTenantAcceptanceSnapshot({
+    organizationId,
+    organizationName: "North East Health Mission",
+    generatedAt: "2026-07-18T00:00:00.000Z",
+    goldenPath,
+    pilotHealth,
+    commandCenter,
+    metrics,
+  });
+
+  return buildCustomerSuccessLiveOpsSnapshot({
+    organizationId,
+    organizationName: "North East Health Mission",
+    generatedAt: "2026-07-18T00:00:00.000Z",
+    goldenPath,
+    acceptance,
+    metrics,
+  });
+}
+
 export function EnterpriseAdminPage({ panel }: { panel: AdminPanelId }) {
   const content = panelContent[panel];
 
@@ -194,6 +237,7 @@ export function EnterpriseAdminPage({ panel }: { panel: AdminPanelId }) {
           </Card>
           <div className="space-y-4">
             {panel === "pilot-command-center" ? <PilotAcceptancePanel initialSnapshot={pilotAcceptancePreviewSnapshot()} /> : null}
+            {panel === "support-ops" ? <CustomerSuccessLiveOpsPanel initialSnapshot={customerSuccessPreviewSnapshot()} /> : null}
             <Card className="p-5">
               <h2 className="text-sm font-semibold text-[#0F1117]">Admin actions</h2>
               <div className="mt-4 grid gap-3 md:grid-cols-3">
