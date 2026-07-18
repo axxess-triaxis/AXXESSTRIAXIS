@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   pilot-golden-path:
-    name: Sprint 27 Golden Path Gate
+    name: Sprint 27/29 Pilot Acceptance Gate
     runs-on: ubuntu-latest
     env:
       NEXT_TELEMETRY_DISABLED: "1"
@@ -33,7 +33,7 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec playwright install --with-deps chromium
-      - run: pnpm exec playwright test tests/e2e/sprint27-golden-path.spec.ts
+      - run: pnpm exec playwright test tests/e2e/sprint27-golden-path.spec.ts tests/e2e/sprint29-pilot-acceptance.spec.ts
       - uses: actions/upload-artifact@v7
         if: always()
         with:

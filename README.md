@@ -233,7 +233,7 @@ These organizations increasingly require AI systems capable of operating within 
 
 **Enterprise Beta Candidate**
 
-Current implementation includes more than twenty-seven structured engineering sprints covering governance, orchestration, operational controls, enterprise administration, connector infrastructure, audit evidence, observability, Human-in-the-Loop workflows and live tenant workflow execution.
+Current implementation includes twenty-nine structured engineering sprints covering governance, orchestration, operational controls, enterprise administration, connector infrastructure, audit evidence, observability, Human-in-the-Loop workflows, live tenant workflow execution, pilot release gates and customer-success acceptance operations.
 
 The platform currently supports:
 
@@ -252,6 +252,8 @@ The platform currently supports:
 - Persisted Golden-Path Progress
 - Workflow Timeline Evidence
 - Review-to-Work Action Creation
+- Pilot Tenant Acceptance
+- Live-Ops Handoff Evidence
 - Multi-tenant Administration
 - Usage Controls
 - Enterprise Readiness Scoring
@@ -266,7 +268,7 @@ https://www.triaxisventures.com
 
 **Enterprise Preview**
 
-https://www.triaxisventures.com/dashboard
+https://axxesstriaxis.vercel.app
 
 ---
 
@@ -1137,7 +1139,7 @@ Current engineering quality includes:
 - Pilot Golden Path Release Gate
 - Vercel Preview validation
 
-Sprint 28 adds a dedicated pilot golden-path release gate on top of the broader type, lint, unit, build, security, Supabase, RAG and Playwright validation pipeline.
+Sprint 29 extends the dedicated pilot golden-path release gate with pilot tenant acceptance coverage on top of the broader type, lint, unit, build, security, Supabase, RAG and Playwright validation pipeline.
 
 ---
 
@@ -1496,7 +1498,7 @@ AXXESS is developed using a structured, sprint-based engineering methodology foc
 
 Rather than optimizing for rapid feature accumulation, the engineering process prioritizes maintainability, operational transparency and production readiness. Every sprint aims to introduce meaningful platform capabilities while preserving architectural consistency and code quality.
 
-As of **Sprint 28**, AXXESS has evolved through more than twenty-eight structured engineering iterations covering identity, governance, enterprise workflows, AI orchestration, connector infrastructure, operational controls, release automation, production UX hardening, executable pilot workflow evidence and release-gated golden-path validation.
+As of **Sprint 29**, AXXESS has evolved through twenty-nine structured engineering iterations covering identity, governance, enterprise workflows, AI orchestration, connector infrastructure, operational controls, release automation, production UX hardening, executable pilot workflow evidence, release-gated golden-path validation and pilot tenant acceptance operations.
 
 ---
 
@@ -1986,6 +1988,28 @@ Verification:
 
 ---
 
+## Sprint 29
+
+Pilot tenant acceptance and live operations.
+
+Implemented:
+
+- Pilot tenant acceptance score from golden-path, pilot health, command-center and live workspace evidence
+- Pilot Command Center acceptance panel with checklist, blockers, evidence gaps and handoff queue
+- Role-protected pilot acceptance API for read, acceptance and handoff recording
+- Supabase migration for `pilot_tenant_acceptance_runs`, `pilot_acceptance_checklist_items` and `pilot_live_ops_events`
+- Audit-backed persistence path for acceptance and live-ops events when Supabase admin runtime is configured
+- Extended Pilot Golden Path Release Gate with Sprint 29 acceptance E2E coverage
+
+Verification:
+
+- TypeScript
+- Focused unit tests
+- Route and RLS tests
+- Seed-gated Playwright acceptance gate
+
+---
+
 # Repo-Local Supabase Integration
 
 Following Sprint 25, AXXESS adopted a repository-managed Supabase workflow.
@@ -2044,7 +2068,7 @@ Engineering changes are expected to satisfy all quality gates before merge.
 
 # Current Engineering Status
 
-As of Sprint 28:
+As of Sprint 29:
 
 - Governance runtime implemented
 - Provider routing implemented
@@ -2066,8 +2090,10 @@ As of Sprint 28:
 - Dashboard snapshot deltas implemented
 - Audit export timeline linkage implemented
 - Pilot golden-path release gate implemented
+- Pilot tenant acceptance implemented
+- Live-ops handoff evidence implemented
 
-The engineering focus now shifts from establishing executable pilot workflows to deepening live integrations, dedicated approval/stakeholder/project action repositories, deployment maturity and production operations.
+The engineering focus now shifts from proving pilot acceptance to deepening live customer-success operations, stuck-step recovery, dedicated workflow record pages, regional key policy foundations and production tenant expansion.
 # Deployment, Operations & Product Roadmap
 
 AXXESS is designed to support enterprise deployments that evolve from early design-partner environments to production-grade regulated workloads. The deployment philosophy emphasizes repeatability, governance, operational visibility and gradual hardening rather than maximizing deployment speed at the expense of long-term maintainability.
@@ -2458,12 +2484,13 @@ Completed:
 
 ## Sprint 29
 
-Focus areas:
+Completed:
 
-- BYOK foundation
-- HSM integration
-- Enhanced key lifecycle
-- Security hardening
+- Pilot tenant acceptance score and status
+- Customer-success acceptance checklist
+- Live-ops operator handoff queue
+- Acceptance persistence and audit evidence
+- Sprint 29 Playwright acceptance gate
 
 ---
 
@@ -2471,6 +2498,10 @@ Focus areas:
 
 Focus areas:
 
+- Customer-success stuck-step drilldowns
+- Dedicated workflow record list/detail pages
+- Live Microsoft mailbox picker UI
+- BYOK and regional key policy foundation
 - Policy simulation
 - Governance analytics
 - AI quality dashboards
@@ -2515,9 +2546,11 @@ The platform now includes:
 - Audit evidence
 - Observability
 - Release gates
+- Pilot tenant acceptance
+- Live-ops handoff evidence
 - Repository-managed Supabase tooling
 
-The engineering focus is now transitioning from foundational platform capabilities toward enterprise deployment maturity, customer onboarding and production operations.
+The engineering focus is now transitioning from foundational platform capabilities toward enterprise deployment maturity, customer-success operations and production tenant expansion.
 
 ---
 
