@@ -8,7 +8,9 @@ import { buildPilotTenantAcceptanceSnapshot } from "../../services/pilot/pilotAc
 import { buildCustomerSuccessLiveOpsSnapshot } from "../../services/pilot/customerSuccessLiveOps";
 import { computePilotHealth, createDemoPilotReadinessEvents } from "../../services/pilot/pilotHealth";
 import { buildEnterpriseGoldenPathSnapshot } from "../../services/workflows/enterpriseGoldenPath";
+import { buildMobileStoreLaunchSnapshot } from "../../services/mobile/mobileStoreLaunch";
 import { CustomerSuccessLiveOpsPanel } from "./CustomerSuccessLiveOpsPanel";
+import { MobileStoreLaunchConsole } from "./MobileStoreLaunchConsole";
 import { PilotAcceptancePanel } from "./PilotAcceptancePanel";
 
 type AdminPanelId =
@@ -28,6 +30,7 @@ type AdminPanelId =
   | "usage-limits"
   | "pilot-command-center"
   | "support-ops"
+  | "mobile-release"
   | "audit-logs"
   | "backups";
 
@@ -128,6 +131,12 @@ const panelContent: Record<AdminPanelId, { title: string; description: string; a
     actions: ["Record live-ops snapshot", "Open stuck-step recovery", "Review regional key posture"],
     evidence: ["customer_success_live_ops_snapshots", "customer_success_sla_timers", "regional_key_policies"],
   },
+  "mobile-release": {
+    title: "Mobile Store Launch Console",
+    description: "Review store listing packs, signed build posture, reviewer account automation, screenshot evidence, crash health, and staged rollout controls.",
+    actions: ["Record release snapshot", "Verify reviewer account", "Update staged rollout"],
+    evidence: ["mobile_release_runs", "mobile_store_listings", "mobile_rollout_events"],
+  },
   "audit-logs": {
     title: "Audit Logs",
     description: "Review and export tenant security, auth, document, workflow, and AI events.",
@@ -218,6 +227,15 @@ function customerSuccessPreviewSnapshot() {
   });
 }
 
+function mobileStoreLaunchPreviewSnapshot() {
+  return buildMobileStoreLaunchSnapshot({
+    organizationId: "org_north_east_health_mission",
+    organizationName: "North East Health Mission",
+    generatedAt: "2026-07-18T00:00:00.000Z",
+    env: process.env,
+  });
+}
+
 export function EnterpriseAdminPage({ panel }: { panel: AdminPanelId }) {
   const content = panelContent[panel];
 
@@ -238,6 +256,7 @@ export function EnterpriseAdminPage({ panel }: { panel: AdminPanelId }) {
           <div className="space-y-4">
             {panel === "pilot-command-center" ? <PilotAcceptancePanel initialSnapshot={pilotAcceptancePreviewSnapshot()} /> : null}
             {panel === "support-ops" ? <CustomerSuccessLiveOpsPanel initialSnapshot={customerSuccessPreviewSnapshot()} /> : null}
+            {panel === "mobile-release" ? <MobileStoreLaunchConsole initialSnapshot={mobileStoreLaunchPreviewSnapshot()} /> : null}
             <Card className="p-5">
               <h2 className="text-sm font-semibold text-[#0F1117]">Admin actions</h2>
               <div className="mt-4 grid gap-3 md:grid-cols-3">
