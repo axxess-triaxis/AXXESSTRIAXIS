@@ -1,6 +1,10 @@
 import Link from "next/link";
 
 export default function HomePage() {
+  const betaWorkspaceUrl =
+    process.env.NEXT_PUBLIC_BETA_WORKSPACE_URL?.replace(/\/$/, "") ??
+    "https://beta.triaxisventures.com";
+
   return (
     <main className="min-h-screen bg-[#f4f6f8] text-[#0f1720]">
       <section className="mx-auto flex max-w-6xl flex-col gap-8 px-6 py-16 md:px-10 md:py-24">
@@ -15,13 +19,13 @@ export default function HomePage() {
         </p>
         <div className="flex flex-wrap gap-4">
           <Link
-            href="/dashboard"
+            href={`${betaWorkspaceUrl}/dashboard`}
             className="rounded-lg bg-[#8b1e2d] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#741927]"
           >
             Open Beta Workspace
           </Link>
           <Link
-            href="/auth"
+            href={`${betaWorkspaceUrl}/auth`}
             className="rounded-lg border border-[#b8c3d1] bg-white px-5 py-3 text-sm font-semibold text-[#1d2a38] transition hover:bg-[#eef2f6]"
           >
             Sign In
