@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { getBetaRootRedirectUrl, getCanonicalHostRedirectUrl, isProtectedRoutePath } from "./middleware";
+import {
+  getBetaRootRedirectUrl,
+  getCanonicalHostRedirectUrl,
+  getMarketingWorkspaceRedirectUrl,
+  isProtectedRoutePath,
+} from "./middleware";
 
 describe("route middleware helpers", () => {
   it("identifies protected workspace paths", () => {
@@ -57,5 +62,32 @@ describe("route middleware helpers", () => {
     );
 
     expect(redirectUrl?.toString()).toBe("https://www.triaxisventures.com/dashboard");
+  });
+
+  it("redirects workspace routes on canonical marketing host to beta host", () => {
+    const redirectUrl = getMarketingWorkspaceRedirectUrl(
+      new URL("https://www.triaxisventures.com/dashboard?tab=active"),
+      "www.triaxisventures.com",
+    );
+
+    expect(redirectUrl?.toString()).toBe("https://beta.triaxisventures.com/dashboard?tab=active");
+  });
+
+  it("redirects auth routes on canonical marketing host to beta host", () => {
+    const redirectUrl = getMarketingWorkspaceRedirectUrl(
+      new URL("https://www.triaxisventures.com/auth?next=%2Fdashboard"),
+      "www.triaxisventures.com",
+    );
+
+    expect(redirectUrl?.toString()).toBe("https://beta.triaxisventures.com/auth?next=%2Fdashboard");
+  });
+
+  it("keeps marketing root on canonical host", () => {
+    const redirectUrl = getMarketingWorkspaceRedirectUrl(
+      new URL("https://www.triaxisventures.com/"),
+      "www.triaxisventures.com",
+    );
+
+    expect(redirectUrl).toBeNull();
   });
 });
