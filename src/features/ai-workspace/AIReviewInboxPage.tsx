@@ -8,6 +8,7 @@ import { SectionHeader } from "../../components/layout/SectionHeader";
 import { WorkflowTimelinePanel } from "../../components/enterprise/WorkflowTimelinePanel";
 import { isDemoModeEnabled } from "../../demo/demoMode";
 import { useMicroSurveyPrompt } from "../../hooks/useMicroSurveyPrompt";
+import { useAnalytics } from "../../services/analytics";
 import type { AiReviewInboxItem } from "../../services/ai/reviewInbox";
 import { workflowActionLabels, type ReviewWorkflowActionType, type WorkflowTimelineEvent } from "../../services/workflows/workflowEvidence";
 import { useWorkflowTimeline } from "../../hooks/useWorkflowTimeline";
@@ -39,6 +40,7 @@ const actionTypes = Object.entries(workflowActionLabels) as Array<[ReviewWorkflo
 
 export function AIReviewInboxPage() {
   const { session } = useAuth();
+  const analytics = useAnalytics();
   const [reviews, setReviews] = useState<AiReviewInboxItem[]>([]);
   const [message, setMessage] = useState<string | null>(null);
   const [actionType, setActionType] = useState<ReviewWorkflowActionType>("task");
@@ -90,6 +92,13 @@ export function AIReviewInboxPage() {
     }
     const createdTitle = payload.workflowAction?.createdTask?.title ?? payload.workflowAction?.createdMeeting?.title;
     setMessage(createAction && createdTitle ? `Review approved and ${createdTitle} was created.` : `Review ${decision} and audit logging requested.`);
+    analytics.trackEvent("ai_answer_reviewed", { decision, created_action: createAction }, {
+      organization_id: session.user?.organizationId,
+      user_id: session.user?.id,
+      user_role: session.user?.role,
+      module_name: "ai-review-inbox",
+      route: "/ai-workspace/review-inbox",
+    });
     microSurvey.trigger();
     return true;
   }
