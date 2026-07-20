@@ -12,6 +12,10 @@ Sprint 15 adds enterprise frontend coherence with shared UI primitives, guided d
 
 The platform is designed with tenant isolation, RBAC, route protection, private storage, audit logs, immutable audit-chain utilities, and server-only privileged operations.
 
+## Testing and Validation Evidence
+
+Repository-level testing and validation evidence is summarized in `docs/TESTING_DUE_DILIGENCE.md`, including quantified unit/integration, Playwright E2E, RLS/security, and release-readiness automation metrics.
+
 ## Auth Model
 
 Current beta supports email/password login/logout/session cookies. Sprint 13 adds sign-up, password recovery, MFA route surfaces, OAuth readiness, and passkey-ready placeholders.
