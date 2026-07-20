@@ -71,7 +71,10 @@ export type AnalyticsEventName =
   | "audit_log_viewed"
   | "audit_export_requested"
   | "pilot_onboarding_step_completed"
-  | "pilot_interest_captured";
+  | "pilot_interest_captured"
+  | "micro_survey_shown"
+  | "micro_survey_responded"
+  | "first_value_milestone_reached";
 
 export type AnalyticsEventSource = "client" | "server" | "test";
 export type SafeAnalyticsPrimitive = string | number | boolean | null;
