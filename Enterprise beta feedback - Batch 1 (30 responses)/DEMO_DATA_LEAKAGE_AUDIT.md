@@ -238,3 +238,33 @@ beta feedback (documents/knowledge already has the strongest real foundation; ap
 directly to the AI Review Inbox's existing `pendingAiReviews` concept and is the most natural next
 build): (1) a real approvals/governance repository, (2) a real stakeholders/CRM repository,
 (3) a real OKR/analytics computation layer.
+
+## Round 3 — found while implementing Sprint 2 / A6 (bulk-approve in AI Review Inbox)
+
+Two more instances surfaced organically while building the bulk/quick-approve feature in the same
+files:
+
+1. **`src/services/ai/reviewInbox.ts`'s `listAiReviewInbox`** returned
+   `fallbackAiReviewInbox(organizationId)` (2 hardcoded fake pending reviews) whenever the real
+   Supabase query returned zero rows, not just when Supabase admin access wasn't configured. A real
+   tenant with genuinely zero pending AI reviews saw fabricated ones. Fixed: only fall back to the
+   demo fixture when Supabase isn't configured **and** `isDemoModeEnabled()` is true; an empty real
+   result now stays `[]`.
+2. **`src/features/ai-workspace/AIReviewInboxPage.tsx`'s `isDemoReviewFallbackEnabled`** was
+   computed as `NEXT_PUBLIC_AXXESS_DEMO_MODE === "true" || NEXT_PUBLIC_AXXESS_AUTH_SHELL ===
+   "true"`. The second condition is not a demo flag — `docs/BETA_TESTING.md` explicitly instructs
+   `NEXT_PUBLIC_AXXESS_AUTH_SHELL=true` as required configuration for **real deployed beta
+   environments**. This meant every real beta customer with a clean inbox was shown a fabricated
+   "Dibrugarh referral SLA variance" pending review, indistinguishable from a real one. Fixed:
+   replaced with a direct `isDemoModeEnabled()` check, both in the initial-load fallback and the
+   fetch-error fallback.
+
+Both fixed alongside the A6 feature; `reviewInbox.test.ts` extended with a test asserting the
+honest empty-inbox behavior (`listAiReviewInbox` returns `[]` when Supabase isn't configured and
+demo mode is off). No dedicated test added for `AIReviewInboxPage.tsx` itself — like the Sprint 1
+page components, it has no existing unit-test coverage to extend; verified via `typecheck`, `lint`,
+and full-suite regression check.
+
+This keeps confirming the pattern: every time a file touched for feature work gets a close read,
+another instance turns up. The `src/lib/demo/` files and `src/demo/*` consumers flagged as
+"not yet reverified" above remain the most likely source of further instances.

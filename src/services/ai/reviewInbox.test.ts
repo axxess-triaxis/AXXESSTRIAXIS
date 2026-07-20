@@ -1,12 +1,21 @@
-import { describe, expect, it } from "vitest";
-import { fallbackAiReviewInbox, recordAiReviewDecision } from "./reviewInbox";
+import { beforeEach, describe, expect, it } from "vitest";
+import { fallbackAiReviewInbox, listAiReviewInbox, recordAiReviewDecision } from "./reviewInbox";
 
 describe("AI review inbox", () => {
+  beforeEach(() => {
+    window.localStorage.clear();
+  });
+
   it("provides tenant-bound fallback review items", () => {
     const reviews = fallbackAiReviewInbox("org-1");
     expect(reviews.length).toBeGreaterThan(0);
     expect(reviews.every((review) => review.organizationId === "org-1")).toBe(true);
     expect(reviews.some((review) => review.humanReviewFlag)).toBe(true);
+  });
+
+  it("shows a real tenant an empty inbox instead of fabricated reviews when Supabase isn't configured and demo mode is off", async () => {
+    const reviews = await listAiReviewInbox("org-1");
+    expect(reviews).toEqual([]);
   });
 
   it("records review decisions without requiring Supabase in local mode", async () => {
