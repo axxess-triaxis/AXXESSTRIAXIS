@@ -3,6 +3,18 @@ import { axxessBetaRoles, axxessSectors, requiredOnboardingNotices, type AxxessB
 export type OnboardingMode = "create-organization" | "join-organization";
 export type OnboardingStepId = "start" | "create-organization" | "join-organization" | "sector" | "workspace" | "security" | "complete";
 
+// Each goal maps to a real, live-data-backed module (documents+AI, projects+tasks, or meetings) --
+// never a module without a real repository (e.g. Approvals/Stakeholders/Analytics), per
+// DEMO_DATA_LEAKAGE_AUDIT.md's "no dummy data" principle. Sample data seeded for a goal is real,
+// persisted, editable, and deletable -- not decorative demo content.
+export type OnboardingGoal = "knowledge_ai" | "workflow_tasks" | "meetings_coordination";
+
+export const onboardingGoals: { id: OnboardingGoal; title: string; description: string; route: string }[] = [
+  { id: "knowledge_ai", title: "Knowledge & AI decision support", description: "Upload institutional documents and ask governed, cited questions.", route: "/ai-workspace" },
+  { id: "workflow_tasks", title: "Workflow & task execution", description: "Track projects and accountable tasks with AI-assisted follow-through.", route: "/tasks" },
+  { id: "meetings_coordination", title: "Meetings & institutional coordination", description: "Capture meetings, decisions, and action items across your team.", route: "/meetings" },
+];
+
 export type EnterpriseOnboardingState = {
   mode?: OnboardingMode;
   organizationName?: string;
@@ -12,6 +24,7 @@ export type EnterpriseOnboardingState = {
   departmentName?: string;
   workspaceName?: string;
   acceptedNotices: string[];
+  primaryGoal?: OnboardingGoal;
 };
 
 export const enterpriseOnboardingSteps: { id: OnboardingStepId; title: string; path: string }[] = [
@@ -40,12 +53,14 @@ export function nextOnboardingPath(currentStep: OnboardingStepId, state: Enterpr
 }
 
 export function isOnboardingComplete(state: EnterpriseOnboardingState): boolean {
+  // departmentName/workspaceName are intentionally not required here -- the provisioning backend
+  // (provisionTenantForUser) already treats them as optional and defaults sensibly when blank.
+  // Requiring them here was an unnecessary setup decision blocking first value; see
+  // PRE_DEMO_ACTIONABLES.md A18.
   return Boolean(
     (state.organizationName || state.invitationCode) &&
     state.sector &&
     state.role &&
-    state.departmentName &&
-    state.workspaceName &&
     requiredOnboardingNotices.every((notice) => state.acceptedNotices.includes(notice)),
   );
 }
