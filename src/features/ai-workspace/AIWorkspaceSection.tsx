@@ -87,6 +87,7 @@ export const AIWorkspaceSection = () => {
   const [input, setInput] = useState("");
   const [approved, setApproved] = useState(false);
   const [querying, setQuerying] = useState(false);
+  const [queryError, setQueryError] = useState<string | null>(null);
   const [reviewing, setReviewing] = useState(false);
   const [reviewMessage, setReviewMessage] = useState<string | null>(null);
   const [ragAnswer, setRagAnswer] = useState<LiveRagAnswer>(fallbackRagAnswer);
@@ -111,18 +112,24 @@ export const AIWorkspaceSection = () => {
     };
   }, [tenantScope]);
 
+  const QUERY_TIMEOUT_MS = 20_000;
+
   async function askGovernedQuestion() {
     const question = input.trim();
     if (!question) return;
 
     setQuerying(true);
+    setQueryError(null);
     setReviewMessage(null);
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), QUERY_TIMEOUT_MS);
     try {
       const response = await fetch("/api/rag/query", {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ question, limit: 5 }),
+        signal: controller.signal,
       });
       const result = await response.json().catch(() => ({} as { error?: string }));
       if (!response.ok) throw new Error(result.error ?? "AXXESS could not complete the governed question.");
@@ -130,8 +137,16 @@ export const AIWorkspaceSection = () => {
       setInput("");
       setApproved(false);
     } catch (error) {
-      setReviewMessage(error instanceof Error ? error.message : "AXXESS could not complete the governed question.");
+      const timedOut = error instanceof DOMException && error.name === "AbortError";
+      setQueryError(
+        timedOut
+          ? "This is taking longer than usual. You can retry the same question."
+          : error instanceof Error
+            ? error.message
+            : "AXXESS could not complete the governed question.",
+      );
     } finally {
+      clearTimeout(timeout);
       setQuerying(false);
     }
   }
@@ -330,6 +345,20 @@ export const AIWorkspaceSection = () => {
                   <Send size={12} className="text-white" />
                 </button>
               </div>
+              {querying && (
+                <p className="mt-2 flex items-center gap-2 text-[11px] text-[#5F6B73]">
+                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#8B1E2D]" />
+                  Generating governed answer&hellip; usually takes 5&ndash;8 seconds
+                </p>
+              )}
+              {!querying && queryError && (
+                <p className="mt-2 flex items-center gap-2 text-[11px] font-medium text-[#8B1E2D]">
+                  {queryError}
+                  <button type="button" onClick={() => void askGovernedQuestion()} className="underline hover:no-underline">
+                    Retry
+                  </button>
+                </p>
+              )}
             </div>
           </Card>
         </div>
