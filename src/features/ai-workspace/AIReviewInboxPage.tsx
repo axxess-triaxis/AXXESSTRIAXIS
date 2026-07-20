@@ -1,10 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useAuth } from "../../auth/AuthProvider";
 import { Card } from "../../components/ui/Card";
+import { MicroSurveyPrompt } from "../../components/feedback/MicroSurveyPrompt";
 import { SectionHeader } from "../../components/layout/SectionHeader";
 import { WorkflowTimelinePanel } from "../../components/enterprise/WorkflowTimelinePanel";
 import { isDemoModeEnabled } from "../../demo/demoMode";
+import { useMicroSurveyPrompt } from "../../hooks/useMicroSurveyPrompt";
 import type { AiReviewInboxItem } from "../../services/ai/reviewInbox";
 import { workflowActionLabels, type ReviewWorkflowActionType, type WorkflowTimelineEvent } from "../../services/workflows/workflowEvidence";
 import { useWorkflowTimeline } from "../../hooks/useWorkflowTimeline";
@@ -35,6 +38,7 @@ const statusStyle: Record<AiReviewInboxItem["status"], string> = {
 const actionTypes = Object.entries(workflowActionLabels) as Array<[ReviewWorkflowActionType, string]>;
 
 export function AIReviewInboxPage() {
+  const { session } = useAuth();
   const [reviews, setReviews] = useState<AiReviewInboxItem[]>([]);
   const [message, setMessage] = useState<string | null>(null);
   const [actionType, setActionType] = useState<ReviewWorkflowActionType>("task");
@@ -42,6 +46,7 @@ export function AIReviewInboxPage() {
   const [localEvents, setLocalEvents] = useState<WorkflowTimelineEvent[]>([]);
   const [bulkApproving, setBulkApproving] = useState(false);
   const workflowTimeline = useWorkflowTimeline(undefined, { limit: 6 });
+  const microSurvey = useMicroSurveyPrompt();
 
   async function loadReviews() {
     try {
@@ -85,6 +90,7 @@ export function AIReviewInboxPage() {
     }
     const createdTitle = payload.workflowAction?.createdTask?.title ?? payload.workflowAction?.createdMeeting?.title;
     setMessage(createAction && createdTitle ? `Review approved and ${createdTitle} was created.` : `Review ${decision} and audit logging requested.`);
+    microSurvey.trigger();
     return true;
   }
 
@@ -219,6 +225,14 @@ export function AIReviewInboxPage() {
           />
         </div>
       </div>
+      {microSurvey.visible && (
+        <MicroSurveyPrompt
+          user={session.user}
+          trigger="ai_review_decision"
+          route="/ai-workspace/review-inbox"
+          onDismiss={microSurvey.dismiss}
+        />
+      )}
     </main>
   );
 }
