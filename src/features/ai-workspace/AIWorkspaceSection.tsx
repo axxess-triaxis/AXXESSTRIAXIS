@@ -50,6 +50,7 @@ const fallbackRagAnswer: RagAnswer = {
   confidence: 0.87,
   humanReviewRequired: false,
   keywords: ["oxygen", "maternal", "stockout", "district", "variance"],
+  rationale: "Synthesized from 3 governed sources (top match: \"Dibrugarh Risk Register - Oxygen Resilience\", 91% relevance).",
   sources: [
     {
       sourceType: "document",
@@ -82,6 +83,7 @@ const emptyRagAnswer: RagAnswer = {
   confidence: 0,
   humanReviewRequired: false,
   keywords: [],
+  rationale: "",
   sources: [],
 };
 
@@ -323,6 +325,12 @@ export const AIWorkspaceSection = () => {
                       <div className="bg-[#F8F9FA] border border-[rgba(0,0,0,0.06)] rounded-2xl rounded-tl-sm px-4 py-3 text-sm text-[#0F1117] leading-relaxed">
                         {ragAnswer.answer}
                       </div>
+                      {ragAnswer.rationale && (
+                        <p className="mt-1.5 flex items-start gap-1.5 text-[11px] leading-relaxed text-[#5F6B73]">
+                          <Terminal size={11} className="mt-0.5 flex-shrink-0 text-[#8B1E2D]" />
+                          {ragAnswer.rationale}
+                        </p>
+                      )}
                       <div className="mt-2 flex flex-wrap items-center gap-2 text-[10px]">
                         <ConfidenceBadge score={ragAnswer.confidence} />
                         <HumanReviewBadge required={ragAnswer.humanReviewRequired} />
