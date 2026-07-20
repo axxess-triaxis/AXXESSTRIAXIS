@@ -51,7 +51,7 @@ jobs:
       IOS_UPLOAD_TO_TESTFLIGHT: ${{ vars.IOS_UPLOAD_TO_TESTFLIGHT }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -123,7 +123,7 @@ jobs:
       ANDROID_UPLOAD_TO_PLAY: ${{ vars.ANDROID_UPLOAD_TO_PLAY }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -242,7 +242,7 @@ jobs:
       STORE_RELEASE: "true"
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -330,7 +330,7 @@ jobs:
       MIN_IOS_BINARY_BYTES: "2000000"
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Download all-platform checklist artifact
         uses: actions/download-artifact@v4

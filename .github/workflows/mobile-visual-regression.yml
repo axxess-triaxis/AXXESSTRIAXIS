@@ -24,7 +24,7 @@ jobs:
       NEXT_PUBLIC_AXXESS_AUTH_SHELL: "true"
       NEXT_PUBLIC_AXXESS_DEMO_MODE: "true"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v4
         with:
           version: 11.7.0

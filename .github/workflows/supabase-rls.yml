@@ -11,7 +11,7 @@ jobs:
   rls-artifact-check:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Confirm RLS persona artifacts
         run: |
           test -f supabase/tests/rls_persona_tests.sql
