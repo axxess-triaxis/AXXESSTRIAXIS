@@ -2,7 +2,7 @@ import type { UserContext } from "../../security/rbac";
 import { applicationServices } from "../../providers/serviceProvider";
 import { tenantScopeFromUser } from "../../repositories/supabaseEnterpriseRepositories";
 import { listPilotReadinessEventsForAcceptance } from "../../repositories/pilotAcceptanceRepository";
-import { getFallbackLiveWorkspaceMetrics, getLiveWorkspaceMetrics } from "../live-platform/livePlatform";
+import { getFallbackLiveWorkspaceMetrics, getLiveWorkspaceMetrics, getZeroLiveWorkspaceMetrics } from "../live-platform/livePlatform";
 import { buildPilotCommandCenterSnapshot } from "../platform/pilotCommandCenter";
 import { buildEnterpriseGoldenPathSnapshot } from "../workflows/enterpriseGoldenPath";
 import { computePilotHealth, createDemoPilotReadinessEvents } from "./pilotHealth";
@@ -20,7 +20,12 @@ export async function buildPilotAcceptanceRuntimeSnapshot(input: BuildPilotAccep
   const env = input.env ?? process.env;
   const seededPilotEvidence = env.NEXT_PUBLIC_AXXESS_DEMO_MODE === "true" || env.AXXESS_PILOT_COMMAND_CENTER_MODE === "preview";
   const scope = tenantScopeFromUser(input.user, input.accessToken);
-  const metrics = await getLiveWorkspaceMetrics(applicationServices, scope).catch(() => getFallbackLiveWorkspaceMetrics());
+  // A live metrics failure must never surface fabricated demo numbers for a real pilot tenant --
+  // only fall back to the demo fixture when this is genuinely a seeded preview. See
+  // DEMO_DATA_LEAKAGE_AUDIT.md.
+  const metrics = await getLiveWorkspaceMetrics(applicationServices, scope).catch(() => (
+    seededPilotEvidence ? getFallbackLiveWorkspaceMetrics() : getZeroLiveWorkspaceMetrics()
+  ));
   const readinessEvents = seededPilotEvidence
     ? createDemoPilotReadinessEvents(input.user.organizationId)
     : await listPilotReadinessEventsForAcceptance(input.user.organizationId).catch(() => []);

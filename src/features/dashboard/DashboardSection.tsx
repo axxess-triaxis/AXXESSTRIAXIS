@@ -165,18 +165,20 @@ export function DashboardSection() {
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        {governanceAlerts.map((alert) => (
-          <Card key={alert.label} className="p-4 transition-shadow hover:shadow-md">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-semibold uppercase tracking-wide text-[#5F6B73]">{alert.label}</span>
-              <span className="rounded-full bg-[#8B1E2D]/8 px-2 py-0.5 text-[10px] font-semibold text-[#8B1E2D]">Live</span>
-            </div>
-            <div className="mt-3 font-mono text-2xl font-semibold text-[#0F1117]">{alert.value}</div>
-            <p className="mt-1 text-xs leading-relaxed text-[#5F6B73]">{alert.detail}</p>
-          </Card>
-        ))}
-      </div>
+      {demoMode && (
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+          {governanceAlerts.map((alert) => (
+            <Card key={alert.label} className="p-4 transition-shadow hover:shadow-md">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-semibold uppercase tracking-wide text-[#5F6B73]">{alert.label}</span>
+                <span className="rounded-full bg-[#8B1E2D]/8 px-2 py-0.5 text-[10px] font-semibold text-[#8B1E2D]">Demo</span>
+              </div>
+              <div className="mt-3 font-mono text-2xl font-semibold text-[#0F1117]">{alert.value}</div>
+              <p className="mt-1 text-xs leading-relaxed text-[#5F6B73]">{alert.detail}</p>
+            </Card>
+          ))}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_420px]">
         <SectionCard
@@ -210,33 +212,37 @@ export function DashboardSection() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <Card className="lg:col-span-2 p-5">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-[#0F1117] text-sm">Strategic Objectives - FY2026 Mission Cycle</h3>
-            <span className="text-xs text-[#5F6B73]">4 of 4 actively governed</span>
+            <h3 className="font-semibold text-[#0F1117] text-sm">Strategic Objectives</h3>
+            {demoMode && <span className="text-xs text-[#5F6B73]">4 of 4 actively governed</span>}
           </div>
-          <div className="space-y-4">
-            {dashboardObjectives.map((objective) => (
-              <div key={objective.name}>
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-xs font-medium text-[#0F1117]">{objective.name}</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-mono text-[#5F6B73]">{objective.progress}% / {objective.target}%</span>
-                    <span className={`text-[10px] font-semibold ${objective.progress >= objective.target * 0.9 ? "text-emerald-600" : objective.progress >= objective.target * 0.7 ? "text-amber-600" : "text-red-600"}`}>
-                      {objective.progress >= objective.target * 0.9 ? "On Track" : objective.progress >= objective.target * 0.7 ? "At Risk" : "Behind"}
-                    </span>
+          {demoMode ? (
+            <div className="space-y-4">
+              {dashboardObjectives.map((objective) => (
+                <div key={objective.name}>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-xs font-medium text-[#0F1117]">{objective.name}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-mono text-[#5F6B73]">{objective.progress}% / {objective.target}%</span>
+                      <span className={`text-[10px] font-semibold ${objective.progress >= objective.target * 0.9 ? "text-emerald-600" : objective.progress >= objective.target * 0.7 ? "text-amber-600" : "text-red-600"}`}>
+                        {objective.progress >= objective.target * 0.9 ? "On Track" : objective.progress >= objective.target * 0.7 ? "At Risk" : "Behind"}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="h-2 bg-[#F2F3F5] rounded-full overflow-hidden">
+                    <div
+                      className="h-full rounded-full transition-all"
+                      style={{
+                        width: `${(objective.progress / objective.target) * 100}%`,
+                        backgroundColor: objective.progress >= objective.target * 0.9 ? "#1A6B4A" : objective.progress >= objective.target * 0.7 ? "#C9A227" : "#8B1E2D",
+                      }}
+                    />
                   </div>
                 </div>
-                <div className="h-2 bg-[#F2F3F5] rounded-full overflow-hidden">
-                  <div
-                    className="h-full rounded-full transition-all"
-                    style={{
-                      width: `${(objective.progress / objective.target) * 100}%`,
-                      backgroundColor: objective.progress >= objective.target * 0.9 ? "#1A6B4A" : objective.progress >= objective.target * 0.7 ? "#C9A227" : "#8B1E2D",
-                    }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <EmptyState message="No strategic objectives configured yet." />
+          )}
         </Card>
 
         <Card className="p-5">
@@ -246,17 +252,21 @@ export function DashboardSection() {
             </div>
             <h3 className="font-semibold text-[#0F1117] text-sm">AI Recommendations</h3>
           </div>
-          <div className="space-y-3">
-            {dashboardAiRecommendations.map((recommendation, index) => (
-              <button key={index} className="flex w-full items-start gap-2.5 p-2.5 rounded-lg bg-[#F2F3F5] hover:bg-[#EAEBEE] transition-colors text-left">
-                <span className={`w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0 ${recommendation.urgency === "urgent" ? "bg-red-500" : recommendation.urgency === "high" ? "bg-amber-500" : "bg-blue-500"}`} />
-                <span>
-                  <span className="block text-xs text-[#0F1117] font-medium leading-snug">{recommendation.title}</span>
-                  <span className="text-[10px] text-[#5F6B73] font-mono">{recommendation.type}</span>
-                </span>
-              </button>
-            ))}
-          </div>
+          {demoMode ? (
+            <div className="space-y-3">
+              {dashboardAiRecommendations.map((recommendation, index) => (
+                <button key={index} className="flex w-full items-start gap-2.5 p-2.5 rounded-lg bg-[#F2F3F5] hover:bg-[#EAEBEE] transition-colors text-left">
+                  <span className={`w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0 ${recommendation.urgency === "urgent" ? "bg-red-500" : recommendation.urgency === "high" ? "bg-amber-500" : "bg-blue-500"}`} />
+                  <span>
+                    <span className="block text-xs text-[#0F1117] font-medium leading-snug">{recommendation.title}</span>
+                    <span className="text-[10px] text-[#5F6B73] font-mono">{recommendation.type}</span>
+                  </span>
+                </button>
+              ))}
+            </div>
+          ) : (
+            <EmptyState message="No AI recommendations yet. These appear as AXXESS learns from your organization's activity." />
+          )}
         </Card>
       </div>
 
@@ -328,34 +338,36 @@ export function DashboardSection() {
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <Card className="p-5">
-          <h3 className="font-semibold text-[#0F1117] text-sm mb-4">Team Workload Capacity</h3>
-          <ResponsiveContainer width="100%" height={180}>
-            <BarChart data={workloadData} barSize={28}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#F2F3F5" vertical={false} />
-              <XAxis dataKey="name" tick={{ fontSize: 11, fill: "#5F6B73", fontFamily: "JetBrains Mono" }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 11, fill: "#5F6B73" }} axisLine={false} tickLine={false} domain={[0, 100]} unit="%" />
-              <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid rgba(0,0,0,0.08)", boxShadow: "0 4px 16px rgba(0,0,0,0.08)" }} formatter={(value) => [`${value}%`, "Utilization"]} />
-              <Bar dataKey="value" fill="#8B1E2D" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </Card>
+      {demoMode && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <Card className="p-5">
+            <h3 className="font-semibold text-[#0F1117] text-sm mb-4">Team Workload Capacity</h3>
+            <ResponsiveContainer width="100%" height={180}>
+              <BarChart data={workloadData} barSize={28}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#F2F3F5" vertical={false} />
+                <XAxis dataKey="name" tick={{ fontSize: 11, fill: "#5F6B73", fontFamily: "JetBrains Mono" }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 11, fill: "#5F6B73" }} axisLine={false} tickLine={false} domain={[0, 100]} unit="%" />
+                <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid rgba(0,0,0,0.08)", boxShadow: "0 4px 16px rgba(0,0,0,0.08)" }} formatter={(value) => [`${value}%`, "Utilization"]} />
+                <Bar dataKey="value" fill="#8B1E2D" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </Card>
 
-        <Card className="p-5">
-          <h3 className="font-semibold text-[#0F1117] text-sm mb-4">Deliverable Completion Trend</h3>
-          <ResponsiveContainer width="100%" height={180}>
-            <AreaChart data={performanceData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#F2F3F5" vertical={false} />
-              <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#5F6B73" }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 11, fill: "#5F6B73" }} axisLine={false} tickLine={false} />
-              <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid rgba(0,0,0,0.08)" }} />
-              <Area type="monotone" dataKey="planned" stroke="#C9A227" strokeWidth={2} fill="#C9A22720" strokeDasharray="4 4" />
-              <Area type="monotone" dataKey="completed" stroke="#8B1E2D" strokeWidth={2} fill="#8B1E2D15" />
-            </AreaChart>
-          </ResponsiveContainer>
-        </Card>
-      </div>
+          <Card className="p-5">
+            <h3 className="font-semibold text-[#0F1117] text-sm mb-4">Deliverable Completion Trend</h3>
+            <ResponsiveContainer width="100%" height={180}>
+              <AreaChart data={performanceData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#F2F3F5" vertical={false} />
+                <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#5F6B73" }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 11, fill: "#5F6B73" }} axisLine={false} tickLine={false} />
+                <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid rgba(0,0,0,0.08)" }} />
+                <Area type="monotone" dataKey="planned" stroke="#C9A227" strokeWidth={2} fill="#C9A22720" strokeDasharray="4 4" />
+                <Area type="monotone" dataKey="completed" stroke="#8B1E2D" strokeWidth={2} fill="#8B1E2D15" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </Card>
+        </div>
+      )}
     </PageShell>
   );
 }
