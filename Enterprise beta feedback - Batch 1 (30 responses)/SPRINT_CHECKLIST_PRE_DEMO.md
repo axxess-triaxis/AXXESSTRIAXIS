@@ -12,21 +12,28 @@ state without reading the whole roadmap.
 
 ## Sprint 1 — Stop the bleeding: onboarding friction and trust signals
 
-**Status:** 2 / 7 shipped (2026-07-20)
+**Status:** 7 / 7 implemented (2026-07-20); pending PR merge to `main` (see `ITERATION_PROGRESS.md`)
 
 - [x] **A1** — Make Golden Path opt-in, not forced
 - [x] **A2** — Explain blocked/locked steps inline
-- [ ] **A8** — Empty states with one clear CTA on every major page
-- [ ] **A5** — Loading/progress + timeout-with-retry states on long AI operations
-- [ ] **A19** — Reliability expectation-setter copy during AI generation
-- [ ] **A20** — Role-appropriate default landing pages
-- [ ] **A12** — Surface feedback button at workflow completion
+- [x] **A8** — Empty states with one clear CTA on every major page (Dashboard, Projects, Tasks)
+- [x] **A5** — Loading/progress + timeout-with-retry states on long AI operations
+- [x] **A19** — Reliability expectation-setter copy during AI generation
+- [x] **A20** — Role-appropriate default landing pages
+- [x] **A12** — Surface feedback button at workflow completion
 
 **Sprint 1 exit criteria** (all must be true before calling the sprint done):
-- [ ] All 7 items above checked
-- [ ] Each has a test asserting its acceptance criteria (see `SPRINT_ROADMAP_PRE_DEMO.md`)
-- [ ] `ITERATION_PROGRESS.md` has one entry per item (or one combined entry, as with A1/A2)
-- [ ] `pnpm run ci` green on the branch that merges the last Sprint 1 item
+- [x] All 7 items above checked
+- [ ] Each has a test asserting its acceptance criteria (see `SPRINT_ROADMAP_PRE_DEMO.md`) —
+      **partial**: A1, A2, A20 have dedicated tests; A8, A5, A19, A12 were verified via
+      `typecheck`/`lint`/full-suite-still-green and manual code review only, since these page
+      components (`DashboardSection.tsx`, `ProjectsSection.tsx`, `TasksSection.tsx`,
+      `AIWorkspaceSection.tsx`) have no existing unit-test coverage in this repo to begin with
+      (coverage here comes from Playwright e2e specs instead). Flagged as a follow-up, not
+      silently skipped — see `ITERATION_PROGRESS.md`.
+- [x] `ITERATION_PROGRESS.md` has one entry per item (or one combined entry, as with A1/A2)
+- [ ] `pnpm run ci` green on the branch that merges the last Sprint 1 item — full suite verified
+      green pre-merge; `pnpm run ci` also runs `build`, not independently re-verified here
 
 ---
 
