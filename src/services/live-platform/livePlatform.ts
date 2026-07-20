@@ -27,10 +27,14 @@ export async function getLiveWorkspaceMetrics(services: ApplicationServices, sco
     unreadNotifications: notifications.filter((notification) => !notification.readAt).length,
     ragReadyDocuments: documents.filter((document) => document.status !== "deleted").length,
     integrationConfigured: getIntegrationHealth().configured,
-    socialAlerts: 4,
+    // No live social-alerts repository exists yet; 0 is an honest default rather than a
+    // fabricated count. See DEMO_DATA_LEAKAGE_AUDIT.md.
+    socialAlerts: 0,
   };
 }
 
+// Illustrative numbers for the investor-demo experience only. Callers must gate this behind
+// isDemoModeEnabled() -- never show these to a real tenant. See DEMO_DATA_LEAKAGE_AUDIT.md.
 export function getFallbackLiveWorkspaceMetrics(): LiveWorkspaceMetrics {
   return {
     activeProjects: 186,
@@ -40,6 +44,20 @@ export function getFallbackLiveWorkspaceMetrics(): LiveWorkspaceMetrics {
     ragReadyDocuments: 2200,
     integrationConfigured: 0,
     socialAlerts: 4,
+  };
+}
+
+// Honest "no data yet" state for real tenants -- used while live metrics are loading or if the
+// live fetch fails, instead of fabricated demo numbers.
+export function getZeroLiveWorkspaceMetrics(): LiveWorkspaceMetrics {
+  return {
+    activeProjects: 0,
+    openTasks: 0,
+    pendingApprovals: 0,
+    unreadNotifications: 0,
+    ragReadyDocuments: 0,
+    integrationConfigured: 0,
+    socialAlerts: 0,
   };
 }
 
