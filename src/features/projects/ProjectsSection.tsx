@@ -1,6 +1,7 @@
 import { Edit3, FolderKanban, Plus, Save, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "../../auth/AuthProvider";
+import { isDemoModeEnabled } from "../../demo/demoMode";
 import { InlineToast } from "../../components/forms/InlineToast";
 import { SelectField, TextAreaField, TextField } from "../../components/forms/FormField";
 import { EmptyState } from "../../components/feedback/EmptyState";
@@ -204,6 +205,8 @@ export const ProjectsSection = () => {
 
   if (loading) return <LoadingState label="Loading project workflows" />;
 
+  const demoMode = isDemoModeEnabled();
+
   return (
     <PageShell className="h-full min-h-0">
       <ModuleHeader
@@ -212,7 +215,7 @@ export const ProjectsSection = () => {
         description={`${projects.length} active initiatives across ${organizations.length || 1} organization${organizations.length === 1 ? "" : "s"}. Projects connect stakeholders, documents, approvals, AI actions, and operational timelines.`}
         badges={[
           <TenantScopeBadge key="tenant" />,
-          <DataStateBadge key="demo" state={projects.length > 0 ? "Live" : "Demo"} />,
+          <DataStateBadge key="demo" state={demoMode ? "Demo" : "Live"} />,
         ]}
         actions={
           <div className="flex items-center gap-2">
@@ -238,18 +241,22 @@ export const ProjectsSection = () => {
         }
       />
 
-      <DemoDataNotice label="Project cards and side panels show linked stakeholder, document, approval, task, and escalation context for demo storytelling." />
-      <div className="grid grid-cols-1 gap-3 lg:grid-cols-4">
-        {demoProjects.map((project, index) => (
-          <WorkflowStepCard
-            key={project.name}
-            index={index + 1}
-            title={project.name}
-            description={`${project.stakeholder} - ${project.document} - ${project.approval}`}
-            status={project.risk}
-          />
-        ))}
-      </div>
+      {demoMode && (
+        <>
+          <DemoDataNotice label="Project cards and side panels show linked stakeholder, document, approval, task, and escalation context for demo storytelling." />
+          <div className="grid grid-cols-1 gap-3 lg:grid-cols-4">
+            {demoProjects.map((project, index) => (
+              <WorkflowStepCard
+                key={project.name}
+                index={index + 1}
+                title={project.name}
+                description={`${project.stakeholder} - ${project.document} - ${project.approval}`}
+                status={project.risk}
+              />
+            ))}
+          </div>
+        </>
+      )}
 
       <div className="grid h-[calc(100%-72px)] min-h-[520px] grid-cols-1 gap-4 xl:grid-cols-[1fr_360px]">
         <div className="min-w-0 overflow-hidden">
