@@ -39,11 +39,12 @@ state without reading the whole roadmap.
 
 ## Sprint 2 — Value clarity, AI trust, and feedback instrumentation
 
-**Status:** 4 / 7 shipped (2026-07-20)
+**Status:** 7 / 7 implemented (2026-07-20); end-to-end browser verification of A3/A7/A18 still
+pending — see exit criteria below
 
-- [ ] **A3** — Guided demo workspace with realistic seeded data
-- [ ] **A7** — Replace single onboarding flow with 3 outcome-first paths *(ship together with A3, not before)*
-- [ ] **A18** — Reduce required setup decisions before first AI interaction *(ship together with A7)*
+- [x] **A3** — Guided demo workspace with realistic seeded data (real repositories, not fabricated content)
+- [x] **A7** — Replace single onboarding flow with 3 outcome-first paths *(shipped with A3, as planned)*
+- [x] **A18** — Reduce required setup decisions before first AI interaction *(shipped with A7)*
 - [x] **A4** — AI citations + rationale under every AI output
 - [x] **A6** — Bulk/quick-approve action in the AI Review Inbox
 - [x] **A9** — In-context 1-click micro-survey after first completed step (AI-review-decision
@@ -51,11 +52,18 @@ state without reading the whole roadmap.
 - [x] **A11** — Wire time-to-first-value / onboarding-completion analytics events
 
 **Sprint 2 exit criteria:**
-- [ ] All 7 items above checked
-- [ ] A3 + A7 + A18 verified together end-to-end (not just individually) — they're interdependent
-- [ ] A11's events verified firing at the correct funnel step, not just "present in code"
-- [ ] `ITERATION_PROGRESS.md` updated
-- [ ] `pnpm run ci` green
+- [x] All 7 items above checked
+- [ ] A3 + A7 + A18 verified together end-to-end (not just individually) — they're interdependent.
+      **Not yet done**: verified via `typecheck`/`lint`/unit tests of the pure logic module
+      (`enterpriseOnboarding.test.ts`) only. No live browser walkthrough of the actual onboarding
+      flow -> seeding -> redirect sequence has been run. Flagged as a required follow-up before
+      this is demoed, not silently skipped.
+- [x] A11's events verified firing at the correct funnel step (code-reviewed against each success
+      path, not just "present in code")
+- [x] `ITERATION_PROGRESS.md` updated
+- [ ] `pnpm run ci` green — `pnpm run typecheck`/`lint`/`test` all independently verified green
+      throughout; `pnpm run ci` also runs `build`, not independently re-run as a single command
+      this sprint
 
 ---
 

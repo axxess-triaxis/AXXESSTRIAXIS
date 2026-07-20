@@ -25,9 +25,17 @@ implementation can start without re-discovery.
    bare "Blocked" badge with no next action. **Implemented:** added a `blockedReason` field
    populated for every blockable step (team provisioning, grounded question, workflow action), and
    a "Requires {role}" hint for role-locked steps, both rendered inline under the step title.
-3. 🔜 **Add a guided demo workspace with realistic seeded data.** *(Experience — M)* Directly
+3. ✅ **Add a guided demo workspace with realistic seeded data.** *(Experience — M)* Directly
    targets the P0 "unclear value" blocker — lets a new user see value before uploading their own
-   documents.
+   documents. **Implemented (with A7/A18, shipped together per the roadmap):** a new
+   `/api/onboarding/seed-sample-data` route creates **real, persisted** records via the live
+   `projectsRepository`/`tasksRepository`/`meetingsRepository`/document-ingestion path — not
+   fabricated demo content. Every seeded record is tagged `sample-data` and titled with a
+   `Sample:` prefix so it's identifiable and removable, but it's genuinely live: editable,
+   deletable, and indistinguishable from the customer's own data to every other part of the app.
+   Deliberately scoped to only the 3 modules with real repository backing (documents/AI,
+   projects/tasks, meetings) — not Approvals/Stakeholders/Analytics, which
+   `DEMO_DATA_LEAKAGE_AUDIT.md` confirmed have no live repository at all.
 4. ✅ **Add source citations + a one-line rationale under every AI output.** *(Experience,
    Execution — M)* P0 explainability gap; 40% of respondents flagged AI output quality.
    **Implemented:** added a genuine, retrieval-derived `rationale` field to `RagAnswer`
@@ -53,9 +61,17 @@ implementation can start without re-discovery.
    auth-facade flag explicitly required in real beta deployments per `BETA_TESTING.md`) as
    equivalent to demo mode, injecting a fake pending review for every real beta customer with a
    clean inbox. Both fixed to use `isDemoModeEnabled()` correctly. See `DEMO_DATA_LEAKAGE_AUDIT.md`.
-7. 🔜 **Replace the single generic onboarding flow with 3 outcome-first paths.** *(Ease,
+7. ✅ **Replace the single generic onboarding flow with 3 outcome-first paths.** *(Ease,
    Experience — M)* Knowledge/AI decision support, workflow+approvals, stakeholder/CRM — matches
-   the original report's section 11 recommendation.
+   the original report's section 11 recommendation. **Implemented:** an optional "What do you
+   want to try first?" step added to the existing onboarding flow (not a new wizard step —
+   folded into the existing `start` screen to avoid adding friction) with 3 paths:
+   *Knowledge & AI decision support*, *Workflow & task execution*, *Meetings & institutional
+   coordination*. The third path was changed from "stakeholder/CRM" to "meetings/coordination"
+   since Stakeholders/CRM has no live repository (see A3 note and
+   `DEMO_DATA_LEAKAGE_AUDIT.md`) — routing a new user into a module that can't persist their
+   choice would recreate the exact problem this whole effort just fixed. Each path routes into
+   its seeded workspace (A3) and its most relevant page on completion.
 8. ✅ **Add empty-states with one clear CTA on every major page.** *(Ease, Experience — S)*
    Dashboard/Projects/Tasks/Knowledge Hub currently go sparse for brand-new tenants. **Implemented:**
    `DashboardSection.tsx` (Project Health Monitor), `ProjectsSection.tsx`, and `TasksSection.tsx` now
@@ -110,8 +126,14 @@ implementation can start without re-discovery.
 17. 🔜 **Add a completion celebration/confirmation on finishing any workflow end-to-end.**
     *(Retention, Experience — S)* Reinforces the knowledge → AI → review → action → audit loop the
     SWOT identifies as the core differentiator.
-18. 🔜 **Reduce required setup decisions before first AI interaction.** *(Ease — M)* Let a solo
-    evaluator ask a grounded question before inviting a team, where possible.
+18. ✅ **Reduce required setup decisions before first AI interaction.** *(Ease — M)* Let a solo
+    evaluator ask a grounded question before inviting a team, where possible. **Implemented:**
+    found that `provisionTenantForUser` (the onboarding backend) already treated department/
+    workspace names as optional and skipped them cleanly when blank — the only thing forcing a
+    user to fill them in was the frontend's `isOnboardingComplete()` check. Removed that
+    artificial requirement; department/workspace name fields are now genuinely optional in the
+    UI, matching what the backend always supported. This directly removes 2 of the required
+    setup decisions before a user can reach their first AI interaction.
 
 ## Tier 5 — Execution-at-customer-end hygiene
 
