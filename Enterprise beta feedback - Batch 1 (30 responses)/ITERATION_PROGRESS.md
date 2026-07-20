@@ -293,5 +293,73 @@ either through a silent error-triggered fallback or through always-on decorative
 - `src/features/dashboard/DashboardSection.tsx`, `src/features/projects/ProjectsSection.tsx`,
   `src/features/tasks/TasksSection.tsx`, `src/features/ai-workspace/AIWorkspaceSection.tsx` — all
   decorative demo content gated behind `isDemoModeEnabled()`.
+
+---
+
+## 2026-07-20 — Full codebase sweep: zero dummy data (Round 2)
+
+### What happened
+
+Following an explicit instruction that beta must have "no dummy or placeholder data anywhere,"
+ran a full-codebase search (every `src/lib/demo/*` and `src/demo/*` import, not just the four
+pages already fixed) and closed every additional instance found. Full detail in
+`DEMO_DATA_LEAKAGE_AUDIT.md`'s "Round 2" section; summary:
+
+- **`dashboard/data.ts`** bypassed the earlier `serviceProvider.ts` fix by importing
+  `demoRepositories` directly. Worst instance found: a brand-new, genuinely empty real tenant
+  (zero projects) was shown **fabricated project and KPI data** instead of an honest empty state.
+  Also fixed: the "live" KPI branch was mixing in a fake approvals count and a hardcoded literal
+  `"2,200"` RAG-documents number even when otherwise using real data. Fixed all of it; added
+  `getZeroDashboardKpis()` for honest zero-state.
+- Gated `dashboardObjectives`, `dashboardAiRecommendations`, `governanceAlerts`, `workloadData`,
+  `performanceData` in `DashboardSection.tsx` behind `isDemoModeEnabled()` (one alert card even had
+  a hardcoded "Live" badge on fabricated data).
+- **`AnalyticsSection.tsx`, `ApprovalsSection.tsx`, `StakeholdersSection.tsx`** are, in their
+  entirety, illustrative content with no live repository backing at all (no OKR engine, no
+  approvals workflow, no CRM repository exist). Fully gated behind `isDemoModeEnabled()` with an
+  honest "not available yet" `EmptyState` for real tenants.
+- **`DocumentsSection.tsx`, `IntegrationsSection.tsx`** are hybrids — ingestion and connector
+  health are genuinely live; only a decorative browse-list/gallery was fake. Added `EmptyState`
+  messaging for the now-empty (already-fixed) sections.
+- **`pilotAcceptanceRuntime.ts`** and **`src/app/api/admin/customer-success/live-ops/route.ts`**
+  had the same silent-fallback-to-fake-metrics-on-error bug as `useLiveWorkspaceMetrics.ts`. Fixed
+  the same way (demo fixture only when genuinely in demo/preview mode, honest zero otherwise).
+- **Reviewed and left as-is:** `EnterpriseAdminPage.tsx`'s `pilotAcceptancePreviewSnapshot()` /
+  `customerSuccessPreviewSnapshot()` are explicitly named "preview," use a fixed timestamp and demo
+  IDs, and read as an intentional internal admin tool, not a customer-facing leak.
+
+### What this does and doesn't close
+
+**Closed:** every feature page and runtime call site found in a full-codebase sweep now either
+shows real data, an honest zero/empty state, or demo content strictly gated behind
+`isDemoModeEnabled()`. No page silently substitutes fabricated content for a real tenant anymore
+that this sweep could find.
+
+**Explicitly does not close:** "no dummy data" (achieved) is different from "Approvals,
+Stakeholders/CRM, and Analytics/OKRs are genuinely live, linkable, and feedable" (not achieved,
+and not achievable via hygiene fixes). No `approvalsRepository`, `stakeholdersRepository`,
+`okrRepository`, or `analyticsRepository` exists anywhere in `src/repositories/` — building real
+versions of these is a multi-sprint product build (schema, migrations, RLS, repository
+implementations), not something this pass could or should attempt piecemeal. Recommended as its
+own tracked initiative; see `DEMO_DATA_LEAKAGE_AUDIT.md`'s closing section for suggested priority
+order (approvals first, tying into the AI Review Inbox's existing `pendingAiReviews` concept).
+
+A handful of lower-risk, not-yet-reverified consumers of `src/demo/*` remain (`TopBar.tsx`,
+`AuthProvider.tsx`, the legacy institutional view repository) — named and flagged, not silently
+skipped.
+
+### Audit trail
+
+- `src/features/dashboard/data.ts` — removed empty-tenant fake-data branches; added
+  `getZeroDashboardKpis()`.
+- `src/features/analytics/AnalyticsSection.tsx`, `src/features/approvals/ApprovalsSection.tsx`,
+  `src/features/stakeholders/StakeholdersSection.tsx`, `src/features/documents/DocumentsSection.tsx`,
+  `src/features/integrations/IntegrationsSection.tsx` — demo content gated behind
+  `isDemoModeEnabled()`.
+- `src/services/pilot/pilotAcceptanceRuntime.ts`,
+  `src/app/api/admin/customer-success/live-ops/route.ts` — fixed the same
+  silent-fallback-to-fake-data bug as `useLiveWorkspaceMetrics.ts`.
+- Verification: `pnpm run typecheck` clean, `pnpm run lint` clean (zero warnings), full suite
+  re-run pending at time of writing (see this session's final commit for confirmed result).
 - Verification: `pnpm run typecheck` clean, `pnpm run lint` clean (zero warnings), full suite
   re-run pending at time of writing (see this session's final commit for confirmed result).
