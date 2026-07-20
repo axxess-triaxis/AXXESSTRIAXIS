@@ -219,3 +219,79 @@ this entry.
   `src/app/App.tsx` (redirect effect) — role-appropriate landing (A20).
 - Verification: `pnpm run typecheck` clean, `pnpm run lint` clean (zero warnings), full Vitest
   suite passing with no regressions.
+
+---
+
+## 2026-07-20 — Golden Path rationale documented; demo-data leakage audit and fix
+
+### What happened
+
+Two separate requests, both documented and (for the second) remediated in the same pass:
+
+1. **Golden Path rationale.** Wrote `GOLDEN_PATH_OPTIONAL_RATIONALE.md`, laying out the exact beta
+   feedback stats behind the A1 decision (35% "too many steps", 20% "difficult onboarding", 30%
+   "unclear value", 100% of non-promoters citing both reliability and clarity issues — all cited
+   to `Enterprise_Beta_Feedback_Batch_1.md` section numbers), the code-level mechanism found during
+   the A1/A2 audit that plausibly explains those numbers, and an explicit argument for why this is
+   additive (two new capabilities: persisted preference, inline explanations) rather than a
+   removal of anything that existed before.
+
+2. **Demo data leakage audit.** Triggered by an explicit requirement that beta must contain zero
+   content from the investor-demo build. Audit findings and full remediation detail are in
+   `DEMO_DATA_LEAKAGE_AUDIT.md`. Summary of what was found and fixed:
+   - **Critical:** `serviceProvider.ts`'s `resilientRepositories` — the repository set used for
+     every real beta/production request — silently substituted fake demo data for projects, tasks,
+     documents, users, orgs, and more whenever a live Supabase call threw for any reason (network
+     blip, expired session, RLS misconfig). Fixed: fallback target changed from `demoRepositories`
+     to `emptyRepositories` everywhere, so a live failure now surfaces as a genuine empty result or
+     a thrown error, never fabricated content.
+   - **Critical:** `institutionalRepository` was hardcoded to the demo repository in both the live
+     and resilient repository sets (no real one exists yet), feeding a fake `pendingApprovals`
+     count into `getLiveWorkspaceMetrics` for every real tenant. Fixed: now uses
+     `emptyRepositories.institutionalRepository`, resolving to `0` honestly instead of a plausible
+     fake number.
+   - **Critical:** `useLiveWorkspaceMetrics.ts` initialized its state with, and fell back on error
+     to, `getFallbackLiveWorkspaceMetrics()` — 186 fake projects, 412 fake tasks, 2200 fake
+     documents — unconditionally. This is the highest-visibility instance found: these are the
+     headline numbers on Dashboard, AI Workspace, and the golden path. Fixed: now demo-mode-gated,
+     with a new `getZeroLiveWorkspaceMetrics()` used for real tenants.
+   - **High:** decorative demo content rendered unconditionally (not gated by
+     `isDemoModeEnabled()`) in `DashboardSection.tsx` (fake org name in the header, fake executive
+     metric cards, fake activity feed), `ProjectsSection.tsx` and `TasksSection.tsx` (decorative
+     fake project/audit-timeline strips, plus a "Demo"/"Live" badge that was inferring mode from
+     data presence rather than checking real demo-mode state), and `AIWorkspaceSection.tsx` (a
+     fully fabricated RAG answer with fake citations used as both the initial state and the
+     error fallback, plus a hardcoded fake audit-trail ID). All now gated behind
+     `isDemoModeEnabled()`, matching the pattern already correctly used in Knowledge Hub and
+     Settings.
+
+### What this does and doesn't close
+
+**Closed:** the specific mechanisms found that would show a real beta customer fabricated data —
+either through a silent error-triggered fallback or through always-on decorative UI — are fixed.
+
+**Honest gaps:**
+- `pendingApprovals` and `socialAlerts` now read `0` for every real tenant, not a real count, until
+  genuine live repositories for those are built. This is a capability gap made visible, not
+  introduced by this fix.
+- Three more real-runtime call sites of `getFallbackLiveWorkspaceMetrics()` were identified but not
+  fixed in this pass: `EnterpriseAdminPage.tsx`, `pilotAcceptanceRuntime.ts`, and the
+  customer-success live-ops API route. Listed explicitly in `DEMO_DATA_LEAKAGE_AUDIT.md` as a
+  follow-up, not silently left out.
+- No dedicated new unit tests for the `resilientRepositories` fallback change or the
+  `isDemoModeEnabled()` gating — verified via typecheck, lint, full-suite regression check, and
+  manual review only. See `DEMO_DATA_LEAKAGE_AUDIT.md` for why (would require mocking
+  `featureFlags.enableSupabaseRuntime`, computed once at module import).
+
+### Audit trail
+
+- `src/providers/serviceProvider.ts` — `withResilientFallback` (renamed from `withDemoFallback`),
+  `resilientTenantRepository`/`resilientMutableRepository` now take an `emptyRepository` fallback.
+- `src/services/live-platform/livePlatform.ts` — `getZeroLiveWorkspaceMetrics()` added, tested in
+  `livePlatform.test.ts`.
+- `src/hooks/useLiveWorkspaceMetrics.ts` — `initialMetrics()` helper, demo-mode-gated.
+- `src/features/dashboard/DashboardSection.tsx`, `src/features/projects/ProjectsSection.tsx`,
+  `src/features/tasks/TasksSection.tsx`, `src/features/ai-workspace/AIWorkspaceSection.tsx` — all
+  decorative demo content gated behind `isDemoModeEnabled()`.
+- Verification: `pnpm run typecheck` clean, `pnpm run lint` clean (zero warnings), full suite
+  re-run pending at time of writing (see this session's final commit for confirmed result).
