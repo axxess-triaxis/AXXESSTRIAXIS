@@ -14,6 +14,7 @@ import {
 import { Avatar } from "../../components/ui/Avatar";
 import { Card } from "../../components/ui/Card";
 import { useEnterpriseGoldenPath } from "../../hooks/useEnterpriseGoldenPath";
+import { useGoldenPathDisplayMode } from "../../hooks/useGoldenPathDisplayMode";
 import { applicationServices } from "../../providers/serviceProvider";
 import { tenantScopeFromUser } from "../../repositories/supabaseEnterpriseRepositories";
 import { getAiRouterStatusSnapshot } from "../../services/ai/router/aiRouter";
@@ -82,6 +83,7 @@ export const AIWorkspaceSection = () => {
   const { session } = useAuth();
   const tenantScope = useMemo(() => session.user ? tenantScopeFromUser(session.user) : undefined, [session.user]);
   const enterpriseJourney = useEnterpriseGoldenPath(tenantScope, session.user);
+  const goldenPathDisplayMode = useGoldenPathDisplayMode();
   const [input, setInput] = useState("");
   const [approved, setApproved] = useState(false);
   const [querying, setQuerying] = useState(false);
@@ -370,7 +372,12 @@ export const AIWorkspaceSection = () => {
             </div>
           </Card>
 
-          <EnterpriseWorkflowJourney snapshot={enterpriseJourney} compact />
+          <EnterpriseWorkflowJourney
+            snapshot={enterpriseJourney}
+            compact
+            displayMode={goldenPathDisplayMode.mode}
+            onDisplayModeChange={goldenPathDisplayMode.setMode}
+          />
 
           <Card className="p-4">
             <h3 className="text-xs font-semibold text-[#0F1117] uppercase tracking-wider mb-3">Context Window</h3>
