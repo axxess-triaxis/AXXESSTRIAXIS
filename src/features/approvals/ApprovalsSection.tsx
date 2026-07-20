@@ -10,8 +10,10 @@ import {
   SectionCard,
   TenantScopeBadge,
 } from "../../components/enterprise";
+import { EmptyState } from "../../components/feedback/EmptyState";
 import { WorkflowTimelinePanel } from "../../components/enterprise/WorkflowTimelinePanel";
 import { Card } from "../../components/ui/Card";
+import { isDemoModeEnabled } from "../../demo/demoMode";
 import { RiskBadge } from "../../components/ui/RiskBadge";
 import { demoApprovalQueue } from "../../lib/demo/demoApprovals";
 import { applicationServices } from "../../providers/serviceProvider";
@@ -19,6 +21,9 @@ import { tenantScopeFromUser } from "../../repositories/supabaseEnterpriseReposi
 import { useWorkflowTimeline } from "../../hooks/useWorkflowTimeline";
 import { Check, CheckCircle2, ShieldCheck, X, XCircle } from "lucide-react";
 
+// No live approvals repository exists yet -- these Approve/Reject actions only update local
+// component state and getApprovals() resolves to real (empty) data outside demo mode. Illustrative
+// content below is gated behind isDemoModeEnabled(). See DEMO_DATA_LEAKAGE_AUDIT.md.
 const approvals = applicationServices.institutionalRepository.getApprovals();
 
 export const ApprovalsSection = () => {
@@ -26,26 +31,35 @@ export const ApprovalsSection = () => {
   const scope = session.user ? tenantScopeFromUser(session.user) : undefined;
   const [actioned, setActioned] = useState<Record<string, "approved" | "rejected" | "clarification">>({});
   const approvalTimeline = useWorkflowTimeline(scope, { limit: 5, resourceType: "approval" });
+  const demoMode = isDemoModeEnabled();
 
   return (
     <PageShell>
       <ModuleHeader
         title="Approvals & Governance"
         eyebrow="80 percent machine, 20 percent human, 100 percent trust"
-        description={`${approvals.filter((approval) => approval.status === "Pending").length} pending approvals, 3 overdue SLA items, and human review required for high-trust institutional actions.`}
+        description={demoMode
+          ? `${approvals.filter((approval) => approval.status === "Pending").length} pending approvals, 3 overdue SLA items, and human review required for high-trust institutional actions.`
+          : "Human review required for high-trust institutional actions."}
         badges={[
           <TenantScopeBadge key="tenant" />,
-          <DataStateBadge key="demo" state="Demo" />,
+          <DataStateBadge key="demo" state={demoMode ? "Demo" : "Live"} />,
           <HumanReviewBadge key="review" required />,
         ]}
       />
-      <DemoDataNotice label="Approval decisions update local demo state, show AI recommendation context, and preserve audit-ready decision language." />
+      {!demoMode && (
+        <Card className="p-8">
+          <EmptyState message="A live approvals workflow isn't wired to a connected data backend yet. This page will populate as that capability is built." />
+        </Card>
+      )}
+      {demoMode && <DemoDataNotice label="Approval decisions update local demo state, show AI recommendation context, and preserve audit-ready decision language." />}
       <WorkflowTimelinePanel
         title="Approval timeline"
         description="Human decisions, SLA-sensitive approval actions, and audit records across governed workflow execution."
         events={approvalTimeline.timeline}
         compact
       />
+      {demoMode && (
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
         {demoApprovalQueue.map((approval) => (
           <ApprovalCard key={approval.title} title={approval.title} requestor={approval.requestor} risk={approval.risk}>
@@ -72,8 +86,11 @@ export const ApprovalsSection = () => {
           </ApprovalCard>
         ))}
       </div>
+      )}
+      {demoMode && (
       <SectionCard title="Operational approval queue" description="Repository-backed approval rows remain available below the guided governance examples.">
       <div className="space-y-4">
+        {approvals.length === 0 && <EmptyState message="No approvals yet." />}
         {approvals.map((approval) => (
           <Card key={approval.id} className="p-5">
             <div className="flex items-start justify-between gap-4 mb-3">
@@ -127,6 +144,7 @@ export const ApprovalsSection = () => {
         ))}
       </div>
       </SectionCard>
+      )}
     </PageShell>
   );
 };
