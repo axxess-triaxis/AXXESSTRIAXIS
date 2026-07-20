@@ -2,6 +2,7 @@ import { Download, FolderKanban, PlayCircle, Plus, RefreshCw, Sparkles } from "l
 import { useEffect, useMemo, useState } from "react";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { useAuth } from "../../auth/AuthProvider";
+import { isDemoModeEnabled } from "../../demo/demoMode";
 import {
   ActivityFeed,
   CommandSearchPlaceholder,
@@ -86,16 +87,17 @@ export function DashboardSection() {
     };
   }, [tenantScope]);
 
+  const demoMode = isDemoModeEnabled();
+
   return (
     <PageShell>
       <ModuleHeader
         title="Executive Dashboard"
-        eyebrow={demoInstitution.organizationName}
+        eyebrow={demoMode ? demoInstitution.organizationName : "Your Organization"}
         description="Portfolio command center for executive risk, approvals, RAG readiness, budget variance, stakeholder follow-ups, and guided investor walkthroughs."
         badges={[
-          <TenantScopeBadge key="tenant" label="North East Health Mission tenant" />,
-          <DataStateBadge key="demo" state="Demo" />,
-          <DataStateBadge key="live" state="Live" />,
+          <TenantScopeBadge key="tenant" />,
+          <DataStateBadge key="live" state={demoMode ? "Demo" : "Live"} />,
           <DataStateBadge key="provider" state="Provider-gated" />,
         ]}
         actions={
@@ -116,7 +118,9 @@ export function DashboardSection() {
         }
       />
 
-      <DemoDataNotice label="The dashboard is preloaded to look like a 6-12 month institutional operating environment while live repositories remain tenant-isolated." />
+      {demoMode && (
+        <DemoDataNotice label="The dashboard is preloaded to look like a 6-12 month institutional operating environment while live repositories remain tenant-isolated." />
+      )}
       <CommandSearchPlaceholder />
 
       {session.user && <BetaOnboardingChecklist user={session.user} projectCount={projects.length} />}
@@ -129,7 +133,7 @@ export function DashboardSection() {
       <TenantHealthCommandCenter snapshot={enterpriseJourney} metrics={liveMetrics} />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {executiveDemoMetrics.map((metric) => (
+        {demoMode && executiveDemoMetrics.map((metric) => (
           <MetricCard key={metric.label} {...metric} state="Demo" />
         ))}
       </div>
@@ -175,8 +179,15 @@ export function DashboardSection() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_420px]">
-        <SectionCard title="Recent institutional activity" description="Seeded activity mirrors a live operating environment and ties AI, approvals, documents, and stakeholder follow-ups together.">
-          <ActivityFeed items={demoRecentActivity} />
+        <SectionCard
+          title="Recent institutional activity"
+          description={demoMode ? "Seeded activity mirrors a live operating environment and ties AI, approvals, documents, and stakeholder follow-ups together." : "Activity ties AI, approvals, documents, and stakeholder follow-ups together as your organization uses AXXESS."}
+        >
+          {demoMode ? (
+            <ActivityFeed items={demoRecentActivity} />
+          ) : (
+            <EmptyState message="No recent activity yet. Activity will appear here as your team works in AXXESS." />
+          )}
         </SectionCard>
         <WorkflowTimelinePanel events={workflowTimeline.timeline} compact />
       </div>

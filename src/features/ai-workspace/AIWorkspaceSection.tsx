@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../../auth/AuthProvider";
 import { EnterpriseWorkflowJourney } from "../../components/enterprise/EnterpriseWorkflowJourney";
+import { isDemoModeEnabled } from "../../demo/demoMode";
 import {
   AuditTrailBadge,
   ConfidenceBadge,
@@ -41,6 +42,9 @@ import {
 const aiMessages = applicationServices.institutionalRepository.getAiMessages();
 const aiRouterStatus = getAiRouterStatusSnapshot();
 
+// Illustrative content for the investor-demo experience only -- gated behind isDemoModeEnabled()
+// everywhere it's used. A real tenant must never see this presented as a live AI answer.
+// See DEMO_DATA_LEAKAGE_AUDIT.md.
 const fallbackRagAnswer: RagAnswer = {
   answer: "District evidence indicates the highest current operational exposure sits in oxygen resilience, maternal referral handoff, and pharmacy stockout variance. Escalation should prioritize Dibrugarh biomedical maintenance, Cachar referral transfer turnaround, and Dhubri stock reconciliation before the next Mission Secretariat review.",
   confidence: 0.87,
@@ -71,6 +75,20 @@ const fallbackRagAnswer: RagAnswer = {
   ],
 };
 
+// Honest "no answer yet" state for real tenants -- used instead of fallbackRagAnswer wherever a
+// live answer hasn't been generated yet or a query failed.
+const emptyRagAnswer: RagAnswer = {
+  answer: "",
+  confidence: 0,
+  humanReviewRequired: false,
+  keywords: [],
+  sources: [],
+};
+
+function initialRagAnswer(): RagAnswer {
+  return isDemoModeEnabled() ? fallbackRagAnswer : emptyRagAnswer;
+}
+
 type LiveRagAnswer = RagAnswer & {
   aiOutputAuditId?: string;
   modelUsed?: string;
@@ -90,7 +108,7 @@ export const AIWorkspaceSection = () => {
   const [queryError, setQueryError] = useState<string | null>(null);
   const [reviewing, setReviewing] = useState(false);
   const [reviewMessage, setReviewMessage] = useState<string | null>(null);
-  const [ragAnswer, setRagAnswer] = useState<LiveRagAnswer>(fallbackRagAnswer);
+  const [ragAnswer, setRagAnswer] = useState<LiveRagAnswer>(() => initialRagAnswer());
 
   useEffect(() => {
     if (!tenantScope) return;
@@ -104,7 +122,7 @@ export const AIWorkspaceSection = () => {
         if (isMounted && answer.sources.length > 0) setRagAnswer(answer);
       })
       .catch(() => {
-        if (isMounted) setRagAnswer(fallbackRagAnswer);
+        if (isMounted) setRagAnswer(initialRagAnswer());
       });
 
     return () => {
@@ -183,6 +201,8 @@ export const AIWorkspaceSection = () => {
     }
   }
 
+  const demoMode = isDemoModeEnabled();
+
   return (
     <PageShell className="h-full flex flex-col">
       <ModuleHeader
@@ -191,7 +211,7 @@ export const AIWorkspaceSection = () => {
         description="Ask questions across tenant-scoped documents, projects, approvals, stakeholders, and audit history with citations, confidence, routing status, and human review."
         badges={[
           <TenantScopeBadge key="tenant" />,
-          <DataStateBadge key="demo" state="Demo" />,
+          <DataStateBadge key="demo" state={demoMode ? "Demo" : "Live"} />,
           <DataStateBadge key="provider" state="Provider-gated" />,
           <HumanReviewBadge key="review" required={ragAnswer.humanReviewRequired} />,
         ]}
@@ -204,7 +224,9 @@ export const AIWorkspaceSection = () => {
           </>
         }
       />
-      <DemoDataNotice label="AI answers use governed demo context, cited sources, confidence signals, and audit preview records when provider keys are not configured." />
+      {demoMode && (
+        <DemoDataNotice label="AI answers use governed demo context, cited sources, confidence signals, and audit preview records when provider keys are not configured." />
+      )}
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-4 min-h-0">
         <div className="lg:col-span-2 flex flex-col">
           <Card className="flex-1 flex flex-col overflow-hidden">
@@ -296,24 +318,32 @@ export const AIWorkspaceSection = () => {
                     <Terminal size={10} />
                     Governed RAG - citations - tenant permissions
                   </div>
-                  <div className="bg-[#F8F9FA] border border-[rgba(0,0,0,0.06)] rounded-2xl rounded-tl-sm px-4 py-3 text-sm text-[#0F1117] leading-relaxed">
-                    {ragAnswer.answer}
-                  </div>
-                  <div className="mt-2 flex flex-wrap items-center gap-2 text-[10px]">
-                    <ConfidenceBadge score={ragAnswer.confidence} />
-                    <HumanReviewBadge required={ragAnswer.humanReviewRequired} />
-                    <AuditTrailBadge eventId={ragAnswer.aiOutputAuditId ?? "ai-audit-demo-0843"} />
-                    {ragAnswer.providerUsed && <span className="rounded-full bg-[#F2F3F5] px-2 py-0.5 text-[10px] font-semibold text-[#5F6B73]">{ragAnswer.providerUsed} - {ragAnswer.costTier ?? "cost logged"}</span>}
-                  </div>
-                  <div className="mt-3 flex flex-wrap items-center gap-2">
-                    <button onClick={() => void reviewAnswer("approved")} disabled={reviewing || !ragAnswer.aiOutputAuditId} className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60">
-                      {reviewing ? "Recording..." : "Approve action"}
-                    </button>
-                    <button onClick={() => void reviewAnswer("rejected")} disabled={reviewing || !ragAnswer.aiOutputAuditId} className="rounded-lg border border-[rgba(0,0,0,0.12)] bg-white px-3 py-1.5 text-xs font-semibold text-[#0F1117] hover:bg-[#F2F3F5] disabled:cursor-not-allowed disabled:opacity-60">
-                      Reject
-                    </button>
-                    {reviewMessage && <span className="text-[11px] font-medium text-[#5F6B73]">{reviewMessage}</span>}
-                  </div>
+                  {ragAnswer.answer ? (
+                    <>
+                      <div className="bg-[#F8F9FA] border border-[rgba(0,0,0,0.06)] rounded-2xl rounded-tl-sm px-4 py-3 text-sm text-[#0F1117] leading-relaxed">
+                        {ragAnswer.answer}
+                      </div>
+                      <div className="mt-2 flex flex-wrap items-center gap-2 text-[10px]">
+                        <ConfidenceBadge score={ragAnswer.confidence} />
+                        <HumanReviewBadge required={ragAnswer.humanReviewRequired} />
+                        {ragAnswer.aiOutputAuditId && <AuditTrailBadge eventId={ragAnswer.aiOutputAuditId} />}
+                        {ragAnswer.providerUsed && <span className="rounded-full bg-[#F2F3F5] px-2 py-0.5 text-[10px] font-semibold text-[#5F6B73]">{ragAnswer.providerUsed} - {ragAnswer.costTier ?? "cost logged"}</span>}
+                      </div>
+                      <div className="mt-3 flex flex-wrap items-center gap-2">
+                        <button onClick={() => void reviewAnswer("approved")} disabled={reviewing || !ragAnswer.aiOutputAuditId} className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60">
+                          {reviewing ? "Recording..." : "Approve action"}
+                        </button>
+                        <button onClick={() => void reviewAnswer("rejected")} disabled={reviewing || !ragAnswer.aiOutputAuditId} className="rounded-lg border border-[rgba(0,0,0,0.12)] bg-white px-3 py-1.5 text-xs font-semibold text-[#0F1117] hover:bg-[#F2F3F5] disabled:cursor-not-allowed disabled:opacity-60">
+                          Reject
+                        </button>
+                        {reviewMessage && <span className="text-[11px] font-medium text-[#5F6B73]">{reviewMessage}</span>}
+                      </div>
+                    </>
+                  ) : (
+                    <div className="bg-[#F8F9FA] border border-dashed border-[rgba(0,0,0,0.08)] rounded-2xl rounded-tl-sm px-4 py-3 text-sm text-[#5F6B73]">
+                      Ask a question above to see a governed, cited answer here.
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
