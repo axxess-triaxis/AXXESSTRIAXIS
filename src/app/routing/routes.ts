@@ -68,3 +68,11 @@ export function sectionFromHash(hash: string): NavSection {
   const normalized = hash.replace(/^#\/?/, "");
   return appRoutes.find((route) => route.path === normalized)?.section ?? "dashboard";
 }
+
+// Employees land on a mostly-locked Executive Dashboard by default (most golden-path dashboard
+// actions require Executive/Manager/Admin roles). Route them to a section they can immediately
+// act on instead. Other roles keep the existing dashboard default.
+export function defaultSectionForRole(role: RoleName): NavSection {
+  if (role === "Employee") return "tasks";
+  return "dashboard";
+}

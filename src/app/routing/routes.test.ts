@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { routeForPath, routeForSection, sectionFromPath } from "./routes";
+import { defaultSectionForRole, routeForPath, routeForSection, sectionFromPath } from "./routes";
 
 describe("enterprise route metadata", () => {
   it("maps canonical sections to Next paths", () => {
@@ -48,5 +48,15 @@ describe("enterprise route metadata", () => {
     expect(sectionFromPath("/admin/model-policy")).toBe("ai-workspace");
     expect(sectionFromPath("/admin/pilot-command-center")).toBe("organization-admin");
     expect(sectionFromPath("/admin/mobile-release")).toBe("organization-admin");
+  });
+
+  it("routes Employees to a section they can act on instead of a mostly-locked dashboard", () => {
+    expect(defaultSectionForRole("Employee")).toBe("tasks");
+    expect(defaultSectionForRole("Super Admin")).toBe("dashboard");
+    expect(defaultSectionForRole("Organization Admin")).toBe("dashboard");
+    expect(defaultSectionForRole("Executive")).toBe("dashboard");
+    expect(defaultSectionForRole("Manager")).toBe("dashboard");
+    expect(defaultSectionForRole("Consultant")).toBe("dashboard");
+    expect(defaultSectionForRole("Guest")).toBe("dashboard");
   });
 });

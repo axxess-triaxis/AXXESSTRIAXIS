@@ -1,4 +1,4 @@
-import { Download, PlayCircle, RefreshCw, Sparkles } from "lucide-react";
+import { Download, FolderKanban, PlayCircle, Plus, RefreshCw, Sparkles } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { useAuth } from "../../auth/AuthProvider";
@@ -16,6 +16,7 @@ import {
 import { EnterpriseWorkflowJourney } from "../../components/enterprise/EnterpriseWorkflowJourney";
 import { TenantHealthCommandCenter } from "../../components/enterprise/TenantHealthCommandCenter";
 import { WorkflowTimelinePanel } from "../../components/enterprise/WorkflowTimelinePanel";
+import { EmptyState } from "../../components/feedback/EmptyState";
 import { Avatar } from "../../components/ui/Avatar";
 import { Card } from "../../components/ui/Card";
 import { RiskBadge } from "../../components/ui/RiskBadge";
@@ -255,6 +256,21 @@ export function DashboardSection() {
             <button className="text-xs text-[#8B1E2D] font-medium hover:underline">View All {projects.length}</button>
           </div>
           <div className="space-y-2.5">
+            {projects.length === 0 && (
+              <EmptyState
+                icon={<FolderKanban size={28} />}
+                title="No projects yet"
+                message="Create your first project to see it tracked here alongside risk and progress."
+                action={
+                  <a
+                    href="/projects"
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-[#8B1E2D] px-3 py-1.5 text-xs text-white hover:bg-[#7a1a27]"
+                  >
+                    <Plus size={12} /> Create your first project
+                  </a>
+                }
+              />
+            )}
             {projects.slice(0, 5).map((project) => (
               <button key={project.id} className="flex w-full items-center gap-3 p-2.5 rounded-lg hover:bg-[#F2F3F5] transition-colors text-left">
                 <Avatar initials={project.owner} />
