@@ -94,3 +94,59 @@ is reproducible and reviewable, rather than living only in the dashboard.
 4. Track adoption per the experiment backlog's `B1-EXP-10` ("Promoter integration requests convert
    to active use") — only prioritize further wrappers once committed usage is observed for the first
    batch.
+
+---
+
+## 2026-07-20 — 20 pre-demo actionables identified; Golden Path made optional (A1/A2 shipped)
+
+### What happened
+
+`SWOT_Analysis_Batch_1.md` was used to derive 20 immediately-executable actionables targeting
+customer ease, experience, retention, feedback, and execution, documented in
+`PRE_DEMO_ACTIONABLES.md` and sequenced into a 3-sprint plan in `SPRINT_ROADMAP_PRE_DEMO.md`.
+
+Two items (A1, A2) were implemented immediately rather than scheduled, since they directly
+answered the reported onboarding-friction feedback:
+
+- **A1 — Golden Path made opt-in.** The enterprise golden path
+  (`src/services/workflows/enterpriseGoldenPath.ts`, rendered via
+  `src/components/enterprise/EnterpriseWorkflowJourney.tsx`) was previously always-on with no
+  way to dismiss it. Added a `GoldenPathDisplayMode` ("guided" | "on-demand"), defaulting new
+  sessions to **on-demand** (a collapsed one-line summary with a "View recommended setup path"
+  expander), with the choice persisted per user via `src/hooks/useGoldenPathDisplayMode.ts`
+  (localStorage-backed, mirrors the existing `useGuidedDemo.ts` pattern). High-discretion users
+  can still opt into the full guided view and make it their default.
+- **A2 — Blocked/locked steps now explain themselves.** Previously a blocked or role-locked step
+  showed only a bare "Blocked" badge with no next action. Added a `blockedReason` field (service
+  layer) populated for every step that can actually be blocked, and a "Requires {role}" hint for
+  role-locked steps, both rendered inline in the journey UI.
+
+### Evidence
+
+Both changes trace directly to `Enterprise_Beta_Feedback_Batch_1.md` section 7.6 (qualitative
+theme: "Usability — more user-friendly; reduce friction") and the user-reported feedback that
+onboarding felt cumbersome, plus the SWOT's P0 weakness "value clarity is the second unanimous
+blocker."
+
+### What this does and doesn't close
+
+**Closed:** the golden path no longer forces every user through an 8-step checklist with no
+escape hatch, and blocked/locked states are self-explanatory rather than dead ends.
+
+**Not yet closed:** this is UI/config-level only (Sprint 1 of the 3-sprint roadmap). The deeper
+P0 items — actual reliability instrumentation, AI output explainability, and a guided demo
+workspace — remain scheduled for Sprints 1-2 per `SPRINT_ROADMAP_PRE_DEMO.md`. Items A3-A20 are
+not yet implemented.
+
+### Audit trail
+
+- Service logic: `src/services/workflows/enterpriseGoldenPath.ts`, tested in
+  `enterpriseGoldenPath.test.ts` ("explains why each blocked step is blocked instead of leaving it
+  unexplained", "leaves blockedReason unset for steps that are not blocked").
+- Display-mode hook: `src/hooks/useGoldenPathDisplayMode.ts`, tested in
+  `useGoldenPathDisplayMode.test.tsx`.
+- UI: `src/components/enterprise/EnterpriseWorkflowJourney.tsx`, wired into
+  `src/features/dashboard/DashboardSection.tsx` and `src/features/ai-workspace/AIWorkspaceSection.tsx`,
+  tested in `enterpriseComponents.test.tsx` ("collapses the golden path to an on-demand summary...",
+  "lets a user persist their preference...", "explains why a blocked or locked step can't be
+  actioned yet").
