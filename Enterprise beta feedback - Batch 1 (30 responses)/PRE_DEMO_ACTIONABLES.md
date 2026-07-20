@@ -30,15 +30,21 @@ implementation can start without re-discovery.
    documents.
 4. 🔜 **Add source citations + a one-line rationale under every AI output.** *(Experience,
    Execution — M)* P0 explainability gap; 40% of respondents flagged AI output quality.
-5. 🔜 **Add visible loading/progress + timeout-with-retry states on long AI operations.**
+5. ✅ **Add visible loading/progress + timeout-with-retry states on long AI operations.**
    *(Experience — S)* Doesn't fix backend latency, but stops "slow" from reading as "broken."
+   **Implemented:** `AIWorkspaceSection.tsx`'s `askGovernedQuestion` now aborts after 20s via
+   `AbortController`, shows an inline "Generating governed answer..." indicator while pending, and
+   surfaces a distinct timeout message with a one-click Retry action (reusing the preserved input).
 6. 🔜 **Add a bulk/quick-approve action in the AI Review Inbox for low-risk items.** *(Ease,
    Execution — M)* P0 workflow friction; 35% flagged "too many steps or approvals."
 7. 🔜 **Replace the single generic onboarding flow with 3 outcome-first paths.** *(Ease,
    Experience — M)* Knowledge/AI decision support, workflow+approvals, stakeholder/CRM — matches
    the original report's section 11 recommendation.
-8. 🔜 **Add empty-states with one clear CTA on every major page.** *(Ease, Experience — S)*
-   Dashboard/Projects/Tasks/Knowledge Hub currently go sparse for brand-new tenants.
+8. ✅ **Add empty-states with one clear CTA on every major page.** *(Ease, Experience — S)*
+   Dashboard/Projects/Tasks/Knowledge Hub currently go sparse for brand-new tenants. **Implemented:**
+   `DashboardSection.tsx` (Project Health Monitor), `ProjectsSection.tsx`, and `TasksSection.tsx` now
+   render the existing `EmptyState` component with a "Create your first..." CTA when there's no real
+   data yet; Knowledge Hub already had this pattern.
 
 ## Tier 2 — Feedback loop
 
@@ -50,8 +56,11 @@ implementation can start without re-discovery.
 11. 🔜 **Wire "time to first value" and "onboarding completion rate" events into the existing
     Mixpanel-ready analytics.** *(Feedback, Execution — M)* Analytics scaffolding already exists —
     mostly event-naming and instrumentation.
-12. 🔜 **Surface the existing `BetaFeedbackButton` at the end of each completed workflow**, not
+12. ✅ **Surface the existing `BetaFeedbackButton` at the end of each completed workflow**, not
     just persistently floating. *(Feedback — S)* Catch feedback at the moment of an actual outcome.
+    **Implemented:** `TasksSection.tsx` now shows a one-time-per-session dismissible prompt
+    ("Task completed! Got a moment to share feedback?") the first time a task is marked complete,
+    opening the existing `BetaFeedbackModal` — the persistent floating button remains unchanged.
 
 ## Tier 3 — Convert integrations work into visible customer value
 
@@ -75,11 +84,16 @@ implementation can start without re-discovery.
 
 ## Tier 5 — Execution-at-customer-end hygiene
 
-19. 🔜 **Add a visible reliability/expectation-setting indicator during AI generation.**
+19. ✅ **Add a visible reliability/expectation-setting indicator during AI generation.**
     *(Experience — S)* E.g. "usually takes ~8 seconds" — cheap perceived-reliability fix while real
-    p50/p95 instrumentation (already P0 in the 30/60/90 plan) is in progress.
-20. 🔜 **Add role-appropriate default landing pages.** *(Ease — S)* An Employee currently can land
-    on an Executive Dashboard mostly composed of locked actions.
+    p50/p95 instrumentation (already P0 in the 30/60/90 plan) is in progress. **Implemented:**
+    shipped together with A5 in `AIWorkspaceSection.tsx` ("usually takes 5-8 seconds" copy shown
+    while a query is pending).
+20. ✅ **Add role-appropriate default landing pages.** *(Ease — S)* An Employee currently can land
+    on an Executive Dashboard mostly composed of locked actions. **Implemented:** added
+    `defaultSectionForRole()` in `src/app/routing/routes.ts` and wired a one-time redirect in
+    `App.tsx` so Employees landing on the generic post-login entry point route to Tasks & Workflow
+    instead of the Dashboard; all other roles are unaffected.
 
 ---
 

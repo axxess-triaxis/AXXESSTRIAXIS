@@ -11,6 +11,7 @@ import { navGroups } from "./navigation";
 import { lazyRouteComponents } from "./routing/lazyRoutes";
 import { RouteBoundary } from "./routing/RouteBoundary";
 import { useAppRouting } from "./routing/useAppRouting";
+import { defaultSectionForRole } from "./routing/routes";
 import { canAccessRoute, getVisibleNavGroups } from "../security/rbac";
 import { useAnalytics } from "../services/analytics";
 import type { NavSection } from "./navigation";
@@ -24,6 +25,13 @@ export default function App() {
   const currentUser = session.user;
   const routePath = `/${activeRoute.path}`;
   const screenshotMode = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("screenshot") === "true";
+
+  useEffect(() => {
+    if (!currentUser || session.status !== "authenticated") return;
+    if (activeRoute.id !== "app") return;
+    const roleDefault = defaultSectionForRole(currentUser.role);
+    if (roleDefault !== active) navigateToSection(roleDefault);
+  }, [active, activeRoute.id, currentUser, navigateToSection, session.status]);
 
   useEffect(() => {
     if (!currentUser || session.status !== "authenticated") return;

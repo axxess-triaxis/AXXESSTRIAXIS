@@ -150,3 +150,72 @@ not yet implemented.
   tested in `enterpriseComponents.test.tsx` ("collapses the golden path to an on-demand summary...",
   "lets a user persist their preference...", "explains why a blocked or locked step can't be
   actioned yet").
+
+---
+
+## 2026-07-20 — Sprint 1 complete: remaining 5 items shipped (A8, A5, A19, A20, A12)
+
+### What happened
+
+Continuing Sprint 1 of `SPRINT_ROADMAP_PRE_DEMO.md` (tracked in `SPRINT_CHECKLIST_PRE_DEMO.md`),
+the remaining 5 items were implemented, bringing Sprint 1 to 7/7:
+
+- **A8 — Empty states with a clear CTA.** `DashboardSection.tsx` (Project Health Monitor card),
+  `ProjectsSection.tsx`, and `TasksSection.tsx` previously rendered nothing (a blank area or an
+  empty table body) when a tenant had no real projects/tasks yet. All three now render the
+  existing `EmptyState` component with a "Create your first..." CTA. Knowledge Hub already had
+  this pattern; it was the only page previously covered.
+- **A5 — Loading/timeout/retry on AI operations.** `AIWorkspaceSection.tsx`'s
+  `askGovernedQuestion` had no timeout at all and no loading indicator beyond a disabled send
+  button. Added a 20-second `AbortController` timeout, an inline "Generating governed answer..."
+  progress indicator while pending, and a distinct timeout message with a one-click Retry
+  (reusing the preserved input, since it's only cleared on success).
+- **A19 — Reliability expectation-setter copy.** Shipped together with A5: "usually takes 5-8
+  seconds" shown alongside the loading indicator.
+- **A20 — Role-appropriate default landing pages.** Every authenticated user previously landed
+  on the Executive Dashboard regardless of role, including Employees who can't act on most of its
+  golden-path items (team provisioning, human review, audit evidence all require
+  Admin/Executive/Manager). Added `defaultSectionForRole()` in `src/app/routing/routes.ts` and a
+  one-time redirect effect in `App.tsx`, scoped specifically to the generic post-login entry route
+  (`activeRoute.id === "app"`) so it never overrides an explicit deep link. Employees now land on
+  Tasks & Workflow; all other roles are unchanged.
+- **A12 — Surface feedback at workflow completion.** `TasksSection.tsx` now shows a
+  one-time-per-session dismissible prompt the first time a task is marked complete, opening the
+  existing `BetaFeedbackModal`. The persistent floating `BetaFeedbackButton` in `AppShell.tsx` is
+  unchanged — this is additive, not a replacement.
+
+### Evidence
+
+Each item traces to the specific SWOT/report findings cited in `PRE_DEMO_ACTIONABLES.md` items
+5, 8, 12, 19, 20 (all updated to ✅ there) and `SPRINT_ROADMAP_PRE_DEMO.md`'s Sprint 1 table.
+
+### What this does and doesn't close
+
+**Closed:** Sprint 1 is functionally complete — onboarding friction (golden path optionality,
+blocked-state clarity, role-appropriate landing, empty-state CTAs) and basic reliability
+perception (loading/timeout/retry, expectation-setting copy) are all addressed at the UI level.
+
+**Not yet closed, honestly:** unlike A1/A2/A20, items A8/A5/A19/A12 do not have dedicated new unit
+tests — `DashboardSection.tsx`, `ProjectsSection.tsx`, `TasksSection.tsx`, and
+`AIWorkspaceSection.tsx` have no existing component-test coverage in this repo to begin with (this
+repo relies on Playwright e2e specs for these heavy page components, not Vitest/RTL unit tests).
+Adding first-time test infrastructure for four large page components was judged out of scope for
+"immediately executable pre-demo" work; verification here is `typecheck` + `lint` (both clean,
+zero warnings) + the full existing suite still passing (no regressions) + manual code review. This
+gap is tracked in `SPRINT_CHECKLIST_PRE_DEMO.md`'s Sprint 1 exit criteria as a flagged follow-up,
+not silently skipped.
+
+The real backend reliability instrumentation (p50/p95 latency, AI evaluation harness) that A19's
+copy is a placeholder for remains unbuilt — that is Sprint 2/P0 work per the original report, not
+this entry.
+
+### Audit trail
+
+- `src/features/dashboard/DashboardSection.tsx`, `src/features/projects/ProjectsSection.tsx`,
+  `src/features/tasks/TasksSection.tsx` — empty-state CTAs (A8), completion feedback prompt (A12,
+  Tasks only).
+- `src/features/ai-workspace/AIWorkspaceSection.tsx` — query timeout/retry/loading copy (A5, A19).
+- `src/app/routing/routes.ts` (`defaultSectionForRole`, tested in `routes.test.ts`) and
+  `src/app/App.tsx` (redirect effect) — role-appropriate landing (A20).
+- Verification: `pnpm run typecheck` clean, `pnpm run lint` clean (zero warnings), full Vitest
+  suite passing with no regressions.
