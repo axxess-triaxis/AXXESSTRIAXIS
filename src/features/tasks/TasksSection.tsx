@@ -211,9 +211,18 @@ export const TasksSection = () => {
       setTasks((current) => current.map((row) => row.id === saved.id ? saved : row));
       setSelectedTask(saved);
       setToast({ tone: "success", message: "Task status updated." });
-      if (nextStatus === "completed" && !completionFeedbackPromptShown) {
-        setShowCompletionFeedbackPrompt(true);
-        setCompletionFeedbackPromptShown(true);
+      if (nextStatus === "completed") {
+        analytics.trackEvent("workflow_action_completed", { task_id: saved.id }, {
+          organization_id: saved.organizationId,
+          user_id: scope.userId,
+          user_role: scope.role,
+          module_name: "tasks",
+          route: "/tasks",
+        });
+        if (!completionFeedbackPromptShown) {
+          setShowCompletionFeedbackPrompt(true);
+          setCompletionFeedbackPromptShown(true);
+        }
       }
     } catch {
       setToast({ tone: "error", message: "Unable to update task status." });
