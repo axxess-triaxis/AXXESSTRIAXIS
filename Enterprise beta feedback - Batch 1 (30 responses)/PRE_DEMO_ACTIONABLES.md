@@ -28,8 +28,14 @@ implementation can start without re-discovery.
 3. 🔜 **Add a guided demo workspace with realistic seeded data.** *(Experience — M)* Directly
    targets the P0 "unclear value" blocker — lets a new user see value before uploading their own
    documents.
-4. 🔜 **Add source citations + a one-line rationale under every AI output.** *(Experience,
+4. ✅ **Add source citations + a one-line rationale under every AI output.** *(Experience,
    Execution — M)* P0 explainability gap; 40% of respondents flagged AI output quality.
+   **Implemented:** added a genuine, retrieval-derived `rationale` field to `RagAnswer`
+   (`governedRag.ts`, `tenantRagWorkflow.ts` — computed from actual matched sources, e.g.
+   "Synthesized from 3 governed sources (top match: ..., 91% relevance)", and honestly reports "no
+   source matched" when there are zero), rendered under the answer bubble in `AIWorkspaceSection.tsx`
+   alongside the existing Sources Used panel. Tested in `governedRag.test.ts` and
+   `tenantRagWorkflow.test.ts`.
 5. ✅ **Add visible loading/progress + timeout-with-retry states on long AI operations.**
    *(Experience — S)* Doesn't fix backend latency, but stops "slow" from reading as "broken."
    **Implemented:** `AIWorkspaceSection.tsx`'s `askGovernedQuestion` now aborts after 20s via

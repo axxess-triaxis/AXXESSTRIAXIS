@@ -33,6 +33,10 @@ export type RagAnswer = {
   humanReviewRequired: boolean;
   sources: RagCitation[];
   keywords: string[];
+  /** One-line, derived-from-retrieval explanation of how the answer was produced -- not a
+   * decorative label. Computed from the actual matched sources, so it stays honest when there
+   * are zero sources (a real "no match" answer) as well as when there are several. */
+  rationale: string;
 };
 
 export type RagRepositories = {
@@ -171,11 +175,16 @@ export async function answerWithGovernedRag(repositories: RagRepositories, scope
     ? summarizeText(topText, 3)
     : "No authorized institutional source matched this question. A human review is required before any answer is used.";
 
+  const rationale = chunks.length === 0
+    ? "No authorized institutional source matched this question closely enough to generate a governed answer."
+    : `Synthesized from ${chunks.length} governed source${chunks.length === 1 ? "" : "s"} (top match: "${chunks[0].title}", ${Math.round(chunks[0].score * 100)}% relevance).`;
+
   const result: RagAnswer = {
     answer,
     confidence,
     humanReviewRequired,
     keywords: extractKeywords(query.question),
+    rationale,
     sources: chunks.map((chunk) => ({
       sourceType: chunk.sourceType,
       sourceId: chunk.sourceId,
