@@ -581,3 +581,74 @@ dashboard").
 - Verification: `pnpm run typecheck` clean, `pnpm run lint` clean (zero warnings),
   `analytics.test.ts` 1 file / 6 tests passing in isolation; full suite confirmed 88 files / 244
   tests passing (unchanged from the A9 commit, as expected -- no new tests added in this entry).
+
+---
+
+## 2026-07-21 — Sprint 2 complete: A3 + A7 + A18 (guided onboarding trio)
+
+### What happened
+
+Final three items of Sprint 2, shipped together per `SPRINT_ROADMAP_PRE_DEMO.md` (they're
+interdependent). All three build on the existing onboarding flow rather than replacing it.
+
+- **A18 (reduce setup decisions).** Found that `provisionTenantForUser` (the onboarding backend)
+  already treated `departmentName`/`workspaceName` as optional -- it silently skips creating
+  them when blank, no error. The only thing forcing a user to fill them in was the frontend's
+  `isOnboardingComplete()` check requiring both. Removed that artificial requirement in
+  `src/onboarding/enterpriseOnboarding.ts`; the `workspace` step's UI copy now says "optional."
+- **A7 (3 outcome-first paths).** Added an optional "What do you want to try first?" section to
+  the existing onboarding `start` screen (not a new wizard step, to avoid adding friction) with 3
+  paths: *Knowledge & AI decision support*, *Workflow & task execution*, *Meetings &
+  institutional coordination*. The third path deliberately replaces the originally-planned
+  "stakeholder/CRM" option -- Stakeholders/CRM has no live repository at all (confirmed in
+  `DEMO_DATA_LEAKAGE_AUDIT.md`), so routing a new user into a module that can't persist their
+  choice would recreate the exact problem the rest of this session's work just fixed.
+- **A3 (seeded sample workspace).** New `/api/onboarding/seed-sample-data` route. For the chosen
+  path, it creates **real, persisted** records via the live `projectsRepository`,
+  `tasksRepository`, `meetingsRepository`, and the same `ingestTenantDocument` path used by real
+  document uploads -- not fabricated demo content. Every seeded record is tagged `sample-data`
+  and titled with a `Sample:` prefix, so it's identifiable and the customer can delete it, but to
+  every other part of the app it's indistinguishable from data the customer created themselves:
+  genuinely live, linkable, and feedable. On successful provisioning, if a path was chosen, the
+  route seeds data for it and the user lands on that path's most relevant page (`/ai-workspace`,
+  `/tasks`, or `/meetings`) instead of an empty `/dashboard`.
+
+### Evidence
+
+`Enterprise_Beta_Feedback_Batch_1.md` section 11 (Days 0-30 product plan): "Replace
+capability-first onboarding with role- and outcome-first onboarding... Offer three initial paths...
+Reduce the number of required setup decisions before first value... Add clear sample data and a
+guided demo workspace." This entry implements that recommendation close to verbatim.
+
+### What this does and doesn't close
+
+**Closed:** the three specific gaps named in the actionables -- forced department/workspace
+fields, a single generic onboarding path, and no sample data to explore before uploading real
+documents.
+
+**Not yet closed, honestly:**
+- **No end-to-end browser verification.** Everything here was verified via `typecheck`, `lint`,
+  and unit tests of the pure logic module (`enterpriseOnboarding.test.ts`). The actual sequence --
+  pick a path, finish onboarding, seed data, land on the right page with real seeded records
+  visible -- has not been walked through in a running app. This is a real gap, flagged explicitly
+  in `SPRINT_CHECKLIST_PRE_DEMO.md`'s Sprint 2 exit criteria, not silently assumed to work.
+- The seeding route has no dedicated test, consistent with this repo's existing convention that
+  Next.js API routes in this area (e.g. `/api/documents/ingest`) don't have unit tests of their
+  own.
+- Sample data seeded once cannot currently be re-seeded or reset from the UI if a customer deletes
+  it and wants it back; there's no "reseed" affordance, only the one-time onboarding trigger.
+
+### Audit trail
+
+- `src/onboarding/enterpriseOnboarding.ts` — `OnboardingGoal` type, `onboardingGoals` list,
+  `primaryGoal` state field, `isOnboardingComplete()` no longer requires department/workspace.
+  Tested in `enterpriseOnboarding.test.ts` (2 new tests: completion without department/workspace,
+  completion still requires the core fields).
+- `src/features/onboarding/EnterpriseOnboardingPage.tsx` — goal-selection UI on the `start` step,
+  optional-field copy on the `workspace` step, seeding call + goal-based redirect on `complete`.
+- `src/app/api/onboarding/seed-sample-data/route.ts` — new route, real repository writes per goal.
+- Verification: `pnpm run typecheck` clean, `pnpm run lint` clean (zero warnings; one
+  `react/no-unescaped-entities` error caught and fixed during this pass), `enterpriseOnboarding.test.ts`
+  run in isolation: 1 file / 4 tests passing (up from 2); full suite confirmed 88 files / 246
+  tests passing (up from 88/244); `pnpm run build` also run to verify the new API route and typed
+  Next.js `Route` casts compile correctly (not previously covered by typecheck/lint/vitest alone).
