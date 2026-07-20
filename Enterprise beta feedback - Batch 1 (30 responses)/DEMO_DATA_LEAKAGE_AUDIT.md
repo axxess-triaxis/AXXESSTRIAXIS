@@ -152,11 +152,89 @@ from `process.env`), which is more test-infrastructure work than this pass cover
 via `typecheck`, `lint`, the full existing suite (no regressions), and manual code review. Flagged
 here as a follow-up, not silently skipped.
 
-**Not covered by this pass — recommended as a follow-up audit:** this review was scoped to the
-service-provider layer and the four feature pages already touched in Sprint 1. A broader,
-systematic search for every import of `src/lib/demo/*` and `src/demo/*` across the full codebase —
-including `src/features/admin/EnterpriseAdminPage.tsx`, `src/services/pilot/pilotAcceptanceRuntime.ts`,
-and `src/app/api/admin/customer-success/live-ops/route.ts`, all of which also call
-`getFallbackLiveWorkspaceMetrics()` and were not touched here — should be run before this is called
-fully closed. There are also more files in `src/lib/demo/` (`demoApprovals.ts`, `demoDocuments.ts`,
-`demoStakeholders.ts`, `demoWorkflow.ts`) not yet individually audited for unconditional rendering.
+## Round 2 — full codebase sweep (triggered by "no dummy data anywhere, full pristine enterprise beta")
+
+A systematic search for every import of `src/lib/demo/*` and `src/demo/*` across the entire
+codebase (not just the four Sprint 1 pages) found five more feature pages and two more runtime
+call sites with the same class of issue.
+
+### `dashboard/data.ts` — the deepest instance found
+
+This file bypassed the `serviceProvider.ts` fix entirely by importing `demoRepositories` directly
+rather than going through `applicationServices`. Specifically:
+
+- `getDashboardProjects(scope)` returned **fake projects for any real tenant with zero projects**
+  (`if (projectRecords.length === 0) return getDashboardFallbackProjects();`) — a brand-new, empty
+  customer would have seen fabricated project data instead of an honest empty state.
+- `getDashboardKpis(scope)` had the same empty-tenant-shows-fake-data bug, and even in its
+  "live" branch it mixed in `demoRepositories.institutionalRepository.getApprovals()` for the
+  Pending Approvals number and a hardcoded literal `"2,200"` for RAG Sources Indexed — meaning
+  the "real" data path was never fully real to begin with.
+- Fixed: removed both empty-tenant fake-data branches (an empty tenant now gets real, honest
+  zero/empty results — the existing `EmptyState` UI from Sprint 1 handles this correctly); the
+  live KPI branch now computes a real document count instead of a hardcoded number, and honestly
+  reports `0` pending approvals instead of fake ones; added `getZeroDashboardKpis()` for the
+  error-catch path (demo fixture only when `isDemoModeEnabled()`).
+- Also gated: `dashboardObjectives`, `dashboardAiRecommendations`, `governanceAlerts`,
+  `workloadData`, `performanceData` — fully static fake arrays with no real backing at all,
+  rendered unconditionally in `DashboardSection.tsx` (one governance-alert card even had a
+  hardcoded "Live" badge on fabricated data). Now demo-mode-gated with `EmptyState` alternatives
+  ("No strategic objectives configured yet.", "No AI recommendations yet.", etc.) for real tenants.
+
+### Five more feature pages
+
+`AnalyticsSection.tsx`, `ApprovalsSection.tsx`, and `StakeholdersSection.tsx` are, in their
+entirety, illustrative content with **no live repository backing at all** — there is no live OKR
+engine, no live approvals workflow (the Approve/Reject buttons only ever updated local component
+state), and no live stakeholder/CRM repository. These three pages are now fully gated behind
+`isDemoModeEnabled()`, with an honest `EmptyState` explaining the capability doesn't exist yet
+("A live approvals workflow isn't wired to a connected data backend yet...", etc.) rather than
+silently building a fake substitute.
+
+`DocumentsSection.tsx` and `IntegrationsSection.tsx` are hybrids: document *ingestion* and
+integration *health/OAuth status* are genuinely live already; only a decorative browse-list
+(Documents) and a decorative connector gallery (Integrations) were sourced from the fake
+institutional repository. Both were already resolving to `[]` for real tenants thanks to the
+`serviceProvider.ts` fix earlier in this audit; added explicit `EmptyState` messaging so the now-empty
+section reads as "nothing here yet" rather than a blank, unexplained gap.
+
+### Two more runtime call sites fixed
+
+- `pilotAcceptanceRuntime.ts`: already had a correct `seededPilotEvidence` demo/live split for
+  readiness events, but its metrics computation fell back to fake data unconditionally on any
+  live-fetch error. Fixed to only use the demo fixture when `seededPilotEvidence` is true, honest
+  zero metrics otherwise.
+- `src/app/api/admin/customer-success/live-ops/route.ts`: same pattern, fixed the same way using
+  `isDemoModeEnabled()`.
+
+### Reviewed and left as-is (not a leak)
+
+`src/features/admin/EnterpriseAdminPage.tsx`'s `pilotAcceptancePreviewSnapshot()` and
+`customerSuccessPreviewSnapshot()` functions are explicitly named "preview," use a hardcoded
+`generatedAt` timestamp and demo organization/user IDs, and appear to be an intentional internal
+admin tool for previewing what the pilot-acceptance/customer-success UI looks like — not something
+presented as real data to an actual customer. Left unchanged; flagged here so it's clear this was
+reviewed, not missed.
+
+### Still not covered — recommended as a further follow-up
+
+There are more files in `src/lib/demo/` (`demoDocuments.ts`, `demoWorkflow.ts`) and other
+consumers of `src/demo/*` (`src/app/layout/TopBar.tsx`, `src/auth/AuthProvider.tsx`, `src/mocks/institutionalData.ts`
+via `src/services/legacyInstitutionalViewRepository.ts`) not individually re-verified in this
+round. Given the naming ("legacy", auth/topbar plumbing), these look lower-risk than the feature
+pages already fixed, but should be confirmed rather than assumed before calling this fully closed.
+
+### What "full pristine and complete enterprise beta" still requires beyond hygiene
+
+Everything above stops fabricated data from being *shown*. It does not, and cannot by itself,
+make Approvals, Stakeholders/CRM, Analytics/OKRs, or Documents browsing genuinely **live, linkable,
+and feedable** in the sense of a complete working feature — those require real database schemas,
+migrations, RLS policies, and repository implementations that do not exist today (confirmed: no
+`approvalsRepository`, `stakeholdersRepository`, `okrRepository`, or `analyticsRepository` exists
+anywhere in `src/repositories/`). That is a genuine multi-sprint product build, not a data-hygiene
+fix, and should be scoped as its own tracked initiative rather than attempted piecemeal inside this
+audit. Recommended candidates for that initiative, in rough priority order matching the original
+beta feedback (documents/knowledge already has the strongest real foundation; approvals ties
+directly to the AI Review Inbox's existing `pendingAiReviews` concept and is the most natural next
+build): (1) a real approvals/governance repository, (2) a real stakeholders/CRM repository,
+(3) a real OKR/analytics computation layer.
