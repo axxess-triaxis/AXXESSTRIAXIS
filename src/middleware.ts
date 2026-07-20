@@ -23,6 +23,9 @@ const sessionCookieName = "axxess-access-token";
 const apexProductionHost = "triaxisventures.com";
 const canonicalProductionHost = "www.triaxisventures.com";
 const betaProductionHost = "beta.triaxisventures.com";
+const marketingOnlyPathname = "/";
+
+const workspaceRoutePrefixes = ["/auth", ...protectedRoutePrefixes];
 
 function normalizeHost(host: string | null) {
   if (!host) {
@@ -65,6 +68,27 @@ export function getBetaRootRedirectUrl(url: URL, host: string | null) {
   return redirectUrl;
 }
 
+export function getMarketingWorkspaceRedirectUrl(url: URL, host: string | null) {
+  const normalizedHost = normalizeHost(host);
+  if (!normalizedHost || normalizedHost !== canonicalProductionHost) {
+    return null;
+  }
+
+  if (url.pathname === marketingOnlyPathname) {
+    return null;
+  }
+
+  const isWorkspaceRoute = workspaceRoutePrefixes.some((prefix) => url.pathname.startsWith(prefix));
+  if (!isWorkspaceRoute) {
+    return null;
+  }
+
+  const redirectUrl = new URL(url.toString());
+  redirectUrl.protocol = "https:";
+  redirectUrl.host = betaProductionHost;
+  return redirectUrl;
+}
+
 export function middleware(request: NextRequest) {
   const requestHost = request.headers.get("x-forwarded-host") ?? request.headers.get("host");
 
@@ -75,6 +99,11 @@ export function middleware(request: NextRequest) {
 
   if (canonicalHostRedirectUrl) {
     return NextResponse.redirect(canonicalHostRedirectUrl, 308);
+  }
+
+  const marketingWorkspaceRedirectUrl = getMarketingWorkspaceRedirectUrl(request.nextUrl, requestHost);
+  if (marketingWorkspaceRedirectUrl) {
+    return NextResponse.redirect(marketingWorkspaceRedirectUrl, 307);
   }
 
   const betaRootRedirectUrl = getBetaRootRedirectUrl(request.nextUrl, requestHost);
