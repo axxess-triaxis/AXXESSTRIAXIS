@@ -64,9 +64,15 @@ implementation can start without re-discovery.
 
 ## Tier 2 — Feedback loop
 
-9. 🔜 **Add an in-context 1-click micro-survey after the first completed AI review decision or
+9. ✅ **Add an in-context 1-click micro-survey after the first completed AI review decision or
    golden-path step.** *(Feedback — M)* Closes the report's own flagged gap: no telemetry linkage
-   between survey sentiment and actual usage.
+   between survey sentiment and actual usage. **Implemented:** `useMicroSurveyPrompt.ts`
+   (localStorage-backed, shows at most once ever, mirrors the `useGoldenPathDisplayMode.ts`
+   pattern) + `MicroSurveyPrompt.tsx` (1-5 one-click rating, dismissible), triggered on the first
+   successful AI review decision in `AIReviewInboxPage.tsx`. Fires `micro_survey_shown` and
+   `micro_survey_responded` analytics events with the score and trigger source. The golden-path-step
+   trigger point is not yet wired — only the AI-review-decision trigger, since that's the surface
+   touched this pass; tracked as a follow-up. Tested in `useMicroSurveyPrompt.test.tsx`.
 10. 🔜 **Add a lightweight post-demo satisfaction capture**, distinct from the existing
     `BetaFeedbackButton`. *(Feedback — S)* A single question at the end of a live demo session.
 11. 🔜 **Wire "time to first value" and "onboarding completion rate" events into the existing
