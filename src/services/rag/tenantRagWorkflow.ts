@@ -290,6 +290,7 @@ export async function answerTenantQuestion(
       humanReviewRequired: citations.some((citation) => citation.score < 0.5),
       sources: citations,
       keywords: extractKeywords(question, 6),
+      rationale: `Synthesized from ${citations.length} governed source${citations.length === 1 ? "" : "s"} (top match: "${citations[0].title}", ${Math.round(citations[0].score * 100)}% relevance).`,
     } satisfies RagAnswer
     : await answerWithGovernedRag(repositories, scope, { question, limit });
 
