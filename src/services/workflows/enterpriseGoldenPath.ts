@@ -3,6 +3,8 @@ import type { LiveWorkspaceMetrics } from "../live-platform/livePlatform";
 
 export type EnterpriseWorkflowStatus = "complete" | "active" | "ready" | "needs-review" | "blocked";
 
+export type GoldenPathDisplayMode = "guided" | "on-demand";
+
 export type EnterpriseWorkflowStepId =
   | "organization-setup"
   | "team-provisioning"
@@ -27,6 +29,7 @@ export type EnterpriseWorkflowStep = {
   auditEvent: string;
   notification: string;
   lockedForRole: boolean;
+  blockedReason?: string;
 };
 
 export type EnterpriseWorkflowAction = {
@@ -123,6 +126,7 @@ export function buildEnterpriseGoldenPathSnapshot(input: EnterpriseGoldenPathInp
       primaryAction: "Open user and role setup",
       auditEvent: "workflow.organization.users_invited",
       notification: "Team provisioning is queued",
+      blockedReason: input.hasOrganization ? undefined : "Complete organization setup (step 1) to unlock team provisioning.",
     },
     {
       id: "knowledge-ingestion",
@@ -151,6 +155,7 @@ export function buildEnterpriseGoldenPathSnapshot(input: EnterpriseGoldenPathInp
       primaryAction: "Ask governed question",
       auditEvent: "workflow.rag.answer_generated",
       notification: "Cited answer generated",
+      blockedReason: input.metrics.ragReadyDocuments > 0 ? undefined : "Upload at least one document in Knowledge Hub to unlock grounded, cited answers.",
     },
     {
       id: "human-review",
@@ -179,6 +184,7 @@ export function buildEnterpriseGoldenPathSnapshot(input: EnterpriseGoldenPathInp
       primaryAction: hasCoreWorkflow ? "Inspect workflow tasks" : "Create accountable task",
       auditEvent: "workflow.action.created",
       notification: "Workflow action was assigned",
+      blockedReason: !hasCoreWorkflow && pendingAiReviews > 0 ? "Resolve the pending AI reviews above before converting approvals into workflow actions." : undefined,
     },
     {
       id: "dashboard-feedback",
