@@ -18,10 +18,11 @@ AXXESS has a substantial checked-in QA surface for a beta-stage enterprise platf
 
 - `100` committed test/spec files were identified across browser E2E, unit/integration, route, security, and service layers.
 - `14` Playwright browser spec files define `22` named E2E test cases covering key workflows and readiness flows.
-- `86` non-Playwright test/spec files define `226` named unit/integration test cases.
+- `86` non-Playwright test/spec files define `229` named unit/integration test cases.
 - `18` source-level security and tenant-isolation test files are checked in under `src/security`.
 - `2` Supabase SQL persona/RLS test assets are checked in with a documented runbook.
 - `8` dedicated validation and release-readiness scripts are committed for mobile, Supabase, release, and store gates.
+- Vitest coverage is now instrumented (`pnpm run test:coverage`, `@vitest/coverage-v8`). A live run measured `27.75%` statement / `25.3%` branch / `26.39%` function / `28.27%` line coverage across `src/**/*.{ts,tsx}`, with all `86` test files (`229` tests) passing.
 
 The testing surface is broad enough to demonstrate meaningful engineering diligence. It does **not** support the claim that every line of code is Playwright-tested. Browser automation is workflow-level, while deeper coverage comes from unit, integration, route, security, SQL, lint, typecheck, and release-gate automation.
 
@@ -34,6 +35,7 @@ The root `package.json` defines the following key gates:
 - `pnpm run typecheck` -> TypeScript no-emit compile validation.
 - `pnpm run lint` -> ESLint with `--max-warnings=0`.
 - `pnpm run test` -> Vitest suite.
+- `pnpm run test:coverage` -> Vitest suite with v8 coverage instrumentation (text, text-summary, json-summary, and html reporters written to `coverage/`).
 - `pnpm run test:e2e` -> Playwright browser E2E suite.
 - `pnpm run build` -> production build validation.
 - `pnpm run ci` -> `typecheck + lint + test + build`.
@@ -55,10 +57,11 @@ The root `package.json` defines the following key gates:
 | Browser E2E | `tests/e2e/*.spec.ts` | 14 spec files | Playwright workflow coverage |
 | Browser E2E named cases | `test()` / `it()` in Playwright specs | 22 cases | Chromium project only |
 | Unit/integration/route tests | `src/**/*.test.*`, related specs | 86 files | Primarily Vitest |
-| Unit/integration named cases | `test()` / `it()` outside Playwright | 226 cases | Includes route, service, security, UI, and repository logic |
+| Unit/integration named cases | `test()` / `it()` outside Playwright | 229 cases | Includes route, service, security, UI, and repository logic |
 | Security and RLS tests | `src/security/*.test.ts` | 18 files | Tenant guard, RLS, IAM, audit integrity |
 | SQL persona/RLS tests | `supabase/tests/*` | 2 files | Manual/CLI runbook driven |
 | Validation/release scripts | `scripts/*validate*`, `*doctor*`, `*gate*`, `*preflight*`, `*verify*` | 8 files | Release and operational readiness automation |
+| Statement coverage | `pnpm run test:coverage` (v8) | 27.75% | Measured live across `src/**/*.{ts,tsx}`; branch 25.3%, function 26.39%, line 28.27% |
 
 ## Playwright Coverage
 
@@ -109,7 +112,7 @@ Based on checked-in specs and supporting docs, browser automation covers or targ
 
 ## Unit, Integration, and Route Coverage
 
-The repository contains `86` non-Playwright test/spec files with `226` named cases. Source test files are concentrated in the following areas:
+The repository contains `86` non-Playwright test/spec files with `229` named cases. All 86 files pass under `pnpm run test`. Source test files are concentrated in the following areas:
 
 | Domain | Test files |
 |---|---:|
@@ -230,6 +233,7 @@ The repository provides explicit evidence for the following categories:
 | Release readiness automation | Present | Preflight, doctor, gate, and verification scripts |
 | Mobile store readiness validation | Present | Doctor and store-readiness scripts |
 | Failure diagnostics in E2E | Present | Trace on retry and failure screenshots |
+| Test coverage measurement | Present | `pnpm run test:coverage` (v8 provider); measured 27.75% statements / 25.3% branches / 26.39% functions / 28.27% lines |
 
 ## What Is Not Yet Evidenced or Is Only Partially Evidenced
 
@@ -237,7 +241,7 @@ The following should be described candidly in diligence conversations.
 
 | Category | Current state | Diligence interpretation |
 |---|---|---|
-| Test coverage percentage | Not evidenced | No committed coverage threshold/report script was found |
+| Test coverage percentage | Partial | Now measured (27.75% statements / 25.3% branches / 26.39% functions / 28.27% lines via `pnpm run test:coverage`), but no committed minimum-coverage threshold or CI enforcement gate exists yet |
 | Literal line-by-line browser testing | Not evidenced | Playwright validates workflows, not every line |
 | Cross-browser E2E matrix | Partial | Playwright config currently declares Chromium only |
 | Native mobile UI automation | Not evidenced | No committed Detox/Appium-style suite found |
@@ -253,7 +257,7 @@ These are not fatal gaps for a beta-stage company, but they should not be overst
 
 The strongest accurate statement is:
 
-> AXXESS has broad automated validation across linting, typecheck, build, unit/integration tests, Playwright browser workflows, tenant-isolation/security tests, Supabase RLS SQL tests, and release-readiness gates. The repo currently evidences 100 committed test/spec files, 226 non-E2E named test cases, 22 Playwright E2E cases, and eight dedicated validation/readiness scripts. The current gap is not absence of testing; it is absence of a single centralized testing diligence document and absence of a few later-stage artifacts such as coverage percentages, cross-browser automation, and performance/load evidence.
+> AXXESS has broad automated validation across linting, typecheck, build, unit/integration tests, Playwright browser workflows, tenant-isolation/security tests, Supabase RLS SQL tests, and release-readiness gates. The repo currently evidences 100 committed test/spec files, 229 non-E2E named test cases (all passing), 22 Playwright E2E cases, measured statement coverage of 27.75%, and eight dedicated validation/readiness scripts. The current gap is not absence of testing; it is that coverage is measured but not yet CI-enforced with a minimum threshold, and a few later-stage artifacts such as cross-browser automation and performance/load evidence are still missing.
 
 That statement is materially stronger and more accurate than saying every line is Playwright-tested.
 
@@ -261,7 +265,7 @@ That statement is materially stronger and more accurate than saying every line i
 
 To further strengthen diligence for investors, enterprise buyers, and YC reviewers, the next additions should be:
 
-1. A generated coverage report with thresholds committed in CI policy.
+1. Enforce a minimum coverage threshold in CI (coverage is now measured via `pnpm run test:coverage`, but not yet gated).
 2. A short pass/fail history table for `ci`, `test:e2e`, `supabase:test:rls`, and `release:ready`.
 3. Cross-browser Playwright expansion if browser portability matters.
 4. Accessibility automation for key routes.
