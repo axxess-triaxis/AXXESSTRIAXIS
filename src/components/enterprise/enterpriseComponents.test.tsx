@@ -1,5 +1,5 @@
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { fireEvent, render, screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
 import {
   ApprovalCard,
   ConfidenceBadge,
@@ -64,6 +64,60 @@ describe("enterprise components", () => {
     expect(screen.getByText("Review AI output before action")).toBeInTheDocument();
     expect(screen.getByText("Next best action")).toBeInTheDocument();
     expect(screen.getByText("Review pending AI output")).toBeInTheDocument();
+  });
+
+  it("collapses the golden path to an on-demand summary until the user opts to expand it", () => {
+    const snapshot = buildEnterpriseGoldenPathSnapshot({
+      metrics: getFallbackLiveWorkspaceMetrics(),
+      userRole: "Organization Admin",
+      hasOrganization: true,
+      hasProfile: true,
+      pendingAiReviews: 2,
+    });
+
+    render(<EnterpriseWorkflowJourney snapshot={snapshot} displayMode="on-demand" />);
+
+    expect(screen.getByText("Enterprise golden path")).toBeInTheDocument();
+    expect(screen.queryByText("Review AI output before action")).not.toBeInTheDocument();
+    expect(screen.getByText(/View recommended setup path/)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText(/View recommended setup path/));
+    expect(screen.getByText("Review AI output before action")).toBeInTheDocument();
+    expect(screen.getByText("Hide guided view")).toBeInTheDocument();
+  });
+
+  it("lets a user persist their preference to always see the guided journey", () => {
+    const snapshot = buildEnterpriseGoldenPathSnapshot({
+      metrics: getFallbackLiveWorkspaceMetrics(),
+      userRole: "Organization Admin",
+      hasOrganization: true,
+      hasProfile: true,
+      pendingAiReviews: 2,
+    });
+    const onDisplayModeChange = vi.fn();
+
+    render(<EnterpriseWorkflowJourney snapshot={snapshot} displayMode="guided" onDisplayModeChange={onDisplayModeChange} />);
+
+    fireEvent.click(screen.getByText("Make this optional (on-demand)"));
+    expect(onDisplayModeChange).toHaveBeenCalledWith("on-demand");
+  });
+
+  it("explains why a blocked or locked step can't be actioned yet", () => {
+    const snapshot = buildEnterpriseGoldenPathSnapshot({
+      metrics: {
+        ...getFallbackLiveWorkspaceMetrics(),
+        ragReadyDocuments: 0,
+      },
+      userRole: "Employee",
+      hasOrganization: true,
+      hasProfile: true,
+      pendingAiReviews: 1,
+    });
+
+    render(<EnterpriseWorkflowJourney snapshot={snapshot} />);
+
+    expect(screen.getByText(/Upload at least one document in Knowledge Hub/)).toBeInTheDocument();
+    expect(screen.getAllByText(/Requires Super Admin or Organization Admin/).length).toBeGreaterThan(0);
   });
 
   it("renders tenant health indicators for the pilot golden path", () => {

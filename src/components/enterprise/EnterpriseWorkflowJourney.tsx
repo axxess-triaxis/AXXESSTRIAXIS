@@ -1,5 +1,6 @@
 import { AlertTriangle, ArrowRight, CheckCircle2, CircleDot, Lock, ShieldCheck } from "lucide-react";
-import type { EnterpriseGoldenPathSnapshot, EnterpriseWorkflowStatus } from "../../services/workflows/enterpriseGoldenPath";
+import { useState } from "react";
+import type { EnterpriseGoldenPathSnapshot, EnterpriseWorkflowStatus, GoldenPathDisplayMode } from "../../services/workflows/enterpriseGoldenPath";
 import { EnterpriseBadge, SectionCard } from "./index";
 
 const statusTone: Record<EnterpriseWorkflowStatus, "success" | "warning" | "danger" | "info" | "neutral"> = {
@@ -29,11 +30,43 @@ function statusIcon(status: EnterpriseWorkflowStatus, locked: boolean) {
 export function EnterpriseWorkflowJourney({
   snapshot,
   compact = false,
+  displayMode = "guided",
+  onDisplayModeChange,
 }: {
   snapshot: EnterpriseGoldenPathSnapshot;
   compact?: boolean;
+  /** "guided" always shows the full step-by-step journey; "on-demand" (default for most users) starts
+   * collapsed to a single summary card so the journey doesn't feel forced on every visit. */
+  displayMode?: GoldenPathDisplayMode;
+  onDisplayModeChange?: (mode: GoldenPathDisplayMode) => void;
 }) {
+  const [expanded, setExpanded] = useState(false);
+  const showFullDetail = displayMode === "guided" || expanded;
   const visibleSteps = compact ? snapshot.steps.slice(0, 5) : snapshot.steps;
+
+  if (!showFullDetail) {
+    return (
+      <SectionCard
+        title={snapshot.title}
+        description="Optional guided setup path — most returning users can skip this."
+        action={
+          <div className="flex flex-wrap items-center gap-2">
+            <EnterpriseBadge label={`${snapshot.readinessScore}% ready`} tone={snapshot.readinessScore >= 80 ? "success" : "warning"} icon={ShieldCheck} />
+            <EnterpriseBadge label={`${snapshot.completionPercent}% complete`} tone="brand" />
+          </div>
+        }
+      >
+        <button
+          type="button"
+          onClick={() => setExpanded(true)}
+          className="flex w-full items-center justify-between gap-3 rounded-lg border border-[rgba(15,17,23,0.08)] bg-white p-3 text-left text-xs font-semibold text-[#8B1E2D] transition-colors hover:border-[#8B1E2D]/30 hover:bg-[#F8F9FA]"
+        >
+          <span>View recommended setup path ({snapshot.steps.length} steps, {snapshot.completionPercent}% complete)</span>
+          <ArrowRight size={14} aria-hidden="true" />
+        </button>
+      </SectionCard>
+    );
+  }
 
   return (
     <SectionCard
@@ -50,6 +83,11 @@ export function EnterpriseWorkflowJourney({
         <div className={compact ? "space-y-2" : "grid gap-2 md:grid-cols-2"}>
           {visibleSteps.map((step, index) => {
             const Icon = statusIcon(step.status, step.lockedForRole);
+            const helperText = step.lockedForRole
+              ? `Requires ${step.requiredRoles.join(" or ")}`
+              : step.status === "blocked" && step.blockedReason
+                ? step.blockedReason
+                : undefined;
             return (
               <a
                 key={step.id}
@@ -67,6 +105,9 @@ export function EnterpriseWorkflowJourney({
                       <EnterpriseBadge label={step.lockedForRole ? "Read only" : statusLabel[step.status]} tone={step.lockedForRole ? "neutral" : statusTone[step.status]} />
                     </span>
                     {!compact && <span className="mt-1 block text-xs leading-relaxed text-[#5F6B73]">{step.description}</span>}
+                    {helperText && (
+                      <span className="mt-1 block text-[10px] font-semibold leading-relaxed text-[#8B1E2D]">{helperText}</span>
+                    )}
                     <span className="mt-2 flex flex-wrap items-center gap-2 text-[10px]">
                       <span className="rounded bg-[#F2F3F5] px-1.5 py-0.5 font-semibold text-[#5F6B73]">{step.module}</span>
                       <span className="font-mono text-[#5F6B73]">{step.metricLabel}: {step.metricValue}</span>
@@ -99,6 +140,25 @@ export function EnterpriseWorkflowJourney({
           )}
         </div>
       </div>
+
+      {(displayMode === "on-demand" || onDisplayModeChange) && (
+        <div className="mt-3 flex flex-wrap items-center gap-3 border-t border-[rgba(15,17,23,0.06)] pt-2">
+          {displayMode === "on-demand" && (
+            <button type="button" onClick={() => setExpanded(false)} className="text-[11px] font-semibold text-[#5F6B73] hover:text-[#8B1E2D]">
+              Hide guided view
+            </button>
+          )}
+          {onDisplayModeChange && (
+            <button
+              type="button"
+              onClick={() => onDisplayModeChange(displayMode === "guided" ? "on-demand" : "guided")}
+              className="text-[11px] font-semibold text-[#5F6B73] hover:text-[#8B1E2D]"
+            >
+              {displayMode === "guided" ? "Make this optional (on-demand)" : "Always show guided view"}
+            </button>
+          )}
+        </div>
+      )}
     </SectionCard>
   );
 }
