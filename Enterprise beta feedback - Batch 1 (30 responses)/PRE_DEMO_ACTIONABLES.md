@@ -75,9 +75,18 @@ implementation can start without re-discovery.
    touched this pass; tracked as a follow-up. Tested in `useMicroSurveyPrompt.test.tsx`.
 10. 🔜 **Add a lightweight post-demo satisfaction capture**, distinct from the existing
     `BetaFeedbackButton`. *(Feedback — S)* A single question at the end of a live demo session.
-11. 🔜 **Wire "time to first value" and "onboarding completion rate" events into the existing
+11. ✅ **Wire "time to first value" and "onboarding completion rate" events into the existing
     Mixpanel-ready analytics.** *(Feedback, Execution — M)* Analytics scaffolding already exists —
-    mostly event-naming and instrumentation.
+    mostly event-naming and instrumentation. **Implemented:** audited which of the report's
+    section 13.2 funnel events were defined-but-never-fired. `sign_up_completed`,
+    `organization_created`, and `onboarding_step_completed` were already wired; added the three
+    that weren't: `rag_query_submitted` (first AI task, fired in `AIWorkspaceSection.tsx` on a
+    successful governed answer), `ai_answer_reviewed` (first review, fired in
+    `AIReviewInboxPage.tsx` on any recorded decision), and `workflow_action_completed` (task/
+    workflow action created, fired in `TasksSection.tsx` when a task is marked complete,
+    alongside the existing `task_status_changed`). Elapsed "time to first value" is derivable
+    downstream from these events' timestamps relative to `sign_up_completed` — not computed
+    client-side.
 12. ✅ **Surface the existing `BetaFeedbackButton` at the end of each completed workflow**, not
     just persistently floating. *(Feedback — S)* Catch feedback at the moment of an actual outcome.
     **Implemented:** `TasksSection.tsx` now shows a one-time-per-session dismissible prompt
