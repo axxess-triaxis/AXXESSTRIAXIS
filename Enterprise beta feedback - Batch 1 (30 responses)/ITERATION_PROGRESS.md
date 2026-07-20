@@ -469,3 +469,54 @@ this feature inherits that inaccuracy. Not a new gap, just worth naming.
 - Verification: `pnpm run typecheck` clean, `pnpm run lint` clean (zero warnings),
   `reviewInbox.test.ts` run in isolation: 1 file / 3 tests passing (2 pre-existing + 1 new); full
   suite confirmed 87 files / 241 tests passing.
+
+---
+
+## 2026-07-20 — Sprint 2 A9: in-context 1-click micro-survey
+
+### What happened
+
+Third item of Sprint 2. Added `src/hooks/useMicroSurveyPrompt.ts` (localStorage-backed, mirrors
+the `useGoldenPathDisplayMode.ts` pattern — shows at most once per user, ever, tracked via
+`axxess.micro-survey.shown`) and `src/components/feedback/MicroSurveyPrompt.tsx` (a dismissible,
+one-click 1-5 rating prompt).
+
+Wired into `AIReviewInboxPage.tsx`: the survey triggers the first time a user successfully records
+any AI review decision (approve/reject/edit/escalate, including via the new A6 bulk-approve path).
+Fires `micro_survey_shown` on mount and `micro_survey_responded` (with the 1-5 score and trigger
+source) when answered -- both new `AnalyticsEventName` entries, closing the report's own flagged
+gap that survey sentiment was never linked to actual product usage events.
+
+### Evidence
+
+`Enterprise_Beta_Feedback_Batch_1.md` section 18 (limitations register): "No telemetry
+linkage -- Cannot correlate ratings with use" is listed as an explicit, named gap with the
+recommended mitigation "Assign anonymized respondent IDs and connect to product events." This is
+the first concrete step toward that.
+
+### What this does and doesn't close
+
+**Closed:** one of the two trigger points named in the actionable (`PRE_DEMO_ACTIONABLES.md` item
+9) -- the first completed AI review decision -- now surfaces the survey and records a
+usage-linked sentiment score.
+
+**Not yet closed:** the second named trigger point, "first completed golden-path step," is not
+wired. The hook and component are reusable for it (same `trigger()` call, a different
+`trigger="golden_path_step"` prop value already exists in the type), but finding the right moment
+in `enterpriseGoldenPath.ts`'s step-completion flow to fire it was left for a follow-up rather than
+guessed at under time pressure. Tracked here explicitly, not silently dropped.
+
+### Audit trail
+
+- `src/hooks/useMicroSurveyPrompt.ts` — new hook, tested in `useMicroSurveyPrompt.test.tsx` (3
+  tests: shows once, never shows again once already shown, can be dismissed).
+- `src/components/feedback/MicroSurveyPrompt.tsx` — new component, exported from
+  `src/components/feedback/index.ts`. No dedicated component test, consistent with this repo's
+  existing convention for small feedback components (none in that folder have one).
+- `src/services/analytics/types.ts` — added `micro_survey_shown`, `micro_survey_responded`, and
+  `first_value_milestone_reached` (the last reserved for A11) to `AnalyticsEventName`.
+- `src/features/ai-workspace/AIReviewInboxPage.tsx` — wired `microSurvey.trigger()` into the
+  `decide()` success path; renders `MicroSurveyPrompt` when visible.
+- Verification: `pnpm run typecheck` clean, `pnpm run lint` clean (zero warnings),
+  `useMicroSurveyPrompt.test.tsx` run in isolation: 1 file / 3 tests passing; full suite confirmed
+  88 files / 244 tests passing (up from 87/241 -- 1 new test file, 3 new tests).
