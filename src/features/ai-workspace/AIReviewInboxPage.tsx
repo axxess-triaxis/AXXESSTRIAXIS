@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Card } from "../../components/ui/Card";
 import { SectionHeader } from "../../components/layout/SectionHeader";
 import { WorkflowTimelinePanel } from "../../components/enterprise/WorkflowTimelinePanel";
+import { isDemoModeEnabled } from "../../demo/demoMode";
 import type { AiReviewInboxItem } from "../../services/ai/reviewInbox";
 import { workflowActionLabels, type ReviewWorkflowActionType, type WorkflowTimelineEvent } from "../../services/workflows/workflowEvidence";
 import { useWorkflowTimeline } from "../../hooks/useWorkflowTimeline";
@@ -32,7 +33,6 @@ const statusStyle: Record<AiReviewInboxItem["status"], string> = {
 };
 
 const actionTypes = Object.entries(workflowActionLabels) as Array<[ReviewWorkflowActionType, string]>;
-const isDemoReviewFallbackEnabled = process.env.NEXT_PUBLIC_AXXESS_DEMO_MODE === "true" || process.env.NEXT_PUBLIC_AXXESS_AUTH_SHELL === "true";
 
 export function AIReviewInboxPage() {
   const [reviews, setReviews] = useState<AiReviewInboxItem[]>([]);
@@ -40,6 +40,7 @@ export function AIReviewInboxPage() {
   const [actionType, setActionType] = useState<ReviewWorkflowActionType>("task");
   const [actionTitles, setActionTitles] = useState<Record<string, string>>({});
   const [localEvents, setLocalEvents] = useState<WorkflowTimelineEvent[]>([]);
+  const [bulkApproving, setBulkApproving] = useState(false);
   const workflowTimeline = useWorkflowTimeline(undefined, { limit: 6 });
 
   async function loadReviews() {
@@ -50,7 +51,7 @@ export function AIReviewInboxPage() {
       setReviews(withPendingDemoReview(payload.reviews ?? []));
       setMessage(null);
     } catch (error) {
-      if (isDemoReviewFallbackEnabled) {
+      if (isDemoModeEnabled()) {
         setReviews(withPendingDemoReview([]));
         setMessage(null);
         return;
@@ -59,8 +60,7 @@ export function AIReviewInboxPage() {
     }
   }
 
-  async function decide(reviewId: string, decision: "approved" | "edited" | "rejected" | "escalated", createAction = false) {
-    setMessage(null);
+  async function decide(reviewId: string, decision: "approved" | "edited" | "rejected" | "escalated", createAction = false, decisionReasonOverride?: string): Promise<boolean> {
     const response = await fetch("/api/ai/reviews", {
       method: "POST",
       credentials: "include",
@@ -68,7 +68,7 @@ export function AIReviewInboxPage() {
       body: JSON.stringify({
         reviewId,
         decision,
-        decisionReason: createAction ? `Approved from tenant AI review inbox and converted to ${workflowActionLabels[actionType].toLowerCase()}.` : `Marked ${decision} from tenant AI review inbox.`,
+        decisionReason: decisionReasonOverride ?? (createAction ? `Approved from tenant AI review inbox and converted to ${workflowActionLabels[actionType].toLowerCase()}.` : `Marked ${decision} from tenant AI review inbox.`),
         createAction,
         actionType,
         actionTitle: actionTitles[reviewId],
@@ -77,7 +77,7 @@ export function AIReviewInboxPage() {
     const payload = await response.json().catch(() => ({})) as DecisionResponse;
     if (!response.ok) {
       setMessage(payload.error ?? "AI review decision could not be recorded.");
-      return;
+      return false;
     }
     setReviews((current) => current.map((review) => review.id === reviewId ? { ...review, status: decision, reviewedAt: new Date().toISOString() } : review));
     if (payload.workflowAction?.timelineEvents?.length) {
@@ -85,6 +85,31 @@ export function AIReviewInboxPage() {
     }
     const createdTitle = payload.workflowAction?.createdTask?.title ?? payload.workflowAction?.createdMeeting?.title;
     setMessage(createAction && createdTitle ? `Review approved and ${createdTitle} was created.` : `Review ${decision} and audit logging requested.`);
+    return true;
+  }
+
+  async function decideAndClearMessage(...args: Parameters<typeof decide>) {
+    setMessage(null);
+    await decide(...args);
+  }
+
+  const lowRiskPendingReviews = reviews.filter((review) => review.status === "pending" && !review.humanReviewFlag);
+
+  async function bulkApproveLowRisk() {
+    setMessage(null);
+    setBulkApproving(true);
+    const targets = lowRiskPendingReviews;
+    // Sequential, not parallel: each call still records its own audit event (no loss of
+    // per-item auditability for the sake of speed -- see PRE_DEMO_ACTIONABLES.md A6).
+    let approved = 0;
+    for (const review of targets) {
+      const ok = await decide(review.id, "approved", false, "Bulk-approved as low-risk from tenant AI review inbox.");
+      if (ok) approved += 1;
+    }
+    setBulkApproving(false);
+    setMessage(approved === targets.length
+      ? `Bulk-approved ${approved} low-risk review${approved === 1 ? "" : "s"}.`
+      : `Bulk-approved ${approved} of ${targets.length} low-risk reviews; the rest need individual attention.`);
   }
 
   useEffect(() => {
@@ -101,6 +126,20 @@ export function AIReviewInboxPage() {
         {message && (
           <Card className="mb-4 border-[#8B1E2D]/20 bg-[#FFF8F8] p-4 text-sm font-semibold text-[#8B1E2D]">
             {message}
+          </Card>
+        )}
+        {lowRiskPendingReviews.length > 0 && (
+          <Card className="mb-4 flex flex-wrap items-center justify-between gap-3 border-emerald-200 bg-emerald-50 p-4">
+            <span className="text-sm font-semibold text-emerald-800">
+              {lowRiskPendingReviews.length} low-risk item{lowRiskPendingReviews.length === 1 ? "" : "s"} (no mandatory human review) awaiting approval.
+            </span>
+            <button
+              disabled={bulkApproving}
+              onClick={() => void bulkApproveLowRisk()}
+              className="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-bold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {bulkApproving ? "Approving..." : `Approve all ${lowRiskPendingReviews.length} low-risk items`}
+            </button>
           </Card>
         )}
         <div className="grid gap-4 xl:grid-cols-[1fr_380px]">
@@ -163,11 +202,11 @@ export function AIReviewInboxPage() {
                 </div>
               )}
               <div className="mt-4 flex flex-wrap gap-2">
-                <button disabled={decisionDisabled} onClick={() => void decide(review.id, "approved", true)} className="rounded-lg bg-[#8B1E2D] px-3 py-2 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-50">Approve and create</button>
-                <button disabled={decisionDisabled} onClick={() => void decide(review.id, "approved")} className="rounded-lg border border-[rgba(15,17,23,0.12)] bg-white px-3 py-2 text-xs font-bold text-[#0F1117] disabled:cursor-not-allowed disabled:opacity-50">Approve only</button>
-                <button disabled={decisionDisabled} onClick={() => void decide(review.id, "edited")} className="rounded-lg border border-[rgba(15,17,23,0.12)] bg-white px-3 py-2 text-xs font-bold text-[#0F1117] disabled:cursor-not-allowed disabled:opacity-50">Mark edited</button>
-                <button disabled={decisionDisabled} onClick={() => void decide(review.id, "escalated")} className="rounded-lg border border-[rgba(15,17,23,0.12)] bg-white px-3 py-2 text-xs font-bold text-[#0F1117] disabled:cursor-not-allowed disabled:opacity-50">Escalate</button>
-                <button disabled={decisionDisabled} onClick={() => void decide(review.id, "rejected")} className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700 disabled:cursor-not-allowed disabled:opacity-50">Reject</button>
+                <button disabled={decisionDisabled} onClick={() => void decideAndClearMessage(review.id, "approved", true)} className="rounded-lg bg-[#8B1E2D] px-3 py-2 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-50">Approve and create</button>
+                <button disabled={decisionDisabled} onClick={() => void decideAndClearMessage(review.id, "approved")} className="rounded-lg border border-[rgba(15,17,23,0.12)] bg-white px-3 py-2 text-xs font-bold text-[#0F1117] disabled:cursor-not-allowed disabled:opacity-50">Approve only</button>
+                <button disabled={decisionDisabled} onClick={() => void decideAndClearMessage(review.id, "edited")} className="rounded-lg border border-[rgba(15,17,23,0.12)] bg-white px-3 py-2 text-xs font-bold text-[#0F1117] disabled:cursor-not-allowed disabled:opacity-50">Mark edited</button>
+                <button disabled={decisionDisabled} onClick={() => void decideAndClearMessage(review.id, "escalated")} className="rounded-lg border border-[rgba(15,17,23,0.12)] bg-white px-3 py-2 text-xs font-bold text-[#0F1117] disabled:cursor-not-allowed disabled:opacity-50">Escalate</button>
+                <button disabled={decisionDisabled} onClick={() => void decideAndClearMessage(review.id, "rejected")} className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700 disabled:cursor-not-allowed disabled:opacity-50">Reject</button>
               </div>
             </Card>
           );})}
@@ -185,7 +224,7 @@ export function AIReviewInboxPage() {
 }
 
 function withPendingDemoReview(reviews: AiReviewInboxItem[]) {
-  if (!isDemoReviewFallbackEnabled || reviews.some((review) => review.status === "pending")) return reviews;
+  if (!isDemoModeEnabled() || reviews.some((review) => review.status === "pending")) return reviews;
   const demoReview: AiReviewInboxItem = {
     id: "review-dibrugarh-referral-sla",
     organizationId: "demo-north-east-health-mission",

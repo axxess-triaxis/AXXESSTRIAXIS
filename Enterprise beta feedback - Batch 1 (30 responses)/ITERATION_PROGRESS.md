@@ -416,4 +416,56 @@ evaluation suite — those remain open per the original 30/60/90 plan.
   `fallbackRagAnswer` and `emptyRagAnswer` updated to satisfy the now-required field.
 - Verification: `pnpm run typecheck` clean, `pnpm run lint` clean (zero warnings),
   `governedRag.test.ts` + `tenantRagWorkflow.test.ts` run in isolation: 2 files / 6 tests passing;
-  full-suite re-run in progress at time of writing.
+  full-suite re-run confirmed 87 files / 241 tests passing (committed as `31f8306`).
+
+---
+
+## 2026-07-20 — Sprint 2 A6: bulk/quick-approve in AI Review Inbox
+
+### What happened
+
+Second item of Sprint 2. `AIReviewInboxPage.tsx` now shows an "Approve all N low-risk items" bar
+whenever there are pending reviews with `humanReviewFlag: false` (no mandatory human review
+required). Each item in the bulk action is still submitted as its own API call to
+`/api/ai/reviews`, so per-item audit logging is unchanged — the feature removes repeated clicking,
+not the audit trail (matching the acceptance criterion in `SPRINT_ROADMAP_PRE_DEMO.md`: "audit
+event still recorded per item").
+
+While implementing this, found and fixed two more demo-data leaks in the same files (Round 3 of
+`DEMO_DATA_LEAKAGE_AUDIT.md`):
+
+- `reviewInbox.ts`'s `listAiReviewInbox` showed 2 fabricated pending reviews whenever the real
+  Supabase query returned zero rows (not just when Supabase admin access was unconfigured) — a
+  real tenant with a genuinely empty inbox saw fake reviews.
+- `AIReviewInboxPage.tsx` treated `NEXT_PUBLIC_AXXESS_AUTH_SHELL=true` as equivalent to demo mode.
+  That flag is explicitly required in **real deployed beta environments** per `docs/BETA_TESTING.md`
+  (it's an auth-facade flag, unrelated to demo content) — meaning every real beta customer with a
+  clean inbox was shown a fake "Dibrugarh referral SLA variance" review. Both now correctly gated
+  on `isDemoModeEnabled()`.
+
+### Evidence
+
+`Enterprise_Beta_Feedback_Batch_1.md` section 7.3: "too many steps or approvals" flagged by 35% of
+respondents (the P0 workflow-friction finding this item addresses).
+
+### What this does and doesn't close
+
+**Closed:** low-risk reviews no longer require one click each; the specific demo-leak instances
+found while building this are fixed.
+
+**Not yet closed:** "low-risk" is currently defined purely as `!humanReviewFlag`. There's no
+confidence-threshold or risk-scoring refinement beyond what the review-generation logic already
+sets on that flag — if that upstream logic under- or over-flags reviews as requiring human review,
+this feature inherits that inaccuracy. Not a new gap, just worth naming.
+
+### Audit trail
+
+- `src/features/ai-workspace/AIReviewInboxPage.tsx` — `bulkApproveLowRisk()`, `lowRiskPendingReviews`
+  derived state, bulk-approve action bar; `isDemoReviewFallbackEnabled` replaced with direct
+  `isDemoModeEnabled()` checks.
+- `src/services/ai/reviewInbox.ts` — `listAiReviewInbox` no longer falls back to fake data on an
+  empty (not failed) real result. Tested in `reviewInbox.test.ts` (new test: empty inbox when
+  Supabase unconfigured and demo mode off).
+- Verification: `pnpm run typecheck` clean, `pnpm run lint` clean (zero warnings),
+  `reviewInbox.test.ts` run in isolation: 1 file / 3 tests passing (2 pre-existing + 1 new); full
+  suite confirmed 87 files / 241 tests passing.

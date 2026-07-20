@@ -1,3 +1,4 @@
+import { isDemoModeEnabled } from "../../demo/demoMode";
 import { isSupabaseAdminConfigured, supabaseAdminRest } from "../../repositories/supabaseAdmin";
 
 export type AiReviewInboxStatus = "pending" | "approved" | "edited" | "rejected" | "escalated";
@@ -79,7 +80,9 @@ export function fallbackAiReviewInbox(organizationId: string): AiReviewInboxItem
 }
 
 export async function listAiReviewInbox(organizationId: string, limit = 25): Promise<AiReviewInboxItem[]> {
-  if (!isSupabaseAdminConfigured()) return fallbackAiReviewInbox(organizationId);
+  // A real tenant with zero pending reviews must see an empty inbox, not fabricated review items.
+  // Demo content only when genuinely in demo mode. See DEMO_DATA_LEAKAGE_AUDIT.md.
+  if (!isSupabaseAdminConfigured()) return isDemoModeEnabled() ? fallbackAiReviewInbox(organizationId) : [];
   const query = new URLSearchParams({
     organization_id: `eq.${organizationId}`,
     select: "id,organization_id,source_audit_id,task_category,status,confidence,human_review_flag,answer_excerpt,citations,created_at,reviewed_at,decision_reason",
@@ -87,7 +90,7 @@ export async function listAiReviewInbox(organizationId: string, limit = 25): Pro
     limit: String(limit),
   });
   const rows = await supabaseAdminRest<AiReviewRow[]>("ai_operation_reviews", { query }).catch(() => []);
-  return rows.length ? rows.map(toInboxItem) : fallbackAiReviewInbox(organizationId);
+  return rows.map(toInboxItem);
 }
 
 export async function recordAiReviewDecision(input: {
