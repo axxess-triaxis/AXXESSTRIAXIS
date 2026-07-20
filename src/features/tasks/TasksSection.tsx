@@ -1,6 +1,7 @@
 import { Check, CheckSquare, Edit3, Filter, Plus, Save, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "../../auth/AuthProvider";
+import { isDemoModeEnabled } from "../../demo/demoMode";
 import { InlineToast } from "../../components/forms/InlineToast";
 import { SelectField, TextAreaField, TextField } from "../../components/forms/FormField";
 import { BetaFeedbackModal } from "../../components/feedback/BetaFeedbackModal";
@@ -227,6 +228,8 @@ export const TasksSection = () => {
 
   if (loading) return <LoadingState label="Loading task workflows" />;
 
+  const demoMode = isDemoModeEnabled();
+
   return (
     <PageShell className="h-full min-h-0">
       <ModuleHeader
@@ -235,7 +238,7 @@ export const TasksSection = () => {
         description={`${tasks.length} active tasks across ${projects.length} projects. Tasks can be created from AI answers, linked to documents, escalated to approvals, and reflected in activity history.`}
         badges={[
           <TenantScopeBadge key="tenant" />,
-          <DataStateBadge key="demo" state={tasks.length > 0 ? "Live" : "Demo"} />,
+          <DataStateBadge key="demo" state={demoMode ? "Demo" : "Live"} />,
         ]}
         actions={
           <div className="flex items-center gap-2">
@@ -253,12 +256,16 @@ export const TasksSection = () => {
         }
       />
 
-      <DemoDataNotice label="The workflow surface demonstrates how AI output becomes assigned work, approval requests, and audit history rather than static analysis." />
-      <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
-        {demoAuditTimeline.map((item, index) => (
-          <WorkflowStepCard key={item.title} index={index + 1} title={item.title} description={item.description ?? ""} status={item.tone === "warning" ? "Human Review" : "Complete"} />
-        ))}
-      </div>
+      {demoMode && (
+        <>
+          <DemoDataNotice label="The workflow surface demonstrates how AI output becomes assigned work, approval requests, and audit history rather than static analysis." />
+          <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
+            {demoAuditTimeline.map((item, index) => (
+              <WorkflowStepCard key={item.title} index={index + 1} title={item.title} description={item.description ?? ""} status={item.tone === "warning" ? "Human Review" : "Complete"} />
+            ))}
+          </div>
+        </>
+      )}
 
       <div className="grid min-h-[520px] grid-cols-1 gap-4 xl:grid-cols-[1fr_360px]">
         <div className="min-w-0">
