@@ -1,0 +1,91 @@
+# Pre-Demo Actionables — 20 Items from the Batch 1 SWOT
+
+**Source:** `SWOT_Analysis_Batch_1.md`, `Enterprise_Beta_Feedback_Batch_1.md`
+**Purpose:** Immediately executable changes, scoped to ship before the next demo/release, that
+improve customer ease, experience, retention, feedback quality, and execution at the customer end.
+**Date:** 2026-07-20
+**Status legend:** ✅ Implemented · 🔜 Planned (see `SPRINT_ROADMAP_PRE_DEMO.md` for sequencing)
+
+Each item is tagged with the SWOT dimension(s) it primarily serves and an effort estimate
+(S/M/L). Where a specific code location was identified during scoping, it's noted so
+implementation can start without re-discovery.
+
+---
+
+## Tier 1 — Highest evidence, lowest effort
+
+1. ✅ **Make Golden Path opt-in, not forced.** *(Ease, Experience — S)* Every non-promoter in the
+   beta cited "unclear value" alongside "slow/unreliable" as blockers, and free-text feedback
+   specifically flagged onboarding friction. The golden path (`src/services/workflows/
+   enterpriseGoldenPath.ts`, rendered via `EnterpriseWorkflowJourney.tsx`) was always-on with no
+   opt-out. **Implemented:** added `GoldenPathDisplayMode` ("guided" | "on-demand"), defaulting to
+   on-demand (collapsed summary card), with a persisted per-user preference
+   (`useGoldenPathDisplayMode.ts`) so high-discretion users can still opt into the full guided view.
+2. ✅ **Explain "blocked" and "locked" states inline.** *(Ease — S)* The journey previously showed a
+   bare "Blocked" badge with no next action. **Implemented:** added a `blockedReason` field
+   populated for every blockable step (team provisioning, grounded question, workflow action), and
+   a "Requires {role}" hint for role-locked steps, both rendered inline under the step title.
+3. 🔜 **Add a guided demo workspace with realistic seeded data.** *(Experience — M)* Directly
+   targets the P0 "unclear value" blocker — lets a new user see value before uploading their own
+   documents.
+4. 🔜 **Add source citations + a one-line rationale under every AI output.** *(Experience,
+   Execution — M)* P0 explainability gap; 40% of respondents flagged AI output quality.
+5. 🔜 **Add visible loading/progress + timeout-with-retry states on long AI operations.**
+   *(Experience — S)* Doesn't fix backend latency, but stops "slow" from reading as "broken."
+6. 🔜 **Add a bulk/quick-approve action in the AI Review Inbox for low-risk items.** *(Ease,
+   Execution — M)* P0 workflow friction; 35% flagged "too many steps or approvals."
+7. 🔜 **Replace the single generic onboarding flow with 3 outcome-first paths.** *(Ease,
+   Experience — M)* Knowledge/AI decision support, workflow+approvals, stakeholder/CRM — matches
+   the original report's section 11 recommendation.
+8. 🔜 **Add empty-states with one clear CTA on every major page.** *(Ease, Experience — S)*
+   Dashboard/Projects/Tasks/Knowledge Hub currently go sparse for brand-new tenants.
+
+## Tier 2 — Feedback loop
+
+9. 🔜 **Add an in-context 1-click micro-survey after the first completed AI review decision or
+   golden-path step.** *(Feedback — M)* Closes the report's own flagged gap: no telemetry linkage
+   between survey sentiment and actual usage.
+10. 🔜 **Add a lightweight post-demo satisfaction capture**, distinct from the existing
+    `BetaFeedbackButton`. *(Feedback — S)* A single question at the end of a live demo session.
+11. 🔜 **Wire "time to first value" and "onboarding completion rate" events into the existing
+    Mixpanel-ready analytics.** *(Feedback, Execution — M)* Analytics scaffolding already exists —
+    mostly event-naming and instrumentation.
+12. 🔜 **Surface the existing `BetaFeedbackButton` at the end of each completed workflow**, not
+    just persistently floating. *(Feedback — S)* Catch feedback at the moment of an actual outcome.
+
+## Tier 3 — Convert integrations work into visible customer value
+
+13. 🔜 **Ship a "Connect Slack" quick-connect in Settings** using the `slack_wrapper` already
+    enabled (see `ITERATION_PROGRESS.md`, 2026-07-20 entry). *(Ease, Experience — M)*
+14. 🔜 **Ship a "Connect Calendly" quick-connect** the same way. *(Ease, Experience — M)* Most
+    directly evidenced by respondent free-text requests.
+15. 🔜 **Cap the integrations surface to just these 2 for the next demo**, not all 12 wrappers.
+    *(Execution — S)* Matches the report's own guidance: "2-3 integrations tied to pilot
+    workflows, not a generic catalogue."
+
+## Tier 4 — Retention and perceived momentum
+
+16. 🔜 **Add a "What's New" panel at login.** *(Retention — S)* Even a 3-line changelog gives
+    demo/pilot users a sense of active development between sessions.
+17. 🔜 **Add a completion celebration/confirmation on finishing any workflow end-to-end.**
+    *(Retention, Experience — S)* Reinforces the knowledge → AI → review → action → audit loop the
+    SWOT identifies as the core differentiator.
+18. 🔜 **Reduce required setup decisions before first AI interaction.** *(Ease — M)* Let a solo
+    evaluator ask a grounded question before inviting a team, where possible.
+
+## Tier 5 — Execution-at-customer-end hygiene
+
+19. 🔜 **Add a visible reliability/expectation-setting indicator during AI generation.**
+    *(Experience — S)* E.g. "usually takes ~8 seconds" — cheap perceived-reliability fix while real
+    p50/p95 instrumentation (already P0 in the 30/60/90 plan) is in progress.
+20. 🔜 **Add role-appropriate default landing pages.** *(Ease — S)* An Employee currently can land
+    on an Executive Dashboard mostly composed of locked actions.
+
+---
+
+## How this maps back to evidence
+
+Every item above traces to a specific SWOT weakness/opportunity or a specific beta-feedback
+percentage in `Enterprise_Beta_Feedback_Batch_1.md` / `SWOT_Analysis_Batch_1.md` — none are
+speculative additions. See `SPRINT_ROADMAP_PRE_DEMO.md` for sequencing, dependencies, acceptance
+criteria, and audit trail for all 20 items.

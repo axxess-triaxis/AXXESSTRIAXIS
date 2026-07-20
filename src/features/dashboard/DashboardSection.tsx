@@ -21,6 +21,7 @@ import { Card } from "../../components/ui/Card";
 import { RiskBadge } from "../../components/ui/RiskBadge";
 import { StatusBadge } from "../../components/ui/StatusBadge";
 import { useEnterpriseGoldenPath } from "../../hooks/useEnterpriseGoldenPath";
+import { useGoldenPathDisplayMode } from "../../hooks/useGoldenPathDisplayMode";
 import { useGuidedDemo } from "../../hooks/useGuidedDemo";
 import { useLiveRagHealth } from "../../hooks/useLiveRagHealth";
 import { useLiveWorkspaceMetrics } from "../../hooks/useLiveWorkspaceMetrics";
@@ -62,6 +63,7 @@ export function DashboardSection() {
   const liveMetrics = useLiveWorkspaceMetrics(tenantScope);
   const ragHealth = useLiveRagHealth(tenantScope);
   const enterpriseJourney = useEnterpriseGoldenPath(tenantScope, session.user);
+  const goldenPathDisplayMode = useGoldenPathDisplayMode();
   const workflowTimeline = useWorkflowTimeline(tenantScope, { limit: 6 });
 
   useEffect(() => {
@@ -118,7 +120,11 @@ export function DashboardSection() {
 
       {session.user && <BetaOnboardingChecklist user={session.user} projectCount={projects.length} />}
 
-      <EnterpriseWorkflowJourney snapshot={enterpriseJourney} />
+      <EnterpriseWorkflowJourney
+        snapshot={enterpriseJourney}
+        displayMode={goldenPathDisplayMode.mode}
+        onDisplayModeChange={goldenPathDisplayMode.setMode}
+      />
       <TenantHealthCommandCenter snapshot={enterpriseJourney} metrics={liveMetrics} />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
