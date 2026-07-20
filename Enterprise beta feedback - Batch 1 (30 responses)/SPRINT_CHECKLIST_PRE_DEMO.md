@@ -39,13 +39,13 @@ state without reading the whole roadmap.
 
 ## Sprint 2 — Value clarity, AI trust, and feedback instrumentation
 
-**Status:** 1 / 7 shipped (2026-07-20)
+**Status:** 2 / 7 shipped (2026-07-20)
 
 - [ ] **A3** — Guided demo workspace with realistic seeded data
 - [ ] **A7** — Replace single onboarding flow with 3 outcome-first paths *(ship together with A3, not before)*
 - [ ] **A18** — Reduce required setup decisions before first AI interaction *(ship together with A7)*
 - [x] **A4** — AI citations + rationale under every AI output
-- [ ] **A6** — Bulk/quick-approve action in the AI Review Inbox
+- [x] **A6** — Bulk/quick-approve action in the AI Review Inbox
 - [ ] **A9** — In-context 1-click micro-survey after first completed step
 - [ ] **A11** — Wire time-to-first-value / onboarding-completion analytics events
 
