@@ -360,6 +360,60 @@ skipped.
   `src/app/api/admin/customer-success/live-ops/route.ts` — fixed the same
   silent-fallback-to-fake-data bug as `useLiveWorkspaceMetrics.ts`.
 - Verification: `pnpm run typecheck` clean, `pnpm run lint` clean (zero warnings), full suite
-  re-run pending at time of writing (see this session's final commit for confirmed result).
-- Verification: `pnpm run typecheck` clean, `pnpm run lint` clean (zero warnings), full suite
-  re-run pending at time of writing (see this session's final commit for confirmed result).
+  87 files / 239 tests passing (1 existing test in `data.test.ts` rewritten to match the corrected
+  behavior, not just new tests added).
+
+---
+
+## 2026-07-20 — Sprint 2 started: A4 (AI citations + rationale) shipped
+
+### What happened
+
+First item of Sprint 2 (`SPRINT_ROADMAP_PRE_DEMO.md`), tracked in `SPRINT_CHECKLIST_PRE_DEMO.md`.
+
+Added a genuine, retrieval-derived `rationale` field to the `RagAnswer` type
+(`src/services/rag/governedRag.ts`), computed from the actual matched sources rather than being a
+decorative label:
+
+- With sources: `"Synthesized from N governed source(s) (top match: \"<title>\", <score>%
+  relevance)."`
+- With zero sources: an honest `"No authorized institutional source matched this question closely
+  enough to generate a governed answer."`
+
+Wired into both RAG answer paths: `answerWithGovernedRag` (`governedRag.ts`) and
+`answerTenantQuestion` (`src/services/rag/tenantRagWorkflow.ts`, the one actually used by the
+`/api/rag/query` production endpoint — it constructs a `RagAnswer` inline for its
+persistent-citations branch, so the same rationale logic was added there too, not just in the
+service used by tests).
+
+Rendered under the answer bubble in `AIWorkspaceSection.tsx`, alongside the pre-existing "Sources
+Used" side panel (which already showed per-source excerpts/scores — the rationale line is the new
+piece, not a replacement).
+
+### Evidence
+
+`Enterprise_Beta_Feedback_Batch_1.md` section 7.3: "AI output quality" flagged by 40% of
+respondents; the report's own 30/60/90 plan calls for "Add source citations/provenance and concise
+model-rationale display" (section 11, Days 0-30 engineering).
+
+### What this does and doesn't close
+
+**Closed:** every governed AI answer now carries a real, derivation-based explanation, not just a
+raw answer string — addressing the specific "concise rationale" gap the report calls out.
+
+**Not yet closed:** this is a retrieval-transparency improvement, not a full AI-output evaluation
+harness (the report's actual P0 item). It doesn't improve answer *quality* or add a systematic
+evaluation suite — those remain open per the original 30/60/90 plan.
+
+### Audit trail
+
+- `src/services/rag/governedRag.ts` — `rationale` field added to `RagAnswer`, computed in
+  `answerWithGovernedRag`. Tested in `governedRag.test.ts` (existing test extended with rationale
+  assertions; new test added for the zero-source honest-rationale case).
+- `src/services/rag/tenantRagWorkflow.ts` — same rationale logic added to `answerTenantQuestion`'s
+  inline `RagAnswer` construction. Tested in `tenantRagWorkflow.test.ts` (existing test extended).
+- `src/features/ai-workspace/AIWorkspaceSection.tsx` — rationale rendered under the answer bubble;
+  `fallbackRagAnswer` and `emptyRagAnswer` updated to satisfy the now-required field.
+- Verification: `pnpm run typecheck` clean, `pnpm run lint` clean (zero warnings),
+  `governedRag.test.ts` + `tenantRagWorkflow.test.ts` run in isolation: 2 files / 6 tests passing;
+  full-suite re-run in progress at time of writing.

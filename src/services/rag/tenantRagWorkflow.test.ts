@@ -122,6 +122,8 @@ describe("tenant RAG workflow", () => {
     const answer = await answerTenantQuestion(repo, scope, "What is the Cachar maternal referral risk?");
     expect(answer.sources[0]?.title).toContain("Cachar");
     expect(answer.confidence).toBeGreaterThan(0);
+    expect(answer.rationale).toContain("governed source");
+    expect(answer.rationale).toContain("Cachar");
     expect(repo.auditLogsRepository?.record).toHaveBeenCalled();
   });
 });
