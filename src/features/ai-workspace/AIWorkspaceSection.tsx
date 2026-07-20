@@ -18,6 +18,7 @@ import { useEnterpriseGoldenPath } from "../../hooks/useEnterpriseGoldenPath";
 import { useGoldenPathDisplayMode } from "../../hooks/useGoldenPathDisplayMode";
 import { applicationServices } from "../../providers/serviceProvider";
 import { tenantScopeFromUser } from "../../repositories/supabaseEnterpriseRepositories";
+import { useAnalytics } from "../../services/analytics";
 import { getAiRouterStatusSnapshot } from "../../services/ai/router/aiRouter";
 import { languageCoverage } from "../../services/nlp/modelRegistry";
 import { answerWithGovernedRag, type RagAnswer } from "../../services/rag/governedRag";
@@ -101,6 +102,7 @@ type LiveRagAnswer = RagAnswer & {
 
 export const AIWorkspaceSection = () => {
   const { session } = useAuth();
+  const analytics = useAnalytics();
   const tenantScope = useMemo(() => session.user ? tenantScopeFromUser(session.user) : undefined, [session.user]);
   const enterpriseJourney = useEnterpriseGoldenPath(tenantScope, session.user);
   const goldenPathDisplayMode = useGoldenPathDisplayMode();
@@ -156,6 +158,13 @@ export const AIWorkspaceSection = () => {
       setRagAnswer(result as LiveRagAnswer);
       setInput("");
       setApproved(false);
+      analytics.trackEvent("rag_query_submitted", { source_count: (result as LiveRagAnswer).sources?.length ?? 0 }, {
+        organization_id: session.user?.organizationId,
+        user_id: session.user?.id,
+        user_role: session.user?.role,
+        module_name: "ai-workspace",
+        route: "/ai-workspace",
+      });
     } catch (error) {
       const timedOut = error instanceof DOMException && error.name === "AbortError";
       setQueryError(

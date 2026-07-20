@@ -513,10 +513,71 @@ guessed at under time pressure. Tracked here explicitly, not silently dropped.
 - `src/components/feedback/MicroSurveyPrompt.tsx` — new component, exported from
   `src/components/feedback/index.ts`. No dedicated component test, consistent with this repo's
   existing convention for small feedback components (none in that folder have one).
-- `src/services/analytics/types.ts` — added `micro_survey_shown`, `micro_survey_responded`, and
-  `first_value_milestone_reached` (the last reserved for A11) to `AnalyticsEventName`.
+- `src/services/analytics/types.ts` — added `micro_survey_shown` and `micro_survey_responded` to
+  `AnalyticsEventName`. (A third placeholder, `first_value_milestone_reached`, was also added
+  here as "reserved for A11" but turned out unneeded -- A11 below reused better-fitting existing
+  event names instead, so it was removed rather than left as unused scaffolding.)
 - `src/features/ai-workspace/AIReviewInboxPage.tsx` — wired `microSurvey.trigger()` into the
   `decide()` success path; renders `MicroSurveyPrompt` when visible.
 - Verification: `pnpm run typecheck` clean, `pnpm run lint` clean (zero warnings),
   `useMicroSurveyPrompt.test.tsx` run in isolation: 1 file / 3 tests passing; full suite confirmed
   88 files / 244 tests passing (up from 87/241 -- 1 new test file, 3 new tests).
+
+---
+
+## 2026-07-20 — Sprint 2 A11: time-to-first-value / onboarding funnel events
+
+### What happened
+
+Fourth item of Sprint 2. Audited the report's section 13.2 activation-funnel spec (account
+created → workspace configured → document/data connected → first AI task completed → human
+review completed → task/workflow action created → second workflow completed) against what's
+actually fired via `trackEvent(...)` in the codebase, not just defined in `AnalyticsEventName`.
+
+Already wired: `sign_up_completed` (`EnterpriseAuthFlowPage.tsx`), `organization_created` and
+`onboarding_step_completed` (`EnterpriseOnboardingPage.tsx`, `BetaOnboardingChecklist.tsx`).
+
+Found defined-but-never-fired and wired the three matching the remaining funnel steps:
+- `rag_query_submitted` — fired in `AIWorkspaceSection.tsx`'s `askGovernedQuestion` on a
+  successful governed answer (first AI task completed).
+- `ai_answer_reviewed` — fired in `AIReviewInboxPage.tsx`'s `decide()` on any recorded decision
+  (human review completed).
+- `workflow_action_completed` — fired in `TasksSection.tsx`'s `toggleTaskStatus` when a task is
+  marked complete, alongside the pre-existing `task_status_changed` (task/workflow action
+  created).
+
+### Evidence
+
+`Enterprise_Beta_Feedback_Batch_1.md` section 13.2's activation funnel and section 13.3's
+recommended activation definition ("connects or uploads real context, completes an AI-assisted
+task, sends it through human review, and converts the result into a project, task, approval, or
+stakeholder action") — this entry wires the events needed to actually measure that definition,
+which previously had no client-side instrumentation for 3 of its 4 non-onboarding steps.
+
+### What this does and doesn't close
+
+**Closed:** every named funnel step from account creation through workflow-action-completed now
+has at least one `trackEvent` call firing at the right moment.
+
+**Not yet closed:** "second workflow completed within 7 days" (the funnel's retention step) isn't
+instrumented — that requires a time-windowed aggregation, which belongs in the analytics backend
+querying these events, not new client-side code. "Time to first value" and "onboarding completion
+rate" are not computed or displayed anywhere in-product; they're derivable from these events'
+timestamps in whatever analytics backend (Mixpanel/PostHog) ingests them, which is consistent with
+how the actionable was scoped ("wire... events into the existing analytics", not "build a funnel
+dashboard").
+
+### Audit trail
+
+- `src/features/ai-workspace/AIWorkspaceSection.tsx` — `rag_query_submitted` on query success.
+- `src/features/ai-workspace/AIReviewInboxPage.tsx` — `ai_answer_reviewed` on decision success.
+- `src/features/tasks/TasksSection.tsx` — `workflow_action_completed` on task completion.
+- `src/services/analytics/types.ts` — removed the unused `first_value_milestone_reached`
+  placeholder added in the A9 commit (see correction note above).
+- No dedicated new tests: none of these three page/feature files have existing unit-test coverage
+  to extend (consistent with the pattern noted throughout Sprint 1/2 for heavy page components).
+  Verified via `typecheck`, `lint`, `analytics.test.ts` re-run in isolation (6/6 passing,
+  confirming the type change didn't break anything), and full-suite regression check.
+- Verification: `pnpm run typecheck` clean, `pnpm run lint` clean (zero warnings),
+  `analytics.test.ts` 1 file / 6 tests passing in isolation; full suite confirmed 88 files / 244
+  tests passing (unchanged from the A9 commit, as expected -- no new tests added in this entry).
