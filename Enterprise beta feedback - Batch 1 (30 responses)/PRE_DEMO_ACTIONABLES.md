@@ -41,8 +41,18 @@ implementation can start without re-discovery.
    **Implemented:** `AIWorkspaceSection.tsx`'s `askGovernedQuestion` now aborts after 20s via
    `AbortController`, shows an inline "Generating governed answer..." indicator while pending, and
    surfaces a distinct timeout message with a one-click Retry action (reusing the preserved input).
-6. 🔜 **Add a bulk/quick-approve action in the AI Review Inbox for low-risk items.** *(Ease,
+6. ✅ **Add a bulk/quick-approve action in the AI Review Inbox for low-risk items.** *(Ease,
    Execution — M)* P0 workflow friction; 35% flagged "too many steps or approvals."
+   **Implemented:** `AIReviewInboxPage.tsx` now shows an "Approve all N low-risk items" bar when
+   there are pending reviews with `humanReviewFlag: false` (no mandatory human review); each item
+   is still approved via its own API call, so per-item audit logging is unchanged — bulk only
+   removes the repeated clicking, not the audit trail. While implementing this, found and fixed
+   two more demo-data leaks in the same files: `reviewInbox.ts`'s `listAiReviewInbox` showed
+   fabricated review items whenever the real result was empty (not just when Supabase was
+   unconfigured), and `AIReviewInboxPage.tsx` treated `NEXT_PUBLIC_AXXESS_AUTH_SHELL=true` (an
+   auth-facade flag explicitly required in real beta deployments per `BETA_TESTING.md`) as
+   equivalent to demo mode, injecting a fake pending review for every real beta customer with a
+   clean inbox. Both fixed to use `isDemoModeEnabled()` correctly. See `DEMO_DATA_LEAKAGE_AUDIT.md`.
 7. 🔜 **Replace the single generic onboarding flow with 3 outcome-first paths.** *(Ease,
    Experience — M)* Knowledge/AI decision support, workflow+approvals, stakeholder/CRM — matches
    the original report's section 11 recommendation.
