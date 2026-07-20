@@ -1,8 +1,10 @@
-import { Check, Edit3, Filter, Plus, Save, X } from "lucide-react";
+import { Check, CheckSquare, Edit3, Filter, Plus, Save, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "../../auth/AuthProvider";
 import { InlineToast } from "../../components/forms/InlineToast";
 import { SelectField, TextAreaField, TextField } from "../../components/forms/FormField";
+import { BetaFeedbackModal } from "../../components/feedback/BetaFeedbackModal";
+import { EmptyState } from "../../components/feedback/EmptyState";
 import { LoadingState } from "../../components/feedback/LoadingState";
 import { DataStateBadge, DemoDataNotice, ModuleHeader, PageShell, TenantScopeBadge, WorkflowStepCard } from "../../components/enterprise";
 import { WorkflowTimelinePanel } from "../../components/enterprise/WorkflowTimelinePanel";
@@ -79,6 +81,9 @@ export const TasksSection = () => {
   const [form, setForm] = useState<TaskFormState>(() => taskForm());
   const [toast, setToast] = useState<{ tone: "success" | "error" | "info"; message: string } | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [showCompletionFeedbackPrompt, setShowCompletionFeedbackPrompt] = useState(false);
+  const [completionFeedbackPromptShown, setCompletionFeedbackPromptShown] = useState(false);
+  const [feedbackModalOpen, setFeedbackModalOpen] = useState(false);
   const taskTimeline = useWorkflowTimeline(scope, { limit: 5, resourceType: selectedTask ? "task" : undefined, resourceId: selectedTask?.id });
 
   const canManageTasks = Boolean(user && ["Super Admin", "Organization Admin", "Executive", "Manager", "Employee"].includes(user.role));
@@ -205,6 +210,10 @@ export const TasksSection = () => {
       setTasks((current) => current.map((row) => row.id === saved.id ? saved : row));
       setSelectedTask(saved);
       setToast({ tone: "success", message: "Task status updated." });
+      if (nextStatus === "completed" && !completionFeedbackPromptShown) {
+        setShowCompletionFeedbackPrompt(true);
+        setCompletionFeedbackPromptShown(true);
+      }
     } catch {
       setToast({ tone: "error", message: "Unable to update task status." });
     }
@@ -254,6 +263,30 @@ export const TasksSection = () => {
       <div className="grid min-h-[520px] grid-cols-1 gap-4 xl:grid-cols-[1fr_360px]">
         <div className="min-w-0">
           {toast && <div className="mb-3"><InlineToast tone={toast.tone} message={toast.message} /></div>}
+          {showCompletionFeedbackPrompt && (
+            <div className="mb-3 flex items-center justify-between gap-3 rounded-lg border border-[rgba(0,0,0,0.08)] bg-white px-3 py-2 text-xs">
+              <span className="text-[#5F6B73]">Task completed! Got a moment to share feedback on this workflow?</span>
+              <div className="flex items-center gap-3">
+                <button type="button" onClick={() => setFeedbackModalOpen(true)} className="font-semibold text-[#8B1E2D] hover:underline">
+                  Send feedback
+                </button>
+                <button type="button" onClick={() => setShowCompletionFeedbackPrompt(false)} aria-label="Dismiss" className="text-[#5F6B73] hover:text-[#0F1117]">
+                  <X size={12} />
+                </button>
+              </div>
+            </div>
+          )}
+          {feedbackModalOpen && user && (
+            <BetaFeedbackModal
+              user={user}
+              moduleName="Tasks"
+              route="/tasks"
+              onClose={() => {
+                setFeedbackModalOpen(false);
+                setShowCompletionFeedbackPrompt(false);
+              }}
+            />
+          )}
           <Card className="overflow-hidden">
             <div className="flex items-center gap-4 border-b border-[rgba(0,0,0,0.06)] bg-[#F8F9FA] px-4 py-2.5">
               <span className="text-[11px] font-semibold uppercase tracking-wider text-[#5F6B73]">Task</span>
@@ -262,6 +295,25 @@ export const TasksSection = () => {
               <span className="w-20 text-center text-[11px] font-semibold uppercase tracking-wider text-[#5F6B73]">Assignee</span>
               <span className="w-24 text-right text-[11px] font-semibold uppercase tracking-wider text-[#5F6B73]">Due Date</span>
             </div>
+            {sorted.length === 0 && (
+              <div className="p-8">
+                <EmptyState
+                  icon={<CheckSquare size={28} />}
+                  title="No tasks yet"
+                  message="Create your first task to start assigning and tracking accountable work."
+                  action={
+                    <button
+                      type="button"
+                      disabled={!canManageTasks}
+                      onClick={() => openForm()}
+                      className="flex items-center gap-1.5 rounded-lg bg-[#8B1E2D] px-3 py-1.5 text-xs text-white hover:bg-[#7a1a27] disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      <Plus size={12} /> Create your first task
+                    </button>
+                  }
+                />
+              </div>
+            )}
             {sorted.map((task) => {
               const assignee = users.find((row) => row.id === task.assigneeId);
               const project = projects.find((row) => row.id === task.projectId);
