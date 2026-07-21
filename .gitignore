@@ -64,3 +64,5 @@ Thumbs.db
 !.vscode/extensions.json
 !.vscode/settings.json
 !.vscode/tasks.json
+.vercel
+.env*
