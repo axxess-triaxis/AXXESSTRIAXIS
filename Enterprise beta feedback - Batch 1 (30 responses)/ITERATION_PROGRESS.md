@@ -752,3 +752,229 @@ mechanics documented so it's recognizable if it recurs.
   file/test counts, `pnpm run build` succeeds.
 - `PRE_DEMO_ACTIONABLES.md` and `SPRINT_CHECKLIST_PRE_DEMO.md` updated in the same branch to remove
   "pending PR merge" language once this reconciliation PR itself merges.
+
+---
+
+## 2026-07-21 — Sprint 3 Phase 1: A15, stop presenting the full integrations catalogue as available
+
+### What happened
+
+Sprint 3 was planned (PR #148) as 4 phases, with A15 reordered ahead of A13/A14. Scoping it found
+`src/services/integrations/pluginRegistry.ts` listed roughly 20 integrations (Gmail, Slack, Jira,
+Salesforce, Razorpay, etc.), every one flagged `demoConnector: true` — only Gmail and Outlook had
+real, working connector code anywhere in this repo (`connectorContract.ts`). Replaced
+`demoConnector` with `pilotEnabled` (true only for connectors with a real connect flow) and added
+`getPilotIntegrations()`/`getInfrastructureOnlyIntegrations()` to split the two groups explicitly.
+
+Traced every consumer of the removed field and found the same "demo dressed up as real" pattern in
+two more places: `IntegrationsSection.tsx` rendered all ~20 as one undifferentiated grid plus a
+"Demo Ready" stat that always equaled the full catalogue count; split into a "Pilot integrations"
+section and an honest "Also available at the infrastructure level" list. `pluginRuntime.ts`'s
+`defaultStatus()` reported every unconfigured plugin as `"available"` whenever `demoConnector` was
+true — i.e., always — which feeds real admin/platform-readiness logic
+(`platform-readiness/route.ts`, `pilotCommandCenter.ts`, `commandCenterScheduler.ts`), not just
+decorative UI. Now gated on `pilotEnabled`.
+
+### Evidence
+
+`Enterprise_Beta_Feedback_Batch_1.md`'s own guidance: "2-3 integrations tied to pilot workflows, not
+a generic catalogue" — this closes that gap at its actual scope (~20 items), not the 12 originally
+assumed (the 2026-07-20 Supabase-wrappers entry above).
+
+### What this does and doesn't close
+
+**Closed:** the integrations surface (registry, `/integrations` UI, and platform-readiness logic)
+no longer implies more real capability exists than actually does.
+
+**Not yet closed:** A13/A14 (below) hadn't shipped yet at this point, so `pilotEnabled` was only
+true for gmail/outlook until the next entry.
+
+### Audit trail
+
+- `src/services/integrations/pluginRegistry.ts`, `src/features/integrations/IntegrationsSection.tsx`,
+  `src/services/plugins/pluginRuntime.ts`.
+- Tests: `pluginRegistry.test.ts` (2 new), `pluginRuntime.test.ts` (1 new regression test).
+- Verification: `pnpm run typecheck` clean, `pnpm run lint --max-warnings=0` clean, `pnpm run test --
+  run`: 88 files / 249 tests passing (up from 88/246), `pnpm run build` succeeds.
+- Branch `feat/sprint3-a15-integrations-catalogue`, merged via PR #150 (`2026-07-21T08:20:22Z`).
+
+---
+
+## 2026-07-21 — Sprint 3 Phase 2: A13 + A14, Slack and Calendly quick-connect
+
+### What happened
+
+Extended the existing Gmail/Microsoft OAuth architecture (`connectorContract.ts`, `oauthProvider.ts`,
+the shared `/api/connectors/oauth/start`+`callback` routes, `tokenVault.ts`) to Slack and Calendly,
+rather than building a parallel system. `ConnectorProviderId` extended to 4 providers;
+`ConnectorContract.category`'s hardcoded `"email"` literal broadened to
+`"email" | "messaging" | "calendar"`; per-provider env-var maps replaced inline gmail/microsoft
+ternaries in `buildConnectorOAuthUrl()`, `providerClient()`, and `getOAuthProviderConfiguration()`
+(the last of which had error messages that would have mislabeled Slack/Calendly's missing
+credentials as Microsoft's). New Settings > Integrations tab
+(`IntegrationsQuickConnectPanel` in `SettingsSection.tsx`), gated to Organization Admins, matching
+the actionables' literal wording ("quick-connect in Settings").
+
+**Real bug found while testing:** Slack's OAuth API returns scopes comma-separated
+(`"chat:write,channels:read"`), but `exchangeOAuthCode()` only split on whitespace
+(Google/Microsoft's format). A successful Slack connection would have stored one comma-joined
+string as its only granted scope, so `pluginRuntime.ts`'s `missingScopes` check
+(`grantedScopes.includes(individualScope)`) would never match — Slack connections would report as
+permanently missing scopes even when fully authorized. Fixed the split regex to handle both
+separators.
+
+**Cost constraint, applied explicitly before building further:** told to skip any API requiring
+payment/subscription/metering, zero-cost for 6-12 months. Slack's standard OAuth/Web API scopes
+are free on any workspace tier. Calendly's Developer API requires a Standard-plan-or-higher
+account for whoever connects it — not available on Calendly's free tier. Asked explicitly how to
+handle this; decision was to keep Calendly (the cost falls on the customer's own subscription
+choice, not AXXESS) but surface the caveat directly in the Settings UI, not just in docs — an amber
+notice on the Calendly connect card.
+
+### Evidence
+
+`Enterprise_Beta_Feedback_Batch_1.md` section 7.6: Slack and Calendly are the two integrations most
+directly evidenced by respondent free-text requests.
+
+### What this does and doesn't close
+
+**Closed:** both connectors have real, working OAuth code following the exact same pattern and
+rigor as Gmail/Microsoft, plus a genuine cross-provider bug (the Slack scope-parsing issue) that
+would otherwise have shipped silently broken.
+
+**Not yet closed:**
+- **No live OAuth verification.** Requires real Slack App / Calendly OAuth app credentials that
+  only whoever holds those accounts can create — none available in this environment. Verified via
+  unit tests against mocked token exchanges, the same rigor Gmail/Microsoft already had.
+- The OAuth callback still redirects to `/integrations` regardless of where the flow started
+  (pre-existing behavior, not introduced here) — connecting from Settings lands back on
+  `/integrations`, not `/settings`.
+- No dedicated test for the new Settings panel itself, consistent with this repo's convention that
+  heavy page components rely on Playwright e2e specs, not unit tests.
+
+### Audit trail
+
+- `src/services/integrations/connectorContract.ts`, `oauthProvider.ts`,
+  `src/app/api/connectors/oauth/callback/route.ts`, `src/features/settings/SettingsSection.tsx`,
+  `.env.example` (new `SLACK_CLIENT_SECRET`/`CALENDLY_CLIENT_ID`/`CALENDLY_CLIENT_SECRET` placeholders).
+- Tests: `connectorContract.test.ts` (2 new), `oauthProvider.test.ts` (2 new, including the Slack
+  scope-parsing regression test).
+- Verification: `pnpm run typecheck` clean, `pnpm run lint --max-warnings=0` clean, `pnpm run test --
+  run`: 88 files / 253 tests passing (up from 88/249), `pnpm run build` succeeds.
+- Branch `feat/sprint3-a13-a14-slack-calendly`, merged via PR #151 (`2026-07-21T09:01:02Z`).
+
+---
+
+## 2026-07-21 — Sprint 3 Phase 3: A10 + A16 + A17, satisfaction capture, What's New, celebration
+
+### What happened
+
+Final phase of Sprint 3, all 3 items independent of A13/A14's external OAuth-credential dependency.
+
+**A10 (post-demo satisfaction):** `usePostDemoSatisfactionPrompt.ts` (sessionStorage-scoped, not
+localStorage — a later demo session can prompt again, unlike A9's once-ever micro-survey) +
+`PostDemoSatisfactionPrompt.tsx` (thumbs-up/down, distinct from A9's 5-point scale). Trigger:
+turning Investor Preview off in Settings. **Real bug found while wiring this up:** `DemoModePanel`
+hard-navigates to `/dashboard` 250ms after toggling demo mode off, destroying any transient "show
+now" React state before it renders. Fixed with a two-step handoff:
+`markPostDemoSatisfactionPromptPending()` writes a flag before the navigation; the hook consumes it
+on its next mount (wherever `/dashboard` resolves to) and triggers itself there.
+
+**A16 ("What's New" panel):** `useWhatsNewPanel.ts` (localStorage, keyed on
+`services/analytics/config.ts`'s `releaseVersion` — shows once per release, not once ever) +
+`WhatsNewPanel.tsx`. Content cites 3 real shipped items (Golden Path optionality, AI answer
+rationale, bulk-approve), per the actionable's own acceptance criteria ("reflects real Sprint 1-3
+work, not placeholder copy"). Rendered from `App.tsx`, gated behind the same `screenshotMode` check
+`GuidedDemoBanner` already uses.
+
+**A17 (completion celebration):** `useWorkflowCompletionCelebration.ts` (no persistence — fires
+every completion, unlike A9/A10/A16's once-per-scope prompts) + `WorkflowCompletionCelebration.tsx`
+(auto-dismissing toast, top-right so it doesn't collide with A9's bottom-center micro-survey or
+A12's inline banner). Wired into the two completion points the roadmap names explicitly ("using the
+same completion trigger as A12/A9"): `TasksSection.tsx`'s task-completion path, and
+`AIReviewInboxPage.tsx`'s `decide()` success path (scoped to `decision === "approved"` specifically
+— rejecting/escalating isn't a "completion").
+
+### Evidence
+
+`PRE_DEMO_ACTIONABLES.md` items 10, 16, 17 — Feedback and Retention dimensions.
+
+### What this does and doesn't close
+
+**Closed:** all 3 items built and unit-tested to the same rigor as the rest of this iteration, with
+one genuine sequencing bug found and fixed (A10's navigation-timing issue).
+
+**Not yet closed:**
+- **This PR (#152) is not yet merged as of this entry.** Per the lesson from the 2026-07-21
+  git-reconciliation incident, this is stated plainly rather than assumed complete because it was
+  built and verified — see `PRODUCT_ITERATION_I_CLOSEOUT.md` section 5 for why that distinction
+  matters.
+- A10's trigger point (demo-mode-off) is the one concrete, testable interpretation of "session/route
+  exit" available in this codebase today; a customer closing the tab entirely still isn't captured.
+- `WhatsNewPanel`'s 3 entries are a manually-curated snapshot as of this commit — nothing pulls them
+  from `ITERATION_PROGRESS.md` automatically, so they will go stale without hand-updates each release.
+- No dedicated tests for the host components (`SettingsSection.tsx`, `App.tsx`, `TasksSection.tsx`,
+  `AIReviewInboxPage.tsx`) beyond what already existed. All 3 new hooks have full unit coverage.
+
+### Audit trail
+
+- New: `usePostDemoSatisfactionPrompt.ts`/`.test.tsx`, `useWhatsNewPanel.ts`/`.test.tsx`,
+  `useWorkflowCompletionCelebration.ts`/`.test.tsx`, `PostDemoSatisfactionPrompt.tsx`,
+  `WhatsNewPanel.tsx`, `WorkflowCompletionCelebration.tsx`.
+- Modified: `src/app/App.tsx`, `src/features/settings/SettingsSection.tsx`,
+  `src/features/tasks/TasksSection.tsx`, `src/features/ai-workspace/AIReviewInboxPage.tsx`,
+  `src/services/analytics/types.ts` (5 new `AnalyticsEventName` entries).
+- Verification: `pnpm run typecheck` clean, `pnpm run lint --max-warnings=0` clean, `pnpm run test --
+  run`: 91 files / 261 tests passing (up from 88/253), `pnpm run build` succeeds.
+- Branch `feat/sprint3-a10-a16-a17-retention`, PR #152 (open, not yet merged as of this entry).
+
+---
+
+## 2026-07-21 — Sprint 3 Phase 0 byproduct: local Supabase seed + audit-trigger fixes
+
+### What happened
+
+While attempting a genuinely live (non-demo-mode) walkthrough of the onboarding flow for Sprint 3's
+Phase 0 integration & harmonization check, `supabase start` failed in two successive layers before
+the local stack could come up at all.
+
+1. All 3 local dev seed files (`supabase/seeds/001-003`) insert into
+   `organizations`/`programs`/`projects`/`tasks`/`meetings`/`notifications`/`audit_logs` without
+   setting `tenant_id`. A later migration made that column NOT NULL, backfilling only pre-existing
+   rows at migration-apply time — seed-inserted rows never got a value. Fixed every affected insert.
+
+2. **More significant, not local-dev-specific:** `public.record_enterprise_audit_log()` — the
+   trigger firing on every insert/update to `projects`/`tasks`/`meetings`/`organizations` — has a
+   `CASE` expression that unconditionally references `old.role is distinct from new.role`, a branch
+   meant only for its separate `users`-table trigger. Postgres must resolve every column reference
+   across a `CASE`'s branches before executing any of them, so this failed every write to those 4
+   tables outright with `record "old" has no field "role"`, regardless of which branch's condition
+   was actually true. Its sibling `record_permission_audit_log()` had a related bug: it never set
+   `tenant_id` on its own `audit_logs` insert, which would fail the same constraint once reached.
+   Fixed via a new migration (doesn't edit the original, to preserve applied-migration history) that
+   recreates both functions.
+
+### What this does and doesn't close
+
+**Closed:** `supabase start` now gets past every migration and every seed file with no SQL errors.
+The local stack's non-database containers (analytics/realtime/storage/pg-meta/studio) then failed
+their own health checks in this sandboxed environment (Docker reported 3.7GiB total memory,
+resolved with `--exclude`/`--ignore-health-check` flags for a one-off run) — an environment-specific
+limit, not a code issue.
+
+**Not yet closed:**
+- **The actual live browser walkthrough of A3/A7/A18 was never carried out**, even after the local
+  stack came up — Sprint 3 code work took priority once it became available. This remains open.
+- **Whether the audit-trigger bug was ever live on the actual production/beta Supabase project is
+  unconfirmed** — no production credentials available in this environment to check. This migration
+  may only ever have existed in this repo's `supabase/migrations/` folder without being applied
+  remotely (there's a documented precedent for the inverse gap — the Supabase wrapper enablement
+  that happened on the live project without a corresponding migration).
+
+### Audit trail
+
+- `supabase/seeds/001_local_enterprise_seed.sql`, `002_sprint6_enterprise_seed.sql`,
+  `003_sprint7_e2e_seed.sql`; new migration `20260721130000_fix_enterprise_audit_log_trigger.sql`.
+- SQL-only change; no typecheck/lint/test/build impact. Verified via the actual failure mode
+  (`supabase start` reaching every migration/seed with no errors).
+- Branch `fix/supabase-seed-and-audit-trigger`, merged via PR #149 (`2026-07-21T08:20:24Z`).
