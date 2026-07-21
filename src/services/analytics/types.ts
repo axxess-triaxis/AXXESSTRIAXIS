@@ -73,7 +73,12 @@ export type AnalyticsEventName =
   | "pilot_onboarding_step_completed"
   | "pilot_interest_captured"
   | "micro_survey_shown"
-  | "micro_survey_responded";
+  | "micro_survey_responded"
+  | "post_demo_satisfaction_shown"
+  | "post_demo_satisfaction_responded"
+  | "whats_new_panel_viewed"
+  | "whats_new_panel_dismissed"
+  | "workflow_completion_celebrated";
 
 export type AnalyticsEventSource = "client" | "server" | "test";
 export type SafeAnalyticsPrimitive = string | number | boolean | null;
