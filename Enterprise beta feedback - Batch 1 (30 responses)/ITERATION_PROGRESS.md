@@ -652,3 +652,103 @@ documents.
   run in isolation: 1 file / 4 tests passing (up from 2); full suite confirmed 88 files / 246
   tests passing (up from 88/244); `pnpm run build` also run to verify the new API route and typed
   Next.js `Route` casts compile correctly (not previously covered by typecheck/lint/vitest alone).
+
+---
+
+## 2026-07-21 — Git reconciliation: recovered Sprint 1 tail + all of Sprint 2 from an orphaned branch
+
+### What happened
+
+PR #137 was merged mid-flight, before every planned commit had been pushed to its source branch
+(`feature/golden-path-optional-plus-pre-demo-docs`). The merge captured exactly one commit —
+`5ebf157` ("feat: make Golden Path optional; add pre-demo actionables + 3-sprint roadmap") — which
+implements only **A1 and A2**. Every commit pushed to that branch afterward had nowhere to land:
+
+```
+5ebf157  MERGED into main as PR #137 (A1, A2 only)
+   ↓ pushed after the merge already happened — never merged in:
+8a3c41d  feat: complete Sprint 1 (A8, A5, A19, A20, A12)
+7de9005  docs: Golden Path rationale + fix critical demo-data leakage into beta
+bc5053f  fix: close remaining demo-data leakage found in full-codebase sweep
+ce2eaae  feat: Sprint 2 A4 — AI citations + rationale under every answer
+2c1a75a  feat: Sprint 2 A6 — bulk/quick-approve in AI Review Inbox
+721edc6  feat: Sprint 2 A9 — in-context 1-click micro-survey
+4519038  feat: Sprint 2 A11 — wire time-to-first-value/onboarding funnel events
+9e7e7fc  feat: Sprint 2 complete — A3 + A7 + A18 (guided onboarding trio)
+```
+
+(Hashes shown are post-rebase; the originals — `711b0e5` etc. — are recorded in each item's own
+entry above.) The branch itself was never deleted, so nothing was lost, but for approximately one
+day `main` genuinely only contained 2 of the 20 actionables while every status document (this log,
+`PRE_DEMO_ACTIONABLES.md`, `SPRINT_CHECKLIST_PRE_DEMO.md`) — correctly, on the branch they were
+written on — described Sprint 1 and Sprint 2 as fully shipped. Those documents were accurate about
+what had been *built and verified*; they were not accurate about what had reached `main`.
+
+### How it was caught
+
+Discovered while responding to a request to plan Sprint 3: pulling the current `PRE_DEMO_ACTIONABLES.md`
+from a fresh `origin/main` checkout showed items 3-20 still marked 🔜, contradicting what had been
+reported as shipped. `git merge-base --is-ancestor 711b0e5 origin/main` confirmed the Sprint 2 tip
+was not an ancestor of `main`; `git show --stat 5ebf157` confirmed the merged commit's actual diff
+was limited to A1/A2. This was surfaced before any Sprint 3 planning or further status-document
+edits, rather than compounding the discrepancy.
+
+### What was done about it
+
+1. `git merge-tree` dry-run confirmed the orphaned branch would apply onto current `main` with zero
+   conflicts (current `main` had since gained an unrelated dependency-hygiene fix, PR #138 — see
+   below — but touched none of the same files as the stranded Sprint 1/2 commits).
+2. Rebased the orphaned branch (`feature/golden-path-optional-plus-pre-demo-docs` @ `711b0e5`) onto
+   post-PR-#138 `main` as a new branch, `reconcile/sprint1-tail-and-sprint2` — all 8 commits applied
+   cleanly, no manual conflict resolution needed.
+3. Re-ran the full verification suite from scratch against the rebased result (not reused from the
+   original, since the base had changed): `pnpm run typecheck`, `pnpm run lint --max-warnings=0`,
+   `pnpm run test -- --run`, `pnpm run build`.
+4. This entry and the corresponding `PRE_DEMO_ACTIONABLES.md`/`SPRINT_CHECKLIST_PRE_DEMO.md` status
+   updates ship as part of the same reconciliation branch, not as a separate follow-up, so the
+   status documents and the code they describe land on `main` atomically.
+
+### Unrelated fix discovered and merged in the same window (PR #138)
+
+While verifying this branch, a second, unrelated problem surfaced: several `dependabot` PRs
+(`typescript` 5.9.3→7.0.2, `eslint` 9.39.4→10.7.0/`@eslint/eslintrc` 3.3.5→3.3.6,
+`react-resizable-panels` 2.1.7→4.12.2) had each been merged individually and were never verified
+together. In combination they broke `typecheck`, `lint`, and `build` on `main`:
+`@typescript-eslint/typescript-estree@8.62.1` (pulled in transitively via `eslint-config-next`)
+declares `peerDependencies: { typescript: ">=4.8.4 <6.1.0" }`, so TS7 crashed ESLint outright rather
+than producing a lint finding; separately, `eslint-plugin-react@7.37.5` (also transitive) crashes
+under ESLint 10's context API. Fixed in PR #138 (merged `2026-07-21T05:30:35Z`) by reverting both to
+their last known-good versions and adding `ignore` rules to `.github/dependabot.yml` for
+`typescript >=6.1.0` and `eslint >=10.0.0` so the same combination isn't silently re-proposed. Also
+in that PR: a real, pre-existing (not introduced by this session) typed-route error in
+`src/app/page.tsx`, and removal of `src/app/components/ui/resizable.tsx` (confirmed zero importers;
+broken outright by the `react-resizable-panels` v4 rewrite). This is a process finding independent
+of the actionables work, but it's the reason the reconciliation in this entry needed a rebase rather
+than a direct merge.
+
+### What this does and doesn't close
+
+**Closed:** all 8 stranded commits are now verified against current `main` and ready to merge
+through a normal PR, restoring Sprint 1 to 7/7 and Sprint 2 to 7/7 on `main` once merged. The root
+cause (a PR merged while its source branch still had planned commits arriving) is named and its
+mechanics documented so it's recognizable if it recurs.
+
+**Not yet closed:**
+- **Process gap, not fixed by this entry:** nothing in this repo currently prevents a PR from being
+  merged mid-flight. That's a process/communication matter between however many people or agents are
+  pushing to a shared branch, not something a doc or a git hook alone resolves — flagging it rather
+  than proposing a specific control here, since that's a workflow decision, not a code fix.
+- All the honest gaps already named in each item's own entry above (no e2e browser verification of
+  A3/A7/A18, no dedicated tests for A8/A5/A19/A12, A9's golden-path-step trigger unwired, etc.)
+  are unchanged by this reconciliation — rebasing and re-verifying doesn't add coverage that wasn't
+  there before.
+
+### Audit trail
+
+- Branch: `reconcile/sprint1-tail-and-sprint2`, rebased from `feature/golden-path-optional-plus-pre-demo-docs`
+  (`711b0e5`) onto `origin/main` post-PR-#138.
+- Verification re-run from scratch on the rebased branch: `pnpm run typecheck` clean, `pnpm run lint
+  --max-warnings=0` clean, `pnpm run test -- --run` — see this entry's companion PR for the exact
+  file/test counts, `pnpm run build` succeeds.
+- `PRE_DEMO_ACTIONABLES.md` and `SPRINT_CHECKLIST_PRE_DEMO.md` updated in the same branch to remove
+  "pending PR merge" language once this reconciliation PR itself merges.
