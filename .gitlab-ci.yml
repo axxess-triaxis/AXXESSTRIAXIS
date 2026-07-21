@@ -1,0 +1,81 @@
+# GitLab CI validation pipeline -- mirrors the checks .github/workflows/ci.yml, security.yml, and
+# supabase-cli.yml ran on GitHub Actions, so validation doesn't depend on GitHub being reachable.
+# See docs/GITHUB_INDEPENDENT_OPERATIONS.md and docs/GITLAB_MIRROR.md for the context.
+#
+# GitLab's built-in SAST/Secret-Detection templates are included below -- they run on GitLab.com's
+# shared runners with no extra configuration and are the closest free-tier equivalent to the
+# CodeQL + Gitleaks jobs security.yml ran on GitHub. They are not a line-for-line replacement (the
+# rulesets differ), but cover the same category of check.
+include:
+  - template: Jobs/SAST.gitlab-ci.yml
+  - template: Jobs/Secret-Detection.gitlab-ci.yml
+
+image: node:22-slim
+
+stages:
+  - quality
+  - supabase
+  - security
+
+variables:
+  NEXT_TELEMETRY_DISABLED: "1"
+  PNPM_VERSION: "11.7.0"
+
+.pnpm_setup:
+  before_script:
+    - corepack enable
+    - corepack prepare pnpm@$PNPM_VERSION --activate
+    - pnpm config set store-dir .pnpm-store
+  cache:
+    key:
+      files:
+        - pnpm-lock.yaml
+    paths:
+      - .pnpm-store
+
+quality:
+  stage: quality
+  extends: .pnpm_setup
+  script:
+    - pnpm install --frozen-lockfile
+    - pnpm run typecheck
+    - pnpm run lint
+    - pnpm run test
+    - pnpm run release:preflight -- --mode=ci --target=all
+    - pnpm run build
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == "main"'
+    - if: '$CI_COMMIT_BRANCH == "staging"'
+    - if: '$CI_COMMIT_BRANCH == "dev"'
+
+supabase-verify:
+  stage: supabase
+  extends: .pnpm_setup
+  script:
+    - pnpm install --frozen-lockfile
+    - pnpm run supabase:version
+    - pnpm run supabase:verify
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      changes:
+        - supabase/**/*
+        - scripts/verify-supabase-migrations.mjs
+        - package.json
+        - pnpm-lock.yaml
+    - if: '$CI_COMMIT_BRANCH == "main"'
+      changes:
+        - supabase/**/*
+        - scripts/verify-supabase-migrations.mjs
+        - package.json
+        - pnpm-lock.yaml
+
+pnpm-audit:
+  stage: security
+  extends: .pnpm_setup
+  script:
+    - pnpm install --frozen-lockfile
+    - pnpm audit --prod --audit-level critical
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH == "main"'

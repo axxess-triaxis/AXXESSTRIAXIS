@@ -1,6 +1,9 @@
 # Supabase CLI Integration
 
-AXXESS manages Supabase through a repo-local CLI dependency, pinned in `package.json`.
+AXXESS manages Supabase through a repo-local CLI dependency, pinned in `package.json`. Every
+command in this document talks directly to the Supabase CLI/API -- none of it depends on GitHub,
+GitHub Actions, or any particular Git host being reachable (see
+`docs/GITHUB_INDEPENDENT_OPERATIONS.md`).
 
 ## Why This Exists
 
@@ -35,11 +38,35 @@ pnpm run supabase:test:rls
 pnpm exec supabase stop --no-backup
 ```
 
-## Linked Project Dry Run
+## Linked Project Workflow (GitHub-independent)
+
+Applying migrations to the real remote project only ever needs the Supabase CLI talking directly
+to Supabase's API -- no GitHub Actions step, no Git push, and no dependency on any Git host being
+reachable. This checkout is not yet linked to a remote project (no `supabase/.temp/project-ref`
+exists here); linking needs a real project ref and either an interactive login or
+`SUPABASE_ACCESS_TOKEN`, none of which are available in this environment -- do this from a machine
+with real Supabase account access.
+
+One-time link:
 
 ```bash
 pnpm run supabase:link -- --project-ref <project-ref>
-pnpm run supabase:db:dry-run
+```
+
+Then, for every migration apply, use `scripts/supabase-migrate-remote.mjs` rather than the raw
+`db push` commands directly -- it always runs a dry run first and only actually applies migrations
+when passed `--yes`, so it can never apply anything by accident:
+
+```bash
+pnpm run supabase:migrate:remote          # dry run only, prints the diff, applies nothing
+pnpm run supabase:migrate:remote:apply    # dry run, then applies if it looks right
+```
+
+Equivalent raw commands, if you want them separately:
+
+```bash
+pnpm run supabase:db:dry-run   # supabase db push --linked --dry-run
+pnpm run supabase:db:push      # supabase db push --linked (applies)
 ```
 
 Use `pnpm run supabase:db:push` only after reviewing the dry run.

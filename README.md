@@ -2300,6 +2300,14 @@ AXXESS is designed to support enterprise deployments that evolve from early desi
 
 The platform is intentionally engineered so that additional customers, jurisdictions and enterprise requirements compound on an existing operational foundation instead of forcing architectural redesign.
 
+**None of this depends on GitHub.** Vercel, Supabase, GitLab, Capacitor, and Linear are each
+operated directly via their own CLI/API — deploying, migrating, building, and tracking work all
+work the same way whether or not any particular Git host is reachable. This was a deliberate
+response to a real incident (the original GitHub account behind this repo was suspended
+mid-project), not a hypothetical design goal. See `docs/GITHUB_INDEPENDENT_OPERATIONS.md` for the
+full control-plane map, and `docs/ENVIRONMENT_VARIABLES.md` for the environment-variable checklist
+across local development, Vercel, Supabase, GitLab CI, and mobile builds.
+
 ---
 
 # Deployment Philosophy
