@@ -92,9 +92,9 @@ implementation can start without re-discovery.
    `micro_survey_responded` analytics events with the score and trigger source. The golden-path-step
    trigger point is not yet wired — only the AI-review-decision trigger, since that's the surface
    touched this pass; tracked as a follow-up. Tested in `useMicroSurveyPrompt.test.tsx`.
-10. 🔨 **Add a lightweight post-demo satisfaction capture**, distinct from the existing
+10. ✅ **Add a lightweight post-demo satisfaction capture**, distinct from the existing
     `BetaFeedbackButton`. *(Feedback — S)* A single question at the end of a live demo session.
-    **Built (PR #152, open):** `usePostDemoSatisfactionPrompt.ts` + `PostDemoSatisfactionPrompt.tsx`,
+    **Implemented (PR #152, merged):** `usePostDemoSatisfactionPrompt.ts` + `PostDemoSatisfactionPrompt.tsx`,
     triggered by turning Investor Preview off in Settings — the concrete equivalent of "the natural
     end of a live demo session" in this product's actual UX. Found and fixed a real sequencing bug
     while wiring it up: the demo-mode-off toggle hard-navigates to `/dashboard` 250ms later,
@@ -144,16 +144,16 @@ implementation can start without re-discovery.
 
 ## Tier 4 — Retention and perceived momentum
 
-16. 🔨 **Add a "What's New" panel at login.** *(Retention — S)* Even a 3-line changelog gives
-    demo/pilot users a sense of active development between sessions. **Built (PR #152, open):**
+16. ✅ **Add a "What's New" panel at login.** *(Retention — S)* Even a 3-line changelog gives
+    demo/pilot users a sense of active development between sessions. **Implemented (PR #152, merged):**
     `useWhatsNewPanel.ts` (shows once per release version) + `WhatsNewPanel.tsx`, citing real
     Sprint 1/2 shipped items (Golden Path optionality, AI answer rationale, bulk-approve) per this
     item's own acceptance criteria. **Honest gap:** the 3 entries are a manually-curated snapshot
     as of PR #152 — nothing pulls them from `ITERATION_PROGRESS.md` automatically, so they will go
     stale without manual updates each release.
-17. 🔨 **Add a completion celebration/confirmation on finishing any workflow end-to-end.**
+17. ✅ **Add a completion celebration/confirmation on finishing any workflow end-to-end.**
     *(Retention, Experience — S)* Reinforces the knowledge → AI → review → action → audit loop the
-    SWOT identifies as the core differentiator. **Built (PR #152, open):**
+    SWOT identifies as the core differentiator. **Implemented (PR #152, merged):**
     `useWorkflowCompletionCelebration.ts` (fires every completion, unlike A9/A10/A16's
     once-per-scope prompts) + `WorkflowCompletionCelebration.tsx`, wired into the same two
     completion points A9/A12 use (`TasksSection.tsx`, `AIReviewInboxPage.tsx`'s `decide()` on
