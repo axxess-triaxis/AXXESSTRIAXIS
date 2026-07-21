@@ -4,8 +4,12 @@ import { useEffect, useState } from "react";
 import { useAuth } from "../auth/AuthProvider";
 import { EmptyState } from "../components/feedback/EmptyState";
 import { LoadingState } from "../components/feedback/LoadingState";
+import { PostDemoSatisfactionPrompt } from "../components/feedback/PostDemoSatisfactionPrompt";
+import { WhatsNewPanel } from "../components/feedback/WhatsNewPanel";
 import { Card } from "../components/ui/Card";
 import { GuidedDemoBanner } from "../components/demo/GuidedDemoBanner";
+import { usePostDemoSatisfactionPrompt } from "../hooks/usePostDemoSatisfactionPrompt";
+import { useWhatsNewPanel } from "../hooks/useWhatsNewPanel";
 import { AppShell } from "./layout/AppShell";
 import { navGroups } from "./navigation";
 import { lazyRouteComponents } from "./routing/lazyRoutes";
@@ -22,6 +26,8 @@ export default function App() {
   const [notifOpen, setNotifOpen] = useState(false);
   const { session, isAuthenticated, logout } = useAuth();
   const analytics = useAnalytics();
+  const postDemoSatisfaction = usePostDemoSatisfactionPrompt();
+  const whatsNew = useWhatsNewPanel();
   const currentUser = session.user;
   const routePath = `/${activeRoute.path}`;
   const screenshotMode = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("screenshot") === "true";
@@ -138,6 +144,12 @@ export default function App() {
       <RouteBoundary route={activeRoute} hasAccess={hasRouteAccess}>
         <ActiveSection />
       </RouteBoundary>
+      {!screenshotMode && postDemoSatisfaction.visible && (
+        <PostDemoSatisfactionPrompt user={currentUser} route={routePath} onDismiss={postDemoSatisfaction.dismiss} />
+      )}
+      {!screenshotMode && whatsNew.visible && (
+        <WhatsNewPanel user={currentUser} route={routePath} onDismiss={whatsNew.dismiss} />
+      )}
     </AppShell>
   );
 }

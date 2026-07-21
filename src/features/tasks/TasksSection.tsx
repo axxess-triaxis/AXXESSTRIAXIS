@@ -7,6 +7,8 @@ import { SelectField, TextAreaField, TextField } from "../../components/forms/Fo
 import { BetaFeedbackModal } from "../../components/feedback/BetaFeedbackModal";
 import { EmptyState } from "../../components/feedback/EmptyState";
 import { LoadingState } from "../../components/feedback/LoadingState";
+import { WorkflowCompletionCelebration } from "../../components/feedback/WorkflowCompletionCelebration";
+import { useWorkflowCompletionCelebration } from "../../hooks/useWorkflowCompletionCelebration";
 import { DataStateBadge, DemoDataNotice, ModuleHeader, PageShell, TenantScopeBadge, WorkflowStepCard } from "../../components/enterprise";
 import { WorkflowTimelinePanel } from "../../components/enterprise/WorkflowTimelinePanel";
 import { Avatar } from "../../components/ui/Avatar";
@@ -85,6 +87,7 @@ export const TasksSection = () => {
   const [showCompletionFeedbackPrompt, setShowCompletionFeedbackPrompt] = useState(false);
   const [completionFeedbackPromptShown, setCompletionFeedbackPromptShown] = useState(false);
   const [feedbackModalOpen, setFeedbackModalOpen] = useState(false);
+  const completionCelebration = useWorkflowCompletionCelebration();
   const taskTimeline = useWorkflowTimeline(scope, { limit: 5, resourceType: selectedTask ? "task" : undefined, resourceId: selectedTask?.id });
 
   const canManageTasks = Boolean(user && ["Super Admin", "Organization Admin", "Executive", "Manager", "Employee"].includes(user.role));
@@ -219,6 +222,14 @@ export const TasksSection = () => {
           module_name: "tasks",
           route: "/tasks",
         });
+        analytics.trackEvent("workflow_completion_celebrated", { task_id: saved.id, source: "tasks" }, {
+          organization_id: saved.organizationId,
+          user_id: scope.userId,
+          user_role: scope.role,
+          module_name: "tasks",
+          route: "/tasks",
+        });
+        completionCelebration.celebrate(`"${saved.title}" completed!`);
         if (!completionFeedbackPromptShown) {
           setShowCompletionFeedbackPrompt(true);
           setCompletionFeedbackPromptShown(true);
@@ -302,6 +313,9 @@ export const TasksSection = () => {
                 setShowCompletionFeedbackPrompt(false);
               }}
             />
+          )}
+          {completionCelebration.visible && (
+            <WorkflowCompletionCelebration message={completionCelebration.message} onDismiss={completionCelebration.dismiss} />
           )}
           <Card className="overflow-hidden">
             <div className="flex items-center gap-4 border-b border-[rgba(0,0,0,0.06)] bg-[#F8F9FA] px-4 py-2.5">
