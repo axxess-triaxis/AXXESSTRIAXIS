@@ -7,6 +7,19 @@ updates:
       day: monday
       time: "09:00"
     open-pull-requests-limit: 10
+    ignore:
+      # @typescript-eslint/typescript-estree@8.62.1 (pulled in transitively via
+      # eslint-config-next) declares peerDependencies typescript ">=4.8.4 <6.1.0".
+      # TS 7.0.2 was merged (PR #128) and crashed eslint outright; do not re-propose
+      # until typescript-eslint publishes TS7 support.
+      - dependency-name: "typescript"
+        versions: [">=6.1.0"]
+      # eslint-plugin-react@7.37.5 (also transitive via eslint-config-next) crashes
+      # under ESLint 10's context API. eslint-config-next's own peerDependency
+      # (">=9.0.0") is too loose to catch this. PR #119 merged eslint 10.7.0 and broke
+      # lint entirely; do not re-propose until eslint-config-next verifies ESLint 10.
+      - dependency-name: "eslint"
+        versions: [">=10.0.0"]
     groups:
       next-and-react:
         patterns:

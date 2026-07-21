@@ -1,5 +1,3 @@
-import Link from "next/link";
-
 export default function HomePage() {
   const betaWorkspaceUrl =
     process.env.NEXT_PUBLIC_BETA_WORKSPACE_URL?.replace(/\/$/, "") ??
@@ -18,18 +16,18 @@ export default function HomePage() {
           The production website and brand experience live at this domain, while the enterprise beta workspace remains available for pilot teams.
         </p>
         <div className="flex flex-wrap gap-4">
-          <Link
+          <a
             href={`${betaWorkspaceUrl}/dashboard`}
             className="rounded-lg bg-[#8b1e2d] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#741927]"
           >
             Open Beta Workspace
-          </Link>
-          <Link
+          </a>
+          <a
             href={`${betaWorkspaceUrl}/auth`}
             className="rounded-lg border border-[#b8c3d1] bg-white px-5 py-3 text-sm font-semibold text-[#1d2a38] transition hover:bg-[#eef2f6]"
           >
             Sign In
-          </Link>
+          </a>
         </div>
       </section>
     </main>
