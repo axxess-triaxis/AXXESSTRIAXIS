@@ -9,13 +9,14 @@ import { isDemoModeEnabled } from "../../demo/demoMode";
 import { applicationServices } from "../../providers/serviceProvider";
 import { previewSelectedEmailImport, type ConnectorProviderId, type EmailImportPreview } from "../../services/integrations/connectorContract";
 import type { MicrosoftGraphMailboxMessageSummary } from "../../services/integrations/microsoftGraphMailbox";
-import { getIntegrationHealth, getProductivityPluginRegistry } from "../../services/integrations/pluginRegistry";
+import { getIntegrationHealth, getInfrastructureOnlyIntegrations, getPilotIntegrations } from "../../services/integrations/pluginRegistry";
 
 // Illustrative connector gallery for the investor-demo experience only -- real connector status
 // comes from getIntegrationHealth()/getProductivityPluginRegistry() below, which are live. Gated
 // behind isDemoModeEnabled(). See DEMO_DATA_LEAKAGE_AUDIT.md.
 const integrations = applicationServices.institutionalRepository.getIntegrations();
-const pluginRegistry = getProductivityPluginRegistry();
+const pilotIntegrations = getPilotIntegrations();
+const infrastructureOnlyIntegrations = getInfrastructureOnlyIntegrations();
 const pluginHealth = getIntegrationHealth();
 
 const connectedCount = integrations.filter((integration) => integration.status === "connected").length;
@@ -221,10 +222,10 @@ export const IntegrationsSection = () => {
 
     <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
       {[
-        ["Adapters", pluginHealth.total],
+        ["Adapters catalogued", pluginHealth.total],
         ["Configured", pluginHealth.configured],
-        ["Demo Ready", pluginHealth.demoConnected],
-        ["Webhooks", pluginHealth.webhookReady],
+        ["Pilot-enabled", pluginHealth.pilotEnabled],
+        ["Webhook-capable", pluginHealth.webhookReady],
       ].map(([label, value]) => (
         <Card key={label} className="p-4">
           <div className="text-[11px] font-semibold uppercase tracking-wide text-[#5F6B73]">{label}</div>
@@ -257,13 +258,12 @@ export const IntegrationsSection = () => {
     <Card className="p-5">
       <div className="mb-4 flex items-center justify-between">
         <div>
-          <h3 className="text-sm font-semibold text-[#0F1117]">Productivity Plugin Registry</h3>
-          <p className="mt-1 text-xs text-[#5F6B73]">OAuth scopes, role gates, webhook readiness, and audit events for enterprise integrations.</p>
+          <h3 className="text-sm font-semibold text-[#0F1117]">Pilot integrations</h3>
+          <p className="mt-1 text-xs text-[#5F6B73]">Connectors with a real, working connect flow in this release. OAuth scopes, role gates, webhook readiness, and audit events shown below.</p>
         </div>
-        <span className="rounded-full bg-[#8B1E2D]/8 px-2.5 py-1 text-[11px] font-semibold text-[#8B1E2D]">Sprint 14</span>
       </div>
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-        {pluginRegistry.map((plugin) => (
+        {pilotIntegrations.map((plugin) => (
           <div key={plugin.id} className="rounded-xl border border-[rgba(0,0,0,0.06)] bg-[#F8F9FA] p-3">
             <div className="flex items-start justify-between gap-3">
               <div>
@@ -276,6 +276,22 @@ export const IntegrationsSection = () => {
             </div>
             <p className="mt-2 text-xs leading-relaxed text-[#5F6B73]">{plugin.useCases.join(" - ")}</p>
           </div>
+        ))}
+      </div>
+    </Card>
+
+    <Card className="p-5">
+      <div className="mb-4">
+        <h3 className="text-sm font-semibold text-[#0F1117]">Also available at the infrastructure level</h3>
+        <p className="mt-1 max-w-2xl text-xs leading-relaxed text-[#5F6B73]">
+          These {infrastructureOnlyIntegrations.length} connectors are enabled at the database level (Supabase wrappers) but have no product-facing connect flow yet -- listed here for reference, not as something you can connect to today.
+        </p>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {infrastructureOnlyIntegrations.map((plugin) => (
+          <span key={plugin.id} className="rounded-full border border-[rgba(0,0,0,0.08)] bg-[#F8F9FA] px-3 py-1 text-[11px] font-medium text-[#5F6B73]">
+            {plugin.name}
+          </span>
         ))}
       </div>
     </Card>
