@@ -225,6 +225,45 @@ Representative customer profiles include:
 
 These organizations increasingly require AI systems capable of operating within formal organizational structures rather than individual productivity environments.
 
+AXXESS is also priced and distributed as a self-serve product for Indian MSMEs, startups and NGOs —
+the entry tier of the same five-tier commercial structure described in the next section, not a
+separate, lighter product.
+
+---
+
+# Business Model & Commercial Structure
+
+AXXESS is priced across five tiers on a single underlying platform, spanning two very different
+buyer types:
+
+| Tier | Buyer | Distribution | Illustrative price point |
+|---|---|---|---|
+| 1 | Indian MSMEs, startups, NGOs | Self-serve, iOS/Android app-store signup | **$50/year** |
+| 2 | Growing SME / mid-market org | Self-serve or light-touch sales, web + mobile | Mid-tier, usage-scaled |
+| 3 | Enterprise | Guided pilot → paid conversion, web-first | Enterprise-scaled |
+| 4 | Regulated enterprise (healthcare, finance, education) | Sales-assisted, compliance-reviewed | Regulated-tier pricing |
+| 5 | Sovereign / government / GCC corporate | Tailored, sandboxed, dedicated deployment | Custom, contract-negotiated |
+
+Tier 1 is the same platform as tier 5 — same schema, same Row Level Security model, same
+governance/audit layer — configured with a narrower `security_tier` and feature-flag exposure, not
+a cut-down demo. This is why the platform is engineered as thoroughly as it is at this stage: the
+same kernel that onboards a $50/year NGO this quarter must be structurally capable of becoming a
+sovereign government tenant later without a re-platform. See
+`MONOREPO_ARCHITECTURE_AND_BUSINESS_MODEL.md` for the full architecture-to-business-model mapping,
+including the exact schema columns (`security_tier`, `data_residency_region`) that back this claim
+today, and what is honestly still a target rather than a shipped capability.
+
+**Capital efficiency.** Total historic spend on development, design and product is approximately
+$800 to date, with $80 spent in the current phase. At the Tier 1 price point, two self-serve
+subscriptions cover current run-rate cost — the company does not depend on enterprise or sovereign
+revenue to sustain current operations; those tiers are a parallel expansion path, not a precondition
+for breakeven.
+
+**Estonia entity and EU expansion path.** Triaxis operates an Estonian OÜ entity, intended to
+support Schengen/EU market entry post-Year-3, sequenced after GDPR and EU AI Act compliance
+documentation is built out. No EU-specific compliance documentation exists in this repository yet
+— this is correctly future work, not a current claim.
+
 ---
 
 # Current Product Status
@@ -289,6 +328,65 @@ https://axxesstriaxis.vercel.app
 ---
 
 *"Enterprise AI becomes trustworthy when governance, auditability and operational control are treated as core infrastructure—not post-deployment features."*
+
+---
+
+# Demo Mode and Live Beta Are Fully Partitioned
+
+AXXESS is not a single demo dressed up as two modes. The investor/demo preview and the live beta
+are genuinely separate, and — as of a direct, in-repository verification pass — are correctly
+isolated from each other at every layer:
+
+| | Investor/demo mode | Live beta (real tenant) |
+|---|---|---|
+| Entry point | Dedicated demo login, or `NEXT_PUBLIC_AXXESS_DEMO_MODE=true` | Real Supabase Auth signup and onboarding |
+| Data source | Fixed illustrative fixture data (`src/demo/demoRepositories.ts`) | Live Supabase Postgres, with an honest empty result on error — never fake data substituted |
+| Tenant identity | Mock user/organization context | A real `auth.users` row and a real, provisioned `organizations` row |
+| Postgres access | Not applicable (fixture data) | Row Level Security + Postgres role grants + a `tenant_id`-partitioned schema |
+
+This was verified, not assumed: a genuine signup → onboarding → provisioning → sample-data-seed →
+governed-RAG-query walkthrough was run end to end against a real, non-demo tenant, and the
+resulting AI answer correctly cited a real, just-seeded document by name with a real confidence
+score — not a fabricated one. Four rounds of dedicated demo-data-leakage auditing have found and
+closed cases where this partition previously leaked (see
+`Enterprise beta feedback - Batch 1 (30 responses)/DEMO_DATA_LEAKAGE_AUDIT.md`), and the schema-level
+tenant-isolation bugs found during the live walkthrough have been fixed (see
+`Enterprise beta feedback - Batch 1 (30 responses)/ITERATION_PROGRESS.md`'s 2026-07-21 entry). Full
+architectural detail in `MONOREPO_ARCHITECTURE_AND_BUSINESS_MODEL.md` §5.
+
+**The point of this discipline:** AXXESS is built for commercial pilots, not for impressing an
+accelerator with a demo. A commercial pilot customer's data must never be able to leak into, or be
+contaminated by, the same investor-facing preview that runs in the same codebase — and that
+boundary is now verified, not just designed.
+
+---
+
+# Pre-Revenue, Pre-Pilot Traction
+
+AXXESS completed its first structured beta-feedback batch: 30 submissions, 28 unique respondents
+after deduplication. Full methodology and honest caveats in
+`Enterprise beta feedback - Batch 1 (30 responses)/Enterprise_Beta_Feedback_Batch_1.md` and
+`MONOREPO_ARCHITECTURE_AND_BUSINESS_MODEL.md` §6 — summarized here:
+
+| Signal | Result |
+|---|---|
+| Combined NPS (deduplicated) | 82.1 |
+| Enterprise-cohort NPS | 87.5 |
+| Mean likelihood to recommend | ~9.55 / 10 |
+| External enterprise respondents indicating a pilot horizon within 6 months | 4 of 7 (57%) |
+| External enterprise respondents selecting "Pilot Customer" | 3 of 7 |
+| External enterprise respondents who would trust AXXESS with sensitive data | 6 of 7 |
+| Stated budget range (enterprise cohort) | ~$100–500/year to $5,000+/year |
+
+**What this is not:** proof of product-market fit, a signed pilot, or paying revenue. No customer
+has paid AXXESS money and no pilot is currently signed — these are survey-stated intent and
+attachment signals, reported at the same precision the source analysis uses, not rounded up. What
+it is: real, structured, directionally positive early signal that the product resonates with its
+intended market, obtained before any revenue-generating activity, which is the correct stage at
+which to be collecting it.
+
+---
+
 # Architecture
 
 AXXESS is designed as a governance-native enterprise AI operating platform rather than a collection of AI assistants or workflow automations.
@@ -1281,7 +1379,24 @@ The platform architecture is intentionally designed to accommodate these differe
 
 # The 80/20 Architecture
 
-AXXESS separates globally reusable capabilities from jurisdiction-specific adaptations.
+AXXESS separates globally reusable capabilities from jurisdiction-specific adaptations. This is not
+an abstract design goal — it is concretely verifiable in the repository today:
+
+- The web application (`src/app/*`, Next.js) and the Capacitor-wrapped iOS/Android app
+  (`apps/mobile-capacitor`) render the **same** `App.tsx` component tree from the **same** `src/`
+  source, via a Vite build (`vite.config.ts` → `src/main.tsx`) that `apps/mobile-capacitor`'s
+  `capacitor.config.ts` loads directly. A fix made once in `src/` ships to web and both mobile app
+  stores simultaneously, with no second implementation to keep in sync.
+- `organizations.security_tier` (checked: `standard` / `regulated` / `mission-critical`) and
+  `organizations.data_residency_region` (open text, defaulting to `global`) exist on the schema's
+  foundational migration and are set per-tenant during onboarding — the same tenant-provisioning
+  code path serves every pricing tier and every configured jurisdiction today, differing only in
+  which values are set, not in which code runs.
+
+Full detail, including what is honestly still a target rather than a shipped capability (e.g. no
+literal `sovereign` tier value exists in the schema yet), is in
+`MONOREPO_ARCHITECTURE_AND_BUSINESS_MODEL.md`, which also maps this architecture directly to the
+five-tier pricing model described earlier in this README.
 
 ## 80% Common Kernel
 
@@ -1625,47 +1740,59 @@ Examples include:
 
 # Repository Structure
 
+This is the actual, verified layout — not an aspirational target. AXXESS is a pnpm workspace
+(`pnpm-workspace.yaml`) with the primary Next.js web application at the repository root, and two
+distinct mobile surfaces under `apps/`. See `MONOREPO_ARCHITECTURE_AND_BUSINESS_MODEL.md` for the
+full architecture rationale and how these surfaces share a kernel.
+
 ```
 /
+├── src/                      # Primary Next.js web app (App Router) — the shared kernel
+│   ├── app/                  # Routes: dashboard, ai-workspace, projects, tasks, meetings,
+│   │                         # documents, knowledge, approvals, crm, stakeholders, analytics,
+│   │                         # admin, integrations, auth, onboarding, api/*
+│   ├── features/             # Feature-module UI components, shared by web and the Capacitor shell
+│   ├── services/             # AI routing, RAG, integrations, analytics, workflows
+│   ├── repositories/         # Live (Supabase), demo, and empty repository implementations
+│   ├── auth/                 # Session resolution, provisioning, Supabase auth client
+│   ├── security/             # RBAC / UserContext
+│   ├── demo/                 # Demo-mode gating and fixture data (isDemoModeEnabled)
+│   └── main.tsx              # Vite entry point — mounts the same App.tsx the Capacitor shell loads
+│
 ├── apps/
-│   ├── web/
-│   ├── admin/
-│   ├── api/
-│   └── mobile/
+│   ├── mobile-capacitor/     # Native iOS/Android shell wrapping the Vite build of src/ (see above) —
+│   │                         # no business logic of its own, only native Capacitor plugins
+│   └── mobile/               # Separate native Expo/React Native app (expo-router) — early
+│                              # scaffolding, shares only packages/shared, not yet live-data-wired
 │
 ├── packages/
-│   ├── ai-runtime/
-│   ├── policy-engine/
-│   ├── observability/
-│   ├── audit/
-│   ├── integrations/
-│   ├── workflows/
-│   ├── review/
-│   └── shared/
-│
-├── docs/
-│   ├── architecture/
-│   ├── compliance/
-│   ├── security/
-│   ├── deployment/
-│   ├── sprint-notes/
-│   └── changelog/
+│   └── shared/                # Constants/types shared between the web kernel and apps/mobile
+│                               # (sectors, roles, analytics event names, OAuth config)
 │
 ├── supabase/
 │   ├── config.toml
-│   ├── migrations/
-│   ├── README.md
-│   └── .gitignore
+│   ├── migrations/            # Versioned schema, RLS policies, tenant_id/grant fixes
+│   └── seeds/
+│
+├── Enterprise beta feedback - Batch 1 (30 responses)/   # Beta survey analysis, sprint iteration
+│                                                          # log, closeout, demo-data-leakage audit
 │
 ├── scripts/
-│
 ├── .github/
 │   └── workflows/
 │
+├── MONOREPO_ARCHITECTURE_AND_BUSINESS_MODEL.md
 └── README.md
 ```
 
-The repository is organized around modular platform components, enabling independent evolution of runtime, governance, integrations and operational tooling.
+The repository is organized around one shared kernel (`src/`) consumed identically by the web app
+and the Capacitor mobile shell, plus a separate, thinner-integration native mobile app — not a set
+of independently-evolving packages. This is a deliberate, verified difference from an earlier draft
+of this section, which described a `packages/ai-runtime` / `packages/policy-engine` /
+`apps/web` / `apps/admin` / `apps/api` split that does not exist in the codebase; the platform
+capabilities described elsewhere in this README (Policy Engine, AI Runtime, Provider Routing, etc.)
+are real, but they live as modules inside `src/services/` and `src/features/`, not as separate
+workspace packages.
 
 ---
 
@@ -1690,9 +1817,15 @@ The repository is organized around modular platform components, enabling indepen
 
 ## Mobile
 
-- React Native
-- Expo
-- Capacitor/Webnative shell
+Two distinct mobile surfaces exist (verified against the repository, not aspirational — see
+`MONOREPO_ARCHITECTURE_AND_BUSINESS_MODEL.md` §2 for the full rationale):
+
+- **`apps/mobile-capacitor`** — a Capacitor native shell wrapping the same web application kernel
+  (`src/`) via a Vite build; this is the production mobile path today, with 100% feature parity
+  with web by construction, not by duplication.
+- **`apps/mobile`** — a separate, genuinely native Expo/React Native app (`expo-router`,
+  React Native 0.86), sharing only `packages/shared`'s constants/types with the web kernel today.
+  Early scaffolding — its screens are not yet wired to live data.
 - Android Play-ready AAB release lane
 - iOS TestFlight-ready IPA release lane
 - VS Code mobile build tasks
@@ -2381,11 +2514,28 @@ Future roadmap includes:
 Current production connectors include:
 
 - Gmail
+- Slack (quick-connect, Sprint 3)
+- Calendly (quick-connect, Sprint 3)
 
 Current OAuth infrastructure supports:
 
 - Gmail
 - Microsoft
+- Slack
+- Calendly
+
+### Postgres-level data connectors (Wrappers)
+
+Separately from the application-level OAuth connectors above, twelve Postgres foreign-data-wrapper
+extensions are enabled at the database layer: `airtable_wrapper`, `auth0_wrapper`,
+`calendly_wrapper`, `clickhouse_wrapper`, `hubspot_wrapper`, `notion_wrapper`, `mssql_wrapper`,
+`paddle_wrapper`, `s3_wrapper`, `slack_wrapper`, `snowflake_wrapper`, `stripe_wrapper`. These let
+Postgres query the corresponding third-party service as if it were a native table. **Honest
+status:** only the two backing Slack and Calendly above have a real, customer-facing product
+surface today; the remaining ten exist as infrastructure ahead of product need, deliberately
+sequenced behind reliability and clarity work rather than built speculatively into the UI. Full
+stack-of-use breakdown (database layer → application connector layer → product UI →
+customer journey → ops) in `MONOREPO_ARCHITECTURE_AND_BUSINESS_MODEL.md` §4.
 
 Future connector roadmap includes:
 
@@ -2398,7 +2548,6 @@ Future connector roadmap includes:
 
 ### Collaboration
 
-- Slack
 - Microsoft Teams
 - Discord
 
@@ -2682,7 +2831,8 @@ Current limitations include:
 
 ## Connectors
 
-- Gmail is the first production connector
+- Gmail, Slack, and Calendly are the current production connectors
+- Ten of twelve enabled Postgres data-layer wrappers have no product-facing surface yet
 - Connector ecosystem remains intentionally limited during beta
 
 ---

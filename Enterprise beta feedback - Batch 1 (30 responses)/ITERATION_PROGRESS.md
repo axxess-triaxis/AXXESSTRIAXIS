@@ -977,4 +977,132 @@ limit, not a code issue.
   `003_sprint7_e2e_seed.sql`; new migration `20260721130000_fix_enterprise_audit_log_trigger.sql`.
 - SQL-only change; no typecheck/lint/test/build impact. Verified via the actual failure mode
   (`supabase start` reaching every migration/seed with no errors).
+
+---
+
+## 2026-07-21 — First genuine live browser walkthrough of A3/A7/A18, four real bugs found and fixed
+
+### What happened
+
+Following up on "how much more can we clear/rectify right now" after the Sprint 1–3 iteration
+report, this closes the single highest-priority carried gap from `PRODUCT_ITERATION_I_CLOSEOUT.md`'s
+honest-gap register (#1): **the live browser walkthrough of A3 (guided workspace with real seeded
+sample data), A7 (goal-based onboarding redirect), and A18 (optional department/workspace fields)
+that had never actually been carried out**, even after the local Supabase stack came up in the prior
+entry. Ran a genuine signup → onboarding → provisioning → goal-based-redirect → sample-data-seed →
+governed-RAG-query flow against a real local Supabase instance (`.env.local` pointed at
+`http://127.0.0.1:54321`, `NEXT_PUBLIC_AXXESS_DEMO_MODE=false`) — not demo mode, not a mock session.
+
+Four distinct, real bugs surfaced, each blocking the flow outright until fixed:
+
+1. **New signups were routed straight into a broken workspace.** `src/auth/supabaseUser.ts`'s
+   `userContextFromAuthUser()` defaulted a brand-new (not-yet-onboarded) user's `organizationId` to
+   `cleanTenantUserContext.organizationId` ("org_clean_tenant", a non-UUID placeholder), and
+   `src/app/auth/page.tsx` routed every successful login straight to `/dashboard` with no check for
+   whether onboarding had actually completed. Every live repository query then failed outright with
+   Postgres `22P02: invalid input syntax for type uuid`. Fixed: added a `needsOnboarding?: boolean`
+   flag to `UserContext` (`src/security/rbac.ts`), an honest empty-string fallback instead of the
+   fake placeholder, login routing that checks the flag (`/onboarding` vs `/dashboard`), and a
+   defensive redirect in `src/app/App.tsx` as a safety net for any other entry path (bookmarks,
+   direct links).
+2. **A bare local Supabase CLI instance was missing baseline grants Supabase Cloud provisions
+   automatically.** Provisioning a new organization failed with `403 permission denied for table
+   organizations` (missing `service_role` grants on foundational tables), then — after fixing that —
+   `403 permission denied for table user_roles` when seeding sample data (missing `authenticated`
+   grants on the same class of foundational tables). Later migrations (sprint18 onward) already
+   grant per-table access to both roles for the tables they introduce; this never happened for
+   tables that predate that convention, because on Supabase Cloud it happens automatically at
+   project creation and so was never captured as a migration. Fixed via two new migrations doing a
+   dynamic `GRANT` loop over every `public` schema table plus `ALTER DEFAULT PRIVILEGES` for future
+   tables: `20260721140000_grant_service_role_public_schema.sql` and
+   `20260721150000_grant_authenticated_public_schema.sql`. Safe/idempotent on Supabase Cloud
+   projects where these grants already exist.
+3. **Genuinely production-relevant, not local-only: `tenant_id` was never set on insert for 11
+   tables that require it.** `202607090001_sprint12_security_compliance_foundation.sql` made
+   `organizations.tenant_id` NOT NULL; `202607090002_sprint13_onboarding_rls_persona_readiness.sql`
+   did the same for `programs`, `projects`, `tasks`, `meetings`, `stakeholders`, `documents`,
+   `notifications`, `audit_logs`, `beta_feedback`, and `knowledge_articles` (tenant_id mirroring
+   `organization_id` for these). Both migrations backfilled only the rows that existed *at
+   migration-apply time* — neither added a default for rows inserted afterward, and no application
+   call site (`src/auth/provisioning.ts`, `src/services/rag/tenantRagWorkflow.ts`, and every
+   enterprise repository writing to these tables) ever sets `tenant_id` explicitly. This meant every
+   brand-new organization signup, and every write to any of those 11 tables, has been failing this
+   constraint since those migrations landed — plausibly true in production too, not confirmed either
+   way (no production credentials available from this environment; same open question as gap #10 in
+   `PRODUCT_ITERATION_I_CLOSEOUT.md`). Fixed at the schema level with two `BEFORE INSERT` triggers
+   (rather than passing an application-generated id/tenant_id, which would be unsafe here
+   specifically — `provisionTenantForUser`'s organizations insert upserts on `conflict(slug)`, and an
+   application-supplied id would let that conflict path reassign an *existing* organization's primary
+   key if two signups ever raced on the same org name): `default_organization_tenant_id()` defaulting
+   `tenant_id := NEW.id` for `organizations` (it's the tenant root), and
+   `default_tenant_id_from_organization()` defaulting `tenant_id := NEW.organization_id` for the
+   other 10 (`20260721140500_organizations_tenant_id_default.sql`,
+   `20260721160000_tenant_child_tables_tenant_id_default.sql`).
+4. **Four more demo-data-leakage instances in `AIWorkspaceSection.tsx`**, found because this was the
+   first time anyone actually looked at this page as a genuinely new, real tenant rather than in
+   demo mode. Documented in full in `DEMO_DATA_LEAKAGE_AUDIT.md`'s new "Round 4" section: a
+   module-level constant that could permanently freeze demo chat content in memory across an SPA
+   session, a hardcoded "2,200 documents indexed" status line, a hardcoded "Context Window" panel,
+   and a hardcoded "AI Audit Trail" panel — none gated behind `isDemoModeEnabled()`, all rendered
+   unconditionally. A fifth instance (`src/features/knowledge/KnowledgeSection.tsx`) was found but
+   confirmed unreachable dead code (never imported/routed anywhere) and left unfixed, flagged
+   separately for cleanup/removal rather than gating code no customer can reach.
+
+### What this does and doesn't close
+
+**Closed:** A3, A7, and A18 are now confirmed working end-to-end against a real, live tenant, not
+just unit tests and code review:
+- **A7** — all 3 outcome-first onboarding paths correctly redirect by goal; verified the
+  "Knowledge & AI decision support" path lands on `/ai-workspace`.
+- **A18** — department/workspace fields are genuinely optional; completed onboarding without either.
+- **A3** — `POST /api/onboarding/seed-sample-data` genuinely persists real records (verified all
+  three goals: `knowledge_ai` → 2 real documents, `workflow_tasks` → 1 project + 2 tasks,
+  `meetings_coordination` → 1 meeting, each a `201` with real repository writes, not a mock). Then
+  asked the AI Workspace a real question ("What does the oxygen resilience note say?") and got back
+  a governed answer citing the actual seeded "Sample: District Oxygen Resilience Note" document by
+  name, with a real (non-fabricated) confidence score and relevance score, correctly flagged for
+  human review — proving the full governed-RAG pipeline works against genuinely live tenant data,
+  not demo fixtures.
+- Also closes gap #1 in `PRODUCT_ITERATION_I_CLOSEOUT.md`'s honest-gap register (see that
+  document's own update alongside this entry).
+
+**Not yet closed:**
+- **Whether bugs #2 and #3 above ever affected the real production/beta Supabase project is
+  unconfirmed** — this environment has no production credentials to check. Bug #2 (missing
+  service_role/authenticated grants) is Supabase-Cloud-vs-bare-CLI-specific and very likely does
+  *not* affect production, since Cloud provisions these automatically. Bug #3 (missing `tenant_id`
+  defaults) is schema/application-level, not CLI-vs-Cloud-specific, and so is the more plausible
+  candidate for also affecting production — this should be checked against the real project before
+  assuming it's local-only, the same open item as gap #10.
+- **The fifth demo-data-leakage instance (`KnowledgeSection.tsx`) was found, not fixed** — flagged
+  as a separate cleanup task rather than addressed here, since it's unreachable dead code, not an
+  active customer-facing leak.
+- **No new automated test coverage was added for any of the four fixes in this entry.** All were
+  found and verified via a live, manual, in-browser walkthrough (the gap this entry closes was
+  specifically the *absence* of that kind of verification) plus `typecheck`/`lint`/full-suite
+  regression checks on the resulting code changes. The schema-level trigger fixes (#2, #3) have no
+  corresponding test infrastructure in this repo to extend (no existing SQL/migration test suite).
+
+### Audit trail
+
+- Modified: `src/security/rbac.ts`, `src/auth/supabaseUser.ts`, `src/auth/AuthProvider.tsx`,
+  `src/app/auth/page.tsx`, `src/app/App.tsx`, `src/auth/provisioning.ts` (comment only — insert body
+  unchanged), `src/features/ai-workspace/AIWorkspaceSection.tsx`.
+- New migrations: `20260721140000_grant_service_role_public_schema.sql`,
+  `20260721140500_organizations_tenant_id_default.sql`,
+  `20260721150000_grant_authenticated_public_schema.sql`,
+  `20260721160000_tenant_child_tables_tenant_id_default.sql`.
+- Verification: `pnpm run typecheck` clean, `pnpm run lint --max-warnings=0` clean, full existing
+  suite re-run on the final branch state: **91 files / 265 tests passing** (re-run deliberately
+  because an earlier in-flight run started before the last two `AIWorkspaceSection.tsx` edits
+  landed, so its result predated the final diff and wasn't trustworthy to cite). Manually verified
+  live in-browser: full signup → onboarding → provisioning → redirect → sample-data-seed →
+  governed-RAG-query flow, and all four `AIWorkspaceSection.tsx` fixes, against a real local
+  Supabase-backed tenant. `src/features/knowledge/KnowledgeSection.tsx` (the fifth demo-data
+  instance, confirmed unreachable dead code) was deleted after this test run and re-verified with a
+  separate clean `typecheck` pass — it has zero test coverage and zero other references, so its
+  removal does not affect the 91/265 figure above.
+- Branch `fix/live-tenant-onboarding-and-rag-walkthrough`, moved off `docs/close-product-iteration-1`
+  (which already carried unrelated, separately-PR'd documentation commits) before committing, per the
+  same corrective pattern used earlier for A15.
 - Branch `fix/supabase-seed-and-audit-trigger`, merged via PR #149 (`2026-07-21T08:20:24Z`).

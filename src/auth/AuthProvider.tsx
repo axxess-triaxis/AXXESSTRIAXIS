@@ -30,7 +30,7 @@ export type AuthSession =
 type AuthContextValue = {
   session: AuthSession;
   isAuthenticated: boolean;
-  login(email: string, password: string): Promise<void>;
+  login(email: string, password: string): Promise<UserContext>;
   logout(): Promise<void>;
   createProfile(input: LocalUserProfile): Promise<UserContext>;
   updateProfile(input: LocalUserProfile): Promise<UserContext>;
@@ -109,15 +109,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const login = useCallback(async (email: string, password: string) => {
+  const login = useCallback(async (email: string, password: string): Promise<UserContext> => {
     if (isDemoLogin(email, password)) {
       setDemoModeEnabled(true);
       setSession(sessionFromUser(demoUserContext, "mock-rbac"));
-      return;
+      return demoUserContext;
     }
 
     const authState = await signInWithPassword(email, password);
     setSession(sessionFromUser(authState.user));
+    return authState.user;
   }, []);
 
   const logout = useCallback(async () => {

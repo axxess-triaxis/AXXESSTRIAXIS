@@ -200,6 +200,7 @@ As of this document, `4f8b714` (A13/A14) and `628da46` (A15) are confirmed ances
 
 | PR | Scope | typecheck | lint | test | build |
 |---|---|---|---|---|---|
+| (open, this branch) | Live A3/A7/A18 walkthrough + 4 schema/auth bugs + demo-leak Round 4 | clean | clean | 91 files / 265 tests | not re-run this pass (SQL/auth/UI changes only) |
 | #152 (open) | A10 + A16 + A17 | clean | clean | 91 files / 261 tests | succeeds |
 | #151 (merged) | A13 + A14 | clean | clean | 88 files / 253 tests | succeeds |
 | #150 (merged) | A15 | clean | clean | 88 files / 249 tests | succeeds |
@@ -238,8 +239,16 @@ tip (except #152, which branched directly from `main` after #151 merged, same as
 
 ## 8. Consolidated honest-gap register
 
-1. **No end-to-end browser verification of A3+A7+A18 (onboarding trio).** Carried from Sprint 2
-   through all of Sprint 3 without closing. Highest-priority gap for whoever picks this up next.
+1. ~~**No end-to-end browser verification of A3+A7+A18 (onboarding trio).**~~ **Closed 2026-07-21.**
+   Carried from Sprint 2 through all of Sprint 3 without closing; finally done — see
+   `ITERATION_PROGRESS.md`'s 2026-07-21 entry ("First genuine live browser walkthrough..."). The
+   walkthrough surfaced and fixed 4 real bugs that had been silently blocking this exact flow (a
+   fake org-id placeholder routing every new signup into a broken workspace, two Supabase
+   permission-grant gaps, and a schema-level `tenant_id` NOT NULL default missing on 11 tables) plus
+   4 more demo-data-leakage instances in `AIWorkspaceSection.tsx` (see gap #11 below and
+   `DEMO_DATA_LEAKAGE_AUDIT.md`'s Round 4). This is exactly why this gap was flagged highest-priority
+   — a live walkthrough is the only verification method that actually catches bugs like these; unit
+   tests and code review across three prior sprints did not.
 2. **A9's golden-path-step trigger unwired** (second of two named trigger points).
 3. **A8/A5/A19/A12 lack dedicated unit tests** (structural gap in page-component testing generally).
 4. **Approvals, Stakeholders/CRM, and Analytics/OKRs remain fully demo-gated with no live
@@ -258,15 +267,29 @@ tip (except #152, which branched directly from `main` after #151 merged, same as
 10. **Whether the audit-trigger bug fixed in PR #149 was ever live on the actual production/beta
     Supabase project is unconfirmed** — no production credentials available to check from this
     environment.
+11. **Whether the `tenant_id` NOT NULL default gap (fixed 2026-07-21 for `organizations` and 10
+    other tables) ever affected the real production/beta Supabase project is unconfirmed** — same
+    caveat as gap #10, and arguably more likely to be live in production too, since (unlike the
+    service_role/authenticated grants gap fixed alongside it, which is specific to a bare local
+    Supabase CLI instance vs. Cloud's automatic bootstrapping) this is a schema/application-logic
+    gap, not an environment-provisioning difference. See `ITERATION_PROGRESS.md`'s 2026-07-21 entry.
+12. ~~**A fifth demo-data-leakage instance found, not fixed:**~~ **Resolved 2026-07-21 (deleted).**
+    `src/features/knowledge/KnowledgeSection.tsx` was fully hardcoded illustrative content with
+    zero demo-mode gating, distinct from the correctly-gated `KnowledgeHubSection.tsx` (a naming
+    collision that let it slip past 3 prior audit rounds). Confirmed unreachable — never imported
+    or routed anywhere — and confirmed via `git log --follow` to be superseded MVP-era scaffolding
+    (predates `KnowledgeHubSection.tsx`, never developed further after it existed), so deleted
+    rather than gated. See `DEMO_DATA_LEAKAGE_AUDIT.md`'s Round 4.
 
 ## 9. What remains before Product Iteration I can be called fully closed
 
 1. Merge PR #152 (or explicitly decide to hold it).
-2. Do the actual live browser walkthrough of A3/A7/A18 — gap #1 above, carried since Sprint 2.
+2. ~~Do the actual live browser walkthrough of A3/A7/A18~~ — **done 2026-07-21**, see gap #1.
 3. Decide whether to address the Capacitor version mismatch (gap #5) before any native mobile
    release, or explicitly accept it as out of scope for the web beta.
-4. Confirm (with production Supabase credentials) whether gap #10 needs remediation on the live
-   project, separately from the local-dev fix already merged.
+4. Confirm (with production Supabase credentials) whether gaps #10 and #11 need remediation on the
+   live project, separately from the local-dev fixes already made.
+5. ~~Decide whether/when to remove or wire up the dead `KnowledgeSection.tsx` page~~ — **done**, deleted (gap #12).
 
 ## 10. Possible scope for a next iteration ("Phase 2"), not started, not scoped in detail here
 
