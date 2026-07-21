@@ -74,7 +74,7 @@ function canRoleAct(userRole: RoleName, allowed: RoleName[]) {
 }
 
 function defaultStatus(plugin: ProductivityPlugin): PluginInstallationStatus {
-  if (!plugin.configured) return plugin.demoConnector ? "available" : "provider_gated";
+  if (!plugin.configured) return plugin.pilotEnabled ? "available" : "provider_gated";
   return "available";
 }
 
