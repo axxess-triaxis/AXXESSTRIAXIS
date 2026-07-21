@@ -4,7 +4,7 @@ import { getServerAuthSession } from "../../../../../auth/serverSession";
 import { auditLogsRepository, tenantScopeFromUser } from "../../../../../repositories/supabaseEnterpriseRepositories";
 import { isSupabaseAdminConfigured, supabaseAdminRest } from "../../../../../repositories/supabaseAdmin";
 import { buildConnectorOAuthUrl, getConnectorContract } from "../../../../../services/integrations/connectorContract";
-import { createOAuthState, getOAuthProviderConfiguration, hashOAuthState } from "../../../../../services/integrations/oauthProvider";
+import { createOAuthState, generatePkceVerifier, getOAuthProviderConfiguration, hashOAuthState, pkceCodeChallenge } from "../../../../../services/integrations/oauthProvider";
 
 export async function GET(request: Request) {
   const session = await getServerAuthSession(true);
@@ -25,13 +25,20 @@ export async function GET(request: Request) {
     });
   }
 
+  const codeVerifier = contract.requiresPkce ? generatePkceVerifier() : undefined;
   const state = createOAuthState({
     organizationId: session.user.organizationId,
     userId: session.user.id,
     providerId: contract.providerId,
     nonce: randomUUID(),
+    codeVerifier,
   });
-  const authorizationUrl = buildConnectorOAuthUrl(contract.providerId, state);
+  const authorizationUrl = buildConnectorOAuthUrl(
+    contract.providerId,
+    state,
+    undefined,
+    codeVerifier ? { codeChallenge: pkceCodeChallenge(codeVerifier) } : undefined,
+  );
   const scope = tenantScopeFromUser(session.user, session.accessToken);
   const stateHash = hashOAuthState(state);
 
