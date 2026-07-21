@@ -47,7 +47,6 @@ import type {
   StorageRepository,
   TasksRepository,
   TenantRepository,
-  TenantScope,
   UsersRepository,
 } from "../repositories/interfaces";
 import type { AiProviderService, AuthenticationService, ConfigurationService, NotificationService } from "../services/interfaces";
@@ -133,7 +132,10 @@ type RepositoryServices = Omit<ApplicationServices, "authService" | "aiService" 
 type TenantResource = { id: string; organizationId: string };
 
 const liveRepositories: RepositoryServices = {
-  institutionalRepository: demoRepositories.institutionalRepository,
+  // No live (Supabase-backed) institutional repository exists yet. Falling back to an empty
+  // repository here -- not the demo one -- so a real tenant never sees fabricated approvals,
+  // AI messages, or institutional context. See DEMO_DATA_LEAKAGE_AUDIT.md.
+  institutionalRepository: emptyRepositories.institutionalRepository,
   organizationsRepository,
   usersRepository,
   programsRepository,
@@ -155,17 +157,10 @@ const liveRepositories: RepositoryServices = {
   storageRepository: documentStorageRepository,
 };
 
-function demoFallbackScope(scope: TenantScope): TenantScope {
-  return {
-    ...scope,
-    organizationId: demoUserContext.organizationId,
-    userId: demoUserContext.id,
-    role: scope.role === "Guest" ? "Guest" : demoUserContext.role,
-    accessToken: undefined,
-  };
-}
-
-async function withDemoFallback<TValue>(primary: () => Promise<TValue>, fallback: () => Promise<TValue>) {
+// A live-call failure must never surface fabricated demo content to a real tenant (see
+// DEMO_DATA_LEAKAGE_AUDIT.md). The fallback on any error is therefore always a genuinely empty,
+// safe result (or a thrown error for mutations) -- never demoRepositories.
+async function withResilientFallback<TValue>(primary: () => Promise<TValue>, fallback: () => Promise<TValue>) {
   try {
     return await primary();
   } catch {
@@ -175,162 +170,162 @@ async function withDemoFallback<TValue>(primary: () => Promise<TValue>, fallback
 
 function resilientTenantRepository<TResource extends TenantResource>(
   liveRepository: TenantRepository<TResource>,
-  demoRepository: TenantRepository<TResource>,
+  emptyRepository: TenantRepository<TResource>,
 ): TenantRepository<TResource> {
   return {
-    list: (scope, query) => withDemoFallback(
+    list: (scope, query) => withResilientFallback(
       () => liveRepository.list(scope, query),
-      () => demoRepository.list(demoFallbackScope(scope), query),
+      () => emptyRepository.list(scope, query),
     ),
-    getById: (scope, id) => withDemoFallback(
+    getById: (scope, id) => withResilientFallback(
       () => liveRepository.getById(scope, id),
-      () => demoRepository.getById(demoFallbackScope(scope), id),
+      () => emptyRepository.getById(scope, id),
     ),
   };
 }
 
 function resilientMutableRepository<TResource extends TenantResource>(
   liveRepository: MutableTenantRepository<TResource>,
-  demoRepository: MutableTenantRepository<TResource>,
+  emptyRepository: MutableTenantRepository<TResource>,
 ): MutableTenantRepository<TResource> {
-  const base = resilientTenantRepository(liveRepository, demoRepository);
+  const base = resilientTenantRepository(liveRepository, emptyRepository);
   return {
     ...base,
-    create: (scope, input) => withDemoFallback(
+    create: (scope, input) => withResilientFallback(
       () => liveRepository.create(scope, input),
-      () => demoRepository.create(demoFallbackScope(scope), input),
+      () => emptyRepository.create(scope, input),
     ),
-    update: (scope, id, input) => withDemoFallback(
+    update: (scope, id, input) => withResilientFallback(
       () => liveRepository.update(scope, id, input),
-      () => demoRepository.update(demoFallbackScope(scope), id, input),
+      () => emptyRepository.update(scope, id, input),
     ),
   };
 }
 
 const resilientRepositories: RepositoryServices = {
-  institutionalRepository: demoRepositories.institutionalRepository,
+  institutionalRepository: emptyRepositories.institutionalRepository,
   organizationsRepository: {
-    list: (scope, query) => withDemoFallback(
+    list: (scope, query) => withResilientFallback(
       () => liveRepositories.organizationsRepository.list(scope, query),
-      () => demoRepositories.organizationsRepository.list(demoFallbackScope(scope), query),
+      () => emptyRepositories.organizationsRepository.list(scope, query),
     ),
-    getById: (scope, id) => withDemoFallback(
+    getById: (scope, id) => withResilientFallback(
       () => liveRepositories.organizationsRepository.getById(scope, id),
-      () => demoRepositories.organizationsRepository.getById(demoFallbackScope(scope), id),
+      () => emptyRepositories.organizationsRepository.getById(scope, id),
     ),
   },
   usersRepository: {
-    listByOrganization: (scope, query) => withDemoFallback(
+    listByOrganization: (scope, query) => withResilientFallback(
       () => liveRepositories.usersRepository.listByOrganization(scope, query),
-      () => demoRepositories.usersRepository.listByOrganization(demoFallbackScope(scope), query),
+      () => emptyRepositories.usersRepository.listByOrganization(scope, query),
     ),
-    getById: (scope, id) => withDemoFallback(
+    getById: (scope, id) => withResilientFallback(
       () => liveRepositories.usersRepository.getById(scope, id),
-      () => demoRepositories.usersRepository.getById(demoFallbackScope(scope), id),
+      () => emptyRepositories.usersRepository.getById(scope, id),
     ),
-    update: (scope, id, input) => withDemoFallback(
+    update: (scope, id, input) => withResilientFallback(
       () => liveRepositories.usersRepository.update(scope, id, input),
-      () => demoRepositories.usersRepository.update(demoFallbackScope(scope), id, input),
+      () => emptyRepositories.usersRepository.update(scope, id, input),
     ),
   },
-  programsRepository: resilientTenantRepository(liveRepositories.programsRepository, demoRepositories.programsRepository),
-  projectsRepository: resilientMutableRepository(liveRepositories.projectsRepository, demoRepositories.projectsRepository),
-  tasksRepository: resilientMutableRepository(liveRepositories.tasksRepository, demoRepositories.tasksRepository),
-  meetingsRepository: resilientMutableRepository(liveRepositories.meetingsRepository, demoRepositories.meetingsRepository),
-  notificationsRepository: resilientMutableRepository(liveRepositories.notificationsRepository, demoRepositories.notificationsRepository),
+  programsRepository: resilientTenantRepository(liveRepositories.programsRepository, emptyRepositories.programsRepository),
+  projectsRepository: resilientMutableRepository(liveRepositories.projectsRepository, emptyRepositories.projectsRepository),
+  tasksRepository: resilientMutableRepository(liveRepositories.tasksRepository, emptyRepositories.tasksRepository),
+  meetingsRepository: resilientMutableRepository(liveRepositories.meetingsRepository, emptyRepositories.meetingsRepository),
+  notificationsRepository: resilientMutableRepository(liveRepositories.notificationsRepository, emptyRepositories.notificationsRepository),
   documentsRepository: {
-    ...resilientMutableRepository(liveRepositories.documentsRepository, demoRepositories.documentsRepository),
-    archive: (scope, id) => withDemoFallback(
+    ...resilientMutableRepository(liveRepositories.documentsRepository, emptyRepositories.documentsRepository),
+    archive: (scope, id) => withResilientFallback(
       () => liveRepositories.documentsRepository.archive(scope, id),
-      () => demoRepositories.documentsRepository.archive(demoFallbackScope(scope), id),
+      () => emptyRepositories.documentsRepository.archive(scope, id),
     ),
-    restore: (scope, id) => withDemoFallback(
+    restore: (scope, id) => withResilientFallback(
       () => liveRepositories.documentsRepository.restore(scope, id),
-      () => demoRepositories.documentsRepository.restore(demoFallbackScope(scope), id),
+      () => emptyRepositories.documentsRepository.restore(scope, id),
     ),
-    softDelete: (scope, id) => withDemoFallback(
+    softDelete: (scope, id) => withResilientFallback(
       () => liveRepositories.documentsRepository.softDelete(scope, id),
-      () => demoRepositories.documentsRepository.softDelete(demoFallbackScope(scope), id),
+      () => emptyRepositories.documentsRepository.softDelete(scope, id),
     ),
-    listArchived: (scope, query) => withDemoFallback(
+    listArchived: (scope, query) => withResilientFallback(
       () => liveRepositories.documentsRepository.listArchived(scope, query),
-      () => demoRepositories.documentsRepository.listArchived(demoFallbackScope(scope), query),
+      () => emptyRepositories.documentsRepository.listArchived(scope, query),
     ),
-    listFavorites: (scope, query) => withDemoFallback(
+    listFavorites: (scope, query) => withResilientFallback(
       () => liveRepositories.documentsRepository.listFavorites(scope, query),
-      () => demoRepositories.documentsRepository.listFavorites(demoFallbackScope(scope), query),
+      () => emptyRepositories.documentsRepository.listFavorites(scope, query),
     ),
-    listSharedWithMe: (scope, query) => withDemoFallback(
+    listSharedWithMe: (scope, query) => withResilientFallback(
       () => liveRepositories.documentsRepository.listSharedWithMe(scope, query),
-      () => demoRepositories.documentsRepository.listSharedWithMe(demoFallbackScope(scope), query),
+      () => emptyRepositories.documentsRepository.listSharedWithMe(scope, query),
     ),
-    recordActivity: (scope, input) => withDemoFallback(
+    recordActivity: (scope, input) => withResilientFallback(
       () => liveRepositories.documentsRepository.recordActivity(scope, input),
-      () => demoRepositories.documentsRepository.recordActivity(demoFallbackScope(scope), input),
+      () => emptyRepositories.documentsRepository.recordActivity(scope, input),
     ),
   },
-  documentVersionsRepository: resilientMutableRepository(liveRepositories.documentVersionsRepository, demoRepositories.documentVersionsRepository),
-  documentCategoriesRepository: resilientMutableRepository(liveRepositories.documentCategoriesRepository, demoRepositories.documentCategoriesRepository),
-  documentTagsRepository: resilientMutableRepository(liveRepositories.documentTagsRepository, demoRepositories.documentTagsRepository),
-  documentPermissionsRepository: resilientMutableRepository(liveRepositories.documentPermissionsRepository, demoRepositories.documentPermissionsRepository),
-  documentActivityRepository: resilientTenantRepository(liveRepositories.documentActivityRepository, demoRepositories.documentActivityRepository),
-  knowledgeArticlesRepository: resilientMutableRepository(liveRepositories.knowledgeArticlesRepository, demoRepositories.knowledgeArticlesRepository),
+  documentVersionsRepository: resilientMutableRepository(liveRepositories.documentVersionsRepository, emptyRepositories.documentVersionsRepository),
+  documentCategoriesRepository: resilientMutableRepository(liveRepositories.documentCategoriesRepository, emptyRepositories.documentCategoriesRepository),
+  documentTagsRepository: resilientMutableRepository(liveRepositories.documentTagsRepository, emptyRepositories.documentTagsRepository),
+  documentPermissionsRepository: resilientMutableRepository(liveRepositories.documentPermissionsRepository, emptyRepositories.documentPermissionsRepository),
+  documentActivityRepository: resilientTenantRepository(liveRepositories.documentActivityRepository, emptyRepositories.documentActivityRepository),
+  knowledgeArticlesRepository: resilientMutableRepository(liveRepositories.knowledgeArticlesRepository, emptyRepositories.knowledgeArticlesRepository),
   knowledgeSearchRepository: {
-    search: (scope, query) => withDemoFallback(
+    search: (scope, query) => withResilientFallback(
       () => liveRepositories.knowledgeSearchRepository.search(scope, query),
-      () => demoRepositories.knowledgeSearchRepository.search(demoFallbackScope(scope), query),
+      () => emptyRepositories.knowledgeSearchRepository.search(scope, query),
     ),
   },
   invitationsRepository: {
-    create: (scope, input) => withDemoFallback(
+    create: (scope, input) => withResilientFallback(
       () => liveRepositories.invitationsRepository.create(scope, input),
-      () => demoRepositories.invitationsRepository.create(demoFallbackScope(scope), input),
+      () => emptyRepositories.invitationsRepository.create(scope, input),
     ),
-    listPending: (scope, query) => withDemoFallback(
+    listPending: (scope, query) => withResilientFallback(
       () => liveRepositories.invitationsRepository.listPending(scope, query),
-      () => demoRepositories.invitationsRepository.listPending(demoFallbackScope(scope), query),
+      () => emptyRepositories.invitationsRepository.listPending(scope, query),
     ),
   },
   auditLogsRepository: {
-    list: (scope, query) => withDemoFallback(
+    list: (scope, query) => withResilientFallback(
       () => liveRepositories.auditLogsRepository.list(scope, query),
-      () => demoRepositories.auditLogsRepository.list(demoFallbackScope(scope), query),
+      () => emptyRepositories.auditLogsRepository.list(scope, query),
     ),
-    record: (scope, input) => withDemoFallback(
+    record: (scope, input) => withResilientFallback(
       () => liveRepositories.auditLogsRepository.record(scope, input),
-      () => demoRepositories.auditLogsRepository.record(demoFallbackScope(scope), input),
+      () => emptyRepositories.auditLogsRepository.record(scope, input),
     ),
   },
   betaFeedbackRepository: {
-    list: (scope, query) => withDemoFallback(
+    list: (scope, query) => withResilientFallback(
       () => liveRepositories.betaFeedbackRepository.list(scope, query),
-      () => demoRepositories.betaFeedbackRepository.list(demoFallbackScope(scope), query),
+      () => emptyRepositories.betaFeedbackRepository.list(scope, query),
     ),
-    create: (scope, input) => withDemoFallback(
+    create: (scope, input) => withResilientFallback(
       () => liveRepositories.betaFeedbackRepository.create(scope, input),
-      () => demoRepositories.betaFeedbackRepository.create(demoFallbackScope(scope), input),
+      () => emptyRepositories.betaFeedbackRepository.create(scope, input),
     ),
-    count: (scope) => withDemoFallback(
+    count: (scope) => withResilientFallback(
       () => liveRepositories.betaFeedbackRepository.count(scope),
-      () => demoRepositories.betaFeedbackRepository.count(demoFallbackScope(scope)),
+      () => emptyRepositories.betaFeedbackRepository.count(scope),
     ),
   },
   storageRepository: {
-    getSignedUploadUrl: (path) => withDemoFallback(
+    getSignedUploadUrl: (path) => withResilientFallback(
       () => liveRepositories.storageRepository.getSignedUploadUrl(path),
-      () => demoRepositories.storageRepository.getSignedUploadUrl(path),
+      () => emptyRepositories.storageRepository.getSignedUploadUrl(path),
     ),
-    getSignedDownloadUrl: (path) => withDemoFallback(
+    getSignedDownloadUrl: (path) => withResilientFallback(
       () => liveRepositories.storageRepository.getSignedDownloadUrl(path),
-      () => demoRepositories.storageRepository.getSignedDownloadUrl(path),
+      () => emptyRepositories.storageRepository.getSignedDownloadUrl(path),
     ),
-    createDocumentUploadIntent: (input) => withDemoFallback(
+    createDocumentUploadIntent: (input) => withResilientFallback(
       () => liveRepositories.storageRepository.createDocumentUploadIntent(input),
-      () => demoRepositories.storageRepository.createDocumentUploadIntent(input),
+      () => emptyRepositories.storageRepository.createDocumentUploadIntent(input),
     ),
-    createDocumentDownloadIntent: (input) => withDemoFallback(
+    createDocumentDownloadIntent: (input) => withResilientFallback(
       () => liveRepositories.storageRepository.createDocumentDownloadIntent(input),
-      () => demoRepositories.storageRepository.createDocumentDownloadIntent(input),
+      () => emptyRepositories.storageRepository.createDocumentDownloadIntent(input),
     ),
   },
 };

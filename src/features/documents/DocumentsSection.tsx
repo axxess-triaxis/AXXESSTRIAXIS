@@ -4,12 +4,17 @@ import { useState } from "react";
 import { useAuth } from "../../auth/AuthProvider";
 import { SectionHeader } from "../../components/layout/SectionHeader";
 import { WorkflowTimelinePanel } from "../../components/enterprise/WorkflowTimelinePanel";
+import { EmptyState } from "../../components/feedback/EmptyState";
 import { Card } from "../../components/ui/Card";
+import { isDemoModeEnabled } from "../../demo/demoMode";
 import { applicationServices } from "../../providers/serviceProvider";
 import { tenantScopeFromUser } from "../../repositories/supabaseEnterpriseRepositories";
 import { useWorkflowTimeline } from "../../hooks/useWorkflowTimeline";
 import { Filter, Plus, Sparkles } from "lucide-react";
 
+// Illustrative content for the investor-demo experience only -- this browse list isn't wired to
+// the real documentsRepository yet (data shapes differ; ingestion above is real, browsing below
+// is not). Gated behind isDemoModeEnabled(). See DEMO_DATA_LEAKAGE_AUDIT.md.
 const documents = applicationServices.institutionalRepository.getDocuments();
 
 export const DocumentsSection = () => {
@@ -111,6 +116,9 @@ export const DocumentsSection = () => {
       </div>
 
       <div className="space-y-3">
+        {!isDemoModeEnabled() && documents.length === 0 && (
+          <EmptyState message="No documents indexed yet. Use Upload above to index your first document." />
+        )}
         {documents.map((document) => (
           <Card key={document.id} className="p-4 hover:shadow-md transition-shadow cursor-pointer">
             <div className="flex items-start gap-4">

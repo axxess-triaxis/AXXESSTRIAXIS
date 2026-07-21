@@ -1,8 +1,10 @@
-import { Edit3, Plus, Save, X } from "lucide-react";
+import { Edit3, FolderKanban, Plus, Save, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "../../auth/AuthProvider";
+import { isDemoModeEnabled } from "../../demo/demoMode";
 import { InlineToast } from "../../components/forms/InlineToast";
 import { SelectField, TextAreaField, TextField } from "../../components/forms/FormField";
+import { EmptyState } from "../../components/feedback/EmptyState";
 import { LoadingState } from "../../components/feedback/LoadingState";
 import { DataStateBadge, DemoDataNotice, ModuleHeader, PageShell, TenantScopeBadge, WorkflowStepCard } from "../../components/enterprise";
 import { WorkflowTimelinePanel } from "../../components/enterprise/WorkflowTimelinePanel";
@@ -203,6 +205,8 @@ export const ProjectsSection = () => {
 
   if (loading) return <LoadingState label="Loading project workflows" />;
 
+  const demoMode = isDemoModeEnabled();
+
   return (
     <PageShell className="h-full min-h-0">
       <ModuleHeader
@@ -211,7 +215,7 @@ export const ProjectsSection = () => {
         description={`${projects.length} active initiatives across ${organizations.length || 1} organization${organizations.length === 1 ? "" : "s"}. Projects connect stakeholders, documents, approvals, AI actions, and operational timelines.`}
         badges={[
           <TenantScopeBadge key="tenant" />,
-          <DataStateBadge key="demo" state={projects.length > 0 ? "Live" : "Demo"} />,
+          <DataStateBadge key="demo" state={demoMode ? "Demo" : "Live"} />,
         ]}
         actions={
           <div className="flex items-center gap-2">
@@ -237,23 +241,45 @@ export const ProjectsSection = () => {
         }
       />
 
-      <DemoDataNotice label="Project cards and side panels show linked stakeholder, document, approval, task, and escalation context for demo storytelling." />
-      <div className="grid grid-cols-1 gap-3 lg:grid-cols-4">
-        {demoProjects.map((project, index) => (
-          <WorkflowStepCard
-            key={project.name}
-            index={index + 1}
-            title={project.name}
-            description={`${project.stakeholder} - ${project.document} - ${project.approval}`}
-            status={project.risk}
-          />
-        ))}
-      </div>
+      {demoMode && (
+        <>
+          <DemoDataNotice label="Project cards and side panels show linked stakeholder, document, approval, task, and escalation context for demo storytelling." />
+          <div className="grid grid-cols-1 gap-3 lg:grid-cols-4">
+            {demoProjects.map((project, index) => (
+              <WorkflowStepCard
+                key={project.name}
+                index={index + 1}
+                title={project.name}
+                description={`${project.stakeholder} - ${project.document} - ${project.approval}`}
+                status={project.risk}
+              />
+            ))}
+          </div>
+        </>
+      )}
 
       <div className="grid h-[calc(100%-72px)] min-h-[520px] grid-cols-1 gap-4 xl:grid-cols-[1fr_360px]">
         <div className="min-w-0 overflow-hidden">
           {toast && <div className="mb-3"><InlineToast tone={toast.tone} message={toast.message} /></div>}
-          {view === "kanban" ? (
+          {projects.length === 0 ? (
+            <Card className="flex min-h-[320px] items-center justify-center p-8">
+              <EmptyState
+                icon={<FolderKanban size={28} />}
+                title="No projects yet"
+                message="Create your first project to start tracking stakeholders, documents, approvals, and AI-assisted work."
+                action={
+                  <button
+                    type="button"
+                    disabled={!canManageProjects}
+                    onClick={() => openForm()}
+                    className="flex items-center gap-1.5 rounded-lg bg-[#8B1E2D] px-3 py-1.5 text-xs text-white hover:bg-[#7a1a27] disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    <Plus size={12} /> Create your first project
+                  </button>
+                }
+              />
+            </Card>
+          ) : view === "kanban" ? (
             <div className="h-full overflow-x-auto pb-4">
               <div className="flex h-full min-w-max gap-4">
                 {columns.map((column) => {
