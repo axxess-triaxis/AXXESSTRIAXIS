@@ -1,0 +1,51 @@
+{
+	"appId": "com.triaxis.axxess",
+	"appName": "AXXESS TRIaxis",
+	"webDir": "../../dist",
+	"server": {
+		"url": "https://app.axxess.dev",
+		"cleartext": false,
+		"allowNavigation": [
+			"app.axxess.dev",
+			"localhost",
+			"127.0.0.1"
+		]
+	},
+	"plugins": {
+		"SplashScreen": {
+			"launchShowDuration": 1200,
+			"launchAutoHide": true,
+			"backgroundColor": "#8B1E2D",
+			"showSpinner": false
+		},
+		"StatusBar": {
+			"style": "LIGHT",
+			"backgroundColor": "#8B1E2D"
+		},
+		"Keyboard": {
+			"resize": "body",
+			"style": "dark"
+		},
+		"App": {},
+		"Browser": {},
+		"Device": {},
+		"Filesystem": {},
+		"Network": {},
+		"Preferences": {},
+		"Share": {},
+		"Haptics": {}
+	},
+	"packageClassList": [
+		"AppPlugin",
+		"CAPBrowserPlugin",
+		"DevicePlugin",
+		"FilesystemPlugin",
+		"HapticsPlugin",
+		"KeyboardPlugin",
+		"CAPNetworkPlugin",
+		"PreferencesPlugin",
+		"SharePlugin",
+		"SplashScreenPlugin",
+		"StatusBarPlugin"
+	]
+}
