@@ -80,19 +80,76 @@ so this sprint focuses on converting already-completed infrastructure work (the 
 from `ITERATION_PROGRESS.md`) into customer-visible value, plus low-risk retention/momentum
 polish timed close to the actual demo date.
 
+**Planned:** 2026-07-21, after Sprint 1 (7/7) and Sprint 2 (7/7) were confirmed merged to `main`
+(PR #146) — see `PRODUCT_ITERATION_I_CLOSEOUT.md` for that close-out record. This plan runs in 4
+phases rather than one flat list, because two things found while planning it change how A13/A14/A15
+need to be scoped, and because Sprint 3's own retention items (A16/A17) build on a completion-event
+surface that was never verified end-to-end.
+
+### Phase 0 — Integration & harmonization check (gates everything below; runs first, not in parallel)
+
+1. **Live browser walkthrough of the A3/A7/A18 onboarding trio.** Carried over from Sprint 2's own
+   exit criteria — verified only via `typecheck`/`lint`/unit tests of the pure logic module, never
+   walked through in a running app. A16 and A17 both build on the same completion-event surface
+   this trio established, so closing this gap first de-risks both.
+2. **Runtime audit of `react-router` 7→8 and the Capacitor major-version bumps** (merged via
+   dependabot around the same time as the typescript/eslint incompatibility documented in
+   `ITERATION_PROGRESS.md`'s 2026-07-21 entry). These passed `typecheck`/`lint` cleanly but were
+   never checked for runtime behavior — major version bumps aren't guaranteed typecheck-safe for
+   route config shape or hook signatures.
+3. **Cross-check that Sprint 1 and Sprint 2 features don't conflict now that both are live together
+   on `main` for the first time** — e.g., Golden Path's on-demand default interacting with A7's
+   onboarding goal-routing.
+4. **Confirm every Sprint 3 branch is cut only after its predecessor PR is actually merged**, not
+   merely pushed — the direct, named lesson from the git-reconciliation incident
+   (`ITERATION_PROGRESS.md`, 2026-07-21): a PR merged mid-flight, before all its planned commits
+   had landed, is what stranded 12 of the 20 actionables on an orphaned branch for roughly a day.
+
+### Phase 1 — A15 first, reordered ahead of A13/A14
+
+Originally sequenced last (see "cross-sprint dependencies" below for why that made sense at the
+time this roadmap was written). Reordering it first because scoping Sprint 3 surfaced that the
+actual problem is bigger than "hide 10 wrappers": `src/services/integrations/pluginRegistry.ts`
+already lists roughly 19 integrations — Slack included — every single one flagged
+`demoConnector: true`, rendered as a full "Productivity Plugin Registry" grid in `/integrations`.
+This is the exact "generic catalogue" the beta report said not to show, and it predates this
+session's actionables entirely (it wasn't caught by the three-round demo-data-leakage audit, which
+focused on data shown to tenants rather than this specific catalogue). A15 needs to cut this down
+to reality — the integrations that are genuinely real (Gmail, Microsoft) plus whatever Slack/
+Calendly become in Phase 2 — before adding more to a page that already overstates capability.
+
+### Phase 2 — A13 + A14 (Slack + Calendly quick-connect)
+
 | ID | Item | Evidence | Acceptance criteria | Audit hook |
 |---|---|---|---|---|
 | A13 | Slack quick-connect in Settings | Limited integrations (P1, 45%, most-selected issue) | A Settings page lets a user authorize and configure a Slack connection using the already-enabled `slack_wrapper`; connection status is visible | Test asserting the connect flow completes and persists connection state; migration added for the wrapper per `ITERATION_PROGRESS.md`'s recommended next step |
 | A14 | Calendly quick-connect in Settings | Same as A13; most directly evidenced by respondent free-text (calendar) | Same pattern as A13, using `calendly_wrapper` | Same pattern as A13 |
-| A15 | Cap integration surface to these 2 | Report's own guidance: "2-3 tied to pilot workflows, not a generic catalogue" | Settings only exposes Slack + Calendly for this release; the other 10 wrappers remain enabled at the database level but have no product-facing entry point yet | Config/test asserting only 2 connectors render in the Settings integrations list |
-| A10 | Post-demo satisfaction capture | Feedback dimension, demo-specific signal distinct from beta survey | A single question appears at the natural end of a live demo session (e.g. on session/route exit) | Test asserting the prompt fires once per demo session and records a response |
-| A16 | "What's New" panel at login | Retention — perceived momentum | Panel shows the 3 most recent shipped items (can pull directly from this roadmap's audit trail) | Content test asserting the panel renders and reflects the current release's entries |
-| A17 | Completion celebration on finishing a workflow | Retention, reinforces the core knowledge→AI→review→action→audit loop | A visible confirmation (not just a status change) appears when a task/review/report is completed end-to-end | Component test asserting the celebration state renders on completion, using the same completion trigger as A12/A9 |
 
-**Sprint 3 exit criteria:** Slack + Calendly are demoable live; `ITERATION_PROGRESS.md` updated to
+**Hard external dependency, not a code gap:** there is no Slack or Calendly connector code anywhere
+in `src/` today — `slack_wrapper`/`calendly_wrapper` only appear in documentation. The existing
+Gmail/Microsoft pattern (`connectorContract.ts`, `/api/connectors/oauth/start?provider=...`,
+rendered honestly as "provider-gated for production credentials" until real env credentials exist)
+is the template to extend, and that code can be written without external input. But this sprint's
+own exit criterion requires these be demoable live with a **real, not mocked, test account** —
+that requires actual Slack App / Calendly OAuth app registrations (client ID/secret), which only
+whoever holds those accounts can create. This blocks the *live-verification* step specifically, not
+the code-writing step; scoped and flagged here rather than silently assumed to resolve itself.
+
+### Phase 3 — A10, A16, A17 (independent, no external blockers)
+
+| ID | Item | Evidence | Acceptance criteria | Audit hook |
+|---|---|---|---|---|
+| A10 | Post-demo satisfaction capture | Feedback dimension, demo-specific signal distinct from beta survey | A single question appears at the natural end of a live demo session (e.g. on session/route exit) | Test asserting the prompt fires once per demo session and records a response |
+| A16 | "What's New" panel at login | Retention — perceived momentum | Panel shows the 3 most recent shipped items, sourced from real `ITERATION_PROGRESS.md` entries, not placeholder copy | Content test asserting the panel renders and reflects the current release's entries |
+| A17 | Completion celebration on finishing a workflow | Retention, reinforces the core knowledge→AI→review→action→audit loop | A visible confirmation (not just a status change) appears when a task/review/report is completed end-to-end, using the same completion-event surface validated in Phase 0 | Component test asserting the celebration state renders on completion, using the same completion trigger as A12/A9 |
+
+**Sprint 3 exit criteria:** Phase 0's 4 checks all closed; A15 ships before A13/A14 are added to the
+integrations surface; Slack + Calendly are demoable live against a real test account (or explicitly
+still blocked on external credentials, not silently skipped); `ITERATION_PROGRESS.md` updated to
 mark the "product-facing surface" gap from the 2026-07-20 entry as closed for these 2 wrappers
-specifically (the other 10 remain explicitly open); What's New panel reflects real Sprint 1-3 work,
-not placeholder copy.
+specifically (the other 10 remain explicitly open, and the `pluginRegistry.ts` catalogue no longer
+overstates the other ~15); What's New panel reflects real Sprint 1-3 work, not placeholder copy;
+every PR merges only after its author confirms all planned commits for it are already pushed.
 
 ---
 
@@ -104,11 +161,15 @@ not placeholder copy.
   route to.
 - **A11 (analytics events) is threaded through A7 and A9** rather than batched at the end, so
   instrumentation ships with the features it measures instead of retrofitted later.
-- **A13/A14 are deliberately last** — they depend on nothing upstream technically, but shipping
-  integrations before the onboarding/trust work (Sprints 1-2) would mean the highest-visibility
-  demo item (new integrations) sits on top of the same reliability/clarity complaints that caused
-  "limited integrations" to be flagged as an *expansion* request rather than the true blocker. Fix
-  the blocker first.
+- **A13/A14/A15 (all of Sprint 3) come after Sprints 1-2, not before** — shipping integrations
+  before the onboarding/trust work would mean the highest-visibility demo item (new integrations)
+  sits on top of the same reliability/clarity complaints that caused "limited integrations" to be
+  flagged as an *expansion* request rather than the true blocker. Fix the blocker first.
+- **Within Sprint 3 itself, A15 now comes before A13/A14** (reordered when Sprint 3 was actually
+  planned, 2026-07-21) — see Sprint 3's Phase 1 note. The original assumption was that capping the
+  integrations surface only made sense once there were 2 real connectors to cap it *to*; scoping
+  the work revealed the existing catalogue (`pluginRegistry.ts`) already overstates ~19 connectors
+  as demo-ready, which is worth fixing regardless of whether Slack/Calendly exist yet.
 
 ## What "fully auditable" means in practice for this roadmap
 
