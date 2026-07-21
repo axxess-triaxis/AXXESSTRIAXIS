@@ -4,7 +4,10 @@
 **Purpose:** Immediately executable changes, scoped to ship before the next demo/release, that
 improve customer ease, experience, retention, feedback quality, and execution at the customer end.
 **Date:** 2026-07-20
-**Status legend:** ✅ Implemented · 🔜 Planned (see `SPRINT_ROADMAP_PRE_DEMO.md` for sequencing)
+**Status legend:** ✅ Implemented and merged to `main` · 🔨 Built, tested, and PR'd, not yet merged
+· 🔜 Planned (see `SPRINT_ROADMAP_PRE_DEMO.md` for sequencing). Per the lesson from the
+2026-07-21 git-reconciliation incident (`ITERATION_PROGRESS.md`), ✅ is reserved for items
+confirmed as an ancestor of `origin/main`, not for items merely built and tested locally.
 
 Each item is tagged with the SWOT dimension(s) it primarily serves and an effort estimate
 (S/M/L). Where a specific code location was identified during scoping, it's noted so
@@ -89,8 +92,14 @@ implementation can start without re-discovery.
    `micro_survey_responded` analytics events with the score and trigger source. The golden-path-step
    trigger point is not yet wired — only the AI-review-decision trigger, since that's the surface
    touched this pass; tracked as a follow-up. Tested in `useMicroSurveyPrompt.test.tsx`.
-10. 🔜 **Add a lightweight post-demo satisfaction capture**, distinct from the existing
+10. 🔨 **Add a lightweight post-demo satisfaction capture**, distinct from the existing
     `BetaFeedbackButton`. *(Feedback — S)* A single question at the end of a live demo session.
+    **Built (PR #152, open):** `usePostDemoSatisfactionPrompt.ts` + `PostDemoSatisfactionPrompt.tsx`,
+    triggered by turning Investor Preview off in Settings — the concrete equivalent of "the natural
+    end of a live demo session" in this product's actual UX. Found and fixed a real sequencing bug
+    while wiring it up: the demo-mode-off toggle hard-navigates to `/dashboard` 250ms later,
+    destroying any transient prompt state before it renders — solved with a pending-flag handoff
+    consumed on the next page's mount. See `PRODUCT_ITERATION_I_CLOSEOUT.md` section 5.
 11. ✅ **Wire "time to first value" and "onboarding completion rate" events into the existing
     Mixpanel-ready analytics.** *(Feedback, Execution — M)* Analytics scaffolding already exists —
     mostly event-naming and instrumentation. **Implemented:** audited which of the report's
@@ -111,21 +120,44 @@ implementation can start without re-discovery.
 
 ## Tier 3 — Convert integrations work into visible customer value
 
-13. 🔜 **Ship a "Connect Slack" quick-connect in Settings** using the `slack_wrapper` already
+13. ✅ **Ship a "Connect Slack" quick-connect in Settings** using the `slack_wrapper` already
     enabled (see `ITERATION_PROGRESS.md`, 2026-07-20 entry). *(Ease, Experience — M)*
-14. 🔜 **Ship a "Connect Calendly" quick-connect** the same way. *(Ease, Experience — M)* Most
-    directly evidenced by respondent free-text requests.
-15. 🔜 **Cap the integrations surface to just these 2 for the next demo**, not all 12 wrappers.
+    **Implemented (PR #151, merged):** extended the existing Gmail/Microsoft OAuth architecture
+    (`connectorContract.ts`, `oauthProvider.ts`) to Slack rather than building a parallel system.
+    No live OAuth verification against a real Slack App — only Slack's standard OAuth/Web API
+    scopes are used, which are free on any workspace tier.
+14. ✅ **Ship a "Connect Calendly" quick-connect** the same way. *(Ease, Experience — M)* Most
+    directly evidenced by respondent free-text requests. **Implemented (PR #151, merged):** same
+    pattern as Slack. **Cost caveat, decided explicitly, not assumed:** Calendly's Developer API
+    requires a Standard-plan-or-higher Calendly account for whoever connects it — not available on
+    Calendly's free tier. Not a cost to AXXESS (the customer connects their own account), but not
+    zero-cost for the customer either. Kept per explicit decision; the caveat is surfaced directly
+    in the Settings UI (amber notice on the Calendly card), not just here.
+15. ✅ **Cap the integrations surface to just these 2 for the next demo**, not all 12 wrappers.
     *(Execution — S)* Matches the report's own guidance: "2-3 integrations tied to pilot
-    workflows, not a generic catalogue."
+    workflows, not a generic catalogue." **Implemented (PR #150, merged):** found the actual problem
+    was bigger than 12 wrappers — `pluginRegistry.ts` had ~20 integrations all flagged
+    `demoConnector: true`. Replaced with `pilotEnabled` (true only for connectors with real code);
+    split `/integrations` into pilot vs. infrastructure-only sections. Also fixed
+    `pluginRuntime.ts`'s `defaultStatus()`, which fed real admin/platform-readiness logic and had
+    been reporting every unconfigured connector as `"available"`.
 
 ## Tier 4 — Retention and perceived momentum
 
-16. 🔜 **Add a "What's New" panel at login.** *(Retention — S)* Even a 3-line changelog gives
-    demo/pilot users a sense of active development between sessions.
-17. 🔜 **Add a completion celebration/confirmation on finishing any workflow end-to-end.**
+16. 🔨 **Add a "What's New" panel at login.** *(Retention — S)* Even a 3-line changelog gives
+    demo/pilot users a sense of active development between sessions. **Built (PR #152, open):**
+    `useWhatsNewPanel.ts` (shows once per release version) + `WhatsNewPanel.tsx`, citing real
+    Sprint 1/2 shipped items (Golden Path optionality, AI answer rationale, bulk-approve) per this
+    item's own acceptance criteria. **Honest gap:** the 3 entries are a manually-curated snapshot
+    as of PR #152 — nothing pulls them from `ITERATION_PROGRESS.md` automatically, so they will go
+    stale without manual updates each release.
+17. 🔨 **Add a completion celebration/confirmation on finishing any workflow end-to-end.**
     *(Retention, Experience — S)* Reinforces the knowledge → AI → review → action → audit loop the
-    SWOT identifies as the core differentiator.
+    SWOT identifies as the core differentiator. **Built (PR #152, open):**
+    `useWorkflowCompletionCelebration.ts` (fires every completion, unlike A9/A10/A16's
+    once-per-scope prompts) + `WorkflowCompletionCelebration.tsx`, wired into the same two
+    completion points A9/A12 use (`TasksSection.tsx`, `AIReviewInboxPage.tsx`'s `decide()` on
+    `decision === "approved"` specifically).
 18. ✅ **Reduce required setup decisions before first AI interaction.** *(Ease — M)* Let a solo
     evaluator ask a grounded question before inviting a team, where possible. **Implemented:**
     found that `provisionTenantForUser` (the onboarding backend) already treated department/
