@@ -40,6 +40,16 @@ export default function App() {
   }, [active, activeRoute.id, currentUser, navigateToSection, session.status]);
 
   useEffect(() => {
+    // Safety net: a real, authenticated user with no provisioned organization yet
+    // (needsOnboarding, see supabaseUser.ts) must never reach a page that queries live
+    // repositories -- organizationId isn't a real tenant id yet and every such query fails.
+    // The login flow (src/app/auth/page.tsx) already routes correctly; this catches any other
+    // path into the workspace shell (bookmarks, direct links, the marketing site's entry point).
+    if (!currentUser?.needsOnboarding) return;
+    window.location.assign("/onboarding");
+  }, [currentUser]);
+
+  useEffect(() => {
     if (!currentUser || session.status !== "authenticated") return;
     analytics.identifyUser(currentUser.id, {
       user_role: currentUser.role,

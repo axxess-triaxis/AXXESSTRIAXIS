@@ -41,15 +41,17 @@ function LoginPanel() {
     setError(null);
 
     try {
-      await login(email, password);
+      const user = await login(email, password);
       analytics.trackEvent("user_login", { auth_method: "password" }, {
-        organization_id: session.user?.organizationId,
-        user_id: session.user?.id,
-        user_role: session.user?.role,
+        organization_id: user.organizationId,
+        user_id: user.id,
+        user_role: user.role,
         module_name: "auth",
         route: "/auth",
       });
-      router.push("/dashboard");
+      // A real, authenticated user with no provisioned organization yet must complete onboarding
+      // before reaching any page that queries live repositories -- see supabaseUser.ts.
+      router.push(user.needsOnboarding ? "/onboarding" : "/dashboard");
     } catch (loginError) {
       setError(loginError instanceof Error ? loginError.message : "Unable to sign in.");
     } finally {
@@ -66,10 +68,10 @@ function LoginPanel() {
           <p className="mt-1 text-sm text-[#5F6B73]">{session.user.displayName ?? session.user.email} is authenticated.</p>
         </div>
         <button
-          onClick={() => router.push("/dashboard")}
+          onClick={() => router.push(session.user!.needsOnboarding ? "/onboarding" : "/dashboard")}
           className="w-full rounded-lg bg-[#8B1E2D] px-4 py-2 text-sm font-semibold text-white hover:bg-[#7a1a27]"
         >
-          Continue to workspace
+          {session.user!.needsOnboarding ? "Continue to onboarding" : "Continue to workspace"}
         </button>
       </Card>
     );
