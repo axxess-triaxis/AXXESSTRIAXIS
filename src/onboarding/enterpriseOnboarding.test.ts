@@ -7,7 +7,7 @@ describe("enterprise onboarding model", () => {
     expect(nextOnboardingPath("create-organization", createDefaultOnboardingState())).toBe("/onboarding/sector");
   });
 
-  it("requires tenant, sector, workspace, role, and notices before completion", () => {
+  it("requires tenant, sector, role, and notices before completion", () => {
     expect(isOnboardingComplete({
       organizationName: "North East Health Mission",
       sector: "Healthcare",
@@ -16,5 +16,26 @@ describe("enterprise onboarding model", () => {
       workspaceName: "Pilot Operations",
       acceptedNotices: [...requiredOnboardingNotices],
     })).toBe(true);
+  });
+
+  it("does not require department or workspace names -- an unnecessary setup decision the backend already defaults", () => {
+    expect(isOnboardingComplete({
+      organizationName: "North East Health Mission",
+      sector: "Healthcare",
+      role: "Organization Admin",
+      acceptedNotices: [...requiredOnboardingNotices],
+    })).toBe(true);
+  });
+
+  it("still requires the core fields", () => {
+    expect(isOnboardingComplete({
+      acceptedNotices: [...requiredOnboardingNotices],
+    })).toBe(false);
+    expect(isOnboardingComplete({
+      organizationName: "North East Health Mission",
+      sector: "Healthcare",
+      role: "Organization Admin",
+      acceptedNotices: [],
+    })).toBe(false);
   });
 });

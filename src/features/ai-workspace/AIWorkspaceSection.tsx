@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../../auth/AuthProvider";
 import { EnterpriseWorkflowJourney } from "../../components/enterprise/EnterpriseWorkflowJourney";
+import { isDemoModeEnabled } from "../../demo/demoMode";
 import {
   AuditTrailBadge,
   ConfidenceBadge,
@@ -17,6 +18,7 @@ import { useEnterpriseGoldenPath } from "../../hooks/useEnterpriseGoldenPath";
 import { useGoldenPathDisplayMode } from "../../hooks/useGoldenPathDisplayMode";
 import { applicationServices } from "../../providers/serviceProvider";
 import { tenantScopeFromUser } from "../../repositories/supabaseEnterpriseRepositories";
+import { useAnalytics } from "../../services/analytics";
 import { getAiRouterStatusSnapshot } from "../../services/ai/router/aiRouter";
 import { languageCoverage } from "../../services/nlp/modelRegistry";
 import { answerWithGovernedRag, type RagAnswer } from "../../services/rag/governedRag";
@@ -41,11 +43,15 @@ import {
 const aiMessages = applicationServices.institutionalRepository.getAiMessages();
 const aiRouterStatus = getAiRouterStatusSnapshot();
 
+// Illustrative content for the investor-demo experience only -- gated behind isDemoModeEnabled()
+// everywhere it's used. A real tenant must never see this presented as a live AI answer.
+// See DEMO_DATA_LEAKAGE_AUDIT.md.
 const fallbackRagAnswer: RagAnswer = {
   answer: "District evidence indicates the highest current operational exposure sits in oxygen resilience, maternal referral handoff, and pharmacy stockout variance. Escalation should prioritize Dibrugarh biomedical maintenance, Cachar referral transfer turnaround, and Dhubri stock reconciliation before the next Mission Secretariat review.",
   confidence: 0.87,
   humanReviewRequired: false,
   keywords: ["oxygen", "maternal", "stockout", "district", "variance"],
+  rationale: "Synthesized from 3 governed sources (top match: \"Dibrugarh Risk Register - Oxygen Resilience\", 91% relevance).",
   sources: [
     {
       sourceType: "document",
@@ -71,6 +77,21 @@ const fallbackRagAnswer: RagAnswer = {
   ],
 };
 
+// Honest "no answer yet" state for real tenants -- used instead of fallbackRagAnswer wherever a
+// live answer hasn't been generated yet or a query failed.
+const emptyRagAnswer: RagAnswer = {
+  answer: "",
+  confidence: 0,
+  humanReviewRequired: false,
+  keywords: [],
+  rationale: "",
+  sources: [],
+};
+
+function initialRagAnswer(): RagAnswer {
+  return isDemoModeEnabled() ? fallbackRagAnswer : emptyRagAnswer;
+}
+
 type LiveRagAnswer = RagAnswer & {
   aiOutputAuditId?: string;
   modelUsed?: string;
@@ -81,15 +102,17 @@ type LiveRagAnswer = RagAnswer & {
 
 export const AIWorkspaceSection = () => {
   const { session } = useAuth();
+  const analytics = useAnalytics();
   const tenantScope = useMemo(() => session.user ? tenantScopeFromUser(session.user) : undefined, [session.user]);
   const enterpriseJourney = useEnterpriseGoldenPath(tenantScope, session.user);
   const goldenPathDisplayMode = useGoldenPathDisplayMode();
   const [input, setInput] = useState("");
   const [approved, setApproved] = useState(false);
   const [querying, setQuerying] = useState(false);
+  const [queryError, setQueryError] = useState<string | null>(null);
   const [reviewing, setReviewing] = useState(false);
   const [reviewMessage, setReviewMessage] = useState<string | null>(null);
-  const [ragAnswer, setRagAnswer] = useState<LiveRagAnswer>(fallbackRagAnswer);
+  const [ragAnswer, setRagAnswer] = useState<LiveRagAnswer>(() => initialRagAnswer());
 
   useEffect(() => {
     if (!tenantScope) return;
@@ -103,7 +126,7 @@ export const AIWorkspaceSection = () => {
         if (isMounted && answer.sources.length > 0) setRagAnswer(answer);
       })
       .catch(() => {
-        if (isMounted) setRagAnswer(fallbackRagAnswer);
+        if (isMounted) setRagAnswer(initialRagAnswer());
       });
 
     return () => {
@@ -111,27 +134,48 @@ export const AIWorkspaceSection = () => {
     };
   }, [tenantScope]);
 
+  const QUERY_TIMEOUT_MS = 20_000;
+
   async function askGovernedQuestion() {
     const question = input.trim();
     if (!question) return;
 
     setQuerying(true);
+    setQueryError(null);
     setReviewMessage(null);
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), QUERY_TIMEOUT_MS);
     try {
       const response = await fetch("/api/rag/query", {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ question, limit: 5 }),
+        signal: controller.signal,
       });
       const result = await response.json().catch(() => ({} as { error?: string }));
       if (!response.ok) throw new Error(result.error ?? "AXXESS could not complete the governed question.");
       setRagAnswer(result as LiveRagAnswer);
       setInput("");
       setApproved(false);
+      analytics.trackEvent("rag_query_submitted", { source_count: (result as LiveRagAnswer).sources?.length ?? 0 }, {
+        organization_id: session.user?.organizationId,
+        user_id: session.user?.id,
+        user_role: session.user?.role,
+        module_name: "ai-workspace",
+        route: "/ai-workspace",
+      });
     } catch (error) {
-      setReviewMessage(error instanceof Error ? error.message : "AXXESS could not complete the governed question.");
+      const timedOut = error instanceof DOMException && error.name === "AbortError";
+      setQueryError(
+        timedOut
+          ? "This is taking longer than usual. You can retry the same question."
+          : error instanceof Error
+            ? error.message
+            : "AXXESS could not complete the governed question.",
+      );
     } finally {
+      clearTimeout(timeout);
       setQuerying(false);
     }
   }
@@ -168,6 +212,8 @@ export const AIWorkspaceSection = () => {
     }
   }
 
+  const demoMode = isDemoModeEnabled();
+
   return (
     <PageShell className="h-full flex flex-col">
       <ModuleHeader
@@ -176,7 +222,7 @@ export const AIWorkspaceSection = () => {
         description="Ask questions across tenant-scoped documents, projects, approvals, stakeholders, and audit history with citations, confidence, routing status, and human review."
         badges={[
           <TenantScopeBadge key="tenant" />,
-          <DataStateBadge key="demo" state="Demo" />,
+          <DataStateBadge key="demo" state={demoMode ? "Demo" : "Live"} />,
           <DataStateBadge key="provider" state="Provider-gated" />,
           <HumanReviewBadge key="review" required={ragAnswer.humanReviewRequired} />,
         ]}
@@ -189,7 +235,9 @@ export const AIWorkspaceSection = () => {
           </>
         }
       />
-      <DemoDataNotice label="AI answers use governed demo context, cited sources, confidence signals, and audit preview records when provider keys are not configured." />
+      {demoMode && (
+        <DemoDataNotice label="AI answers use governed demo context, cited sources, confidence signals, and audit preview records when provider keys are not configured." />
+      )}
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-4 min-h-0">
         <div className="lg:col-span-2 flex flex-col">
           <Card className="flex-1 flex flex-col overflow-hidden">
@@ -281,24 +329,38 @@ export const AIWorkspaceSection = () => {
                     <Terminal size={10} />
                     Governed RAG - citations - tenant permissions
                   </div>
-                  <div className="bg-[#F8F9FA] border border-[rgba(0,0,0,0.06)] rounded-2xl rounded-tl-sm px-4 py-3 text-sm text-[#0F1117] leading-relaxed">
-                    {ragAnswer.answer}
-                  </div>
-                  <div className="mt-2 flex flex-wrap items-center gap-2 text-[10px]">
-                    <ConfidenceBadge score={ragAnswer.confidence} />
-                    <HumanReviewBadge required={ragAnswer.humanReviewRequired} />
-                    <AuditTrailBadge eventId={ragAnswer.aiOutputAuditId ?? "ai-audit-demo-0843"} />
-                    {ragAnswer.providerUsed && <span className="rounded-full bg-[#F2F3F5] px-2 py-0.5 text-[10px] font-semibold text-[#5F6B73]">{ragAnswer.providerUsed} - {ragAnswer.costTier ?? "cost logged"}</span>}
-                  </div>
-                  <div className="mt-3 flex flex-wrap items-center gap-2">
-                    <button onClick={() => void reviewAnswer("approved")} disabled={reviewing || !ragAnswer.aiOutputAuditId} className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60">
-                      {reviewing ? "Recording..." : "Approve action"}
-                    </button>
-                    <button onClick={() => void reviewAnswer("rejected")} disabled={reviewing || !ragAnswer.aiOutputAuditId} className="rounded-lg border border-[rgba(0,0,0,0.12)] bg-white px-3 py-1.5 text-xs font-semibold text-[#0F1117] hover:bg-[#F2F3F5] disabled:cursor-not-allowed disabled:opacity-60">
-                      Reject
-                    </button>
-                    {reviewMessage && <span className="text-[11px] font-medium text-[#5F6B73]">{reviewMessage}</span>}
-                  </div>
+                  {ragAnswer.answer ? (
+                    <>
+                      <div className="bg-[#F8F9FA] border border-[rgba(0,0,0,0.06)] rounded-2xl rounded-tl-sm px-4 py-3 text-sm text-[#0F1117] leading-relaxed">
+                        {ragAnswer.answer}
+                      </div>
+                      {ragAnswer.rationale && (
+                        <p className="mt-1.5 flex items-start gap-1.5 text-[11px] leading-relaxed text-[#5F6B73]">
+                          <Terminal size={11} className="mt-0.5 flex-shrink-0 text-[#8B1E2D]" />
+                          {ragAnswer.rationale}
+                        </p>
+                      )}
+                      <div className="mt-2 flex flex-wrap items-center gap-2 text-[10px]">
+                        <ConfidenceBadge score={ragAnswer.confidence} />
+                        <HumanReviewBadge required={ragAnswer.humanReviewRequired} />
+                        {ragAnswer.aiOutputAuditId && <AuditTrailBadge eventId={ragAnswer.aiOutputAuditId} />}
+                        {ragAnswer.providerUsed && <span className="rounded-full bg-[#F2F3F5] px-2 py-0.5 text-[10px] font-semibold text-[#5F6B73]">{ragAnswer.providerUsed} - {ragAnswer.costTier ?? "cost logged"}</span>}
+                      </div>
+                      <div className="mt-3 flex flex-wrap items-center gap-2">
+                        <button onClick={() => void reviewAnswer("approved")} disabled={reviewing || !ragAnswer.aiOutputAuditId} className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60">
+                          {reviewing ? "Recording..." : "Approve action"}
+                        </button>
+                        <button onClick={() => void reviewAnswer("rejected")} disabled={reviewing || !ragAnswer.aiOutputAuditId} className="rounded-lg border border-[rgba(0,0,0,0.12)] bg-white px-3 py-1.5 text-xs font-semibold text-[#0F1117] hover:bg-[#F2F3F5] disabled:cursor-not-allowed disabled:opacity-60">
+                          Reject
+                        </button>
+                        {reviewMessage && <span className="text-[11px] font-medium text-[#5F6B73]">{reviewMessage}</span>}
+                      </div>
+                    </>
+                  ) : (
+                    <div className="bg-[#F8F9FA] border border-dashed border-[rgba(0,0,0,0.08)] rounded-2xl rounded-tl-sm px-4 py-3 text-sm text-[#5F6B73]">
+                      Ask a question above to see a governed, cited answer here.
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -330,6 +392,20 @@ export const AIWorkspaceSection = () => {
                   <Send size={12} className="text-white" />
                 </button>
               </div>
+              {querying && (
+                <p className="mt-2 flex items-center gap-2 text-[11px] text-[#5F6B73]">
+                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#8B1E2D]" />
+                  Generating governed answer&hellip; usually takes 5&ndash;8 seconds
+                </p>
+              )}
+              {!querying && queryError && (
+                <p className="mt-2 flex items-center gap-2 text-[11px] font-medium text-[#8B1E2D]">
+                  {queryError}
+                  <button type="button" onClick={() => void askGovernedQuestion()} className="underline hover:no-underline">
+                    Retry
+                  </button>
+                </p>
+              )}
             </div>
           </Card>
         </div>

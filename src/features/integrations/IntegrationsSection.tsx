@@ -4,11 +4,16 @@ import { useState } from "react";
 import { SectionHeader } from "../../components/layout/SectionHeader";
 import { InlineToast } from "../../components/forms/InlineToast";
 import { Card } from "../../components/ui/Card";
+import { EmptyState } from "../../components/feedback/EmptyState";
+import { isDemoModeEnabled } from "../../demo/demoMode";
 import { applicationServices } from "../../providers/serviceProvider";
 import { previewSelectedEmailImport, type ConnectorProviderId, type EmailImportPreview } from "../../services/integrations/connectorContract";
 import type { MicrosoftGraphMailboxMessageSummary } from "../../services/integrations/microsoftGraphMailbox";
 import { getIntegrationHealth, getProductivityPluginRegistry } from "../../services/integrations/pluginRegistry";
 
+// Illustrative connector gallery for the investor-demo experience only -- real connector status
+// comes from getIntegrationHealth()/getProductivityPluginRegistry() below, which are live. Gated
+// behind isDemoModeEnabled(). See DEMO_DATA_LEAKAGE_AUDIT.md.
 const integrations = applicationServices.institutionalRepository.getIntegrations();
 const pluginRegistry = getProductivityPluginRegistry();
 const pluginHealth = getIntegrationHealth();
@@ -229,6 +234,9 @@ export const IntegrationsSection = () => {
     </div>
 
     <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      {!isDemoModeEnabled() && integrations.length === 0 && (
+        <EmptyState message="No demo connector gallery in this view. See connector status and OAuth setup below." />
+      )}
       {integrations.map((int) => (
         <Card key={int.name} className="p-4 transition-shadow hover:shadow-md">
           <div className="mb-3 flex items-start justify-between">
