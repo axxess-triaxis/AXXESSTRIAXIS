@@ -6,7 +6,7 @@ import { getConnectorContract, type ConnectorProviderId } from "../../../../../s
 import { buildIntegrationConnectionUpsert, exchangeOAuthCode, getOAuthProviderConfiguration, hashOAuthState, verifyOAuthState } from "../../../../../services/integrations/oauthProvider";
 
 function providerId(value: string | null): ConnectorProviderId | undefined {
-  return value === "gmail" || value === "microsoft" ? value : undefined;
+  return value === "gmail" || value === "microsoft" || value === "slack" || value === "calendly" ? value : undefined;
 }
 
 type IntegrationConnectionRow = {
