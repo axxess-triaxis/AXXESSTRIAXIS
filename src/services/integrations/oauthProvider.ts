@@ -58,16 +58,18 @@ function signatureFor(payload: string, env: NodeJS.ProcessEnv = process.env) {
   return scryptSync(`oauth-state:${payload}`, oauthStateSecret(env), 32).toString("base64url");
 }
 
+const oauthClientEnvVars: Record<ConnectorProviderId, { clientId: string; clientSecret: string }> = {
+  gmail: { clientId: "GOOGLE_CLIENT_ID", clientSecret: "GOOGLE_CLIENT_SECRET" },
+  microsoft: { clientId: "MICROSOFT_CLIENT_ID", clientSecret: "MICROSOFT_CLIENT_SECRET" },
+  slack: { clientId: "SLACK_CLIENT_ID", clientSecret: "SLACK_CLIENT_SECRET" },
+  calendly: { clientId: "CALENDLY_CLIENT_ID", clientSecret: "CALENDLY_CLIENT_SECRET" },
+};
+
 function providerClient(providerId: ConnectorProviderId, env: NodeJS.ProcessEnv = process.env) {
-  if (providerId === "gmail") {
-    return {
-      clientId: env.GOOGLE_CLIENT_ID,
-      clientSecret: env.GOOGLE_CLIENT_SECRET,
-    };
-  }
+  const envVars = oauthClientEnvVars[providerId];
   return {
-    clientId: env.MICROSOFT_CLIENT_ID,
-    clientSecret: env.MICROSOFT_CLIENT_SECRET,
+    clientId: env[envVars.clientId],
+    clientSecret: env[envVars.clientSecret],
   };
 }
 
@@ -145,8 +147,8 @@ export function getOAuthProviderConfiguration(providerId: ConnectorProviderId, e
     client,
     redirectUri: appUrl ? `${appUrl}/api/connectors/oauth/callback?provider=${providerId}` : undefined,
     missing: [
-      !client.clientId ? `${providerId === "gmail" ? "GOOGLE" : "MICROSOFT"}_CLIENT_ID` : undefined,
-      !client.clientSecret ? `${providerId === "gmail" ? "GOOGLE" : "MICROSOFT"}_CLIENT_SECRET` : undefined,
+      !client.clientId ? oauthClientEnvVars[providerId].clientId : undefined,
+      !client.clientSecret ? oauthClientEnvVars[providerId].clientSecret : undefined,
       !appUrl ? "NEXT_PUBLIC_APP_URL" : undefined,
       ...tokenVaultMissing,
     ].filter((item): item is string => Boolean(item)),
@@ -189,7 +191,10 @@ export async function exchangeOAuthCode(input: {
   const expiresAt = payload.expires_in
     ? new Date((input.now ?? Date.now()) + payload.expires_in * 1000).toISOString()
     : undefined;
-  const scope = payload.scope?.split(/\s+/).filter(Boolean) ?? contract.requiredScopes;
+  // Google/Microsoft return space-separated scopes; Slack returns comma-separated scopes.
+  // Splitting on either keeps missingScopes comparisons (pluginRuntime.ts) working for both --
+  // an array containing one comma-joined string would never match individual requiredScopes.
+  const scope = payload.scope?.split(/[\s,]+/).filter(Boolean) ?? contract.requiredScopes;
   const oauthSubject = decodeJwtSubject(payload.id_token);
   const vaultRecord = sealTokenBundle({
     providerId: input.providerId,

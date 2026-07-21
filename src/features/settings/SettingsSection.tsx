@@ -14,12 +14,13 @@ import { applicationServices } from "../../providers/serviceProvider";
 import { tenantScopeFromUser } from "../../repositories/supabaseEnterpriseRepositories";
 import { getAiRouterStatusSnapshot } from "../../services/ai/router/aiRouter";
 import { useAnalytics } from "../../services/analytics";
+import { getPilotIntegrations } from "../../services/integrations/pluginRegistry";
 import { languageCoverage } from "../../services/nlp/modelRegistry";
-import { Building2, Check, CheckCircle2, Database, RotateCcw, Save, Send, Settings, ShieldCheck, Sparkles, UserPlus, X, XCircle } from "lucide-react";
+import { Building2, Calendar, Check, CheckCircle2, Database, MessageSquare, RotateCcw, Save, Send, Settings, ShieldCheck, Sparkles, UserPlus, X, XCircle } from "lucide-react";
 
 export const SettingsSection = () => {
   const [tab, setTab] = useState("security");
-  const tabs = ["Profile", "Organization", "Security", "Users", "Permissions", "AI Configuration", "Demo"];
+  const tabs = ["Profile", "Organization", "Security", "Integrations", "Users", "Permissions", "AI Configuration", "Demo"];
 
   return (
     <div>
@@ -93,6 +94,8 @@ export const SettingsSection = () => {
           </Card>
         </div>
       )}
+
+      {tab === "integrations" && <IntegrationsQuickConnectPanel />}
 
       {tab === "users" && <UserAdministration />}
 
@@ -174,6 +177,59 @@ function AiRoutingProvidersPanel() {
       </div>
       <p className="mt-3 text-[11px] leading-relaxed text-[#5F6B73]">Server-side keys are never shown here. Missing providers stay adapter-ready and fall back to local deterministic mode.</p>
     </Card>
+  );
+}
+
+const quickConnectIcons: Record<string, typeof MessageSquare> = {
+  slack: MessageSquare,
+  calendly: Calendar,
+};
+
+function IntegrationsQuickConnectPanel() {
+  const { session } = useAuth();
+  // Per PRE_DEMO_ACTIONABLES.md A13/A14/A15: Settings surfaces only the 2 connectors this
+  // release actually ships a working connect flow for, not the full integrations catalogue
+  // (that full catalogue lives at /integrations, split into pilot vs. infrastructure-only).
+  const quickConnectPlugins = getPilotIntegrations().filter((plugin) => plugin.id === "slack" || plugin.id === "calendly");
+  const canConnect = Boolean(session.user && ["Super Admin", "Organization Admin"].includes(session.user.role));
+
+  return (
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      {quickConnectPlugins.map((plugin) => {
+        const Icon = quickConnectIcons[plugin.id] ?? MessageSquare;
+        return (
+          <Card key={plugin.id} className="p-5">
+            <div className="mb-3 flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#8B1E2D]/8 text-[#8B1E2D]">
+                <Icon size={18} />
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-[#0F1117]">{plugin.name}</h3>
+                <span className={`mt-0.5 inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold ${plugin.configured ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"}`}>
+                  {plugin.configured ? "configured" : "provider-gated for production credentials"}
+                </span>
+              </div>
+            </div>
+            <p className="mb-3 text-xs leading-relaxed text-[#5F6B73]">{plugin.useCases.join(" - ")}</p>
+            {plugin.id === "calendly" && (
+              <p className="mb-3 rounded-lg bg-amber-50 px-2.5 py-2 text-[11px] leading-relaxed text-amber-800">
+                Calendly&apos;s API requires a Standard plan or higher on the account you connect -- it isn&apos;t available on Calendly&apos;s free tier. This is a cost on your own Calendly subscription, not an AXXESS charge.
+              </p>
+            )}
+            {canConnect ? (
+              <a
+                href={`/api/connectors/oauth/start?provider=${plugin.id}`}
+                className="inline-flex items-center gap-2 rounded-lg border border-[rgba(139,30,45,0.22)] bg-white px-3 py-2 text-xs font-semibold text-[#8B1E2D] hover:bg-[#8B1E2D]/5"
+              >
+                Connect {plugin.name}
+              </a>
+            ) : (
+              <InlineToast tone="info" message="Only Organization Admins can connect this workspace's integrations." />
+            )}
+          </Card>
+        );
+      })}
+    </div>
   );
 }
 
