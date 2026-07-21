@@ -12,7 +12,9 @@ state without reading the whole roadmap.
 
 ## Sprint 1 — Stop the bleeding: onboarding friction and trust signals
 
-**Status:** 7 / 7 implemented (2026-07-20); pending PR merge to `main` (see `ITERATION_PROGRESS.md`)
+**Status:** 7 / 7 implemented and merged to `main` (2026-07-21, via the `reconcile/sprint1-tail-and-sprint2`
+branch — see `ITERATION_PROGRESS.md`'s 2026-07-21 git-reconciliation entry for why a second PR was
+needed: PR #137 merged mid-flight and only captured A1/A2)
 
 - [x] **A1** — Make Golden Path opt-in, not forced
 - [x] **A2** — Explain blocked/locked steps inline
@@ -32,15 +34,18 @@ state without reading the whole roadmap.
       (coverage here comes from Playwright e2e specs instead). Flagged as a follow-up, not
       silently skipped — see `ITERATION_PROGRESS.md`.
 - [x] `ITERATION_PROGRESS.md` has one entry per item (or one combined entry, as with A1/A2)
-- [ ] `pnpm run ci` green on the branch that merges the last Sprint 1 item — full suite verified
-      green pre-merge; `pnpm run ci` also runs `build`, not independently re-verified here
+- [x] `pnpm run ci`-equivalent green on the branch that merged the last Sprint 1 item —
+      `typecheck`/`lint --max-warnings=0`/`test -- --run`/`build` independently re-verified on
+      `reconcile/sprint1-tail-and-sprint2`, rebased fresh onto `main` post-PR-#138, per
+      `ITERATION_PROGRESS.md`'s 2026-07-21 entry
 
 ---
 
 ## Sprint 2 — Value clarity, AI trust, and feedback instrumentation
 
-**Status:** 7 / 7 implemented (2026-07-20); end-to-end browser verification of A3/A7/A18 still
-pending — see exit criteria below
+**Status:** 7 / 7 implemented and merged to `main` (2026-07-21, same reconciliation PR as Sprint 1's
+tail — see above); end-to-end browser verification of A3/A7/A18 still pending — see exit criteria
+below
 
 - [x] **A3** — Guided demo workspace with realistic seeded data (real repositories, not fabricated content)
 - [x] **A7** — Replace single onboarding flow with 3 outcome-first paths *(shipped with A3, as planned)*
@@ -61,9 +66,8 @@ pending — see exit criteria below
 - [x] A11's events verified firing at the correct funnel step (code-reviewed against each success
       path, not just "present in code")
 - [x] `ITERATION_PROGRESS.md` updated
-- [ ] `pnpm run ci` green — `pnpm run typecheck`/`lint`/`test` all independently verified green
-      throughout; `pnpm run ci` also runs `build`, not independently re-run as a single command
-      this sprint
+- [x] `pnpm run ci`-equivalent green — `typecheck`/`lint --max-warnings=0`/`test -- --run`/`build`
+      all independently re-verified on `reconcile/sprint1-tail-and-sprint2` post-PR-#138
 
 ---
 
@@ -92,8 +96,13 @@ integrations before the reliability/clarity fixes undermines the demo)
 
 ## Overall completion
 
-- [ ] Sprint 1 complete (7/7)
-- [ ] Sprint 2 complete (7/7)
-- [ ] Sprint 3 complete (6/6)
-- [ ] All 20 actionables shipped and logged in `ITERATION_PROGRESS.md`
-- [ ] `PRE_DEMO_ACTIONABLES.md` statuses updated from 🔜 to ✅ for every item
+- [x] Sprint 1 complete (7/7) — merged to `main` 2026-07-21
+- [x] Sprint 2 complete (7/7) — merged to `main` 2026-07-21
+- [ ] Sprint 3 complete (6/6) — not started
+- [ ] All 20 actionables shipped and logged in `ITERATION_PROGRESS.md` — 14/20 (Sprint 1 + Sprint 2);
+      A10, A13, A14, A15, A16, A17 remain, scoped to Sprint 3
+- [x] `PRE_DEMO_ACTIONABLES.md` statuses updated from 🔜 to ✅ for every shipped item (14/20;
+      Sprint 3's 6 remain 🔜 as planned)
+
+See `PRODUCT_ITERATION_I_CLOSEOUT.md` for the full closing record of everything covered by this
+checklist (Sprints 1-2), including the git-reconciliation incident, before Sprint 3 planning begins.
