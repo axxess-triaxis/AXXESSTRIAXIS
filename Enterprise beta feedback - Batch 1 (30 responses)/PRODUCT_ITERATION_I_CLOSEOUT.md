@@ -200,6 +200,7 @@ As of this document, `4f8b714` (A13/A14) and `628da46` (A15) are confirmed ances
 
 | PR | Scope | typecheck | lint | test | build |
 |---|---|---|---|---|---|
+| (open, this branch) | + 9/12 Postgres wrapper integrations wired, dual Mixpanel+PostHog analytics | clean | clean | 91 files / 270 tests | not re-run this pass (no build-affecting changes) |
 | (open, this branch) | Live A3/A7/A18 walkthrough + 4 schema/auth bugs + demo-leak Round 4 | clean | clean | 91 files / 265 tests | not re-run this pass (SQL/auth/UI changes only) |
 | #152 (open) | A10 + A16 + A17 | clean | clean | 91 files / 261 tests | succeeds |
 | #151 (merged) | A13 + A14 | clean | clean | 88 files / 253 tests | succeeds |
