@@ -73,24 +73,38 @@ below
 
 ## Sprint 3 — Visible integrations, retention signals, demo readiness
 
-**Status:** 0 / 6 shipped — blocked on Sprint 1 + 2 (see roadmap's "why this order" section: shipping
-integrations before the reliability/clarity fixes undermines the demo)
+**Status:** 3 / 6 merged to `main` (A13, A14, A15 — PRs #150, #151); 3 / 6 built, tested, and PR'd
+but **not yet merged** (A10, A16, A17 — PR #152, open). Planned 2026-07-21 as 4 phases; see
+`SPRINT_ROADMAP_PRE_DEMO.md` and `PRODUCT_ITERATION_I_CLOSEOUT.md` section 5 for full detail,
+including 2 real bugs found and fixed along the way (a broken audit-log trigger firing on every
+project/task/meeting/organization write, and a Slack OAuth scope-parsing bug).
 
-- [ ] **A13** — Slack quick-connect in Settings (using `slack_wrapper`)
-- [ ] **A14** — Calendly quick-connect in Settings (using `calendly_wrapper`)
-- [ ] **A15** — Cap the integrations surface to just these 2 for this release
-- [ ] **A10** — Post-demo satisfaction capture (distinct from beta feedback button)
-- [ ] **A16** — "What's New" panel at login
-- [ ] **A17** — Completion celebration on finishing a workflow end-to-end
+- [x] **A13** — Slack quick-connect in Settings (merged, PR #151)
+- [x] **A14** — Calendly quick-connect in Settings (merged, PR #151; customer-side cost caveat —
+      Calendly's API requires a paid plan on the account being connected, surfaced in the Settings UI)
+- [x] **A15** — Cap the integrations surface to reality (merged, PR #150 — found the real scope was
+      ~20 fake-flagged connectors, not 12 wrappers)
+- [ ] **A10** — Post-demo satisfaction capture (built + tested, PR #152 open, not yet merged)
+- [ ] **A16** — "What's New" panel at login (built + tested, PR #152 open, not yet merged)
+- [ ] **A17** — Completion celebration on finishing a workflow end-to-end (built + tested, PR #152
+      open, not yet merged)
 
 **Sprint 3 exit criteria:**
-- [ ] All 6 items above checked
+- [ ] All 6 items above checked — 3/6 (A10/A16/A17 pending #152 merge)
 - [ ] Slack + Calendly connections demoable live, end to end, with a real (not mocked) test account
+      — **not done**: no real Slack App / Calendly OAuth app credentials available in this
+      environment; code verified via unit tests against mocked token exchanges only
 - [ ] `ITERATION_PROGRESS.md`'s 2026-07-20 Supabase-wrappers entry updated to mark the
-      product-facing gap closed for these 2 wrappers specifically (the other 10 remain open)
-- [ ] "What's New" panel content reflects real Sprint 1-3 work, not placeholder copy
-- [ ] `pnpm run ci` green
-- [ ] Demo dry-run completed against the full Sprint 1-3 experience, not just this sprint's items in isolation
+      product-facing gap closed for these 2 wrappers specifically — **not done as a doc update**,
+      though A13/A14 are functionally shipped
+- [ ] "What's New" panel content reflects real Sprint 1-3 work, not placeholder copy — done in
+      content (cites real Sprint 1/2 items), but is a manually-curated one-time snapshot with no
+      mechanism to stay current; will go stale without hand-updates each release
+- [x] `pnpm run ci`-equivalent green on every Sprint 3 PR individually (#149, #150, #151, #152 each
+      independently verified: `typecheck`/`lint --max-warnings=0`/`test -- --run`/`build`)
+- [ ] Demo dry-run completed against the full Sprint 1-3 experience — **not done**
+- [ ] Live browser walkthrough of A3/A7/A18 (Phase 0's own gate for this sprint) — **not done**,
+      carried forward as the single largest open gap since Sprint 2
 
 ---
 
@@ -98,11 +112,13 @@ integrations before the reliability/clarity fixes undermines the demo)
 
 - [x] Sprint 1 complete (7/7) — merged to `main` 2026-07-21
 - [x] Sprint 2 complete (7/7) — merged to `main` 2026-07-21
-- [ ] Sprint 3 complete (6/6) — not started
-- [ ] All 20 actionables shipped and logged in `ITERATION_PROGRESS.md` — 14/20 (Sprint 1 + Sprint 2);
-      A10, A13, A14, A15, A16, A17 remain, scoped to Sprint 3
-- [x] `PRE_DEMO_ACTIONABLES.md` statuses updated from 🔜 to ✅ for every shipped item (14/20;
-      Sprint 3's 6 remain 🔜 as planned)
+- [ ] Sprint 3 complete (6/6) — 3/6 merged (A13, A14, A15); 3/6 built + tested + PR'd, pending
+      merge of #152 (A10, A16, A17)
+- [ ] All 20 actionables shipped and logged in `ITERATION_PROGRESS.md` — 17/20 merged; A10/A16/A17
+      logged as built-and-PR'd, not yet merged
+- [x] `PRE_DEMO_ACTIONABLES.md` statuses updated: ✅ for 17 merged items, 🔨 for the 3 built-and-PR'd
+      items (A10, A16, A17) — see that file's updated status legend
 
 See `PRODUCT_ITERATION_I_CLOSEOUT.md` for the full closing record of everything covered by this
-checklist (Sprints 1-2), including the git-reconciliation incident, before Sprint 3 planning begins.
+checklist (Sprints 1, 2, and 3), including the git-reconciliation incident and every honest gap
+carried forward.
