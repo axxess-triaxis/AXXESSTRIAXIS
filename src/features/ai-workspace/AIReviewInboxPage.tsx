@@ -7,7 +7,9 @@ import { MicroSurveyPrompt } from "../../components/feedback/MicroSurveyPrompt";
 import { SectionHeader } from "../../components/layout/SectionHeader";
 import { WorkflowTimelinePanel } from "../../components/enterprise/WorkflowTimelinePanel";
 import { isDemoModeEnabled } from "../../demo/demoMode";
+import { WorkflowCompletionCelebration } from "../../components/feedback/WorkflowCompletionCelebration";
 import { useMicroSurveyPrompt } from "../../hooks/useMicroSurveyPrompt";
+import { useWorkflowCompletionCelebration } from "../../hooks/useWorkflowCompletionCelebration";
 import { useAnalytics } from "../../services/analytics";
 import type { AiReviewInboxItem } from "../../services/ai/reviewInbox";
 import { workflowActionLabels, type ReviewWorkflowActionType, type WorkflowTimelineEvent } from "../../services/workflows/workflowEvidence";
@@ -49,6 +51,7 @@ export function AIReviewInboxPage() {
   const [bulkApproving, setBulkApproving] = useState(false);
   const workflowTimeline = useWorkflowTimeline(undefined, { limit: 6 });
   const microSurvey = useMicroSurveyPrompt();
+  const completionCelebration = useWorkflowCompletionCelebration();
 
   async function loadReviews() {
     try {
@@ -100,6 +103,18 @@ export function AIReviewInboxPage() {
       route: "/ai-workspace/review-inbox",
     });
     microSurvey.trigger();
+    // Celebrate approvals specifically -- rejecting/escalating aren't "completions" in the sense
+    // A17 means (finishing a workflow end-to-end), so they're excluded from the celebration.
+    if (decision === "approved") {
+      analytics.trackEvent("workflow_completion_celebrated", { review_id: reviewId, source: "ai-review-inbox" }, {
+        organization_id: session.user?.organizationId,
+        user_id: session.user?.id,
+        user_role: session.user?.role,
+        module_name: "ai-review-inbox",
+        route: "/ai-workspace/review-inbox",
+      });
+      completionCelebration.celebrate(createAction && createdTitle ? `Review approved and ${createdTitle} created!` : "Review approved!");
+    }
     return true;
   }
 
@@ -241,6 +256,9 @@ export function AIReviewInboxPage() {
           route="/ai-workspace/review-inbox"
           onDismiss={microSurvey.dismiss}
         />
+      )}
+      {completionCelebration.visible && (
+        <WorkflowCompletionCelebration message={completionCelebration.message} onDismiss={completionCelebration.dismiss} />
       )}
     </main>
   );

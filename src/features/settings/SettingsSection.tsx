@@ -12,6 +12,7 @@ import { isDemoModeEnabled, isDemoModeForcedByEnv, resetDemoEnvironment, setDemo
 import type { Invitation, RoleName, User } from "../../domain";
 import { applicationServices } from "../../providers/serviceProvider";
 import { tenantScopeFromUser } from "../../repositories/supabaseEnterpriseRepositories";
+import { markPostDemoSatisfactionPromptPending } from "../../hooks/usePostDemoSatisfactionPrompt";
 import { getAiRouterStatusSnapshot } from "../../services/ai/router/aiRouter";
 import { useAnalytics } from "../../services/analytics";
 import { getPilotIntegrations } from "../../services/integrations/pluginRegistry";
@@ -428,6 +429,10 @@ function DemoModePanel() {
       tone: "success",
       message: nextEnabled ? "Investor preview will open with the seeded institution." : "Normal mode will open as a clean tenant.",
     });
+    // A10: capture a satisfaction signal at the natural end of a live demo session -- turning
+    // Investor Preview off. The prompt itself can't render here since we're about to hard-navigate
+    // away; mark intent and let App.tsx trigger it once /dashboard has actually mounted.
+    if (!nextEnabled) markPostDemoSatisfactionPromptPending();
     window.setTimeout(() => window.location.assign("/dashboard"), 250);
   };
 
