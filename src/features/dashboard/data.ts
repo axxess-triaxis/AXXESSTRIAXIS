@@ -1,6 +1,6 @@
 import { AlertTriangle, FolderKanban, ShieldCheck, Sparkles } from "lucide-react";
 import { demoRepositories } from "../../demo/demoRepositories";
-import { demoUserContext } from "../../demo/demoMode";
+import { demoUserContext, isDemoModeEnabled } from "../../demo/demoMode";
 import { applicationServices } from "../../providers/serviceProvider";
 import {
   ownerInitialsForProject,
@@ -36,6 +36,9 @@ export function dashboardScopeForUser(user: UserContext): TenantScope {
   return tenantScopeFromUser(user);
 }
 
+// Illustrative content for the investor-demo experience only -- callers must gate this behind
+// isDemoModeEnabled(). A real tenant, including one with zero projects yet, must see its own
+// (possibly empty) data or an honest zero, never this. See DEMO_DATA_LEAKAGE_AUDIT.md.
 export function getDashboardFallbackProjects() {
   return demoRepositories.institutionalRepository.getProjects();
 }
@@ -54,6 +57,17 @@ export function getDashboardFallbackKpis(): DashboardKpi[] {
   ];
 }
 
+// Honest zero-state KPIs for a real tenant with no data or trend history yet. No fabricated
+// deltas -- "no change data yet" rather than an invented trend.
+function getZeroDashboardKpis(documentCount = 0): DashboardKpi[] {
+  return [
+    { label: "Active Projects", value: "0", delta: "No change yet", trend: "up", icon: FolderKanban, color: "#8B1E2D" },
+    { label: "At-Risk Items", value: "0", delta: "No change yet", trend: "down", icon: AlertTriangle, color: "#C9A227" },
+    { label: "Pending Approvals", value: "0", delta: "No change yet", trend: "up", icon: ShieldCheck, color: "#2C4A7C" },
+    { label: "Documents Indexed", value: String(documentCount), delta: "No change yet", trend: "up", icon: Sparkles, color: "#1A6B4A" },
+  ];
+}
+
 export async function getDashboardProjects(scope: TenantScope) {
   try {
     const [projectRecords, programRecords, userRecords] = await Promise.all([
@@ -61,8 +75,6 @@ export async function getDashboardProjects(scope: TenantScope) {
       applicationServices.programsRepository.list(scope),
       applicationServices.usersRepository.listByOrganization(scope),
     ]);
-
-    if (projectRecords.length === 0) return getDashboardFallbackProjects();
 
     return projectRecords.map((project, index) => ({
       id: index + 1,
@@ -77,28 +89,30 @@ export async function getDashboardProjects(scope: TenantScope) {
       spent: index === 0 ? "$8.2M" : index === 1 ? "$14.8M" : "$10.5M",
     }));
   } catch {
-    return getDashboardFallbackProjects();
+    return isDemoModeEnabled() ? getDashboardFallbackProjects() : [];
   }
 }
 
 export async function getDashboardKpis(scope: TenantScope): Promise<DashboardKpi[]> {
   try {
-    const [scopedProjects, scopedTasks] = await Promise.all([
+    const [scopedProjects, scopedTasks, scopedDocuments] = await Promise.all([
       applicationServices.projectsRepository.list(scope),
       applicationServices.tasksRepository.list(scope),
+      applicationServices.documentsRepository.list(scope),
     ]);
-    if (scopedProjects.length === 0) return getDashboardFallbackKpis();
     const atRiskCount = scopedProjects.filter((project) => project.riskLevel === "high" || project.riskLevel === "urgent" || project.status === "at-risk").length;
-    const approvals = demoRepositories.institutionalRepository.getApprovals();
+    const documentCount = scopedDocuments.filter((document) => document.status !== "deleted").length;
+    // No live approvals repository exists yet; 0 is honest until one is built.
+    const pendingApprovals = 0;
 
     return [
       { label: "Active Projects", value: String(scopedProjects.length), delta: "+18", trend: "up", icon: FolderKanban, color: "#8B1E2D", sentiment: "positive" },
       { label: "At-Risk Items", value: String(atRiskCount + scopedTasks.filter((task) => task.priority === "urgent").length), delta: "-7", trend: "down", icon: AlertTriangle, color: "#C9A227", sentiment: "positive" },
-      { label: "Pending Approvals", value: String(approvals.filter((approval) => approval.status !== "Completed").length), delta: "-5", trend: "up", icon: ShieldCheck, color: "#2C4A7C", sentiment: "positive" },
-      { label: "RAG Sources Indexed", value: "2,200", delta: "+1,976", trend: "up", icon: Sparkles, color: "#1A6B4A", sentiment: "positive" },
+      { label: "Pending Approvals", value: String(pendingApprovals), delta: "No change yet", trend: "up", icon: ShieldCheck, color: "#2C4A7C" },
+      { label: "Documents Indexed", value: String(documentCount), delta: "No change yet", trend: "up", icon: Sparkles, color: "#1A6B4A" },
     ];
   } catch {
-    return getDashboardFallbackKpis();
+    return isDemoModeEnabled() ? getDashboardFallbackKpis() : getZeroDashboardKpis();
   }
 }
 

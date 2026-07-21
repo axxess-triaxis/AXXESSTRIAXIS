@@ -1,13 +1,20 @@
 import { DataStateBadge, DemoDataNotice, ModuleHeader, PageShell, SectionCard, StatusBadge, TenantScopeBadge } from "../../components/enterprise";
+import { EmptyState } from "../../components/feedback/EmptyState";
 import { Avatar } from "../../components/ui/Avatar";
 import { Card } from "../../components/ui/Card";
+import { isDemoModeEnabled } from "../../demo/demoMode";
 import { demoStakeholderCards } from "../../lib/demo/demoStakeholders";
 import { applicationServices } from "../../providers/serviceProvider";
 import { Plus } from "lucide-react";
 
+// No live stakeholders/CRM repository exists yet. Illustrative content below is gated behind
+// isDemoModeEnabled(). See DEMO_DATA_LEAKAGE_AUDIT.md.
 const stakeholders = applicationServices.institutionalRepository.getStakeholders();
 
-export const StakeholdersSection = () => (
+export const StakeholdersSection = () => {
+  const demoMode = isDemoModeEnabled();
+
+  return (
   <PageShell>
     <ModuleHeader
       title="Stakeholders & CRM"
@@ -15,7 +22,7 @@ export const StakeholdersSection = () => (
       description="Relationship strength, linked workflows, follow-ups, and AI-generated briefing suggestions across government, healthcare, NGO, investor, and partner stakeholders."
       badges={[
         <TenantScopeBadge key="tenant" />,
-        <DataStateBadge key="demo" state="Demo" />,
+        <DataStateBadge key="demo" state={demoMode ? "Demo" : "Live"} />,
       ]}
       actions={
         <button className="text-xs bg-[#8B1E2D] text-white px-3 py-2 rounded-lg flex items-center gap-1.5 hover:bg-[#7a1a27]">
@@ -23,7 +30,14 @@ export const StakeholdersSection = () => (
         </button>
       }
     />
-    <DemoDataNotice label="Stakeholder records use one coherent institutional storyline and link back to projects, approvals, documents, and follow-up tasks." />
+    {!demoMode && (
+      <Card className="p-8">
+        <EmptyState message="No stakeholders yet. Add your first contact to start tracking relationships, follow-ups, and linked workflows." />
+      </Card>
+    )}
+    {demoMode && <DemoDataNotice label="Stakeholder records use one coherent institutional storyline and link back to projects, approvals, documents, and follow-up tasks." />}
+    {demoMode && (
+    <>
     <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
       {demoStakeholderCards.map((stakeholder) => (
         <SectionCard key={stakeholder.name} title={stakeholder.name} description={`${stakeholder.organization} - ${stakeholder.lastInteraction}`}>
@@ -131,7 +145,10 @@ export const StakeholdersSection = () => (
         </Card>
       </div>
     </div>
+    </>
+    )}
   </PageShell>
-);
+  );
+};
 
 export default StakeholdersSection;

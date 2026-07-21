@@ -149,9 +149,21 @@ describe("governed RAG retrieval", () => {
     expect(answer.sources.length).toBeGreaterThan(0);
     expect(answer.confidence).toBeGreaterThan(0.5);
     expect(answer.humanReviewRequired).toBe(true);
+    expect(answer.rationale).toContain(`${answer.sources.length} governed source`);
+    expect(answer.rationale).toContain(answer.sources[0].title);
     expect(record).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
       action: "rag.answer.generated",
       resourceType: "rag-query",
     }));
+  });
+
+  it("gives an honest rationale instead of a fabricated one when no source matches", async () => {
+    const answer = await answerWithGovernedRag(repositories({ documents: [] }), scope, {
+      question: "a question with no authorized institutional context",
+    });
+
+    expect(answer.sources).toHaveLength(0);
+    expect(answer.confidence).toBe(0);
+    expect(answer.rationale).toMatch(/no authorized institutional source matched/i);
   });
 });

@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import type { Route } from "next";
 import { useRouter } from "next/navigation";
-import { axxessBetaRoles, axxessSectors, createDefaultOnboardingState, enterpriseOnboardingSteps, isOnboardingComplete, nextOnboardingPath, requiredOnboardingNotices, type EnterpriseOnboardingState, type OnboardingStepId } from "../../onboarding/enterpriseOnboarding";
+import { axxessBetaRoles, axxessSectors, createDefaultOnboardingState, enterpriseOnboardingSteps, isOnboardingComplete, nextOnboardingPath, onboardingGoals, requiredOnboardingNotices, type EnterpriseOnboardingState, type OnboardingStepId } from "../../onboarding/enterpriseOnboarding";
 import { Card } from "../../components/ui/Card";
 import { SectionHeader } from "../../components/layout/SectionHeader";
 import { trackEvent } from "../../services/analytics";
@@ -66,6 +66,19 @@ export function EnterpriseOnboardingPage({ step }: EnterpriseOnboardingPageProps
         if (!response.ok) throw new Error(result.error ?? "Tenant provisioning failed.");
         window.localStorage.removeItem(storageKey);
         trackEvent("organization_created", { sector: state.sector, role: state.role }, { module_name: "onboarding", route: "/onboarding/complete" });
+
+        const goal = onboardingGoals.find((item) => item.id === state.primaryGoal);
+        if (goal) {
+          const seedResponse = await fetch("/api/onboarding/seed-sample-data", {
+            method: "POST",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ goal: goal.id }),
+          }).catch(() => undefined);
+          trackEvent("onboarding_step_completed", { step: "seed-sample-data", goal: goal.id, seeded: Boolean(seedResponse?.ok) }, { module_name: "onboarding", route: "/onboarding/complete" });
+          router.push(goal.route as Route);
+          return;
+        }
         router.push("/dashboard");
       } catch (error) {
         setMessage({ tone: "error", text: error instanceof Error ? error.message : "Tenant provisioning failed." });
@@ -111,17 +124,35 @@ export function EnterpriseOnboardingPage({ step }: EnterpriseOnboardingPageProps
 
           <Card className="p-6">
             {step === "start" && (
-              <div className="space-y-4">
-                <h2 className="text-lg font-bold text-[#0F1117]">How should this user enter AXXESS?</h2>
-                <div className="grid gap-3 md:grid-cols-2">
-                  <button onClick={() => updateState({ ...state, mode: "create-organization" })} className={`rounded-lg border p-4 text-left ${state.mode === "create-organization" ? "border-[#8B1E2D] bg-[#8B1E2D]/5" : "border-[rgba(0,0,0,0.08)]"}`}>
-                    <span className="block text-sm font-semibold text-[#0F1117]">Create organization</span>
-                    <span className="mt-1 block text-xs text-[#5F6B73]">Provision a new clean tenant for a live beta customer.</span>
-                  </button>
-                  <button onClick={() => updateState({ ...state, mode: "join-organization" })} className={`rounded-lg border p-4 text-left ${state.mode === "join-organization" ? "border-[#8B1E2D] bg-[#8B1E2D]/5" : "border-[rgba(0,0,0,0.08)]"}`}>
-                    <span className="block text-sm font-semibold text-[#0F1117]">Join organization</span>
-                    <span className="mt-1 block text-xs text-[#5F6B73]">Use an invitation to join an existing tenant.</span>
-                  </button>
+              <div className="space-y-6">
+                <div>
+                  <h2 className="text-lg font-bold text-[#0F1117]">How should this user enter AXXESS?</h2>
+                  <div className="mt-4 grid gap-3 md:grid-cols-2">
+                    <button onClick={() => updateState({ ...state, mode: "create-organization" })} className={`rounded-lg border p-4 text-left ${state.mode === "create-organization" ? "border-[#8B1E2D] bg-[#8B1E2D]/5" : "border-[rgba(0,0,0,0.08)]"}`}>
+                      <span className="block text-sm font-semibold text-[#0F1117]">Create organization</span>
+                      <span className="mt-1 block text-xs text-[#5F6B73]">Provision a new clean tenant for a live beta customer.</span>
+                    </button>
+                    <button onClick={() => updateState({ ...state, mode: "join-organization" })} className={`rounded-lg border p-4 text-left ${state.mode === "join-organization" ? "border-[#8B1E2D] bg-[#8B1E2D]/5" : "border-[rgba(0,0,0,0.08)]"}`}>
+                      <span className="block text-sm font-semibold text-[#0F1117]">Join organization</span>
+                      <span className="mt-1 block text-xs text-[#5F6B73]">Use an invitation to join an existing tenant.</span>
+                    </button>
+                  </div>
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-[#0F1117]">What do you want to try first?</h2>
+                  <p className="mt-1 text-xs text-[#5F6B73]">Optional — pick one to get a sample workspace and land in the right place. Skip this and you&apos;ll start from an empty dashboard.</p>
+                  <div className="mt-4 grid gap-3 md:grid-cols-3">
+                    {onboardingGoals.map((goal) => (
+                      <button
+                        key={goal.id}
+                        onClick={() => updateState({ ...state, primaryGoal: state.primaryGoal === goal.id ? undefined : goal.id })}
+                        className={`rounded-lg border p-4 text-left ${state.primaryGoal === goal.id ? "border-[#8B1E2D] bg-[#8B1E2D]/5" : "border-[rgba(0,0,0,0.08)]"}`}
+                      >
+                        <span className="block text-sm font-semibold text-[#0F1117]">{goal.title}</span>
+                        <span className="mt-1 block text-xs text-[#5F6B73]">{goal.description}</span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
             )}
@@ -146,9 +177,9 @@ export function EnterpriseOnboardingPage({ step }: EnterpriseOnboardingPageProps
             )}
 
             {step === "workspace" && (
-              <FieldPanel title="Department and workspace" description="Create the first department and workspace boundary for tenant data.">
-                <TextInput label="Department name" value={state.departmentName ?? ""} onChange={(value) => updateState({ ...state, departmentName: value })} />
-                <TextInput label="Workspace name" value={state.workspaceName ?? ""} onChange={(value) => updateState({ ...state, workspaceName: value })} />
+              <FieldPanel title="Department and workspace" description="Optional — create a first department and workspace boundary now, or skip and add one later from Organization Admin.">
+                <TextInput label="Department name (optional)" value={state.departmentName ?? ""} onChange={(value) => updateState({ ...state, departmentName: value })} />
+                <TextInput label="Workspace name (optional)" value={state.workspaceName ?? ""} onChange={(value) => updateState({ ...state, workspaceName: value })} />
               </FieldPanel>
             )}
 
@@ -182,8 +213,9 @@ export function EnterpriseOnboardingPage({ step }: EnterpriseOnboardingPageProps
                     ["Organization", state.organizationName ?? state.invitationCode ?? "Not set"],
                     ["Sector", state.sector ?? "Not set"],
                     ["Role", state.role ?? "Not set"],
-                    ["Department", state.departmentName ?? "Not set"],
-                    ["Workspace", state.workspaceName ?? "Not set"],
+                    ["Department", state.departmentName ?? "Skipped (optional)"],
+                    ["Workspace", state.workspaceName ?? "Skipped (optional)"],
+                    ["Starting focus", onboardingGoals.find((item) => item.id === state.primaryGoal)?.title ?? "None selected -- empty dashboard"],
                     ["Notices", `${state.acceptedNotices.length}/${requiredOnboardingNotices.length} accepted`],
                   ].map(([label, value]) => (
                     <div key={label} className="rounded-lg bg-[#F8F9FA] p-3">

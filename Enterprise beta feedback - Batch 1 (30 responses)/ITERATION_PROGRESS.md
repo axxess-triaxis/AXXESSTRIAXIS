@@ -150,3 +150,605 @@ not yet implemented.
   tested in `enterpriseComponents.test.tsx` ("collapses the golden path to an on-demand summary...",
   "lets a user persist their preference...", "explains why a blocked or locked step can't be
   actioned yet").
+
+---
+
+## 2026-07-20 — Sprint 1 complete: remaining 5 items shipped (A8, A5, A19, A20, A12)
+
+### What happened
+
+Continuing Sprint 1 of `SPRINT_ROADMAP_PRE_DEMO.md` (tracked in `SPRINT_CHECKLIST_PRE_DEMO.md`),
+the remaining 5 items were implemented, bringing Sprint 1 to 7/7:
+
+- **A8 — Empty states with a clear CTA.** `DashboardSection.tsx` (Project Health Monitor card),
+  `ProjectsSection.tsx`, and `TasksSection.tsx` previously rendered nothing (a blank area or an
+  empty table body) when a tenant had no real projects/tasks yet. All three now render the
+  existing `EmptyState` component with a "Create your first..." CTA. Knowledge Hub already had
+  this pattern; it was the only page previously covered.
+- **A5 — Loading/timeout/retry on AI operations.** `AIWorkspaceSection.tsx`'s
+  `askGovernedQuestion` had no timeout at all and no loading indicator beyond a disabled send
+  button. Added a 20-second `AbortController` timeout, an inline "Generating governed answer..."
+  progress indicator while pending, and a distinct timeout message with a one-click Retry
+  (reusing the preserved input, since it's only cleared on success).
+- **A19 — Reliability expectation-setter copy.** Shipped together with A5: "usually takes 5-8
+  seconds" shown alongside the loading indicator.
+- **A20 — Role-appropriate default landing pages.** Every authenticated user previously landed
+  on the Executive Dashboard regardless of role, including Employees who can't act on most of its
+  golden-path items (team provisioning, human review, audit evidence all require
+  Admin/Executive/Manager). Added `defaultSectionForRole()` in `src/app/routing/routes.ts` and a
+  one-time redirect effect in `App.tsx`, scoped specifically to the generic post-login entry route
+  (`activeRoute.id === "app"`) so it never overrides an explicit deep link. Employees now land on
+  Tasks & Workflow; all other roles are unchanged.
+- **A12 — Surface feedback at workflow completion.** `TasksSection.tsx` now shows a
+  one-time-per-session dismissible prompt the first time a task is marked complete, opening the
+  existing `BetaFeedbackModal`. The persistent floating `BetaFeedbackButton` in `AppShell.tsx` is
+  unchanged — this is additive, not a replacement.
+
+### Evidence
+
+Each item traces to the specific SWOT/report findings cited in `PRE_DEMO_ACTIONABLES.md` items
+5, 8, 12, 19, 20 (all updated to ✅ there) and `SPRINT_ROADMAP_PRE_DEMO.md`'s Sprint 1 table.
+
+### What this does and doesn't close
+
+**Closed:** Sprint 1 is functionally complete — onboarding friction (golden path optionality,
+blocked-state clarity, role-appropriate landing, empty-state CTAs) and basic reliability
+perception (loading/timeout/retry, expectation-setting copy) are all addressed at the UI level.
+
+**Not yet closed, honestly:** unlike A1/A2/A20, items A8/A5/A19/A12 do not have dedicated new unit
+tests — `DashboardSection.tsx`, `ProjectsSection.tsx`, `TasksSection.tsx`, and
+`AIWorkspaceSection.tsx` have no existing component-test coverage in this repo to begin with (this
+repo relies on Playwright e2e specs for these heavy page components, not Vitest/RTL unit tests).
+Adding first-time test infrastructure for four large page components was judged out of scope for
+"immediately executable pre-demo" work; verification here is `typecheck` + `lint` (both clean,
+zero warnings) + the full existing suite still passing (no regressions) + manual code review. This
+gap is tracked in `SPRINT_CHECKLIST_PRE_DEMO.md`'s Sprint 1 exit criteria as a flagged follow-up,
+not silently skipped.
+
+The real backend reliability instrumentation (p50/p95 latency, AI evaluation harness) that A19's
+copy is a placeholder for remains unbuilt — that is Sprint 2/P0 work per the original report, not
+this entry.
+
+### Audit trail
+
+- `src/features/dashboard/DashboardSection.tsx`, `src/features/projects/ProjectsSection.tsx`,
+  `src/features/tasks/TasksSection.tsx` — empty-state CTAs (A8), completion feedback prompt (A12,
+  Tasks only).
+- `src/features/ai-workspace/AIWorkspaceSection.tsx` — query timeout/retry/loading copy (A5, A19).
+- `src/app/routing/routes.ts` (`defaultSectionForRole`, tested in `routes.test.ts`) and
+  `src/app/App.tsx` (redirect effect) — role-appropriate landing (A20).
+- Verification: `pnpm run typecheck` clean, `pnpm run lint` clean (zero warnings), full Vitest
+  suite passing with no regressions.
+
+---
+
+## 2026-07-20 — Golden Path rationale documented; demo-data leakage audit and fix
+
+### What happened
+
+Two separate requests, both documented and (for the second) remediated in the same pass:
+
+1. **Golden Path rationale.** Wrote `GOLDEN_PATH_OPTIONAL_RATIONALE.md`, laying out the exact beta
+   feedback stats behind the A1 decision (35% "too many steps", 20% "difficult onboarding", 30%
+   "unclear value", 100% of non-promoters citing both reliability and clarity issues — all cited
+   to `Enterprise_Beta_Feedback_Batch_1.md` section numbers), the code-level mechanism found during
+   the A1/A2 audit that plausibly explains those numbers, and an explicit argument for why this is
+   additive (two new capabilities: persisted preference, inline explanations) rather than a
+   removal of anything that existed before.
+
+2. **Demo data leakage audit.** Triggered by an explicit requirement that beta must contain zero
+   content from the investor-demo build. Audit findings and full remediation detail are in
+   `DEMO_DATA_LEAKAGE_AUDIT.md`. Summary of what was found and fixed:
+   - **Critical:** `serviceProvider.ts`'s `resilientRepositories` — the repository set used for
+     every real beta/production request — silently substituted fake demo data for projects, tasks,
+     documents, users, orgs, and more whenever a live Supabase call threw for any reason (network
+     blip, expired session, RLS misconfig). Fixed: fallback target changed from `demoRepositories`
+     to `emptyRepositories` everywhere, so a live failure now surfaces as a genuine empty result or
+     a thrown error, never fabricated content.
+   - **Critical:** `institutionalRepository` was hardcoded to the demo repository in both the live
+     and resilient repository sets (no real one exists yet), feeding a fake `pendingApprovals`
+     count into `getLiveWorkspaceMetrics` for every real tenant. Fixed: now uses
+     `emptyRepositories.institutionalRepository`, resolving to `0` honestly instead of a plausible
+     fake number.
+   - **Critical:** `useLiveWorkspaceMetrics.ts` initialized its state with, and fell back on error
+     to, `getFallbackLiveWorkspaceMetrics()` — 186 fake projects, 412 fake tasks, 2200 fake
+     documents — unconditionally. This is the highest-visibility instance found: these are the
+     headline numbers on Dashboard, AI Workspace, and the golden path. Fixed: now demo-mode-gated,
+     with a new `getZeroLiveWorkspaceMetrics()` used for real tenants.
+   - **High:** decorative demo content rendered unconditionally (not gated by
+     `isDemoModeEnabled()`) in `DashboardSection.tsx` (fake org name in the header, fake executive
+     metric cards, fake activity feed), `ProjectsSection.tsx` and `TasksSection.tsx` (decorative
+     fake project/audit-timeline strips, plus a "Demo"/"Live" badge that was inferring mode from
+     data presence rather than checking real demo-mode state), and `AIWorkspaceSection.tsx` (a
+     fully fabricated RAG answer with fake citations used as both the initial state and the
+     error fallback, plus a hardcoded fake audit-trail ID). All now gated behind
+     `isDemoModeEnabled()`, matching the pattern already correctly used in Knowledge Hub and
+     Settings.
+
+### What this does and doesn't close
+
+**Closed:** the specific mechanisms found that would show a real beta customer fabricated data —
+either through a silent error-triggered fallback or through always-on decorative UI — are fixed.
+
+**Honest gaps:**
+- `pendingApprovals` and `socialAlerts` now read `0` for every real tenant, not a real count, until
+  genuine live repositories for those are built. This is a capability gap made visible, not
+  introduced by this fix.
+- Three more real-runtime call sites of `getFallbackLiveWorkspaceMetrics()` were identified but not
+  fixed in this pass: `EnterpriseAdminPage.tsx`, `pilotAcceptanceRuntime.ts`, and the
+  customer-success live-ops API route. Listed explicitly in `DEMO_DATA_LEAKAGE_AUDIT.md` as a
+  follow-up, not silently left out.
+- No dedicated new unit tests for the `resilientRepositories` fallback change or the
+  `isDemoModeEnabled()` gating — verified via typecheck, lint, full-suite regression check, and
+  manual review only. See `DEMO_DATA_LEAKAGE_AUDIT.md` for why (would require mocking
+  `featureFlags.enableSupabaseRuntime`, computed once at module import).
+
+### Audit trail
+
+- `src/providers/serviceProvider.ts` — `withResilientFallback` (renamed from `withDemoFallback`),
+  `resilientTenantRepository`/`resilientMutableRepository` now take an `emptyRepository` fallback.
+- `src/services/live-platform/livePlatform.ts` — `getZeroLiveWorkspaceMetrics()` added, tested in
+  `livePlatform.test.ts`.
+- `src/hooks/useLiveWorkspaceMetrics.ts` — `initialMetrics()` helper, demo-mode-gated.
+- `src/features/dashboard/DashboardSection.tsx`, `src/features/projects/ProjectsSection.tsx`,
+  `src/features/tasks/TasksSection.tsx`, `src/features/ai-workspace/AIWorkspaceSection.tsx` — all
+  decorative demo content gated behind `isDemoModeEnabled()`.
+
+---
+
+## 2026-07-20 — Full codebase sweep: zero dummy data (Round 2)
+
+### What happened
+
+Following an explicit instruction that beta must have "no dummy or placeholder data anywhere,"
+ran a full-codebase search (every `src/lib/demo/*` and `src/demo/*` import, not just the four
+pages already fixed) and closed every additional instance found. Full detail in
+`DEMO_DATA_LEAKAGE_AUDIT.md`'s "Round 2" section; summary:
+
+- **`dashboard/data.ts`** bypassed the earlier `serviceProvider.ts` fix by importing
+  `demoRepositories` directly. Worst instance found: a brand-new, genuinely empty real tenant
+  (zero projects) was shown **fabricated project and KPI data** instead of an honest empty state.
+  Also fixed: the "live" KPI branch was mixing in a fake approvals count and a hardcoded literal
+  `"2,200"` RAG-documents number even when otherwise using real data. Fixed all of it; added
+  `getZeroDashboardKpis()` for honest zero-state.
+- Gated `dashboardObjectives`, `dashboardAiRecommendations`, `governanceAlerts`, `workloadData`,
+  `performanceData` in `DashboardSection.tsx` behind `isDemoModeEnabled()` (one alert card even had
+  a hardcoded "Live" badge on fabricated data).
+- **`AnalyticsSection.tsx`, `ApprovalsSection.tsx`, `StakeholdersSection.tsx`** are, in their
+  entirety, illustrative content with no live repository backing at all (no OKR engine, no
+  approvals workflow, no CRM repository exist). Fully gated behind `isDemoModeEnabled()` with an
+  honest "not available yet" `EmptyState` for real tenants.
+- **`DocumentsSection.tsx`, `IntegrationsSection.tsx`** are hybrids — ingestion and connector
+  health are genuinely live; only a decorative browse-list/gallery was fake. Added `EmptyState`
+  messaging for the now-empty (already-fixed) sections.
+- **`pilotAcceptanceRuntime.ts`** and **`src/app/api/admin/customer-success/live-ops/route.ts`**
+  had the same silent-fallback-to-fake-metrics-on-error bug as `useLiveWorkspaceMetrics.ts`. Fixed
+  the same way (demo fixture only when genuinely in demo/preview mode, honest zero otherwise).
+- **Reviewed and left as-is:** `EnterpriseAdminPage.tsx`'s `pilotAcceptancePreviewSnapshot()` /
+  `customerSuccessPreviewSnapshot()` are explicitly named "preview," use a fixed timestamp and demo
+  IDs, and read as an intentional internal admin tool, not a customer-facing leak.
+
+### What this does and doesn't close
+
+**Closed:** every feature page and runtime call site found in a full-codebase sweep now either
+shows real data, an honest zero/empty state, or demo content strictly gated behind
+`isDemoModeEnabled()`. No page silently substitutes fabricated content for a real tenant anymore
+that this sweep could find.
+
+**Explicitly does not close:** "no dummy data" (achieved) is different from "Approvals,
+Stakeholders/CRM, and Analytics/OKRs are genuinely live, linkable, and feedable" (not achieved,
+and not achievable via hygiene fixes). No `approvalsRepository`, `stakeholdersRepository`,
+`okrRepository`, or `analyticsRepository` exists anywhere in `src/repositories/` — building real
+versions of these is a multi-sprint product build (schema, migrations, RLS, repository
+implementations), not something this pass could or should attempt piecemeal. Recommended as its
+own tracked initiative; see `DEMO_DATA_LEAKAGE_AUDIT.md`'s closing section for suggested priority
+order (approvals first, tying into the AI Review Inbox's existing `pendingAiReviews` concept).
+
+A handful of lower-risk, not-yet-reverified consumers of `src/demo/*` remain (`TopBar.tsx`,
+`AuthProvider.tsx`, the legacy institutional view repository) — named and flagged, not silently
+skipped.
+
+### Audit trail
+
+- `src/features/dashboard/data.ts` — removed empty-tenant fake-data branches; added
+  `getZeroDashboardKpis()`.
+- `src/features/analytics/AnalyticsSection.tsx`, `src/features/approvals/ApprovalsSection.tsx`,
+  `src/features/stakeholders/StakeholdersSection.tsx`, `src/features/documents/DocumentsSection.tsx`,
+  `src/features/integrations/IntegrationsSection.tsx` — demo content gated behind
+  `isDemoModeEnabled()`.
+- `src/services/pilot/pilotAcceptanceRuntime.ts`,
+  `src/app/api/admin/customer-success/live-ops/route.ts` — fixed the same
+  silent-fallback-to-fake-data bug as `useLiveWorkspaceMetrics.ts`.
+- Verification: `pnpm run typecheck` clean, `pnpm run lint` clean (zero warnings), full suite
+  87 files / 239 tests passing (1 existing test in `data.test.ts` rewritten to match the corrected
+  behavior, not just new tests added).
+
+---
+
+## 2026-07-20 — Sprint 2 started: A4 (AI citations + rationale) shipped
+
+### What happened
+
+First item of Sprint 2 (`SPRINT_ROADMAP_PRE_DEMO.md`), tracked in `SPRINT_CHECKLIST_PRE_DEMO.md`.
+
+Added a genuine, retrieval-derived `rationale` field to the `RagAnswer` type
+(`src/services/rag/governedRag.ts`), computed from the actual matched sources rather than being a
+decorative label:
+
+- With sources: `"Synthesized from N governed source(s) (top match: \"<title>\", <score>%
+  relevance)."`
+- With zero sources: an honest `"No authorized institutional source matched this question closely
+  enough to generate a governed answer."`
+
+Wired into both RAG answer paths: `answerWithGovernedRag` (`governedRag.ts`) and
+`answerTenantQuestion` (`src/services/rag/tenantRagWorkflow.ts`, the one actually used by the
+`/api/rag/query` production endpoint — it constructs a `RagAnswer` inline for its
+persistent-citations branch, so the same rationale logic was added there too, not just in the
+service used by tests).
+
+Rendered under the answer bubble in `AIWorkspaceSection.tsx`, alongside the pre-existing "Sources
+Used" side panel (which already showed per-source excerpts/scores — the rationale line is the new
+piece, not a replacement).
+
+### Evidence
+
+`Enterprise_Beta_Feedback_Batch_1.md` section 7.3: "AI output quality" flagged by 40% of
+respondents; the report's own 30/60/90 plan calls for "Add source citations/provenance and concise
+model-rationale display" (section 11, Days 0-30 engineering).
+
+### What this does and doesn't close
+
+**Closed:** every governed AI answer now carries a real, derivation-based explanation, not just a
+raw answer string — addressing the specific "concise rationale" gap the report calls out.
+
+**Not yet closed:** this is a retrieval-transparency improvement, not a full AI-output evaluation
+harness (the report's actual P0 item). It doesn't improve answer *quality* or add a systematic
+evaluation suite — those remain open per the original 30/60/90 plan.
+
+### Audit trail
+
+- `src/services/rag/governedRag.ts` — `rationale` field added to `RagAnswer`, computed in
+  `answerWithGovernedRag`. Tested in `governedRag.test.ts` (existing test extended with rationale
+  assertions; new test added for the zero-source honest-rationale case).
+- `src/services/rag/tenantRagWorkflow.ts` — same rationale logic added to `answerTenantQuestion`'s
+  inline `RagAnswer` construction. Tested in `tenantRagWorkflow.test.ts` (existing test extended).
+- `src/features/ai-workspace/AIWorkspaceSection.tsx` — rationale rendered under the answer bubble;
+  `fallbackRagAnswer` and `emptyRagAnswer` updated to satisfy the now-required field.
+- Verification: `pnpm run typecheck` clean, `pnpm run lint` clean (zero warnings),
+  `governedRag.test.ts` + `tenantRagWorkflow.test.ts` run in isolation: 2 files / 6 tests passing;
+  full-suite re-run confirmed 87 files / 241 tests passing (committed as `31f8306`).
+
+---
+
+## 2026-07-20 — Sprint 2 A6: bulk/quick-approve in AI Review Inbox
+
+### What happened
+
+Second item of Sprint 2. `AIReviewInboxPage.tsx` now shows an "Approve all N low-risk items" bar
+whenever there are pending reviews with `humanReviewFlag: false` (no mandatory human review
+required). Each item in the bulk action is still submitted as its own API call to
+`/api/ai/reviews`, so per-item audit logging is unchanged — the feature removes repeated clicking,
+not the audit trail (matching the acceptance criterion in `SPRINT_ROADMAP_PRE_DEMO.md`: "audit
+event still recorded per item").
+
+While implementing this, found and fixed two more demo-data leaks in the same files (Round 3 of
+`DEMO_DATA_LEAKAGE_AUDIT.md`):
+
+- `reviewInbox.ts`'s `listAiReviewInbox` showed 2 fabricated pending reviews whenever the real
+  Supabase query returned zero rows (not just when Supabase admin access was unconfigured) — a
+  real tenant with a genuinely empty inbox saw fake reviews.
+- `AIReviewInboxPage.tsx` treated `NEXT_PUBLIC_AXXESS_AUTH_SHELL=true` as equivalent to demo mode.
+  That flag is explicitly required in **real deployed beta environments** per `docs/BETA_TESTING.md`
+  (it's an auth-facade flag, unrelated to demo content) — meaning every real beta customer with a
+  clean inbox was shown a fake "Dibrugarh referral SLA variance" review. Both now correctly gated
+  on `isDemoModeEnabled()`.
+
+### Evidence
+
+`Enterprise_Beta_Feedback_Batch_1.md` section 7.3: "too many steps or approvals" flagged by 35% of
+respondents (the P0 workflow-friction finding this item addresses).
+
+### What this does and doesn't close
+
+**Closed:** low-risk reviews no longer require one click each; the specific demo-leak instances
+found while building this are fixed.
+
+**Not yet closed:** "low-risk" is currently defined purely as `!humanReviewFlag`. There's no
+confidence-threshold or risk-scoring refinement beyond what the review-generation logic already
+sets on that flag — if that upstream logic under- or over-flags reviews as requiring human review,
+this feature inherits that inaccuracy. Not a new gap, just worth naming.
+
+### Audit trail
+
+- `src/features/ai-workspace/AIReviewInboxPage.tsx` — `bulkApproveLowRisk()`, `lowRiskPendingReviews`
+  derived state, bulk-approve action bar; `isDemoReviewFallbackEnabled` replaced with direct
+  `isDemoModeEnabled()` checks.
+- `src/services/ai/reviewInbox.ts` — `listAiReviewInbox` no longer falls back to fake data on an
+  empty (not failed) real result. Tested in `reviewInbox.test.ts` (new test: empty inbox when
+  Supabase unconfigured and demo mode off).
+- Verification: `pnpm run typecheck` clean, `pnpm run lint` clean (zero warnings),
+  `reviewInbox.test.ts` run in isolation: 1 file / 3 tests passing (2 pre-existing + 1 new); full
+  suite confirmed 87 files / 241 tests passing.
+
+---
+
+## 2026-07-20 — Sprint 2 A9: in-context 1-click micro-survey
+
+### What happened
+
+Third item of Sprint 2. Added `src/hooks/useMicroSurveyPrompt.ts` (localStorage-backed, mirrors
+the `useGoldenPathDisplayMode.ts` pattern — shows at most once per user, ever, tracked via
+`axxess.micro-survey.shown`) and `src/components/feedback/MicroSurveyPrompt.tsx` (a dismissible,
+one-click 1-5 rating prompt).
+
+Wired into `AIReviewInboxPage.tsx`: the survey triggers the first time a user successfully records
+any AI review decision (approve/reject/edit/escalate, including via the new A6 bulk-approve path).
+Fires `micro_survey_shown` on mount and `micro_survey_responded` (with the 1-5 score and trigger
+source) when answered -- both new `AnalyticsEventName` entries, closing the report's own flagged
+gap that survey sentiment was never linked to actual product usage events.
+
+### Evidence
+
+`Enterprise_Beta_Feedback_Batch_1.md` section 18 (limitations register): "No telemetry
+linkage -- Cannot correlate ratings with use" is listed as an explicit, named gap with the
+recommended mitigation "Assign anonymized respondent IDs and connect to product events." This is
+the first concrete step toward that.
+
+### What this does and doesn't close
+
+**Closed:** one of the two trigger points named in the actionable (`PRE_DEMO_ACTIONABLES.md` item
+9) -- the first completed AI review decision -- now surfaces the survey and records a
+usage-linked sentiment score.
+
+**Not yet closed:** the second named trigger point, "first completed golden-path step," is not
+wired. The hook and component are reusable for it (same `trigger()` call, a different
+`trigger="golden_path_step"` prop value already exists in the type), but finding the right moment
+in `enterpriseGoldenPath.ts`'s step-completion flow to fire it was left for a follow-up rather than
+guessed at under time pressure. Tracked here explicitly, not silently dropped.
+
+### Audit trail
+
+- `src/hooks/useMicroSurveyPrompt.ts` — new hook, tested in `useMicroSurveyPrompt.test.tsx` (3
+  tests: shows once, never shows again once already shown, can be dismissed).
+- `src/components/feedback/MicroSurveyPrompt.tsx` — new component, exported from
+  `src/components/feedback/index.ts`. No dedicated component test, consistent with this repo's
+  existing convention for small feedback components (none in that folder have one).
+- `src/services/analytics/types.ts` — added `micro_survey_shown` and `micro_survey_responded` to
+  `AnalyticsEventName`. (A third placeholder, `first_value_milestone_reached`, was also added
+  here as "reserved for A11" but turned out unneeded -- A11 below reused better-fitting existing
+  event names instead, so it was removed rather than left as unused scaffolding.)
+- `src/features/ai-workspace/AIReviewInboxPage.tsx` — wired `microSurvey.trigger()` into the
+  `decide()` success path; renders `MicroSurveyPrompt` when visible.
+- Verification: `pnpm run typecheck` clean, `pnpm run lint` clean (zero warnings),
+  `useMicroSurveyPrompt.test.tsx` run in isolation: 1 file / 3 tests passing; full suite confirmed
+  88 files / 244 tests passing (up from 87/241 -- 1 new test file, 3 new tests).
+
+---
+
+## 2026-07-20 — Sprint 2 A11: time-to-first-value / onboarding funnel events
+
+### What happened
+
+Fourth item of Sprint 2. Audited the report's section 13.2 activation-funnel spec (account
+created → workspace configured → document/data connected → first AI task completed → human
+review completed → task/workflow action created → second workflow completed) against what's
+actually fired via `trackEvent(...)` in the codebase, not just defined in `AnalyticsEventName`.
+
+Already wired: `sign_up_completed` (`EnterpriseAuthFlowPage.tsx`), `organization_created` and
+`onboarding_step_completed` (`EnterpriseOnboardingPage.tsx`, `BetaOnboardingChecklist.tsx`).
+
+Found defined-but-never-fired and wired the three matching the remaining funnel steps:
+- `rag_query_submitted` — fired in `AIWorkspaceSection.tsx`'s `askGovernedQuestion` on a
+  successful governed answer (first AI task completed).
+- `ai_answer_reviewed` — fired in `AIReviewInboxPage.tsx`'s `decide()` on any recorded decision
+  (human review completed).
+- `workflow_action_completed` — fired in `TasksSection.tsx`'s `toggleTaskStatus` when a task is
+  marked complete, alongside the pre-existing `task_status_changed` (task/workflow action
+  created).
+
+### Evidence
+
+`Enterprise_Beta_Feedback_Batch_1.md` section 13.2's activation funnel and section 13.3's
+recommended activation definition ("connects or uploads real context, completes an AI-assisted
+task, sends it through human review, and converts the result into a project, task, approval, or
+stakeholder action") — this entry wires the events needed to actually measure that definition,
+which previously had no client-side instrumentation for 3 of its 4 non-onboarding steps.
+
+### What this does and doesn't close
+
+**Closed:** every named funnel step from account creation through workflow-action-completed now
+has at least one `trackEvent` call firing at the right moment.
+
+**Not yet closed:** "second workflow completed within 7 days" (the funnel's retention step) isn't
+instrumented — that requires a time-windowed aggregation, which belongs in the analytics backend
+querying these events, not new client-side code. "Time to first value" and "onboarding completion
+rate" are not computed or displayed anywhere in-product; they're derivable from these events'
+timestamps in whatever analytics backend (Mixpanel/PostHog) ingests them, which is consistent with
+how the actionable was scoped ("wire... events into the existing analytics", not "build a funnel
+dashboard").
+
+### Audit trail
+
+- `src/features/ai-workspace/AIWorkspaceSection.tsx` — `rag_query_submitted` on query success.
+- `src/features/ai-workspace/AIReviewInboxPage.tsx` — `ai_answer_reviewed` on decision success.
+- `src/features/tasks/TasksSection.tsx` — `workflow_action_completed` on task completion.
+- `src/services/analytics/types.ts` — removed the unused `first_value_milestone_reached`
+  placeholder added in the A9 commit (see correction note above).
+- No dedicated new tests: none of these three page/feature files have existing unit-test coverage
+  to extend (consistent with the pattern noted throughout Sprint 1/2 for heavy page components).
+  Verified via `typecheck`, `lint`, `analytics.test.ts` re-run in isolation (6/6 passing,
+  confirming the type change didn't break anything), and full-suite regression check.
+- Verification: `pnpm run typecheck` clean, `pnpm run lint` clean (zero warnings),
+  `analytics.test.ts` 1 file / 6 tests passing in isolation; full suite confirmed 88 files / 244
+  tests passing (unchanged from the A9 commit, as expected -- no new tests added in this entry).
+
+---
+
+## 2026-07-21 — Sprint 2 complete: A3 + A7 + A18 (guided onboarding trio)
+
+### What happened
+
+Final three items of Sprint 2, shipped together per `SPRINT_ROADMAP_PRE_DEMO.md` (they're
+interdependent). All three build on the existing onboarding flow rather than replacing it.
+
+- **A18 (reduce setup decisions).** Found that `provisionTenantForUser` (the onboarding backend)
+  already treated `departmentName`/`workspaceName` as optional -- it silently skips creating
+  them when blank, no error. The only thing forcing a user to fill them in was the frontend's
+  `isOnboardingComplete()` check requiring both. Removed that artificial requirement in
+  `src/onboarding/enterpriseOnboarding.ts`; the `workspace` step's UI copy now says "optional."
+- **A7 (3 outcome-first paths).** Added an optional "What do you want to try first?" section to
+  the existing onboarding `start` screen (not a new wizard step, to avoid adding friction) with 3
+  paths: *Knowledge & AI decision support*, *Workflow & task execution*, *Meetings &
+  institutional coordination*. The third path deliberately replaces the originally-planned
+  "stakeholder/CRM" option -- Stakeholders/CRM has no live repository at all (confirmed in
+  `DEMO_DATA_LEAKAGE_AUDIT.md`), so routing a new user into a module that can't persist their
+  choice would recreate the exact problem the rest of this session's work just fixed.
+- **A3 (seeded sample workspace).** New `/api/onboarding/seed-sample-data` route. For the chosen
+  path, it creates **real, persisted** records via the live `projectsRepository`,
+  `tasksRepository`, `meetingsRepository`, and the same `ingestTenantDocument` path used by real
+  document uploads -- not fabricated demo content. Every seeded record is tagged `sample-data`
+  and titled with a `Sample:` prefix, so it's identifiable and the customer can delete it, but to
+  every other part of the app it's indistinguishable from data the customer created themselves:
+  genuinely live, linkable, and feedable. On successful provisioning, if a path was chosen, the
+  route seeds data for it and the user lands on that path's most relevant page (`/ai-workspace`,
+  `/tasks`, or `/meetings`) instead of an empty `/dashboard`.
+
+### Evidence
+
+`Enterprise_Beta_Feedback_Batch_1.md` section 11 (Days 0-30 product plan): "Replace
+capability-first onboarding with role- and outcome-first onboarding... Offer three initial paths...
+Reduce the number of required setup decisions before first value... Add clear sample data and a
+guided demo workspace." This entry implements that recommendation close to verbatim.
+
+### What this does and doesn't close
+
+**Closed:** the three specific gaps named in the actionables -- forced department/workspace
+fields, a single generic onboarding path, and no sample data to explore before uploading real
+documents.
+
+**Not yet closed, honestly:**
+- **No end-to-end browser verification.** Everything here was verified via `typecheck`, `lint`,
+  and unit tests of the pure logic module (`enterpriseOnboarding.test.ts`). The actual sequence --
+  pick a path, finish onboarding, seed data, land on the right page with real seeded records
+  visible -- has not been walked through in a running app. This is a real gap, flagged explicitly
+  in `SPRINT_CHECKLIST_PRE_DEMO.md`'s Sprint 2 exit criteria, not silently assumed to work.
+- The seeding route has no dedicated test, consistent with this repo's existing convention that
+  Next.js API routes in this area (e.g. `/api/documents/ingest`) don't have unit tests of their
+  own.
+- Sample data seeded once cannot currently be re-seeded or reset from the UI if a customer deletes
+  it and wants it back; there's no "reseed" affordance, only the one-time onboarding trigger.
+
+### Audit trail
+
+- `src/onboarding/enterpriseOnboarding.ts` — `OnboardingGoal` type, `onboardingGoals` list,
+  `primaryGoal` state field, `isOnboardingComplete()` no longer requires department/workspace.
+  Tested in `enterpriseOnboarding.test.ts` (2 new tests: completion without department/workspace,
+  completion still requires the core fields).
+- `src/features/onboarding/EnterpriseOnboardingPage.tsx` — goal-selection UI on the `start` step,
+  optional-field copy on the `workspace` step, seeding call + goal-based redirect on `complete`.
+- `src/app/api/onboarding/seed-sample-data/route.ts` — new route, real repository writes per goal.
+- Verification: `pnpm run typecheck` clean, `pnpm run lint` clean (zero warnings; one
+  `react/no-unescaped-entities` error caught and fixed during this pass), `enterpriseOnboarding.test.ts`
+  run in isolation: 1 file / 4 tests passing (up from 2); full suite confirmed 88 files / 246
+  tests passing (up from 88/244); `pnpm run build` also run to verify the new API route and typed
+  Next.js `Route` casts compile correctly (not previously covered by typecheck/lint/vitest alone).
+
+---
+
+## 2026-07-21 — Git reconciliation: recovered Sprint 1 tail + all of Sprint 2 from an orphaned branch
+
+### What happened
+
+PR #137 was merged mid-flight, before every planned commit had been pushed to its source branch
+(`feature/golden-path-optional-plus-pre-demo-docs`). The merge captured exactly one commit —
+`5ebf157` ("feat: make Golden Path optional; add pre-demo actionables + 3-sprint roadmap") — which
+implements only **A1 and A2**. Every commit pushed to that branch afterward had nowhere to land:
+
+```
+5ebf157  MERGED into main as PR #137 (A1, A2 only)
+   ↓ pushed after the merge already happened — never merged in:
+8a3c41d  feat: complete Sprint 1 (A8, A5, A19, A20, A12)
+7de9005  docs: Golden Path rationale + fix critical demo-data leakage into beta
+bc5053f  fix: close remaining demo-data leakage found in full-codebase sweep
+ce2eaae  feat: Sprint 2 A4 — AI citations + rationale under every answer
+2c1a75a  feat: Sprint 2 A6 — bulk/quick-approve in AI Review Inbox
+721edc6  feat: Sprint 2 A9 — in-context 1-click micro-survey
+4519038  feat: Sprint 2 A11 — wire time-to-first-value/onboarding funnel events
+9e7e7fc  feat: Sprint 2 complete — A3 + A7 + A18 (guided onboarding trio)
+```
+
+(Hashes shown are post-rebase; the originals — `711b0e5` etc. — are recorded in each item's own
+entry above.) The branch itself was never deleted, so nothing was lost, but for approximately one
+day `main` genuinely only contained 2 of the 20 actionables while every status document (this log,
+`PRE_DEMO_ACTIONABLES.md`, `SPRINT_CHECKLIST_PRE_DEMO.md`) — correctly, on the branch they were
+written on — described Sprint 1 and Sprint 2 as fully shipped. Those documents were accurate about
+what had been *built and verified*; they were not accurate about what had reached `main`.
+
+### How it was caught
+
+Discovered while responding to a request to plan Sprint 3: pulling the current `PRE_DEMO_ACTIONABLES.md`
+from a fresh `origin/main` checkout showed items 3-20 still marked 🔜, contradicting what had been
+reported as shipped. `git merge-base --is-ancestor 711b0e5 origin/main` confirmed the Sprint 2 tip
+was not an ancestor of `main`; `git show --stat 5ebf157` confirmed the merged commit's actual diff
+was limited to A1/A2. This was surfaced before any Sprint 3 planning or further status-document
+edits, rather than compounding the discrepancy.
+
+### What was done about it
+
+1. `git merge-tree` dry-run confirmed the orphaned branch would apply onto current `main` with zero
+   conflicts (current `main` had since gained an unrelated dependency-hygiene fix, PR #138 — see
+   below — but touched none of the same files as the stranded Sprint 1/2 commits).
+2. Rebased the orphaned branch (`feature/golden-path-optional-plus-pre-demo-docs` @ `711b0e5`) onto
+   post-PR-#138 `main` as a new branch, `reconcile/sprint1-tail-and-sprint2` — all 8 commits applied
+   cleanly, no manual conflict resolution needed.
+3. Re-ran the full verification suite from scratch against the rebased result (not reused from the
+   original, since the base had changed): `pnpm run typecheck`, `pnpm run lint --max-warnings=0`,
+   `pnpm run test -- --run`, `pnpm run build`.
+4. This entry and the corresponding `PRE_DEMO_ACTIONABLES.md`/`SPRINT_CHECKLIST_PRE_DEMO.md` status
+   updates ship as part of the same reconciliation branch, not as a separate follow-up, so the
+   status documents and the code they describe land on `main` atomically.
+
+### Unrelated fix discovered and merged in the same window (PR #138)
+
+While verifying this branch, a second, unrelated problem surfaced: several `dependabot` PRs
+(`typescript` 5.9.3→7.0.2, `eslint` 9.39.4→10.7.0/`@eslint/eslintrc` 3.3.5→3.3.6,
+`react-resizable-panels` 2.1.7→4.12.2) had each been merged individually and were never verified
+together. In combination they broke `typecheck`, `lint`, and `build` on `main`:
+`@typescript-eslint/typescript-estree@8.62.1` (pulled in transitively via `eslint-config-next`)
+declares `peerDependencies: { typescript: ">=4.8.4 <6.1.0" }`, so TS7 crashed ESLint outright rather
+than producing a lint finding; separately, `eslint-plugin-react@7.37.5` (also transitive) crashes
+under ESLint 10's context API. Fixed in PR #138 (merged `2026-07-21T05:30:35Z`) by reverting both to
+their last known-good versions and adding `ignore` rules to `.github/dependabot.yml` for
+`typescript >=6.1.0` and `eslint >=10.0.0` so the same combination isn't silently re-proposed. Also
+in that PR: a real, pre-existing (not introduced by this session) typed-route error in
+`src/app/page.tsx`, and removal of `src/app/components/ui/resizable.tsx` (confirmed zero importers;
+broken outright by the `react-resizable-panels` v4 rewrite). This is a process finding independent
+of the actionables work, but it's the reason the reconciliation in this entry needed a rebase rather
+than a direct merge.
+
+### What this does and doesn't close
+
+**Closed:** all 8 stranded commits are now verified against current `main` and ready to merge
+through a normal PR, restoring Sprint 1 to 7/7 and Sprint 2 to 7/7 on `main` once merged. The root
+cause (a PR merged while its source branch still had planned commits arriving) is named and its
+mechanics documented so it's recognizable if it recurs.
+
+**Not yet closed:**
+- **Process gap, not fixed by this entry:** nothing in this repo currently prevents a PR from being
+  merged mid-flight. That's a process/communication matter between however many people or agents are
+  pushing to a shared branch, not something a doc or a git hook alone resolves — flagging it rather
+  than proposing a specific control here, since that's a workflow decision, not a code fix.
+- All the honest gaps already named in each item's own entry above (no e2e browser verification of
+  A3/A7/A18, no dedicated tests for A8/A5/A19/A12, A9's golden-path-step trigger unwired, etc.)
+  are unchanged by this reconciliation — rebasing and re-verifying doesn't add coverage that wasn't
+  there before.
+
+### Audit trail
+
+- Branch: `reconcile/sprint1-tail-and-sprint2`, rebased from `feature/golden-path-optional-plus-pre-demo-docs`
+  (`711b0e5`) onto `origin/main` post-PR-#138.
+- Verification re-run from scratch on the rebased branch: `pnpm run typecheck` clean, `pnpm run lint
+  --max-warnings=0` clean, `pnpm run test -- --run` — see this entry's companion PR for the exact
+  file/test counts, `pnpm run build` succeeds.
+- `PRE_DEMO_ACTIONABLES.md` and `SPRINT_CHECKLIST_PRE_DEMO.md` updated in the same branch to remove
+  "pending PR merge" language once this reconciliation PR itself merges.
