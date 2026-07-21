@@ -50,4 +50,17 @@ describe("plugin runtime", () => {
     expect(decision.allowed).toBe(true);
     expect("approvalRequired" in decision && decision.approvalRequired).toBe(true);
   });
+
+  it("only marks pilot-enabled connectors as available before real credentials exist; the rest are honestly provider-gated", () => {
+    // Regression test: defaultStatus() used to check plugin.demoConnector, which was true for
+    // every one of the ~20 catalogued plugins, so every unconfigured connector reported as
+    // "available" -- implying a customer could use it -- rather than "provider_gated". See
+    // PRE_DEMO_ACTIONABLES.md A15.
+    const snapshot = buildPluginRuntimeSnapshot({ organizationId: "org-1" });
+    const gmail = snapshot.contracts.find((contract) => contract.plugin.id === "gmail");
+    const jira = snapshot.contracts.find((contract) => contract.plugin.id === "jira");
+
+    expect(gmail?.installation.status).toBe("available");
+    expect(jira?.installation.status).toBe("provider_gated");
+  });
 });
