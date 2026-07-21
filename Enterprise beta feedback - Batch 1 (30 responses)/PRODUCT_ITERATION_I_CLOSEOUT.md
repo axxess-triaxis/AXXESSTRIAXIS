@@ -1,13 +1,14 @@
 # Product Iteration I — Close-Out Report
 
-**Covers:** the full run from `SWOT_Analysis_Batch_1.md` through Sprint 1 and Sprint 2 of
-`SPRINT_ROADMAP_PRE_DEMO.md`, including the git-reconciliation incident that delayed Sprint 2's
-arrival on `main`.
-**Purpose:** a single, standalone record of everything shipped, verified, and still open in this
-iteration, so Sprint 3 planning starts from ground truth rather than from what individual commit
-messages or chat history claimed at the time.
-**Status as of this document:** Sprint 1 (7/7) and Sprint 2 (7/7) merged to `main`. Sprint 3 (0/6)
-not started.
+**Covers:** the full run from `SWOT_Analysis_Batch_1.md` through all 3 sprints of
+`SPRINT_ROADMAP_PRE_DEMO.md` (20 actionables total), including the git-reconciliation incident
+that delayed Sprint 2's arrival on `main`.
+**Purpose:** a single, standalone record of everything shipped, verified, and still open across
+this iteration, so whatever comes next starts from ground truth rather than from what individual
+commit messages or chat history claimed at the time.
+**Status as of this document:** Sprint 1 (7/7) and Sprint 2 (7/7) merged to `main`. Sprint 3: 3/6
+merged (A13, A14, A15); 3/6 built, tested, and PR'd but **not yet merged** (A10, A16, A17 — PR
+#152, open). **17/20 actionables merged to `main`; 3/20 pending merge of #152.**
 
 ---
 
@@ -40,11 +41,9 @@ plan was executed.
 **Honest gap, carried forward, not silently dropped:** A8/A5/A19/A12 touch
 `DashboardSection.tsx`, `ProjectsSection.tsx`, `TasksSection.tsx`, `AIWorkspaceSection.tsx` — none
 of these page components have unit-test coverage in this repo to begin with (this codebase relies
-on Playwright e2e specs for heavy page components, not Vitest/RTL unit tests). Adding first-time
-test infrastructure for four large page components was judged out of scope for "immediately
-executable pre-demo" work. Verification for these four items is `typecheck` + `lint` (both clean)
-+ full-suite regression (no breaks) + manual code review — real verification, but a different kind
-than the other three items get. Full detail: `ITERATION_PROGRESS.md`, 2026-07-20 entries.
+on Playwright e2e specs for heavy page components, not Vitest/RTL unit tests). Verification for
+these four items is `typecheck` + `lint` (both clean) + full-suite regression (no breaks) + manual
+code review. Full detail: `ITERATION_PROGRESS.md`, 2026-07-20 entries.
 
 ## 3. Sprint 2 — Value clarity, AI trust, and feedback instrumentation (7/7, merged)
 
@@ -59,25 +58,16 @@ than the other three items get. Full detail: `ITERATION_PROGRESS.md`, 2026-07-20
 | A18 | Fewer required setup decisions before first AI use | ✅ | `enterpriseOnboarding.test.ts` (shared with A3/A7) |
 
 **Honest gaps, carried forward, not silently dropped:**
-- **No end-to-end browser verification of A3+A7+A18.** These three are interdependent by design
-  (per the roadmap, they shipped together deliberately) and were verified via `typecheck`, `lint`,
-  and unit tests of the pure onboarding-state logic only. The actual sequence — pick a path, finish
-  onboarding, seed data, land on the right page with real seeded records visible — has never been
-  walked through in a running app. This is the single largest open risk carried out of Sprint 2.
+- **No end-to-end browser verification of A3+A7+A18.** Still true as of this document — see
+  section 6's Sprint 3 recap for why the local-environment attempt to close this gap didn't finish.
 - **A9's second trigger point is unwired.** The micro-survey fires on the first completed AI review
-  decision; the actionable also named "first completed golden-path step" as a trigger, and the hook
-  supports it (`trigger="golden_path_step"` already exists as a value), but no call site was wired
-  for it.
-- **A6's "low-risk" definition is coarse** — purely `!humanReviewFlag`, inheriting whatever
-  under/over-flagging exists further upstream in review generation.
-- **A11's retention step ("second workflow completed within 7 days") is not instrumented** — that's
-  a time-windowed aggregation that belongs in the analytics backend, not client-side code.
-- Along the way, three additional demo-data leaks were found and fixed opportunistically (not part
-  of the original 20 actionables, but directly relevant to the "zero dummy data" requirement raised
-  mid-iteration) — see `DEMO_DATA_LEAKAGE_AUDIT.md` for the full three-round audit. Explicitly out
-  of scope from that effort: Approvals, Stakeholders/CRM, and Analytics/OKRs have **no live
-  repository at all** — hygiene fixes made this honest (gated behind demo mode) but did not and
-  could not make those modules real. That remains a separate, multi-sprint initiative.
+  decision; the golden-path-step trigger the actionable also named is not wired to any call site.
+- **A6's "low-risk" definition is coarse** — purely `!humanReviewFlag`.
+- **A11's retention step ("second workflow completed within 7 days") is not instrumented.**
+- Three additional demo-data leaks were found and fixed opportunistically — see
+  `DEMO_DATA_LEAKAGE_AUDIT.md`. Approvals, Stakeholders/CRM, and Analytics/OKRs remain fully
+  demo-gated with **no live repository at all** — a separate, multi-sprint initiative, not attempted
+  here.
 
 Full detail for every item: `ITERATION_PROGRESS.md`, 2026-07-20/2026-07-21 entries.
 
@@ -89,118 +79,203 @@ was delayed by roughly a day past when it was first reported complete.
 
 **What happened:** PR #137 was merged while its source branch still had planned commits arriving.
 The merge captured exactly one commit (`5ebf157`, implementing only A1/A2). Six further commits —
-the rest of Sprint 1 (A8/A5/A19/A20/A12), the Golden Path rationale doc, the demo-data-leakage
-fixes, and all of Sprint 2 — were pushed to the same branch afterward and had nowhere to land. For
-about a day, `main` genuinely contained 2 of the 20 actionables while the status documents (written
-and verified correctly on the branch they lived on) described Sprint 1 and Sprint 2 as fully shipped.
-The documents were right about what had been *built and tested*; they were not right about what had
-reached `main`.
+the rest of Sprint 1, the Golden Path rationale doc, the demo-data-leakage fixes, and all of
+Sprint 2 — were pushed to the same branch afterward and had nowhere to land. For about a day,
+`main` genuinely contained 2 of the 20 actionables while the status documents (written and
+verified correctly on the branch they lived on) described Sprint 1 and Sprint 2 as fully shipped.
 
-**How it surfaced:** while preparing to plan Sprint 3, a fresh pull of `PRE_DEMO_ACTIONABLES.md`
-from `origin/main` showed items 3-20 still unmarked, contradicting prior status reports.
-`git merge-base --is-ancestor` and `git show --stat` on the merge commit confirmed the gap precisely
-before any further status-document edits or Sprint 3 planning proceeded.
-
-**How it was fixed:** the orphaned branch was rebased onto current `main` (which had, in the
-interim, also gained an unrelated dependency-hygiene fix — see below) as
+**How it was fixed:** the orphaned branch was rebased onto current `main` as
 `reconcile/sprint1-tail-and-sprint2`. All 8 commits applied with zero conflicts. The full
-verification suite (`typecheck`, `lint --max-warnings=0`, `test -- --run`, `build`) was re-run from
-scratch against the rebased result, not assumed to still hold from the original run.
+verification suite was re-run from scratch against the rebased result, not assumed to still hold.
 
-**Unrelated, separately-discovered problem fixed in the same window:** several `dependabot` PRs
-(`typescript` → 7.0.2, `eslint` → 10.7.0, `react-resizable-panels` → 4.12.2) had each merged
-individually and were never verified together, breaking `typecheck`/`lint`/`build` on `main`
-entirely. Fixed in PR #138 by reverting both `typescript` and `eslint` to their last known-good,
-mutually-compatible versions, plus `dependabot.yml` ignore rules so the same combination isn't
-silently re-proposed. Full detail: `ITERATION_PROGRESS.md`'s 2026-07-21 entries (both the
-reconciliation entry and the dependency-fix context inside it).
+**Unrelated problem fixed in the same window:** several `dependabot` PRs (`typescript` → 7.0.2,
+`eslint` → 10.7.0, `react-resizable-panels` → 4.12.2) had each merged individually and were never
+verified together, breaking `typecheck`/`lint`/`build` on `main` entirely. Fixed in PR #138 by
+reverting both `typescript` and `eslint` to their last known-good, mutually-compatible versions,
+plus `dependabot.yml` ignore rules so the same combination isn't silently re-proposed.
 
-**What this incident does and doesn't change:**
-- It does not change *what was built* — every item's implementation and test coverage is exactly
-  what's described in sections 2-3 above.
-- It does change *when it became real* — Sprint 1's remaining 5 items and all of Sprint 2 became
-  live on `main` on 2026-07-21, not 2026-07-20 as originally reported.
-- It is a **process gap, not a code gap**: nothing in this repo currently prevents a PR from being
-  merged while commits are still arriving on its source branch. That's a workflow/communication
-  matter (relevant here specifically because this repo is worked on by more than one
-  person/agent at once), not something this document proposes a specific fix for — flagged so it's
-  recognizable if it recurs, not silently absorbed.
+**What this incident does and doesn't change:** it does not change *what was built* — every item's
+implementation and test coverage is exactly what's described in sections 2-3. It does change *when
+it became real*. It is a **process gap, not a code gap**, and — see section 6 below — **the
+lesson from this incident directly shaped how Sprint 3 was executed**: every Sprint 3 PR was
+pushed and verified as its own branch, and merge status was re-checked via `git log`/`gh pr list`
+against `origin/main` directly before starting the next phase of work, rather than assumed from
+memory of what had been "reported complete."
 
-## 5. Final verified state (this iteration, `reconcile/sprint1-tail-and-sprint2` → `main`)
+## 5. Sprint 3 — Visible integrations, retention signals, demo readiness (3/6 merged, 3/6 PR'd)
 
-- `pnpm run typecheck` — clean
-- `pnpm run lint --max-warnings=0` — clean
-- `pnpm run test -- --run` — one run hit a transient worker-spawn timeout on
-  `src/security/sprint28PilotReleaseRls.test.ts` (`[vitest-pool-runner]: Timeout waiting for worker
-  to respond`), which failed the run's exit code even though the 87 files that did start reported
-  244/244 passing. Re-ran the isolated file alone (2/2 passing in 5.6s, confirming it's not a code
-  regression) and re-ran the full suite again for a clean result — see this branch's PR for the
-  exact final count. Noting the flake here rather than silently discarding it: this environment's
-  test runs have consistently shown very long `environment` setup phases (250-300s of a ~330-590s
-  run), which is the likely source of worker-spawn contention under load, not anything introduced
-  by this reconciliation.
-- `pnpm run build` — succeeds, all routes compile
+Planned 2026-07-21 (`SPRINT_ROADMAP_PRE_DEMO.md`, PR #148) as 4 phases, after Sprint 1+2 were
+confirmed merged. Reordered A15 ahead of A13/A14 — see the roadmap's own rationale.
 
-## 6. All 20 actionables — final status at Product Iteration I close
+### Phase 0 — Integration & harmonization check (partially closed, not fully)
+
+- **Live browser walkthrough of A3/A7/A18 — still not done.** Attempted via a local Supabase stack
+  (`supabase start`), which surfaced and required fixing two real, pre-existing bugs before it
+  could even boot (below) — but the actual walkthrough itself (pick a path → finish onboarding →
+  confirm seeded records visible) was never carried out before Sprint 3 code work took priority.
+  **This remains the single largest carried-forward gap from both Sprint 2 and Sprint 3.**
+- **react-router 7→8 audit — done.** Confirmed via `grep` that `react-router` is never imported
+  anywhere in `src/`; the version bump carries zero runtime risk.
+- **Capacitor plugin/core version audit — done, found a real mismatch, not fixed.**
+  `@capacitor/filesystem@8.1.2`, `@capacitor/haptics@8.0.2`, and `@capacitor/preferences@8.0.1`
+  all declare `peerDependencies: { "@capacitor/core": ">=8.0.0" }`, but `@capacitor/core` (and
+  `android`/`ios`) remain at `7.6.7` — outside the officially supported range. pnpm installed it
+  anyway (peer warnings aren't hard blocks). **Not fixed in this iteration** — flagged to the user
+  in chat, no PR filed. Only matters for the native mobile app, not the web beta.
+- **Sprint 1+2 cross-check — done, no conflict found.** Traced how Golden Path's
+  `knowledge-ingestion` step status (`statusForCount(metrics.ragReadyDocuments)`) relates to A3's
+  seeded documents (via the same `ingestTenantDocument` path real uploads use) — no design conflict
+  found by static reading. Not confirmed by an actual live walkthrough (see above).
+- **Byproduct fixes, not originally scoped, found while pursuing the live walkthrough (PR #149,
+  merged):** all 3 local dev seed files (`supabase/seeds/001-003`) were missing `tenant_id` on
+  inserts to 7 tables, failing a NOT NULL constraint added by a later migration. More significantly:
+  `public.record_enterprise_audit_log()` — the trigger firing on every insert/update to
+  `projects`/`tasks`/`meetings`/`organizations` — had a `CASE` expression that unconditionally
+  referenced `old.role`/`new.role` (meant only for its separate `users`-table trigger). Postgres
+  must resolve every column reference across a `CASE`'s branches before executing any of them, so
+  this failed **every write to those 4 tables**, unconditionally. Fixed via a new migration
+  (`20260721130000_fix_enterprise_audit_log_trigger.sql`) rather than editing the historical one.
+  **Not confirmed whether this second bug was ever live on the actual production/beta Supabase
+  project** — no production credentials available to check; flagged, not assumed either way.
+
+### Phase 1 — A15 (merged, PR #150)
+
+Reordered ahead of A13/A14 after discovering `src/services/integrations/pluginRegistry.ts` listed
+~20 integrations, every one flagged `demoConnector: true`, rendered as a full "generic catalogue"
+in `/integrations` — exactly what the beta report said not to show, and missed by the earlier
+three-round demo-data-leakage audit (which focused on tenant data, not this catalogue). Replaced
+`demoConnector` with `pilotEnabled` (true only for connectors with real, working connect code) and
+split `/integrations` into a "pilot" section and an honest "infrastructure-only, not yet
+product-facing" list. The same fix also corrected `pluginRuntime.ts`'s `defaultStatus()`, which had
+been reporting every unconfigured connector as `"available"` (implying a customer could use it) —
+this fed real admin/platform-readiness logic, not just decorative UI.
+
+### Phase 2 — A13 + A14 (merged, PR #151)
+
+Extended the existing Gmail/Microsoft OAuth architecture (`connectorContract.ts`, `oauthProvider.ts`,
+the shared `/api/connectors/oauth/start`+`callback` routes) to Slack and Calendly, rather than
+building a parallel system. Writing a Slack token-exchange test surfaced a real bug: Slack returns
+OAuth scopes **comma-separated**, but the shared exchange code only split on whitespace
+(Google/Microsoft's format) — a successful Slack connection would have stored one comma-joined
+string as its only granted scope, making `pluginRuntime.ts`'s `missingScopes` check never clear
+even after full authorization. Fixed the split regex to handle both separators.
+
+**Cost constraint applied mid-build:** told explicitly to skip any API requiring payment/subscription/
+metering, zero-cost for 6-12 months. Slack's standard OAuth/Web API scopes are free on any
+workspace tier — no concern. Calendly's Developer API requires a Standard-plan-or-higher account
+for whoever connects it — not available on Calendly's free tier. Decision (explicit, not assumed):
+keep Calendly, since the cost falls on the customer's own subscription choice, not on AXXESS — but
+surface the caveat directly in the Settings UI (an amber notice on the Calendly connect card), not
+just in this document.
+
+**Honest gaps:** no live OAuth verification against real Slack/Calendly credentials (none available
+in this environment); the OAuth callback still redirects to `/integrations` regardless of where the
+flow started (pre-existing behavior, not introduced here) — connecting from Settings lands back on
+`/integrations`, not `/settings`.
+
+### Phase 3 — A10 + A16 + A17 (built, tested, PR'd — **PR #152 not yet merged**)
+
+- **A10 — post-demo satisfaction capture.** Triggered by turning Investor Preview off in Settings —
+  the concrete, testable equivalent of "the natural end of a live demo session" in this product's
+  actual UX. Found a real sequencing bug while wiring it up: the demo-mode-off toggle hard-navigates
+  to `/dashboard` 250ms later, destroying any transient "show now" React state before it renders.
+  Fixed with a two-step handoff (a pending flag written before navigation, consumed on the next
+  page's mount).
+- **A16 — "What's New" panel.** Shows once per release version (not once ever). Its 3 entries are a
+  **manually-curated snapshot as of PR #152** citing real Sprint 1/2 work — nothing pulls them
+  automatically from `ITERATION_PROGRESS.md`, so **they will silently go stale if not hand-updated
+  each release.** Flagged explicitly as a structural gap, not a one-time content task.
+- **A17 — completion celebration.** Fires on every workflow completion (unlike A9/A10/A16's
+  once-per-scope prompts), wired into the same two completion points A9/A12 already use
+  (`TasksSection.tsx` task completion, `AIReviewInboxPage.tsx`'s `decide()` — scoped to
+  `decision === "approved"` specifically, since rejecting/escalating isn't a "completion").
+
+**Why this PR is called out as unmerged rather than folded into a blanket "Sprint 3 done" claim:**
+directly applying the lesson from section 4 — status is reported from what's actually verified on
+`origin/main` (`git log`, `gh pr list --state merged`), not from what was built and tested locally.
+As of this document, `4f8b714` (A13/A14) and `628da46` (A15) are confirmed ancestors of
+`origin/main`; PR #152's commit is not.
+
+## 6. Final verified state (per PR, most recent first)
+
+| PR | Scope | typecheck | lint | test | build |
+|---|---|---|---|---|---|
+| #152 (open) | A10 + A16 + A17 | clean | clean | 91 files / 261 tests | succeeds |
+| #151 (merged) | A13 + A14 | clean | clean | 88 files / 253 tests | succeeds |
+| #150 (merged) | A15 | clean | clean | 88 files / 249 tests | succeeds |
+| #149 (merged) | Supabase seed/trigger fixes | n/a (SQL-only) | n/a | n/a | n/a |
+| reconcile branch (merged, #146) | Sprint 1 tail + Sprint 2 | clean | clean | 88 files / 246 tests | succeeds |
+
+Test counts increase monotonically across PRs because each branched from the previous PR's merged
+tip (except #152, which branched directly from `main` after #151 merged, same as #150 did).
+
+## 7. All 20 actionables — final status at this document's writing
 
 | # | ID | Item | Status |
 |---|---|---|---|
 | 1 | A1 | Golden Path opt-in | ✅ merged |
 | 2 | A2 | Blocked/locked steps explain themselves | ✅ merged |
-| 3 | A3 | Guided workspace with real seeded data | ✅ merged |
+| 3 | A3 | Guided workspace with real seeded data | ✅ merged (e2e walkthrough still not done) |
 | 4 | A4 | AI citations + rationale | ✅ merged |
 | 5 | A5 | Loading/timeout/retry on AI ops | ✅ merged |
 | 6 | A6 | Bulk/quick-approve in Review Inbox | ✅ merged |
-| 7 | A7 | 3 outcome-first onboarding paths | ✅ merged |
+| 7 | A7 | 3 outcome-first onboarding paths | ✅ merged (e2e walkthrough still not done) |
 | 8 | A8 | Empty states with one CTA | ✅ merged |
 | 9 | A9 | In-context micro-survey | ✅ merged (1 of 2 triggers wired) |
-| 10 | A10 | Post-demo satisfaction capture | ⬜ Sprint 3 |
+| 10 | A10 | Post-demo satisfaction capture | 🔨 built + tested, PR #152 open |
 | 11 | A11 | Funnel analytics events | ✅ merged |
 | 12 | A12 | Feedback at workflow completion | ✅ merged |
-| 13 | A13 | Slack quick-connect | ⬜ Sprint 3 |
-| 14 | A14 | Calendly quick-connect | ⬜ Sprint 3 |
-| 15 | A15 | Cap integrations surface to 2 | ⬜ Sprint 3 |
-| 16 | A16 | "What's New" panel | ⬜ Sprint 3 |
-| 17 | A17 | Completion celebration | ⬜ Sprint 3 |
+| 13 | A13 | Slack quick-connect | ✅ merged (no live OAuth verification) |
+| 14 | A14 | Calendly quick-connect | ✅ merged (no live OAuth verification; customer-side cost caveat) |
+| 15 | A15 | Cap integrations surface to reality | ✅ merged |
+| 16 | A16 | "What's New" panel | 🔨 built + tested, PR #152 open (content will go stale without manual upkeep) |
+| 17 | A17 | Completion celebration | 🔨 built + tested, PR #152 open |
 | 18 | A18 | Fewer setup decisions before first AI use | ✅ merged |
 | 19 | A19 | Reliability expectation-setter copy | ✅ merged |
 | 20 | A20 | Role-appropriate default landing pages | ✅ merged |
 
-**14/20 merged to `main`. 6/20 (all of Sprint 3) not started.**
+**17/20 merged to `main`. 3/20 (A10, A16, A17) built, tested, and PR'd — pending merge of #152.**
 
-## 7. Consolidated honest-gap register (carried into Sprint 3 planning)
+## 8. Consolidated honest-gap register
 
-1. No end-to-end browser verification of A3+A7+A18 (onboarding trio) — highest-priority gap to
-   close before or during Sprint 3, since Sprint 3's own A16 ("What's New" panel) and A17
-   (completion celebration) build on the same completion-event surface.
-2. A9's golden-path-step trigger unwired (second of two named trigger points).
-3. A8/A5/A19/A12 lack dedicated unit tests (structural gap in this repo's page-component testing,
-   not unique to these items).
-4. Approvals, Stakeholders/CRM, and Analytics/OKRs remain fully demo-gated with no live repository —
-   out of scope for hygiene work, tracked as a separate initiative.
-5. `react-router` 7→8 and several Capacitor major-version bumps merged via dependabot around the
-   same time as the typescript/eslint incompatibility (section 4) but pass typecheck/lint cleanly —
-   **not yet audited for runtime behavior**, since major version bumps aren't guaranteed
-   typecheck-safe (route config shape, hook signatures). This is the most relevant open item to the
-   "integration and harmonization check" requested for Sprint 3 planning.
-6. The process gap named in section 4 (a PR can be merged while its source branch still has commits
-   arriving) has no structural fix yet.
+1. **No end-to-end browser verification of A3+A7+A18 (onboarding trio).** Carried from Sprint 2
+   through all of Sprint 3 without closing. Highest-priority gap for whoever picks this up next.
+2. **A9's golden-path-step trigger unwired** (second of two named trigger points).
+3. **A8/A5/A19/A12 lack dedicated unit tests** (structural gap in page-component testing generally).
+4. **Approvals, Stakeholders/CRM, and Analytics/OKRs remain fully demo-gated with no live
+   repository** — out of scope for hygiene work; a separate, multi-sprint initiative.
+5. **Capacitor plugin/core version mismatch** (`filesystem`/`haptics`/`preferences` @8.x vs.
+   `core`/`android`/`ios` @7.6.7) — found, not fixed. Mobile-app-only; doesn't affect the web beta.
+6. **The git-reconciliation incident's root process gap has no structural fix** — nothing in this
+   repo prevents a PR from being merged while its source branch still has commits arriving. Sprint 3
+   avoided a repeat by checking merge status directly against `origin/main` before each phase,
+   which is a practice, not a guardrail.
+7. **PR #152 (A10/A16/A17) is unmerged** — the most immediate outstanding item.
+8. **WhatsNewPanel's content is a manually-curated, one-time snapshot** — no mechanism ties it to
+   `ITERATION_PROGRESS.md`, so it will read as stale within a release or two if untouched.
+9. **Calendly (A14) has a real cost caveat for the customer** — surfaced in the Settings UI, but
+   worth remembering when planning any customer-facing rollout communication.
+10. **Whether the audit-trigger bug fixed in PR #149 was ever live on the actual production/beta
+    Supabase project is unconfirmed** — no production credentials available to check from this
+    environment.
 
-## 8. Handoff to Sprint 3
+## 9. What remains before Product Iteration I can be called fully closed
 
-Sprint 3 (`SPRINT_ROADMAP_PRE_DEMO.md`) covers A10, A13, A14, A15, A16, A17 — visible integrations,
-retention signals, and demo readiness. Its own exit criteria already require Slack + Calendly to be
-"demoable live, end to end, with a real (not mocked) test account," which this document doesn't
-change or soften.
+1. Merge PR #152 (or explicitly decide to hold it).
+2. Do the actual live browser walkthrough of A3/A7/A18 — gap #1 above, carried since Sprint 2.
+3. Decide whether to address the Capacitor version mismatch (gap #5) before any native mobile
+   release, or explicitly accept it as out of scope for the web beta.
+4. Confirm (with production Supabase credentials) whether gap #10 needs remediation on the live
+   project, separately from the local-dev fix already merged.
 
-Given this close-out, Sprint 3 planning should explicitly include an **integration and harmonization
-check** covering, at minimum:
-- Gap 1 above (A3/A7/A18 live walkthrough) — since A16/A17 build on the same completion-event
-  surface, doing this first de-risks both.
-- Gap 5 above (`react-router`/Capacitor runtime audit) — before adding more integration surface
-  area on top of dependencies that haven't been runtime-verified since their version bumps.
-- A cross-check that Sprint 1 and Sprint 2 features don't conflict with each other now that both are
-  actually live together on `main` for the first time (e.g., Golden Path's on-demand default
-  interacting with the onboarding goal-routing from A7/A3).
-- Confirmation that the git-reconciliation incident's root cause (section 4) doesn't recur during
-  Sprint 3 — i.e., no PR gets merged until its author confirms all planned commits are pushed.
+## 10. Possible scope for a next iteration ("Phase 2"), not started, not scoped in detail here
+
+- Real Approvals/Stakeholders/CRM/Analytics repositories (gap #4) — the largest deferred item
+  across the entire iteration, named repeatedly and consistently out of scope every time it
+  surfaced.
+- A mechanism to keep `WhatsNewPanel`'s content current automatically (gap #8), rather than manual
+  per-release upkeep.
+- Wiring A9's second trigger point (gap #2).
+- Whatever the next round of beta feedback (a Batch 2 survey, presumably) surfaces as the next
+  SWOT-derived priority list — this document's own section 1 process (feedback → SWOT →
+  actionables → roadmap → checklist → close-out) is the template to repeat, not a one-time exercise.
