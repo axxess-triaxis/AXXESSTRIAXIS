@@ -1,12 +1,12 @@
 import { extractKeywords, summarizeText } from "../nlp/localNlp";
 
-export type ConnectorProviderId = "gmail" | "microsoft";
+export type ConnectorProviderId = "gmail" | "microsoft" | "slack" | "calendly";
 export type ConnectorStatus = "provider_gated" | "configured" | "connected" | "paused" | "error" | "revoked";
 
 export type ConnectorContract = {
   providerId: ConnectorProviderId;
   displayName: string;
-  category: "email";
+  category: "email" | "messaging" | "calendar";
   authType: "oauth2";
   authorizationUrl: string;
   tokenUrl: string;
@@ -62,6 +62,34 @@ const connectorContracts: Record<ConnectorProviderId, ConnectorContract> = {
     tenantOwned: true,
     auditEvents: ["connector.microsoft.oauth.started", "connector.microsoft.email.previewed", "connector.microsoft.email.imported"],
   },
+  slack: {
+    providerId: "slack",
+    displayName: "Slack",
+    category: "messaging",
+    authType: "oauth2",
+    authorizationUrl: "https://slack.com/oauth/v2/authorize",
+    tokenUrl: "https://slack.com/api/oauth.v2.access",
+    requiredScopes: ["chat:write", "channels:read"],
+    webhookSupported: true,
+    tenantOwned: true,
+    auditEvents: ["connector.slack.oauth.started", "connector.slack.oauth.connected", "connector.slack.notification.sent"],
+  },
+  calendly: {
+    providerId: "calendly",
+    displayName: "Calendly",
+    category: "calendar",
+    authType: "oauth2",
+    authorizationUrl: "https://auth.calendly.com/oauth/authorize",
+    tokenUrl: "https://auth.calendly.com/oauth/token",
+    // Calendly's OAuth grants access to the connected user's whole scheduling account rather
+    // than discrete scopes -- there is no scope parameter to request. Kept as an empty array
+    // (not omitted) so every consumer of requiredScopes (audit logging, the Settings UI) stays
+    // correct without a special case.
+    requiredScopes: [],
+    webhookSupported: true,
+    tenantOwned: true,
+    auditEvents: ["connector.calendly.oauth.started", "connector.calendly.oauth.connected", "connector.calendly.event.created"],
+  },
 };
 
 function sentenceCandidates(text: string, match: RegExp) {
@@ -82,13 +110,20 @@ export function getConnectorContract(providerId: string): ConnectorContract | un
   return connectorContracts[providerId as ConnectorProviderId];
 }
 
+const oauthClientIdEnvVar: Record<ConnectorProviderId, string> = {
+  gmail: "GOOGLE_CLIENT_ID",
+  microsoft: "MICROSOFT_CLIENT_ID",
+  slack: "SLACK_CLIENT_ID",
+  calendly: "CALENDLY_CLIENT_ID",
+};
+
 export function buildConnectorOAuthUrl(
   providerId: ConnectorProviderId,
   state: string,
   env: NodeJS.ProcessEnv = process.env,
 ) {
   const contract = connectorContracts[providerId];
-  const clientId = providerId === "gmail" ? env.GOOGLE_CLIENT_ID : env.MICROSOFT_CLIENT_ID;
+  const clientId = env[oauthClientIdEnvVar[providerId]];
   const appUrl = env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "");
   if (!clientId || !appUrl) return undefined;
 
@@ -96,10 +131,16 @@ export function buildConnectorOAuthUrl(
   url.searchParams.set("client_id", clientId);
   url.searchParams.set("redirect_uri", `${appUrl}/api/connectors/oauth/callback?provider=${providerId}`);
   url.searchParams.set("response_type", "code");
-  url.searchParams.set("scope", contract.requiredScopes.join(" "));
+  if (contract.requiredScopes.length > 0) {
+    url.searchParams.set("scope", contract.requiredScopes.join(" "));
+  }
   url.searchParams.set("state", state);
-  url.searchParams.set("access_type", "offline");
-  url.searchParams.set("prompt", "consent");
+  // Offline access + forced consent are Google-specific OAuth extensions; sending them to
+  // Microsoft/Slack/Calendly's authorization endpoints isn't meaningful and could be rejected.
+  if (providerId === "gmail") {
+    url.searchParams.set("access_type", "offline");
+    url.searchParams.set("prompt", "consent");
+  }
   return url.toString();
 }
 
