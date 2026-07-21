@@ -1,5 +1,6 @@
 import { MockAnalyticsProvider } from "./MockAnalyticsProvider";
 import { MixpanelAnalyticsProvider } from "./MixpanelAnalyticsProvider";
+import { MultiAnalyticsProvider } from "./MultiAnalyticsProvider";
 import { PostHogAnalyticsProvider } from "./PostHogAnalyticsProvider";
 import { normalizeAnalyticsProvider } from "./providers";
 import type { AnalyticsProvider, AnalyticsRuntime } from "./types";
@@ -26,13 +27,32 @@ export function createAnalyticsProvider(): AnalyticsProvider {
   if (typeof window === "undefined") return new MockAnalyticsProvider();
   if (!isAnalyticsEnabled()) return new MockAnalyticsProvider();
   const requestedProvider = normalizeAnalyticsProvider(process.env.NEXT_PUBLIC_ANALYTICS_PROVIDER);
-  if ((requestedProvider === "posthog" || requestedProvider === "auto") && process.env.NEXT_PUBLIC_POSTHOG_KEY) {
-    return new PostHogAnalyticsProvider(process.env.NEXT_PUBLIC_POSTHOG_KEY, process.env.NEXT_PUBLIC_POSTHOG_HOST);
+
+  // "posthog"/"mixpanel" force a single named provider (useful for isolating one during
+  // debugging). "auto" (and any other configured value) runs every provider with a token
+  // present simultaneously -- for every visit to beta or demo, both Mixpanel and PostHog receive
+  // the same event stream rather than one being chosen over the other, since neither should be
+  // silently dropped just because the other happens to be configured too.
+  if (requestedProvider === "posthog") {
+    return process.env.NEXT_PUBLIC_POSTHOG_KEY
+      ? new PostHogAnalyticsProvider(process.env.NEXT_PUBLIC_POSTHOG_KEY, process.env.NEXT_PUBLIC_POSTHOG_HOST)
+      : new MockAnalyticsProvider();
   }
-  if ((requestedProvider === "mixpanel" || requestedProvider === "auto") && process.env.NEXT_PUBLIC_MIXPANEL_TOKEN) {
-    return new MixpanelAnalyticsProvider(process.env.NEXT_PUBLIC_MIXPANEL_TOKEN);
+  if (requestedProvider === "mixpanel") {
+    return process.env.NEXT_PUBLIC_MIXPANEL_TOKEN
+      ? new MixpanelAnalyticsProvider(process.env.NEXT_PUBLIC_MIXPANEL_TOKEN)
+      : new MockAnalyticsProvider();
   }
-  return new MockAnalyticsProvider();
+
+  const activeProviders: AnalyticsProvider[] = [];
+  if (process.env.NEXT_PUBLIC_POSTHOG_KEY) {
+    activeProviders.push(new PostHogAnalyticsProvider(process.env.NEXT_PUBLIC_POSTHOG_KEY, process.env.NEXT_PUBLIC_POSTHOG_HOST));
+  }
+  if (process.env.NEXT_PUBLIC_MIXPANEL_TOKEN) {
+    activeProviders.push(new MixpanelAnalyticsProvider(process.env.NEXT_PUBLIC_MIXPANEL_TOKEN));
+  }
+  if (activeProviders.length === 0) return new MockAnalyticsProvider();
+  return activeProviders.length === 1 ? activeProviders[0] : new MultiAnalyticsProvider(activeProviders);
 }
 
 export function analyticsRuntime(provider: AnalyticsProvider): AnalyticsRuntime {

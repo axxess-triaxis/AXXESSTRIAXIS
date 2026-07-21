@@ -1106,3 +1106,175 @@ just unit tests and code review:
   (which already carried unrelated, separately-PR'd documentation commits) before committing, per the
   same corrective pattern used earlier for A15.
 - Branch `fix/supabase-seed-and-audit-trigger`, merged via PR #149 (`2026-07-21T08:20:24Z`).
+
+---
+
+## 2026-07-21 — Nine of twelve Postgres wrapper integrations wired into real product surfaces
+
+### What happened
+
+Following up directly on the previous entry's monorepo/business-model documentation (which
+described the 12 Supabase Postgres wrapper integrations honestly as "two live, ten
+infrastructure-only"), this session built real, working product surfaces for seven more of the
+remaining ten, using the existing OAuth pipeline (`connectorContract.ts`/`oauthProvider.ts`/
+`tokenVault.ts`) and a new, generalized credential-storage pipeline built to match it.
+
+**OAuth-based (extends the existing pipeline used by Gmail/Microsoft/Slack/Calendly):**
+- **Airtable, HubSpot, Notion** — each already had `pilotEnabled: false` scaffolding in
+  `pluginRegistry.ts` with `envMap` entries waiting. Added full `ConnectorContract` entries
+  (authorization/token URLs, scopes), extended the OAuth callback route's provider allow-list, and
+  flipped `pilotEnabled: true`. Airtable's OAuth requires PKCE (not needed by the other four
+  providers) — added `requiresPkce`/`tokenRequestStyle` fields to `ConnectorContract`, a
+  `codeVerifier` carried inside the signed OAuth state payload (rather than a separate store, since
+  the state is already tamper-evident and single-use), and `generatePkceVerifier()`/
+  `pkceCodeChallenge()` helpers. Notion requires HTTP Basic Auth + a JSON token-exchange body
+  (every other provider here uses form-encoded client_id/secret) — added a
+  `tokenRequestStyle: "json-basic-auth"` branch in `exchangeOAuthCode`.
+- **Notion additionally got a real sync workflow**, not just a connect button: a new
+  `notionPages.ts` service (Notion Search API + block-children text extraction, covering the common
+  text-bearing block types honestly, not a full block-tree renderer) backs two new API routes
+  (`/api/connectors/notion/pages/list`, `/api/connectors/notion/pages/import`) mirroring the
+  existing Microsoft-mailbox-listing pattern exactly (find connection → open vault token → call the
+  provider API). Import reuses `ingestTenantDocument` (the same pipeline `email/import` uses), so an
+  imported Notion page becomes a real, governed tenant document immediately queryable by RAG.
+
+**Credential-based (new pipeline, for wrappers that don't fit an OAuth "connect my account" model):**
+- **Auth0** (enterprise SSO configuration — distinct from the deeper login-flow federation this
+  would eventually require, honestly scoped as configuration storage only, not live SSO),
+  **ClickHouse, MSSQL, Snowflake** (data-warehouse connections), **S3** (alternate storage backend),
+  **Paddle, Stripe** (billing, mapping directly to the five-tier pricing model). Built a new,
+  generalized AES-256-GCM credential vault (`enterpriseConnectorVault.ts`, parallel to but distinct
+  from `tokenVault.ts` — sealing arbitrary per-provider credential JSON rather than a fixed OAuth
+  token-bundle shape) and a new migration
+  (`20260721170000_enterprise_connector_credentials.sql`) creating a server-only
+  `enterprise_connector_credentials` table (same access model as `oauth_token_vault`: revoked from
+  `anon`/`authenticated`, granted only to `service_role`), with `tenant_id` defaulting via the same
+  trigger function this session's earlier entry added for the 10 other tenant-scoped tables — kept
+  consistent with that fix from day one rather than repeating the gap. A new
+  `/api/connectors/enterprise/credentials` route (GET/POST/DELETE) and a new
+  `EnterpriseConnectorCredentialsPanel` UI card in `IntegrationsSection.tsx` provide save/list/revoke.
+  **Deliberately not built:** live connectivity verification against the actual external service —
+  saving confirms the credential was encrypted and stored correctly, not that e.g. Snowflake
+  accepted it. Building that honestly would need either new SDK dependencies (for non-HTTP
+  protocols like MSSQL's TDS) or outbound calls to arbitrary user-supplied hosts, both of which
+  deserve their own reviewed pass rather than being folded into this one.
+
+**Bonus finding:** while editing `IntegrationsSection.tsx`, found the exact same module-level-
+caching demo-data-leakage bug this session's earlier entry fixed in `AIWorkspaceSection.tsx`
+(`aiMessages`), this time in the same file's `integrations` constant. Fixed the same way (moved
+inside the component body). See `DEMO_DATA_LEAKAGE_AUDIT.md`'s new Round 5.
+
+### What this does and doesn't close
+
+**Closed:** all twelve Postgres wrapper integrations now have *some* real product-facing surface
+(previously two of twelve). Verified live against a genuine, freshly-provisioned, non-demo tenant
+(not just typecheck/lint): saved a Stripe credential through the actual UI, confirmed via direct
+Postgres inspection that the stored row's `encrypted_payload` contains no plaintext secret and that
+`tenant_id` correctly auto-populated via the trigger, then revoked it through the UI and confirmed
+the status change persisted on reload. Also confirmed Notion's page-listing route returns a clean
+`provider_gated` response (not a crash) with no connected account, and that Airtable/HubSpot/Notion
+now appear correctly in the "Pilot integrations" list (moved out of "Also available at the
+infrastructure level", which dropped from 17 to 14 entries accordingly).
+
+**Not yet closed:**
+- **No real third-party OAuth app credentials exist for Airtable/HubSpot/Notion in any
+  environment**, local or production — every connect flow is genuinely wired and correct, but
+  untestable against a live third-party account without registering real OAuth apps and setting
+  `AIRTABLE_CLIENT_ID`/`AIRTABLE_CLIENT_SECRET` etc. This is the same limitation that already
+  applied to Gmail/Microsoft/Slack/Calendly before this session; not new, but not resolved either.
+- **Live connectivity verification for the seven credential-based connectors is explicitly not
+  implemented** (see above) — this is a stated scope boundary, not an oversight, but it means
+  "configured" only ever means "stored," never "confirmed working."
+- **No new automated test coverage was added.** Verified via `typecheck`/`lint` (both clean) and a
+  live, manual, in-browser + direct-database walkthrough, consistent with this repository's
+  existing pattern for connector work (`oauthProvider.test.ts`/`tokenVault.test.ts`/
+  `connectorContract.test.ts` exist for the pre-existing pipeline; the new PKCE/Basic-auth branches
+  and the new `enterpriseConnectorVault.ts` have no dedicated tests yet).
+- **Auth0's SSO configuration is storage only** — an org's employees still authenticate via
+  Supabase Auth, not Auth0, until the deeper identity-federation work described as an honest
+  limitation in `MONOREPO_ARCHITECTURE_AND_BUSINESS_MODEL.md` §1.3/§3 is built.
+
+### Audit trail
+
+- New: `src/services/integrations/notionPages.ts`, `src/services/integrations/
+  enterpriseConnectorVault.ts`, `src/app/api/connectors/notion/pages/list/route.ts`, `src/app/api/
+  connectors/notion/pages/import/route.ts`, `src/app/api/connectors/enterprise/credentials/route.ts`,
+  `supabase/migrations/20260721170000_enterprise_connector_credentials.sql`.
+- Modified: `src/services/integrations/connectorContract.ts`, `src/services/integrations/
+  oauthProvider.ts`, `src/services/integrations/pluginRegistry.ts`, `src/app/api/connectors/oauth/
+  start/route.ts`, `src/app/api/connectors/oauth/callback/route.ts`, `src/features/settings/
+  SettingsSection.tsx`, `src/features/integrations/IntegrationsSection.tsx`.
+- Verification: `pnpm run typecheck` clean, `pnpm run lint --max-warnings=0` clean. Live walkthrough
+  against a genuine, freshly-provisioned tenant covering signup → onboarding → provisioning →
+  Integrations page → Stripe credential save/encrypt-verify/revoke → Notion page-list provider-gated
+  response, all confirmed working as described above. Full suite: **91 files / 270 tests passing**
+  (one existing test, `pluginRegistry.test.ts`, had hardcoded expectations of exactly 4
+  pilot-enabled connectors and needed updating to 7 — an expected consequence of intentionally
+  flipping `pilotEnabled` for airtable/hubspot/notion, not a regression). One transient
+  `[vitest-pool-runner]: Timeout waiting for worker to respond` was observed on an unrelated file
+  during the full-suite run (the same class of resource-contention flakiness noted in the
+  2026-07-21 live-walkthrough entry above, under sustained multi-hour concurrent tool load in this
+  sandbox); the affected file was re-run in isolation and passed cleanly (2/2), confirming it was
+  not a real failure.
+
+---
+
+## 2026-07-21 — Mixpanel and PostHog can now run simultaneously for every beta/demo visit
+
+### What happened
+
+Asked to "activate Mixpanel and PostHog for all visits to beta and demo." Investigation found both
+providers were already fully implemented (`MixpanelAnalyticsProvider.ts`, `PostHogAnalyticsProvider.ts`)
+and the shared app shell (`src/app/workspace-page.tsx`, used by essentially every route —
+`/dashboard`, `/tasks`, `/projects`, `/integrations`, etc. all just re-export it) already wraps
+`AnalyticsProviderShell`, with `App.tsx` firing `beta_session_started` on load and
+`AnalyticsProviderShell`'s own cleanup firing `beta_session_ended` on unmount — meaning "every
+visit, both demo and live beta" was already architecturally covered, since neither `App.tsx` nor
+the shell distinguishes demo from live tenants.
+
+**What was missing:** `config.ts`'s `createAnalyticsProvider()` only ever selected *one* provider —
+PostHog if its key was present, else Mixpanel, an either/or fallback chain, not both at once. Built
+a new `MultiAnalyticsProvider` (fans every `trackEvent`/`identifyUser`/`setUserProperties`/
+`resetAnalytics` call out to every wrapped provider, with each call individually guarded so one
+provider's SDK throwing can't block another's) and changed `createAnalyticsProvider()` so that the
+default/`"auto"` provider setting now builds a `MultiAnalyticsProvider` from every provider that has
+a token configured — both simultaneously if both `NEXT_PUBLIC_POSTHOG_KEY` and
+`NEXT_PUBLIC_MIXPANEL_TOKEN` are set, falling back to whichever single one is set otherwise.
+Explicit `"posthog"`/`"mixpanel"` values still force just that one provider, for debugging.
+
+### What this does and doesn't close
+
+**Closed:** the code path for tracking every beta/demo visit in both Mixpanel and PostHog
+simultaneously is built, tested, typechecked, and linted clean.
+
+**Not yet closed — this is the real gap, not a code gap:** no real Mixpanel project token or
+PostHog project API key exists in any environment, local or deployed. Activating real tracking
+requires the user to create both projects (or use existing ones) and supply the actual token/key
+values — something outside what this environment can do (account creation is out of scope for the
+same reason it's out of scope for every other connector in this codebase). Asked the user how they
+wanted to proceed; they chose to create the accounts first. Until real values are set in
+`.env.local` (local dev) and in Vercel's environment variables (deployed beta/demo — this
+environment has no access to that dashboard), `isAnalyticsEnabled()` correctly returns false and
+every visit continues to no-op through `MockAnalyticsProvider`, exactly as it did before this
+change. Also updated `.env.example`'s `NEXT_PUBLIC_ANALYTICS_PROVIDER` default to `auto` (was
+`noop`) so that filling in either token activates tracking immediately without a separate
+provider-selection step — this has no effect until at least one real token is present.
+
+**Also honestly out of scope:** `apps/mobile` (the separate Expo/React Native app) has its own
+`EXPO_PUBLIC_ANALYTICS_PROVIDER`/`EXPO_PUBLIC_POSTHOG_KEY`/`EXPO_PUBLIC_MIXPANEL_TOKEN` env vars
+documented in its own README and read into `app.config.ts`, but confirmed via grep that nothing in
+that app's code actually instantiates a provider or sends an event yet — consistent with this
+app being early scaffolding (see `MONOREPO_ARCHITECTURE_AND_BUSINESS_MODEL.md` §2.3). There was
+nothing to "activate" there since no analytics call exists to activate; building that from scratch
+would be new feature work, not activation, and was correctly left alone.
+
+### Audit trail
+
+- New: `src/services/analytics/MultiAnalyticsProvider.ts`.
+- Modified: `src/services/analytics/config.ts`, `src/services/analytics/index.ts`,
+  `src/services/analytics/analytics.test.ts` (5 new tests: fan-out behavior, enabled/name
+  composition, one-provider-throwing isolation, dual-provider selection, single-provider fallback),
+  `.env.example` (provider-selection default and comment).
+- Verification: `pnpm run typecheck` clean, `pnpm run lint --max-warnings=0` clean,
+  `src/services/analytics/analytics.test.ts` run in isolation: 11/11 passing. Full-suite number
+  folded into the count in the entry above (both changes landed in the same verification pass).

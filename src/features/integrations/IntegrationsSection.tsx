@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useAuth } from "../../auth/AuthProvider";
 import { SectionHeader } from "../../components/layout/SectionHeader";
 import { InlineToast } from "../../components/forms/InlineToast";
 import { Card } from "../../components/ui/Card";
@@ -9,18 +10,23 @@ import { isDemoModeEnabled } from "../../demo/demoMode";
 import { applicationServices } from "../../providers/serviceProvider";
 import { previewSelectedEmailImport, type ConnectorProviderId, type EmailImportPreview } from "../../services/integrations/connectorContract";
 import type { MicrosoftGraphMailboxMessageSummary } from "../../services/integrations/microsoftGraphMailbox";
+import type { NotionPageSummary } from "../../services/integrations/notionPages";
 import { getIntegrationHealth, getInfrastructureOnlyIntegrations, getPilotIntegrations } from "../../services/integrations/pluginRegistry";
 
 // Illustrative connector gallery for the investor-demo experience only -- real connector status
 // comes from getIntegrationHealth()/getProductivityPluginRegistry() below, which are live. Gated
 // behind isDemoModeEnabled(). See DEMO_DATA_LEAKAGE_AUDIT.md.
-const integrations = applicationServices.institutionalRepository.getIntegrations();
+//
+// pilotIntegrations/infrastructureOnlyIntegrations/pluginHealth are computed from env vars, which
+// are stable for a process's lifetime, so a module-level constant is fine for them. `integrations`
+// is different -- it depends on isDemoModeEnabled(), which can change within a single client
+// session (SPA navigation, no full reload). A module-level call here would evaluate exactly once
+// at import time and could freeze the demo fixture gallery in memory even after switching to a
+// real, non-demo tenant -- the same bug class documented in DEMO_DATA_LEAKAGE_AUDIT.md's Round 4
+// for AIWorkspaceSection.tsx's aiMessages. Computed inside the component instead, see below.
 const pilotIntegrations = getPilotIntegrations();
 const infrastructureOnlyIntegrations = getInfrastructureOnlyIntegrations();
 const pluginHealth = getIntegrationHealth();
-
-const connectedCount = integrations.filter((integration) => integration.status === "connected").length;
-const disconnectedCount = integrations.length - connectedCount;
 
 type SelectedMailboxMessage = {
   id: string;
@@ -63,6 +69,10 @@ const selectedMailboxMessages = [
 ] satisfies SelectedMailboxMessage[];
 
 export const IntegrationsSection = () => {
+  const integrations = applicationServices.institutionalRepository.getIntegrations();
+  const connectedCount = integrations.filter((integration) => integration.status === "connected").length;
+  const disconnectedCount = integrations.length - connectedCount;
+
   const [emailForm, setEmailForm] = useState({
     providerId: "gmail",
     from: "",
@@ -75,6 +85,11 @@ export const IntegrationsSection = () => {
   const [loadingMailbox, setLoadingMailbox] = useState(false);
   const [liveMailboxMessages, setLiveMailboxMessages] = useState<SelectedMailboxMessage[]>([]);
   const [toast, setToast] = useState<{ tone: "success" | "error" | "info"; message: string } | null>(null);
+  const [notionPages, setNotionPages] = useState<NotionPageSummary[]>([]);
+  const [loadingNotion, setLoadingNotion] = useState(false);
+  const [notionPreview, setNotionPreview] = useState<{ pageId: string; title: string; bodyPreview: string } | null>(null);
+  const [importingNotion, setImportingNotion] = useState(false);
+  const [notionToast, setNotionToast] = useState<{ tone: "success" | "error" | "info"; message: string } | null>(null);
   const mailboxMessages = liveMailboxMessages.length ? liveMailboxMessages : selectedMailboxMessages;
 
   function selectMailboxMessage(message: SelectedMailboxMessage) {
@@ -154,6 +169,73 @@ export const IntegrationsSection = () => {
     }
   }
 
+  async function loadNotionPages() {
+    setLoadingNotion(true);
+    setNotionToast(null);
+    try {
+      const response = await fetch("/api/connectors/notion/pages/list?limit=10", {
+        credentials: "include",
+        cache: "no-store",
+      });
+      const result = await response.json().catch(() => ({})) as { providerGated?: boolean; message?: string; pages?: NotionPageSummary[] };
+      if (!response.ok) throw new Error(result.message ?? "Notion page listing failed.");
+      const pages = result.pages ?? [];
+      setNotionPages(pages);
+      if (!pages.length) {
+        setNotionToast({ tone: "info", message: result.message ?? "Notion page listing is provider-gated until OAuth and token vault credentials are connected." });
+        return;
+      }
+      setNotionToast({ tone: "success", message: `Loaded ${pages.length} Notion page(s).` });
+    } catch (error) {
+      setNotionToast({ tone: "error", message: error instanceof Error ? error.message : "Notion page listing failed." });
+    } finally {
+      setLoadingNotion(false);
+    }
+  }
+
+  async function previewNotionImport(page: NotionPageSummary) {
+    setImportingNotion(true);
+    setNotionToast(null);
+    try {
+      const response = await fetch("/api/connectors/notion/pages/import", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pageId: page.pageId, title: page.title, confirm: false }),
+      });
+      const result = await response.json().catch(() => ({} as { error?: string; preview?: { title: string; bodyPreview: string } }));
+      if (!response.ok) throw new Error(result.error ?? "Notion page preview failed.");
+      setNotionPreview({ pageId: page.pageId, title: page.title, bodyPreview: result.preview?.bodyPreview ?? "" });
+      setNotionToast({ tone: "info", message: "Review the extracted content before importing it as a tenant document." });
+    } catch (error) {
+      setNotionToast({ tone: "error", message: error instanceof Error ? error.message : "Notion page preview failed." });
+    } finally {
+      setImportingNotion(false);
+    }
+  }
+
+  async function confirmNotionImport() {
+    if (!notionPreview) return;
+    setImportingNotion(true);
+    setNotionToast(null);
+    try {
+      const response = await fetch("/api/connectors/notion/pages/import", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pageId: notionPreview.pageId, title: notionPreview.title, confirm: true }),
+      });
+      const result = await response.json().catch(() => ({} as { error?: string }));
+      if (!response.ok) throw new Error(result.error ?? "Notion page import failed.");
+      setNotionToast({ tone: "success", message: `"${notionPreview.title}" imported as a tenant document.` });
+      setNotionPreview(null);
+    } catch (error) {
+      setNotionToast({ tone: "error", message: error instanceof Error ? error.message : "Notion page import failed." });
+    } finally {
+      setImportingNotion(false);
+    }
+  }
+
   return (
   <div className="space-y-5">
     <SectionHeader title="Integrations" subtitle={`${pluginHealth.total} plugin adapters - ${pluginHealth.webhookReady} webhook-ready - ${connectedCount} connected - ${disconnectedCount} disconnected - provider-gated for production credentials`} />
@@ -219,6 +301,51 @@ export const IntegrationsSection = () => {
         </div>
       )}
     </Card>
+
+    <Card className="p-5">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div>
+          <h3 className="text-sm font-semibold text-[#0F1117]">Notion Knowledge Import</h3>
+          <p className="mt-1 max-w-2xl text-xs leading-relaxed text-[#5F6B73]">Connect Notion, list pages from the connected workspace, then preview and import a page&apos;s text content as a governed tenant document available to the Knowledge Hub and AI Workspace.</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <a href="/api/connectors/oauth/start?provider=notion" className="rounded-lg border border-[rgba(139,30,45,0.22)] bg-white px-3 py-2 text-xs font-semibold text-[#8B1E2D] hover:bg-[#8B1E2D]/5">Connect Notion</a>
+            <button type="button" onClick={() => void loadNotionPages()} disabled={loadingNotion} className="rounded-lg bg-[#8B1E2D] px-3 py-2 text-xs font-semibold text-white hover:bg-[#7a1a27] disabled:opacity-60">List Notion pages</button>
+          </div>
+        </div>
+        <div className="grid w-full gap-2 lg:max-w-md">
+          <div className="rounded-lg border border-[rgba(15,17,23,0.08)] bg-[#F8F9FA] p-2">
+            <div className="mb-2 text-[10px] font-semibold uppercase text-[#5F6B73]">Notion pages</div>
+            <div className="grid gap-2">
+              {notionPages.length === 0 && <p className="px-3 py-2 text-[11px] text-[#5F6B73]">No pages loaded yet.</p>}
+              {notionPages.map((page) => (
+                <button
+                  key={page.pageId}
+                  onClick={() => void previewNotionImport(page)}
+                  disabled={importingNotion}
+                  className="rounded-lg bg-white px-3 py-2 text-left text-xs hover:bg-[#F2F3F5] disabled:opacity-60"
+                >
+                  <span className="block font-semibold text-[#0F1117]">{page.title}</span>
+                  <span className="mt-0.5 block text-[11px] text-[#5F6B73]">{page.url}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+      {notionToast && <div className="mt-4"><InlineToast tone={notionToast.tone} message={notionToast.message} /></div>}
+      {notionPreview && (
+        <div className="mt-4 rounded-lg bg-[#F8F9FA] p-3">
+          <div className="mb-2 text-[10px] font-semibold uppercase text-[#5F6B73]">Preview -- {notionPreview.title}</div>
+          <p className="mb-3 whitespace-pre-line text-[11px] leading-relaxed text-[#0F1117]">{notionPreview.bodyPreview || "No text content extracted."}</p>
+          <div className="flex flex-wrap gap-2">
+            <button onClick={() => setNotionPreview(null)} className="rounded-lg border border-[rgba(0,0,0,0.12)] px-3 py-2 text-xs font-semibold text-[#0F1117] hover:bg-[#F2F3F5]">Cancel</button>
+            <button onClick={() => void confirmNotionImport()} disabled={importingNotion} className="rounded-lg bg-[#8B1E2D] px-3 py-2 text-xs font-semibold text-white hover:bg-[#7a1a27] disabled:opacity-60">Confirm import</button>
+          </div>
+        </div>
+      )}
+    </Card>
+
+    <EnterpriseConnectorCredentialsPanel />
 
     <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
       {[
@@ -298,6 +425,180 @@ export const IntegrationsSection = () => {
   </div>
   );
 };
+
+type EnterpriseConnectorProviderInfo = {
+  providerId: string;
+  displayName: string;
+  category: string;
+  purpose: string;
+  credentialFields: Array<{ key: string; label: string; secret: boolean }>;
+};
+
+type EnterpriseConnectorConnection = {
+  provider_id: string;
+  status: string;
+  updated_at: string;
+};
+
+function EnterpriseConnectorCredentialsPanel() {
+  const { session } = useAuth();
+  const [providers, setProviders] = useState<EnterpriseConnectorProviderInfo[]>([]);
+  const [connections, setConnections] = useState<EnterpriseConnectorConnection[]>([]);
+  const [openProviderId, setOpenProviderId] = useState<string | null>(null);
+  const [form, setForm] = useState<Record<string, string>>({});
+  const [saving, setSaving] = useState(false);
+  const [toast, setToast] = useState<{ tone: "success" | "error" | "info"; message: string } | null>(null);
+  const canConfigure = Boolean(session.user && ["Super Admin", "Organization Admin"].includes(session.user.role));
+
+  useEffect(() => {
+    let isMounted = true;
+    fetch("/api/connectors/enterprise/credentials", { credentials: "include", cache: "no-store" })
+      .then((response) => response.json())
+      .then((result: { providers?: EnterpriseConnectorProviderInfo[]; connections?: EnterpriseConnectorConnection[] }) => {
+        if (!isMounted) return;
+        setProviders(result.providers ?? []);
+        setConnections(result.connections ?? []);
+      })
+      .catch(() => undefined);
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  function statusFor(providerId: string) {
+    return connections.find((connection) => connection.provider_id === providerId)?.status;
+  }
+
+  function openProvider(providerId: string) {
+    setOpenProviderId(providerId === openProviderId ? null : providerId);
+    setForm({});
+    setToast(null);
+  }
+
+  async function saveCredentials(provider: EnterpriseConnectorProviderInfo) {
+    setSaving(true);
+    setToast(null);
+    try {
+      const response = await fetch("/api/connectors/enterprise/credentials", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ providerId: provider.providerId, credentials: form }),
+      });
+      const result = await response.json().catch(() => ({} as { error?: string; message?: string }));
+      if (!response.ok) throw new Error(result.error ?? result.message ?? "Saving credentials failed.");
+      setToast({ tone: "success", message: `${provider.displayName} credentials stored (encrypted at rest).` });
+      setConnections((current) => [
+        ...current.filter((connection) => connection.provider_id !== provider.providerId),
+        { provider_id: provider.providerId, status: "configured", updated_at: new Date().toISOString() },
+      ]);
+      setOpenProviderId(null);
+      setForm({});
+    } catch (error) {
+      setToast({ tone: "error", message: error instanceof Error ? error.message : "Saving credentials failed." });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function revokeCredentials(provider: EnterpriseConnectorProviderInfo) {
+    setSaving(true);
+    setToast(null);
+    try {
+      const response = await fetch(`/api/connectors/enterprise/credentials?providerId=${provider.providerId}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!response.ok) throw new Error("Revoking credentials failed.");
+      setConnections((current) => current.map((connection) => (connection.provider_id === provider.providerId ? { ...connection, status: "revoked" } : connection)));
+      setToast({ tone: "success", message: `${provider.displayName} credentials revoked.` });
+    } catch (error) {
+      setToast({ tone: "error", message: error instanceof Error ? error.message : "Revoking credentials failed." });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (providers.length === 0) return null;
+
+  return (
+    <Card className="p-5">
+      <div className="mb-4">
+        <h3 className="text-sm font-semibold text-[#0F1117]">Enterprise Data &amp; Billing Connections</h3>
+        <p className="mt-1 max-w-2xl text-xs leading-relaxed text-[#5F6B73]">
+          Store encrypted credentials for enterprise data-warehouse, storage, billing and SSO connectors backed by their Postgres wrapper. Credentials are sealed with AES-256-GCM and never exposed to client-side code once saved. Live connectivity verification against the external service is not implemented in this pass -- saving confirms the credential was stored correctly, not that the external service accepted it.
+        </p>
+      </div>
+      {toast && <div className="mb-3"><InlineToast tone={toast.tone} message={toast.message} /></div>}
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+        {providers.map((provider) => {
+          const status = statusFor(provider.providerId);
+          const isOpen = openProviderId === provider.providerId;
+          return (
+            <div key={provider.providerId} className="rounded-xl border border-[rgba(0,0,0,0.06)] bg-[#F8F9FA] p-3">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <div className="text-sm font-semibold text-[#0F1117]">{provider.displayName}</div>
+                  <div className="mt-0.5 font-mono text-[11px] uppercase text-[#5F6B73]">{provider.category}</div>
+                </div>
+                <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${status === "configured" ? "bg-emerald-50 text-emerald-700" : status === "revoked" ? "bg-gray-100 text-gray-600" : "bg-amber-50 text-amber-700"}`}>
+                  {status === "configured" ? "configured" : status === "revoked" ? "revoked" : "not configured"}
+                </span>
+              </div>
+              <p className="mt-2 text-xs leading-relaxed text-[#5F6B73]">{provider.purpose}</p>
+              {canConfigure ? (
+                <div className="mt-3">
+                  <button
+                    type="button"
+                    onClick={() => openProvider(provider.providerId)}
+                    className="rounded-lg border border-[rgba(139,30,45,0.22)] bg-white px-3 py-2 text-xs font-semibold text-[#8B1E2D] hover:bg-[#8B1E2D]/5"
+                  >
+                    {isOpen ? "Cancel" : status === "configured" ? "Update credentials" : "Configure"}
+                  </button>
+                  {status === "configured" && (
+                    <button
+                      type="button"
+                      onClick={() => void revokeCredentials(provider)}
+                      disabled={saving}
+                      className="ml-2 rounded-lg border border-[rgba(0,0,0,0.12)] px-3 py-2 text-xs font-semibold text-[#0F1117] hover:bg-[#F2F3F5] disabled:opacity-60"
+                    >
+                      Revoke
+                    </button>
+                  )}
+                  {isOpen && (
+                    <div className="mt-3 grid gap-2">
+                      {provider.credentialFields.map((field) => (
+                        <input
+                          key={field.key}
+                          aria-label={field.label}
+                          type={field.secret ? "password" : "text"}
+                          placeholder={field.label}
+                          value={form[field.key] ?? ""}
+                          onChange={(event) => setForm({ ...form, [field.key]: event.target.value })}
+                          className="rounded-lg border border-[rgba(0,0,0,0.12)] bg-white px-3 py-2 text-xs outline-none"
+                        />
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() => void saveCredentials(provider)}
+                        disabled={saving}
+                        className="rounded-lg bg-[#8B1E2D] px-3 py-2 text-xs font-semibold text-white hover:bg-[#7a1a27] disabled:opacity-60"
+                      >
+                        Save credentials
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <p className="mt-3 text-[11px] text-[#5F6B73]">Only Organization Admins can configure this connector.</p>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </Card>
+  );
+}
 
 function isConnectorProviderId(value: string): value is ConnectorProviderId {
   return value === "gmail" || value === "microsoft";

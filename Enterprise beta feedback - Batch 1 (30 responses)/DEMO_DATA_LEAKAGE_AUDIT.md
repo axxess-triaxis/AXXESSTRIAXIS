@@ -326,3 +326,28 @@ round. The honest takeaway: this class of bug is not something a fixed number of
 prove absent, only reduce the odds of. A live, in-browser walkthrough — not just grep — is what
 actually found rounds 1 and 4's context-window/audit-trail instances, since they don't match any
 `demo`-named import that a static search would catch.
+
+## Round 5 — found while wiring real product surfaces for the Postgres wrapper integrations (2026-07-21)
+
+While adding a live-tenant Notion sync workflow to `src/features/integrations/IntegrationsSection.tsx`,
+found the exact same module-level-caching pattern Round 4 fixed in `AIWorkspaceSection.tsx`'s
+`aiMessages`, in the same file's `integrations` constant:
+
+```ts
+const integrations = applicationServices.institutionalRepository.getIntegrations();
+```
+
+Evaluated once at module import time rather than per-render, this could freeze the demo connector
+gallery in memory for the rest of a client session if the module ever first loaded while demo mode
+was active (SPA navigation, no full reload) — same mechanism, same risk, as the `aiMessages` fix.
+Fixed the same way: moved the call inside the `IntegrationsSection` component body so it reads
+`isDemoModeEnabled()` fresh on every render, and moved the dependent `connectedCount`/
+`disconnectedCount` calculations alongside it.
+
+This makes a firm pattern: every file touched for feature work in this codebase, so far, has turned
+up at least one more instance of this bug class. The remaining files flagged as "not yet
+reverified" in Round 2 (`src/lib/demo/demoDocuments.ts`, `demoWorkflow.ts`, and the `src/demo/*`
+consumers in `TopBar.tsx`/`AuthProvider.tsx`/`legacyInstitutionalViewRepository.ts`) remain the most
+likely source of further instances, and a full audit specifically for this
+module-level-constant-computed-from-isDemoModeEnabled() pattern (as opposed to hardcoded demo data
+generally) has still never been run as its own dedicated pass.

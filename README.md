@@ -2516,26 +2516,32 @@ Current production connectors include:
 - Gmail
 - Slack (quick-connect, Sprint 3)
 - Calendly (quick-connect, Sprint 3)
+- Airtable, HubSpot, Notion (OAuth quick-connect, 2026-07-21)
 
 Current OAuth infrastructure supports:
 
-- Gmail
-- Microsoft
-- Slack
-- Calendly
+- Gmail, Microsoft, Slack, Calendly, Airtable, HubSpot, Notion
+
+Notion additionally has a genuine sync workflow beyond connecting: list pages from the connected
+workspace, preview extracted text, then import a page as a real tenant document usable by the
+Knowledge Hub and AI Workspace's governed RAG.
+
+Auth0, ClickHouse, MSSQL, Snowflake, S3, Paddle, and Stripe have an encrypted credential-storage
+connect flow (Settings → Integrations → Enterprise Data & Billing Connections) rather than OAuth —
+saving confirms the credential was stored correctly (AES-256-GCM, server-only), not that the
+external service has verified it; live connectivity checks against these are not implemented yet.
 
 ### Postgres-level data connectors (Wrappers)
 
-Separately from the application-level OAuth connectors above, twelve Postgres foreign-data-wrapper
+Separately from the application-level connectors above, twelve Postgres foreign-data-wrapper
 extensions are enabled at the database layer: `airtable_wrapper`, `auth0_wrapper`,
 `calendly_wrapper`, `clickhouse_wrapper`, `hubspot_wrapper`, `notion_wrapper`, `mssql_wrapper`,
 `paddle_wrapper`, `s3_wrapper`, `slack_wrapper`, `snowflake_wrapper`, `stripe_wrapper`. These let
-Postgres query the corresponding third-party service as if it were a native table. **Honest
-status:** only the two backing Slack and Calendly above have a real, customer-facing product
-surface today; the remaining ten exist as infrastructure ahead of product need, deliberately
-sequenced behind reliability and clarity work rather than built speculatively into the UI. Full
-stack-of-use breakdown (database layer → application connector layer → product UI →
-customer journey → ops) in `MONOREPO_ARCHITECTURE_AND_BUSINESS_MODEL.md` §4.
+Postgres query the corresponding third-party service as if it were a native table. **Status
+(updated 2026-07-21):** all twelve now have some product-facing surface — seven as real OAuth
+connections, five (plus the two billing wrappers) as encrypted credential storage without live
+verification (see above). Full stack-of-use breakdown (database layer → application connector
+layer → product UI → customer journey → ops) in `MONOREPO_ARCHITECTURE_AND_BUSINESS_MODEL.md` §4.
 
 Future connector roadmap includes:
 
@@ -2831,8 +2837,9 @@ Current limitations include:
 
 ## Connectors
 
-- Gmail, Slack, and Calendly are the current production connectors
-- Ten of twelve enabled Postgres data-layer wrappers have no product-facing surface yet
+- Gmail, Microsoft, Slack, Calendly, Airtable, HubSpot, and Notion have real OAuth connect flows;
+  Auth0, ClickHouse, MSSQL, Snowflake, S3, Paddle, and Stripe have encrypted credential storage
+  with no live external verification yet
 - Connector ecosystem remains intentionally limited during beta
 
 ---
