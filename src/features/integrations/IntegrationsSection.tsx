@@ -113,7 +113,12 @@ export const IntegrationsSection = () => {
         cache: "no-store",
       });
       const result = await response.json().catch(() => ({})) as { providerGated?: boolean; message?: string; messages?: MicrosoftGraphMailboxMessageSummary[] };
-      if (!response.ok) throw new Error(result.message ?? "Microsoft mailbox listing failed.");
+      if (!response.ok) {
+        console.error("Microsoft mailbox listing failed.", response.status, result.message);
+        if (response.status === 401) throw new Error("Sign in to list Microsoft mailbox messages.");
+        if (response.status === 403) throw new Error("Your role does not have permission to list Microsoft mailbox messages.");
+        throw new Error("Microsoft mailbox listing failed.");
+      }
       const messages = (result.messages ?? []).map((message) => ({
         id: message.messageId ?? message.sourceLink ?? message.subject,
         providerId: "microsoft" as ConnectorProviderId,
@@ -148,7 +153,12 @@ export const IntegrationsSection = () => {
         body: JSON.stringify({ ...emailForm, confirm }),
       });
       const result = await response.json().catch(() => ({} as { error?: string; preview?: typeof preview; tasks?: unknown[] }));
-      if (!response.ok) throw new Error(result.error ?? "Email import failed.");
+      if (!response.ok) {
+        console.error("Email import failed.", response.status, result.error);
+        if (response.status === 401) throw new Error("Sign in to import email.");
+        if (response.status === 403) throw new Error("Your role does not have permission to import email.");
+        throw new Error("Email import failed.");
+      }
       if (!confirm) {
         setPreview(result.preview ?? localPreview);
         setToast({ tone: "info", message: "Review extracted tasks, decisions and stakeholders before creating records." });
@@ -178,7 +188,12 @@ export const IntegrationsSection = () => {
         cache: "no-store",
       });
       const result = await response.json().catch(() => ({})) as { providerGated?: boolean; message?: string; pages?: NotionPageSummary[] };
-      if (!response.ok) throw new Error(result.message ?? "Notion page listing failed.");
+      if (!response.ok) {
+        console.error("Notion page listing failed.", response.status, result.message);
+        if (response.status === 401) throw new Error("Sign in to list Notion pages.");
+        if (response.status === 403) throw new Error("Your role does not have permission to list Notion pages.");
+        throw new Error("Notion page listing failed.");
+      }
       const pages = result.pages ?? [];
       setNotionPages(pages);
       if (!pages.length) {
@@ -204,7 +219,12 @@ export const IntegrationsSection = () => {
         body: JSON.stringify({ pageId: page.pageId, title: page.title, confirm: false }),
       });
       const result = await response.json().catch(() => ({} as { error?: string; preview?: { title: string; bodyPreview: string } }));
-      if (!response.ok) throw new Error(result.error ?? "Notion page preview failed.");
+      if (!response.ok) {
+        console.error("Notion page preview failed.", response.status, result.error);
+        if (response.status === 401) throw new Error("Sign in to preview this Notion page.");
+        if (response.status === 403) throw new Error("Your role does not have permission to preview Notion pages.");
+        throw new Error("Notion page preview failed.");
+      }
       setNotionPreview({ pageId: page.pageId, title: page.title, bodyPreview: result.preview?.bodyPreview ?? "" });
       setNotionToast({ tone: "info", message: "Review the extracted content before importing it as a tenant document." });
     } catch (error) {
@@ -226,7 +246,12 @@ export const IntegrationsSection = () => {
         body: JSON.stringify({ pageId: notionPreview.pageId, title: notionPreview.title, confirm: true }),
       });
       const result = await response.json().catch(() => ({} as { error?: string }));
-      if (!response.ok) throw new Error(result.error ?? "Notion page import failed.");
+      if (!response.ok) {
+        console.error("Notion page import failed.", response.status, result.error);
+        if (response.status === 401) throw new Error("Sign in to import this Notion page.");
+        if (response.status === 403) throw new Error("Your role does not have permission to import Notion pages.");
+        throw new Error("Notion page import failed.");
+      }
       setNotionToast({ tone: "success", message: `"${notionPreview.title}" imported as a tenant document.` });
       setNotionPreview(null);
     } catch (error) {
@@ -486,7 +511,14 @@ function EnterpriseConnectorCredentialsPanel() {
         body: JSON.stringify({ providerId: provider.providerId, credentials: form }),
       });
       const result = await response.json().catch(() => ({} as { error?: string; message?: string }));
-      if (!response.ok) throw new Error(result.error ?? result.message ?? "Saving credentials failed.");
+      // Never surface the raw backend error/message here -- this panel handles provider secrets,
+      // so a leaked backend string is a higher-severity risk than elsewhere (Sprint 3).
+      if (!response.ok) {
+        console.error("Saving connector credentials failed.", response.status, result.error ?? result.message);
+        if (response.status === 401) throw new Error("Sign in to configure connector credentials.");
+        if (response.status === 403) throw new Error("Your role does not have permission to configure connector credentials.");
+        throw new Error("Saving credentials failed.");
+      }
       setToast({ tone: "success", message: `${provider.displayName} credentials stored (encrypted at rest).` });
       setConnections((current) => [
         ...current.filter((connection) => connection.provider_id !== provider.providerId),

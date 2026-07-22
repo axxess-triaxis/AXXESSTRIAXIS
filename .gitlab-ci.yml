@@ -48,6 +48,9 @@ quality:
     - if: '$CI_COMMIT_BRANCH == "main"'
     - if: '$CI_COMMIT_BRANCH == "staging"'
     - if: '$CI_COMMIT_BRANCH == "dev"'
+    # Sprint/remediation branches get the same automatic verification on every push, not just
+    # on an MR event -- add a new `if:` line here for each future long-lived sprint branch.
+    - if: '$CI_COMMIT_BRANCH == "canonical/sprint-1-35-unified-gitlab"'
 
 supabase-verify:
   stage: supabase
@@ -79,3 +82,8 @@ pnpm-audit:
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
     - if: '$CI_COMMIT_BRANCH == "main"'
+    - if: '$CI_COMMIT_BRANCH == "canonical/sprint-1-35-unified-gitlab"'
+
+# Automated MR code review is handled by GitLab's native Duo Agent Platform "Code Review"
+# foundational flow (Group Settings -> GitLab Duo -> Configuration -> Flows), not a custom CI job --
+# see docs/GITLAB_MIRROR.md "Automated Post-Sprint CI Verification And AI Code Review".
