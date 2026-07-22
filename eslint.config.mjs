@@ -14,9 +14,15 @@ const eslintConfig = defineConfig([
   globalIgnores(
     [
       ".next/**",
+      ".agents/**",
+      ".cache/**",
+      ".pnpm-store/**",
       "dist/**",
       "node_modules/**",
       "coverage/**",
+      "playwright-report/**",
+      "test-results/**",
+      "Enterprise beta feedback - Batch 1 (30 responses)/**",
       "next-env.d.ts",
       "src/app/components/figma/**",
       "src/app/components/ui/**",
