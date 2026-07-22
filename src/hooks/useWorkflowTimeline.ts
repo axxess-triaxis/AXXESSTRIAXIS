@@ -5,6 +5,7 @@ import {
   type WorkflowTimelineEvent,
   type WorkflowTimelineResourceType,
 } from "../services/workflows/workflowEvidence";
+import { isDemoModeEnabled } from "../demo/demoMode";
 
 type TimelineResponse = {
   timeline?: WorkflowTimelineEvent[];
@@ -15,7 +16,7 @@ export function useWorkflowTimeline(
   scope?: TenantScope,
   options: { limit?: number; resourceType?: WorkflowTimelineResourceType; resourceId?: string } = {},
 ) {
-  const [timeline, setTimeline] = useState<WorkflowTimelineEvent[]>(() => fallbackWorkflowTimelineEvents(scope?.organizationId ?? "demo-tenant"));
+  const [timeline, setTimeline] = useState<WorkflowTimelineEvent[]>(() => isDemoModeEnabled() ? fallbackWorkflowTimelineEvents(scope?.organizationId ?? "demo-tenant") : []);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -25,7 +26,9 @@ export function useWorkflowTimeline(
     if (options.resourceType) params.set("resourceType", options.resourceType);
     if (options.resourceId) params.set("resourceId", options.resourceId);
 
-    setTimeline(fallbackWorkflowTimelineEvents(scope.organizationId).slice(0, options.limit ?? 12));
+    const demoMode = isDemoModeEnabled();
+    const limit = options.limit ?? 12;
+    setTimeline(demoMode ? fallbackWorkflowTimelineEvents(scope.organizationId).slice(0, limit) : []);
     setLoading(true);
     fetch(`/api/workflows/timeline?${params.toString()}`, {
       credentials: "include",
@@ -35,10 +38,10 @@ export function useWorkflowTimeline(
       .then(async (response) => {
         const payload = await response.json().catch(() => ({})) as TimelineResponse;
         if (!response.ok) throw new Error(payload.error ?? "Workflow timeline could not be loaded.");
-        setTimeline(payload.timeline?.length ? payload.timeline : fallbackWorkflowTimelineEvents(scope.organizationId));
+        setTimeline(payload.timeline?.length ? payload.timeline : demoMode ? fallbackWorkflowTimelineEvents(scope.organizationId).slice(0, limit) : []);
       })
       .catch(() => {
-        if (!controller.signal.aborted) setTimeline(fallbackWorkflowTimelineEvents(scope.organizationId));
+        if (!controller.signal.aborted) setTimeline(demoMode ? fallbackWorkflowTimelineEvents(scope.organizationId).slice(0, limit) : []);
       })
       .finally(() => {
         if (!controller.signal.aborted) setLoading(false);
