@@ -2,6 +2,8 @@
 
 AXXESS uses a Supabase Auth-ready facade with a local investor preview path.
 
+Real Supabase-backed auth is the default for deployed environments. Local mock-RBAC auth is allowed only when `NEXT_PUBLIC_AXXESS_AUTH_SHELL=false` is explicitly set for local UI development.
+
 ## Supported Flows
 
 - Email/password login through `/api/auth/login`
@@ -43,7 +45,9 @@ Routes and feature controls read the authenticated `UserContext`. Organization b
 - Client login responses do not expose Supabase access or refresh tokens.
 - Server-only service-role keys must remain outside `NEXT_PUBLIC_*` variables.
 - Demo login is isolated to the seeded preview tenant.
-- Production deployments should move session validation fully to httpOnly cookie-backed server checks.
+- Production and beta deployments must use `NEXT_PUBLIC_AXXESS_AUTH_SHELL=true` so the client waits for `/api/auth/session` instead of creating a mock authenticated user.
+- Session validation uses httpOnly cookie-backed server checks for protected API routes.
+- `src/middleware.ts` enforces the same production-safe default at the edge: any protected route (`/dashboard`, `/projects`, `/admin/*`, etc.) without a session cookie is redirected to `/auth` unless the auth shell is explicitly disabled (`NEXT_PUBLIC_AXXESS_AUTH_SHELL=false`, local mock auth only) or Demo Mode is explicitly enabled. This closes the 2026-07-22 QA finding where an unset auth-shell variable let the client render an authenticated workspace while the server still returned `401` for every tenant-scoped request.
 
 ## Sprint 13 Auth Readiness
 

@@ -1,5 +1,214 @@
 # Sprint Log
 
+## Next 5 Milestones - Beta, Mobile And Analytics
+
+This planning record defines the next milestone gates after canonical workspace consolidation and Claude Code beta QA remediation planning.
+
+### Documented
+
+- Added `docs/NEXT_5_MILESTONES_BETA_AND_MOBILE_RELEASE.md`.
+- Defined Enterprise Beta 1.0 as complete only when Triaxis Ventures Pvt Ltd can onboard fully as the first tenant and Claude Code audits the live workflow as market-release beta.
+- Defined iOS completion as Apple App Store release after TestFlight and the full testing suite.
+- Defined Android completion as Google Play Store release after the required testing path and full testing suite.
+- Defined Mixpanel/PostHog completion as validated privacy-safe events from enterprise web beta, iOS beta/app and Android beta/app.
+- Defined first-30-users analytics completion as reviewed analytics from 30 real beta users across the three beta surfaces.
+
+### Status
+
+```text
+Milestones documented.
+Implementation, release and analytics evidence remain pending.
+```
+
+## Beta QA Remediation - 2026-07-22
+
+This pass converts an external-style beta QA report into repository evidence and remediates the highest-leverage auth/session and demo/live data leakage issues.
+
+### Documentation Package
+
+- Preserved the raw Claude Code beta QA report as `docs/qa-artifacts/2026-07-22-claude-code-beta-e2e-qa-report.txt`.
+- Verified the raw QA artifact hash as `05102445D0CC696072109AB43848C1F378BE6E39BAC0A8E587ED45EBAC6DA488`.
+- Added `docs/BETA_QA_ACTIONABLES_2026_07_22.md` with 20 concrete remediation actionables.
+- Added `docs/BETA_QA_ANALYSIS_AND_REMEDIATION_ROADMAP_2026_07_22.md` with root-cause analysis and phased remediation plan.
+- Added `docs/BETA_QA_5_SPRINT_REMEDIATION_CHECKLIST_2026_07_22.md` with sprint-by-sprint implementation, test, lint, documentation, diligence and exit criteria.
+- Added `docs/Post-Claude Code exhaustive workflow audit production remediation package.md` as the index for the raw artifact, actionables, roadmap and checklist.
+
+### Completed
+
+- Added `docs/BETA_E2E_QA_REPORT_2026_07_22.md`.
+- Made Supabase-backed auth shell the safe default for deployed environments.
+- Kept local mock-RBAC auth available only through explicit `NEXT_PUBLIC_AXXESS_AUTH_SHELL=false`.
+- Updated auth and Vercel deployment docs with the production auth invariant.
+- Gated fallback workflow timeline data behind Demo Mode.
+- Prevented unauthenticated live workflow-record pages from showing seeded demo records.
+- Fixed `/documents` lazy route mapping so Documents and Knowledge Hub render distinct workspace components.
+- Added focused tests for auth-shell defaults and demo-only fallback behavior.
+
+### Sprint 1 Complete - Auth Integrity And Protected Access - 2026-07-22
+
+Full findings-by-finding ledger, constraint-compliance checklist, and estimated (not yet live-verified) QA score deltas are recorded in `docs/SPRINT_1_CLOSEOUT_2026_07_22.md`.
+
+The remainder of Sprint 1 closed the gap left after the initial pass above: the client-side auth-shell default was fixed, but `src/middleware.ts` -- the edge-level route guard that decides whether a protected page is served at all -- still used the old `NEXT_PUBLIC_AXXESS_AUTH_SHELL === "true"` check. On a deployment with the variable unset, that left protected routes unguarded at the edge even though the client would correctly refuse to render an authenticated workspace. This was the last concrete gap behind F-001/F-002/F-003/F-004 in the raw QA report.
+
+Changes:
+
+- Fixed `src/middleware.ts` so its auth-shell/demo-mode checks match `src/config/featureFlags.ts` (unset env var behaves as `true`, real Supabase auth required, unless explicitly set to `false` for local mock auth). Extracted the redirect decision into exported pure functions (`isAuthShellEnabledFromEnv`, `isDemoModeEnabledFromEnv`, `shouldRedirectToLogin`) so the behavior is directly unit-testable.
+- Audited `src/auth/AuthProvider.tsx`, `src/app/auth/page.tsx`, `src/app/App.tsx` (route guard), `src/auth/serverSession.ts`, and the `/api/auth/session`, `/api/auth/logout` routes -- all were already correctly gated behind `featureFlags.enableAuthShell`; the only production-affecting defect was the middleware default described above.
+- Confirmed tenant-scoped API routes (e.g. `src/app/api/repositories/[resource]/route.ts`) already return `401 {"error":"Unauthorized."}` for every verb when `getServerAuthSession` finds no session, and never construct a tenant scope without one.
+- Added `src/auth/AuthProvider.test.tsx`: logout clears authenticated state and does not rehydrate a mock/demo session; client session agrees with an unauthenticated server response.
+- Added `src/app/auth/page.test.tsx`: `/auth` renders the real email/password login form (and investor-preview button) for a fresh unauthenticated browser, never a "Signed in" state.
+- Extended `src/middleware.test.ts` with 7 new cases covering the production-safe default, explicit local opt-out, demo-mode bypass, session-cookie bypass, and non-protected-route exemption.
+
+### Sprint 1 Verification Evidence - 2026-07-22
+
+```text
+pnpm run typecheck                        PASS (tsc --noEmit, no errors)
+pnpm --dir apps/mobile run typecheck      PASS (tsc --noEmit, no errors)
+pnpm run lint                             PASS (eslint . --max-warnings=0, zero warnings)
+pnpm run test                             PASS (96 test files, 286 tests, 0 failed)
+pnpm run build                            PASS (Next.js 16.2.10, 114 routes generated;
+                                           pre-existing "middleware file convention is
+                                           deprecated, use proxy instead" warning -- Next.js
+                                           16 naming-convention notice, not introduced by this
+                                           sprint, not a build failure, tracked as a follow-up)
+pnpm run supabase:verify                  PASS (27 migrations, 100 tables, 100 RLS-protected;
+                                           1 pre-existing warning: permissive `using (true)`
+                                           RLS predicate in the original 2026-07-02 initial
+                                           schema migration -- pre-existing, out of Sprint 1
+                                           scope, tracked as a follow-up)
+pnpm run mobile:store:release-gate        PASS
+pnpm run mobile:capacitor:store:doctor    PASS
+```
+
+Diligence evidence:
+
+- Deployed beta/production environment variables expected: `NEXT_PUBLIC_AXXESS_AUTH_SHELL=true`, `NEXT_PUBLIC_AXXESS_DEMO_MODE=false` (see `docs/VERCEL_DEPLOYMENT.md`). The code now defaults safely even if the Vercel project variable is missing, but explicit configuration remains required policy.
+- Local-only/demo-only paths: `NEXT_PUBLIC_AXXESS_AUTH_SHELL=false` (mock-RBAC UI development) and the investor-preview login (`investor.preview@axxess.demo` / `preview`, or `demo@axxess.local`), which explicitly sets Demo Mode via `src/demo/demoMode.ts` and is isolated from live tenant sessions.
+- Live Vercel beta environment variables were **not** verified against the actual `beta.triaxisventures.com` deployment in this pass -- this was a local repository fix, build and test verification only. Confirming and redeploying the live Vercel project variables is a required follow-up before the original QA golden path can be re-run against the live URL (Sprint 5 scope).
+- Investor preview login was exercised indirectly through the `/auth` page's "Open investor preview" flow already present in code and covered by the demo-mode test suite; it was not manually re-tested against a live deployment in this pass.
+- Exit criteria met locally: fresh browser (no cookies/session) redirected to `/auth` by `src/middleware.ts` and shown the real login form; `/auth` never renders "Signed in" without a real session; logout clears client state and does not rehydrate; protected routes (`/dashboard`, `/projects`, `/admin/*`, etc.) block unauthenticated access at the edge; client session state and `/api/auth/session` agree; Demo Mode and Investor Preview remain explicit, opt-in and labeled; no P0 auth finding from the QA report reproduces locally.
+
+### Sprint 2 Complete - Live Tenant Persistence And Golden Path Writes - 2026-07-22
+
+Full cumulative (Sprint 1+2) findings ledger, constraint-compliance checklist, and both an isolated Sprint 2 score delta and a composite Sprint 1+2 score delta (both estimated, not live-verified) are recorded in `docs/SPRINT_2_CLOSEOUT_2026_07_22.md`.
+
+Objective: prove a real authenticated tenant can create durable records and that the system records evidence of the action, addressing the QA repro `POST /api/repositories/projects -> 401`.
+
+This sprint turned out smaller than the prompt anticipated: auditing the repository/API/RLS layer that handles project creation found that persistence, refresh survival, unauthenticated-failure handling and tenant-scoped filtering were **already correct** before this sprint started (the `401` in the QA repro was the same root cause as Sprint 1's F-001, not a separate defect). The one genuine gap was evidence, not persistence.
+
+Changes:
+
+- Audited `src/app/api/repositories/[resource]/route.ts`, `src/repositories/supabaseEnterpriseRepositories.ts`, `src/services/workflows/liveTenantWorkflow.ts`, and the `projects`/`audit_logs`/`workflow_timeline_events` RLS policies in `supabase/migrations/20260702165736_initial_enterprise_schema.sql` and `supabase/migrations/20260716091356_sprint27_live_tenant_workflow_execution.sql`.
+- Confirmed already-correct, unchanged: `projectsRepository.create` writes real Supabase-backed rows via authenticated REST (not local state); `ProjectsSection.tsx` reloads the project list from the repository after save (survives refresh); the POST/PATCH/GET handlers return `401` before constructing any tenant scope when unauthenticated; `organizationIdForMutation` ignores a client-supplied `organizationId` for every role except Super Admin; the `projects` table's RLS policies (`projects_member_select` / `projects_manager_write`) independently enforce the same tenant boundary at the database level.
+- Fixed the actual gap: added `recordProjectCreateEvidence` in `src/app/api/repositories/[resource]/route.ts`, called after a successful `projects` create. It writes an `audit_logs` row (`action: "project.created"`, `resourceType: "project"`, `resourceId`, `category: "project-management"`) via `auditLogsRepository.record`, then a `workflow_timeline_events` row (`eventType: "workflow_action_created"`, `resourceType: "project"`, actor/tenant/target fields) via `recordWorkflowTimelineEvent` -- reusing the exact same functions already used for AI-review-approved actions, so no new architecture was introduced.
+- Added tests: `src/repositories/supabaseEnterpriseRepositories.test.ts` (+3: spoofed-`organizationId` create ignored for non-Super-Admin, honored for Super Admin, tenant-scoped read filter), `src/app/api/repositories/[resource]/route.test.ts` (new file, 6 tests: unauthenticated 401 across all three verbs, scope-from-session not from body, validation + 201 response shape, role-gated write, audit+timeline evidence wiring, best-effort error handling), `src/features/projects/ProjectsSection.test.ts` (new file, 4 tests: real persistence path, visible success/error states, refresh-survival via reload, Demo Mode separation).
+
+### Sprint 2 Verification Evidence - 2026-07-22
+
+```text
+pnpm run typecheck                        PASS
+pnpm --dir apps/mobile run typecheck      PASS
+pnpm run lint                             PASS (zero warnings)
+pnpm run test                             PASS (98 test files, 299 tests, 0 failed --
+                                           up from 96/286 before this sprint)
+pnpm run build                            PASS (114 routes; same pre-existing Next.js 16
+                                           middleware-to-proxy deprecation warning as
+                                           Sprint 1, unrelated to this sprint)
+pnpm run supabase:verify                  PASS (27 migrations, 100 tables, 100 RLS-protected;
+                                           same single pre-existing warning as Sprint 1 --
+                                           no migration was added or changed this sprint)
+pnpm run mobile:store:release-gate        PASS
+pnpm run mobile:capacitor:store:doctor    PASS
+```
+
+Diligence evidence:
+
+- Affected files: `src/app/api/repositories/[resource]/route.ts` (implementation), `src/repositories/supabaseEnterpriseRepositories.test.ts`, `src/app/api/repositories/[resource]/route.test.ts` (new), `src/features/projects/ProjectsSection.test.ts` (new).
+- Affected routes: `POST /api/repositories/projects` only (the specific QA repro). `GET`/`PATCH` and other resources on the same route file were audited but not modified.
+- Affected repositories/services: `projectsRepository`, `auditLogsRepository`, `recordWorkflowTimelineEvent` (all pre-existing, used as-is).
+- Affected database tables: none modified. Reads/writes flow into the pre-existing `projects`, `audit_logs`, `workflow_timeline_events` tables.
+- Affected RLS policies: none added or changed. Confirmed the pre-existing `projects_member_select`/`projects_manager_write`, `audit_logs_admin_select`/`audit_logs_system_insert`, and `workflow_timeline_events_member_select`/`workflow_timeline_events_member_insert` policies already enforce tenant isolation independently of this change.
+- Migrations added: none.
+- Audit event format: `{ organization_id, actor_user_id, actor_role, action: "project.created", resource_type: "project", resource_id, category: "project-management", metadata: { name } }`.
+- Workflow/timeline event format: `{ organizationId, resourceType: "project", resourceId, eventType: "workflow_action_created", title: "Project created", actorUserId, actorLabel: role, sourceType: "project", sourceId, auditLogId, metadata: { name } }`.
+- Live-provider verification status: **not performed.** No live Supabase project was used to create a real project and confirm the audit/timeline rows land correctly; all evidence is from mocked-fetch unit tests and the code-path audit above.
+- Remaining caveats: the exact QA repro (create a project as a real authenticated user against a live Supabase-backed deployment, then check Audit Logs and the dashboard timeline) has not been re-run live. Two-tenant isolation is proven at the query/mutation-logic level (unit tests) and independently by RLS, but not by provisioning two real tenants and testing live cross-access.
+
+### QA Scores Recorded
+
+```text
+Beta readiness: 22/100
+Enterprise readiness: 48/100
+Investor demo readiness: 35/100
+Pilot customer readiness: 12/100
+```
+
+(Scores as originally reported by the raw QA artifact; see `docs/SPRINT_1_CLOSEOUT_2026_07_22.md` for reasoned, explicitly-not-live-verified projections after Sprint 1. Sprint 2's fix is evidence/audit-trail only and would not by itself move any golden-path pass/fail step recorded in the original QA report -- project creation was already architecturally functional before this sprint; Sprint 2 makes it auditable, which principally affects Enterprise/Pilot readiness once live-verified, not Beta/Investor readiness.)
+
+### Sprint 3 Complete - Workspace Loading And Error-State Hardening - 2026-07-22
+
+Objective: eliminate indefinite loading states and raw backend errors across the 9 workspaces the QA report found hanging (F-006-F-014), plus normalize raw `Unauthorized.` text (F-016).
+
+The headline finding this sprint: auditing the *current* local codebase (not the QA report's live deployment, which has not been redeployed since Sprint 1 or 2) found that most of the reported hangs do not reproduce at all. Per-workspace audit:
+
+```text
+Workspace              Async load gate?   Hang possible?  Action taken
+AI Workspace           No                 No              Fixed 2 raw-error-leak call sites
+AI Review Inbox        No                 No              Fixed 2 raw-error-leak call sites (F-016)
+Approvals              No (sync stub)     No              Fixed routing bug (missing appRoutes entry -- see below)
+Stakeholders/CRM       No (sync stub)     No              Audited, no fix needed
+Analytics              No (sync stub)     No              Audited, no fix needed
+Integrations           Yes, non-blocking  No              Fixed 6 raw-error-leak call sites
+Settings               No                 No              Audited, no fix needed
+Organization Admin     Yes, blocking      Yes (narrow)     Fixed: loading flag had no terminal fallback
+Audit Logs             Yes, blocking      Yes (narrow)     Fixed: loading flag had no terminal fallback
+Dashboard + 4 hooks     Yes, non-blocking  No              Audited, no fix needed
+```
+
+Changes:
+
+- **Root-caused the Approvals mislabel** ("Loading Executive Dashboard"): `src/app/routing/routes.ts`'s `appRoutes` array had no entry at all for `"approvals"`, even though it's a valid `NavSection` with its own sidebar item and lazy-loaded component (`ApprovalsSection`). `routeForPath("/approvals")` and `routeForSection("approvals")` therefore silently fell back to `appRoutes[1]` (the Dashboard route), and `RouteBoundary`'s `Suspense` fallback used that route's label. Added the missing entry. This is a routing bug, not a component bug -- `ApprovalsSection.tsx` itself was already fine.
+- **Fixed the "stale loading flag" defect** in `src/features/admin/OrganizationAdminSection.tsx` and `src/features/admin/AuditLogsSection.tsx`: both had `if (!scope) return;` (or `!scope || !user`) inside their load function, which skipped resetting `loading` to `false`. If this ran before session/tenant scope resolved, `loading` could stay stuck at its initial `true` value with no terminal fallback. Fixed by always settling to `loading: false` in that branch. Also replaced `if (!user) return null;` (a blank page) in both with an explicit "Sign in required" state.
+- **Fixed 9 raw-backend-error-text leaks** (F-016 and the same anti-pattern found beyond the one confirmed instance): `src/features/ai-workspace/AIReviewInboxPage.tsx` (2 call sites: `loadReviews`, `decide`), `src/features/ai-workspace/AIWorkspaceSection.tsx` (2: governed question, review decision), `src/features/integrations/IntegrationsSection.tsx` (6: Microsoft mailbox listing, email import, Notion listing/preview/import, connector credential save). All followed `throw new Error(result.error ?? fallback)` then `setMessage(error.message)` -- now each checks `response.status` explicitly (401 -> sign-in copy, 403 -> permission copy, other -> generic retry copy) and logs the raw detail via `console.error` for developer diagnostics instead of showing it to the user.
+- **Confirmed already-correct, unchanged**: Approvals/Stakeholders/Analytics are synchronous, Demo-Mode-gated stubs with honest empty states outside Demo Mode (per their own code comments referencing `DEMO_DATA_LEAKAGE_AUDIT.md` -- no live repository exists yet for these, by design); Settings has no loading gate; Integrations' provider-gated states (`DataStateBadge state="Provider-gated"`) were already correct; Dashboard and its 4 dependent hooks (`useLiveWorkspaceMetrics`, `useLiveRagHealth`, `useEnterpriseGoldenPath`, `useWorkflowTimeline`) all initialize to a safe fallback value and never block render.
+- **State model used**: no new shared abstraction was introduced (matches "do not rewrite architecture"). The existing per-component pattern -- `DataStateBadge` (Demo/Live/Provider-gated), `EmptyState` (honest empty/permission copy), `LoadingState` (Suspense-level route loading), `RouteBoundary`'s `AccessDeniedSection` (role-permission gate), and the `{tone, message}` toast pattern -- already constitutes a coherent 6-state model (live, empty, demo, permission, provider-gated, error) once each workspace's own bugs are fixed; Sprint 3's job was making sure every workspace correctly reaches it, not building a new one.
+
+### Sprint 3 Verification Evidence - 2026-07-22
+
+```text
+pnpm run typecheck                        PASS
+pnpm --dir apps/mobile run typecheck      PASS
+pnpm run lint                             PASS (zero warnings)
+pnpm run test                             PASS (108 test files, 324 tests, 0 failed --
+                                           up from 98/299 before this sprint)
+pnpm run build                            PASS
+pnpm run supabase:verify                  PASS (27 migrations, 100 tables, 100 RLS-protected;
+                                           same single pre-existing warning as prior sprints --
+                                           no migration touched)
+pnpm run mobile:store:release-gate        PASS
+pnpm run mobile:capacitor:store:doctor    PASS
+```
+
+Diligence evidence:
+
+- Affected files: `src/app/routing/routes.ts`, `src/features/admin/OrganizationAdminSection.tsx`, `src/features/admin/AuditLogsSection.tsx`, `src/features/ai-workspace/AIReviewInboxPage.tsx`, `src/features/ai-workspace/AIWorkspaceSection.tsx`, `src/features/integrations/IntegrationsSection.tsx`.
+- Affected routes: `/approvals` (routing metadata only); no other route paths changed.
+- Affected workspaces: all 9 named plus Dashboard (audited, unchanged).
+- Affected hooks/services: none of the shared hooks (`useWorkflowTimeline`, `useLiveWorkspaceMetrics`, `useLiveRagHealth`, `useEnterpriseGoldenPath`) needed changes -- all were already safe.
+- No security/RBAC/tenant-isolation logic was touched -- every fix was either UI-copy normalization or a client-side loading-flag correction; server-side auth enforcement, RLS and RBAC checks are byte-for-byte unchanged from Sprint 2.
+- No provider credentials (Gmail, Microsoft, Notion, enterprise connectors) are configured in this local environment -- provider-gated behavior was confirmed correct by code audit, not by exercising a live connector.
+- Remaining caveats: no live beta replay was performed; the fixes are local-repository, build, and unit-test verified only.
+
+### Remaining Follow-Up
+
+- Verify Vercel beta env vars and redeploy (Sprint 1 fix is local/repository-only; live beta has not yet been redeployed or re-tested).
+- Re-run the same QA walkthrough on `beta.triaxisventures.com` after redeploy -- this would be the first live confirmation that the Approvals routing fix and the loading/error-copy fixes actually resolve the reported symptoms in production.
+- Re-test a real Supabase tenant write path end to end against a live deployment, confirming the audit/timeline rows actually land as expected (Sprint 2 fix is unit-tested only, not live-verified).
+- Re-verify tenant isolation with two real, provisioned tenants once real sessions exist in a live deployment (unit-tested and RLS-backed this pass, not live-tested; do not assume safe by default).
+- Live provider/connector testing (Gmail, Microsoft, Notion, enterprise connectors) once credentials are available -- Sprint 3 only confirmed provider-gated *states* by code audit.
+- Minor, out-of-scope tech debt noted during Sprint 1 verification, still open: Next.js 16 reports `middleware.ts` as a deprecated convention in favor of `proxy.ts` (build warning only, not a failure); the original 2026-07-02 initial-schema Supabase migration has one permissive `using (true)` RLS predicate flagged by `supabase:verify` as a warning. Neither blocks any sprint's exit criteria so far.
+- Recommended Sprint 4 focus: demo/live data separation and navigation integrity (onboarding progress consistency, sidebar badge/tenant-state mismatch -- note the Approvals sidebar badge showing "23" against a zero-record tenant is F-020, still open) per `docs/BETA_QA_5_SPRINT_REMEDIATION_CHECKLIST_2026_07_22.md`.
+
 ## Canonical Workspace Migration And Documentation Governance
 
 This repository now records the consolidation of Codex Sprint 1-32 work and later Claude Code work into the canonical AXXESS workspace.

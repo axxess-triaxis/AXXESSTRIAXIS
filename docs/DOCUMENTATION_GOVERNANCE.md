@@ -180,7 +180,30 @@ As of the canonical workspace migration documented in `docs/CANONICAL_WORKSPACE_
 
 - The canonical active local workspace is `C:\Users\Sudipta Sarmah\OneDrive - State Bank of India\Documents\AXXESS-TRIAXIS`.
 - The GitLab repository `https://gitlab.com/triaxis-ventures-private-limited-group/axxess-triaxis` contains the unified Sprint 1-32 Codex work plus later Claude work.
-- The final verified migration commit is `615faf218fbfe538dcdcd1eb1a079ee05ad65b4b`.
-- Physical duplicate-workspace archival remains subject to the operating system releasing the old `C:\Users\Sudipta Sarmah\Downloads\Claude` folder lock.
+- The final verified migration commit before documentation-governance follow-up was `615faf218fbfe538dcdcd1eb1a079ee05ad65b4b`.
+- The later documentation-governance commit is `df60399888d5d70936a05c1322eb0e9dee83521d`.
+- The old `C:\Users\Sudipta Sarmah\Downloads\Claude` workspace has been archived to `C:\Users\Sudipta Sarmah\Downloads\Claude.migrated-archive-20260722`.
+- The migration record documents the reason for migration, branch ancestry evidence, safeguards, GitLab verification, verification gates, Supabase schema posture, physical archive process, caveats and final completion status.
+- GitHub remains the intended primary source-of-truth and auditable public record, with GitLab maintained as mirror/fallback continuity while the GitHub suspension appeal remains pending.
+- The GitHub suspension appeal context is documented in `docs/GITHUB_INDEPENDENT_OPERATIONS.md`.
 
-Until that old folder is archived or removed, the code migration is complete but the physical workspace deduplication should not be described as fully complete.
+The correct current status is:
+
+`Complete: canonical workspace migration, GitLab synchronization and physical duplicate-workspace archival concluded successfully.`
+
+## Migration Documentation Standard
+
+Future migrations must follow the same evidence standard used for the canonical workspace migration:
+
+- State why the migration is necessary.
+- Name the source and destination systems.
+- Preserve historical source material unless deletion is explicitly approved and documented.
+- Verify branch, commit and remote state.
+- Record safeguards used to prevent data loss or accidental overwrite.
+- Run applicable type, lint, test, build, schema and deployment checks.
+- Document database, RLS and schema implications.
+- Separate migration completion from unrelated follow-up product fixes.
+- Record caveats and future hardening items.
+- Use precise status language.
+
+This standard exists because repository, workspace, database and deployment migrations are part of the product's enterprise governance posture, not merely developer housekeeping.

@@ -133,6 +133,80 @@ describe("Supabase enterprise repositories", () => {
     expect(String(init?.body)).toContain("Sprint 7 Workflow");
   });
 
+  it("ignores a spoofed organizationId on create for a non-Super-Admin tenant scope (cross-tenant write blocked)", async () => {
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify([{
+      id: "project_3",
+      organization_id: "org_public_safety",
+      name: "Isolated Tenant Project",
+      owner_id: "user_raj_anand",
+      progress: 0,
+      risk_level: "medium",
+      priority: "medium",
+      status: "planning",
+      tags: [],
+    }]), { status: 201 }));
+    vi.stubGlobal("fetch", fetchMock);
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://example.supabase.co");
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY", "anon-key");
+
+    await projectsRepository.create({ ...scope, accessToken: "server-token" }, {
+      organizationId: "org_someone_elses_tenant",
+      name: "Isolated Tenant Project",
+      ownerId: "user_raj_anand",
+      priority: "medium",
+      riskLevel: "medium",
+      status: "planning",
+      tags: [],
+    });
+
+    const [, init] = fetchCall(fetchMock);
+    expect(String(init?.body)).toContain("org_public_safety");
+    expect(String(init?.body)).not.toContain("org_someone_elses_tenant");
+  });
+
+  it("honors an explicit organizationId on create only for Super Admin scopes", async () => {
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify([{
+      id: "project_4",
+      organization_id: "org_platform_target",
+      name: "Cross-Org Admin Project",
+      owner_id: "user_raj_anand",
+      progress: 0,
+      risk_level: "medium",
+      priority: "medium",
+      status: "planning",
+      tags: [],
+    }]), { status: 201 }));
+    vi.stubGlobal("fetch", fetchMock);
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://example.supabase.co");
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY", "anon-key");
+
+    const superAdminScope: TenantScope = { ...scope, role: "Super Admin", accessToken: "server-token" };
+    await projectsRepository.create(superAdminScope, {
+      organizationId: "org_platform_target",
+      name: "Cross-Org Admin Project",
+      ownerId: "user_raj_anand",
+      priority: "medium",
+      riskLevel: "medium",
+      status: "planning",
+      tags: [],
+    });
+
+    const [, init] = fetchCall(fetchMock);
+    expect(String(init?.body)).toContain("org_platform_target");
+  });
+
+  it("always scopes project reads to the requesting tenant, ignoring any other organization in the query", async () => {
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify([]), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://example.supabase.co");
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY", "anon-key");
+
+    await projectsRepository.list({ ...scope, accessToken: "server-token" });
+
+    const [url] = fetchCall(fetchMock);
+    expect(String(url)).toContain("organization_id=eq.org_public_safety");
+  });
+
   it("updates tasks through Supabase REST when a server access token is supplied", async () => {
     const fetchMock = vi.fn(async () => new Response(JSON.stringify([
       {
