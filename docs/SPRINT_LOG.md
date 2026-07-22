@@ -305,7 +305,7 @@ Live provider evidence:
 - `npx vercel env ls production` (before fix) -- confirmed `NEXT_PUBLIC_AXXESS_AUTH_SHELL`/`NEXT_PUBLIC_AXXESS_DEMO_MODE` absent from the 16 listed production variables.
 - `npx vercel env add NEXT_PUBLIC_AXXESS_AUTH_SHELL production` (value `true`) and `npx vercel env add NEXT_PUBLIC_AXXESS_DEMO_MODE production` (value `false`) -- both confirmed added via a follow-up `env ls`.
 - Live browser replay (Browser tool) against `beta.triaxisventures.com`: screenshots and a captured network-request log showing the F-001/F-003/F-021 symptoms live, before the redeploy.
-- `pnpm run vercel:deploy:production` -- see `docs/SPRINT_5_CLOSEOUT_2026_07_22.md` for the resulting deployment ID/URL.
+- `pnpm run vercel:deploy:production` -- first attempt (deployment `dpl_6PVJJDfsxLJrgrsKDTRYR4VzrtKH`) **failed** with `{"status":"error","reason":"deploy_failed","message":"...getaddrinfo ENOTFOUND api.vercel.com"}` -- a transient local DNS/network resolution failure (confirmed by `curl`/`nslookup` against `api.vercel.com` succeeding normally moments later), not a code, configuration, or Vercel-side problem. A second attempt was made once connectivity was confirmed restored; see `docs/SPRINT_5_CLOSEOUT_2026_07_22.md` for that attempt's outcome.
 
 Diligence evidence:
 
