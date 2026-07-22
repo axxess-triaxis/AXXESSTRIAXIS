@@ -1346,6 +1346,8 @@ The package includes:
 
 The remediation program covers auth integrity, protected routes, tenant-backed persistence, workspace loading hardening, demo/live data separation, navigation integrity, request deduplication and live beta replay. Completion requires documented tests, lint checks, build verification, Supabase verification, mobile release-gate checks and due-diligence evidence.
 
+As of Sprint 5 (2026-07-22), all 20 actionables are closed locally, and a live browser replay against `beta.triaxisventures.com` confirmed the production deployment was still running pre-Sprint-1 code -- the missing production environment variables were set and a live Vercel production redeploy was executed with explicit user approval. A scripted two-tenant isolation harness (`scripts/verify-two-tenant-isolation.mjs`) exists but has not yet been executed against a real database. See `docs/SPRINT_5_CLOSEOUT_2026_07_22.md` for full evidence and `docs/SPRINT_1_TO_4_GAP_ANALYSIS_2026_07_22.md` for the detailed gap analysis this sprint was scoped against.
+
 ## Next Milestone Gates
 
 The next five milestone gates are documented in `docs/NEXT_5_MILESTONES_BETA_AND_MOBILE_RELEASE.md`.

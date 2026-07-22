@@ -36,28 +36,58 @@ describe("tenant-scoped repository gateway API (Sprint 2 -- POST /api/repositori
 
   it("writes audit and workflow-timeline evidence for a real project creation (F-004/F-005 regression)", () => {
     const postBlock = routeSource.slice(routeSource.indexOf("export async function POST"), routeSource.indexOf("export async function PATCH"));
-    expect(postBlock).toContain('if (resourceName === "projects") {');
-    expect(postBlock).toContain("await recordProjectCreateEvidence(scope, result);");
+    expect(postBlock).toContain("await recordResourceCreateEvidence(resourceName, scope, result);");
 
     const evidenceBlock = routeSource.slice(
-      routeSource.indexOf("async function recordProjectCreateEvidence"),
+      routeSource.indexOf("async function recordResourceCreateEvidence"),
       routeSource.indexOf("export async function GET"),
     );
-    expect(evidenceBlock).toContain('action: "project.created"');
-    expect(evidenceBlock).toContain('resourceType: "project"');
-    expect(evidenceBlock).toContain("resourceId: projectId");
     expect(evidenceBlock).toContain("auditLogsRepository.record(scope");
     expect(evidenceBlock).toContain("recordWorkflowTimelineEvent(");
     expect(evidenceBlock).toContain("actorUserId: scope.userId");
     expect(evidenceBlock).toContain("actorLabel: scope.role");
+
+    const configBlock = routeSource.slice(
+      routeSource.indexOf("const EVIDENCE_RESOURCE_CONFIG"),
+      routeSource.indexOf("async function recordResourceCreateEvidence"),
+    );
+    expect(configBlock).toContain('projects: { singular: "project", actionVerb: "project.created"');
   });
 
-  it("never fails project creation if audit/timeline recording fails", () => {
+  it("never fails resource creation if audit/timeline recording fails", () => {
     const evidenceBlock = routeSource.slice(
-      routeSource.indexOf("async function recordProjectCreateEvidence"),
+      routeSource.indexOf("async function recordResourceCreateEvidence"),
       routeSource.indexOf("export async function GET"),
     );
     const catchCount = (evidenceBlock.match(/\.catch\(\(\) => undefined\)/g) ?? []).length;
     expect(catchCount).toBeGreaterThanOrEqual(2);
+  });
+
+  it("extends audit/timeline evidence beyond projects to tasks, documents, knowledge articles and meetings (Sprint 5, gap-analysis Section 2)", () => {
+    const configBlock = routeSource.slice(
+      routeSource.indexOf("const EVIDENCE_RESOURCE_CONFIG"),
+      routeSource.indexOf("async function recordResourceCreateEvidence"),
+    );
+    expect(configBlock).toContain('tasks: { singular: "task", actionVerb: "task.created"');
+    expect(configBlock).toContain('documents: { singular: "document", actionVerb: "document.created"');
+    expect(configBlock).toContain('knowledge_articles: { singular: "knowledge_article", actionVerb: "knowledge_article.created"');
+    expect(configBlock).toContain('meetings: { singular: "meeting", actionVerb: "meeting.created"');
+  });
+
+  it("only writes evidence after createRepositoryResource has already succeeded, never before or on a thrown error", () => {
+    const postBlock = routeSource.slice(routeSource.indexOf("export async function POST"), routeSource.indexOf("export async function PATCH"));
+    const createIndex = postBlock.indexOf("await createRepositoryResource(resourceName, scope, body)");
+    const evidenceIndex = postBlock.indexOf("await recordResourceCreateEvidence(resourceName, scope, result);");
+    expect(createIndex).toBeGreaterThan(-1);
+    expect(evidenceIndex).toBeGreaterThan(createIndex);
+  });
+
+  it("does not write evidence for resource types outside EVIDENCE_RESOURCE_CONFIG (e.g. organizations, users, notifications)", () => {
+    const evidenceBlock = routeSource.slice(
+      routeSource.indexOf("async function recordResourceCreateEvidence"),
+      routeSource.indexOf("export async function GET"),
+    );
+    expect(evidenceBlock).toContain("const config = EVIDENCE_RESOURCE_CONFIG[resourceName];");
+    expect(evidenceBlock).toContain("if (!config) return;");
   });
 });

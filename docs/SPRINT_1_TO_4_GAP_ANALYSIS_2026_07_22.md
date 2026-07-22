@@ -1,5 +1,7 @@
 # Sprint 1-4 Gap Analysis - What The Roadmap And Checklist Say Is Still Missing - 2026-07-22
 
+**Sprint 5 update (2026-07-22):** this document is left as-is below, frozen at its original end-of-Sprint-4 state, since it is itself a piece of evidence about what that state was. Sprint 5 closed several of the gaps identified here: F-021 (Dashboard duplicate requests, Section 7/8), the Social Alerts formal audit (Section 4), audit/timeline evidence beyond `projects` (Section 2), and the two recurring tech-debt warnings (Section 5). It also converted the single largest caveat repeated throughout this document -- "no sprint has ever run against a live deployment" -- into a real, executed live browser replay against `beta.triaxisventures.com`, which confirmed the production deployment was still running pre-Sprint-1 code, and then redeployed it. The live two-tenant isolation test (Section 6/priority #2) was written as an executable harness in Sprint 5 but still has not been *run* against a real database -- that gap survives Sprint 5 exactly as described below. See `docs/SPRINT_5_CLOSEOUT_2026_07_22.md` for the full detail.
+
 ## Purpose
 
 This document answers one question directly: **across Sprints 1, 2, 3 and 4, what has the five-sprint remediation program *not* done yet**, measured against its own governing documents:
