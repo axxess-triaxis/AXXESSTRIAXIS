@@ -1340,6 +1340,16 @@ This supports:
 - Compliance assessments
 - Long-term maintainability
 
+AXXESS documentation is now governed by `docs/DOCUMENTATION_GOVERNANCE.md`. Future work must be documented for five review audiences:
+
+- Technical reviewers
+- Investors assessing technical and engineering capability
+- Enterprise buyers
+- Investor or technical due diligence teams
+- Government, sovereign and regulated stakeholders
+
+Every material sprint, production fix, data model change, AI workflow change, integration change, deployment change and release process change should document what changed, why it changed, how it was verified, what remains provider-gated, and which risks remain.
+
 ---
 
 ## Operational Evidence by Default
@@ -2252,7 +2262,7 @@ Engineering changes are expected to satisfy all quality gates before merge.
 
 # Current Engineering Status
 
-As of Sprint 32:
+As of Sprint 32 plus the canonical GitLab workspace migration:
 
 - Governance runtime implemented
 - Provider routing implemented
@@ -2292,8 +2302,14 @@ As of Sprint 32:
 - Crash and release health monitoring implemented
 - Staged rollout controls implemented
 - Mobile store release readiness gate implemented
+- Canonical local workspace verified at `C:\Users\Sudipta Sarmah\OneDrive - State Bank of India\Documents\AXXESS-TRIAXIS`
+- GitLab `main`, `canonical/sprint-1-35-unified-gitlab` and `fix/live-tenant-onboarding-and-rag-walkthrough` verified at migration commit `615faf218fbfe538dcdcd1eb1a079ee05ad65b4b`, before this documentation-governance follow-up
+- Documentation governance standard added for technical review, investor review, enterprise buying, due diligence and sovereign/public-sector audit audiences
 
-The engineering focus now shifts from mobile store launch readiness to live store reviewer automation, automated screenshot capture artifacts, crash provider wiring, production support telemetry, staged rollout runbooks and production tenant expansion.
+The engineering focus now shifts from mobile store launch readiness and repository consolidation to live store reviewer automation, automated screenshot capture artifacts, crash provider wiring, production support telemetry, staged rollout runbooks, production tenant expansion and continuously auditable documentation.
+
+---
+
 # Deployment, Operations & Product Roadmap
 
 AXXESS is designed to support enterprise deployments that evolve from early design-partner environments to production-grade regulated workloads. The deployment philosophy emphasizes repeatability, governance, operational visibility and gradual hardening rather than maximizing deployment speed at the expense of long-term maintainability.
@@ -2307,6 +2323,24 @@ response to a real incident (the original GitHub account behind this repo was su
 mid-project), not a hypothetical design goal. See `docs/GITHUB_INDEPENDENT_OPERATIONS.md` for the
 full control-plane map, and `docs/ENVIRONMENT_VARIABLES.md` for the environment-variable checklist
 across local development, Vercel, Supabase, GitLab CI, and mobile builds.
+
+## Canonical Workspace And Repository State
+
+The canonical active local workspace is:
+
+```text
+C:\Users\Sudipta Sarmah\OneDrive - State Bank of India\Documents\AXXESS-TRIAXIS
+```
+
+The GitLab repository used for verified continuity pushes is:
+
+```text
+https://gitlab.com/triaxis-ventures-private-limited-group/axxess-triaxis
+```
+
+The canonical migration record is maintained in `docs/CANONICAL_WORKSPACE_MIGRATION.md`.
+
+Important status note: the code migration, GitLab synchronization and verification were completed at migration commit `615faf218fbfe538dcdcd1eb1a079ee05ad65b4b`; however, physical deduplication is only fully complete after the old `C:\Users\Sudipta Sarmah\Downloads\Claude` folder is archived or removed once the operating system releases its folder lock.
 
 ---
 
@@ -3110,6 +3144,8 @@ Organizations should retain the ability to adopt new AI providers without rebuil
 Documentation is part of the product.
 
 Future engineers, customers and auditors should understand not only *what* the platform does but *why* specific architectural decisions were made.
+
+From the canonical workspace migration onward, documentation must also make each significant change useful to technical reviewers, investors, enterprise buyers, due diligence reviewers and government or sovereign stakeholders. The standing rule is maintained in `docs/DOCUMENTATION_GOVERNANCE.md`.
 
 ---
 
