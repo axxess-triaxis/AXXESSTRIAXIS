@@ -1,5 +1,7 @@
 # Local Post-Sprint Automation
 
+For how this fits alongside GitHub Actions, GitLab CI, and GitLab Duo Code Review -- including a full "what is and isn't automated" breakdown -- see `docs/AUTOMATION_OVERVIEW.md`.
+
 ## Purpose
 
 This automation exists to catch regressions and confirm the app still builds/deploys correctly on a regular cadence, **independent of whether GitHub or GitLab are reachable** -- both have had availability incidents during this project (see `docs/GITLAB_MIRROR.md`). It runs entirely on the local development machine using already-authenticated CLIs; it does not fetch, pull, or push any git remote.
