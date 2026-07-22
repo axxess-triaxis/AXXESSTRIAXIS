@@ -4,6 +4,9 @@ All notable changes to AXXESS are documented here. This project follows the spir
 
 ## Unreleased
 
+- Added canonical workspace migration record documenting the Codex Sprint 1-32 workspace, later Claude workspace, unified GitLab state, verification evidence, remaining duplicate-folder lock, and final verified commit `615faf218fbfe538dcdcd1eb1a079ee05ad65b4b`.
+- Added documentation governance standard requiring future work to document changes for technical reviewers, investors, enterprise buyers, due diligence teams, and government or sovereign stakeholders.
+- Updated engineering workflow and GitLab continuity documentation to reflect the verified GitLab remote, CLI/API deployment strategy, fast-forward-only safety policy, and documentation-as-product requirements.
 - Added Sprint 32 Mobile Store Launch Console for full-stack release readiness across Android, iOS, store metadata, reviewer access, screenshots, release health and staged rollout controls.
 - Added role-protected `GET /api/admin/mobile-release` and `POST /api/admin/mobile-release` for mobile release snapshots and audit-backed operator actions.
 - Added Sprint 32 Supabase migration for `mobile_release_runs`, `mobile_store_listings`, `mobile_reviewer_accounts`, `mobile_crash_events`, and `mobile_rollout_events` with tenant-scoped RLS.
