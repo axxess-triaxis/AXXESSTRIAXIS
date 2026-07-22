@@ -140,6 +140,7 @@ As documented by the user, covering the full Sprint 1-41 program to date:
 | GitHub | Free | -- |
 | GitLab | Free | -- |
 | VS Code | Free | -- |
+| Capacitor | Free | -- |
 | **Total product/dev/web spend** | **≈$220** | |
 
 This covers the entire program's tooling cost from Sprint 1 (Codex) through Sprint 41 (QA 2) -- an enterprise-grade, 41-sprint product and QA remediation program, including a full-stack mobile-ready enterprise SaaS product, a 30-respondent enterprise beta with 1,200+ actionable feedback points and NPS 80+, an independent exhaustive QA audit, and a five-round live-verification remediation program, delivered for approximately $220 in total tooling spend.
