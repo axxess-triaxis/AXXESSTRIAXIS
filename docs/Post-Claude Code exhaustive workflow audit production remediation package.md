@@ -221,4 +221,9 @@ Sprint 4 closeout (cumulative Sprint 1+2+3+4 findings ledger, isolated
 Sprint 4 delta, composite Sprint 1+2+3+4 delta, and a full inventory of
 everything still unchecked across the roadmap and five-sprint checklist):
 docs/SPRINT_4_CLOSEOUT_2026_07_22.md.
+Dedicated Sprint 1-4 gap analysis (sprint-by-sprint review of what each
+sprint left undone within its own scope, cross-cutting structural gaps,
+consolidated roadmap-phase and actionable-status tables, and a
+leverage-ranked priority list for what to close next):
+docs/SPRINT_1_TO_4_GAP_ANALYSIS_2026_07_22.md.
 ```

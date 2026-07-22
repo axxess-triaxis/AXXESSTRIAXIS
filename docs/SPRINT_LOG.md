@@ -261,6 +261,7 @@ Diligence evidence:
 - Re-run the same QA walkthrough on `beta.triaxisventures.com` after redeploy.
 - Decide whether Social Alerts and Approvals sidebar counts should get a real live-tenant data source (Sprint 5 candidate) or remain permanently Demo-Mode-only.
 - Actionable 20 (deduplicate repeated Dashboard API requests) is the only one of the original 20 QA actionables not yet addressed -- primary recommended Sprint 5 focus, alongside the golden-path replay and two-tenant isolation work already scoped there.
+- A dedicated Sprint 1-4 gap analysis (`docs/SPRINT_1_TO_4_GAP_ANALYSIS_2026_07_22.md`) reviews, sprint by sprint, everything each sprint left undone within its own declared scope -- including a code-verified finding that audit/timeline evidence (Sprint 2) is wired for the `projects` resource only, not the 15 other resource types the generic repository route also handles, and that no live two-tenant isolation test exists anywhere in the repository.
 
 ## Canonical Workspace Migration And Documentation Governance
 
