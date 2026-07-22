@@ -27,12 +27,13 @@ flowchart TB
 
     gitlab -->|".gitlab-ci.yml"| ci["GitLab CI\n(typecheck/lint/test/build,\nsupabase verify, pnpm audit)"]
 
-    github["GitHub (github remote)\nread-only fallback, not depended on"] -.->|"fetch only, when reachable"| gitlab
+    github["GitHub (origin remote)\nhistorical continuity, not depended on"] -.->|"fetch only, when reachable"| gitlab
 ```
 
-Nothing in this diagram requires GitHub. It's kept as a remote (`github`, renamed from `origin`
-during the migration -- see `docs/GITLAB_MIRROR.md`) purely as a read source when it's reachable,
-never as a dependency for deploying, migrating, building, or tracking work.
+Nothing in this diagram requires GitHub. GitHub remains configured for historical continuity where
+reachable, while GitLab is the verified writable continuity remote documented in
+`docs/GITLAB_MIRROR.md` and `docs/CANONICAL_WORKSPACE_MIGRATION.md`. Neither remote is a
+dependency for deploying, migrating, building, or tracking work.
 
 ## Per-tool quick reference
 
@@ -40,7 +41,7 @@ never as a dependency for deploying, migrating, building, or tracking work.
 |---|---|---|---|
 | Vercel | Hosts the web app | `pnpm run vercel:deploy:preview` / `:production` | `docs/VERCEL_DEPLOYMENT.md` |
 | Supabase | Postgres, Auth, Storage backend | `pnpm run supabase:migrate:remote[:apply]` | `docs/SUPABASE_CLI.md` |
-| GitLab | Version control + CI (the new `origin`) | `pnpm run gitlab:mirror[:dry-run]` | `docs/GITLAB_MIRROR.md` |
+| GitLab | Version control continuity remote + CI | `pnpm run gitlab:mirror[:dry-run]` | `docs/GITLAB_MIRROR.md` |
 | GitLab CI | Automated typecheck/lint/test/build/audit | `.gitlab-ci.yml` (runs automatically on push/MR) | This document, section below |
 | Capacitor | iOS/Android native app builds | `pnpm run mobile:capacitor:*` | `docs/MOBILE_RELEASE_RUNBOOK.md` |
 | Linear | Sprint/actionable tracking | `pnpm run linear:sync` | `docs/LINEAR_SYNC.md` |
@@ -49,9 +50,10 @@ never as a dependency for deploying, migrating, building, or tracking work.
 
 Built, tested, and confirmed working end to end in this environment:
 
-- **GitLab as the writable remote.** All local branches and tags pushed and tracked correctly
-  (`docs/GITLAB_MIRROR.md`), though a known gap was found and documented there: local `main` had
-  drifted behind the true GitHub history at the time of the initial migration push.
+- **GitLab as the verified writable continuity remote.** The canonical migration pushed the unified
+  workspace to GitLab and verified `main`, `canonical/sprint-1-35-unified-gitlab`, and
+  `fix/live-tenant-onboarding-and-rag-walkthrough` at commit
+  `615faf218fbfe538dcdcd1eb1a079ee05ad65b4b`.
 - **Vercel CLI deploy.** Already authenticated on this machine, project already linked
   (`.vercel/project.json`), `scripts/deploy-vercel.mjs` runs the same quality gates CI does before
   deploying.

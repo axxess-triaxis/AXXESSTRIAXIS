@@ -1,5 +1,49 @@
 # Sprint Log
 
+## Canonical Workspace Migration And Documentation Governance
+
+This repository now records the consolidation of Codex Sprint 1-32 work and later Claude Code work into the canonical AXXESS workspace.
+
+### Completed
+
+- Verified `C:\Users\Sudipta Sarmah\OneDrive - State Bank of India\Documents\AXXESS-TRIAXIS` as the active canonical workspace.
+- Confirmed later Claude work from `C:\Users\Sudipta Sarmah\Downloads\Claude` descended from the Codex Sprint 32 history.
+- Created and pushed `canonical/sprint-1-35-unified-gitlab`.
+- Fast-forwarded GitLab `main` and `fix/live-tenant-onboarding-and-rag-walkthrough` to the same verified commit.
+- Removed the temporary local `downloads-local` remote from the canonical workspace.
+- Added `docs/CANONICAL_WORKSPACE_MIGRATION.md` for migration provenance, verification evidence and remaining physical dedupe status.
+- Added `docs/DOCUMENTATION_GOVERNANCE.md` as the standing documentation standard for future work.
+- Updated README, changelog, GitLab mirror docs and engineering workflow docs to make the repository useful to technical reviewers, investors, enterprise buyers, due diligence teams and government or sovereign stakeholders.
+
+### Verified
+
+```text
+pnpm run typecheck
+pnpm --dir apps/mobile run typecheck
+pnpm run lint
+pnpm run test
+pnpm run build
+pnpm run supabase:verify
+pnpm run mobile:store:release-gate
+pnpm run mobile:capacitor:store:doctor
+```
+
+The final verified migration commit before this documentation pass was:
+
+```text
+615faf218fbfe538dcdcd1eb1a079ee05ad65b4b
+```
+
+### Remaining Risk
+
+The old `C:\Users\Sudipta Sarmah\Downloads\Claude` folder still existed when the migration record was created. Archival was attempted, but Windows blocked the rename because another process had the folder open.
+
+Until that folder is archived or removed, the correct status is:
+
+```text
+Code migration complete; physical deduplication pending OS folder unlock.
+```
+
 ## Sprint 32 - Mobile Store Launch Console And Full-Stack Release Readiness
 
 Sprint 32 turns Sprint 31's store-ready Capacitor build lane into a product-facing release operations console. It covers store listing packs, reviewer access, screenshot evidence, release health monitoring, staged rollout controls, tenant-scoped persistence and a dedicated release readiness gate.
