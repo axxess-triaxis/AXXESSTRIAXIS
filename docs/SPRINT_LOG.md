@@ -88,6 +88,50 @@ Diligence evidence:
 - Investor preview login was exercised indirectly through the `/auth` page's "Open investor preview" flow already present in code and covered by the demo-mode test suite; it was not manually re-tested against a live deployment in this pass.
 - Exit criteria met locally: fresh browser (no cookies/session) redirected to `/auth` by `src/middleware.ts` and shown the real login form; `/auth` never renders "Signed in" without a real session; logout clears client state and does not rehydrate; protected routes (`/dashboard`, `/projects`, `/admin/*`, etc.) block unauthenticated access at the edge; client session state and `/api/auth/session` agree; Demo Mode and Investor Preview remain explicit, opt-in and labeled; no P0 auth finding from the QA report reproduces locally.
 
+### Sprint 2 Complete - Live Tenant Persistence And Golden Path Writes - 2026-07-22
+
+Objective: prove a real authenticated tenant can create durable records and that the system records evidence of the action, addressing the QA repro `POST /api/repositories/projects -> 401`.
+
+This sprint turned out smaller than the prompt anticipated: auditing the repository/API/RLS layer that handles project creation found that persistence, refresh survival, unauthenticated-failure handling and tenant-scoped filtering were **already correct** before this sprint started (the `401` in the QA repro was the same root cause as Sprint 1's F-001, not a separate defect). The one genuine gap was evidence, not persistence.
+
+Changes:
+
+- Audited `src/app/api/repositories/[resource]/route.ts`, `src/repositories/supabaseEnterpriseRepositories.ts`, `src/services/workflows/liveTenantWorkflow.ts`, and the `projects`/`audit_logs`/`workflow_timeline_events` RLS policies in `supabase/migrations/20260702165736_initial_enterprise_schema.sql` and `supabase/migrations/20260716091356_sprint27_live_tenant_workflow_execution.sql`.
+- Confirmed already-correct, unchanged: `projectsRepository.create` writes real Supabase-backed rows via authenticated REST (not local state); `ProjectsSection.tsx` reloads the project list from the repository after save (survives refresh); the POST/PATCH/GET handlers return `401` before constructing any tenant scope when unauthenticated; `organizationIdForMutation` ignores a client-supplied `organizationId` for every role except Super Admin; the `projects` table's RLS policies (`projects_member_select` / `projects_manager_write`) independently enforce the same tenant boundary at the database level.
+- Fixed the actual gap: added `recordProjectCreateEvidence` in `src/app/api/repositories/[resource]/route.ts`, called after a successful `projects` create. It writes an `audit_logs` row (`action: "project.created"`, `resourceType: "project"`, `resourceId`, `category: "project-management"`) via `auditLogsRepository.record`, then a `workflow_timeline_events` row (`eventType: "workflow_action_created"`, `resourceType: "project"`, actor/tenant/target fields) via `recordWorkflowTimelineEvent` -- reusing the exact same functions already used for AI-review-approved actions, so no new architecture was introduced.
+- Added tests: `src/repositories/supabaseEnterpriseRepositories.test.ts` (+3: spoofed-`organizationId` create ignored for non-Super-Admin, honored for Super Admin, tenant-scoped read filter), `src/app/api/repositories/[resource]/route.test.ts` (new file, 6 tests: unauthenticated 401 across all three verbs, scope-from-session not from body, validation + 201 response shape, role-gated write, audit+timeline evidence wiring, best-effort error handling), `src/features/projects/ProjectsSection.test.ts` (new file, 4 tests: real persistence path, visible success/error states, refresh-survival via reload, Demo Mode separation).
+
+### Sprint 2 Verification Evidence - 2026-07-22
+
+```text
+pnpm run typecheck                        PASS
+pnpm --dir apps/mobile run typecheck      PASS
+pnpm run lint                             PASS (zero warnings)
+pnpm run test                             PASS (98 test files, 299 tests, 0 failed --
+                                           up from 96/286 before this sprint)
+pnpm run build                            PASS (114 routes; same pre-existing Next.js 16
+                                           middleware-to-proxy deprecation warning as
+                                           Sprint 1, unrelated to this sprint)
+pnpm run supabase:verify                  PASS (27 migrations, 100 tables, 100 RLS-protected;
+                                           same single pre-existing warning as Sprint 1 --
+                                           no migration was added or changed this sprint)
+pnpm run mobile:store:release-gate        PASS
+pnpm run mobile:capacitor:store:doctor    PASS
+```
+
+Diligence evidence:
+
+- Affected files: `src/app/api/repositories/[resource]/route.ts` (implementation), `src/repositories/supabaseEnterpriseRepositories.test.ts`, `src/app/api/repositories/[resource]/route.test.ts` (new), `src/features/projects/ProjectsSection.test.ts` (new).
+- Affected routes: `POST /api/repositories/projects` only (the specific QA repro). `GET`/`PATCH` and other resources on the same route file were audited but not modified.
+- Affected repositories/services: `projectsRepository`, `auditLogsRepository`, `recordWorkflowTimelineEvent` (all pre-existing, used as-is).
+- Affected database tables: none modified. Reads/writes flow into the pre-existing `projects`, `audit_logs`, `workflow_timeline_events` tables.
+- Affected RLS policies: none added or changed. Confirmed the pre-existing `projects_member_select`/`projects_manager_write`, `audit_logs_admin_select`/`audit_logs_system_insert`, and `workflow_timeline_events_member_select`/`workflow_timeline_events_member_insert` policies already enforce tenant isolation independently of this change.
+- Migrations added: none.
+- Audit event format: `{ organization_id, actor_user_id, actor_role, action: "project.created", resource_type: "project", resource_id, category: "project-management", metadata: { name } }`.
+- Workflow/timeline event format: `{ organizationId, resourceType: "project", resourceId, eventType: "workflow_action_created", title: "Project created", actorUserId, actorLabel: role, sourceType: "project", sourceId, auditLogId, metadata: { name } }`.
+- Live-provider verification status: **not performed.** No live Supabase project was used to create a real project and confirm the audit/timeline rows land correctly; all evidence is from mocked-fetch unit tests and the code-path audit above.
+- Remaining caveats: the exact QA repro (create a project as a real authenticated user against a live Supabase-backed deployment, then check Audit Logs and the dashboard timeline) has not been re-run live. Two-tenant isolation is proven at the query/mutation-logic level (unit tests) and independently by RLS, but not by provisioning two real tenants and testing live cross-access.
+
 ### QA Scores Recorded
 
 ```text
@@ -97,6 +141,8 @@ Investor demo readiness: 35/100
 Pilot customer readiness: 12/100
 ```
 
+(Scores as originally reported by the raw QA artifact; see `docs/SPRINT_1_CLOSEOUT_2026_07_22.md` for reasoned, explicitly-not-live-verified projections after Sprint 1. Sprint 2's fix is evidence/audit-trail only and would not by itself move any golden-path pass/fail step recorded in the original QA report -- project creation was already architecturally functional before this sprint; Sprint 2 makes it auditable, which principally affects Enterprise/Pilot readiness once live-verified, not Beta/Investor readiness.)
+
 ### Remaining Follow-Up
 
 - Verify Vercel beta env vars and redeploy (Sprint 1 fix is local/repository-only; live beta has not yet been redeployed or re-tested).
@@ -104,10 +150,10 @@ Pilot customer readiness: 12/100
 - Add defensive timeout/error states to every fetch-driven workspace (Sprint 3 scope, F-006-F-014).
 - Normalize unauthorized error rendering (Sprint 3 scope, F-016).
 - Re-test `/documents` and `/knowledge` after deployment to confirm distinct visual behavior.
-- Re-test a real Supabase tenant write path end to end, including audit/timeline evidence (Sprint 2 scope, F-004/F-005).
-- Re-verify tenant isolation with two real tenants once real sessions exist in a live deployment (untested this pass; do not assume safe by default).
-- Minor, out-of-scope tech debt noted during Sprint 1 verification: Next.js 16 reports `middleware.ts` as a deprecated convention in favor of `proxy.ts` (build warning only, not a failure); the original 2026-07-02 initial-schema Supabase migration has one permissive `using (true)` RLS predicate flagged by `supabase:verify` as a warning. Neither blocks Sprint 1 exit criteria; both are candidates for a future sprint.
-- Recommended Sprint 2 focus: live tenant persistence and golden-path writes (re-test project creation end to end against a real Supabase tenant, confirm audit/timeline evidence, confirm cross-tenant isolation) per `docs/BETA_QA_5_SPRINT_REMEDIATION_CHECKLIST_2026_07_22.md`.
+- Re-test a real Supabase tenant write path end to end against a live deployment, confirming the audit/timeline rows actually land as expected (Sprint 2 fix is unit-tested only, not live-verified).
+- Re-verify tenant isolation with two real, provisioned tenants once real sessions exist in a live deployment (unit-tested and RLS-backed this pass, not live-tested; do not assume safe by default).
+- Minor, out-of-scope tech debt noted during Sprint 1 verification, still open: Next.js 16 reports `middleware.ts` as a deprecated convention in favor of `proxy.ts` (build warning only, not a failure); the original 2026-07-02 initial-schema Supabase migration has one permissive `using (true)` RLS predicate flagged by `supabase:verify` as a warning. Neither blocks Sprint 1 or Sprint 2 exit criteria.
+- Recommended Sprint 3 focus: workspace loading and error-state hardening (eliminate the nine indefinite-loading workspaces and normalize raw `Unauthorized.` error text) per `docs/BETA_QA_5_SPRINT_REMEDIATION_CHECKLIST_2026_07_22.md`.
 
 ## Canonical Workspace Migration And Documentation Governance
 

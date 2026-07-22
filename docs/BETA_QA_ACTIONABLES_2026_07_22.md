@@ -180,6 +180,8 @@ Acceptance:
 - The project appears after refresh.
 - Audit and activity timeline records are written.
 
+Status: Closed locally in Sprint 2 (2026-07-22). Confirmed `projectsRepository.create` already wrote real Supabase-backed project rows via authenticated REST (not local state), and `ProjectsSection.tsx` already reloaded the project list from the repository after save (so a created project survives refresh) -- both pre-existing and unchanged. The actual gap was that `POST /api/repositories/projects` never wrote audit or workflow-timeline evidence; added `recordProjectCreateEvidence` in `src/app/api/repositories/[resource]/route.ts`, which calls `auditLogsRepository.record` (action `project.created`) and `recordWorkflowTimelineEvent` (event type `workflow_action_created`) after a successful project create. Regression-tested in `src/app/api/repositories/[resource]/route.test.ts` and `src/features/projects/ProjectsSection.test.ts`. The exact QA repro (creating a project as a real authenticated user against a live Supabase project) was not re-run against a live deployment this pass -- only local/test-fixture verification.
+
 ### 6. Audit All Tenant-Scoped API Routes For Session Agreement
 
 Severity: P0
@@ -200,7 +202,7 @@ Acceptance:
 - Tenant routes return controlled auth responses for invalid sessions.
 - No route leaks cross-tenant data.
 
-Status: Partially closed in Sprint 1 (2026-07-22). Audited `src/app/api/repositories/[resource]/route.ts` and confirmed every verb (`GET`/`POST`/`PATCH`) returns `401` before constructing a tenant scope when `getServerAuthSession` finds no session, and only scopes data via `tenantScopeFromUser(session.user, ...)` after a real session is confirmed. Live two-tenant cross-isolation testing against a real Supabase deployment was not performed this pass -- tracked as Sprint 2 follow-up, do not assume safe by default.
+Status: Closed locally in Sprint 2 (2026-07-22), extending the Sprint 1 partial close. Audited `src/app/api/repositories/[resource]/route.ts` and confirmed every verb (`GET`/`POST`/`PATCH`) returns `401` before constructing a tenant scope when `getServerAuthSession` finds no session, and only scopes data via `tenantScopeFromUser(session.user, ...)` after a real session is confirmed. Confirmed `organizationIdForMutation` in `src/repositories/supabaseEnterpriseRepositories.ts` ignores any client-supplied `organizationId` for non-Super-Admin roles (always uses the authenticated scope's own organization), and that the `projects` table's RLS policies (initial schema migration) independently enforce the same boundary at the database level regardless of application code. Added repository-level tests proving a spoofed `organizationId` is ignored for a normal tenant scope and only honored for Super Admin. Live two-tenant cross-isolation testing against a real Supabase deployment with two provisioned tenants was not performed this pass -- the tests prove the query/mutation logic is correctly scoped in isolation, not an end-to-end live check; tracked as a Sprint 5 follow-up, do not assume safe by default without that live check.
 
 ### 7. Add Timeout And Error Fallbacks To All Loading Workspaces
 
@@ -521,12 +523,14 @@ This checklist is intentionally derived from the QA artifact rather than from en
 ```text
 Raw QA artifact preserved.
 20 actionables extracted.
-Actionables 1-4 and 6 (Sprint 1 scope) closed locally on 2026-07-22.
-See docs/SPRINT_LOG.md "Sprint 1 Complete" entry for implementation and
-verification evidence (typecheck, lint, 96 test files / 286 tests, build,
-supabase:verify, mobile release gates all passing).
-Actionables 5, 7-20 (Sprints 2-5 scope) remain pending.
+Actionables 1-6 (Sprints 1-2 scope) closed locally as of 2026-07-22.
+See docs/SPRINT_LOG.md "Sprint 1 Complete" and "Sprint 2 Complete" entries
+for implementation and verification evidence (typecheck, lint, 98 test
+files / 299 tests, build, supabase:verify, mobile release gates all
+passing).
+Actionables 7-20 (Sprints 3-5 scope) remain pending.
 Live Vercel beta redeploy and QA golden-path replay against the live URL
 remain pending for all sprints.
-Full findings ledger and estimated score deltas: docs/SPRINT_1_CLOSEOUT_2026_07_22.md.
+Full Sprint 1 findings ledger and estimated score deltas:
+docs/SPRINT_1_CLOSEOUT_2026_07_22.md.
 ```
