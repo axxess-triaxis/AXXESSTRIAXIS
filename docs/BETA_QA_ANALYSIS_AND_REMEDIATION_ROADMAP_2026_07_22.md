@@ -292,6 +292,9 @@ sprints.
 Cumulative Sprint 1+2 findings ledger, isolated Sprint 2 delta, and
 composite Sprint 1+2 delta (all estimated, not live-verified):
 docs/SPRINT_2_CLOSEOUT_2026_07_22.md.
+Cumulative Sprint 1+2+3 findings ledger, isolated Sprint 3 delta, and
+composite Sprint 1+2+3 delta (all estimated, not live-verified):
+docs/SPRINT_3_CLOSEOUT_2026_07_22.md.
 Full findings ledger and estimated (not live-verified) score deltas:
 docs/SPRINT_1_CLOSEOUT_2026_07_22.md.
 ```
