@@ -118,6 +118,18 @@ export async function signInServerSide(email: string, password: string): Promise
   return { accessToken: payload.access_token, refreshToken: payload.refresh_token, user };
 }
 
+// Google/Microsoft OAuth sign-in (see /api/auth/oauth/start) redirects the browser to Supabase's
+// own authorize endpoint, which redirects back to /auth/login with access/refresh tokens in the URL
+// fragment -- Supabase never calls our server directly. This establishes the same httpOnly-cookie
+// session signInServerSide creates for password login, but starting from tokens the client already
+// has instead of an email/password pair.
+export async function establishServerSessionFromOAuthTokens(accessToken: string, refreshToken?: string): Promise<ServerSession> {
+  const authUser = await supabaseAuthRequest<SupabasePasswordResponse["user"]>("user", {}, accessToken);
+  const user = await resolveUser(accessToken, authUser);
+  await setServerAuthCookies(accessToken, refreshToken);
+  return { accessToken, refreshToken, user };
+}
+
 async function refreshServerSession(refreshToken: string) {
   const payload = await supabaseAuthRequest<SupabasePasswordResponse>("token?grant_type=refresh_token", {
     method: "POST",
