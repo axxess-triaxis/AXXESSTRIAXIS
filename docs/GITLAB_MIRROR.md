@@ -93,6 +93,8 @@ The mirror workflow is intentionally conservative:
 
 ## Automated Post-Sprint CI Verification And AI Code Review
 
+For the full picture across GitHub Actions, GitLab CI, GitLab Duo, and the local scheduled task -- including an explicit list of what is *not* automated -- see `docs/AUTOMATION_OVERVIEW.md`.
+
 As of 2026-07-22, `.gitlab-ci.yml` automatically verifies every push to sprint/remediation branches, not only merge requests and `main`/`staging`/`dev`. This closes the gap where a sprint branch (e.g. `canonical/sprint-1-35-unified-gitlab`) could accumulate commits with no automatic typecheck/lint/test/build/audit until an MR was opened.
 
 Pipeline stages, in order:
