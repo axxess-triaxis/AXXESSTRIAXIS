@@ -3,7 +3,10 @@ import {
   getBetaRootRedirectUrl,
   getCanonicalHostRedirectUrl,
   getMarketingWorkspaceRedirectUrl,
+  isAuthShellEnabledFromEnv,
+  isDemoModeEnabledFromEnv,
   isProtectedRoutePath,
+  shouldRedirectToLogin,
 } from "./middleware";
 
 describe("route middleware helpers", () => {
@@ -89,5 +92,60 @@ describe("route middleware helpers", () => {
     );
 
     expect(redirectUrl).toBeNull();
+  });
+
+  it("requires real Supabase auth by default, matching featureFlags.enableAuthShell", () => {
+    expect(isAuthShellEnabledFromEnv(undefined)).toBe(true);
+    expect(isAuthShellEnabledFromEnv("true")).toBe(true);
+  });
+
+  it("only disables the auth-shell guard when explicitly set to false", () => {
+    expect(isAuthShellEnabledFromEnv("false")).toBe(false);
+  });
+
+  it("only enables demo mode when explicitly set to true", () => {
+    expect(isDemoModeEnabledFromEnv(undefined)).toBe(false);
+    expect(isDemoModeEnabledFromEnv("false")).toBe(false);
+    expect(isDemoModeEnabledFromEnv("true")).toBe(true);
+  });
+
+  it("redirects a protected route to /auth when no session cookie is present (production-safe default)", () => {
+    expect(shouldRedirectToLogin("/dashboard", {
+      authShellEnabled: true,
+      demoModeEnabled: false,
+      hasSessionCookie: false,
+    })).toBe(true);
+  });
+
+  it("does not redirect once a session cookie is present", () => {
+    expect(shouldRedirectToLogin("/dashboard", {
+      authShellEnabled: true,
+      demoModeEnabled: false,
+      hasSessionCookie: true,
+    })).toBe(false);
+  });
+
+  it("does not redirect when demo mode is explicitly enabled", () => {
+    expect(shouldRedirectToLogin("/dashboard", {
+      authShellEnabled: true,
+      demoModeEnabled: true,
+      hasSessionCookie: false,
+    })).toBe(false);
+  });
+
+  it("does not redirect when the auth shell is explicitly disabled for local mock auth", () => {
+    expect(shouldRedirectToLogin("/dashboard", {
+      authShellEnabled: false,
+      demoModeEnabled: false,
+      hasSessionCookie: false,
+    })).toBe(false);
+  });
+
+  it("never redirects a non-protected route such as /auth itself", () => {
+    expect(shouldRedirectToLogin("/auth", {
+      authShellEnabled: true,
+      demoModeEnabled: false,
+      hasSessionCookie: false,
+    })).toBe(false);
   });
 });

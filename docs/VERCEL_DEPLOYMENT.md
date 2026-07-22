@@ -27,6 +27,17 @@ Public:
 - `NEXT_PUBLIC_MIXPANEL_TOKEN`
 - `NEXT_PUBLIC_ANALYTICS_DISABLED`
 
+Production and beta deployments must set:
+
+```text
+NEXT_PUBLIC_AXXESS_AUTH_SHELL=true
+NEXT_PUBLIC_AXXESS_DEMO_MODE=false
+```
+
+`NEXT_PUBLIC_AXXESS_AUTH_SHELL=false` is only for local mock-RBAC UI development. If it is used on a deployed beta, the browser can render a mock authenticated user while server routes correctly reject every tenant-scoped request with `401`.
+
+As of the 2026-07-22 beta auth remediation, both the client feature flag (`src/config/featureFlags.ts`) and the edge route guard (`src/middleware.ts`) treat this variable as production-safe by default: an unset value now behaves as `true` (real Supabase auth required), not `false`. Setting it explicitly on every deployed environment remains required policy — do not rely on the safe default in place of an explicit `NEXT_PUBLIC_AXXESS_AUTH_SHELL=true` in Vercel project settings.
+
 Server-only:
 
 - `SUPABASE_SERVICE_ROLE_KEY`
@@ -39,6 +50,15 @@ Never expose service-role or provider secret keys through `NEXT_PUBLIC_*`.
 ## Demo Mode
 
 Use `NEXT_PUBLIC_AXXESS_DEMO_MODE=true` for investor preview deployments only. Keep it `false` for production tenants.
+
+The investor preview login remains available through:
+
+```text
+investor.preview@axxess.demo
+preview
+```
+
+That path intentionally enables Demo Mode. It must not be confused with live tenant authentication.
 
 ## Security Headers
 

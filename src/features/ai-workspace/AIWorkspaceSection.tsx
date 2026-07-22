@@ -154,7 +154,14 @@ export const AIWorkspaceSection = () => {
         signal: controller.signal,
       });
       const result = await response.json().catch(() => ({} as { error?: string }));
-      if (!response.ok) throw new Error(result.error ?? "AXXESS could not complete the governed question.");
+      // Never surface the raw backend error string to the user (Sprint 3, F-016) -- log the detail
+      // for developer diagnostics and throw a fixed, safe message instead.
+      if (!response.ok) {
+        console.error("Governed RAG query failed.", response.status, result.error);
+        if (response.status === 401) throw new Error("Sign in to ask AXXESS a governed question.");
+        if (response.status === 403) throw new Error("Your role does not have permission to ask governed questions.");
+        throw new Error("AXXESS could not complete the governed question.");
+      }
       setRagAnswer(result as LiveRagAnswer);
       setInput("");
       setApproved(false);
@@ -202,7 +209,12 @@ export const AIWorkspaceSection = () => {
         }),
       });
       const result = await response.json().catch(() => ({} as { error?: string; task?: { id?: string } }));
-      if (!response.ok) throw new Error(result.error ?? "Review could not be recorded.");
+      if (!response.ok) {
+        console.error("RAG review decision failed.", response.status, result.error);
+        if (response.status === 401) throw new Error("Sign in to record this review decision.");
+        if (response.status === 403) throw new Error("Your role does not have permission to record this decision.");
+        throw new Error("Review could not be recorded.");
+      }
       setApproved(decision === "approved");
       setReviewMessage(decision === "approved" ? `Approved and audit logged${result.task?.id ? " with a follow-up task." : "."}` : "Rejected and audit logged.");
     } catch (error) {

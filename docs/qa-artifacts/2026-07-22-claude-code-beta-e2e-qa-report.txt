@@ -1,0 +1,360 @@
+AXXESS by Triaxis — Enterprise QA Engagement
+
+Beta End-to-End QA Report
+One complete end-to-end walkthrough of the live AXXESS beta, tested as a senior QA engineer, enterprise product reviewer, and pilot-customer success lead would test it. No source code was modified, nothing was committed or pushed, and no tenant data was deleted.
+
+URL beta.triaxisventures.com
+Date 2026-07-22
+Environment production (self-reported)
+Account none — see F-001
+01Executive Summary
+The beta is not currently usable as a live product by a real tenant. The UI is comprehensive, well-designed, and clearly enterprise-oriented in its information architecture — but the deployment being tested is not correctly wired to its own backend. No real authentication session exists server-side, roughly half of all workspaces hang on an infinite loading spinner, no write action can succeed, and “Sign Out” does not sign out. This is one root cause manifesting as a dozen symptoms, not a pile of unrelated small bugs.
+
+Most likely root cause: this deployment appears to have NEXT_PUBLIC_AXXESS_AUTH_SHELL set to false (its default) rather than true, as the product's own documentation says every deployed environment requires. With it off, the client falls back to a mock “authenticated” session unconditionally, while every server route correctly requires — and fails to find — a real Supabase session (401). Most pages were never built to degrade gracefully from that specific state.
+
+Beta readiness
+
+22/100
+
+Golden path cannot complete.
+
+Enterprise readiness
+
+48/100
+
+Strong design, broken execution.
+
+Investor demo readiness
+
+35/100
+
+One click from a dead end.
+
+Pilot customer readiness
+
+12/100
+
+No record can be created.
+
+Biggest blockers
+No real backend session ever exists on this deployment; every write action fails (F-004, F-005).
+Nine of roughly twenty workspaces never finish loading — permanent spinners, not errors (F-006–F-014).
+“Sign Out” does not sign out (F-002); the real /auth login form is unreachable (F-003).
+Specific, dated, named “Live” activity appears identically on multiple pages for an otherwise-empty tenant, with timestamps that shift between loads — fabricated, unlabeled (F-015–F-017).
+Biggest strengths
+Where empty/gated states are handled (Knowledge Hub, Projects, Tasks, Meetings, Pilot Conversion, Product Analytics, Beta Readiness), they're handled honestly — several pages explicitly say “Demo” or “mock” rather than pretending.
+The internal /admin/beta-readiness diagnostic page is genuinely excellent and would have shortened this entire investigation had I found it first.
+The sidebar's Overview / Operations / Intelligence / Relationships / Governance / Admin grouping is genuinely well-conceived, enterprise-appropriate information architecture.
+The governed-RAG / human-review conceptual model (citations, confidence, audit chains) is a strong, differentiated thesis, consistently communicated in copy even where the underlying data is currently fake.
+02Test Environment
+URL tested	beta.triaxisventures.com (reached via axxesstriaxis.vercel.app's “Open Beta Workspace” link)
+Date / time	2026-07-22, single continuous session
+Browser / device	Automated Chromium-based browser pane
+Screen sizes tested	Desktop 1280×720 · Tablet 768×1024 · Mobile 375×812
+Account used	None. The application auto-granted a mock “Organization Admin” session on first load, before any credentials — including the supplied investor-preview pair — could be entered. See F-001.
+Organization / tenant	“Your Organization” (mock placeholder; internal IDs org_clean_tenant / user_clean_admin observed in form defaults)
+Demo or production?	Presents as “Live” throughout; /admin/beta-readiness explicitly reports ENVIRONMENT: production. Not the product's labeled Demo Mode — a genuinely unauthenticated production tenant.
+The task brief's primary account and beta URL were left as placeholders. I resolved the URL via the marketing site's own link. I was never able to reach an actual login form to test the primary account or investor.preview@axxess.demo, because the application never presented one.
+
+03Golden Path Result
+1 of 16 steps fully passed (step 1, partially); 2 partial; 13 failed. The path cannot be completed end-to-end in this deployment's current state.
+
+01
+Open beta URL cold
+Landed on marketing site; had to follow a separate link to reach the app.
+Partial
+02
+Log in
+No login form was ever shown — auto “Signed in” with zero credentials entered.
+Fail
+03
+Confirm session persistence after refresh
+Mock session trivially “persists” — proves nothing about real session handling.
+Fail
+04
+Create or select an organization/tenant
+Mock tenant already present; no real onboarding flow reachable.
+Fail
+05
+Review onboarding status
+Shown, but inconsistent between loads — “0 of 10” then “2 of 10” with no action taken.
+Fail
+06
+Navigate to Executive Dashboard
+Loads; mixes honest zeros with fabricated populated activity in the same view.
+Partial
+07
+Upload or create a document/knowledge item
+Not completed — consistent with the same 401 wall as project creation.
+Fail
+08
+Ask AXXESS a grounded question
+AI Workspace never finishes loading. Blocks the core value proposition.
+Fail
+09
+Verify cited sources are shown
+Not reachable — page never loads.
+Fail
+10
+Send to review / open Review Inbox
+Loads; honest empty queue, but shows raw “Unauthorized.” text and a fabricated timeline.
+Partial
+11
+Approve, reject, or edit AI output
+Not reachable — no queued item exists.
+N/A
+12
+Create a real workflow record
+Attempted a project named “QA TEST – Do Not Use.” Failed: POST /api/repositories/projects → 401.
+Fail
+13
+Verify record appears in workspace
+N/A — nothing was created.
+Fail
+14
+Verify dashboard/audit updates
+N/A; pre-existing “evidence” predates any action taken.
+Fail
+15
+Log out
+Same authenticated dashboard reappeared immediately.
+Fail
+16
+Log back in, verify persistence
+Not reachable — no real logout occurred.
+Fail
+04Workspace Coverage Matrix
+Workspace	Route	Load	Data status	Persistence	Issues	Severity
+Login / Auth	/auth	Shows “Signed in”, not a form	N/A	N/A	Real form unreachable	P0
+Onboarding	—	Never reached	N/A	N/A	Bypassed entirely by mock session	P0
+Dashboard	/dashboard	Loads	Honest zeros + fabricated timeline	N/A	Contradictory activity feed	P1
+AI Workspace	/ai-workspace	Never resolves	N/A	N/A	Infinite spinner, flagship feature blocked	P0
+AI Review Inbox	/ai-workspace/review-inbox	Loads	Honest empty + raw error text	N/A	Raw “Unauthorized.”, fabricated timeline	P1
+Knowledge Hub	/knowledge	Loads	Honest “Empty”, well labeled	N/A	None significant	—
+Documents & Files	/documents	Loads	Identical to Knowledge Hub	N/A	Routing bug — distinct view unreachable	P1
+Projects & Programs	/projects	Loads	Honest empty state	Failed (401)	Create fails end-to-end	P0
+Tasks & Workflow	/tasks	Loads	Honest empty state	Not submitted	None significant	—
+Workflow Records	/workflow-records	Loads	Fabricated “Live” records	N/A	Contradicts zero elsewhere	P1
+Approvals & Governance	/approvals	Never resolves	N/A	N/A	Infinite spinner, mislabeled “Loading Executive Dashboard”	P0
+Stakeholders / CRM	/stakeholders	Never resolves	N/A	N/A	Infinite spinner	P0
+Meetings	/meetings	Loads	Honest empty state	Not submitted	None significant	—
+Analytics / Reports	/analytics	Never resolves	N/A	N/A	Infinite spinner	P0
+Integrations	/integrations	Never resolves	N/A	N/A	Blocks all connector testing	P0
+Notifications	(panel)	Opens correctly	Honest “No notifications”	N/A	None significant	—
+Settings	/settings	Never resolves	N/A	N/A	Infinite spinner	P0
+Organization Admin	/admin/organization	Never resolves	N/A	N/A	Infinite spinner	P0
+Audit Logs	/admin/audit-logs	Never resolves	N/A	N/A	The one compliance-evidence page never loads	P0
+Pilot Conversion	/admin/pilot-conversion	Loads	Clearly labeled “Demo” throughout	N/A	Good example of the correct pattern	—
+Product Analytics	/admin/product-analytics	Loads	Labeled “mock”	N/A	None significant	—
+Beta Readiness	/admin/beta-readiness	Loads	Honest self-diagnostic	N/A	Correctly reports the broken state	—
+05Detailed Findings
+P0
+No real authentication exists; every visitor gets a mock session
+F-001 · Login / Auth · /auth, /dashboard, all routes
+What happened
+Opening the beta URL cold, with zero cookies and empty localStorage, immediately shows “Signed in — Organization Admin is authenticated.” No credentials were requested or entered.
+Expected
+A real login form requiring the primary or investor-preview credentials, gating access to any tenant workspace.
+Repro
+Open beta.triaxisventures.com/auth in a fresh browser profile with no prior cookies/localStorage for the domain.
+Evidence
+document.cookie → "". localStorage → empty. fetch('/api/auth/session') → 401 {"user":null} while the UI shows an authenticated dashboard.
+Recommendation
+Confirm NEXT_PUBLIC_AXXESS_AUTH_SHELL=true is set on this deployment. Very likely fixes the majority of F-002–F-014 as a side effect.
+P0
+“Sign Out” does not sign the user out
+F-002 · Global header · any authenticated page
+What happened
+Clicking “Sign out” from the dashboard header immediately re-renders the same authenticated dashboard.
+Expected
+Session cleared, redirect to login/marketing page.
+Repro
+From /dashboard, click “Sign out” in the top-right header.
+Evidence
+Page content before and after the click is identical.
+Recommendation
+Direct consequence of F-001 — the mock session is recreated on every render regardless of sign-out.
+P0
+Real login form is structurally unreachable
+F-003 · Login / Auth · /auth
+What happened
+Navigating directly to /auth always shows “Signed in / Continue to workspace” instead of a form, because the page checks isAuthenticated first and the mock session always satisfies it.
+Recommendation
+Same root cause and fix as F-001.
+P0
+No write action can succeed anywhere in the product
+F-004 · Projects & Programs (confirmed); inferred elsewhere · /projects
+What happened
+Filled in and submitted “New Project” with a clearly test-labeled name. UI showed: “Project could not be saved. Check permissions and required fields.”
+Repro
+Go to /projects → “Create your first project” → fill name → “Save Project.”
+Evidence
+POST /api/repositories/projects → 401, alongside 401s for projects/programs/users/organizations reads.
+Recommendation
+Most concrete proof that the golden path's central promise doesn't work today. Re-test immediately after F-001 is fixed.
+P0
+Every tenant-scoped API route returns 401
+F-005 · Global
+What happened
+Every /api/repositories/* and /api/workflows/* call observed all session returned 401 — reads and the one write attempted.
+Recommendation
+Same as F-001.
+P0
+Nine workspaces hang on a permanent loading state
+F-006–F-014 · AI Workspace, Analytics, Social Alerts, Stakeholders/CRM, Approvals, Integrations, Settings, Org Admin, Audit Logs
+What happened
+Each page shows “Loading {Workspace Name}” that never resolves, confirmed by waiting 3+ seconds and re-checking. /approvals additionally shows the wrong label (“Loading Executive Dashboard”).
+Expected
+Either real/honestly-empty data, or a visible failure with retry — not an indefinite spinner.
+Evidence
+Repeated get_page_text calls after multi-second waits show identical loading text. No console errors surface during any hang.
+Recommendation
+Fix F-001, then add a timeout/error boundary to every data-fetching hook so an unresolved promise becomes a visible error, not an infinite spinner — several other pages in this same app already demonstrate the correct pattern.
+P1
+Dashboard shows “no activity” and populated activity simultaneously
+F-015 · Dashboard · /dashboard
+What happened
+Same page shows “No recent activity yet” and a fully populated “Workflow timeline” with four specific, dated, named entries (“Mission Operations,” “AXXESS Governed RAG,” “Program Manager”) — none of which exist in this zero-record tenant.
+Recommendation
+Gate the “Workflow timeline” source behind the same real-vs-demo check already correctly applied to “Recent institutional activity” on the same page.
+P2
+Raw “Unauthorized.” error text rendered to the user
+F-016 · AI Review Inbox · /ai-workspace/review-inbox
+What happened
+The literal string “Unauthorized.” appears in the page body next to the honest empty-state message.
+Recommendation
+Suppress this specific error case or replace it with user-appropriate copy — the empty-state message already covers “nothing to show” correctly.
+P1
+Workflow Records shows fabricated “Live” governance packets
+F-017 · Workflow Records · /workflow-records
+What happened
+“Approval Requests” shows 2 record(s) — “Kamrup procurement variance,” “Barpeta oxygen resilience” — the same fixture-style content family seen elsewhere, despite 0 tasks/0 projects everywhere else.
+Recommendation
+Same class of fix as F-015.
+P2
+Onboarding progress inconsistent between loads
+F-018 · Dashboard · Pilot Onboarding widget
+What happened
+“Pilot Onboarding” read “2 of 10 complete” on one load and “0 of 10 complete” on a later load, with no user action in between.
+Recommendation
+Investigate for non-deterministic or race-condition logic, possibly related to F-006–F-014's unresolved-session state.
+P1
+/documents renders the Knowledge Hub, not a distinct view
+F-019 · Documents & Files · /documents
+What happened
+Navigating to /documents produces byte-for-byte identical content to /knowledge. location.pathname confirms the URL is genuinely /documents — not a redirect.
+Recommendation
+Check the route's component mapping — looks like it's wired to the Knowledge Hub component instead of its own.
+P2
+Sidebar badges contradict the tenant's otherwise-empty state
+F-020 · Global navigation
+What happened
+Sidebar shows a “4” badge on Social Alerts and a “23” badge on Approvals & Governance, while every workspace's own content shows 0 items.
+Recommendation
+Audit the badge data source; likely the same leak pattern as F-015/F-017.
+P2
+Repeated, un-backed-off duplicate API requests
+F-021 · Dashboard (and likely others)
+What happened
+notifications, projects, tasks, documents each fetched three times in immediate succession on one Dashboard load, all failing identically.
+Recommendation
+Add request deduplication/backoff; check for competing effects independently triggering the same fetch.
+Tooling note
+Screenshots could not be captured this pass
+F-022 · Not a product finding
+What happened
+The automated browser tool's screenshot function timed out (30s) on every attempt, at every viewport size tried.
+Recommendation
+Re-run with working screenshot capture to visually confirm the mobile/tablet observations in Section 6.
+06UX Review
+Navigation: sidebar IA is clear, logical, appropriately enterprise. Command search (“Ctrl K”) present, not deeply exercised.
+Information architecture: strong — the ask → review → act separation (Dashboard / AI Workspace / Review Inbox) is coherent even where currently broken.
+First-time clarity: undermined by F-001 — a first-time user cannot tell they aren't really logged in, since nothing tells them.
+Enterprise polish: high in visual/copy terms; undermined by raw error text and contradictory data.
+Empty states: genuinely good where applied — Knowledge Hub, Projects, Tasks, Meetings all show honest, actionable empty states. The problem is inconsistency, not absence of the pattern.
+Loading states: the single biggest UX failure found — 9 workspaces show an indefinite spinner with no timeout or fallback.
+Error states: inconsistent — Projects handles a failed save reasonably; Review Inbox leaks a raw HTTP string.
+Mobile responsiveness: partially assessed (screenshot tooling unavailable). At 375px, header controls disappear from the interactive element list — may be a collapsed menu (fine) or inaccessible (a problem). Needs visual confirmation.
+Accessibility: not deeply audited this pass; the dense dashboard/heatmap content warrants a dedicated screen-reader and keyboard-only pass.
+07Workflow & Data Integrity Review
+Tenant isolation: untestable this pass — no real session, no real data. Flagged as a coverage gap, not a clean bill of health.
+Persistence: fails outright — the one write attempted did not persist.
+CRUD: Create fails (F-004); Read returns 401 everywhere (masked by honest empty states on some pages, hangs on others); Update/Delete unreachable.
+Workflow timelines: actively misleading — the same four-event timeline appears on two pages with shifting timestamps, proving it's generated relative to load time.
+Audit logs: the exact page a pilot sponsor is told to visit for compliance evidence never finishes loading — a significant trust gap for this product's positioning.
+AI review flow: reachable, honestly empty, but polluted by raw error text and fabricated timeline content.
+Creation flows: Task and Meeting forms load and appear well-built; Project creation fails outright; Stakeholder creation is unreachable.
+Refresh/logout/login: refresh trivially “persists” the mock session; logout doesn't work; real login/persistence untestable.
+08AI & RAG Review
+Almost entirely blocked. AI Workspace — where a grounded question would be asked and reviewed — never finishes loading.
+
+Grounded answers: untested, blocked.
+Citations: untested, blocked.
+Source relevance: untested, blocked.
+Unauthorized documents appearing: untested, blocked — worth prioritizing given the open tenant-isolation question in Section 7.
+Confidence/review clarity: partially observable via Review Inbox's copy, which correctly references confidence and human review — design intent is present, just not exercisable.
+Human review enforcement: cannot be confirmed end-to-end, though the conceptual gate (Review Inbox before consequential action) is sound in principle.
+This is the highest-priority functional area to re-test once F-001 is resolved — it's the product's core differentiator and currently entirely unverifiable.
+
+09Integrations Review
+Also entirely blocked — /integrations never finishes loading. No OAuth flow, provider-gated state, or error handling could be observed. Prior engineering work on this product includes real OAuth wiring for Gmail, Microsoft, Slack, Calendly, Airtable, HubSpot, and Notion; all of it is currently unreachable to any visitor of this deployment. Re-test immediately once F-001 is fixed — this is very likely a symptom, not a separate defect.
+
+10Admin & Governance Review
+Organization management: never loads — cannot assess.
+Users/roles/invitations: inherits the Organization Admin hang — not independently reachable.
+RBAC: cannot be assessed without a working admin surface or a second real user/role.
+Audit logs: never loads — a specific, significant gap for a governance-positioned product.
+Pilot/support/mobile consoles: the best-behaving pages found this pass. Pilot Conversion and Beta Readiness both load correctly and consistently label demo/mock content — exactly the discipline missing from Dashboard, Review Inbox, and Workflow Records.
+Compliance maturity: conceptually high (audit chains, human-review gates, SLA framing); operationally unverifiable because the proving surfaces don't load.
+11Performance & Reliability
+Slow pages: not specifically timed; no loading page took more than a few seconds.
+Repeated failed requests: confirmed — four endpoints each fetched three times in immediate succession on one load, all failing identically.
+Heavy screens: Dashboard is visually dense but rendered without apparent jank.
+Loading delays: the defining issue — 9 of ~20 workspaces never resolve at all, as opposed to being merely slow.
+Refresh behavior: works mechanically; proves nothing about real session durability.
+Session reliability: no real session exists to evaluate.
+12Screenshots / Evidence
+No screenshots were successfully captured this pass — the browser tool's screenshot function timed out on every attempt, at desktop and resized viewports (F-022), a limitation of this test environment, not a product finding. Evidence instead comes from:
+
+Full page-text extractions at each route, quoted throughout Sections 3–5.
+Direct fetch() calls to /api/auth/session and /api/repositories/*, with status codes and bodies recorded.
+Accessibility-tree structural reads at desktop, tablet, and mobile widths.
+Network request logs (URL + status) captured throughout the session.
+13Recommended Fix List
+Must fix before investor demo
+Set NEXT_PUBLIC_AXXESS_AUTH_SHELL=true on this deployment (F-001) — likely resolves most of this list as a side effect.
+Add a timeout/error fallback to every hook capable of an infinite spinner (F-006–F-014).
+Gate the fabricated “Workflow timeline” content behind the real-vs-demo check already used correctly elsewhere (F-015, F-017).
+Fix the /approvals mislabeled loading state (F-010).
+Must fix before pilot customer
+Confirm real write persistence end-to-end once F-001 is fixed — re-test F-004's exact repro, don't assume.
+Fix or remove the raw “Unauthorized.” text (F-016).
+Fix the /documents routing bug (F-019).
+Re-verify tenant isolation with two real tenants once real sessions exist — untestable this pass, don't assume safe by default.
+Re-verify Integrations and at least one real OAuth connector end-to-end — significant prior investment currently unreachable.
+Should fix before public beta
+Deduplicate repeated API requests (F-021).
+Resolve sidebar badge counts to match actual tenant state (F-020).
+Resolve the onboarding-progress inconsistency (F-018).
+Visual/responsive re-audit with working screenshot tooling.
+Nice to have
+Surface a visible “not authenticated” banner as a defensive measure against this exact failure mode recurring silently.
+Extend the “Demo”/“mock” labeling discipline from Pilot Conversion, Product Analytics, and Beta Readiness to every other surface, as a standing convention.
+14Final Verdict
+Can an investor click through this today?
+
+Only if they stay on a fortunate subset of pages. A genuinely cold click-through has a real chance of landing on AI Workspace, Integrations, Settings, or Audit Logs — each of which hangs forever with no error, no explanation, no way forward. That's a demo-ending failure mode, not a rough edge.
+
+Can a pilot customer use this without developer help?
+
+No. There is no way to log in with real credentials, and no way for any user — real or mock — to create a single persisted record. This is the most fundamental blocker possible for a “beta.”
+
+Does it feel like an enterprise operating system?
+
+In design, genuinely yes — the IA, governance vocabulary, and human-in-the-loop framing are well-conceived and consistently communicated, and several pages execute that vision honestly. In current operation on this deployment, no — the foundational session wiring that would let any of it prove itself isn't functioning.
+
+What is the single highest-leverage next sprint?
+
+Fix the authentication/session configuration on this deployment (F-001), then immediately re-run this exact walkthrough end to end. Given how many findings trace to that one root cause, a single configuration change — not a redesign, not new features — could plausibly move the beta-readiness score from 22 to considerably higher in one pass. The design and much of the underlying engineering appear sound; what's missing is confirmation that this specific deployment is actually wired to prove it.
+
+Tested read-only: no source changed, nothing committed, nothing pushed, no tenant data deleted. One test project creation was attempted per the required golden-p

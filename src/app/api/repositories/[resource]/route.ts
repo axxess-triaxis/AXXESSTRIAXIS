@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerAuthSession } from "../../../../auth/serverSession";
 import type { RoleName } from "../../../../domain";
 import {
+  auditLogsRepository,
   createRepositoryResource,
   listRepositoryResource,
   notificationsRepository,
@@ -10,6 +11,7 @@ import {
   type ResourceName,
 } from "../../../../repositories/supabaseEnterpriseRepositories";
 import type { RepositoryQuery, TenantScope } from "../../../../repositories/interfaces";
+import { recordWorkflowTimelineEvent } from "../../../../services/workflows/liveTenantWorkflow";
 
 const allowedResources = new Set([
   "organizations",
@@ -129,6 +131,41 @@ async function notifyAfterMutation(resource: ResourceName, scope: TenantScope, r
   }).catch(() => undefined);
 }
 
+// Writes audit + workflow-timeline evidence for a real tenant-backed project creation, so a
+// created project shows up in Audit Logs and the Dashboard/timeline the same way an approved
+// AI-review workflow action already does (see recordWorkflowTimelineEvent in liveTenantWorkflow.ts).
+// Scoped to "projects" only, matching the QA finding this addresses (POST /api/repositories/projects
+// -> 401); best-effort (failures here must never fail the create itself).
+async function recordProjectCreateEvidence(scope: TenantScope, result: unknown) {
+  if (!result || typeof result !== "object" || !("id" in result)) return;
+  const record = result as Record<string, unknown>;
+  const projectId = typeof record.id === "string" ? record.id : undefined;
+  const projectName = typeof record.name === "string" ? record.name : "Project";
+
+  const auditLog = await auditLogsRepository.record(scope, {
+    action: "project.created",
+    resourceType: "project",
+    resourceId: projectId,
+    category: "project-management",
+    metadata: { name: projectName },
+  }).catch(() => undefined);
+
+  await recordWorkflowTimelineEvent({
+    organizationId: scope.organizationId,
+    resourceType: "project",
+    resourceId: projectId,
+    eventType: "workflow_action_created",
+    title: "Project created",
+    description: `${projectName} was created.`,
+    actorUserId: scope.userId,
+    actorLabel: scope.role,
+    sourceType: "project",
+    sourceId: projectId,
+    auditLogId: auditLog?.id,
+    metadata: { name: projectName },
+  }).catch(() => undefined);
+}
+
 export async function GET(request: Request, context: RouteContext) {
   const { resource } = await context.params;
   if (!allowedResources.has(resource)) {
@@ -173,6 +210,9 @@ export async function POST(request: Request, context: RouteContext) {
   const result = await createRepositoryResource(resourceName, scope, body);
   if (resourceName === "projects" || resourceName === "tasks" || resourceName === "meetings") {
     await notifyAfterMutation(resourceName, scope, result, "created");
+  }
+  if (resourceName === "projects") {
+    await recordProjectCreateEvidence(scope, result);
   }
 
   return NextResponse.json(result, { status: 201 });
