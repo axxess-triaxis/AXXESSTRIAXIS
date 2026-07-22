@@ -111,6 +111,17 @@ Full verification passed: `pnpm run typecheck`, `pnpm --dir apps/mobile run type
 
 **Not yet done:** no live Supabase project was used to create a real project this pass -- verification is local/test-fixture only (mocked-fetch unit tests plus a code-path audit). Live re-test of the exact QA repro against a real Supabase-backed tenant, and two-tenant isolation testing with two actually-provisioned tenants, remain pending (Sprint 5 scope).
 
+Sprint 3 (Workspace Loading And Error-State Hardening) is complete locally as of 2026-07-22:
+
+- Audited all 9 named workspaces (AI Workspace, AI Review Inbox, Approvals, Stakeholders/CRM, Analytics, Integrations, Settings, Organization Admin, Audit Logs) plus Dashboard's 4 dependent data hooks against the *current* local codebase. Central finding: 7 of 9 do not have a mount-time async gate capable of hanging at all -- three (Approvals, Stakeholders, Analytics) are synchronous, Demo-Mode-gated stubs with no fetch; four (AI Workspace, Integrations, Settings, AI Review Inbox) populate state asynchronously without ever blocking initial render.
+- Fixed a genuine, narrow defect in the remaining two (Organization Admin, Audit Logs): an early `if (!scope) return;` skipped resetting their `loading` flag to `false`, so it could stay stuck at `true` if it ran before session/scope resolved. Also replaced a blank `return null` for an absent user with an explicit "Sign in required" state in both.
+- Found and fixed the actual root cause of the QA report's exact "Loading Executive Dashboard" mislabel on Approvals: `src/app/routing/routes.ts` had no `appRoutes` entry at all for `"approvals"`, so route lookups silently fell back to the Dashboard route's metadata (including its label). This was a routing bug, not a component bug, and had gone completely untested before this sprint.
+- Found and fixed 9 raw-backend-error-text leaks across `AIReviewInboxPage.tsx` (2, the confirmed F-016 instance), `AIWorkspaceSection.tsx` (2), and `IntegrationsSection.tsx` (6, including the connector-credentials panel) -- all followed the same `throw new Error(result.error ?? fallback)` then `setMessage(error.message)` anti-pattern, which could surface a raw string like `"Unauthorized."` to the user. All now log the raw detail to the console and show fixed, role-aware copy instead.
+
+Full verification passed: `pnpm run typecheck`, `pnpm --dir apps/mobile run typecheck`, `pnpm run lint` (zero warnings), `pnpm run test` (108 files / 324 tests), `pnpm run build`, `pnpm run supabase:verify`, `pnpm run mobile:store:release-gate`, and `pnpm run mobile:capacitor:store:doctor` all passed (same 27 migrations / 100 RLS-protected tables -- no schema change this sprint). See `docs/SPRINT_LOG.md` for full command-by-command evidence.
+
+**Not yet done:** no live provider credentials (Gmail, Microsoft, Notion, enterprise connectors) are configured in this local environment, so provider-gated states were confirmed by code audit, not live connector testing. No live beta replay was performed. Both remain Sprint 5 scope.
+
 ## Severity Model
 
 ### P0 - Blocks Real Pilot Use
@@ -273,7 +284,9 @@ tested, documented and fully verified on 2026-07-22.
 Sprint 2 (Phase 2 - Live Tenant Golden Path, persistence/audit/timeline
 subset) complete locally: implemented, tested, documented and fully
 verified on 2026-07-22.
-Sprints 3-5 (Phases 3-5) remain pending.
+Sprint 3 (Phase 3 - Workspace Loading-State Hardening) complete locally:
+implemented, tested, documented and fully verified on 2026-07-22.
+Sprints 4-5 (Phases 4-5) remain pending.
 Live Vercel beta redeploy and live beta re-test remain pending for all
 sprints.
 Cumulative Sprint 1+2 findings ledger, isolated Sprint 2 delta, and
