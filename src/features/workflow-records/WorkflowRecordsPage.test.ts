@@ -11,4 +11,8 @@ describe("workflow record pages", () => {
     expect(source).toContain("\"project-updates\"");
     expect(source).toContain("isWorkflowRecordType");
   });
+
+  it("does not return demo records for unauthenticated live tenants", () => {
+    expect(source).toContain("if (!session) return isDemoModeEnabled() ? demoRecords()[type] : []");
+  });
 });

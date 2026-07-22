@@ -6,9 +6,10 @@ that delayed Sprint 2's arrival on `main`.
 **Purpose:** a single, standalone record of everything shipped, verified, and still open across
 this iteration, so whatever comes next starts from ground truth rather than from what individual
 commit messages or chat history claimed at the time.
-**Status as of this document:** Sprint 1 (7/7) and Sprint 2 (7/7) merged to `main`. Sprint 3: 3/6
-merged (A13, A14, A15); 3/6 built, tested, and PR'd but **not yet merged** (A10, A16, A17 — PR
-#152, open). **17/20 actionables merged to `main`; 3/20 pending merge of #152.**
+**Status as of this document (corrected 2026-07-21 — see section 5's Phase 3 note):** Sprint 1
+(7/7), Sprint 2 (7/7), and Sprint 3 (6/6, including A10/A16/A17 via PR #152) all merged to `main`.
+**20/20 actionables merged to `main`.** This line previously read "17/20 merged, 3/20 pending
+#152" after #152 had, in fact, already merged — left stale rather than re-verified.
 
 ---
 
@@ -102,7 +103,7 @@ pushed and verified as its own branch, and merge status was re-checked via `git 
 against `origin/main` directly before starting the next phase of work, rather than assumed from
 memory of what had been "reported complete."
 
-## 5. Sprint 3 — Visible integrations, retention signals, demo readiness (3/6 merged, 3/6 PR'd)
+## 5. Sprint 3 — Visible integrations, retention signals, demo readiness (6/6 merged)
 
 Planned 2026-07-21 (`SPRINT_ROADMAP_PRE_DEMO.md`, PR #148) as 4 phases, after Sprint 1+2 were
 confirmed merged. Reordered A15 ahead of A13/A14 — see the roadmap's own rationale.
@@ -173,7 +174,7 @@ in this environment); the OAuth callback still redirects to `/integrations` rega
 flow started (pre-existing behavior, not introduced here) — connecting from Settings lands back on
 `/integrations`, not `/settings`.
 
-### Phase 3 — A10 + A16 + A17 (built, tested, PR'd — **PR #152 not yet merged**)
+### Phase 3 — A10 + A16 + A17 (built, tested, PR'd — **PR #152 merged**)
 
 - **A10 — post-demo satisfaction capture.** Triggered by turning Investor Preview off in Settings —
   the concrete, testable equivalent of "the natural end of a live demo session" in this product's
@@ -190,17 +191,26 @@ flow started (pre-existing behavior, not introduced here) — connecting from Se
   (`TasksSection.tsx` task completion, `AIReviewInboxPage.tsx`'s `decide()` — scoped to
   `decision === "approved"` specifically, since rejecting/escalating isn't a "completion").
 
-**Why this PR is called out as unmerged rather than folded into a blanket "Sprint 3 done" claim:**
-directly applying the lesson from section 4 — status is reported from what's actually verified on
-`origin/main` (`git log`, `gh pr list --state merged`), not from what was built and tested locally.
-As of this document, `4f8b714` (A13/A14) and `628da46` (A15) are confirmed ancestors of
-`origin/main`; PR #152's commit is not.
+**Correction (2026-07-21):** this section previously called PR #152 out as unmerged, applying
+section 4's lesson to check `git log`/`origin/main` directly rather than assume. At the time that
+check was run, `3d23ddc` (PR #152's merge commit) genuinely was not yet an ancestor of `main`. It
+has since merged — confirmed via `git merge-base --is-ancestor 3d23ddc origin/main` against the
+canonical GitHub history — and this document's claim was left stale for longer than it should have
+been rather than re-verified each time it was read. All of Phase 1-3 (A13/A14/A15/A10/A16/A17) are
+now confirmed merged ancestors of `main`. Separately and worth flagging: a `git remote rename`/
+migration to a new GitLab origin later in this session pushed a local `main` branch that itself had
+never been fast-forwarded past PR #124 — meaning the *GitLab* remote's `main` is currently missing
+this entire Sprint 3 completion (and everything after PR #124), even though the original GitHub
+history has it. That's a remote-sync gap, not a code-completeness gap — the work described in this
+section is real and merged on GitHub; it just hasn't propagated to GitLab yet.
 
 ## 6. Final verified state (per PR, most recent first)
 
 | PR | Scope | typecheck | lint | test | build |
 |---|---|---|---|---|---|
-| #152 (open) | A10 + A16 + A17 | clean | clean | 91 files / 261 tests | succeeds |
+| (open, this branch) | + 9/12 Postgres wrapper integrations wired, dual Mixpanel+PostHog analytics | clean | clean | 91 files / 270 tests | not re-run this pass (no build-affecting changes) |
+| (open, this branch) | Live A3/A7/A18 walkthrough + 4 schema/auth bugs + demo-leak Round 4 | clean | clean | 91 files / 265 tests | not re-run this pass (SQL/auth/UI changes only) |
+| #152 (merged) | A10 + A16 + A17 | clean | clean | 91 files / 261 tests | succeeds |
 | #151 (merged) | A13 + A14 | clean | clean | 88 files / 253 tests | succeeds |
 | #150 (merged) | A15 | clean | clean | 88 files / 249 tests | succeeds |
 | #149 (merged) | Supabase seed/trigger fixes | n/a (SQL-only) | n/a | n/a | n/a |
@@ -215,31 +225,46 @@ tip (except #152, which branched directly from `main` after #151 merged, same as
 |---|---|---|---|
 | 1 | A1 | Golden Path opt-in | ✅ merged |
 | 2 | A2 | Blocked/locked steps explain themselves | ✅ merged |
-| 3 | A3 | Guided workspace with real seeded data | ✅ merged (e2e walkthrough still not done) |
+| 3 | A3 | Guided workspace with real seeded data | ✅ merged; live e2e walkthrough done 2026-07-21 (unmerged branch, see below) |
 | 4 | A4 | AI citations + rationale | ✅ merged |
 | 5 | A5 | Loading/timeout/retry on AI ops | ✅ merged |
 | 6 | A6 | Bulk/quick-approve in Review Inbox | ✅ merged |
-| 7 | A7 | 3 outcome-first onboarding paths | ✅ merged (e2e walkthrough still not done) |
+| 7 | A7 | 3 outcome-first onboarding paths | ✅ merged; live e2e walkthrough done 2026-07-21 (unmerged branch, see below) |
 | 8 | A8 | Empty states with one CTA | ✅ merged |
 | 9 | A9 | In-context micro-survey | ✅ merged (1 of 2 triggers wired) |
-| 10 | A10 | Post-demo satisfaction capture | 🔨 built + tested, PR #152 open |
+| 10 | A10 | Post-demo satisfaction capture | ✅ merged (PR #152) |
 | 11 | A11 | Funnel analytics events | ✅ merged |
 | 12 | A12 | Feedback at workflow completion | ✅ merged |
 | 13 | A13 | Slack quick-connect | ✅ merged (no live OAuth verification) |
 | 14 | A14 | Calendly quick-connect | ✅ merged (no live OAuth verification; customer-side cost caveat) |
 | 15 | A15 | Cap integrations surface to reality | ✅ merged |
-| 16 | A16 | "What's New" panel | 🔨 built + tested, PR #152 open (content will go stale without manual upkeep) |
-| 17 | A17 | Completion celebration | 🔨 built + tested, PR #152 open |
-| 18 | A18 | Fewer setup decisions before first AI use | ✅ merged |
+| 16 | A16 | "What's New" panel | ✅ merged (PR #152; content will go stale without manual upkeep) |
+| 17 | A17 | Completion celebration | ✅ merged (PR #152) |
+| 18 | A18 | Fewer setup decisions before first AI use | ✅ merged; live e2e walkthrough done 2026-07-21 (unmerged branch, see below) |
 | 19 | A19 | Reliability expectation-setter copy | ✅ merged |
 | 20 | A20 | Role-appropriate default landing pages | ✅ merged |
 
-**17/20 merged to `main`. 3/20 (A10, A16, A17) built, tested, and PR'd — pending merge of #152.**
+**20/20 merged to `main` (GitHub). Corrected 2026-07-21 — this line previously read "17/20... pending
+merge of #152" after #152 had, in fact, already merged; left stale rather than re-checked. See the
+correction note under Phase 3 (section 5) for the same fix and the separate GitLab-sync caveat.**
+Additionally, A3/A7/A18's live end-to-end browser walkthrough (the thing distinguishing "merged" from
+"actually verified working," per this document's own section 4 lesson) is now done — see
+`ITERATION_PROGRESS.md`'s 2026-07-21 "First genuine live browser walkthrough" entry — but sits on
+branch `fix/live-tenant-onboarding-and-rag-walkthrough`, not yet merged to `main`, holding on git
+instructions rather than a code gap.
 
 ## 8. Consolidated honest-gap register
 
-1. **No end-to-end browser verification of A3+A7+A18 (onboarding trio).** Carried from Sprint 2
-   through all of Sprint 3 without closing. Highest-priority gap for whoever picks this up next.
+1. ~~**No end-to-end browser verification of A3+A7+A18 (onboarding trio).**~~ **Closed 2026-07-21.**
+   Carried from Sprint 2 through all of Sprint 3 without closing; finally done — see
+   `ITERATION_PROGRESS.md`'s 2026-07-21 entry ("First genuine live browser walkthrough..."). The
+   walkthrough surfaced and fixed 4 real bugs that had been silently blocking this exact flow (a
+   fake org-id placeholder routing every new signup into a broken workspace, two Supabase
+   permission-grant gaps, and a schema-level `tenant_id` NOT NULL default missing on 11 tables) plus
+   4 more demo-data-leakage instances in `AIWorkspaceSection.tsx` (see gap #11 below and
+   `DEMO_DATA_LEAKAGE_AUDIT.md`'s Round 4). This is exactly why this gap was flagged highest-priority
+   — a live walkthrough is the only verification method that actually catches bugs like these; unit
+   tests and code review across three prior sprints did not.
 2. **A9's golden-path-step trigger unwired** (second of two named trigger points).
 3. **A8/A5/A19/A12 lack dedicated unit tests** (structural gap in page-component testing generally).
 4. **Approvals, Stakeholders/CRM, and Analytics/OKRs remain fully demo-gated with no live
@@ -250,7 +275,11 @@ tip (except #152, which branched directly from `main` after #151 merged, same as
    repo prevents a PR from being merged while its source branch still has commits arriving. Sprint 3
    avoided a repeat by checking merge status directly against `origin/main` before each phase,
    which is a practice, not a guardrail.
-7. **PR #152 (A10/A16/A17) is unmerged** — the most immediate outstanding item.
+7. ~~**PR #152 (A10/A16/A17) is unmerged**~~ **Resolved — was already merged, this line was stale.**
+   Confirmed 2026-07-21 via `git merge-base --is-ancestor 3d23ddc origin/main` against the canonical
+   GitHub history. This document itself had been asserting the older, incorrect state for longer
+   than it should have — a live-checked claim that was never re-verified after the underlying fact
+   changed. See the correction note under section 5's Phase 3.
 8. **WhatsNewPanel's content is a manually-curated, one-time snapshot** — no mechanism ties it to
    `ITERATION_PROGRESS.md`, so it will read as stale within a release or two if untouched.
 9. **Calendly (A14) has a real cost caveat for the customer** — surfaced in the Settings UI, but
@@ -258,15 +287,46 @@ tip (except #152, which branched directly from `main` after #151 merged, same as
 10. **Whether the audit-trigger bug fixed in PR #149 was ever live on the actual production/beta
     Supabase project is unconfirmed** — no production credentials available to check from this
     environment.
+11. **Whether the `tenant_id` NOT NULL default gap (fixed 2026-07-21 for `organizations` and 10
+    other tables) ever affected the real production/beta Supabase project is unconfirmed** — same
+    caveat as gap #10, and arguably more likely to be live in production too, since (unlike the
+    service_role/authenticated grants gap fixed alongside it, which is specific to a bare local
+    Supabase CLI instance vs. Cloud's automatic bootstrapping) this is a schema/application-logic
+    gap, not an environment-provisioning difference. See `ITERATION_PROGRESS.md`'s 2026-07-21 entry.
+12. ~~**A fifth demo-data-leakage instance found, not fixed:**~~ **Resolved 2026-07-21 (deleted).**
+    `src/features/knowledge/KnowledgeSection.tsx` was fully hardcoded illustrative content with
+    zero demo-mode gating, distinct from the correctly-gated `KnowledgeHubSection.tsx` (a naming
+    collision that let it slip past 3 prior audit rounds). Confirmed unreachable — never imported
+    or routed anywhere — and confirmed via `git log --follow` to be superseded MVP-era scaffolding
+    (predates `KnowledgeHubSection.tsx`, never developed further after it existed), so deleted
+    rather than gated. See `DEMO_DATA_LEAKAGE_AUDIT.md`'s Round 4.
+13. **GitLab's `main` is 53 commits behind the true GitHub `main`.** During a git-hosting migration
+    (GitHub account suspended mid-session — `git fetch` returned "Your account is suspended"), the
+    original `origin` remote was renamed to `github` and a new GitLab remote added as `origin`. The
+    local `main` branch itself, however, had never been fast-forwarded past PR #124 (fetching updates
+    a remote-tracking ref, not the local branch), so `git push -u origin --all` pushed that stale
+    `main` to GitLab — missing PR #150, #151, #152, #153, and ~24 dependabot merges. Discovered
+    2026-07-21 while re-verifying PR #152's merge status for this document. Not yet fixed: holding
+    on git operations per current instruction, since a second agent (Codex) is concurrently
+    committing Sprint 0-32 work to the same GitLab remote and a fast-forward should be coordinated,
+    not done unilaterally mid-flight.
 
 ## 9. What remains before Product Iteration I can be called fully closed
 
-1. Merge PR #152 (or explicitly decide to hold it).
-2. Do the actual live browser walkthrough of A3/A7/A18 — gap #1 above, carried since Sprint 2.
+1. ~~Merge PR #152 (or explicitly decide to hold it).~~ — **already merged**, this item was stale (gap #7).
+2. ~~Do the actual live browser walkthrough of A3/A7/A18~~ — **done 2026-07-21**, see gap #1. Sits on
+   branch `fix/live-tenant-onboarding-and-rag-walkthrough`, not yet merged to `main` — holding on
+   git instructions, not a code gap.
 3. Decide whether to address the Capacitor version mismatch (gap #5) before any native mobile
    release, or explicitly accept it as out of scope for the web beta.
-4. Confirm (with production Supabase credentials) whether gap #10 needs remediation on the live
-   project, separately from the local-dev fix already merged.
+4. Confirm (with production Supabase credentials) whether gaps #10 and #11 need remediation on the
+   live project, separately from the local-dev fixes already made.
+5. ~~Decide whether/when to remove or wire up the dead `KnowledgeSection.tsx` page~~ — **done**, deleted (gap #12).
+6. Fast-forward GitLab's `main` to match the true GitHub history (gap #13) — coordinate with Codex
+   first, since it's concurrently committing to the same GitLab remote.
+7. Merge `fix/live-tenant-onboarding-and-rag-walkthrough` itself (item #2 above, plus 9/12 Postgres
+   wrapper integrations and dual Mixpanel/PostHog analytics wiring built on top of it) once git
+   operations are unblocked.
 
 ## 10. Possible scope for a next iteration ("Phase 2"), not started, not scoped in detail here
 

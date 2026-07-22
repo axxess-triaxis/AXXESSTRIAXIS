@@ -1,9 +1,11 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { MockAnalyticsProvider } from "./MockAnalyticsProvider";
 import { MixpanelAnalyticsProvider } from "./MixpanelAnalyticsProvider";
+import { MultiAnalyticsProvider } from "./MultiAnalyticsProvider";
 import { PostHogAnalyticsProvider } from "./PostHogAnalyticsProvider";
 import { normalizeAnalyticsProvider } from "./providers";
 import { sanitizeAnalyticsPayload, sanitizeAnalyticsProperties } from "./sanitize";
+import type { AnalyticsProvider } from "./types";
 
 vi.mock("mixpanel-browser", () => ({
   default: {
@@ -80,5 +82,91 @@ describe("analytics service contracts", () => {
     });
 
     expect(payload.properties).toEqual({ feedback_type: "Bug", permission_to_contact: true });
+  });
+
+  describe("MultiAnalyticsProvider", () => {
+    function fakeProvider(name: string, overrides: Partial<AnalyticsProvider> = {}): AnalyticsProvider {
+      return {
+        name,
+        enabled: true,
+        trackEvent: vi.fn(),
+        identifyUser: vi.fn(),
+        setUserProperties: vi.fn(),
+        resetAnalytics: vi.fn(),
+        ...overrides,
+      };
+    }
+
+    const payload = {
+      timestamp: "2026-07-03T00:00:00.000Z",
+      environment: "test",
+      app_version: "0.6.0",
+      release_version: "0.6.0-beta",
+    };
+
+    it("fans every call out to all wrapped providers", () => {
+      const posthog = fakeProvider("posthog");
+      const mixpanel = fakeProvider("mixpanel");
+      const multi = new MultiAnalyticsProvider([posthog, mixpanel]);
+
+      multi.trackEvent("project_created", payload);
+      multi.identifyUser("user_1", { user_role: "Manager" });
+      multi.setUserProperties({ plan_type: "beta" });
+      multi.resetAnalytics();
+
+      for (const provider of [posthog, mixpanel]) {
+        expect(provider.trackEvent).toHaveBeenCalledWith("project_created", payload);
+        expect(provider.identifyUser).toHaveBeenCalledWith("user_1", { user_role: "Manager" });
+        expect(provider.setUserProperties).toHaveBeenCalledWith({ plan_type: "beta" });
+        expect(provider.resetAnalytics).toHaveBeenCalled();
+      }
+    });
+
+    it("is enabled when at least one wrapped provider is enabled, and names all of them", () => {
+      const multi = new MultiAnalyticsProvider([fakeProvider("posthog"), fakeProvider("mixpanel", { enabled: false })]);
+      expect(multi.enabled).toBe(true);
+      expect(multi.name).toBe("posthog+mixpanel");
+    });
+
+    it("does not let one provider throwing block the others from receiving the event", () => {
+      const broken = fakeProvider("posthog", { trackEvent: vi.fn(() => { throw new Error("network down"); }) });
+      const healthy = fakeProvider("mixpanel");
+      const multi = new MultiAnalyticsProvider([broken, healthy]);
+
+      expect(() => multi.trackEvent("project_created", payload)).not.toThrow();
+      expect(healthy.trackEvent).toHaveBeenCalledWith("project_created", payload);
+    });
+  });
+
+  describe("createAnalyticsProvider dual-provider selection", () => {
+    afterEach(() => {
+      vi.unstubAllEnvs();
+      vi.resetModules();
+    });
+
+    it("runs both Mixpanel and PostHog simultaneously when both tokens are configured", async () => {
+      vi.stubEnv("NEXT_PUBLIC_ANALYTICS_DISABLED", "false");
+      vi.stubEnv("NEXT_PUBLIC_ANALYTICS_PROVIDER", "auto");
+      vi.stubEnv("NEXT_PUBLIC_POSTHOG_KEY", "posthog_public_project_token");
+      vi.stubEnv("NEXT_PUBLIC_MIXPANEL_TOKEN", "mixpanel_project_token");
+
+      const { createAnalyticsProvider } = await import("./config");
+      const provider = createAnalyticsProvider();
+
+      expect(provider.name).toBe("posthog+mixpanel");
+      expect(provider.enabled).toBe(true);
+    });
+
+    it("falls back to a single provider when only one token is configured", async () => {
+      vi.stubEnv("NEXT_PUBLIC_ANALYTICS_DISABLED", "false");
+      vi.stubEnv("NEXT_PUBLIC_ANALYTICS_PROVIDER", "auto");
+      vi.stubEnv("NEXT_PUBLIC_POSTHOG_KEY", "posthog_public_project_token");
+      vi.stubEnv("NEXT_PUBLIC_MIXPANEL_TOKEN", "");
+
+      const { createAnalyticsProvider } = await import("./config");
+      const provider = createAnalyticsProvider();
+
+      expect(provider.name).toBe("posthog");
+    });
   });
 });
