@@ -17,6 +17,16 @@ stages:
   - supabase
   - security
 
+# The included SAST/Secret-Detection templates default their jobs to `stage: test`, which does not
+# exist in this pipeline's custom `stages:` list above -- GitLab rejects the whole pipeline as
+# invalid YAML (0 jobs run, including quality/supabase-verify/pnpm-audit) unless every included
+# job's stage is remapped to one that actually exists. Both are security-category checks, so both
+# map to the existing `security` stage.
+sast:
+  stage: security
+secret_detection:
+  stage: security
+
 variables:
   NEXT_TELEMETRY_DISABLED: "1"
   PNPM_VERSION: "11.7.0"
