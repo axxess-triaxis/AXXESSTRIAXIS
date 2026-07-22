@@ -210,9 +210,14 @@ Sprint 3 delta, composite Sprint 1+2+3 delta): docs/SPRINT_3_CLOSEOUT_2026_07_22
 Sprint 4 (Demo/Live Data Separation, Navigation Integrity And Tenant
 Trust) implemented, tested, documented and fully verified locally on
 2026-07-22 -- same references.
-Sprint 5 remains pending.
-Live Vercel beta redeploy and live beta QA replay remain pending for all
-sprints.
+Sprint 5 (Live QA Replay, Tenant Isolation, Audit Evidence Expansion And
+Release Gate) implemented, tested, documented and fully verified on
+2026-07-22, including a live Vercel production redeploy -- same
+references, plus docs/SPRINT_5_CLOSEOUT_2026_07_22.md.
+All 20 QA actionables are closed locally. Live two-tenant isolation
+verification (harness written, not yet executed against a real
+database) and a full authenticated live golden-path replay remain open
+follow-ups.
 Sprint 1 closeout (findings ledger, constraint compliance, estimated score
 deltas): docs/SPRINT_1_CLOSEOUT_2026_07_22.md.
 Sprint 2 closeout (cumulative Sprint 1+2 findings ledger, isolated Sprint 2
@@ -226,4 +231,14 @@ sprint left undone within its own scope, cross-cutting structural gaps,
 consolidated roadmap-phase and actionable-status tables, and a
 leverage-ranked priority list for what to close next):
 docs/SPRINT_1_TO_4_GAP_ANALYSIS_2026_07_22.md.
+Sprint 5 closeout (cumulative Sprint 1+2+3+4+5 findings ledger, isolated
+Sprint 5 delta, composite Sprint 1+2+3+4+5 delta, live-replay evidence
+and the production deployment record): docs/SPRINT_5_CLOSEOUT_2026_07_22.md.
+This QA-local "Sprint 5" is recorded in the full Sprint 1-41 engineering
+history as Sprint 41, "QA 2 - Live Verification, Tenant Isolation &
+Release-Gate Audit" -- a milestone. See
+docs/SPRINT_41_QA2_MILESTONE_2026_07_22.md for the full Sprint 1-41
+numbering/history, program spend, the facts/partial/untouched
+breakdown, the deployment attempt narrative, and 20 ranked next
+actionables.
 ```

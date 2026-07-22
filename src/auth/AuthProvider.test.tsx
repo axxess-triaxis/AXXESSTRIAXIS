@@ -2,6 +2,11 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AuthProvider, useAuth } from "./AuthProvider";
 
+const clearLiveWorkspaceMetricsCacheMock = vi.fn();
+vi.mock("../hooks/liveWorkspaceMetricsCache", () => ({
+  clearLiveWorkspaceMetricsCache: () => clearLiveWorkspaceMetricsCacheMock(),
+}));
+
 function Harness() {
   const { session, isAuthenticated, logout } = useAuth();
   return (
@@ -16,6 +21,7 @@ function Harness() {
 describe("AuthProvider", () => {
   beforeEach(() => {
     window.localStorage.clear();
+    clearLiveWorkspaceMetricsCacheMock.mockClear();
   });
 
   afterEach(() => {
@@ -58,6 +64,33 @@ describe("AuthProvider", () => {
     await new Promise((resolve) => setTimeout(resolve, 10));
     expect(screen.getByTestId("authed").textContent).toBe("no");
     expect(screen.getByTestId("status").textContent).toBe("unauthenticated");
+  });
+
+  it("clears the tenant-scoped live-metrics dedup cache on logout, so a different user signing in next never reuses a stale entry (Sprint 5, F-021)", async () => {
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/api/auth/session")) {
+        return new Response(JSON.stringify({
+          user: { id: "user_1", organizationId: "org_1", role: "Organization Admin", email: "admin@example.com" },
+        }), { status: 200 });
+      }
+      if (url.includes("/api/auth/logout")) {
+        return new Response(JSON.stringify({ ok: true }), { status: 200 });
+      }
+      return new Response(JSON.stringify({ error: "Not found" }), { status: 404 });
+    }));
+
+    render(
+      <AuthProvider>
+        <Harness />
+      </AuthProvider>,
+    );
+
+    await waitFor(() => expect(screen.getByTestId("authed").textContent).toBe("yes"));
+    fireEvent.click(screen.getByText("sign out"));
+    await waitFor(() => expect(screen.getByTestId("authed").textContent).toBe("no"));
+
+    expect(clearLiveWorkspaceMetricsCacheMock).toHaveBeenCalled();
   });
 
   it("stays unauthenticated when the server reports no real session (client/server session agreement)", async () => {

@@ -114,7 +114,11 @@ export function shouldRedirectToLogin(
   );
 }
 
-export function middleware(request: NextRequest) {
+// Renamed from `middleware` to `proxy` (and this file from middleware.ts to proxy.ts) in Sprint 5,
+// following the official `npx @next/codemod@canary middleware-to-proxy .` migration: Next.js 16
+// deprecated the `middleware.ts` file convention in favor of `proxy.ts` as a pure rename with no
+// runtime behavior change (still an Edge Runtime request interceptor, same `config.matcher`).
+export function proxy(request: NextRequest) {
   const requestHost = request.headers.get("x-forwarded-host") ?? request.headers.get("host");
 
   const canonicalHostRedirectUrl = getCanonicalHostRedirectUrl(

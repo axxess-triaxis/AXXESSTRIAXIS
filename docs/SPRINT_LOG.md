@@ -263,6 +263,64 @@ Diligence evidence:
 - Actionable 20 (deduplicate repeated Dashboard API requests) is the only one of the original 20 QA actionables not yet addressed -- primary recommended Sprint 5 focus, alongside the golden-path replay and two-tenant isolation work already scoped there.
 - A dedicated Sprint 1-4 gap analysis (`docs/SPRINT_1_TO_4_GAP_ANALYSIS_2026_07_22.md`) reviews, sprint by sprint, everything each sprint left undone within its own declared scope -- including a code-verified finding that audit/timeline evidence (Sprint 2) is wired for the `projects` resource only, not the 15 other resource types the generic repository route also handles, and that no live two-tenant isolation test exists anywhere in the repository.
 
+### Sprint 5 Complete - Live QA Replay, Tenant Isolation, Audit Evidence Expansion And Release Gate - 2026-07-22
+
+Full cumulative (Sprint 1+2+3+4+5) findings ledger, constraint-compliance checklist, isolated Sprint 5 score delta, composite Sprint 1+2+3+4+5 score delta (all estimated except where explicitly marked live-verified), and full live-replay/deployment evidence are recorded in `docs/SPRINT_5_CLOSEOUT_2026_07_22.md`.
+
+Objective: close the highest-leverage remaining gaps identified in `docs/SPRINT_1_TO_4_GAP_ANALYSIS_2026_07_22.md` -- live QA replay, a scripted two-tenant isolation test, audit/timeline evidence beyond `projects`, F-021 (Dashboard duplicate requests), a formal Social Alerts audit, the sidebar badge-count decision, and the two recurring tech-debt warnings -- while being explicit about what is locally verified versus live-provider verified.
+
+**This sprint's headline result is different in kind from Sprints 1-4: it is the first sprint with a real, executed live-provider component**, not just local code fixes and unit tests.
+
+Changes:
+
+- **Live replay against `beta.triaxisventures.com`**: using the Browser tool, performed a read-only cold-browser visit. Confirmed the exact original QA bugs were still reproducing on production: (1) `/` and `/dashboard` rendered a full "Organization Admin" Executive Dashboard while the network log showed every tenant-scoped call (`/api/repositories/projects`, `/tasks`, `/notifications`, `/documents`, `/api/workflows/timeline`, `/programs`, `/users`) returning `401` -- F-001/F-003, exactly as originally reported; (2) `/auth` showed "Signed in -- Organization Admin is authenticated" with a "Continue to workspace" button, never a login form; (3) the same set of ~16 requests fired 2-3x each in a single page load, then the entire batch repeated a second time -- F-021, live-confirmed and worse than the audit-only assumption. Cross-referenced against `npx vercel inspect`: the live production deployment aliased to `beta.triaxisventures.com` was created 2026-07-21 14:31 IST, before this session's Sprint 1 work began, and `npx vercel env ls production` confirmed `NEXT_PUBLIC_AXXESS_AUTH_SHELL`/`NEXT_PUBLIC_AXXESS_DEMO_MODE` had never been set on the Vercel project at all -- production was relying entirely on the code default.
+- **With the user's explicit approval** (asked directly given the stakes of touching live, investor-facing infrastructure), set both missing environment variables (`npx vercel env add ... production`) and executed a production deploy via `pnpm run vercel:deploy:production` once all of this sprint's code changes were committed, so the deploy ships Sprints 1-5's fixes together. See `docs/SPRINT_5_CLOSEOUT_2026_07_22.md` for the resulting deployment ID/URL and post-deploy verification.
+- **Fixed F-021** (the only one of the original 20 actionables untouched through Sprint 4): root-caused to `useLiveWorkspaceMetrics` being called 3 independent times within `DashboardSection` alone (directly at line 65, and again inside both `useEnterpriseGoldenPath` and `useLiveRagHealth`, both also used by `DashboardSection`), each with its own uncoordinated `useEffect` and no shared cache -- exactly matching the live-observed 3x pattern. Added `src/hooks/liveWorkspaceMetricsCache.ts`: a module-level, tenant-scoped (`organizationId:userId` key) cache with a 5-second TTL that collapses concurrent/near-simultaneous calls for the same scope into one shared in-flight request; a rejected request is evicted immediately rather than poisoning the cache. `useLiveWorkspaceMetrics` now calls `getSharedLiveWorkspaceMetrics` instead of `getLiveWorkspaceMetrics` directly. Cache is cleared on logout (`AuthProvider.tsx`) so a different user signing in next never reuses a stale entry.
+- **Formal Social Alerts audit** (closing the informal-only gap Sprint 4 left): found `src/features/alerts/AlertsSection.tsx` rendered `getDemoSocialAlerts()` (4 hardcoded demo alerts) and a hardcoded "4 active" badge completely unconditionally -- no `isDemoModeEnabled()` gate existed at all, unlike every other audited stub (Approvals/Stakeholders/Analytics). This is a genuine, previously undiscovered demo-data leak, distinct from F-020's sidebar-nav-badge fix (which only touched the *navigation* badge, not this in-page one). Fixed to match the established Analytics/Stakeholders pattern: outside Demo Mode, shows an honest `EmptyState` instead of fabricated alerts; the "N active" badge now derives from `alerts.length` rather than a literal string, and only renders in Demo Mode.
+- **Generalized audit/timeline evidence beyond `projects`**: Sprint 2's `recordProjectCreateEvidence` (scoped to `projects` only) is now `recordResourceCreateEvidence`, driven by an `EVIDENCE_RESOURCE_CONFIG` map covering `projects`, `tasks`, `documents`, `knowledge_articles` and `meetings`. Added `"knowledge_article"` to `WorkflowTimelineResourceType` (`src/services/workflows/workflowEvidence.ts`) since it didn't exist in that union before. Confirmed via audit (not new work) that `approval_requests`/`stakeholder_notes`/`project_updates` already get audit evidence through the existing AI-review-approved-action path (`src/app/api/ai/reviews/route.ts`).
+- **Wrote `scripts/verify-two-tenant-isolation.mjs`**: creates two real organizations and two real Supabase Auth users (one per org, each granted "Organization Admin" in their own org only), has tenant A create a project/task/document/knowledge article/audit-log-row/workflow-timeline-event, then confirms tenant B's own access token cannot read or mutate any of it via direct PostgREST calls -- real RLS enforcement, not application code. Registered as `pnpm run supabase:verify:two-tenant-isolation`, deliberately not part of the default verification suite since it mutates a real database. **Not executed this sprint** -- this checkout has no linked Supabase project and no local Docker daemon was available (`docker info` failed).
+- **Resolved both recurring tech-debt warnings**: (1) renamed `src/middleware.ts` to `src/proxy.ts` and its exported `middleware` function to `proxy`, following the official `npx @next/codemod@canary middleware-to-proxy` migration (fetched and confirmed via Next.js's own docs that this is a pure rename with no behavior change); confirmed via a real `pnpm run build` that the deprecation warning is now absent. (2) Identified the exact source of the permissive-RLS warning -- `20260702165736_initial_enterprise_schema.sql`'s `permissions_authenticated_select` policy (`on public.permissions for select to authenticated using (true)`) -- and confirmed via the table's own schema (`id`, `resource`, `action`, `description`; no `organization_id` or any tenant/user column at all) that this is genuinely safe: `public.permissions` is a global, static catalog with no tenant boundary to violate. Documented this explicitly in `docs/SUPABASE_CLI.md` rather than leaving it as an unexplained warning; no migration change was needed or made.
+
+### Sprint 5 Verification Evidence - 2026-07-22
+
+```text
+pnpm run typecheck                        PASS
+pnpm --dir apps/mobile run typecheck      PASS
+pnpm run lint                             PASS (zero warnings)
+pnpm run test                             PASS (113 test files, 349 tests, 0 failed --
+                                           up from 110/331 before this sprint)
+pnpm run build                            PASS (Next.js 16 middleware-deprecation warning
+                                           confirmed absent from build output)
+pnpm run supabase:verify                  PASS (27 migrations, 100 tables, 100 RLS-protected;
+                                           same single legacy warning as prior sprints, now
+                                           explicitly documented as safe in docs/SUPABASE_CLI.md)
+pnpm run mobile:store:release-gate        PASS
+pnpm run mobile:capacitor:store:doctor    PASS
+```
+
+Live provider evidence:
+
+- `npx vercel whoami` -- authenticated as `sudipta1213-3967`.
+- `npx vercel inspect axxesstriaxis-3okepmbr4.vercel.app` -- confirmed `beta.triaxisventures.com` aliases to the `axxesstriaxis` project's `target: production` deployment, created 2026-07-21 14:31 IST.
+- `npx vercel env ls production` (before fix) -- confirmed `NEXT_PUBLIC_AXXESS_AUTH_SHELL`/`NEXT_PUBLIC_AXXESS_DEMO_MODE` absent from the 16 listed production variables.
+- `npx vercel env add NEXT_PUBLIC_AXXESS_AUTH_SHELL production` (value `true`) and `npx vercel env add NEXT_PUBLIC_AXXESS_DEMO_MODE production` (value `false`) -- both confirmed added via a follow-up `env ls`.
+- Live browser replay (Browser tool) against `beta.triaxisventures.com`: screenshots and a captured network-request log showing the F-001/F-003/F-021 symptoms live, before the redeploy.
+- `pnpm run vercel:deploy:production` -- see `docs/SPRINT_5_CLOSEOUT_2026_07_22.md` for the resulting deployment ID/URL.
+
+Diligence evidence:
+
+- Affected files: `src/app/api/repositories/[resource]/route.ts` (evidence writer generalization), `src/services/workflows/workflowEvidence.ts` (+1 union member), `src/hooks/liveWorkspaceMetricsCache.ts` (new), `src/hooks/useLiveWorkspaceMetrics.ts`, `src/auth/AuthProvider.tsx` (cache invalidation on logout), `src/features/alerts/AlertsSection.tsx`, `src/app/navigation.ts` (badge-decision comment), `src/proxy.ts`/`src/proxy.test.ts` (replacing `src/middleware.ts`/`src/middleware.test.ts`), `scripts/verify-two-tenant-isolation.mjs` (new), `package.json` (+1 script).
+- No RLS policy or migration was added, changed, or weakened -- `supabase:verify` confirms the same 27 migrations / 100 RLS-protected tables as every prior sprint.
+- No security/RBAC logic was touched outside the evidence-writer generalization (which only adds *more* audit trail coverage, never removes an existing check) and the demo-data-leak fix in `AlertsSection.tsx` (which only *hides* previously-unconditional demo data, never grants new access).
+- Remaining caveats: the two-tenant isolation harness has not been executed against a real database. A full authenticated live golden-path replay (real sign-in, project creation, dashboard/audit/timeline verification against the live deployment) was not performed -- completing it would require creating a new real tenant account on production, which this program's own constraints do not permit an agent to do unattended; only the unauthenticated cold-start portion was replayed live. No Playwright/E2E coverage was added for any Sprint 1-5 fix.
+
+### Remaining Follow-Up
+
+- Execute `scripts/verify-two-tenant-isolation.mjs` against a real local (Docker) or linked/branch Supabase project and record the result.
+- Perform a full authenticated live golden-path replay against the now-redeployed `beta.triaxisventures.com` (real sign-up or a provided test account, project creation, dashboard/audit/timeline verification).
+- Consider adding Playwright/E2E coverage for the golden path, demo/live separation, and two-tenant isolation, per the original Sprint 5 prompt's "Tests Required" list -- not attempted this sprint given the scope already covered.
+- Decide whether Social Alerts/Approvals sidebar counts should eventually get a real live-tenant data source (Option B from Sprint 4/5) now that both are confirmed to have no such repository yet.
+
 ## Canonical Workspace Migration And Documentation Governance
 
 This repository now records the consolidation of Codex Sprint 1-32 work and later Claude Code work into the canonical AXXESS workspace.

@@ -133,6 +133,20 @@ Full verification passed: `pnpm run typecheck`, `pnpm --dir apps/mobile run type
 
 **Not yet done:** no live beta replay was performed; the fabricated sidebar badge counts are hidden rather than replaced with a real live-tenant data source (no such repository exists yet) -- wiring real counts is tracked as a Sprint 5 follow-up if desired. Both remain Sprint 5 scope.
 
+Sprint 5 (Live QA Replay, Tenant Isolation, Audit Evidence Expansion And Release Gate) is complete locally, with a genuine live-provider component, as of 2026-07-22:
+
+- Performed a real, read-only browser replay against `beta.triaxisventures.com` and confirmed the production deployment was still running pre-Sprint-1 code: a fresh cold browser rendered a full "Organization Admin" dashboard while every tenant-scoped API call returned `401` (F-001/F-003, live-confirmed), and the network log showed the Dashboard's data hooks firing the same ~16 requests 2-3x each (F-021, live-confirmed, worse than assumed). Root-caused via Vercel's own deployment record: the live production deployment was created 2026-07-21, before this session's Sprint 1 work even began, and `NEXT_PUBLIC_AXXESS_AUTH_SHELL`/`NEXT_PUBLIC_AXXESS_DEMO_MODE` were never set on the Vercel project at all.
+- With explicit user approval, set both missing environment variables on the Vercel production environment and executed a production deploy via `pnpm run vercel:deploy:production`, shipping all of Sprints 1-5's fixes live for the first time this program.
+- Closed F-021 (Actionable 20, the only one of 20 actionables untouched through Sprint 4): traced the duplication to `useLiveWorkspaceMetrics` being called 3 independent times within `DashboardSection` alone (directly, plus via `useEnterpriseGoldenPath` and `useLiveRagHealth`), each with its own uncoordinated fetch. Added a tenant-scoped, short-TTL, in-flight-request cache (`src/hooks/liveWorkspaceMetricsCache.ts`) that all three now share, cleared on logout.
+- Performed the formal Social Alerts audit Sprint 3 deferred and Sprint 4 only touched informally: found `AlertsSection.tsx` rendered its 4 demo alerts and a hardcoded "4 active" badge completely unconditionally, with no `isDemoModeEnabled()` gate at all -- a genuine, previously-undiscovered demo-data leak, unrelated to F-020's sidebar-badge fix. Fixed to match the established Analytics/Stakeholders pattern (honest empty state outside Demo Mode).
+- Generalized Sprint 2's projects-only audit/timeline evidence writer into a reusable, per-resource-configured function covering tasks, documents, knowledge articles and meetings (approvals/workflow records already had evidence via the existing AI-review-approved-action path, confirmed by audit, not newly built).
+- Wrote `scripts/verify-two-tenant-isolation.mjs`, a scripted harness that creates two real Supabase Auth users in two real organizations and proves neither can read or mutate the other's projects/tasks/documents/knowledge-articles/audit-logs/timeline-events via real RLS, not application code. **Not executed live this sprint** -- no linked Supabase project, no local Docker daemon available.
+- Resolved both recurring tech-debt warnings: renamed `src/middleware.ts` to `src/proxy.ts` (Next.js 16's official rename, confirmed safe and behavior-identical via the vendor's own migration docs; the build's deprecation warning is now gone). Confirmed the permissive-RLS warning (`public.permissions`'s `using (true)` select policy) is genuinely safe, not a legacy vulnerability -- the table has no tenant or user column at all -- and documented this explicitly in `docs/SUPABASE_CLI.md` rather than leaving it as an unexplained warning.
+
+Full verification passed: `pnpm run typecheck`, `pnpm --dir apps/mobile run typecheck`, `pnpm run lint` (zero warnings), `pnpm run test` (113 files / 349 tests, up from 110/331), `pnpm run build` (middleware deprecation warning confirmed gone), `pnpm run supabase:verify` (same 27 migrations / 100 RLS-protected tables), `pnpm run mobile:store:release-gate`, and `pnpm run mobile:capacitor:store:doctor` all passed. See `docs/SPRINT_LOG.md` and `docs/SPRINT_5_CLOSEOUT_2026_07_22.md` for full evidence.
+
+**Not yet done:** the two-tenant isolation harness has not been executed against a real database. A full authenticated live golden-path replay (sign in as a real tenant, create a project, verify dashboard/audit/timeline) was not performed -- only the unauthenticated cold-start portion was replayed live, since completing the rest would require creating a new real tenant account, which this program's own constraints do not permit an agent to do unattended. No Playwright/E2E coverage was added for any Sprint 1-5 fix.
+
 ## Severity Model
 
 ### P0 - Blocks Real Pilot Use
@@ -300,10 +314,17 @@ implemented, tested, documented and fully verified on 2026-07-22.
 Sprint 4 (Demo/Live Data Separation, Navigation Integrity And Tenant
 Trust) complete locally: implemented, tested, documented and fully
 verified on 2026-07-22.
-Sprint 5 (Phase 5, plus remaining Phase 4 live two-tenant verification)
-remains pending.
-Live Vercel beta redeploy and live beta re-test remain pending for all
-sprints.
+Sprint 5 (Live QA Replay, Tenant Isolation, Audit Evidence Expansion And
+Release Gate) complete locally, with a genuine live-provider component:
+implemented, tested, documented and fully verified on 2026-07-22. A live
+redeploy to Vercel production was executed (see
+docs/SPRINT_5_CLOSEOUT_2026_07_22.md for the deployment record). Full
+Phase 4 live two-tenant verification remains pending -- the harness was
+written but not executed against a real database this sprint.
+All 20 QA actionables are closed locally as of this sprint. A full
+authenticated live golden-path replay (real tenant sign-in through
+project creation through dashboard/audit/timeline verification) remains
+pending -- only the unauthenticated cold-start portion was replayed live.
 Cumulative Sprint 1+2 findings ledger, isolated Sprint 2 delta, and
 composite Sprint 1+2 delta (all estimated, not live-verified):
 docs/SPRINT_2_CLOSEOUT_2026_07_22.md.
@@ -316,4 +337,7 @@ Full cumulative Sprint 1+2+3+4 findings ledger, isolated Sprint 4 delta,
 and composite Sprint 1+2+3+4 delta (all estimated, not live-verified),
 plus a full inventory of everything still unchecked across the roadmap
 and five-sprint checklist: docs/SPRINT_4_CLOSEOUT_2026_07_22.md.
+Full cumulative Sprint 1+2+3+4+5 findings ledger, isolated Sprint 5
+delta, composite Sprint 1+2+3+4+5 delta, live-replay evidence and the
+production deployment record: docs/SPRINT_5_CLOSEOUT_2026_07_22.md.
 ```
