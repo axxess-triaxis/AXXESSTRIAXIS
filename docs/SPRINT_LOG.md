@@ -147,6 +147,8 @@ Pilot customer readiness: 12/100
 
 ### Sprint 3 Complete - Workspace Loading And Error-State Hardening - 2026-07-22
 
+Full cumulative (Sprint 1+2+3) findings ledger, constraint-compliance checklist, and both an isolated Sprint 3 score delta and a composite Sprint 1+2+3 score delta (both estimated, not live-verified) are recorded in `docs/SPRINT_3_CLOSEOUT_2026_07_22.md`.
+
 Objective: eliminate indefinite loading states and raw backend errors across the 9 workspaces the QA report found hanging (F-006-F-014), plus normalize raw `Unauthorized.` text (F-016).
 
 The headline finding this sprint: auditing the *current* local codebase (not the QA report's live deployment, which has not been redeployed since Sprint 1 or 2) found that most of the reported hangs do not reproduce at all. Per-workspace audit:

@@ -205,6 +205,8 @@ references.
 Sprint 3 (Workspace Loading And Error-State Hardening) implemented,
 tested, documented and fully verified locally on 2026-07-22 -- same
 references.
+Sprint 3 closeout (cumulative Sprint 1+2+3 findings ledger, isolated
+Sprint 3 delta, composite Sprint 1+2+3 delta): docs/SPRINT_3_CLOSEOUT_2026_07_22.md.
 Sprints 4-5 remain pending.
 Live Vercel beta redeploy and live beta QA replay remain pending for all
 sprints.
