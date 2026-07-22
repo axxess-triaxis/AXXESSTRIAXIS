@@ -449,6 +449,9 @@ failure-path fallback behind isDemoModeEnabled(), matching the pattern
 already correctly used for KPIs in the same file. Live Vercel/beta
 re-verification remains outstanding and is explicitly deferred to
 Sprint 5.
+Full cumulative Sprint 1+2+3+4 findings ledger, isolated Sprint 4 score
+delta, and composite Sprint 1+2+3+4 score delta (all estimated, not
+live-verified): docs/SPRINT_4_CLOSEOUT_2026_07_22.md.
 ```
 
 ## Sprint 5 - QA Replay, Performance And Release Gate

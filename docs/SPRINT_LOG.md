@@ -213,7 +213,7 @@ Diligence evidence:
 
 ### Sprint 4 Complete - Demo/Live Data Separation, Navigation Integrity And Tenant Trust - 2026-07-22
 
-Full cumulative (Sprint 1+2+3+4) findings ledger, constraint-compliance checklist, and both an isolated Sprint 4 score delta and a composite Sprint 1+2+3+4 score delta (both estimated, not live-verified) are produced only if/when a Sprint 4 closeout is requested, per this project's established closeout cadence.
+Full cumulative (Sprint 1+2+3+4) findings ledger, constraint-compliance checklist, both an isolated Sprint 4 score delta and a composite Sprint 1+2+3+4 score delta (all estimated, not live-verified), and a full inventory of everything still unchecked across the five-sprint roadmap and checklist are recorded in `docs/SPRINT_4_CLOSEOUT_2026_07_22.md`.
 
 Objective: fix F-015 (dashboard fabricated timeline), F-017 (workflow records fabricated), F-018 (onboarding progress inconsistency), F-019 (`/documents` route mapping), and F-020 (sidebar badges contradict tenant state), while re-verifying F-001-F-016 haven't regressed.
 
