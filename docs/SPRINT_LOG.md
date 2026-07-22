@@ -90,6 +90,8 @@ Diligence evidence:
 
 ### Sprint 2 Complete - Live Tenant Persistence And Golden Path Writes - 2026-07-22
 
+Full cumulative (Sprint 1+2) findings ledger, constraint-compliance checklist, and both an isolated Sprint 2 score delta and a composite Sprint 1+2 score delta (both estimated, not live-verified) are recorded in `docs/SPRINT_2_CLOSEOUT_2026_07_22.md`.
+
 Objective: prove a real authenticated tenant can create durable records and that the system records evidence of the action, addressing the QA repro `POST /api/repositories/projects -> 401`.
 
 This sprint turned out smaller than the prompt anticipated: auditing the repository/API/RLS layer that handles project creation found that persistence, refresh survival, unauthenticated-failure handling and tenant-scoped filtering were **already correct** before this sprint started (the `401` in the QA repro was the same root cause as Sprint 1's F-001, not a separate defect). The one genuine gap was evidence, not persistence.

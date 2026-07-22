@@ -232,6 +232,9 @@ auditLogsRepository/recordWorkflowTimelineEvent pattern already used
 elsewhere in the codebase for AI-review-approved actions, so no new
 architecture was introduced. Live Supabase/Vercel re-verification of the
 exact QA repro remains outstanding and is explicitly deferred to Sprint 5.
+Full cumulative Sprint 1+2 findings ledger, isolated Sprint 2 score delta,
+and composite Sprint 1+2 score delta (all estimated, not live-verified):
+docs/SPRINT_2_CLOSEOUT_2026_07_22.md.
 ```
 
 ## Sprint 3 - Workspace Loading And Error-State Hardening

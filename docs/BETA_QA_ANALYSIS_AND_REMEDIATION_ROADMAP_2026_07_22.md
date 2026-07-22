@@ -276,6 +276,9 @@ verified on 2026-07-22.
 Sprints 3-5 (Phases 3-5) remain pending.
 Live Vercel beta redeploy and live beta re-test remain pending for all
 sprints.
+Cumulative Sprint 1+2 findings ledger, isolated Sprint 2 delta, and
+composite Sprint 1+2 delta (all estimated, not live-verified):
+docs/SPRINT_2_CLOSEOUT_2026_07_22.md.
 Full findings ledger and estimated (not live-verified) score deltas:
 docs/SPRINT_1_CLOSEOUT_2026_07_22.md.
 ```
