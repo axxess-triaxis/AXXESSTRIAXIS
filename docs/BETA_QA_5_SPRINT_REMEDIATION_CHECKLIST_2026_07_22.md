@@ -363,65 +363,92 @@ Make live tenant data honest and Demo Mode polished, explicit and non-confusing.
 
 ### Implementation Checklist
 
-- [ ] Gate dashboard workflow timeline fallback to Demo Mode only.
-- [ ] Gate workflow records fallback to Demo Mode only.
-- [ ] Ensure clean live tenants show honest empty states.
-- [ ] Ensure Demo Mode remains populated and clearly labeled.
-- [ ] Fix `/documents` route mapping.
-- [ ] Confirm `/documents` and `/knowledge` are distinct.
-- [ ] Audit sidebar badge data source.
-- [ ] Align badge counts with actual tenant state.
-- [ ] Fix onboarding progress calculations.
-- [ ] Ensure onboarding progress changes only after durable user actions.
+- [x] Gate dashboard workflow timeline fallback to Demo Mode only. (Regression-verified: `useWorkflowTimeline.ts` already gated pre-Sprint-4; no change needed.)
+- [x] Gate workflow records fallback to Demo Mode only. (Regression-verified: `WorkflowRecordsPage.tsx` already gated pre-Sprint-4; no change needed.)
+- [x] Ensure clean live tenants show honest empty states. (Confirmed for dashboard projects/KPIs, workflow timeline, workflow records; fixed the one remaining gap in `DashboardSection.tsx`'s project list, see below.)
+- [x] Ensure Demo Mode remains populated and clearly labeled. (Confirmed unchanged: `GuidedDemoBanner.tsx` and `TopBar.tsx`'s "Investor Preview" badge remain correctly gated behind `isDemoModeEnabled()`.)
+- [x] Fix `/documents` route mapping. (Regression-verified: already fixed in Sprint 3, `lazyRoutes.tsx` maps `documents` -> `DocumentsSection`, `knowledge` -> `KnowledgeHubSection`; no regression found.)
+- [x] Confirm `/documents` and `/knowledge` are distinct. (Confirmed distinct headings and no cross-reference; added a dedicated regression test this sprint.)
+- [x] Audit sidebar badge data source. (Found: `navigation.ts`'s hardcoded `badge: "4"` (Social Alerts) and `badge: "23"` (Approvals & Governance) render unconditionally regardless of tenant state, with no backing repository call.)
+- [x] Align badge counts with actual tenant state. (Fixed: added `badgeKind?: "tag" | "count"` to `NavItem`; `Sidebar.tsx` now only renders a `"count"`-kind badge when `isDemoModeEnabled()`; the "AI" tag on AI Workspace renders unconditionally as a `"tag"`-kind badge.)
+- [x] Fix onboarding progress calculations. (Root cause found and fixed in `DashboardSection.tsx`, not the onboarding widget itself -- see below.)
+- [x] Ensure onboarding progress changes only after durable user actions. (Fixed: `DashboardSection.tsx`'s `projects` state was unconditionally seeded and re-seeded with 186 fabricated demo projects on the initial render and on any live-fetch failure, which fed a false non-zero `projectCount` into `BetaOnboardingChecklist.tsx` and permanently advanced its "first_project" step for any tenant. Both the initial `useState` and the `.catch` fallback are now gated behind `isDemoModeEnabled()`.)
 
 ### Tests Required
 
-- [ ] Unit test: live mode does not load demo timeline fallback.
-- [ ] Unit test: Demo Mode loads seeded timeline fallback.
-- [ ] Unit test: live mode does not load demo workflow records.
-- [ ] Route test: `/documents` loads Documents workspace.
-- [ ] Route test: `/knowledge` loads Knowledge Hub.
-- [ ] Unit test: badge counts derive from tenant state.
-- [ ] Unit test: onboarding progress is deterministic.
+- [x] Unit test: live mode does not load demo timeline fallback. (Regression-verified via existing `useWorkflowTimeline` coverage; no new test needed, no regression found.)
+- [x] Unit test: Demo Mode loads seeded timeline fallback. (Regression-verified via existing coverage; no regression found.)
+- [x] Unit test: live mode does not load demo workflow records. (Regression-verified via existing `WorkflowRecordsPage.test.ts` coverage; no regression found.)
+- [x] Route test: `/documents` loads Documents workspace. (`src/app/routing/lazyRoutes.test.ts`, pre-existing.)
+- [x] Route test: `/knowledge` loads Knowledge Hub. (`src/app/routing/lazyRoutes.test.ts`, pre-existing + new Sprint 4 heading-distinctness regression test.)
+- [x] Unit test: badge counts derive from tenant state. (`src/app/layout/Sidebar.test.tsx`, new: asserts no fabricated "4"/"23" badges outside Demo Mode, and both appear once Demo Mode is enabled.)
+- [x] Unit test: onboarding progress is deterministic. (`src/features/onboarding/BetaOnboardingChecklist.test.tsx`, extended with 2 new tests; `src/features/dashboard/DashboardSection.test.ts`, new.)
 
 ### Lint And Type Checks
 
-- [ ] `pnpm run typecheck`
-- [ ] `pnpm run lint`
+- [x] `pnpm run typecheck` -- PASS
+- [x] `pnpm --dir apps/mobile run typecheck` -- PASS
+- [x] `pnpm run lint` -- PASS (zero warnings)
 
 ### Build And Regression Checks
 
-- [ ] `pnpm run test`
-- [ ] `pnpm run build`
+- [x] `pnpm run test` -- PASS (110 test files, 331 tests)
+- [x] `pnpm run build` -- PASS
+- [x] `pnpm run supabase:verify` -- PASS (27 migrations, 100 tables, 100 RLS-protected -- unchanged from Sprint 3)
+- [x] `pnpm run mobile:store:release-gate` -- PASS
+- [x] `pnpm run mobile:capacitor:store:doctor` -- PASS
 
 ### Documentation Required
 
-- [ ] Update `docs/DEMO_MODE.md`.
-- [ ] Update `docs/PRODUCT_ARCHITECTURE.md` or equivalent route/workspace documentation if present.
-- [ ] Update `CHANGELOG.md`.
-- [ ] Update `docs/SPRINT_LOG.md`.
-- [ ] Update beta QA checklist status.
+- [x] Update `docs/DEMO_MODE.md`.
+- [x] Update `docs/PRODUCT_ARCHITECTURE.md` or equivalent route/workspace documentation if present. (No dedicated `PRODUCT_ARCHITECTURE.md` exists; route/workspace behavior recorded in `docs/SPRINT_LOG.md`.)
+- [x] Update `CHANGELOG.md`.
+- [x] Update `docs/SPRINT_LOG.md`.
+- [x] Update beta QA checklist status. (`docs/BETA_QA_ACTIONABLES_2026_07_22.md`.)
 
 ### Diligence Evidence
 
-- [ ] Record live-mode clean tenant behavior.
-- [ ] Record Demo Mode behavior.
-- [ ] Record investor-preview labeling.
-- [ ] Record route distinctions.
-- [ ] Record badge-count source of truth.
+- [x] Record live-mode clean tenant behavior. A clean live tenant with zero real projects now sees an empty project list (not 186 fabricated demo projects) and a stable "1 of 10 complete" onboarding state (organization step only), on both initial load and any live-fetch failure.
+- [x] Record Demo Mode behavior. Unchanged: Demo Mode continues to show the full 186-project seeded dataset, seeded timeline/workflow records, and the fabricated "4"/"23" sidebar badges, all under the existing `isDemoModeEnabled()` gate.
+- [x] Record investor-preview labeling. Unchanged: `TopBar.tsx`'s "Investor Preview" badge and `GuidedDemoBanner.tsx`'s self-labeling ("Demo workflow using seeded enterprise data") both remain correctly gated and were not modified.
+- [x] Record route distinctions. `/documents` -> `DocumentsSection` ("Documents & File Intelligence"), `/knowledge` -> `KnowledgeHubSection` ("Knowledge Hub"); confirmed no shared heading text via new regression test.
+- [x] Record badge-count source of truth. "AI" (AI Workspace) is a static feature tag with no data source, tagged `badgeKind: "tag"`, renders always. "4" (Social Alerts) and "23" (Approvals & Governance) are hardcoded literals in `navigation.ts` with no backing repository call, tagged `badgeKind: "count"`, now gated to Demo Mode only pending a real live-count data source (tracked as a Sprint 5 follow-up if live badge counts are desired instead of hiding them).
 
 ### Exit Criteria
 
-- [ ] Clean live tenant shows no fabricated timeline or workflow records.
-- [ ] Demo Mode shows rich seeded content with a clear Demo Environment badge.
-- [ ] `/documents` and `/knowledge` are distinct and tested.
-- [ ] Sidebar badges match workspace data.
-- [ ] Onboarding progress is stable and action-driven.
+- [x] Clean live tenant shows no fabricated timeline or workflow records. (Regression-verified, pre-existing.)
+- [x] Demo Mode shows rich seeded content with a clear Demo Environment badge. (Regression-verified, pre-existing.)
+- [x] `/documents` and `/knowledge` are distinct and tested. (Regression-verified in Sprint 3; new distinctness test added this sprint.)
+- [x] Sidebar badges match workspace data. (Fixed: fabricated counts hidden outside Demo Mode; the one non-fabricated tag still shows.)
+- [x] Onboarding progress is stable and action-driven. (Fixed at its true root cause in `DashboardSection.tsx`.)
 
 ### Completion Statement Template
 
 ```text
 Sprint 4 is complete when live tenant data is honest, demo data is explicitly labeled, navigation routes are correct and badge/onboarding state is internally consistent.
+```
+
+### Sprint 4 Status - 2026-07-22
+
+```text
+Complete locally. All implementation checklist items, required tests,
+lint/type checks, build/regression checks and documentation updates are
+done and verified (see docs/SPRINT_LOG.md "Sprint 4 Complete" entry for
+full command-by-command evidence). This sprint's central finding mirrors
+Sprint 3's pattern: 3 of the 5 QA actionables in scope (dashboard timeline
+fallback, workflow records fallback, /documents route mapping) were
+already correctly fixed by prior sprints and regression-verified with no
+change needed. The 2 genuine remaining defects were both real: (1) sidebar
+badge counts ("4", "23") rendered unconditionally regardless of tenant
+state, with no backing data source at all -- fixed by gating them behind
+Demo Mode pending a real live-count source; (2) onboarding progress
+inconsistency (F-018) was traced to its true root cause in
+DashboardSection.tsx's ungated demo-project fallback, not a bug in the
+onboarding widget itself -- fixed by gating both the initial state and the
+failure-path fallback behind isDemoModeEnabled(), matching the pattern
+already correctly used for KPIs in the same file. Live Vercel/beta
+re-verification remains outstanding and is explicitly deferred to
+Sprint 5.
 ```
 
 ## Sprint 5 - QA Replay, Performance And Release Gate

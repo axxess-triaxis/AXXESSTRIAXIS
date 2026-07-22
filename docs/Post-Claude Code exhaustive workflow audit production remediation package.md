@@ -207,11 +207,17 @@ tested, documented and fully verified locally on 2026-07-22 -- same
 references.
 Sprint 3 closeout (cumulative Sprint 1+2+3 findings ledger, isolated
 Sprint 3 delta, composite Sprint 1+2+3 delta): docs/SPRINT_3_CLOSEOUT_2026_07_22.md.
-Sprints 4-5 remain pending.
+Sprint 4 (Demo/Live Data Separation, Navigation Integrity And Tenant
+Trust) implemented, tested, documented and fully verified locally on
+2026-07-22 -- same references.
+Sprint 5 remains pending.
 Live Vercel beta redeploy and live beta QA replay remain pending for all
 sprints.
 Sprint 1 closeout (findings ledger, constraint compliance, estimated score
 deltas): docs/SPRINT_1_CLOSEOUT_2026_07_22.md.
 Sprint 2 closeout (cumulative Sprint 1+2 findings ledger, isolated Sprint 2
 delta, composite Sprint 1+2 delta): docs/SPRINT_2_CLOSEOUT_2026_07_22.md.
+Sprint 4 closeout (cumulative Sprint 1+2+3+4 findings ledger, isolated
+Sprint 4 delta, composite Sprint 1+2+3+4 delta) is produced only if/when
+requested, per this project's established closeout cadence.
 ```

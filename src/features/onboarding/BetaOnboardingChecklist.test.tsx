@@ -4,6 +4,16 @@ import { AnalyticsProviderShell } from "../../services/analytics";
 import { MockAnalyticsProvider } from "../../services/analytics/MockAnalyticsProvider";
 import { BetaOnboardingChecklist } from "./BetaOnboardingChecklist";
 
+const testUser = { id: "user_1", organizationId: "org_1", role: "Organization Admin" as const };
+
+function renderChecklist(projectCount: number) {
+  return render(
+    <AnalyticsProviderShell provider={new MockAnalyticsProvider()}>
+      <BetaOnboardingChecklist user={testUser} projectCount={projectCount} />
+    </AnalyticsProviderShell>,
+  );
+}
+
 vi.mock("next/navigation", () => ({
   usePathname: () => "/dashboard",
   useRouter: () => ({ push: vi.fn() }),
@@ -67,5 +77,30 @@ describe("BetaOnboardingChecklist", () => {
         project_count: 3,
       },
     });
+  });
+
+  it("is deterministic: a fresh tenant with zero projects shows 1 of 10 complete (organization step only) on every load, never fluctuating without action (Sprint 4, F-018)", () => {
+    // testUser has an organizationId, so the "organization" step auto-completes immediately --
+    // that is the only step done for a brand-new tenant with zero projects.
+    const { unmount } = renderChecklist(0);
+    expect(screen.getByText("1 of 10 complete - first 10 minutes of a real tenant")).toBeInTheDocument();
+    unmount();
+
+    // Re-mounting with the same (honest, unchanged) projectCount must reproduce the exact same
+    // progress -- reading from localStorage again must not silently advance any step.
+    renderChecklist(0);
+    expect(screen.getByText("1 of 10 complete - first 10 minutes of a real tenant")).toBeInTheDocument();
+  });
+
+  it("only advances the 'first_project' step once a real project genuinely exists, and that advance persists across reloads", () => {
+    const { unmount } = renderChecklist(0);
+    expect(screen.getByText("1 of 10 complete - first 10 minutes of a real tenant")).toBeInTheDocument();
+    unmount();
+
+    // A durable state change (the tenant now genuinely has 1 project) is the only thing allowed
+    // to move progress -- this simulates returning to the dashboard after Sprint 2's real project
+    // creation path succeeded. organization + first_project are now both done.
+    renderChecklist(1);
+    expect(screen.getByText("2 of 10 complete - first 10 minutes of a real tenant")).toBeInTheDocument();
   });
 });
