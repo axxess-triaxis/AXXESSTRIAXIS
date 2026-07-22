@@ -60,11 +60,23 @@
     "supabase:db:lint": "supabase db lint --local --fail-on error",
     "supabase:db:advisors": "supabase db advisors --local --type all --level warn --fail-on error",
     "supabase:test:rls": "supabase test db --local supabase/tests",
+    "supabase:migrate:remote": "node scripts/supabase-migrate-remote.mjs",
+    "supabase:migrate:remote:apply": "node scripts/supabase-migrate-remote.mjs --yes",
+    "supabase:verify:two-tenant-isolation": "node scripts/verify-two-tenant-isolation.mjs",
     "test": "vitest run --config vitest.config.mjs",
     "test:coverage": "vitest run --config vitest.config.mjs --coverage",
     "test:e2e": "playwright test",
     "test:watch": "vitest",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "vercel:link": "vercel link",
+    "vercel:whoami": "vercel whoami",
+    "vercel:env:pull": "vercel env pull .env.local",
+    "vercel:env:ls": "vercel env ls",
+    "vercel:deploy:preview": "node scripts/deploy-vercel.mjs --target=preview",
+    "vercel:deploy:production": "node scripts/deploy-vercel.mjs --target=production",
+    "gitlab:mirror": "node scripts/gitlab-mirror-push.mjs",
+    "gitlab:mirror:dry-run": "node scripts/gitlab-mirror-push.mjs --dry-run",
+    "linear:sync": "node scripts/linear-sync.mjs"
   },
   "dependencies": {
     "@emotion/react": "11.14.0",
@@ -150,6 +162,7 @@
     "supabase": "2.109.1",
     "tailwindcss": "4.1.12",
     "typescript": "^6.0.3",
+    "vercel": "56.2.0",
     "vite": "6.4.3",
     "vitest": "^4.1.10"
   },

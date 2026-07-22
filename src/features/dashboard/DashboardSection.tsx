@@ -60,7 +60,7 @@ const heatmap = [
 export function DashboardSection() {
   const { session } = useAuth();
   const tenantScope = useMemo(() => session.user ? dashboardScopeForUser(session.user) : undefined, [session.user]);
-  const [projects, setProjects] = useState<DashboardProject[]>(() => getDashboardFallbackProjects());
+  const [projects, setProjects] = useState<DashboardProject[]>(() => (isDemoModeEnabled() ? getDashboardFallbackProjects() : []));
   const guidedDemo = useGuidedDemo("dashboard");
   const liveMetrics = useLiveWorkspaceMetrics(tenantScope);
   const ragHealth = useLiveRagHealth(tenantScope);
@@ -79,7 +79,11 @@ export function DashboardSection() {
       })
       .catch(() => {
         if (!isMounted) return;
-        setProjects(getDashboardFallbackProjects());
+        // A live-call failure must never surface fabricated demo projects to a real tenant (see
+        // DEMO_DATA_LEAKAGE_AUDIT.md) -- getDashboardFallbackProjects() is demo data (186 seeded
+        // records), so it must stay behind the same isDemoModeEnabled() gate as the initial state
+        // above, not fall back unconditionally.
+        setProjects(isDemoModeEnabled() ? getDashboardFallbackProjects() : []);
       });
 
     return () => {

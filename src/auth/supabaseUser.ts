@@ -1,5 +1,4 @@
 import type { RoleName } from "../domain";
-import { cleanTenantUserContext } from "../demo/demoMode";
 import { isRoleName, type UserContext } from "../security/rbac";
 
 type SupabaseAuthUser = {
@@ -55,9 +54,18 @@ export function userContextFromAuthUser(authUser: SupabaseAuthUser): UserContext
     .slice(0, 2)
     .toUpperCase() || "AU";
 
+  const organizationId = readMetadataString(metadata, "organization_id");
+
   return {
     id: authUser.id,
-    organizationId: readMetadataString(metadata, "organization_id") ?? cleanTenantUserContext.organizationId,
+    // Never fall back to a demo/mock placeholder here -- this is a real, Supabase-authenticated
+    // user, and this function is only reached when no public.users row exists yet (see
+    // resolveUser() in serverSession.ts), meaning organization provisioning genuinely has not
+    // happened. A placeholder like "org_clean_tenant" is not a valid uuid and would make every
+    // subsequent live repository query fail with a Postgres 22P02 error instead of routing the
+    // user to onboarding, where they belong.
+    organizationId: organizationId ?? "",
+    needsOnboarding: !organizationId,
     role: normalizeRole(readMetadataString(metadata, "role")),
     email,
     displayName,

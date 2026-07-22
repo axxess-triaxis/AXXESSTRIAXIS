@@ -16,6 +16,7 @@ import {
   TenantScopeBadge,
   WorkflowStepCard,
 } from "../../components/enterprise";
+import { Card } from "../../components/ui/Card";
 import type { AuditLog, Invitation, Organization, User } from "../../domain";
 import { applicationServices } from "../../providers/serviceProvider";
 import { tenantScopeFromUser } from "../../repositories/supabaseEnterpriseRepositories";
@@ -46,7 +47,13 @@ export function OrganizationAdminSection() {
   const [state, setState] = useState<AdminState>({ users: [], invitations: [], auditLogs: [], loading: true });
 
   const loadAdminState = useCallback(async () => {
-    if (!scope || !user) return;
+    if (!scope || !user) {
+      // Without a resolved tenant scope there is nothing to load; settle out of the initial
+      // `loading: true` state instead of leaving it stuck (Sprint 3 hardening -- a stale `loading`
+      // flag here previously had no terminal fallback if this ever ran before session/scope resolved).
+      setState((current) => ({ ...current, loading: false }));
+      return;
+    }
     setState((current) => ({ ...current, loading: true }));
     const [organizations, users, invitations, auditLogs] = await Promise.allSettled([
       applicationServices.organizationsRepository.list(scope, { pageSize: 25 }),
@@ -79,7 +86,18 @@ export function OrganizationAdminSection() {
     });
   }, [analytics, user]);
 
-  if (!user) return null;
+  if (!user) {
+    return (
+      <PageShell>
+        <Card className="flex min-h-[320px] items-center justify-center p-8">
+          <EmptyState
+            title="Sign in required"
+            message="Your session is required to view Organization Admin."
+          />
+        </Card>
+      </PageShell>
+    );
+  }
 
   const admins = state.users.filter((row) => row.role === "Super Admin" || row.role === "Organization Admin");
   const departments = new Set(state.users.map((row) => row.department).filter(Boolean));

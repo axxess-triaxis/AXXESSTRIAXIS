@@ -11,6 +11,7 @@ export type WorkflowTimelineResourceType =
   | "organization"
   | "user"
   | "document"
+  | "knowledge_article"
   | "email"
   | "ai_review"
   | "task"

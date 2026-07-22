@@ -1,6 +1,7 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useAuth } from "../../auth/AuthProvider";
 import { Avatar } from "../../components/ui/Avatar";
+import { isDemoModeEnabled } from "../../demo/demoMode";
 import { getVisibleNavGroups } from "../../security/rbac";
 import { navGroups, type NavSection } from "../navigation";
 
@@ -15,6 +16,7 @@ export function Sidebar({ active, sidebarOpen, onSelectSection, onToggleSidebar 
   const { session } = useAuth();
   const user = session.user;
   const visibleNavGroups = user ? getVisibleNavGroups(navGroups, user) : [];
+  const demoMode = isDemoModeEnabled();
 
   return (
     <aside
@@ -69,7 +71,7 @@ export function Sidebar({ active, sidebarOpen, onSelectSection, onToggleSidebar 
                   {sidebarOpen && (
                     <>
                       <span className="text-xs font-medium flex-1 text-left">{item.label}</span>
-                      {"badge" in item && item.badge && (
+                      {"badge" in item && item.badge && (item.badgeKind !== "count" || demoMode) && (
                         <span className="bg-[#8B1E2D] text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full font-mono">
                           {item.badge}
                         </span>

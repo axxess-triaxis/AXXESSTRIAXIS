@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerAuthSession } from "../../../../auth/serverSession";
 import type { RoleName } from "../../../../domain";
 import {
+  auditLogsRepository,
   createRepositoryResource,
   listRepositoryResource,
   notificationsRepository,
@@ -10,6 +11,8 @@ import {
   type ResourceName,
 } from "../../../../repositories/supabaseEnterpriseRepositories";
 import type { RepositoryQuery, TenantScope } from "../../../../repositories/interfaces";
+import { recordWorkflowTimelineEvent } from "../../../../services/workflows/liveTenantWorkflow";
+import type { WorkflowTimelineResourceType } from "../../../../services/workflows/workflowEvidence";
 
 const allowedResources = new Set([
   "organizations",
@@ -129,6 +132,67 @@ async function notifyAfterMutation(resource: ResourceName, scope: TenantScope, r
   }).catch(() => undefined);
 }
 
+// Writes audit + workflow-timeline evidence for a real tenant-backed resource creation, so the
+// created record shows up in Audit Logs and the Dashboard/timeline the same way an approved
+// AI-review workflow action already does (see recordWorkflowTimelineEvent in liveTenantWorkflow.ts).
+// Best-effort (failures here must never fail the create itself). Only called after a successful
+// createRepositoryResource() -- an unauthorized/forbidden/failed create never reaches this point,
+// so no evidence is ever written for a request that didn't actually succeed. Metadata is limited to
+// the record's own name/title (never the full request body), so no sensitive field of an unlisted
+// resource type can leak into an audit_logs/workflow_timeline_events row.
+//
+// Sprint 2 originally scoped this to "projects" only (the QA finding it addressed was specifically
+// POST /api/repositories/projects -> 401). Sprint 5 generalizes it to every resource named in
+// EVIDENCE_RESOURCE_CONFIG below, per the roadmap's golden-path steps that also expect timeline/audit
+// evidence for tasks, documents and meetings, not projects alone -- see
+// docs/SPRINT_1_TO_4_GAP_ANALYSIS_2026_07_22.md Section 2 for the gap this closes.
+const EVIDENCE_RESOURCE_CONFIG: Partial<Record<ResourceName, {
+  singular: WorkflowTimelineResourceType;
+  actionVerb: string;
+  category: string;
+}>> = {
+  projects: { singular: "project", actionVerb: "project.created", category: "project-management" },
+  tasks: { singular: "task", actionVerb: "task.created", category: "task-management" },
+  documents: { singular: "document", actionVerb: "document.created", category: "document-management" },
+  knowledge_articles: { singular: "knowledge_article", actionVerb: "knowledge_article.created", category: "knowledge-management" },
+  meetings: { singular: "meeting", actionVerb: "meeting.created", category: "meeting-management" },
+};
+
+async function recordResourceCreateEvidence(resourceName: ResourceName, scope: TenantScope, result: unknown) {
+  const config = EVIDENCE_RESOURCE_CONFIG[resourceName];
+  if (!config) return;
+  if (!result || typeof result !== "object" || !("id" in result)) return;
+
+  const record = result as Record<string, unknown>;
+  const resourceId = typeof record.id === "string" ? record.id : undefined;
+  const recordName = typeof record.name === "string" ? record.name
+    : typeof record.title === "string" ? record.title
+      : config.singular;
+
+  const auditLog = await auditLogsRepository.record(scope, {
+    action: config.actionVerb,
+    resourceType: config.singular,
+    resourceId,
+    category: config.category,
+    metadata: { name: recordName },
+  }).catch(() => undefined);
+
+  await recordWorkflowTimelineEvent({
+    organizationId: scope.organizationId,
+    resourceType: config.singular,
+    resourceId,
+    eventType: "workflow_action_created",
+    title: `${config.singular === "knowledge_article" ? "Knowledge article" : config.singular.charAt(0).toUpperCase() + config.singular.slice(1)} created`,
+    description: `${recordName} was created.`,
+    actorUserId: scope.userId,
+    actorLabel: scope.role,
+    sourceType: config.singular,
+    sourceId: resourceId,
+    auditLogId: auditLog?.id,
+    metadata: { name: recordName },
+  }).catch(() => undefined);
+}
+
 export async function GET(request: Request, context: RouteContext) {
   const { resource } = await context.params;
   if (!allowedResources.has(resource)) {
@@ -174,6 +238,7 @@ export async function POST(request: Request, context: RouteContext) {
   if (resourceName === "projects" || resourceName === "tasks" || resourceName === "meetings") {
     await notifyAfterMutation(resourceName, scope, result, "created");
   }
+  await recordResourceCreateEvidence(resourceName, scope, result);
 
   return NextResponse.json(result, { status: 201 });
 }

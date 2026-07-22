@@ -89,7 +89,36 @@ export function getMarketingWorkspaceRedirectUrl(url: URL, host: string | null) 
   return redirectUrl;
 }
 
-export function middleware(request: NextRequest) {
+// Matches the production-safe default in src/config/featureFlags.ts: real Supabase-backed
+// auth is required unless local mock auth is explicitly opted into with `=false`. A stale
+// `=== "true"` check here would silently let every deployed environment with the env var
+// unset skip the login redirect while the client-side flag (correctly) still required a
+// real session -- exactly the F-001 mismatch from the 2026-07-22 beta QA report.
+export function isAuthShellEnabledFromEnv(env: string | undefined) {
+  return env !== "false";
+}
+
+export function isDemoModeEnabledFromEnv(env: string | undefined) {
+  return env === "true";
+}
+
+export function shouldRedirectToLogin(
+  pathname: string,
+  options: { authShellEnabled: boolean; demoModeEnabled: boolean; hasSessionCookie: boolean },
+) {
+  return (
+    isProtectedRoutePath(pathname)
+    && options.authShellEnabled
+    && !options.demoModeEnabled
+    && !options.hasSessionCookie
+  );
+}
+
+// Renamed from `middleware` to `proxy` (and this file from middleware.ts to proxy.ts) in Sprint 5,
+// following the official `npx @next/codemod@canary middleware-to-proxy .` migration: Next.js 16
+// deprecated the `middleware.ts` file convention in favor of `proxy.ts` as a pure rename with no
+// runtime behavior change (still an Edge Runtime request interceptor, same `config.matcher`).
+export function proxy(request: NextRequest) {
   const requestHost = request.headers.get("x-forwarded-host") ?? request.headers.get("host");
 
   const canonicalHostRedirectUrl = getCanonicalHostRedirectUrl(
@@ -111,11 +140,15 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(betaRootRedirectUrl, 307);
   }
 
-  const isAuthShellEnabled = process.env.NEXT_PUBLIC_AXXESS_AUTH_SHELL === "true";
-  const isDemoModeEnabled = process.env.NEXT_PUBLIC_AXXESS_DEMO_MODE === "true";
+  const isAuthShellEnabled = isAuthShellEnabledFromEnv(process.env.NEXT_PUBLIC_AXXESS_AUTH_SHELL);
+  const isDemoModeEnabled = isDemoModeEnabledFromEnv(process.env.NEXT_PUBLIC_AXXESS_DEMO_MODE);
   const isProtectedRoute = isProtectedRoutePath(request.nextUrl.pathname);
 
-  if (isProtectedRoute && isAuthShellEnabled && !isDemoModeEnabled && !request.cookies.get(sessionCookieName)) {
+  if (shouldRedirectToLogin(request.nextUrl.pathname, {
+    authShellEnabled: isAuthShellEnabled,
+    demoModeEnabled: isDemoModeEnabled,
+    hasSessionCookie: Boolean(request.cookies.get(sessionCookieName)),
+  })) {
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = "/auth";
     loginUrl.searchParams.set("next", request.nextUrl.pathname);

@@ -977,4 +977,304 @@ limit, not a code issue.
   `003_sprint7_e2e_seed.sql`; new migration `20260721130000_fix_enterprise_audit_log_trigger.sql`.
 - SQL-only change; no typecheck/lint/test/build impact. Verified via the actual failure mode
   (`supabase start` reaching every migration/seed with no errors).
+
+---
+
+## 2026-07-21 — First genuine live browser walkthrough of A3/A7/A18, four real bugs found and fixed
+
+### What happened
+
+Following up on "how much more can we clear/rectify right now" after the Sprint 1–3 iteration
+report, this closes the single highest-priority carried gap from `PRODUCT_ITERATION_I_CLOSEOUT.md`'s
+honest-gap register (#1): **the live browser walkthrough of A3 (guided workspace with real seeded
+sample data), A7 (goal-based onboarding redirect), and A18 (optional department/workspace fields)
+that had never actually been carried out**, even after the local Supabase stack came up in the prior
+entry. Ran a genuine signup → onboarding → provisioning → goal-based-redirect → sample-data-seed →
+governed-RAG-query flow against a real local Supabase instance (`.env.local` pointed at
+`http://127.0.0.1:54321`, `NEXT_PUBLIC_AXXESS_DEMO_MODE=false`) — not demo mode, not a mock session.
+
+Four distinct, real bugs surfaced, each blocking the flow outright until fixed:
+
+1. **New signups were routed straight into a broken workspace.** `src/auth/supabaseUser.ts`'s
+   `userContextFromAuthUser()` defaulted a brand-new (not-yet-onboarded) user's `organizationId` to
+   `cleanTenantUserContext.organizationId` ("org_clean_tenant", a non-UUID placeholder), and
+   `src/app/auth/page.tsx` routed every successful login straight to `/dashboard` with no check for
+   whether onboarding had actually completed. Every live repository query then failed outright with
+   Postgres `22P02: invalid input syntax for type uuid`. Fixed: added a `needsOnboarding?: boolean`
+   flag to `UserContext` (`src/security/rbac.ts`), an honest empty-string fallback instead of the
+   fake placeholder, login routing that checks the flag (`/onboarding` vs `/dashboard`), and a
+   defensive redirect in `src/app/App.tsx` as a safety net for any other entry path (bookmarks,
+   direct links).
+2. **A bare local Supabase CLI instance was missing baseline grants Supabase Cloud provisions
+   automatically.** Provisioning a new organization failed with `403 permission denied for table
+   organizations` (missing `service_role` grants on foundational tables), then — after fixing that —
+   `403 permission denied for table user_roles` when seeding sample data (missing `authenticated`
+   grants on the same class of foundational tables). Later migrations (sprint18 onward) already
+   grant per-table access to both roles for the tables they introduce; this never happened for
+   tables that predate that convention, because on Supabase Cloud it happens automatically at
+   project creation and so was never captured as a migration. Fixed via two new migrations doing a
+   dynamic `GRANT` loop over every `public` schema table plus `ALTER DEFAULT PRIVILEGES` for future
+   tables: `20260721140000_grant_service_role_public_schema.sql` and
+   `20260721150000_grant_authenticated_public_schema.sql`. Safe/idempotent on Supabase Cloud
+   projects where these grants already exist.
+3. **Genuinely production-relevant, not local-only: `tenant_id` was never set on insert for 11
+   tables that require it.** `202607090001_sprint12_security_compliance_foundation.sql` made
+   `organizations.tenant_id` NOT NULL; `202607090002_sprint13_onboarding_rls_persona_readiness.sql`
+   did the same for `programs`, `projects`, `tasks`, `meetings`, `stakeholders`, `documents`,
+   `notifications`, `audit_logs`, `beta_feedback`, and `knowledge_articles` (tenant_id mirroring
+   `organization_id` for these). Both migrations backfilled only the rows that existed *at
+   migration-apply time* — neither added a default for rows inserted afterward, and no application
+   call site (`src/auth/provisioning.ts`, `src/services/rag/tenantRagWorkflow.ts`, and every
+   enterprise repository writing to these tables) ever sets `tenant_id` explicitly. This meant every
+   brand-new organization signup, and every write to any of those 11 tables, has been failing this
+   constraint since those migrations landed — plausibly true in production too, not confirmed either
+   way (no production credentials available from this environment; same open question as gap #10 in
+   `PRODUCT_ITERATION_I_CLOSEOUT.md`). Fixed at the schema level with two `BEFORE INSERT` triggers
+   (rather than passing an application-generated id/tenant_id, which would be unsafe here
+   specifically — `provisionTenantForUser`'s organizations insert upserts on `conflict(slug)`, and an
+   application-supplied id would let that conflict path reassign an *existing* organization's primary
+   key if two signups ever raced on the same org name): `default_organization_tenant_id()` defaulting
+   `tenant_id := NEW.id` for `organizations` (it's the tenant root), and
+   `default_tenant_id_from_organization()` defaulting `tenant_id := NEW.organization_id` for the
+   other 10 (`20260721140500_organizations_tenant_id_default.sql`,
+   `20260721160000_tenant_child_tables_tenant_id_default.sql`).
+4. **Four more demo-data-leakage instances in `AIWorkspaceSection.tsx`**, found because this was the
+   first time anyone actually looked at this page as a genuinely new, real tenant rather than in
+   demo mode. Documented in full in `DEMO_DATA_LEAKAGE_AUDIT.md`'s new "Round 4" section: a
+   module-level constant that could permanently freeze demo chat content in memory across an SPA
+   session, a hardcoded "2,200 documents indexed" status line, a hardcoded "Context Window" panel,
+   and a hardcoded "AI Audit Trail" panel — none gated behind `isDemoModeEnabled()`, all rendered
+   unconditionally. A fifth instance (`src/features/knowledge/KnowledgeSection.tsx`) was found but
+   confirmed unreachable dead code (never imported/routed anywhere) and left unfixed, flagged
+   separately for cleanup/removal rather than gating code no customer can reach.
+
+### What this does and doesn't close
+
+**Closed:** A3, A7, and A18 are now confirmed working end-to-end against a real, live tenant, not
+just unit tests and code review:
+- **A7** — all 3 outcome-first onboarding paths correctly redirect by goal; verified the
+  "Knowledge & AI decision support" path lands on `/ai-workspace`.
+- **A18** — department/workspace fields are genuinely optional; completed onboarding without either.
+- **A3** — `POST /api/onboarding/seed-sample-data` genuinely persists real records (verified all
+  three goals: `knowledge_ai` → 2 real documents, `workflow_tasks` → 1 project + 2 tasks,
+  `meetings_coordination` → 1 meeting, each a `201` with real repository writes, not a mock). Then
+  asked the AI Workspace a real question ("What does the oxygen resilience note say?") and got back
+  a governed answer citing the actual seeded "Sample: District Oxygen Resilience Note" document by
+  name, with a real (non-fabricated) confidence score and relevance score, correctly flagged for
+  human review — proving the full governed-RAG pipeline works against genuinely live tenant data,
+  not demo fixtures.
+- Also closes gap #1 in `PRODUCT_ITERATION_I_CLOSEOUT.md`'s honest-gap register (see that
+  document's own update alongside this entry).
+
+**Not yet closed:**
+- **Whether bugs #2 and #3 above ever affected the real production/beta Supabase project is
+  unconfirmed** — this environment has no production credentials to check. Bug #2 (missing
+  service_role/authenticated grants) is Supabase-Cloud-vs-bare-CLI-specific and very likely does
+  *not* affect production, since Cloud provisions these automatically. Bug #3 (missing `tenant_id`
+  defaults) is schema/application-level, not CLI-vs-Cloud-specific, and so is the more plausible
+  candidate for also affecting production — this should be checked against the real project before
+  assuming it's local-only, the same open item as gap #10.
+- **The fifth demo-data-leakage instance (`KnowledgeSection.tsx`) was found, not fixed** — flagged
+  as a separate cleanup task rather than addressed here, since it's unreachable dead code, not an
+  active customer-facing leak.
+- **No new automated test coverage was added for any of the four fixes in this entry.** All were
+  found and verified via a live, manual, in-browser walkthrough (the gap this entry closes was
+  specifically the *absence* of that kind of verification) plus `typecheck`/`lint`/full-suite
+  regression checks on the resulting code changes. The schema-level trigger fixes (#2, #3) have no
+  corresponding test infrastructure in this repo to extend (no existing SQL/migration test suite).
+
+### Audit trail
+
+- Modified: `src/security/rbac.ts`, `src/auth/supabaseUser.ts`, `src/auth/AuthProvider.tsx`,
+  `src/app/auth/page.tsx`, `src/app/App.tsx`, `src/auth/provisioning.ts` (comment only — insert body
+  unchanged), `src/features/ai-workspace/AIWorkspaceSection.tsx`.
+- New migrations: `20260721140000_grant_service_role_public_schema.sql`,
+  `20260721140500_organizations_tenant_id_default.sql`,
+  `20260721150000_grant_authenticated_public_schema.sql`,
+  `20260721160000_tenant_child_tables_tenant_id_default.sql`.
+- Verification: `pnpm run typecheck` clean, `pnpm run lint --max-warnings=0` clean, full existing
+  suite re-run on the final branch state: **91 files / 265 tests passing** (re-run deliberately
+  because an earlier in-flight run started before the last two `AIWorkspaceSection.tsx` edits
+  landed, so its result predated the final diff and wasn't trustworthy to cite). Manually verified
+  live in-browser: full signup → onboarding → provisioning → redirect → sample-data-seed →
+  governed-RAG-query flow, and all four `AIWorkspaceSection.tsx` fixes, against a real local
+  Supabase-backed tenant. `src/features/knowledge/KnowledgeSection.tsx` (the fifth demo-data
+  instance, confirmed unreachable dead code) was deleted after this test run and re-verified with a
+  separate clean `typecheck` pass — it has zero test coverage and zero other references, so its
+  removal does not affect the 91/265 figure above.
+- Branch `fix/live-tenant-onboarding-and-rag-walkthrough`, moved off `docs/close-product-iteration-1`
+  (which already carried unrelated, separately-PR'd documentation commits) before committing, per the
+  same corrective pattern used earlier for A15.
 - Branch `fix/supabase-seed-and-audit-trigger`, merged via PR #149 (`2026-07-21T08:20:24Z`).
+
+---
+
+## 2026-07-21 — Nine of twelve Postgres wrapper integrations wired into real product surfaces
+
+### What happened
+
+Following up directly on the previous entry's monorepo/business-model documentation (which
+described the 12 Supabase Postgres wrapper integrations honestly as "two live, ten
+infrastructure-only"), this session built real, working product surfaces for seven more of the
+remaining ten, using the existing OAuth pipeline (`connectorContract.ts`/`oauthProvider.ts`/
+`tokenVault.ts`) and a new, generalized credential-storage pipeline built to match it.
+
+**OAuth-based (extends the existing pipeline used by Gmail/Microsoft/Slack/Calendly):**
+- **Airtable, HubSpot, Notion** — each already had `pilotEnabled: false` scaffolding in
+  `pluginRegistry.ts` with `envMap` entries waiting. Added full `ConnectorContract` entries
+  (authorization/token URLs, scopes), extended the OAuth callback route's provider allow-list, and
+  flipped `pilotEnabled: true`. Airtable's OAuth requires PKCE (not needed by the other four
+  providers) — added `requiresPkce`/`tokenRequestStyle` fields to `ConnectorContract`, a
+  `codeVerifier` carried inside the signed OAuth state payload (rather than a separate store, since
+  the state is already tamper-evident and single-use), and `generatePkceVerifier()`/
+  `pkceCodeChallenge()` helpers. Notion requires HTTP Basic Auth + a JSON token-exchange body
+  (every other provider here uses form-encoded client_id/secret) — added a
+  `tokenRequestStyle: "json-basic-auth"` branch in `exchangeOAuthCode`.
+- **Notion additionally got a real sync workflow**, not just a connect button: a new
+  `notionPages.ts` service (Notion Search API + block-children text extraction, covering the common
+  text-bearing block types honestly, not a full block-tree renderer) backs two new API routes
+  (`/api/connectors/notion/pages/list`, `/api/connectors/notion/pages/import`) mirroring the
+  existing Microsoft-mailbox-listing pattern exactly (find connection → open vault token → call the
+  provider API). Import reuses `ingestTenantDocument` (the same pipeline `email/import` uses), so an
+  imported Notion page becomes a real, governed tenant document immediately queryable by RAG.
+
+**Credential-based (new pipeline, for wrappers that don't fit an OAuth "connect my account" model):**
+- **Auth0** (enterprise SSO configuration — distinct from the deeper login-flow federation this
+  would eventually require, honestly scoped as configuration storage only, not live SSO),
+  **ClickHouse, MSSQL, Snowflake** (data-warehouse connections), **S3** (alternate storage backend),
+  **Paddle, Stripe** (billing, mapping directly to the five-tier pricing model). Built a new,
+  generalized AES-256-GCM credential vault (`enterpriseConnectorVault.ts`, parallel to but distinct
+  from `tokenVault.ts` — sealing arbitrary per-provider credential JSON rather than a fixed OAuth
+  token-bundle shape) and a new migration
+  (`20260721170000_enterprise_connector_credentials.sql`) creating a server-only
+  `enterprise_connector_credentials` table (same access model as `oauth_token_vault`: revoked from
+  `anon`/`authenticated`, granted only to `service_role`), with `tenant_id` defaulting via the same
+  trigger function this session's earlier entry added for the 10 other tenant-scoped tables — kept
+  consistent with that fix from day one rather than repeating the gap. A new
+  `/api/connectors/enterprise/credentials` route (GET/POST/DELETE) and a new
+  `EnterpriseConnectorCredentialsPanel` UI card in `IntegrationsSection.tsx` provide save/list/revoke.
+  **Deliberately not built:** live connectivity verification against the actual external service —
+  saving confirms the credential was encrypted and stored correctly, not that e.g. Snowflake
+  accepted it. Building that honestly would need either new SDK dependencies (for non-HTTP
+  protocols like MSSQL's TDS) or outbound calls to arbitrary user-supplied hosts, both of which
+  deserve their own reviewed pass rather than being folded into this one.
+
+**Bonus finding:** while editing `IntegrationsSection.tsx`, found the exact same module-level-
+caching demo-data-leakage bug this session's earlier entry fixed in `AIWorkspaceSection.tsx`
+(`aiMessages`), this time in the same file's `integrations` constant. Fixed the same way (moved
+inside the component body). See `DEMO_DATA_LEAKAGE_AUDIT.md`'s new Round 5.
+
+### What this does and doesn't close
+
+**Closed:** all twelve Postgres wrapper integrations now have *some* real product-facing surface
+(previously two of twelve). Verified live against a genuine, freshly-provisioned, non-demo tenant
+(not just typecheck/lint): saved a Stripe credential through the actual UI, confirmed via direct
+Postgres inspection that the stored row's `encrypted_payload` contains no plaintext secret and that
+`tenant_id` correctly auto-populated via the trigger, then revoked it through the UI and confirmed
+the status change persisted on reload. Also confirmed Notion's page-listing route returns a clean
+`provider_gated` response (not a crash) with no connected account, and that Airtable/HubSpot/Notion
+now appear correctly in the "Pilot integrations" list (moved out of "Also available at the
+infrastructure level", which dropped from 17 to 14 entries accordingly).
+
+**Not yet closed:**
+- **No real third-party OAuth app credentials exist for Airtable/HubSpot/Notion in any
+  environment**, local or production — every connect flow is genuinely wired and correct, but
+  untestable against a live third-party account without registering real OAuth apps and setting
+  `AIRTABLE_CLIENT_ID`/`AIRTABLE_CLIENT_SECRET` etc. This is the same limitation that already
+  applied to Gmail/Microsoft/Slack/Calendly before this session; not new, but not resolved either.
+- **Live connectivity verification for the seven credential-based connectors is explicitly not
+  implemented** (see above) — this is a stated scope boundary, not an oversight, but it means
+  "configured" only ever means "stored," never "confirmed working."
+- **No new automated test coverage was added.** Verified via `typecheck`/`lint` (both clean) and a
+  live, manual, in-browser + direct-database walkthrough, consistent with this repository's
+  existing pattern for connector work (`oauthProvider.test.ts`/`tokenVault.test.ts`/
+  `connectorContract.test.ts` exist for the pre-existing pipeline; the new PKCE/Basic-auth branches
+  and the new `enterpriseConnectorVault.ts` have no dedicated tests yet).
+- **Auth0's SSO configuration is storage only** — an org's employees still authenticate via
+  Supabase Auth, not Auth0, until the deeper identity-federation work described as an honest
+  limitation in `MONOREPO_ARCHITECTURE_AND_BUSINESS_MODEL.md` §1.3/§3 is built.
+
+### Audit trail
+
+- New: `src/services/integrations/notionPages.ts`, `src/services/integrations/
+  enterpriseConnectorVault.ts`, `src/app/api/connectors/notion/pages/list/route.ts`, `src/app/api/
+  connectors/notion/pages/import/route.ts`, `src/app/api/connectors/enterprise/credentials/route.ts`,
+  `supabase/migrations/20260721170000_enterprise_connector_credentials.sql`.
+- Modified: `src/services/integrations/connectorContract.ts`, `src/services/integrations/
+  oauthProvider.ts`, `src/services/integrations/pluginRegistry.ts`, `src/app/api/connectors/oauth/
+  start/route.ts`, `src/app/api/connectors/oauth/callback/route.ts`, `src/features/settings/
+  SettingsSection.tsx`, `src/features/integrations/IntegrationsSection.tsx`.
+- Verification: `pnpm run typecheck` clean, `pnpm run lint --max-warnings=0` clean. Live walkthrough
+  against a genuine, freshly-provisioned tenant covering signup → onboarding → provisioning →
+  Integrations page → Stripe credential save/encrypt-verify/revoke → Notion page-list provider-gated
+  response, all confirmed working as described above. Full suite: **91 files / 270 tests passing**
+  (one existing test, `pluginRegistry.test.ts`, had hardcoded expectations of exactly 4
+  pilot-enabled connectors and needed updating to 7 — an expected consequence of intentionally
+  flipping `pilotEnabled` for airtable/hubspot/notion, not a regression). One transient
+  `[vitest-pool-runner]: Timeout waiting for worker to respond` was observed on an unrelated file
+  during the full-suite run (the same class of resource-contention flakiness noted in the
+  2026-07-21 live-walkthrough entry above, under sustained multi-hour concurrent tool load in this
+  sandbox); the affected file was re-run in isolation and passed cleanly (2/2), confirming it was
+  not a real failure.
+
+---
+
+## 2026-07-21 — Mixpanel and PostHog can now run simultaneously for every beta/demo visit
+
+### What happened
+
+Asked to "activate Mixpanel and PostHog for all visits to beta and demo." Investigation found both
+providers were already fully implemented (`MixpanelAnalyticsProvider.ts`, `PostHogAnalyticsProvider.ts`)
+and the shared app shell (`src/app/workspace-page.tsx`, used by essentially every route —
+`/dashboard`, `/tasks`, `/projects`, `/integrations`, etc. all just re-export it) already wraps
+`AnalyticsProviderShell`, with `App.tsx` firing `beta_session_started` on load and
+`AnalyticsProviderShell`'s own cleanup firing `beta_session_ended` on unmount — meaning "every
+visit, both demo and live beta" was already architecturally covered, since neither `App.tsx` nor
+the shell distinguishes demo from live tenants.
+
+**What was missing:** `config.ts`'s `createAnalyticsProvider()` only ever selected *one* provider —
+PostHog if its key was present, else Mixpanel, an either/or fallback chain, not both at once. Built
+a new `MultiAnalyticsProvider` (fans every `trackEvent`/`identifyUser`/`setUserProperties`/
+`resetAnalytics` call out to every wrapped provider, with each call individually guarded so one
+provider's SDK throwing can't block another's) and changed `createAnalyticsProvider()` so that the
+default/`"auto"` provider setting now builds a `MultiAnalyticsProvider` from every provider that has
+a token configured — both simultaneously if both `NEXT_PUBLIC_POSTHOG_KEY` and
+`NEXT_PUBLIC_MIXPANEL_TOKEN` are set, falling back to whichever single one is set otherwise.
+Explicit `"posthog"`/`"mixpanel"` values still force just that one provider, for debugging.
+
+### What this does and doesn't close
+
+**Closed:** the code path for tracking every beta/demo visit in both Mixpanel and PostHog
+simultaneously is built, tested, typechecked, and linted clean.
+
+**Not yet closed — this is the real gap, not a code gap:** no real Mixpanel project token or
+PostHog project API key exists in any environment, local or deployed. Activating real tracking
+requires the user to create both projects (or use existing ones) and supply the actual token/key
+values — something outside what this environment can do (account creation is out of scope for the
+same reason it's out of scope for every other connector in this codebase). Asked the user how they
+wanted to proceed; they chose to create the accounts first. Until real values are set in
+`.env.local` (local dev) and in Vercel's environment variables (deployed beta/demo — this
+environment has no access to that dashboard), `isAnalyticsEnabled()` correctly returns false and
+every visit continues to no-op through `MockAnalyticsProvider`, exactly as it did before this
+change. Also updated `.env.example`'s `NEXT_PUBLIC_ANALYTICS_PROVIDER` default to `auto` (was
+`noop`) so that filling in either token activates tracking immediately without a separate
+provider-selection step — this has no effect until at least one real token is present.
+
+**Also honestly out of scope:** `apps/mobile` (the separate Expo/React Native app) has its own
+`EXPO_PUBLIC_ANALYTICS_PROVIDER`/`EXPO_PUBLIC_POSTHOG_KEY`/`EXPO_PUBLIC_MIXPANEL_TOKEN` env vars
+documented in its own README and read into `app.config.ts`, but confirmed via grep that nothing in
+that app's code actually instantiates a provider or sends an event yet — consistent with this
+app being early scaffolding (see `MONOREPO_ARCHITECTURE_AND_BUSINESS_MODEL.md` §2.3). There was
+nothing to "activate" there since no analytics call exists to activate; building that from scratch
+would be new feature work, not activation, and was correctly left alone.
+
+### Audit trail
+
+- New: `src/services/analytics/MultiAnalyticsProvider.ts`.
+- Modified: `src/services/analytics/config.ts`, `src/services/analytics/index.ts`,
+  `src/services/analytics/analytics.test.ts` (5 new tests: fan-out behavior, enabled/name
+  composition, one-provider-throwing isolation, dual-provider selection, single-provider fallback),
+  `.env.example` (provider-selection default and comment).
+- Verification: `pnpm run typecheck` clean, `pnpm run lint --max-warnings=0` clean,
+  `src/services/analytics/analytics.test.ts` run in isolation: 11/11 passing. Full-suite number
+  folded into the count in the entry above (both changes landed in the same verification pass).

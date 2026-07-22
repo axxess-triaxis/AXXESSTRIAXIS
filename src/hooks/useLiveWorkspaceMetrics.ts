@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { applicationServices } from "../providers/serviceProvider";
 import type { TenantScope } from "../repositories/interfaces";
 import { isDemoModeEnabled } from "../demo/demoMode";
-import { getFallbackLiveWorkspaceMetrics, getLiveWorkspaceMetrics, getZeroLiveWorkspaceMetrics, type LiveWorkspaceMetrics } from "../services/live-platform/livePlatform";
+import { getFallbackLiveWorkspaceMetrics, getZeroLiveWorkspaceMetrics, type LiveWorkspaceMetrics } from "../services/live-platform/livePlatform";
+import { getSharedLiveWorkspaceMetrics } from "./liveWorkspaceMetricsCache";
 
 // getFallbackLiveWorkspaceMetrics() returns illustrative investor-demo numbers and must only ever
 // be shown in demo mode. A real tenant sees genuinely zeroed metrics while data is loading or if a
@@ -17,7 +18,7 @@ export function useLiveWorkspaceMetrics(scope?: TenantScope) {
   useEffect(() => {
     if (!scope) return;
     let mounted = true;
-    void getLiveWorkspaceMetrics(applicationServices, scope)
+    void getSharedLiveWorkspaceMetrics(applicationServices, scope)
       .then((value) => { if (mounted) setMetrics(value); })
       .catch(() => { if (mounted) setMetrics(initialMetrics()); });
     return () => { mounted = false; };

@@ -85,6 +85,10 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Install mobile dependencies
+        working-directory: apps/mobile
+        run: pnpm install
+
       - name: Typecheck mobile app
         working-directory: apps/mobile
         run: pnpm run typecheck

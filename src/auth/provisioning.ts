@@ -201,6 +201,14 @@ export async function provisionTenantForUser(user: UserContext, input: TenantPro
   const organizationName = input.organizationName.trim();
   if (!organizationName) throw new Error("Organization name is required.");
 
+  // tenant_id has been NOT NULL since 202607090001_sprint12_security_compliance_foundation.sql,
+  // which backfilled every existing row as tenant_id = id but added no default for new rows --
+  // every brand-new organization signup was failing this constraint outright until a DB-level
+  // fix (a BEFORE INSERT trigger defaulting tenant_id to id, see the accompanying migration).
+  // Deliberately not set here: passing an explicit id in this upsert body would let the
+  // on_conflict(slug) merge path reassign an *existing* organization's primary key if two
+  // signups ever raced on the same org name -- the trigger fixes this for every insert path,
+  // not just this one call site, without that risk.
   const organizationRows = await supabaseAdminRest<OrganizationRow[]>("organizations", {
     method: "POST",
     query: new URLSearchParams({ on_conflict: "slug" }),

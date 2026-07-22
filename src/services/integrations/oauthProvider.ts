@@ -1,4 +1,4 @@
-import { scryptSync, timingSafeEqual } from "node:crypto";
+import { createHash, randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
 import type { ConnectorProviderId } from "./connectorContract";
 import { getConnectorContract } from "./connectorContract";
 import {
@@ -13,6 +13,10 @@ export type OAuthStatePayload = {
   providerId: ConnectorProviderId;
   nonce: string;
   issuedAt: number;
+  // PKCE code_verifier, present only for providers with contract.requiresPkce (Airtable).
+  // Carried inside the signed state payload rather than a separate store, since the state is
+  // already a tamper-evident, short-lived, single-use value tied to this exact OAuth attempt.
+  codeVerifier?: string;
 };
 
 export type OAuthTokenExchangeResult = {
@@ -63,7 +67,18 @@ const oauthClientEnvVars: Record<ConnectorProviderId, { clientId: string; client
   microsoft: { clientId: "MICROSOFT_CLIENT_ID", clientSecret: "MICROSOFT_CLIENT_SECRET" },
   slack: { clientId: "SLACK_CLIENT_ID", clientSecret: "SLACK_CLIENT_SECRET" },
   calendly: { clientId: "CALENDLY_CLIENT_ID", clientSecret: "CALENDLY_CLIENT_SECRET" },
+  airtable: { clientId: "AIRTABLE_CLIENT_ID", clientSecret: "AIRTABLE_CLIENT_SECRET" },
+  hubspot: { clientId: "HUBSPOT_CLIENT_ID", clientSecret: "HUBSPOT_CLIENT_SECRET" },
+  notion: { clientId: "NOTION_CLIENT_ID", clientSecret: "NOTION_CLIENT_SECRET" },
 };
+
+export function generatePkceVerifier() {
+  return randomBytes(32).toString("base64url");
+}
+
+export function pkceCodeChallenge(codeVerifier: string) {
+  return createHash("sha256").update(codeVerifier).digest("base64url");
+}
 
 function providerClient(providerId: ConnectorProviderId, env: NodeJS.ProcessEnv = process.env) {
   const envVars = oauthClientEnvVars[providerId];
@@ -91,14 +106,18 @@ export function createOAuthState(input: {
   providerId: ConnectorProviderId;
   nonce?: string;
   issuedAt?: number;
+  codeVerifier?: string;
   env?: NodeJS.ProcessEnv;
 }) {
+  const contract = getConnectorContract(input.providerId);
+  const codeVerifier = contract?.requiresPkce ? (input.codeVerifier ?? generatePkceVerifier()) : undefined;
   const payload: OAuthStatePayload = {
     organizationId: input.organizationId,
     userId: input.userId,
     providerId: input.providerId,
     nonce: input.nonce ?? globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(16).slice(2)}`,
     issuedAt: input.issuedAt ?? Date.now(),
+    codeVerifier,
   };
   const encodedPayload = base64Url(JSON.stringify(payload));
   return `${encodedPayload}.${signatureFor(encodedPayload, input.env)}`;
@@ -161,6 +180,7 @@ export async function exchangeOAuthCode(input: {
   userId: string;
   code: string;
   redirectUri: string;
+  codeVerifier?: string;
   env?: NodeJS.ProcessEnv;
   fetcher?: typeof fetch;
   now?: number;
@@ -169,20 +189,43 @@ export async function exchangeOAuthCode(input: {
   if (!contract) throw new Error("Unsupported OAuth connector provider.");
   const client = providerClient(input.providerId, input.env);
   if (!client.clientId || !client.clientSecret) throw new Error("OAuth client credentials are not configured.");
+  if (contract.requiresPkce && !input.codeVerifier) throw new Error("PKCE code verifier is required for this connector.");
 
-  const body = new URLSearchParams({
-    client_id: client.clientId,
-    client_secret: client.clientSecret,
-    code: input.code,
-    grant_type: "authorization_code",
-    redirect_uri: input.redirectUri,
-  });
-  const response = await (input.fetcher ?? fetch)(contract.tokenUrl, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body,
-    cache: "no-store",
-  });
+  let response: Response;
+  if (contract.tokenRequestStyle === "json-basic-auth") {
+    // Notion requires client credentials as an HTTP Basic Auth header and a JSON body, unlike
+    // every other provider here (form-urlencoded with client_id/secret inline).
+    response = await (input.fetcher ?? fetch)(contract.tokenUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Basic ${Buffer.from(`${client.clientId}:${client.clientSecret}`).toString("base64")}`,
+      },
+      body: JSON.stringify({
+        grant_type: "authorization_code",
+        code: input.code,
+        redirect_uri: input.redirectUri,
+      }),
+      cache: "no-store",
+    });
+  } else {
+    const body = new URLSearchParams({
+      client_id: client.clientId,
+      client_secret: client.clientSecret,
+      code: input.code,
+      grant_type: "authorization_code",
+      redirect_uri: input.redirectUri,
+    });
+    if (contract.requiresPkce && input.codeVerifier) {
+      body.set("code_verifier", input.codeVerifier);
+    }
+    response = await (input.fetcher ?? fetch)(contract.tokenUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body,
+      cache: "no-store",
+    });
+  }
   const payload = await response.json().catch(() => ({})) as OAuthTokenResponse;
   if (!response.ok || payload.error || !payload.access_token) {
     throw new Error(payload.error_description ?? payload.error ?? `OAuth token exchange failed with status ${response.status}.`);

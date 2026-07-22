@@ -17,7 +17,7 @@ import { getAiRouterStatusSnapshot } from "../../services/ai/router/aiRouter";
 import { useAnalytics } from "../../services/analytics";
 import { getPilotIntegrations } from "../../services/integrations/pluginRegistry";
 import { languageCoverage } from "../../services/nlp/modelRegistry";
-import { Building2, Calendar, Check, CheckCircle2, Database, MessageSquare, RotateCcw, Save, Send, Settings, ShieldCheck, Sparkles, UserPlus, X, XCircle } from "lucide-react";
+import { Building2, Calendar, Check, CheckCircle2, Database, FileText, MessageSquare, RotateCcw, Save, Send, Settings, ShieldCheck, Sparkles, UserPlus, X, XCircle } from "lucide-react";
 
 export const SettingsSection = () => {
   const [tab, setTab] = useState("security");
@@ -184,14 +184,19 @@ function AiRoutingProvidersPanel() {
 const quickConnectIcons: Record<string, typeof MessageSquare> = {
   slack: MessageSquare,
   calendly: Calendar,
+  airtable: Database,
+  hubspot: Building2,
+  notion: FileText,
 };
 
 function IntegrationsQuickConnectPanel() {
   const { session } = useAuth();
-  // Per PRE_DEMO_ACTIONABLES.md A13/A14/A15: Settings surfaces only the 2 connectors this
-  // release actually ships a working connect flow for, not the full integrations catalogue
-  // (that full catalogue lives at /integrations, split into pilot vs. infrastructure-only).
-  const quickConnectPlugins = getPilotIntegrations().filter((plugin) => plugin.id === "slack" || plugin.id === "calendly");
+  // Per PRE_DEMO_ACTIONABLES.md A13/A14/A15: Settings surfaces only the connectors this release
+  // actually ships a working connect flow for, not the full integrations catalogue (that full
+  // catalogue lives at /integrations, split into pilot vs. infrastructure-only). Email connectors
+  // (Gmail, Microsoft) get their own dedicated card in IntegrationsSection.tsx instead of this
+  // generic quick-connect grid, so they're excluded here.
+  const quickConnectPlugins = getPilotIntegrations().filter((plugin) => plugin.id !== "gmail" && plugin.id !== "outlook");
   const canConnect = Boolean(session.user && ["Super Admin", "Organization Admin"].includes(session.user.role));
 
   return (

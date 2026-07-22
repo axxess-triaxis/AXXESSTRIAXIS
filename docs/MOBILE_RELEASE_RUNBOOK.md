@@ -1,5 +1,66 @@
 # Mobile Release Runbook
 
+## Fully Local Release (No GitHub Actions)
+
+Everything below "Triggering builds" describes the GitHub Actions path. None of it is required --
+every step it runs is just calling the same `pnpm run mobile:capacitor:*` scripts this repo already
+has, which work identically run by hand on a local machine. Use this path whenever GitHub Actions
+isn't available (as happened when the GitHub account behind this repo was suspended) or simply to
+avoid depending on it at all going forward.
+
+**Platform split, confirmed by actually running this locally on Windows:**
+
+- **Android: fully buildable locally on Windows.** `pnpm run mobile:capacitor:sync` (or
+  `sync:android` for just that platform) completes end to end -- web assets copied, native
+  Android project regenerated, all Capacitor plugins registered.
+- **iOS: sync completes, but the final native build step needs a Mac.** `cap sync` on Windows
+  successfully copies web assets and regenerates `ios/App/App/*`, but the last step
+  (`pod install`, via CocoaPods) requires Xcode/CocoaPods, which only run on macOS. Do the iOS
+  native build (`mobile:capacitor:build:ios` / `mobile:capacitor:release:ios`) on a Mac, or use the
+  existing `mobile:eas:*` (Expo/EAS) scripts for `apps/mobile` if a cloud iOS build is acceptable
+  and Expo credentials are configured.
+
+### Local build steps
+
+```bash
+# One-time per machine (or after changing native config / plugins):
+pnpm run mobile:capacitor:sync                          # both platforms
+pnpm --dir apps/mobile-capacitor run sync:android       # Android only, if you only need that platform
+
+# Debug/dev build:
+pnpm run mobile:capacitor:build:android     # produces a debug .apk/.aab locally
+pnpm run mobile:capacitor:build:ios         # Mac only
+
+# Store-signed release build (needs signing env vars set locally -- see
+# docs/ANDROID_SIGNING.md / docs/IOS_SIGNING.md for what to set and where to get it):
+pnpm run mobile:capacitor:store:apply       # applies store-specific Capacitor config
+pnpm run mobile:capacitor:store:doctor      # verifies readiness before building
+pnpm run mobile:capacitor:release:android   # signed .aab, ready for Play Store upload
+pnpm run mobile:capacitor:release:ios       # Mac only -- signed .ipa, ready for TestFlight
+```
+
+Environment variables read the same way whether the build runs in GitHub Actions or locally --
+GitHub Actions just injected them from its own secrets/variables store (see "Production
+environment setup" below). Locally, set the same variable names in `.env.local` or your shell
+environment before running the commands above; nothing about how the build scripts read them
+changes. See `docs/ENVIRONMENT_VARIABLES.md` for the full checklist including which of these are
+mobile-specific.
+
+### Store upload
+
+The GitHub Actions workflow uploads to Google Play internal testing / TestFlight automatically via
+`r0adkll/upload-google-play` and App Store Connect API credentials. Doing this locally means
+uploading the built `.aab`/`.ipa` through each store's own console (Play Console's release
+dashboard, Xcode Organizer or Transporter for TestFlight) instead of an automated action -- slower,
+but requires nothing GitHub-specific and works from any machine with the right store account
+access.
+
+### VS Code tasks work the same way
+
+The "VS Code release tasks" section further down already documents the fully-local path via
+`Terminal > Run Task` -- those tasks call the same scripts above and were never GitHub-dependent to
+begin with.
+
 ## Triggering builds
 
 - Every push to main that changes relevant mobile/web files triggers the Capacitor workflow.
