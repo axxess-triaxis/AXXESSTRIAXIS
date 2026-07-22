@@ -533,4 +533,7 @@ Live Vercel beta redeploy and QA golden-path replay against the live URL
 remain pending for all sprints.
 Full Sprint 1 findings ledger and estimated score deltas:
 docs/SPRINT_1_CLOSEOUT_2026_07_22.md.
+Full cumulative Sprint 1+2 findings ledger, isolated Sprint 2 delta, and
+composite Sprint 1+2 delta (all estimated, not live-verified):
+docs/SPRINT_2_CLOSEOUT_2026_07_22.md.
 ```

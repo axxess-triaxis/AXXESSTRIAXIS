@@ -207,4 +207,6 @@ Live Vercel beta redeploy and live beta QA replay remain pending for all
 sprints.
 Sprint 1 closeout (findings ledger, constraint compliance, estimated score
 deltas): docs/SPRINT_1_CLOSEOUT_2026_07_22.md.
+Sprint 2 closeout (cumulative Sprint 1+2 findings ledger, isolated Sprint 2
+delta, composite Sprint 1+2 delta): docs/SPRINT_2_CLOSEOUT_2026_07_22.md.
 ```
