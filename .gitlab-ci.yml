@@ -82,6 +82,16 @@ supabase-verify:
         - scripts/verify-supabase-migrations.mjs
         - package.json
         - pnpm-lock.yaml
+    # Sprint/remediation branches get the same change-gated verification as main -- this rule was
+    # missing here even after quality/pnpm-audit got their sprint-branch rules added, so this job
+    # silently never ran on canonical/sprint-1-35-unified-gitlab, in any pipeline, regardless of
+    # what changed (confirmed by CI pipeline audit, see docs/SPRINT_LOG.md).
+    - if: '$CI_COMMIT_BRANCH == "canonical/sprint-1-35-unified-gitlab"'
+      changes:
+        - supabase/**/*
+        - scripts/verify-supabase-migrations.mjs
+        - package.json
+        - pnpm-lock.yaml
 
 pnpm-audit:
   stage: security
