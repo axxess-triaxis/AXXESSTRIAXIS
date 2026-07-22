@@ -199,7 +199,10 @@ Sprint 1 (Auth Integrity And Protected Access) implemented, tested,
 documented and fully verified locally on 2026-07-22 -- see
 docs/SPRINT_LOG.md and docs/BETA_QA_5_SPRINT_REMEDIATION_CHECKLIST_2026_07_22.md
 for evidence.
-Sprints 2-5 remain pending.
+Sprint 2 (Live Tenant Persistence And Golden Path Writes) implemented,
+tested, documented and fully verified locally on 2026-07-22 -- same
+references.
+Sprints 3-5 remain pending.
 Live Vercel beta redeploy and live beta QA replay remain pending for all
 sprints.
 Sprint 1 closeout (findings ledger, constraint compliance, estimated score
