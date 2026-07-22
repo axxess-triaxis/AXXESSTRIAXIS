@@ -15,9 +15,6 @@ const nextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
   typedRoutes: true,
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
   async headers() {
     return [
       {
