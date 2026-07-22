@@ -134,6 +134,8 @@ full command-by-command evidence). Live Vercel beta env var verification
 and redeploy remain outstanding and are explicitly deferred to Sprint 5's
 live beta re-verification step, per repository policy against deploying
 this remediation as part of a documentation-and-code-only local pass.
+Full findings-by-finding ledger, constraint-compliance checklist and
+estimated (not live-verified) QA score deltas: docs/SPRINT_1_CLOSEOUT_2026_07_22.md.
 ```
 
 ## Sprint 2 - Live Tenant Persistence And Golden Path Writes
