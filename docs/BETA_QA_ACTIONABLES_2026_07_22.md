@@ -379,6 +379,8 @@ Acceptance:
 - Demo Mode shows seeded timeline with a Demo Environment label.
 - Investor Preview remains polished but explicitly identified.
 
+Status: Regression-verified as already closed in Sprint 4 (2026-07-22). `useWorkflowTimeline.ts` and `WorkflowRecordsPage.tsx` already gated their seeded/fallback timeline events behind `isDemoModeEnabled()` prior to this sprint; re-audited this sprint with no regression found. See `docs/SPRINT_LOG.md` Sprint 4 entry.
+
 ### 15. Remove Raw Unauthorized Text From User-Facing UI
 
 Severity: P2
@@ -421,6 +423,8 @@ Acceptance:
 - Demo tenant has populated workflow records.
 - Badges and records remain consistent.
 
+Status: Regression-verified as already closed in Sprint 4 (2026-07-22). `WorkflowRecordsPage.tsx`'s fallback records are already gated behind `isDemoModeEnabled()`; re-audited this sprint with no regression found. See `docs/SPRINT_LOG.md` Sprint 4 entry.
+
 ### 17. Fix Onboarding Progress Inconsistency
 
 Severity: P2
@@ -440,6 +444,8 @@ Acceptance:
 - Onboarding progress is deterministic.
 - Progress changes only when durable actions occur.
 - Dashboard and onboarding views agree.
+
+Status: Closed locally in Sprint 4 (2026-07-22). Root cause was not in the onboarding widget itself: `DashboardSection.tsx` initialized its `projects` state via an unconditional `useState<DashboardProject[]>(() => getDashboardFallbackProjects())` -- 186 fabricated demo projects -- and repeated that same unconditional fallback on any live-fetch failure. `BetaOnboardingChecklist.tsx`'s completion logic (`projectCount > 0 || loaded.first_project`) then permanently marked the "first_project" onboarding step complete for any tenant, live or not, before the real fetch ever resolved. Fixed by gating both the initial state and the failure-path fallback behind `isDemoModeEnabled()`, matching the pattern already used correctly elsewhere in the same file for KPIs. A clean live tenant with zero real projects now deterministically shows the same progress on every load (1 of 10 -- the "organization" step only, from having an `organizationId`) instead of fluctuating. Regression-tested in `src/features/dashboard/DashboardSection.test.ts` and `src/features/onboarding/BetaOnboardingChecklist.test.tsx`.
 
 ### 18. Fix `/documents` Route Mapping
 
@@ -461,6 +467,8 @@ Acceptance:
 - Each route has a clear product purpose.
 - Tests protect against route regression.
 
+Status: Regression-verified as already closed in Sprint 3 (2026-07-22), and re-confirmed in Sprint 4. `lazyRoutes.tsx` maps `documents` to `DocumentsSection` ("Documents & File Intelligence") and `knowledge` to `KnowledgeHubSection` ("Knowledge Hub") as two distinct components with distinct headings and no cross-reference to each other's product name. Added a dedicated regression test this sprint asserting both files carry their own heading and never the other's: `src/app/routing/lazyRoutes.test.ts`.
+
 ### 19. Reconcile Sidebar Badge Counts With Live Tenant State
 
 Severity: P2
@@ -480,6 +488,8 @@ Acceptance:
 - Clean live tenants do not show fabricated counts.
 - Demo tenants show coherent seeded counts.
 - Badge data matches workspace data.
+
+Status: Closed locally in Sprint 4 (2026-07-22). `navigation.ts`'s `NavItem` type gained a `badgeKind?: "tag" | "count"` discriminator: the "AI" badge on AI Workspace is tagged `"tag"` (a static feature label, not a tenant count, so it renders unconditionally), while the hardcoded "4" (Social Alerts) and "23" (Approvals & Governance) counts are tagged `"count"`. `Sidebar.tsx` now only renders a `"count"`-kind badge when `isDemoModeEnabled()` is true. A clean live tenant sees the AI tag but not the fabricated counts; Demo Mode sees both. Regression-tested in `src/app/layout/Sidebar.test.tsx`.
 
 ### 20. Deduplicate Repeated Dashboard API Requests
 
@@ -539,12 +549,15 @@ This checklist is intentionally derived from the QA artifact rather than from en
 ```text
 Raw QA artifact preserved.
 20 actionables extracted.
-Actionables 1-13, 15 (Sprints 1-3 scope) closed locally as of 2026-07-22.
-See docs/SPRINT_LOG.md "Sprint 1 Complete", "Sprint 2 Complete" and
-"Sprint 3 Complete" entries for implementation and verification evidence
-(typecheck, lint, 108 test files / 324 tests, build, supabase:verify,
-mobile release gates all passing).
-Actionables 14, 16-20 (Sprints 4-5 scope) remain pending.
+Actionables 1-20 (Sprints 1-4 scope) closed or regression-verified
+locally as of 2026-07-22.
+See docs/SPRINT_LOG.md "Sprint 1 Complete", "Sprint 2 Complete",
+"Sprint 3 Complete" and "Sprint 4 Complete" entries for implementation
+and verification evidence (typecheck, mobile typecheck, lint, 110 test
+files / 331 tests, build, supabase:verify, mobile release gates all
+passing).
+Actionable 20 (dashboard request deduplication, Sprint 5 scope) is the
+only actionable not yet addressed.
 Live Vercel beta redeploy and QA golden-path replay against the live URL
 remain pending for all sprints.
 Full Sprint 1 findings ledger and estimated score deltas:
@@ -555,4 +568,6 @@ docs/SPRINT_2_CLOSEOUT_2026_07_22.md.
 Full cumulative Sprint 1+2+3 findings ledger, isolated Sprint 3 delta, and
 composite Sprint 1+2+3 delta (all estimated, not live-verified):
 docs/SPRINT_3_CLOSEOUT_2026_07_22.md.
+Sprint 4 closeout (isolated + composite Sprint 1+2+3+4 delta) is produced
+only if/when requested, per this project's established closeout cadence.
 ```
