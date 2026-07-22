@@ -3,6 +3,7 @@ import type { Route } from "next";
 import { SectionHeader } from "../../components/layout/SectionHeader";
 import { Card } from "../../components/ui/Card";
 import { getServerAuthSession } from "../../auth/serverSession";
+import { isDemoModeEnabled } from "../../demo/demoMode";
 import { approvalRequestsRepository, projectUpdatesRepository, stakeholderNotesRepository } from "../../repositories/workflowActionRepositories";
 import { tenantScopeFromUser } from "../../repositories/supabaseEnterpriseRepositories";
 import {
@@ -146,8 +147,8 @@ function recordDate(record: WorkflowRecord) {
 
 async function loadRecords(type: WorkflowRecordType) {
   const session = await getServerAuthSession(true);
-  const useDemoFallback = !session || process.env.NEXT_PUBLIC_AXXESS_DEMO_MODE === "true";
-  if (useDemoFallback) return demoRecords()[type];
+  if (!session) return isDemoModeEnabled() ? demoRecords()[type] : [];
+  if (isDemoModeEnabled()) return demoRecords()[type];
 
   const scope = tenantScopeFromUser(session.user, session.accessToken);
   if (type === "approval-requests") return approvalRequestsRepository.list(scope, { pageSize: 50 });
