@@ -145,17 +145,69 @@ Pilot customer readiness: 12/100
 
 (Scores as originally reported by the raw QA artifact; see `docs/SPRINT_1_CLOSEOUT_2026_07_22.md` for reasoned, explicitly-not-live-verified projections after Sprint 1. Sprint 2's fix is evidence/audit-trail only and would not by itself move any golden-path pass/fail step recorded in the original QA report -- project creation was already architecturally functional before this sprint; Sprint 2 makes it auditable, which principally affects Enterprise/Pilot readiness once live-verified, not Beta/Investor readiness.)
 
+### Sprint 3 Complete - Workspace Loading And Error-State Hardening - 2026-07-22
+
+Objective: eliminate indefinite loading states and raw backend errors across the 9 workspaces the QA report found hanging (F-006-F-014), plus normalize raw `Unauthorized.` text (F-016).
+
+The headline finding this sprint: auditing the *current* local codebase (not the QA report's live deployment, which has not been redeployed since Sprint 1 or 2) found that most of the reported hangs do not reproduce at all. Per-workspace audit:
+
+```text
+Workspace              Async load gate?   Hang possible?  Action taken
+AI Workspace           No                 No              Fixed 2 raw-error-leak call sites
+AI Review Inbox        No                 No              Fixed 2 raw-error-leak call sites (F-016)
+Approvals              No (sync stub)     No              Fixed routing bug (missing appRoutes entry -- see below)
+Stakeholders/CRM       No (sync stub)     No              Audited, no fix needed
+Analytics              No (sync stub)     No              Audited, no fix needed
+Integrations           Yes, non-blocking  No              Fixed 6 raw-error-leak call sites
+Settings               No                 No              Audited, no fix needed
+Organization Admin     Yes, blocking      Yes (narrow)     Fixed: loading flag had no terminal fallback
+Audit Logs             Yes, blocking      Yes (narrow)     Fixed: loading flag had no terminal fallback
+Dashboard + 4 hooks     Yes, non-blocking  No              Audited, no fix needed
+```
+
+Changes:
+
+- **Root-caused the Approvals mislabel** ("Loading Executive Dashboard"): `src/app/routing/routes.ts`'s `appRoutes` array had no entry at all for `"approvals"`, even though it's a valid `NavSection` with its own sidebar item and lazy-loaded component (`ApprovalsSection`). `routeForPath("/approvals")` and `routeForSection("approvals")` therefore silently fell back to `appRoutes[1]` (the Dashboard route), and `RouteBoundary`'s `Suspense` fallback used that route's label. Added the missing entry. This is a routing bug, not a component bug -- `ApprovalsSection.tsx` itself was already fine.
+- **Fixed the "stale loading flag" defect** in `src/features/admin/OrganizationAdminSection.tsx` and `src/features/admin/AuditLogsSection.tsx`: both had `if (!scope) return;` (or `!scope || !user`) inside their load function, which skipped resetting `loading` to `false`. If this ran before session/tenant scope resolved, `loading` could stay stuck at its initial `true` value with no terminal fallback. Fixed by always settling to `loading: false` in that branch. Also replaced `if (!user) return null;` (a blank page) in both with an explicit "Sign in required" state.
+- **Fixed 9 raw-backend-error-text leaks** (F-016 and the same anti-pattern found beyond the one confirmed instance): `src/features/ai-workspace/AIReviewInboxPage.tsx` (2 call sites: `loadReviews`, `decide`), `src/features/ai-workspace/AIWorkspaceSection.tsx` (2: governed question, review decision), `src/features/integrations/IntegrationsSection.tsx` (6: Microsoft mailbox listing, email import, Notion listing/preview/import, connector credential save). All followed `throw new Error(result.error ?? fallback)` then `setMessage(error.message)` -- now each checks `response.status` explicitly (401 -> sign-in copy, 403 -> permission copy, other -> generic retry copy) and logs the raw detail via `console.error` for developer diagnostics instead of showing it to the user.
+- **Confirmed already-correct, unchanged**: Approvals/Stakeholders/Analytics are synchronous, Demo-Mode-gated stubs with honest empty states outside Demo Mode (per their own code comments referencing `DEMO_DATA_LEAKAGE_AUDIT.md` -- no live repository exists yet for these, by design); Settings has no loading gate; Integrations' provider-gated states (`DataStateBadge state="Provider-gated"`) were already correct; Dashboard and its 4 dependent hooks (`useLiveWorkspaceMetrics`, `useLiveRagHealth`, `useEnterpriseGoldenPath`, `useWorkflowTimeline`) all initialize to a safe fallback value and never block render.
+- **State model used**: no new shared abstraction was introduced (matches "do not rewrite architecture"). The existing per-component pattern -- `DataStateBadge` (Demo/Live/Provider-gated), `EmptyState` (honest empty/permission copy), `LoadingState` (Suspense-level route loading), `RouteBoundary`'s `AccessDeniedSection` (role-permission gate), and the `{tone, message}` toast pattern -- already constitutes a coherent 6-state model (live, empty, demo, permission, provider-gated, error) once each workspace's own bugs are fixed; Sprint 3's job was making sure every workspace correctly reaches it, not building a new one.
+
+### Sprint 3 Verification Evidence - 2026-07-22
+
+```text
+pnpm run typecheck                        PASS
+pnpm --dir apps/mobile run typecheck      PASS
+pnpm run lint                             PASS (zero warnings)
+pnpm run test                             PASS (108 test files, 324 tests, 0 failed --
+                                           up from 98/299 before this sprint)
+pnpm run build                            PASS
+pnpm run supabase:verify                  PASS (27 migrations, 100 tables, 100 RLS-protected;
+                                           same single pre-existing warning as prior sprints --
+                                           no migration touched)
+pnpm run mobile:store:release-gate        PASS
+pnpm run mobile:capacitor:store:doctor    PASS
+```
+
+Diligence evidence:
+
+- Affected files: `src/app/routing/routes.ts`, `src/features/admin/OrganizationAdminSection.tsx`, `src/features/admin/AuditLogsSection.tsx`, `src/features/ai-workspace/AIReviewInboxPage.tsx`, `src/features/ai-workspace/AIWorkspaceSection.tsx`, `src/features/integrations/IntegrationsSection.tsx`.
+- Affected routes: `/approvals` (routing metadata only); no other route paths changed.
+- Affected workspaces: all 9 named plus Dashboard (audited, unchanged).
+- Affected hooks/services: none of the shared hooks (`useWorkflowTimeline`, `useLiveWorkspaceMetrics`, `useLiveRagHealth`, `useEnterpriseGoldenPath`) needed changes -- all were already safe.
+- No security/RBAC/tenant-isolation logic was touched -- every fix was either UI-copy normalization or a client-side loading-flag correction; server-side auth enforcement, RLS and RBAC checks are byte-for-byte unchanged from Sprint 2.
+- No provider credentials (Gmail, Microsoft, Notion, enterprise connectors) are configured in this local environment -- provider-gated behavior was confirmed correct by code audit, not by exercising a live connector.
+- Remaining caveats: no live beta replay was performed; the fixes are local-repository, build, and unit-test verified only.
+
 ### Remaining Follow-Up
 
 - Verify Vercel beta env vars and redeploy (Sprint 1 fix is local/repository-only; live beta has not yet been redeployed or re-tested).
-- Re-run the same QA walkthrough on `beta.triaxisventures.com` after redeploy.
-- Add defensive timeout/error states to every fetch-driven workspace (Sprint 3 scope, F-006-F-014).
-- Normalize unauthorized error rendering (Sprint 3 scope, F-016).
-- Re-test `/documents` and `/knowledge` after deployment to confirm distinct visual behavior.
+- Re-run the same QA walkthrough on `beta.triaxisventures.com` after redeploy -- this would be the first live confirmation that the Approvals routing fix and the loading/error-copy fixes actually resolve the reported symptoms in production.
 - Re-test a real Supabase tenant write path end to end against a live deployment, confirming the audit/timeline rows actually land as expected (Sprint 2 fix is unit-tested only, not live-verified).
 - Re-verify tenant isolation with two real, provisioned tenants once real sessions exist in a live deployment (unit-tested and RLS-backed this pass, not live-tested; do not assume safe by default).
-- Minor, out-of-scope tech debt noted during Sprint 1 verification, still open: Next.js 16 reports `middleware.ts` as a deprecated convention in favor of `proxy.ts` (build warning only, not a failure); the original 2026-07-02 initial-schema Supabase migration has one permissive `using (true)` RLS predicate flagged by `supabase:verify` as a warning. Neither blocks Sprint 1 or Sprint 2 exit criteria.
-- Recommended Sprint 3 focus: workspace loading and error-state hardening (eliminate the nine indefinite-loading workspaces and normalize raw `Unauthorized.` error text) per `docs/BETA_QA_5_SPRINT_REMEDIATION_CHECKLIST_2026_07_22.md`.
+- Live provider/connector testing (Gmail, Microsoft, Notion, enterprise connectors) once credentials are available -- Sprint 3 only confirmed provider-gated *states* by code audit.
+- Minor, out-of-scope tech debt noted during Sprint 1 verification, still open: Next.js 16 reports `middleware.ts` as a deprecated convention in favor of `proxy.ts` (build warning only, not a failure); the original 2026-07-02 initial-schema Supabase migration has one permissive `using (true)` RLS predicate flagged by `supabase:verify` as a warning. Neither blocks any sprint's exit criteria so far.
+- Recommended Sprint 4 focus: demo/live data separation and navigation integrity (onboarding progress consistency, sidebar badge/tenant-state mismatch -- note the Approvals sidebar badge showing "23" against a zero-record tenant is F-020, still open) per `docs/BETA_QA_5_SPRINT_REMEDIATION_CHECKLIST_2026_07_22.md`.
 
 ## Canonical Workspace Migration And Documentation Governance
 

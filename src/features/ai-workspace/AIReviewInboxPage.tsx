@@ -56,8 +56,31 @@ export function AIReviewInboxPage() {
   async function loadReviews() {
     try {
       const response = await fetch("/api/ai/reviews", { credentials: "include" });
+      // Never surface the raw backend error string (e.g. "Unauthorized.") to the user (Sprint 3,
+      // F-016) -- map known response statuses to safe, specific copy and log the raw detail for
+      // developer diagnostics instead.
+      if (response.status === 401) {
+        console.error("AI review inbox request was unauthorized.");
+        if (isDemoModeEnabled()) {
+          setReviews(withPendingDemoReview([]));
+          setMessage(null);
+          return;
+        }
+        setReviews([]);
+        setMessage("Sign in to view the AI review inbox.");
+        return;
+      }
+      if (response.status === 403) {
+        console.error("AI review inbox request was forbidden.");
+        setReviews([]);
+        setMessage("Your role does not have permission to view the AI review inbox.");
+        return;
+      }
       const payload = await response.json().catch(() => ({})) as ReviewResponse;
-      if (!response.ok) throw new Error(payload.error ?? "AI review inbox could not be loaded.");
+      if (!response.ok) {
+        console.error("AI review inbox request failed.", payload.error);
+        throw new Error("request failed");
+      }
       setReviews(withPendingDemoReview(payload.reviews ?? []));
       setMessage(null);
     } catch (error) {
@@ -66,7 +89,8 @@ export function AIReviewInboxPage() {
         setMessage(null);
         return;
       }
-      setMessage(error instanceof Error ? error.message : "AI review inbox could not be loaded.");
+      console.error("AI review inbox could not be loaded.", error);
+      setMessage("AI review inbox could not be loaded. Please try again.");
     }
   }
 
@@ -86,7 +110,13 @@ export function AIReviewInboxPage() {
     });
     const payload = await response.json().catch(() => ({})) as DecisionResponse;
     if (!response.ok) {
-      setMessage(payload.error ?? "AI review decision could not be recorded.");
+      // Never surface the raw backend error string to the user (Sprint 3, F-016).
+      console.error("AI review decision request failed.", response.status, payload.error);
+      setMessage(
+        response.status === 401 ? "Sign in to record this review decision."
+          : response.status === 403 ? "Your role does not have permission to record this decision."
+            : "AI review decision could not be recorded. Please try again.",
+      );
       return false;
     }
     setReviews((current) => current.map((review) => review.id === reviewId ? { ...review, status: decision, reviewedAt: new Date().toISOString() } : review));

@@ -50,6 +50,18 @@ describe("enterprise route metadata", () => {
     expect(sectionFromPath("/admin/mobile-release")).toBe("organization-admin");
   });
 
+  it("maps /approvals to its own route metadata, not the dashboard fallback (Sprint 3 F-010 regression)", () => {
+    // Previously "approvals" had no entry in appRoutes at all, so routeForPath("/approvals") and
+    // routeForSection("approvals") silently fell back to appRoutes[1] (the dashboard route), which
+    // is exactly why RouteBoundary's Suspense fallback showed "Loading Executive Dashboard" on the
+    // Approvals page instead of "Loading Approvals & Governance".
+    expect(routeForPath("/approvals").section).toBe("approvals");
+    expect(routeForPath("/approvals").label).toBe("Approvals & Governance");
+    expect(routeForPath("/approvals").requiresAuth).toBe(true);
+    expect(routeForSection("approvals").path).toBe("approvals");
+    expect(routeForSection("approvals").label).toBe("Approvals & Governance");
+  });
+
   it("routes Employees to a section they can act on instead of a mostly-locked dashboard", () => {
     expect(defaultSectionForRole("Employee")).toBe("tasks");
     expect(defaultSectionForRole("Super Admin")).toBe("dashboard");

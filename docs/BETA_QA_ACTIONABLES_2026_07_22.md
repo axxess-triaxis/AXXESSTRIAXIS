@@ -224,6 +224,8 @@ Acceptance:
 - No infinite spinners.
 - Failed requests produce actionable UI states.
 
+Status: Closed locally in Sprint 3 (2026-07-22). Audited all 9 named workspaces plus Dashboard's dependent hooks against the *current* local codebase (not the QA report's live deployment, which by this point had not been redeployed since Sprint 1 or 2 either). The honest finding: most of these workspaces do not have a mount-time async gate capable of hanging in the current source -- Approvals, Stakeholders/CRM, and Analytics are synchronous, Demo-Mode-gated stubs with no fetch at all; AI Workspace, Integrations, and Settings populate state asynchronously without ever blocking initial render. Two components (Organization Admin, Audit Logs) had a genuine, if narrow, defect: an early `if (!scope) return;` skipped resetting their `loading` flag to `false`, so `loading` could stay stuck at its initial `true` value if it ever ran before session/tenant scope resolved -- fixed in both. Separately, Approvals' exact QA-reported symptom ("Loading Executive Dashboard") was traced to a real routing bug, not a component bug -- see item 9. See `docs/SPRINT_LOG.md` for the full per-workspace breakdown.
+
 ### 8. Fix AI Workspace Loading Failure
 
 Severity: P0
@@ -243,6 +245,8 @@ Acceptance:
 - The page resolves.
 - User can see either the governed ask flow, a setup state or a provider-gated state.
 - No indefinite spinner blocks the flagship workflow.
+
+Status: Closed locally in Sprint 3 (2026-07-22). `AIWorkspaceSection.tsx` renders its full ask/review UI immediately -- it has no page-level loading gate to hang on. The interactive "ask a governed question" flow already had a 20-second timeout with `AbortController` and a distinct "taking longer than usual" retry state. Fixed a separate, real defect: the governed-question and review-decision failure paths threw `Error(result.error ?? fallback)`, which could surface a raw backend string (e.g. `"Unauthorized."`) to the user; now they log the raw detail to the console and always show fixed, role-aware copy (sign-in-required for 401, permission-denied for 403, generic failure otherwise).
 
 ### 9. Fix Approvals And Governance Loading Failure
 
@@ -264,6 +268,8 @@ Acceptance:
 - Loading copy references Approvals/Governance.
 - Empty, live and demo states are distinct.
 
+Status: Closed locally in Sprint 3 (2026-07-22), and this is the sprint's most significant find. `ApprovalsSection.tsx` itself was already a safe, synchronous, Demo-Mode-gated stub with no fetch to hang on -- but the exact QA-reported symptom ("Loading Executive Dashboard" on the Approvals page) was real, and traced to `src/app/routing/routes.ts`: the `appRoutes` array had **no entry at all** for `id`/`section: "approvals"`, even though `"approvals"` is a valid `NavSection` with its own sidebar item and its own lazy-loaded component. `routeForPath("/approvals")` and `routeForSection("approvals")` therefore silently fell back to `appRoutes[1]` (the Dashboard route, labeled "Executive Dashboard"), and `RouteBoundary`'s `<Suspense fallback={<LoadingState label={\`Loading ${route.label}\`} />}>` used that wrong label. Fixed by adding the missing route entry. Regression-tested in `src/app/routing/routes.test.ts` and `src/app/routing/RouteBoundary.test.tsx`.
+
 ### 10. Fix Stakeholders / CRM Loading Failure
 
 Severity: P0
@@ -283,6 +289,8 @@ Acceptance:
 - `/stakeholders` resolves for a real tenant.
 - Empty tenant state provides a real CTA.
 - Errors do not hang the page.
+
+Status: Closed locally in Sprint 3 (2026-07-22). `StakeholdersSection.tsx` is a synchronous, Demo-Mode-gated stub (no live stakeholders/CRM repository exists yet, per its own code comment) -- it has no fetch and cannot hang. Outside Demo Mode it already showed an honest empty state with a real "Add Contact" CTA. Regression-tested with a render test confirming immediate, non-loading output.
 
 ### 11. Fix Analytics / Reports Loading Failure
 
@@ -304,6 +312,8 @@ Acceptance:
 - Charts never remain blank without explanation.
 - Live tenant metrics do not reuse misleading demo values.
 
+Status: Closed locally in Sprint 3 (2026-07-22). `AnalyticsSection.tsx` is a synchronous, Demo-Mode-gated stub (no live OKR/analytics computation engine exists yet, per its own code comment) -- it has no fetch and cannot hang. Outside Demo Mode it already showed an honest "not available yet" empty state instead of fabricated charts. Regression-tested with a render test confirming immediate, non-loading output.
+
 ### 12. Fix Integrations Workspace Loading Failure
 
 Severity: P0
@@ -323,6 +333,8 @@ Acceptance:
 - `/integrations` resolves.
 - Gmail, Microsoft and other connector entries show real status.
 - Missing credentials show provider-gated setup, not a spinner.
+
+Status: Closed locally in Sprint 3 (2026-07-22). `IntegrationsSection.tsx` populates its provider/connector state asynchronously without ever blocking initial render -- it has no page-level loading gate and cannot hang. Fixed a real, repeated defect instead: six call sites (Microsoft mailbox listing, email import, Notion page listing/preview/import, and saving connector credentials) threw `Error(result.error/message ?? fallback)`, which could surface a raw backend string to the user -- notably in the credentials panel, where this is a higher-severity concern since that panel handles provider secrets. All six now log the raw detail to the console and always show fixed, role-aware copy instead.
 
 ### 13. Fix Settings, Organization Admin And Audit Logs Loading Failures
 
@@ -344,6 +356,8 @@ Acceptance:
 - `/admin/organization` resolves.
 - `/admin/audit-logs` resolves.
 - Permission states are role-aware.
+
+Status: Closed locally in Sprint 3 (2026-07-22). `SettingsSection.tsx` has no page-level loading gate and cannot hang (audited, no fix needed). `OrganizationAdminSection.tsx` and `AuditLogsSection.tsx` both had the same genuine defect: `if (!scope) return;` (or `!scope || !user`) inside their load function skipped resetting the `loading` flag to `false`, so it could stay stuck at its initial `true` value if the load ran before session/scope resolved -- fixed in both, and both now show an explicit "Sign in required" state instead of rendering blank (`return null`) when `user` is unexpectedly absent. Regression-tested in new `OrganizationAdminSection.test.ts` and `AuditLogsSection.test.ts`.
 
 ### 14. Gate Dashboard Workflow Timeline Fallback To Demo Mode Only
 
@@ -384,6 +398,8 @@ Acceptance:
 - No page renders raw `Unauthorized.`
 - User sees sign-in, insufficient-permission or provider-gated copy.
 - Error copy is consistent across workspaces.
+
+Status: Closed locally in Sprint 3 (2026-07-22). The confirmed instance -- `AIReviewInboxPage.tsx`'s `loadReviews()` and `decide()` -- surfaced the raw `payload.error` string (e.g. `"Unauthorized."`) verbatim via `setMessage`. Fixed by checking `response.status` explicitly (401 -> sign-in copy, 403 -> permission copy, other failures -> generic retry copy) and logging the raw detail via `console.error` for developer diagnostics instead of showing it. The same anti-pattern (`throw new Error(result.error ?? fallback)` then displaying `error.message`) was found and fixed in two more places in `AIWorkspaceSection.tsx` and six more in `IntegrationsSection.tsx` -- see items 8 and 12 above. Regression-tested in `AIReviewInboxPage.test.ts`, `AIWorkspaceSection.test.ts`, and `IntegrationsSection.test.ts`.
 
 ### 16. Gate Workflow Records Fallback To Demo Mode Only
 
@@ -523,12 +539,12 @@ This checklist is intentionally derived from the QA artifact rather than from en
 ```text
 Raw QA artifact preserved.
 20 actionables extracted.
-Actionables 1-6 (Sprints 1-2 scope) closed locally as of 2026-07-22.
-See docs/SPRINT_LOG.md "Sprint 1 Complete" and "Sprint 2 Complete" entries
-for implementation and verification evidence (typecheck, lint, 98 test
-files / 299 tests, build, supabase:verify, mobile release gates all
-passing).
-Actionables 7-20 (Sprints 3-5 scope) remain pending.
+Actionables 1-13, 15 (Sprints 1-3 scope) closed locally as of 2026-07-22.
+See docs/SPRINT_LOG.md "Sprint 1 Complete", "Sprint 2 Complete" and
+"Sprint 3 Complete" entries for implementation and verification evidence
+(typecheck, lint, 108 test files / 324 tests, build, supabase:verify,
+mobile release gates all passing).
+Actionables 14, 16-20 (Sprints 4-5 scope) remain pending.
 Live Vercel beta redeploy and QA golden-path replay against the live URL
 remain pending for all sprints.
 Full Sprint 1 findings ledger and estimated score deltas:
