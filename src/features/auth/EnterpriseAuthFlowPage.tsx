@@ -3,8 +3,10 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import type { Route } from "next";
+import { useRouter } from "next/navigation";
 import { Card } from "../../components/ui/Card";
 import { trackEvent } from "../../services/analytics";
+import { OAuthProviderButtons } from "./OAuthProviderButtons";
 
 type AuthFlowKind = "sign-up" | "login" | "forgot-password" | "reset-password" | "mfa-enroll" | "mfa-challenge" | "security" | "account-delete" | "privacy";
 
@@ -65,6 +67,7 @@ const flowCopy: Record<AuthFlowKind, { title: string; subtitle: string; action: 
 
 export function EnterpriseAuthFlowPage({ kind }: { kind: AuthFlowKind }) {
   const copy = flowCopy[kind];
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [recoveryToken, setRecoveryToken] = useState("");
@@ -78,6 +81,42 @@ export function EnterpriseAuthFlowPage({ kind }: { kind: AuthFlowKind }) {
     const token = hashParams.get("access_token") ?? hashParams.get("token") ?? "";
     if (token) setRecoveryToken(token);
   }, [kind]);
+
+  // /api/auth/oauth/start redirects the browser to Supabase's own authorize endpoint, which -- once
+  // the user completes Google/Microsoft sign-in on the provider's own page -- redirects back here
+  // (/auth/login) with access/refresh tokens in the URL fragment. Supabase never calls our server
+  // directly, so this is the only place that can pick those tokens up and turn them into a real,
+  // httpOnly-cookie-backed session via /api/auth/oauth/callback.
+  useEffect(() => {
+    if (kind !== "login" || typeof window === "undefined") return;
+    const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+    const accessToken = hashParams.get("access_token");
+    if (!accessToken) return;
+    const refreshToken = hashParams.get("refresh_token") ?? undefined;
+
+    setBusy(true);
+    setMessage(null);
+    fetch("/api/auth/oauth/callback", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ accessToken, refreshToken }),
+    })
+      .then(async (response) => {
+        const body = await response.json().catch(() => ({} as { user?: { needsOnboarding?: boolean }; error?: string }));
+        if (!response.ok || !body.user) {
+          setMessage(body.error ?? "Unable to complete sign-in with the selected provider.");
+          setBusy(false);
+          return;
+        }
+        trackEvent("user_login", { auth_method: "oauth" }, { module_name: "auth", route: "/auth/login" });
+        router.push(body.user.needsOnboarding ? "/onboarding" : "/dashboard");
+      })
+      .catch(() => {
+        setMessage("Unable to complete sign-in with the selected provider.");
+        setBusy(false);
+      });
+  }, [kind, router]);
 
   async function submit() {
     if (kind === "login") {
@@ -150,16 +189,42 @@ export function EnterpriseAuthFlowPage({ kind }: { kind: AuthFlowKind }) {
           </>
         )}
 
+        {kind === "sign-up" && (
+          <>
+            <div className="mt-4 flex items-center gap-3 text-[10px] font-semibold uppercase tracking-wide text-[#5F6B73]">
+              <span className="h-px flex-1 bg-[rgba(0,0,0,0.08)]" />
+              or
+              <span className="h-px flex-1 bg-[rgba(0,0,0,0.08)]" />
+            </div>
+            <div className="mt-4">
+              <OAuthProviderButtons onError={setMessage} />
+            </div>
+          </>
+        )}
+
         {message && <p className="mt-4 rounded-lg bg-[#F8F9FA] px-3 py-2 text-xs font-medium text-[#0F1117]">{message}</p>}
 
-        <div className="mt-5 flex flex-wrap gap-3">
-          <button onClick={() => void submit()} disabled={busy} className="rounded-lg bg-[#8B1E2D] px-4 py-2 text-sm font-semibold text-white hover:bg-[#7a1a27] disabled:opacity-60">
-            {busy ? "Working..." : copy.action}
-          </button>
-          <Link href={"/onboarding" as Route} className="rounded-lg border border-[rgba(0,0,0,0.12)] px-4 py-2 text-sm font-semibold text-[#0F1117]">
-            Onboarding
-          </Link>
-        </div>
+        {kind === "login" && busy ? (
+          <p className="mt-5 text-sm text-[#5F6B73]">Completing sign-in...</p>
+        ) : (
+          <div className="mt-5 flex flex-wrap gap-3">
+            <button onClick={() => void submit()} disabled={busy} className="rounded-lg bg-[#8B1E2D] px-4 py-2 text-sm font-semibold text-white hover:bg-[#7a1a27] disabled:opacity-60">
+              {busy ? "Working..." : copy.action}
+            </button>
+            <Link href={"/onboarding" as Route} className="rounded-lg border border-[rgba(0,0,0,0.12)] px-4 py-2 text-sm font-semibold text-[#0F1117]">
+              Onboarding
+            </Link>
+          </div>
+        )}
+
+        {kind === "sign-up" && (
+          <p className="mt-4 text-center text-sm text-[#5F6B73]">
+            Already have an account?{" "}
+            <Link href={"/auth" as Route} className="font-semibold text-[#8B1E2D] hover:underline">
+              Sign in
+            </Link>
+          </p>
+        )}
       </Card>
     </main>
   );

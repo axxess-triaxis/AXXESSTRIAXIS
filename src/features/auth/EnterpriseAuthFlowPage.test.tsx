@@ -1,0 +1,68 @@
+import { render, screen, waitFor } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { EnterpriseAuthFlowPage } from "./EnterpriseAuthFlowPage";
+
+const pushMock = vi.fn();
+vi.mock("next/navigation", () => ({
+  usePathname: () => "/auth/sign-up",
+  useRouter: () => ({ push: pushMock }),
+}));
+
+describe("EnterpriseAuthFlowPage", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    pushMock.mockClear();
+    window.location.hash = "";
+  });
+
+  describe("sign-up (Product Issue 1 remediation)", () => {
+    it("offers manual email/password plus Google/Microsoft as separate, visible options, with a link back to sign-in", () => {
+      render(<EnterpriseAuthFlowPage kind="sign-up" />);
+
+      expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Continue with Google" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Continue with Microsoft" })).toBeInTheDocument();
+      expect(screen.getByRole("link", { name: /sign in/i })).toHaveAttribute("href", "/auth");
+    });
+  });
+
+  describe("login kind -- OAuth callback session establishment", () => {
+    it("does nothing when there is no access_token in the URL fragment (plain navigation to /auth/login)", () => {
+      render(<EnterpriseAuthFlowPage kind="login" />);
+      expect(screen.queryByText(/completing sign-in/i)).not.toBeInTheDocument();
+    });
+
+    it("exchanges an OAuth access_token from the URL fragment for a real session and redirects into the app", async () => {
+      window.location.hash = "#access_token=test-access-token&refresh_token=test-refresh-token";
+      vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        expect(String(input)).toBe("/api/auth/oauth/callback");
+        expect(JSON.parse(String(init?.body))).toEqual({ accessToken: "test-access-token", refreshToken: "test-refresh-token" });
+        return new Response(JSON.stringify({ user: { id: "user_1", needsOnboarding: false } }), { status: 200 });
+      }));
+
+      render(<EnterpriseAuthFlowPage kind="login" />);
+
+      await waitFor(() => expect(pushMock).toHaveBeenCalledWith("/dashboard"));
+    });
+
+    it("routes a first-time OAuth user (no organization yet) to onboarding instead of the dashboard", async () => {
+      window.location.hash = "#access_token=test-access-token";
+      vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ user: { id: "user_1", needsOnboarding: true } }), { status: 200 })));
+
+      render(<EnterpriseAuthFlowPage kind="login" />);
+
+      await waitFor(() => expect(pushMock).toHaveBeenCalledWith("/onboarding"));
+    });
+
+    it("shows a clear error and does not redirect when the token exchange fails", async () => {
+      window.location.hash = "#access_token=bad-token";
+      vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ error: "Unable to complete sign-in with the selected provider." }), { status: 401 })));
+
+      render(<EnterpriseAuthFlowPage kind="login" />);
+
+      expect(await screen.findByText("Unable to complete sign-in with the selected provider.")).toBeInTheDocument();
+      expect(pushMock).not.toHaveBeenCalled();
+    });
+  });
+});

@@ -1,9 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
+import type { Route } from "next";
 import { useRouter } from "next/navigation";
 import { AuthProvider, useAuth } from "../../auth/AuthProvider";
 import { Card } from "../../components/ui/Card";
+import { OAuthProviderButtons } from "../../features/auth/OAuthProviderButtons";
 import { AnalyticsProviderShell, useAnalytics } from "../../services/analytics";
 
 function LoginPanel() {
@@ -120,6 +123,23 @@ function LoginPanel() {
           {submitting ? "Signing in..." : "Sign in"}
         </button>
       </form>
+
+      <div className="mt-4 flex items-center gap-3 text-[10px] font-semibold uppercase tracking-wide text-[#5F6B73]">
+        <span className="h-px flex-1 bg-[rgba(0,0,0,0.08)]" />
+        or
+        <span className="h-px flex-1 bg-[rgba(0,0,0,0.08)]" />
+      </div>
+
+      <div className="mt-4">
+        <OAuthProviderButtons onError={setError} />
+      </div>
+
+      <p className="mt-4 text-center text-sm text-[#5F6B73]">
+        Don&apos;t have an account?{" "}
+        <Link href={"/auth/sign-up" as Route} className="font-semibold text-[#8B1E2D] hover:underline">
+          Sign up
+        </Link>
+      </p>
 
       <div className="mt-4 border-t border-[rgba(0,0,0,0.08)] pt-4">
         <button

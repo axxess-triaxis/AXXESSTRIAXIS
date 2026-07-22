@@ -7,11 +7,31 @@ Real Supabase-backed auth is the default for deployed environments. Local mock-R
 ## Supported Flows
 
 - Email/password login through `/api/auth/login`
+- Email/password sign-up through `/api/auth/sign-up`
+- Google/Microsoft OAuth sign-up and sign-in through `/api/auth/oauth/start` and `/api/auth/oauth/callback` (see "OAuth Sign-Up And Sign-In" below)
 - Logout through `/api/auth/logout`
 - Session validation through `/api/auth/session`
 - Protected routes through route metadata and middleware helpers
 - Investor preview login through Demo Mode
 - Local profile creation and editing for display name, email, initials, department, title, and timezone
+
+## OAuth Sign-Up And Sign-In (2026-07-22)
+
+Both `/auth` (sign-in) and `/auth/sign-up` now show three separate, always-visible identity options -- manual email/password, "Continue with Google", and "Continue with Microsoft" -- rather than only the manual form. This closes a real gap found during a live Tenant 0 onboarding attempt: there was no visible sign-up entry point on the sign-in page at all, and no alternative to manual email/password anywhere in the UI, even though backend OAuth-start infrastructure (`/api/auth/oauth/start`) already existed.
+
+How it works:
+
+1. `OAuthProviderButtons` (`src/features/auth/OAuthProviderButtons.tsx`) calls `GET /api/auth/oauth/start?provider=google|microsoft`, which returns a Supabase `/auth/v1/authorize` URL if the provider is enabled, or a clear, safe error message if it is not (`"<provider> OAuth is not enabled for this deployment."`) -- shown inline, never masked.
+2. The browser is redirected to that URL, completes the provider's own consent screen, and Supabase redirects back to `/auth/login` with `access_token`/`refresh_token` in the URL fragment.
+3. `EnterpriseAuthFlowPage`'s `login` kind picks up those fragment tokens and `POST`s them to the new `/api/auth/oauth/callback` route, which calls `establishServerSessionFromOAuthTokens` (`src/auth/serverSession.ts`) -- this sets the exact same httpOnly session cookies password login does, then routes the user into `/dashboard` or `/onboarding` depending on whether they already belong to an organization.
+
+**What still needs to happen before Google/Microsoft sign-in actually works, and who needs to do it (not something this codebase or an agent can complete):**
+
+- Register a real OAuth application in Google Cloud Console (for Google) and in Azure Portal / Entra ID (for Microsoft), under Triaxis Ventures' own accounts, with the correct authorized redirect URI (Supabase's own callback URL, found in the Supabase dashboard's Auth > Providers page for each provider).
+- Enter the resulting Client ID and Client Secret into the Supabase project's dashboard under **Authentication > Providers > Google** / **Microsoft**, and enable each provider there.
+- Set `NEXT_PUBLIC_AUTH_GOOGLE_ENABLED=true` / `NEXT_PUBLIC_AUTH_MICROSOFT_ENABLED=true` on the Vercel project (see `.env.example`) and redeploy.
+
+Until all three of the above are done, the buttons are visible (by design, so a real tenant sees the intended options rather than a hidden feature) but will show the safe "not enabled for this deployment" message when clicked -- this is expected, not a bug, and is not something further code changes can resolve.
 
 ## Investor Preview
 
