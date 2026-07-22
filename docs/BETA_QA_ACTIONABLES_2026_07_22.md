@@ -528,4 +528,5 @@ supabase:verify, mobile release gates all passing).
 Actionables 5, 7-20 (Sprints 2-5 scope) remain pending.
 Live Vercel beta redeploy and QA golden-path replay against the live URL
 remain pending for all sprints.
+Full findings ledger and estimated score deltas: docs/SPRINT_1_CLOSEOUT_2026_07_22.md.
 ```

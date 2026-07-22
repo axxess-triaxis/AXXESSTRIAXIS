@@ -46,6 +46,8 @@ This pass converts an external-style beta QA report into repository evidence and
 
 ### Sprint 1 Complete - Auth Integrity And Protected Access - 2026-07-22
 
+Full findings-by-finding ledger, constraint-compliance checklist, and estimated (not yet live-verified) QA score deltas are recorded in `docs/SPRINT_1_CLOSEOUT_2026_07_22.md`.
+
 The remainder of Sprint 1 closed the gap left after the initial pass above: the client-side auth-shell default was fixed, but `src/middleware.ts` -- the edge-level route guard that decides whether a protected page is served at all -- still used the old `NEXT_PUBLIC_AXXESS_AUTH_SHELL === "true"` check. On a deployment with the variable unset, that left protected routes unguarded at the edge even though the client would correctly refuse to render an authenticated workspace. This was the last concrete gap behind F-001/F-002/F-003/F-004 in the raw QA report.
 
 Changes:
