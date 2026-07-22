@@ -225,6 +225,45 @@ Representative customer profiles include:
 
 These organizations increasingly require AI systems capable of operating within formal organizational structures rather than individual productivity environments.
 
+AXXESS is also priced and distributed as a self-serve product for Indian MSMEs, startups and NGOs —
+the entry tier of the same five-tier commercial structure described in the next section, not a
+separate, lighter product.
+
+---
+
+# Business Model & Commercial Structure
+
+AXXESS is priced across five tiers on a single underlying platform, spanning two very different
+buyer types:
+
+| Tier | Buyer | Distribution | Illustrative price point |
+|---|---|---|---|
+| 1 | Indian MSMEs, startups, NGOs | Self-serve, iOS/Android app-store signup | **$50/year** |
+| 2 | Growing SME / mid-market org | Self-serve or light-touch sales, web + mobile | Mid-tier, usage-scaled |
+| 3 | Enterprise | Guided pilot → paid conversion, web-first | Enterprise-scaled |
+| 4 | Regulated enterprise (healthcare, finance, education) | Sales-assisted, compliance-reviewed | Regulated-tier pricing |
+| 5 | Sovereign / government / GCC corporate | Tailored, sandboxed, dedicated deployment | Custom, contract-negotiated |
+
+Tier 1 is the same platform as tier 5 — same schema, same Row Level Security model, same
+governance/audit layer — configured with a narrower `security_tier` and feature-flag exposure, not
+a cut-down demo. This is why the platform is engineered as thoroughly as it is at this stage: the
+same kernel that onboards a $50/year NGO this quarter must be structurally capable of becoming a
+sovereign government tenant later without a re-platform. See
+`MONOREPO_ARCHITECTURE_AND_BUSINESS_MODEL.md` for the full architecture-to-business-model mapping,
+including the exact schema columns (`security_tier`, `data_residency_region`) that back this claim
+today, and what is honestly still a target rather than a shipped capability.
+
+**Capital efficiency.** Total historic spend on development, design and product is approximately
+$800 to date, with $80 spent in the current phase. At the Tier 1 price point, two self-serve
+subscriptions cover current run-rate cost — the company does not depend on enterprise or sovereign
+revenue to sustain current operations; those tiers are a parallel expansion path, not a precondition
+for breakeven.
+
+**Estonia entity and EU expansion path.** Triaxis operates an Estonian OÜ entity, intended to
+support Schengen/EU market entry post-Year-3, sequenced after GDPR and EU AI Act compliance
+documentation is built out. No EU-specific compliance documentation exists in this repository yet
+— this is correctly future work, not a current claim.
+
 ---
 
 # Current Product Status
@@ -289,6 +328,65 @@ https://axxesstriaxis.vercel.app
 ---
 
 *"Enterprise AI becomes trustworthy when governance, auditability and operational control are treated as core infrastructure—not post-deployment features."*
+
+---
+
+# Demo Mode and Live Beta Are Fully Partitioned
+
+AXXESS is not a single demo dressed up as two modes. The investor/demo preview and the live beta
+are genuinely separate, and — as of a direct, in-repository verification pass — are correctly
+isolated from each other at every layer:
+
+| | Investor/demo mode | Live beta (real tenant) |
+|---|---|---|
+| Entry point | Dedicated demo login, or `NEXT_PUBLIC_AXXESS_DEMO_MODE=true` | Real Supabase Auth signup and onboarding |
+| Data source | Fixed illustrative fixture data (`src/demo/demoRepositories.ts`) | Live Supabase Postgres, with an honest empty result on error — never fake data substituted |
+| Tenant identity | Mock user/organization context | A real `auth.users` row and a real, provisioned `organizations` row |
+| Postgres access | Not applicable (fixture data) | Row Level Security + Postgres role grants + a `tenant_id`-partitioned schema |
+
+This was verified, not assumed: a genuine signup → onboarding → provisioning → sample-data-seed →
+governed-RAG-query walkthrough was run end to end against a real, non-demo tenant, and the
+resulting AI answer correctly cited a real, just-seeded document by name with a real confidence
+score — not a fabricated one. Four rounds of dedicated demo-data-leakage auditing have found and
+closed cases where this partition previously leaked (see
+`Enterprise beta feedback - Batch 1 (30 responses)/DEMO_DATA_LEAKAGE_AUDIT.md`), and the schema-level
+tenant-isolation bugs found during the live walkthrough have been fixed (see
+`Enterprise beta feedback - Batch 1 (30 responses)/ITERATION_PROGRESS.md`'s 2026-07-21 entry). Full
+architectural detail in `MONOREPO_ARCHITECTURE_AND_BUSINESS_MODEL.md` §5.
+
+**The point of this discipline:** AXXESS is built for commercial pilots, not for impressing an
+accelerator with a demo. A commercial pilot customer's data must never be able to leak into, or be
+contaminated by, the same investor-facing preview that runs in the same codebase — and that
+boundary is now verified, not just designed.
+
+---
+
+# Pre-Revenue, Pre-Pilot Traction
+
+AXXESS completed its first structured beta-feedback batch: 30 submissions, 28 unique respondents
+after deduplication. Full methodology and honest caveats in
+`Enterprise beta feedback - Batch 1 (30 responses)/Enterprise_Beta_Feedback_Batch_1.md` and
+`MONOREPO_ARCHITECTURE_AND_BUSINESS_MODEL.md` §6 — summarized here:
+
+| Signal | Result |
+|---|---|
+| Combined NPS (deduplicated) | 82.1 |
+| Enterprise-cohort NPS | 87.5 |
+| Mean likelihood to recommend | ~9.55 / 10 |
+| External enterprise respondents indicating a pilot horizon within 6 months | 4 of 7 (57%) |
+| External enterprise respondents selecting "Pilot Customer" | 3 of 7 |
+| External enterprise respondents who would trust AXXESS with sensitive data | 6 of 7 |
+| Stated budget range (enterprise cohort) | ~$100–500/year to $5,000+/year |
+
+**What this is not:** proof of product-market fit, a signed pilot, or paying revenue. No customer
+has paid AXXESS money and no pilot is currently signed — these are survey-stated intent and
+attachment signals, reported at the same precision the source analysis uses, not rounded up. What
+it is: real, structured, directionally positive early signal that the product resonates with its
+intended market, obtained before any revenue-generating activity, which is the correct stage at
+which to be collecting it.
+
+---
+
 # Architecture
 
 AXXESS is designed as a governance-native enterprise AI operating platform rather than a collection of AI assistants or workflow automations.
@@ -1234,6 +1332,34 @@ Documentation is treated as part of the product itself.
 
 Architecture decisions, migration history, governance controls, operational procedures and engineering standards are maintained alongside the codebase.
 
+## Beta QA Remediation Package
+
+The 2026-07-22 Claude Code beta end-to-end QA report is preserved as a raw artifact and converted into a structured remediation program.
+
+The package includes:
+
+- Raw QA artifact: `docs/qa-artifacts/2026-07-22-claude-code-beta-e2e-qa-report.txt`
+- 20 actionables: `docs/BETA_QA_ACTIONABLES_2026_07_22.md`
+- QA analysis and roadmap: `docs/BETA_QA_ANALYSIS_AND_REMEDIATION_ROADMAP_2026_07_22.md`
+- Five-sprint checklist: `docs/BETA_QA_5_SPRINT_REMEDIATION_CHECKLIST_2026_07_22.md`
+- Package index: `docs/Post-Claude Code exhaustive workflow audit production remediation package.md`
+
+The remediation program covers auth integrity, protected routes, tenant-backed persistence, workspace loading hardening, demo/live data separation, navigation integrity, request deduplication and live beta replay. Completion requires documented tests, lint checks, build verification, Supabase verification, mobile release-gate checks and due-diligence evidence.
+
+As of Sprint 5 (2026-07-22), all 20 actionables are closed locally, and a live browser replay against `beta.triaxisventures.com` confirmed the production deployment was still running pre-Sprint-1 code -- the missing production environment variables were set and a live Vercel production redeploy was executed with explicit user approval. A scripted two-tenant isolation harness (`scripts/verify-two-tenant-isolation.mjs`) exists but has not yet been executed against a real database. See `docs/SPRINT_5_CLOSEOUT_2026_07_22.md` for full evidence and `docs/SPRINT_1_TO_4_GAP_ANALYSIS_2026_07_22.md` for the detailed gap analysis this sprint was scoped against.
+
+## Next Milestone Gates
+
+The next five milestone gates are documented in `docs/NEXT_5_MILESTONES_BETA_AND_MOBILE_RELEASE.md`.
+
+They are:
+
+- Enterprise Beta 1.0: complete only when Triaxis Ventures Pvt Ltd can onboard fully as the first tenant and Claude Code audits the tenant workflow as market-release beta.
+- iOS App Store release: complete only when Apple releases AXXESS in the App Store after TestFlight and the full testing suite.
+- Android Google Play release: complete only when Google releases AXXESS in the Play Store after the required testing path and full testing suite.
+- Mixpanel/PostHog integration: complete only when both analytics systems receive privacy-safe validated events from the enterprise web beta, iOS beta/app and Android beta/app.
+- First-30-users analytics: complete only when analytics from 30 real beta users across the three beta surfaces are collected, reviewed and converted into documented product decisions.
+
 This supports:
 
 - Enterprise procurement
@@ -1241,6 +1367,16 @@ This supports:
 - Internal onboarding
 - Compliance assessments
 - Long-term maintainability
+
+AXXESS documentation is now governed by `docs/DOCUMENTATION_GOVERNANCE.md`. Future work must be documented for five review audiences:
+
+- Technical reviewers
+- Investors assessing technical and engineering capability
+- Enterprise buyers
+- Investor or technical due diligence teams
+- Government, sovereign and regulated stakeholders
+
+Every material sprint, production fix, data model change, AI workflow change, integration change, deployment change and release process change should document what changed, why it changed, how it was verified, what remains provider-gated, and which risks remain.
 
 ---
 
@@ -1281,7 +1417,24 @@ The platform architecture is intentionally designed to accommodate these differe
 
 # The 80/20 Architecture
 
-AXXESS separates globally reusable capabilities from jurisdiction-specific adaptations.
+AXXESS separates globally reusable capabilities from jurisdiction-specific adaptations. This is not
+an abstract design goal — it is concretely verifiable in the repository today:
+
+- The web application (`src/app/*`, Next.js) and the Capacitor-wrapped iOS/Android app
+  (`apps/mobile-capacitor`) render the **same** `App.tsx` component tree from the **same** `src/`
+  source, via a Vite build (`vite.config.ts` → `src/main.tsx`) that `apps/mobile-capacitor`'s
+  `capacitor.config.ts` loads directly. A fix made once in `src/` ships to web and both mobile app
+  stores simultaneously, with no second implementation to keep in sync.
+- `organizations.security_tier` (checked: `standard` / `regulated` / `mission-critical`) and
+  `organizations.data_residency_region` (open text, defaulting to `global`) exist on the schema's
+  foundational migration and are set per-tenant during onboarding — the same tenant-provisioning
+  code path serves every pricing tier and every configured jurisdiction today, differing only in
+  which values are set, not in which code runs.
+
+Full detail, including what is honestly still a target rather than a shipped capability (e.g. no
+literal `sovereign` tier value exists in the schema yet), is in
+`MONOREPO_ARCHITECTURE_AND_BUSINESS_MODEL.md`, which also maps this architecture directly to the
+five-tier pricing model described earlier in this README.
 
 ## 80% Common Kernel
 
@@ -1625,47 +1778,59 @@ Examples include:
 
 # Repository Structure
 
+This is the actual, verified layout — not an aspirational target. AXXESS is a pnpm workspace
+(`pnpm-workspace.yaml`) with the primary Next.js web application at the repository root, and two
+distinct mobile surfaces under `apps/`. See `MONOREPO_ARCHITECTURE_AND_BUSINESS_MODEL.md` for the
+full architecture rationale and how these surfaces share a kernel.
+
 ```
 /
+├── src/                      # Primary Next.js web app (App Router) — the shared kernel
+│   ├── app/                  # Routes: dashboard, ai-workspace, projects, tasks, meetings,
+│   │                         # documents, knowledge, approvals, crm, stakeholders, analytics,
+│   │                         # admin, integrations, auth, onboarding, api/*
+│   ├── features/             # Feature-module UI components, shared by web and the Capacitor shell
+│   ├── services/             # AI routing, RAG, integrations, analytics, workflows
+│   ├── repositories/         # Live (Supabase), demo, and empty repository implementations
+│   ├── auth/                 # Session resolution, provisioning, Supabase auth client
+│   ├── security/             # RBAC / UserContext
+│   ├── demo/                 # Demo-mode gating and fixture data (isDemoModeEnabled)
+│   └── main.tsx              # Vite entry point — mounts the same App.tsx the Capacitor shell loads
+│
 ├── apps/
-│   ├── web/
-│   ├── admin/
-│   ├── api/
-│   └── mobile/
+│   ├── mobile-capacitor/     # Native iOS/Android shell wrapping the Vite build of src/ (see above) —
+│   │                         # no business logic of its own, only native Capacitor plugins
+│   └── mobile/               # Separate native Expo/React Native app (expo-router) — early
+│                              # scaffolding, shares only packages/shared, not yet live-data-wired
 │
 ├── packages/
-│   ├── ai-runtime/
-│   ├── policy-engine/
-│   ├── observability/
-│   ├── audit/
-│   ├── integrations/
-│   ├── workflows/
-│   ├── review/
-│   └── shared/
-│
-├── docs/
-│   ├── architecture/
-│   ├── compliance/
-│   ├── security/
-│   ├── deployment/
-│   ├── sprint-notes/
-│   └── changelog/
+│   └── shared/                # Constants/types shared between the web kernel and apps/mobile
+│                               # (sectors, roles, analytics event names, OAuth config)
 │
 ├── supabase/
 │   ├── config.toml
-│   ├── migrations/
-│   ├── README.md
-│   └── .gitignore
+│   ├── migrations/            # Versioned schema, RLS policies, tenant_id/grant fixes
+│   └── seeds/
+│
+├── Enterprise beta feedback - Batch 1 (30 responses)/   # Beta survey analysis, sprint iteration
+│                                                          # log, closeout, demo-data-leakage audit
 │
 ├── scripts/
-│
 ├── .github/
 │   └── workflows/
 │
+├── MONOREPO_ARCHITECTURE_AND_BUSINESS_MODEL.md
 └── README.md
 ```
 
-The repository is organized around modular platform components, enabling independent evolution of runtime, governance, integrations and operational tooling.
+The repository is organized around one shared kernel (`src/`) consumed identically by the web app
+and the Capacitor mobile shell, plus a separate, thinner-integration native mobile app — not a set
+of independently-evolving packages. This is a deliberate, verified difference from an earlier draft
+of this section, which described a `packages/ai-runtime` / `packages/policy-engine` /
+`apps/web` / `apps/admin` / `apps/api` split that does not exist in the codebase; the platform
+capabilities described elsewhere in this README (Policy Engine, AI Runtime, Provider Routing, etc.)
+are real, but they live as modules inside `src/services/` and `src/features/`, not as separate
+workspace packages.
 
 ---
 
@@ -1690,9 +1855,15 @@ The repository is organized around modular platform components, enabling indepen
 
 ## Mobile
 
-- React Native
-- Expo
-- Capacitor/Webnative shell
+Two distinct mobile surfaces exist (verified against the repository, not aspirational — see
+`MONOREPO_ARCHITECTURE_AND_BUSINESS_MODEL.md` §2 for the full rationale):
+
+- **`apps/mobile-capacitor`** — a Capacitor native shell wrapping the same web application kernel
+  (`src/`) via a Vite build; this is the production mobile path today, with 100% feature parity
+  with web by construction, not by duplication.
+- **`apps/mobile`** — a separate, genuinely native Expo/React Native app (`expo-router`,
+  React Native 0.86), sharing only `packages/shared`'s constants/types with the web kernel today.
+  Early scaffolding — its screens are not yet wired to live data.
 - Android Play-ready AAB release lane
 - iOS TestFlight-ready IPA release lane
 - VS Code mobile build tasks
@@ -2119,7 +2290,7 @@ Engineering changes are expected to satisfy all quality gates before merge.
 
 # Current Engineering Status
 
-As of Sprint 32:
+As of Sprint 32 plus the canonical GitLab workspace migration:
 
 - Governance runtime implemented
 - Provider routing implemented
@@ -2159,13 +2330,45 @@ As of Sprint 32:
 - Crash and release health monitoring implemented
 - Staged rollout controls implemented
 - Mobile store release readiness gate implemented
+- Canonical local workspace verified at `C:\Users\Sudipta Sarmah\OneDrive - State Bank of India\Documents\AXXESS-TRIAXIS`
+- GitLab `main`, `canonical/sprint-1-35-unified-gitlab` and `fix/live-tenant-onboarding-and-rag-walkthrough` verified at migration commit `615faf218fbfe538dcdcd1eb1a079ee05ad65b4b`, before this documentation-governance follow-up
+- Documentation governance standard added for technical review, investor review, enterprise buying, due diligence and sovereign/public-sector audit audiences
 
-The engineering focus now shifts from mobile store launch readiness to live store reviewer automation, automated screenshot capture artifacts, crash provider wiring, production support telemetry, staged rollout runbooks and production tenant expansion.
+The engineering focus now shifts from mobile store launch readiness and repository consolidation to live store reviewer automation, automated screenshot capture artifacts, crash provider wiring, production support telemetry, staged rollout runbooks, production tenant expansion and continuously auditable documentation.
+
+---
+
 # Deployment, Operations & Product Roadmap
 
 AXXESS is designed to support enterprise deployments that evolve from early design-partner environments to production-grade regulated workloads. The deployment philosophy emphasizes repeatability, governance, operational visibility and gradual hardening rather than maximizing deployment speed at the expense of long-term maintainability.
 
 The platform is intentionally engineered so that additional customers, jurisdictions and enterprise requirements compound on an existing operational foundation instead of forcing architectural redesign.
+
+**None of this depends on GitHub.** Vercel, Supabase, GitLab, Capacitor, and Linear are each
+operated directly via their own CLI/API — deploying, migrating, building, and tracking work all
+work the same way whether or not any particular Git host is reachable. This was a deliberate
+response to a real incident (the original GitHub account behind this repo was suspended
+mid-project), not a hypothetical design goal. See `docs/GITHUB_INDEPENDENT_OPERATIONS.md` for the
+full control-plane map, and `docs/ENVIRONMENT_VARIABLES.md` for the environment-variable checklist
+across local development, Vercel, Supabase, GitLab CI, and mobile builds.
+
+## Canonical Workspace And Repository State
+
+The canonical active local workspace is:
+
+```text
+C:\Users\Sudipta Sarmah\OneDrive - State Bank of India\Documents\AXXESS-TRIAXIS
+```
+
+The GitLab repository used for verified continuity pushes is:
+
+```text
+https://gitlab.com/triaxis-ventures-private-limited-group/axxess-triaxis
+```
+
+The canonical migration record is maintained in `docs/CANONICAL_WORKSPACE_MIGRATION.md`.
+
+Important status note: the code migration, GitLab synchronization and verification were completed at migration commit `615faf218fbfe538dcdcd1eb1a079ee05ad65b4b`; however, physical deduplication is only fully complete after the old `C:\Users\Sudipta Sarmah\Downloads\Claude` folder is archived or removed once the operating system releases its folder lock.
 
 ---
 
@@ -2381,11 +2584,34 @@ Future roadmap includes:
 Current production connectors include:
 
 - Gmail
+- Slack (quick-connect, Sprint 3)
+- Calendly (quick-connect, Sprint 3)
+- Airtable, HubSpot, Notion (OAuth quick-connect, 2026-07-21)
 
 Current OAuth infrastructure supports:
 
-- Gmail
-- Microsoft
+- Gmail, Microsoft, Slack, Calendly, Airtable, HubSpot, Notion
+
+Notion additionally has a genuine sync workflow beyond connecting: list pages from the connected
+workspace, preview extracted text, then import a page as a real tenant document usable by the
+Knowledge Hub and AI Workspace's governed RAG.
+
+Auth0, ClickHouse, MSSQL, Snowflake, S3, Paddle, and Stripe have an encrypted credential-storage
+connect flow (Settings → Integrations → Enterprise Data & Billing Connections) rather than OAuth —
+saving confirms the credential was stored correctly (AES-256-GCM, server-only), not that the
+external service has verified it; live connectivity checks against these are not implemented yet.
+
+### Postgres-level data connectors (Wrappers)
+
+Separately from the application-level connectors above, twelve Postgres foreign-data-wrapper
+extensions are enabled at the database layer: `airtable_wrapper`, `auth0_wrapper`,
+`calendly_wrapper`, `clickhouse_wrapper`, `hubspot_wrapper`, `notion_wrapper`, `mssql_wrapper`,
+`paddle_wrapper`, `s3_wrapper`, `slack_wrapper`, `snowflake_wrapper`, `stripe_wrapper`. These let
+Postgres query the corresponding third-party service as if it were a native table. **Status
+(updated 2026-07-21):** all twelve now have some product-facing surface — seven as real OAuth
+connections, five (plus the two billing wrappers) as encrypted credential storage without live
+verification (see above). Full stack-of-use breakdown (database layer → application connector
+layer → product UI → customer journey → ops) in `MONOREPO_ARCHITECTURE_AND_BUSINESS_MODEL.md` §4.
 
 Future connector roadmap includes:
 
@@ -2398,7 +2624,6 @@ Future connector roadmap includes:
 
 ### Collaboration
 
-- Slack
 - Microsoft Teams
 - Discord
 
@@ -2682,7 +2907,9 @@ Current limitations include:
 
 ## Connectors
 
-- Gmail is the first production connector
+- Gmail, Microsoft, Slack, Calendly, Airtable, HubSpot, and Notion have real OAuth connect flows;
+  Auth0, ClickHouse, MSSQL, Snowflake, S3, Paddle, and Stripe have encrypted credential storage
+  with no live external verification yet
 - Connector ecosystem remains intentionally limited during beta
 
 ---
@@ -2945,6 +3172,8 @@ Organizations should retain the ability to adopt new AI providers without rebuil
 Documentation is part of the product.
 
 Future engineers, customers and auditors should understand not only *what* the platform does but *why* specific architectural decisions were made.
+
+From the canonical workspace migration onward, documentation must also make each significant change useful to technical reviewers, investors, enterprise buyers, due diligence reviewers and government or sovereign stakeholders. The standing rule is maintained in `docs/DOCUMENTATION_GOVERNANCE.md`.
 
 ---
 

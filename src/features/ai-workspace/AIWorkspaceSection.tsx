@@ -7,6 +7,7 @@ import {
   ConfidenceBadge,
   DataStateBadge,
   DemoDataNotice,
+  EmptyState,
   HumanReviewBadge,
   ModuleHeader,
   PageShell,
@@ -40,7 +41,6 @@ import {
   Users,
 } from "lucide-react";
 
-const aiMessages = applicationServices.institutionalRepository.getAiMessages();
 const aiRouterStatus = getAiRouterStatusSnapshot();
 
 // Illustrative content for the investor-demo experience only -- gated behind isDemoModeEnabled()
@@ -154,7 +154,14 @@ export const AIWorkspaceSection = () => {
         signal: controller.signal,
       });
       const result = await response.json().catch(() => ({} as { error?: string }));
-      if (!response.ok) throw new Error(result.error ?? "AXXESS could not complete the governed question.");
+      // Never surface the raw backend error string to the user (Sprint 3, F-016) -- log the detail
+      // for developer diagnostics and throw a fixed, safe message instead.
+      if (!response.ok) {
+        console.error("Governed RAG query failed.", response.status, result.error);
+        if (response.status === 401) throw new Error("Sign in to ask AXXESS a governed question.");
+        if (response.status === 403) throw new Error("Your role does not have permission to ask governed questions.");
+        throw new Error("AXXESS could not complete the governed question.");
+      }
       setRagAnswer(result as LiveRagAnswer);
       setInput("");
       setApproved(false);
@@ -202,7 +209,12 @@ export const AIWorkspaceSection = () => {
         }),
       });
       const result = await response.json().catch(() => ({} as { error?: string; task?: { id?: string } }));
-      if (!response.ok) throw new Error(result.error ?? "Review could not be recorded.");
+      if (!response.ok) {
+        console.error("RAG review decision failed.", response.status, result.error);
+        if (response.status === 401) throw new Error("Sign in to record this review decision.");
+        if (response.status === 403) throw new Error("Your role does not have permission to record this decision.");
+        throw new Error("Review could not be recorded.");
+      }
       setApproved(decision === "approved");
       setReviewMessage(decision === "approved" ? `Approved and audit logged${result.task?.id ? " with a follow-up task." : "."}` : "Rejected and audit logged.");
     } catch (error) {
@@ -213,6 +225,11 @@ export const AIWorkspaceSection = () => {
   }
 
   const demoMode = isDemoModeEnabled();
+  // Read fresh on every render rather than caching a module-level snapshot at import time --
+  // a module constant would evaluate isDemoModeEnabled() exactly once for the module's whole
+  // lifetime, which on the client (SPA navigation, no full reload) can permanently freeze the
+  // demo fixture thread in memory even after the session switches to a real, non-demo tenant.
+  const aiMessages = applicationServices.institutionalRepository.getAiMessages();
 
   return (
     <PageShell className="h-full flex flex-col">
@@ -249,7 +266,9 @@ export const AIWorkspaceSection = () => {
                 <div className="text-sm font-semibold text-[#0F1117]">AXXESS Intelligence Engine</div>
                 <div className="flex items-center gap-1.5 text-[11px] text-[#5F6B73]">
                   <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
-                  Active - 2,200 documents indexed - Permission-aware retrieval
+                  {demoMode
+                    ? "Active - 2,200 documents indexed - Permission-aware retrieval"
+                    : "Active - Permission-aware retrieval over tenant-scoped sources"}
                 </div>
               </div>
               <div className="ml-auto flex items-center gap-2">
@@ -262,6 +281,12 @@ export const AIWorkspaceSection = () => {
             </div>
 
             <div className="flex-1 overflow-y-auto p-4 space-y-4 [&::-webkit-scrollbar]:hidden">
+              {aiMessages.length === 0 && (
+                <EmptyState
+                  title="No conversation history yet"
+                  message="Ask a governed question below to start building this tenant's AI workspace history."
+                />
+              )}
               {aiMessages.map((msg, i) => (
                 <div key={i}>
                   {msg.role === "user" ? (
@@ -458,12 +483,15 @@ export const AIWorkspaceSection = () => {
           <Card className="p-4">
             <h3 className="text-xs font-semibold text-[#0F1117] uppercase tracking-wider mb-3">Context Window</h3>
             <div className="space-y-2">
-              {[
-                { type: "Project", name: "Dibrugarh Oxygen Resilience Upgrade", icon: FolderKanban },
-                { type: "Document", name: "Cachar Maternal Referral Review Note", icon: FileText },
-                { type: "Meeting", name: "Mission Secretariat SLA Review - Jul 4", icon: CalendarDays },
-                { type: "Stakeholder", name: "Dr. Purnima Bora, State Health Directorate", icon: Users },
-              ].map((ctx, i) => (
+              {(demoMode
+                ? [
+                    { type: "Project", name: "Dibrugarh Oxygen Resilience Upgrade", icon: FolderKanban },
+                    { type: "Document", name: "Cachar Maternal Referral Review Note", icon: FileText },
+                    { type: "Meeting", name: "Mission Secretariat SLA Review - Jul 4", icon: CalendarDays },
+                    { type: "Stakeholder", name: "Dr. Purnima Bora, State Health Directorate", icon: Users },
+                  ]
+                : []
+              ).map((ctx, i) => (
                 <div key={i} className="flex items-center gap-2.5 p-2 rounded-lg bg-[#F8F9FA] hover:bg-[#F2F3F5] cursor-pointer transition-colors">
                   <ctx.icon size={13} className="text-[#8B1E2D]" />
                   <div>
@@ -472,6 +500,9 @@ export const AIWorkspaceSection = () => {
                   </div>
                 </div>
               ))}
+              {!demoMode && (
+                <p className="text-xs leading-relaxed text-[#5F6B73]">No context added to this session yet.</p>
+              )}
             </div>
             <button className="mt-3 w-full text-xs text-[#5F6B73] border border-dashed border-[rgba(0,0,0,0.12)] rounded-lg py-2 hover:border-[#8B1E2D] hover:text-[#8B1E2D] transition-colors">
               Add governed context
@@ -518,17 +549,23 @@ export const AIWorkspaceSection = () => {
           <Card className="p-4">
             <h3 className="text-xs font-semibold text-[#0F1117] uppercase tracking-wider mb-2">AI Audit Trail</h3>
             <div className="space-y-2">
-              {[
-                { time: "08:43", action: "RAG answer generated", user: "Auto" },
-                { time: "08:41", action: "Risk register queried", user: session.user?.avatarInitials ?? "AR" },
-                { time: "07:55", action: "District brief drafted", user: "Auto" },
-              ].map((log, i) => (
+              {(demoMode
+                ? [
+                    { time: "08:43", action: "RAG answer generated", user: "Auto" },
+                    { time: "08:41", action: "Risk register queried", user: session.user?.avatarInitials ?? "AR" },
+                    { time: "07:55", action: "District brief drafted", user: "Auto" },
+                  ]
+                : []
+              ).map((log, i) => (
                 <div key={i} className="flex items-center gap-2 text-[11px] text-[#5F6B73]">
                   <span className="font-mono">{log.time}</span>
                   <span className="flex-1 truncate">{log.action}</span>
                   <span className="font-medium text-[#0F1117]">{log.user}</span>
                 </div>
               ))}
+              {!demoMode && (
+                <p className="text-xs leading-relaxed text-[#5F6B73]">No AI actions recorded yet for this tenant.</p>
+              )}
             </div>
           </Card>
         </div>

@@ -5,8 +5,10 @@ import { isSupabaseAdminConfigured, supabaseAdminRest } from "../../../../../rep
 import { getConnectorContract, type ConnectorProviderId } from "../../../../../services/integrations/connectorContract";
 import { buildIntegrationConnectionUpsert, exchangeOAuthCode, getOAuthProviderConfiguration, hashOAuthState, verifyOAuthState } from "../../../../../services/integrations/oauthProvider";
 
+const supportedProviderIds: ConnectorProviderId[] = ["gmail", "microsoft", "slack", "calendly", "airtable", "hubspot", "notion"];
+
 function providerId(value: string | null): ConnectorProviderId | undefined {
-  return value === "gmail" || value === "microsoft" || value === "slack" || value === "calendly" ? value : undefined;
+  return supportedProviderIds.find((id) => id === value);
 }
 
 type IntegrationConnectionRow = {
@@ -47,6 +49,7 @@ export async function GET(request: Request) {
     userId: session.user.id,
     code,
     redirectUri: config.redirectUri,
+    codeVerifier: verified.payload.codeVerifier,
   });
   const scope = tenantScopeFromUser(session.user, session.accessToken);
   const stateHash = hashOAuthState(state);

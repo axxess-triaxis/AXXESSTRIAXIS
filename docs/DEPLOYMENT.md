@@ -2,6 +2,21 @@
 
 AXXESS is prepared for Vercel and container-based deployment.
 
+## Repository And Deployment Control Plane
+
+GitHub is the primary source-of-truth repository and auditable public record for AXXESS source history where reachable.
+
+GitLab is maintained as a mirror and fallback repository if GitHub becomes unavailable or operationally blocked.
+
+Deployments are not mediated through GitHub or GitLab as a hard dependency. Each deployment path should use the relevant provider CLI/API:
+
+- Vercel deployments through Vercel CLI/API
+- Supabase migrations through Supabase CLI/API
+- Mobile builds through Capacitor, Android, Apple, Expo or provider-specific tooling
+- Linear and integration operations through their provider APIs
+
+A commit proves source history. It does not prove deployment. Deployment success must be verified through provider logs, deployment IDs, release artifacts, migration output or dashboard status.
+
 ## Build
 
 ```bash

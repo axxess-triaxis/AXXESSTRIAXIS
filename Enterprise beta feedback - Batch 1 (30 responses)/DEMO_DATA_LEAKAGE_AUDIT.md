@@ -268,3 +268,86 @@ and full-suite regression check.
 This keeps confirming the pattern: every time a file touched for feature work gets a close read,
 another instance turns up. The `src/lib/demo/` files and `src/demo/*` consumers flagged as
 "not yet reverified" above remain the most likely source of further instances.
+
+## Round 4 — found via the first genuine live browser walkthrough of a real tenant (2026-07-21)
+
+Carrying out the live A3/A7/A18 walkthrough that Rounds 1–3 never got to (see
+`ITERATION_PROGRESS.md`'s 2026-07-21 entry) surfaced four more instances, all in
+`AIWorkspaceSection.tsx` — the same file Round 1 already touched, which is exactly why this keeps
+happening: fixing the *known* fabricated values in a file doesn't guarantee every fabricated value
+in it was found.
+
+1. **Round 1's claim that `aiMessages` was "already fixed indirectly" was incomplete.** Round 1
+   noted `institutionalRepository` now resolves to `emptyRepositories` for real tenants, and assumed
+   that alone fixed `const aiMessages = applicationServices.institutionalRepository.getAiMessages();`
+   too. It does fix the steady-state case, but the line is a **module-level constant, evaluated
+   once at import time**, not per-render. In an SPA (client-side navigation, no full page reload),
+   if that module is ever first evaluated while `isDemoModeEnabled()` is true (e.g. a session that
+   opens the investor-demo preview before signing into a real tenant, in the same tab), the demo
+   fixture thread gets frozen in memory for the rest of that tab's lifetime — a real tenant reached
+   afterward still sees it. Fixed by moving the call inside the component body so it's read fresh
+   on every render, with an `EmptyState` ("No conversation history yet") for the real, empty case.
+2. **The "AXXESS Intelligence Engine" status line** (`Active - 2,200 documents indexed -
+   Permission-aware retrieval`) was hardcoded and rendered unconditionally — unlike the
+   `DemoDataNotice` banner two lines below it in the same JSX block, which was already correctly
+   gated. Fixed: demo mode keeps the original line; real tenants see
+   `Active - Permission-aware retrieval over tenant-scoped sources` (no fabricated count).
+3. **The "Context Window" panel** (a hardcoded list: "Dibrugarh Oxygen Resilience Upgrade" project,
+   "Cachar Maternal Referral Review Note" document, "Mission Secretariat SLA Review - Jul 4"
+   meeting, "Dr. Purnima Bora, State Health Directorate" stakeholder) rendered unconditionally, with
+   no gating at all. A real tenant would reasonably read this as their own AI workspace already
+   having this project/document/meeting/person loaded as context. Fixed: demo-mode-gated, real
+   tenants see "No context added to this session yet."
+4. **The "AI Audit Trail" panel** (three hardcoded fake log lines — "RAG answer generated", "Risk
+   register queried", "District brief drafted" — with fake timestamps, one even wired to the real
+   signed-in user's initials, making it look more authentic than it was) rendered unconditionally.
+   Fixed the same way: demo-mode-gated, real tenants see "No AI actions recorded yet for this
+   tenant."
+
+All four verified live in-browser against a genuinely new, real, non-demo tenant provisioned via
+the actual onboarding flow (not a mock session) — see `ITERATION_PROGRESS.md` for the full
+walkthrough and the schema-level bugs found alongside these.
+
+**A fifth instance found — confirmed unreachable, not a live leak, resolved by deletion.**
+`src/features/knowledge/KnowledgeSection.tsx` (distinct from the correctly-gated
+`src/features/knowledge-hub/KnowledgeHubSection.tsx` — a naming collision that likely let it slip
+past all three prior rounds) was entirely hardcoded illustrative content (a fake knowledge-graph
+SVG, hardcoded stats including another "Documents Indexed: 2,200"), with zero demo-mode gating and
+zero live repository calls. `grep -rn "KnowledgeSection" src/` confirmed it was never imported
+anywhere else in the codebase — no route, no navigation entry, unreachable by any real customer.
+`git log --follow` showed it was created at MVP foundation (`fcb8788`) and touched only once more
+(`25cdb60`, sprint-11), while `KnowledgeHubSection.tsx` was created shortly after (sprint-9,
+`89006b6`) and remained the actively developed page through sprint-15 (`c4ea935`) — confirming it
+was superseded scaffolding, not a page awaiting a route. Deleted rather than demo-gated, since
+gating code nobody can reach serves no purpose.
+
+This is now the fourth round to find "one more instance" in a file already touched by a prior
+round. The honest takeaway: this class of bug is not something a fixed number of audit passes can
+prove absent, only reduce the odds of. A live, in-browser walkthrough — not just grep — is what
+actually found rounds 1 and 4's context-window/audit-trail instances, since they don't match any
+`demo`-named import that a static search would catch.
+
+## Round 5 — found while wiring real product surfaces for the Postgres wrapper integrations (2026-07-21)
+
+While adding a live-tenant Notion sync workflow to `src/features/integrations/IntegrationsSection.tsx`,
+found the exact same module-level-caching pattern Round 4 fixed in `AIWorkspaceSection.tsx`'s
+`aiMessages`, in the same file's `integrations` constant:
+
+```ts
+const integrations = applicationServices.institutionalRepository.getIntegrations();
+```
+
+Evaluated once at module import time rather than per-render, this could freeze the demo connector
+gallery in memory for the rest of a client session if the module ever first loaded while demo mode
+was active (SPA navigation, no full reload) — same mechanism, same risk, as the `aiMessages` fix.
+Fixed the same way: moved the call inside the `IntegrationsSection` component body so it reads
+`isDemoModeEnabled()` fresh on every render, and moved the dependent `connectedCount`/
+`disconnectedCount` calculations alongside it.
+
+This makes a firm pattern: every file touched for feature work in this codebase, so far, has turned
+up at least one more instance of this bug class. The remaining files flagged as "not yet
+reverified" in Round 2 (`src/lib/demo/demoDocuments.ts`, `demoWorkflow.ts`, and the `src/demo/*`
+consumers in `TopBar.tsx`/`AuthProvider.tsx`/`legacyInstitutionalViewRepository.ts`) remain the most
+likely source of further instances, and a full audit specifically for this
+module-level-constant-computed-from-isDemoModeEnabled() pattern (as opposed to hardcoded demo data
+generally) has still never been run as its own dedicated pass.

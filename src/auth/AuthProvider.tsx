@@ -12,6 +12,7 @@ import {
   isDemoModeForcedByEnv,
   setDemoModeEnabled,
 } from "../demo/demoMode";
+import { clearLiveWorkspaceMetricsCache } from "../hooks/liveWorkspaceMetricsCache";
 import type { UserContext } from "../security/rbac";
 import { createUserProfile, loadStoredUserProfile, mergeUserProfile, saveStoredUserProfile, type LocalUserProfile } from "./localProfile";
 import {
@@ -30,7 +31,7 @@ export type AuthSession =
 type AuthContextValue = {
   session: AuthSession;
   isAuthenticated: boolean;
-  login(email: string, password: string): Promise<void>;
+  login(email: string, password: string): Promise<UserContext>;
   logout(): Promise<void>;
   createProfile(input: LocalUserProfile): Promise<UserContext>;
   updateProfile(input: LocalUserProfile): Promise<UserContext>;
@@ -109,18 +110,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const login = useCallback(async (email: string, password: string) => {
+  const login = useCallback(async (email: string, password: string): Promise<UserContext> => {
     if (isDemoLogin(email, password)) {
       setDemoModeEnabled(true);
       setSession(sessionFromUser(demoUserContext, "mock-rbac"));
-      return;
+      return demoUserContext;
     }
 
     const authState = await signInWithPassword(email, password);
     setSession(sessionFromUser(authState.user));
+    return authState.user;
   }, []);
 
   const logout = useCallback(async () => {
+    // Tenant-scoped cache keys already prevent cross-tenant leakage, but clearing on every logout
+    // means a different user signing in on the same browser immediately after never has any chance
+    // of seeing a cached entry, even a same-tenant one, within the TTL window (F-021 dedup cache).
+    clearLiveWorkspaceMetricsCache();
     if (isDemoModeEnabled()) {
       setDemoModeEnabled(false);
       setSession(isDemoModeForcedByEnv()

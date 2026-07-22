@@ -1,12 +1,12 @@
 import { extractKeywords, summarizeText } from "../nlp/localNlp";
 
-export type ConnectorProviderId = "gmail" | "microsoft" | "slack" | "calendly";
+export type ConnectorProviderId = "gmail" | "microsoft" | "slack" | "calendly" | "airtable" | "hubspot" | "notion";
 export type ConnectorStatus = "provider_gated" | "configured" | "connected" | "paused" | "error" | "revoked";
 
 export type ConnectorContract = {
   providerId: ConnectorProviderId;
   displayName: string;
-  category: "email" | "messaging" | "calendar";
+  category: "email" | "messaging" | "calendar" | "database" | "crm" | "document";
   authType: "oauth2";
   authorizationUrl: string;
   tokenUrl: string;
@@ -14,6 +14,13 @@ export type ConnectorContract = {
   webhookSupported: boolean;
   tenantOwned: true;
   auditEvents: string[];
+  // Airtable's OAuth requires a PKCE code_challenge/code_verifier pair -- see buildConnectorOAuthUrl
+  // and oauthProvider.ts's exchangeOAuthCode, which both branch on this flag.
+  requiresPkce?: boolean;
+  // Notion's token endpoint requires the client credentials as an HTTP Basic Auth header and a
+  // JSON (not form-urlencoded) request body, unlike every other provider here -- see
+  // oauthProvider.ts's exchangeOAuthCode.
+  tokenRequestStyle?: "form" | "json-basic-auth";
 };
 
 export type SelectedEmailImport = {
@@ -90,6 +97,46 @@ const connectorContracts: Record<ConnectorProviderId, ConnectorContract> = {
     tenantOwned: true,
     auditEvents: ["connector.calendly.oauth.started", "connector.calendly.oauth.connected", "connector.calendly.event.created"],
   },
+  airtable: {
+    providerId: "airtable",
+    displayName: "Airtable",
+    category: "database",
+    authType: "oauth2",
+    authorizationUrl: "https://airtable.com/oauth2/v1/authorize",
+    tokenUrl: "https://airtable.com/oauth2/v1/token",
+    requiredScopes: ["data.records:read", "schema.bases:read"],
+    webhookSupported: false,
+    tenantOwned: true,
+    requiresPkce: true,
+    auditEvents: ["connector.airtable.oauth.started", "connector.airtable.oauth.connected", "connector.airtable.records.imported"],
+  },
+  hubspot: {
+    providerId: "hubspot",
+    displayName: "HubSpot",
+    category: "crm",
+    authType: "oauth2",
+    authorizationUrl: "https://app.hubspot.com/oauth/authorize",
+    tokenUrl: "https://api.hubapi.com/oauth/v1/token",
+    requiredScopes: ["crm.objects.contacts.read"],
+    webhookSupported: true,
+    tenantOwned: true,
+    auditEvents: ["connector.hubspot.oauth.started", "connector.hubspot.oauth.connected", "connector.hubspot.contact.synced"],
+  },
+  notion: {
+    providerId: "notion",
+    displayName: "Notion",
+    category: "document",
+    authType: "oauth2",
+    authorizationUrl: "https://api.notion.com/v1/oauth/authorize",
+    tokenUrl: "https://api.notion.com/v1/oauth/token",
+    // Notion's OAuth grants access to the specific pages/databases the user selects during
+    // consent rather than discrete scopes -- same shape as Calendly's empty requiredScopes.
+    requiredScopes: [],
+    webhookSupported: false,
+    tenantOwned: true,
+    tokenRequestStyle: "json-basic-auth",
+    auditEvents: ["connector.notion.oauth.started", "connector.notion.oauth.connected", "connector.notion.page.imported"],
+  },
 };
 
 function sentenceCandidates(text: string, match: RegExp) {
@@ -115,17 +162,22 @@ const oauthClientIdEnvVar: Record<ConnectorProviderId, string> = {
   microsoft: "MICROSOFT_CLIENT_ID",
   slack: "SLACK_CLIENT_ID",
   calendly: "CALENDLY_CLIENT_ID",
+  airtable: "AIRTABLE_CLIENT_ID",
+  hubspot: "HUBSPOT_CLIENT_ID",
+  notion: "NOTION_CLIENT_ID",
 };
 
 export function buildConnectorOAuthUrl(
   providerId: ConnectorProviderId,
   state: string,
   env: NodeJS.ProcessEnv = process.env,
+  pkce?: { codeChallenge: string },
 ) {
   const contract = connectorContracts[providerId];
   const clientId = env[oauthClientIdEnvVar[providerId]];
   const appUrl = env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "");
   if (!clientId || !appUrl) return undefined;
+  if (contract.requiresPkce && !pkce?.codeChallenge) return undefined;
 
   const url = new URL(contract.authorizationUrl);
   url.searchParams.set("client_id", clientId);
@@ -135,8 +187,12 @@ export function buildConnectorOAuthUrl(
     url.searchParams.set("scope", contract.requiredScopes.join(" "));
   }
   url.searchParams.set("state", state);
+  if (contract.requiresPkce && pkce) {
+    url.searchParams.set("code_challenge", pkce.codeChallenge);
+    url.searchParams.set("code_challenge_method", "S256");
+  }
   // Offline access + forced consent are Google-specific OAuth extensions; sending them to
-  // Microsoft/Slack/Calendly's authorization endpoints isn't meaningful and could be rejected.
+  // other providers' authorization endpoints isn't meaningful and could be rejected.
   if (providerId === "gmail") {
     url.searchParams.set("access_type", "offline");
     url.searchParams.set("prompt", "consent");

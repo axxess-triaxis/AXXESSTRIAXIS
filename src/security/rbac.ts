@@ -12,6 +12,11 @@ export type UserContext = {
   department?: string;
   title?: string;
   timezone?: string;
+  // True for a real, Supabase-authenticated identity that has not yet completed organization
+  // provisioning (no corresponding public.users row exists yet). Callers must route this user to
+  // /onboarding rather than any page that queries live repositories by organizationId -- it is not
+  // a real tenant id and Postgres will reject it as an invalid uuid.
+  needsOnboarding?: boolean;
 };
 
 export type MockUserContext = UserContext;
