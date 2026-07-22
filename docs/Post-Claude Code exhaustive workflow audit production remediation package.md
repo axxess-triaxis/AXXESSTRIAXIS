@@ -218,6 +218,7 @@ deltas): docs/SPRINT_1_CLOSEOUT_2026_07_22.md.
 Sprint 2 closeout (cumulative Sprint 1+2 findings ledger, isolated Sprint 2
 delta, composite Sprint 1+2 delta): docs/SPRINT_2_CLOSEOUT_2026_07_22.md.
 Sprint 4 closeout (cumulative Sprint 1+2+3+4 findings ledger, isolated
-Sprint 4 delta, composite Sprint 1+2+3+4 delta) is produced only if/when
-requested, per this project's established closeout cadence.
+Sprint 4 delta, composite Sprint 1+2+3+4 delta, and a full inventory of
+everything still unchecked across the roadmap and five-sprint checklist):
+docs/SPRINT_4_CLOSEOUT_2026_07_22.md.
 ```
