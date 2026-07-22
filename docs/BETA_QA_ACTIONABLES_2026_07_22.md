@@ -511,6 +511,8 @@ Acceptance:
 - Fetch logic is cached, memoized or consolidated.
 - Auth failures are handled once and surfaced cleanly.
 
+Status: Closed locally in Sprint 5 (2026-07-22), and live-confirmed as a real bug before the fix (not just a local audit finding) via a direct browser replay against `beta.triaxisventures.com`: the network log showed `projects`/`tasks`/`notifications`/`documents` fetched 3x each, then the entire batch repeated a second time. Root cause: `useLiveWorkspaceMetrics(tenantScope)` is called 3 independent times within `DashboardSection` alone -- directly, and again inside both `useEnterpriseGoldenPath` and `useLiveRagHealth` -- each with its own uncoordinated `useEffect` and no shared cache. Fixed by adding `src/hooks/liveWorkspaceMetricsCache.ts`, a tenant-scoped (`organizationId:userId` key), short-TTL (5s) in-flight-request cache that `useLiveWorkspaceMetrics` now goes through; concurrent calls for the same tenant now share one underlying request. Cache is cleared on logout so a different user signing in next never reuses a stale entry. Regression-tested in `src/hooks/liveWorkspaceMetricsCache.test.ts` and a new `AuthProvider.test.tsx` case.
+
 ## Release Gate Checklist
 
 The QA remediation should not be considered complete until these checks pass:
@@ -549,17 +551,19 @@ This checklist is intentionally derived from the QA artifact rather than from en
 ```text
 Raw QA artifact preserved.
 20 actionables extracted.
-Actionables 1-20 (Sprints 1-4 scope) closed or regression-verified
-locally as of 2026-07-22.
-See docs/SPRINT_LOG.md "Sprint 1 Complete", "Sprint 2 Complete",
-"Sprint 3 Complete" and "Sprint 4 Complete" entries for implementation
-and verification evidence (typecheck, mobile typecheck, lint, 110 test
-files / 331 tests, build, supabase:verify, mobile release gates all
-passing).
-Actionable 20 (dashboard request deduplication, Sprint 5 scope) is the
-only actionable not yet addressed.
-Live Vercel beta redeploy and QA golden-path replay against the live URL
-remain pending for all sprints.
+Actionables 1-20 (all) closed or regression-verified locally as of
+2026-07-22 (Sprint 5).
+See docs/SPRINT_LOG.md "Sprint 1 Complete" through "Sprint 5 Complete"
+entries for implementation and verification evidence (typecheck, mobile
+typecheck, lint, 113 test files / 349 tests, build, supabase:verify,
+mobile release gates all passing).
+A live browser replay against beta.triaxisventures.com during Sprint 5
+confirmed the production deployment was still running pre-Sprint-1 code
+(same mock-auth/401 mismatch and duplicate-request pattern QA originally
+reported) -- Sprint 5 set the missing NEXT_PUBLIC_AXXESS_AUTH_SHELL /
+NEXT_PUBLIC_AXXESS_DEMO_MODE production environment variables and
+redeployed via the Vercel CLI. See docs/SPRINT_5_CLOSEOUT_2026_07_22.md
+for the full live-replay evidence and deployment record.
 Full Sprint 1 findings ledger and estimated score deltas:
 docs/SPRINT_1_CLOSEOUT_2026_07_22.md.
 Full cumulative Sprint 1+2 findings ledger, isolated Sprint 2 delta, and

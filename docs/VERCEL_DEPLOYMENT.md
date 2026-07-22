@@ -36,7 +36,7 @@ NEXT_PUBLIC_AXXESS_DEMO_MODE=false
 
 `NEXT_PUBLIC_AXXESS_AUTH_SHELL=false` is only for local mock-RBAC UI development. If it is used on a deployed beta, the browser can render a mock authenticated user while server routes correctly reject every tenant-scoped request with `401`.
 
-As of the 2026-07-22 beta auth remediation, both the client feature flag (`src/config/featureFlags.ts`) and the edge route guard (`src/middleware.ts`) treat this variable as production-safe by default: an unset value now behaves as `true` (real Supabase auth required), not `false`. Setting it explicitly on every deployed environment remains required policy — do not rely on the safe default in place of an explicit `NEXT_PUBLIC_AXXESS_AUTH_SHELL=true` in Vercel project settings.
+As of the 2026-07-22 beta auth remediation, both the client feature flag (`src/config/featureFlags.ts`) and the edge route guard (`src/proxy.ts`, renamed from `src/middleware.ts` in Sprint 5 per Next.js 16's middleware-to-proxy migration) treat this variable as production-safe by default: an unset value now behaves as `true` (real Supabase auth required), not `false`. Setting it explicitly on every deployed environment remains required policy — do not rely on the safe default in place of an explicit `NEXT_PUBLIC_AXXESS_AUTH_SHELL=true` in Vercel project settings. As of Sprint 5, both variables are also confirmed explicitly set on the live Vercel production environment (previously they were unset, relying only on the code default).
 
 Server-only:
 

@@ -7,9 +7,9 @@ import {
   isDemoModeEnabledFromEnv,
   isProtectedRoutePath,
   shouldRedirectToLogin,
-} from "./middleware";
+} from "./proxy";
 
-describe("route middleware helpers", () => {
+describe("route proxy helpers (renamed from middleware.ts in Sprint 5, Next.js 16 middleware-to-proxy migration)", () => {
   it("identifies protected workspace paths", () => {
     expect(isProtectedRoutePath("/dashboard")).toBe(true);
     expect(isProtectedRoutePath("/projects/active")).toBe(true);

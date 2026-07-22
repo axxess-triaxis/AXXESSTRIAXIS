@@ -1,6 +1,8 @@
 import { BellRing, Radio, ShieldCheck } from "lucide-react";
 import { SectionHeader } from "../../components/layout/SectionHeader";
+import { EmptyState } from "../../components/feedback/EmptyState";
 import { Card } from "../../components/ui/Card";
+import { isDemoModeEnabled } from "../../demo/demoMode";
 import { getDemoSocialAlerts, getSocialAlertProviderStatus } from "../../services/alerts/socialAlerts";
 
 const providerLabels = {
@@ -11,8 +13,16 @@ const providerLabels = {
   demo: "Investor Demo",
 };
 
+// Sprint 5 formal audit (closing the Sprint 3/4 Social Alerts gap, see
+// docs/SPRINT_1_TO_4_GAP_ANALYSIS_2026_07_22.md Section 4): this component has no async fetch and
+// therefore cannot reproduce the original QA-reported hang -- but getDemoSocialAlerts() was being
+// rendered completely unconditionally, with no isDemoModeEnabled() gate at all, so every live
+// tenant saw the same 4 fabricated demo alerts and a hardcoded "4 active" badge. No live social
+// alerts ingestion repository exists yet, so outside Demo Mode this now shows an honest empty
+// state instead, matching the pattern already used in AnalyticsSection.tsx/StakeholdersSection.tsx.
 export const AlertsSection = () => {
-  const alerts = getDemoSocialAlerts();
+  const demoMode = isDemoModeEnabled();
+  const alerts = demoMode ? getDemoSocialAlerts() : [];
   const providers = getSocialAlertProviderStatus();
 
   return (
@@ -45,32 +55,39 @@ export const AlertsSection = () => {
             <h3 className="text-sm font-semibold text-[#0F1117]">Institutional Signal Queue</h3>
             <p className="mt-1 text-xs text-[#5F6B73]">Demo signals are isolated from live customer tenants and can be converted into tasks, CRM notes, briefs, or risks.</p>
           </div>
-          <span className="rounded-full bg-[#8B1E2D]/8 px-2.5 py-1 text-[11px] font-semibold text-[#8B1E2D]">4 active</span>
+          {demoMode && (
+            <span className="rounded-full bg-[#8B1E2D]/8 px-2.5 py-1 text-[11px] font-semibold text-[#8B1E2D]">{alerts.length} active</span>
+          )}
         </div>
-        <div className="space-y-3">
-          {alerts.map((alert) => (
-            <button key={alert.id} className="flex w-full items-start gap-3 rounded-xl border border-[rgba(0,0,0,0.06)] bg-[#F8F9FA] p-3 text-left transition-colors hover:bg-[#F2F3F5]">
-              <div className={`mt-0.5 flex h-8 w-8 items-center justify-center rounded-lg ${alert.urgency === "high" ? "bg-red-50 text-red-700" : "bg-amber-50 text-amber-700"}`}>
-                <BellRing size={15} />
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-sm font-semibold text-[#0F1117]">{alert.title}</span>
-                  <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-semibold uppercase text-[#5F6B73]">{alert.topic}</span>
+        {!demoMode && (
+          <EmptyState message="Social alert ingestion isn't wired to a live provider or tenant-scoped repository yet. This queue will populate once a live signal source is connected." />
+        )}
+        {demoMode && (
+          <div className="space-y-3">
+            {alerts.map((alert) => (
+              <button key={alert.id} className="flex w-full items-start gap-3 rounded-xl border border-[rgba(0,0,0,0.06)] bg-[#F8F9FA] p-3 text-left transition-colors hover:bg-[#F2F3F5]">
+                <div className={`mt-0.5 flex h-8 w-8 items-center justify-center rounded-lg ${alert.urgency === "high" ? "bg-red-50 text-red-700" : "bg-amber-50 text-amber-700"}`}>
+                  <BellRing size={15} />
                 </div>
-                <p className="mt-1 text-xs text-[#5F6B73]">{alert.account} - {new Date(alert.receivedAt).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}</p>
-                <div className="mt-2 flex flex-wrap gap-1.5">
-                  {alert.actionTargets.map((target) => (
-                    <span key={target} className="rounded-full border border-[rgba(0,0,0,0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[#0F1117]">
-                      {target.replace(/_/g, " ")}
-                    </span>
-                  ))}
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-sm font-semibold text-[#0F1117]">{alert.title}</span>
+                    <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-semibold uppercase text-[#5F6B73]">{alert.topic}</span>
+                  </div>
+                  <p className="mt-1 text-xs text-[#5F6B73]">{alert.account} - {new Date(alert.receivedAt).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}</p>
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {alert.actionTargets.map((target) => (
+                      <span key={target} className="rounded-full border border-[rgba(0,0,0,0.08)] bg-white px-2 py-0.5 text-[10px] font-medium text-[#0F1117]">
+                        {target.replace(/_/g, " ")}
+                      </span>
+                    ))}
+                  </div>
                 </div>
-              </div>
-              <ShieldCheck size={14} className="mt-1 text-emerald-600" />
-            </button>
-          ))}
-        </div>
+                <ShieldCheck size={14} className="mt-1 text-emerald-600" />
+              </button>
+            ))}
+          </div>
+        )}
       </Card>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
