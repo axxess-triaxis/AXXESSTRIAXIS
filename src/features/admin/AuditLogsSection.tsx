@@ -15,6 +15,7 @@ import {
   StatusBadge,
   TenantScopeBadge,
 } from "../../components/enterprise";
+import { Card } from "../../components/ui/Card";
 import type { AuditLog } from "../../domain";
 import { applicationServices } from "../../providers/serviceProvider";
 import { tenantScopeFromUser } from "../../repositories/supabaseEnterpriseRepositories";
@@ -54,7 +55,13 @@ export function AuditLogsSection() {
   const [exportState, setExportState] = useState<AuditExportState>({ status: "idle" });
 
   const loadAuditLogs = useCallback(async () => {
-    if (!scope) return;
+    if (!scope) {
+      // No resolved tenant scope yet -- settle out of the initial `loading: true` state instead of
+      // leaving it stuck (Sprint 3 hardening: this previously had no terminal fallback if it ran
+      // before session/scope resolved).
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     const rows = await applicationServices.auditLogsRepository.list(scope, { pageSize: 100 }).catch(() => []);
     setLogs(rows);
@@ -76,7 +83,18 @@ export function AuditLogsSection() {
     });
   }, [analytics, filter, logs.length, user]);
 
-  if (!user) return null;
+  if (!user) {
+    return (
+      <PageShell>
+        <Card className="flex min-h-[320px] items-center justify-center p-8">
+          <EmptyState
+            title="Sign in required"
+            message="Your session is required to view Audit Logs."
+          />
+        </Card>
+      </PageShell>
+    );
+  }
 
   const filteredLogs = logs.filter((log) => filter === "all" || log.category === filter || log.resourceType === filter);
   const securityEvents = logs.filter((log) => log.category === "security" || log.resourceType === "auth").length;

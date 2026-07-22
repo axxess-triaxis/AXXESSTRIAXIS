@@ -202,7 +202,10 @@ for evidence.
 Sprint 2 (Live Tenant Persistence And Golden Path Writes) implemented,
 tested, documented and fully verified locally on 2026-07-22 -- same
 references.
-Sprints 3-5 remain pending.
+Sprint 3 (Workspace Loading And Error-State Hardening) implemented,
+tested, documented and fully verified locally on 2026-07-22 -- same
+references.
+Sprints 4-5 remain pending.
 Live Vercel beta redeploy and live beta QA replay remain pending for all
 sprints.
 Sprint 1 closeout (findings ledger, constraint compliance, estimated score
