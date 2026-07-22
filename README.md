@@ -1332,6 +1332,32 @@ Documentation is treated as part of the product itself.
 
 Architecture decisions, migration history, governance controls, operational procedures and engineering standards are maintained alongside the codebase.
 
+## Beta QA Remediation Package
+
+The 2026-07-22 Claude Code beta end-to-end QA report is preserved as a raw artifact and converted into a structured remediation program.
+
+The package includes:
+
+- Raw QA artifact: `docs/qa-artifacts/2026-07-22-claude-code-beta-e2e-qa-report.txt`
+- 20 actionables: `docs/BETA_QA_ACTIONABLES_2026_07_22.md`
+- QA analysis and roadmap: `docs/BETA_QA_ANALYSIS_AND_REMEDIATION_ROADMAP_2026_07_22.md`
+- Five-sprint checklist: `docs/BETA_QA_5_SPRINT_REMEDIATION_CHECKLIST_2026_07_22.md`
+- Package index: `docs/Post-Claude Code exhaustive workflow audit production remediation package.md`
+
+The remediation program covers auth integrity, protected routes, tenant-backed persistence, workspace loading hardening, demo/live data separation, navigation integrity, request deduplication and live beta replay. Completion requires documented tests, lint checks, build verification, Supabase verification, mobile release-gate checks and due-diligence evidence.
+
+## Next Milestone Gates
+
+The next five milestone gates are documented in `docs/NEXT_5_MILESTONES_BETA_AND_MOBILE_RELEASE.md`.
+
+They are:
+
+- Enterprise Beta 1.0: complete only when Triaxis Ventures Pvt Ltd can onboard fully as the first tenant and Claude Code audits the tenant workflow as market-release beta.
+- iOS App Store release: complete only when Apple releases AXXESS in the App Store after TestFlight and the full testing suite.
+- Android Google Play release: complete only when Google releases AXXESS in the Play Store after the required testing path and full testing suite.
+- Mixpanel/PostHog integration: complete only when both analytics systems receive privacy-safe validated events from the enterprise web beta, iOS beta/app and Android beta/app.
+- First-30-users analytics: complete only when analytics from 30 real beta users across the three beta surfaces are collected, reviewed and converted into documented product decisions.
+
 This supports:
 
 - Enterprise procurement

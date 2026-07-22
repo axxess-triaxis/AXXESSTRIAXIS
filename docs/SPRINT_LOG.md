@@ -1,5 +1,112 @@
 # Sprint Log
 
+## Next 5 Milestones - Beta, Mobile And Analytics
+
+This planning record defines the next milestone gates after canonical workspace consolidation and Claude Code beta QA remediation planning.
+
+### Documented
+
+- Added `docs/NEXT_5_MILESTONES_BETA_AND_MOBILE_RELEASE.md`.
+- Defined Enterprise Beta 1.0 as complete only when Triaxis Ventures Pvt Ltd can onboard fully as the first tenant and Claude Code audits the live workflow as market-release beta.
+- Defined iOS completion as Apple App Store release after TestFlight and the full testing suite.
+- Defined Android completion as Google Play Store release after the required testing path and full testing suite.
+- Defined Mixpanel/PostHog completion as validated privacy-safe events from enterprise web beta, iOS beta/app and Android beta/app.
+- Defined first-30-users analytics completion as reviewed analytics from 30 real beta users across the three beta surfaces.
+
+### Status
+
+```text
+Milestones documented.
+Implementation, release and analytics evidence remain pending.
+```
+
+## Beta QA Remediation - 2026-07-22
+
+This pass converts an external-style beta QA report into repository evidence and remediates the highest-leverage auth/session and demo/live data leakage issues.
+
+### Documentation Package
+
+- Preserved the raw Claude Code beta QA report as `docs/qa-artifacts/2026-07-22-claude-code-beta-e2e-qa-report.txt`.
+- Verified the raw QA artifact hash as `05102445D0CC696072109AB43848C1F378BE6E39BAC0A8E587ED45EBAC6DA488`.
+- Added `docs/BETA_QA_ACTIONABLES_2026_07_22.md` with 20 concrete remediation actionables.
+- Added `docs/BETA_QA_ANALYSIS_AND_REMEDIATION_ROADMAP_2026_07_22.md` with root-cause analysis and phased remediation plan.
+- Added `docs/BETA_QA_5_SPRINT_REMEDIATION_CHECKLIST_2026_07_22.md` with sprint-by-sprint implementation, test, lint, documentation, diligence and exit criteria.
+- Added `docs/Post-Claude Code exhaustive workflow audit production remediation package.md` as the index for the raw artifact, actionables, roadmap and checklist.
+
+### Completed
+
+- Added `docs/BETA_E2E_QA_REPORT_2026_07_22.md`.
+- Made Supabase-backed auth shell the safe default for deployed environments.
+- Kept local mock-RBAC auth available only through explicit `NEXT_PUBLIC_AXXESS_AUTH_SHELL=false`.
+- Updated auth and Vercel deployment docs with the production auth invariant.
+- Gated fallback workflow timeline data behind Demo Mode.
+- Prevented unauthenticated live workflow-record pages from showing seeded demo records.
+- Fixed `/documents` lazy route mapping so Documents and Knowledge Hub render distinct workspace components.
+- Added focused tests for auth-shell defaults and demo-only fallback behavior.
+
+### Sprint 1 Complete - Auth Integrity And Protected Access - 2026-07-22
+
+The remainder of Sprint 1 closed the gap left after the initial pass above: the client-side auth-shell default was fixed, but `src/middleware.ts` -- the edge-level route guard that decides whether a protected page is served at all -- still used the old `NEXT_PUBLIC_AXXESS_AUTH_SHELL === "true"` check. On a deployment with the variable unset, that left protected routes unguarded at the edge even though the client would correctly refuse to render an authenticated workspace. This was the last concrete gap behind F-001/F-002/F-003/F-004 in the raw QA report.
+
+Changes:
+
+- Fixed `src/middleware.ts` so its auth-shell/demo-mode checks match `src/config/featureFlags.ts` (unset env var behaves as `true`, real Supabase auth required, unless explicitly set to `false` for local mock auth). Extracted the redirect decision into exported pure functions (`isAuthShellEnabledFromEnv`, `isDemoModeEnabledFromEnv`, `shouldRedirectToLogin`) so the behavior is directly unit-testable.
+- Audited `src/auth/AuthProvider.tsx`, `src/app/auth/page.tsx`, `src/app/App.tsx` (route guard), `src/auth/serverSession.ts`, and the `/api/auth/session`, `/api/auth/logout` routes -- all were already correctly gated behind `featureFlags.enableAuthShell`; the only production-affecting defect was the middleware default described above.
+- Confirmed tenant-scoped API routes (e.g. `src/app/api/repositories/[resource]/route.ts`) already return `401 {"error":"Unauthorized."}` for every verb when `getServerAuthSession` finds no session, and never construct a tenant scope without one.
+- Added `src/auth/AuthProvider.test.tsx`: logout clears authenticated state and does not rehydrate a mock/demo session; client session agrees with an unauthenticated server response.
+- Added `src/app/auth/page.test.tsx`: `/auth` renders the real email/password login form (and investor-preview button) for a fresh unauthenticated browser, never a "Signed in" state.
+- Extended `src/middleware.test.ts` with 7 new cases covering the production-safe default, explicit local opt-out, demo-mode bypass, session-cookie bypass, and non-protected-route exemption.
+
+### Sprint 1 Verification Evidence - 2026-07-22
+
+```text
+pnpm run typecheck                        PASS (tsc --noEmit, no errors)
+pnpm --dir apps/mobile run typecheck      PASS (tsc --noEmit, no errors)
+pnpm run lint                             PASS (eslint . --max-warnings=0, zero warnings)
+pnpm run test                             PASS (96 test files, 286 tests, 0 failed)
+pnpm run build                            PASS (Next.js 16.2.10, 114 routes generated;
+                                           pre-existing "middleware file convention is
+                                           deprecated, use proxy instead" warning -- Next.js
+                                           16 naming-convention notice, not introduced by this
+                                           sprint, not a build failure, tracked as a follow-up)
+pnpm run supabase:verify                  PASS (27 migrations, 100 tables, 100 RLS-protected;
+                                           1 pre-existing warning: permissive `using (true)`
+                                           RLS predicate in the original 2026-07-02 initial
+                                           schema migration -- pre-existing, out of Sprint 1
+                                           scope, tracked as a follow-up)
+pnpm run mobile:store:release-gate        PASS
+pnpm run mobile:capacitor:store:doctor    PASS
+```
+
+Diligence evidence:
+
+- Deployed beta/production environment variables expected: `NEXT_PUBLIC_AXXESS_AUTH_SHELL=true`, `NEXT_PUBLIC_AXXESS_DEMO_MODE=false` (see `docs/VERCEL_DEPLOYMENT.md`). The code now defaults safely even if the Vercel project variable is missing, but explicit configuration remains required policy.
+- Local-only/demo-only paths: `NEXT_PUBLIC_AXXESS_AUTH_SHELL=false` (mock-RBAC UI development) and the investor-preview login (`investor.preview@axxess.demo` / `preview`, or `demo@axxess.local`), which explicitly sets Demo Mode via `src/demo/demoMode.ts` and is isolated from live tenant sessions.
+- Live Vercel beta environment variables were **not** verified against the actual `beta.triaxisventures.com` deployment in this pass -- this was a local repository fix, build and test verification only. Confirming and redeploying the live Vercel project variables is a required follow-up before the original QA golden path can be re-run against the live URL (Sprint 5 scope).
+- Investor preview login was exercised indirectly through the `/auth` page's "Open investor preview" flow already present in code and covered by the demo-mode test suite; it was not manually re-tested against a live deployment in this pass.
+- Exit criteria met locally: fresh browser (no cookies/session) redirected to `/auth` by `src/middleware.ts` and shown the real login form; `/auth` never renders "Signed in" without a real session; logout clears client state and does not rehydrate; protected routes (`/dashboard`, `/projects`, `/admin/*`, etc.) block unauthenticated access at the edge; client session state and `/api/auth/session` agree; Demo Mode and Investor Preview remain explicit, opt-in and labeled; no P0 auth finding from the QA report reproduces locally.
+
+### QA Scores Recorded
+
+```text
+Beta readiness: 22/100
+Enterprise readiness: 48/100
+Investor demo readiness: 35/100
+Pilot customer readiness: 12/100
+```
+
+### Remaining Follow-Up
+
+- Verify Vercel beta env vars and redeploy (Sprint 1 fix is local/repository-only; live beta has not yet been redeployed or re-tested).
+- Re-run the same QA walkthrough on `beta.triaxisventures.com` after redeploy.
+- Add defensive timeout/error states to every fetch-driven workspace (Sprint 3 scope, F-006-F-014).
+- Normalize unauthorized error rendering (Sprint 3 scope, F-016).
+- Re-test `/documents` and `/knowledge` after deployment to confirm distinct visual behavior.
+- Re-test a real Supabase tenant write path end to end, including audit/timeline evidence (Sprint 2 scope, F-004/F-005).
+- Re-verify tenant isolation with two real tenants once real sessions exist in a live deployment (untested this pass; do not assume safe by default).
+- Minor, out-of-scope tech debt noted during Sprint 1 verification: Next.js 16 reports `middleware.ts` as a deprecated convention in favor of `proxy.ts` (build warning only, not a failure); the original 2026-07-02 initial-schema Supabase migration has one permissive `using (true)` RLS predicate flagged by `supabase:verify` as a warning. Neither blocks Sprint 1 exit criteria; both are candidates for a future sprint.
+- Recommended Sprint 2 focus: live tenant persistence and golden-path writes (re-test project creation end to end against a real Supabase tenant, confirm audit/timeline evidence, confirm cross-tenant isolation) per `docs/BETA_QA_5_SPRINT_REMEDIATION_CHECKLIST_2026_07_22.md`.
+
 ## Canonical Workspace Migration And Documentation Governance
 
 This repository now records the consolidation of Codex Sprint 1-32 work and later Claude Code work into the canonical AXXESS workspace.
