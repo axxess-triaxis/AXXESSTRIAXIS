@@ -9,4 +9,14 @@ describe("lazy route component mapping", () => {
     expect(source).toContain('knowledge: lazy(() => import("../../features/knowledge-hub/KnowledgeHubSection"))');
     expect(source).toContain('documents: lazy(() => import("../../features/documents/DocumentsSection"))');
   });
+
+  it("keeps Documents and Knowledge Hub headings and empty states distinct (Sprint 4, F-019 regression)", () => {
+    const documentsSource = readFileSync(join(process.cwd(), "src/features/documents/DocumentsSection.tsx"), "utf8");
+    const knowledgeSource = readFileSync(join(process.cwd(), "src/features/knowledge-hub/KnowledgeHubSection.tsx"), "utf8");
+
+    expect(documentsSource).toContain("Documents & File Intelligence");
+    expect(knowledgeSource).toContain("Knowledge Hub");
+    expect(documentsSource).not.toContain("Knowledge Hub");
+    expect(knowledgeSource).not.toContain("Documents & File Intelligence");
+  });
 });

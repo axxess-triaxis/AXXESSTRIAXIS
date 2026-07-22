@@ -211,6 +211,57 @@ Diligence evidence:
 - Minor, out-of-scope tech debt noted during Sprint 1 verification, still open: Next.js 16 reports `middleware.ts` as a deprecated convention in favor of `proxy.ts` (build warning only, not a failure); the original 2026-07-02 initial-schema Supabase migration has one permissive `using (true)` RLS predicate flagged by `supabase:verify` as a warning. Neither blocks any sprint's exit criteria so far.
 - Recommended Sprint 4 focus: demo/live data separation and navigation integrity (onboarding progress consistency, sidebar badge/tenant-state mismatch -- note the Approvals sidebar badge showing "23" against a zero-record tenant is F-020, still open) per `docs/BETA_QA_5_SPRINT_REMEDIATION_CHECKLIST_2026_07_22.md`.
 
+### Sprint 4 Complete - Demo/Live Data Separation, Navigation Integrity And Tenant Trust - 2026-07-22
+
+Full cumulative (Sprint 1+2+3+4) findings ledger, constraint-compliance checklist, and both an isolated Sprint 4 score delta and a composite Sprint 1+2+3+4 score delta (both estimated, not live-verified) are produced only if/when a Sprint 4 closeout is requested, per this project's established closeout cadence.
+
+Objective: fix F-015 (dashboard fabricated timeline), F-017 (workflow records fabricated), F-018 (onboarding progress inconsistency), F-019 (`/documents` route mapping), and F-020 (sidebar badges contradict tenant state), while re-verifying F-001-F-016 haven't regressed.
+
+The headline finding this sprint, echoing Sprint 3's pattern: 3 of the 5 scoped actionables (F-015, F-017, F-019) were already correctly fixed by prior sprints and did not regress. The 2 remaining actionables (F-018, F-020) were both genuine, unfixed defects.
+
+Changes:
+
+- **Root-caused F-018 (onboarding progress inconsistency)**: the defect was not in `BetaOnboardingChecklist.tsx` itself, but upstream in `src/features/dashboard/DashboardSection.tsx`. Its `projects` state was seeded via an unconditional `useState<DashboardProject[]>(() => getDashboardFallbackProjects())` -- 186 fabricated demo projects -- as the very first render for every tenant, live or demo, and repeated the same unconditional fallback in its `.catch()` handler on any live-fetch failure. `BetaOnboardingChecklist.tsx`'s completion logic (`projectCount > 0 || loaded.first_project`) then permanently marked the "first_project" onboarding step complete for any tenant before the real fetch ever resolved, exactly matching the QA report's "shifted from 0 of 10 to 2 of 10 without user action" symptom. Fixed by gating both the initial state and the failure-path fallback behind `isDemoModeEnabled()`, matching the pattern already used correctly for dashboard KPIs (`getDashboardKpis`) in the same file.
+- **Fixed F-020 (sidebar badge/tenant-state mismatch)**: `src/app/navigation.ts` rendered two hardcoded badge counts unconditionally -- `"4"` (Social Alerts) and `"23"` (Approvals & Governance) -- with no backing tenant data source at all (the Approvals workspace itself is a Demo-Mode-gated stub per Sprint 3's audit, so a zero-record live tenant would see "23" regardless). Added a `badgeKind?: "tag" | "count"` discriminator to the `NavItem` type; tagged the AI Workspace's "AI" badge as `"tag"` (a static feature label, not a tenant count) and the Social Alerts/Approvals badges as `"count"`. `src/app/layout/Sidebar.tsx` now only renders a `"count"`-kind badge when `isDemoModeEnabled()` is true; `"tag"`-kind badges render unconditionally.
+- **Regression-verified F-015 and F-017**: `src/hooks/useWorkflowTimeline.ts` and `src/features/workflow-records/WorkflowRecordsPage.tsx` already gated their seeded/fallback data behind `isDemoModeEnabled()` prior to this sprint; re-audited with no regression found, no change made.
+- **Regression-verified F-019**: `src/app/routing/lazyRoutes.tsx` already mapped `documents` -> `DocumentsSection` ("Documents & File Intelligence") and `knowledge` -> `KnowledgeHubSection` ("Knowledge Hub") as distinct components since Sprint 3; re-confirmed no shared heading text between the two and added a dedicated regression test.
+- **Audited and confirmed already-safe, no changes needed**: `src/providers/serviceProvider.ts` (`selectedRepositories()` only picks `demoRepositories` when `isDemoModeEnabled()`; `resilientRepositories` falls back to `emptyRepositories`, never demo, on a live-call failure); `src/app/layout/TopBar.tsx` (real notifications repository call; "Investor Preview" badge correctly gated); `src/components/demo/GuidedDemoBanner.tsx` (`if (!demo.active) return null`, self-labels as demo data); `src/mocks/institutionalData.ts` and `src/services/legacyInstitutionalViewRepository.ts` (confirmed demo-only, and the latter has zero consumers anywhere in the codebase -- confirmed dead code, left in place as out of this sprint's specific scope, matching the precedent of a prior audit round that deleted a similar dead file).
+- **Regression swept F-001-F-016**: re-read `src/hooks/useWorkflowTimeline.ts`, `src/features/workflow-records/WorkflowRecordsPage.tsx`, and `src/app/routing/lazyRoutes.tsx` against their Sprint 1-3 fixed state; no regressions found in any of them.
+
+### Sprint 4 Verification Evidence - 2026-07-22
+
+```text
+pnpm run typecheck                        PASS
+pnpm --dir apps/mobile run typecheck      PASS
+pnpm run lint                             PASS (zero warnings)
+pnpm run test                             PASS (110 test files, 331 tests, 0 failed --
+                                           up from 108/324 before this sprint)
+pnpm run build                            PASS
+pnpm run supabase:verify                  PASS (27 migrations, 100 tables, 100 RLS-protected;
+                                           same single pre-existing warning as prior sprints --
+                                           no migration touched)
+pnpm run mobile:store:release-gate        PASS
+pnpm run mobile:capacitor:store:doctor    PASS
+```
+
+Diligence evidence:
+
+- Affected files: `src/features/dashboard/DashboardSection.tsx`, `src/app/navigation.ts`, `src/app/layout/Sidebar.tsx`.
+- New test files: `src/features/dashboard/DashboardSection.test.ts`, `src/app/layout/Sidebar.test.tsx`.
+- Extended test files: `src/features/onboarding/BetaOnboardingChecklist.test.tsx` (+2 tests), `src/app/routing/lazyRoutes.test.ts` (+1 test).
+- Affected routes/workspaces: Dashboard (`projects` state only; KPIs and other dashboard state untouched), sidebar navigation (badge rendering only; no route or permission logic changed).
+- No security/RBAC/tenant-isolation logic was touched -- every fix was a demo/live data-source gating correction; server-side auth enforcement, RLS and RBAC checks are byte-for-byte unchanged from Sprint 3.
+- Live-mode clean-tenant behavior: a tenant with zero real projects now sees an empty project list (not 186 fabricated demo projects) on both initial load and any live-fetch failure, and a stable "1 of 10 complete" onboarding state (organization step only, from having an `organizationId`) that does not fluctuate without a durable action. The same tenant no longer sees fabricated "4"/"23" sidebar badges.
+- Demo Mode behavior: unchanged -- continues to show the full 186-project seeded dataset, seeded timeline/workflow records, "Investor Preview" badge, and the "4"/"23" sidebar badges, all under the pre-existing `isDemoModeEnabled()` gate.
+- Remaining caveats: no live beta replay was performed. The fabricated sidebar badge counts are hidden rather than replaced with a real live-tenant data source (no Social Alerts or Approvals-count repository exists yet) -- wiring real counts, if desired, is a Sprint 5 follow-up, not done this sprint. Deletion of the confirmed-dead `legacyInstitutionalViewRepository.ts` was deliberately left out of scope.
+
+### Remaining Follow-Up
+
+- Verify Vercel beta env vars and redeploy (still outstanding from Sprint 1; live beta has not yet been redeployed or re-tested after any of Sprints 1-4).
+- Re-run the same QA walkthrough on `beta.triaxisventures.com` after redeploy.
+- Decide whether Social Alerts and Approvals sidebar counts should get a real live-tenant data source (Sprint 5 candidate) or remain permanently Demo-Mode-only.
+- Actionable 20 (deduplicate repeated Dashboard API requests) is the only one of the original 20 QA actionables not yet addressed -- primary recommended Sprint 5 focus, alongside the golden-path replay and two-tenant isolation work already scoped there.
+
 ## Canonical Workspace Migration And Documentation Governance
 
 This repository now records the consolidation of Codex Sprint 1-32 work and later Claude Code work into the canonical AXXESS workspace.

@@ -60,3 +60,4 @@ The Settings demo panel includes a one-click reset. Reset restores the original 
 - Production tenants never receive seeded data.
 - Demo repositories remain separate from Supabase-backed repositories.
 - No service-role keys are exposed to the browser.
+- Any client-side state that seeds from demo data (dashboard project lists, workflow timeline events, workflow records, sidebar navigation badges) must gate on `isDemoModeEnabled()` both for its initial render and for any live-fetch failure fallback -- falling back to demo data unconditionally, even only on error, leaks fabricated content into a real tenant's view. See `docs/BETA_QA_ACTIONABLES_2026_07_22.md` items 14, 16, 17, 19 and the Sprint 4 entry in `docs/SPRINT_LOG.md` for the specific defects this guardrail was written to prevent.

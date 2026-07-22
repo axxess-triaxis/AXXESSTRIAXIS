@@ -122,6 +122,17 @@ Full verification passed: `pnpm run typecheck`, `pnpm --dir apps/mobile run type
 
 **Not yet done:** no live provider credentials (Gmail, Microsoft, Notion, enterprise connectors) are configured in this local environment, so provider-gated states were confirmed by code audit, not live connector testing. No live beta replay was performed. Both remain Sprint 5 scope.
 
+Sprint 4 (Demo/Live Data Separation, Navigation Integrity And Tenant Trust) is complete locally as of 2026-07-22:
+
+- Regression-verified that 3 of the 5 scoped QA actionables (dashboard workflow timeline fallback, workflow records fallback, `/documents` route mapping) were already correctly fixed by prior sprints, with no regression found in the current codebase.
+- Traced the onboarding progress inconsistency (F-018) to its true root cause: `DashboardSection.tsx`'s `projects` state was unconditionally seeded with 186 fabricated demo projects on initial render and on any live-fetch failure, feeding a false non-zero project count into `BetaOnboardingChecklist.tsx` and permanently advancing its "first_project" step for any tenant, live or demo. Fixed by gating both the initial state and the failure-path fallback behind `isDemoModeEnabled()`, matching the pattern already correctly used for dashboard KPIs in the same file.
+- Found and fixed sidebar badge/count inconsistency (F-020): `navigation.ts` rendered hardcoded "4" (Social Alerts) and "23" (Approvals & Governance) badges unconditionally, with no backing tenant data source at all. Added a `badgeKind?: "tag" | "count"` discriminator to `NavItem` and gated `"count"`-kind badges behind `isDemoModeEnabled()` in `Sidebar.tsx`, while the static "AI" feature tag continues to render unconditionally.
+- Audited `serviceProvider.ts`, `TopBar.tsx`, `GuidedDemoBanner.tsx`, and the demo-only data source files (`institutionalData.ts`, `legacyInstitutionalViewRepository.ts`) and confirmed all were already correctly gated or already dead code with no consumers -- no changes needed.
+
+Full verification passed: `pnpm run typecheck`, `pnpm --dir apps/mobile run typecheck`, `pnpm run lint` (zero warnings), `pnpm run test` (110 files / 331 tests), `pnpm run build`, `pnpm run supabase:verify`, `pnpm run mobile:store:release-gate`, and `pnpm run mobile:capacitor:store:doctor` all passed (same 27 migrations / 100 RLS-protected tables -- no schema change this sprint). See `docs/SPRINT_LOG.md` for full command-by-command evidence.
+
+**Not yet done:** no live beta replay was performed; the fabricated sidebar badge counts are hidden rather than replaced with a real live-tenant data source (no such repository exists yet) -- wiring real counts is tracked as a Sprint 5 follow-up if desired. Both remain Sprint 5 scope.
+
 ## Severity Model
 
 ### P0 - Blocks Real Pilot Use
@@ -286,7 +297,11 @@ subset) complete locally: implemented, tested, documented and fully
 verified on 2026-07-22.
 Sprint 3 (Phase 3 - Workspace Loading-State Hardening) complete locally:
 implemented, tested, documented and fully verified on 2026-07-22.
-Sprints 4-5 (Phases 4-5) remain pending.
+Sprint 4 (Demo/Live Data Separation, Navigation Integrity And Tenant
+Trust) complete locally: implemented, tested, documented and fully
+verified on 2026-07-22.
+Sprint 5 (Phase 5, plus remaining Phase 4 live two-tenant verification)
+remains pending.
 Live Vercel beta redeploy and live beta re-test remain pending for all
 sprints.
 Cumulative Sprint 1+2 findings ledger, isolated Sprint 2 delta, and
@@ -297,4 +312,6 @@ composite Sprint 1+2+3 delta (all estimated, not live-verified):
 docs/SPRINT_3_CLOSEOUT_2026_07_22.md.
 Full findings ledger and estimated (not live-verified) score deltas:
 docs/SPRINT_1_CLOSEOUT_2026_07_22.md.
+Sprint 4 closeout (isolated + composite Sprint 1+2+3+4 delta) is produced
+only if/when requested, per this project's established closeout cadence.
 ```
