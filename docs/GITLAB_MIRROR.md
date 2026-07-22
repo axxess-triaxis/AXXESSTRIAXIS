@@ -91,6 +91,33 @@ The mirror workflow is intentionally conservative:
 - It should keep tags aligned only when safe.
 - It should keep GitLab usable as a fallback without changing the policy that GitHub is the primary source-of-truth repository when available.
 
+## Automated Post-Sprint CI Verification And AI Code Review
+
+As of 2026-07-22, `.gitlab-ci.yml` automatically verifies every push to sprint/remediation branches, not only merge requests and `main`/`staging`/`dev`. This closes the gap where a sprint branch (e.g. `canonical/sprint-1-35-unified-gitlab`) could accumulate commits with no automatic typecheck/lint/test/build/audit until an MR was opened.
+
+Pipeline stages, in order:
+
+```text
+quality   -- pnpm run typecheck / lint / test / release:preflight / build
+supabase  -- pnpm run supabase:verify (only when supabase/** or related files changed)
+security  -- GitLab SAST + Secret-Detection templates, pnpm audit --prod --audit-level critical
+```
+
+To add automatic per-push verification for a future long-lived sprint branch, add one `if: '$CI_COMMIT_BRANCH == "<branch-name>"'` line to the `quality` job's `rules:` (and `pnpm-audit`'s, if that branch should also get the security gate on every push, not just on its MR).
+
+### AI Code Review
+
+Automated MR code review is handled by **GitLab's native Duo Agent Platform "Code Review" foundational flow**, not a custom CI job -- a custom `ai-code-review` pipeline job calling the Anthropic API directly was built and then removed on 2026-07-22 in favor of this, once it became clear the group already had (or intended) GitLab Duo access rather than the two specifically-named CI/CD variables the custom job needed.
+
+To enable it (group `Triaxis Ventures Private Limited-group`, requires accepting GitLab's Duo AI Terms):
+
+1. Group -> Settings -> GitLab Duo -> Configuration.
+2. Turn on **GitLab Duo Agent Platform access**.
+3. Under Flows, turn on **Allow flow execution** and **Allow foundational flows**.
+4. Confirm the **Code Review** foundational flow is enabled.
+
+See https://gitlab.com/help/user/duo_agent_platform/flows/foundational_flows/code_review.md for GitLab's own documentation on this flow's behavior and prerequisites. This is an **additive** review, not a merge gate, and is not a substitute for human review or for `/code-review`-style deeper audits.
+
 ## Documentation Requirement
 
 Every mirror, migration or remote reconciliation event must update documentation when it changes the operational truth of the repository.
@@ -101,5 +128,6 @@ At minimum, update:
 - `docs/GITHUB_INDEPENDENT_OPERATIONS.md`
 - `docs/ENGINEERING_WORKFLOW.md`
 - `CHANGELOG.md`
+- `.gitlab-ci.yml` itself, plus this file's "Automated Post-Sprint CI Verification And AI Code Review" section, whenever pipeline stages, triggers or required CI/CD variables change
 
 This is required so technical reviewers, investors, enterprise buyers, due diligence reviewers and government or sovereign stakeholders can audit repository provenance without relying on chat history.
