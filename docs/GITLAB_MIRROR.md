@@ -105,7 +105,7 @@ supabase  -- pnpm run supabase:verify (only when supabase/** or related files ch
 security  -- GitLab SAST + Secret-Detection templates, pnpm audit --prod --audit-level critical
 ```
 
-To add automatic per-push verification for a future long-lived sprint branch, add one `if: '$CI_COMMIT_BRANCH == "<branch-name>"'` line to the `quality` job's `rules:` (and `pnpm-audit`'s, if that branch should also get the security gate on every push, not just on its MR).
+To add automatic per-push verification for a future long-lived sprint branch, add one `if: '$CI_COMMIT_BRANCH == "<branch-name>"'` line to each of `quality`'s, `pnpm-audit`'s, and `supabase-verify`'s `rules:`. **`supabase-verify` was missed when this branch's rule was originally added** -- confirmed by directly auditing pipeline #2696889560 and the then-latest running pipeline on this branch, both of which ran only 4 jobs (`quality`, `semgrep-sast`, `secret_detection`, `pnpm-audit`) with no `supabase-verify` job at all, on any commit, ever, regardless of whether `package.json`/`pnpm-lock.yaml`/`supabase/**` changed. Fixed by adding the same `if: '$CI_COMMIT_BRANCH == "canonical/sprint-1-35-unified-gitlab"'` condition (with the same `changes:` filter as the `main`/MR rules) to `supabase-verify`'s `rules:`.
 
 ### AI Code Review
 
