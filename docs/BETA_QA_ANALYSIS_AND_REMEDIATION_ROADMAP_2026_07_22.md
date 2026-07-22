@@ -101,6 +101,16 @@ Full verification passed: `pnpm run typecheck`, `pnpm --dir apps/mobile run type
 
 **Not yet done:** live Vercel beta environment variables have not been verified or redeployed, and the QA golden path has not been re-run against `beta.triaxisventures.com`. This was a local repository fix, build and test pass only -- live redeploy and QA replay remain pending (Sprint 5 scope in the five-sprint checklist).
 
+Sprint 2 (Live Tenant Persistence And Golden Path Writes) is complete locally as of 2026-07-22:
+
+- Audited the full repository/API/RLS stack behind `POST /api/repositories/projects` -- the exact QA repro's failing route. Found that project creation already wrote real Supabase-backed rows (not local state), already survived refresh, already returned `401` safely when unauthenticated, and already ignored a client-spoofed `organizationId` for non-Super-Admin roles (both in application code and independently via the `projects` table's RLS policies). None of this needed to change.
+- The one real gap: project creation never wrote audit or workflow-timeline evidence. Added `recordProjectCreateEvidence` to `src/app/api/repositories/[resource]/route.ts`, reusing the exact same `auditLogsRepository.record` / `recordWorkflowTimelineEvent` pattern already used elsewhere (AI-review-approved actions) -- no new architecture introduced.
+- Added repository-level tests proving cross-tenant write isolation (a spoofed `organizationId` is ignored for a normal tenant scope, honored only for Super Admin) and API-route-level tests proving the audit/timeline evidence wiring, unauthenticated failure, and response-shape consistency.
+
+Full verification passed: `pnpm run typecheck`, `pnpm --dir apps/mobile run typecheck`, `pnpm run lint` (zero warnings), `pnpm run test` (98 files / 299 tests), `pnpm run build`, and `pnpm run supabase:verify` all passed (same 27 migrations / 100 RLS-protected tables as before -- no schema change this sprint). See `docs/SPRINT_LOG.md` for full command-by-command evidence.
+
+**Not yet done:** no live Supabase project was used to create a real project this pass -- verification is local/test-fixture only (mocked-fetch unit tests plus a code-path audit). Live re-test of the exact QA repro against a real Supabase-backed tenant, and two-tenant isolation testing with two actually-provisioned tenants, remain pending (Sprint 5 scope).
+
 ## Severity Model
 
 ### P0 - Blocks Real Pilot Use
@@ -260,7 +270,10 @@ QA analysis documented.
 Canonical workspace migration completed.
 Sprint 1 (Phase 1 - Beta Access Integrity) complete locally: implemented,
 tested, documented and fully verified on 2026-07-22.
-Sprints 2-5 (Phases 2-5) remain pending.
+Sprint 2 (Phase 2 - Live Tenant Golden Path, persistence/audit/timeline
+subset) complete locally: implemented, tested, documented and fully
+verified on 2026-07-22.
+Sprints 3-5 (Phases 3-5) remain pending.
 Live Vercel beta redeploy and live beta re-test remain pending for all
 sprints.
 Full findings ledger and estimated (not live-verified) score deltas:
