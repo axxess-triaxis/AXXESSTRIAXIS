@@ -27,6 +27,14 @@ AXXESS is being engineered from the outset to support those requirements.
 
 ---
 
+## Provenance
+
+AXXESS TRIaxis -- design, product definition, coding, engineering, testing, workflow orchestration, beta feedback collection, product iteration and remediation, and the live Tenant 0 onboarding attempts documented in `docs/TENANT_0_ONBOARDING_FINDINGS_2026_07_22.md` -- was built end to end by **Sudipta Koushik Sarmah, Founder & Managing Director of Triaxis Ventures Private Limited**.
+
+No second human has been involved in any part of this work. The only assistance used throughout has been AI assistant tools and agents (Claude Code, Codex, Claude Pro, ChatGPT Plus, Microsoft Copilot, and the other tools recorded in `docs/SPRINT_41_QA2_MILESTONE_2026_07_22.md` Section 9's spend record).
+
+---
+
 # Why We Are Building AXXESS
 
 Enterprise AI adoption is accelerating faster than enterprise AI governance.

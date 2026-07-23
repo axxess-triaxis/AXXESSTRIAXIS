@@ -1,5 +1,15 @@
 # Tenant 0 Live Onboarding Findings Log
 
+## Attestation Of Authorship (Stated Explicitly, In Full)
+
+**AXXESS TRIaxis was built end to end by one person: Sudipta Koushik Sarmah, Founder & Managing Director of Triaxis Ventures Private Limited.**
+
+This covers, without exception: design, product definition, coding, engineering, testing, workflow orchestration, beta feedback collection, product iteration and remediation across the full Sprint 1-41 program, and both Tenant 0 onboarding attempts documented in this log.
+
+**No second human has been involved in any part of this work, at any point.** The only assistance used throughout has been AI assistant tools and agents -- Claude Code, Codex, Claude Pro, ChatGPT Plus, Microsoft Copilot, and the other tools recorded in `docs/SPRINT_41_QA2_MILESTONE_2026_07_22.md` Section 9's spend record.
+
+This is recorded here as the user's own direct, explicit statement -- Claude Code has not independently verified identity or sole authorship (it has no mechanism to), and this record should be read as an attestation, not a third-party audit finding. The same statement is also recorded in `README.md`'s "Provenance" section and `docs/SPRINT_41_QA2_MILESTONE_2026_07_22.md`.
+
 ## Purpose
 
 This is a running log of findings from Triaxis Ventures Private Limited's own live onboarding attempt as **Pilot Tenant 0** on `beta.triaxisventures.com` -- the authenticated golden-path gate that `docs/SPRINT_41_QA2_MILESTONE_2026_07_22.md` identified as the last thing standing between the QA remediation program and an Enterprise Beta 1.0 determination.
@@ -7,10 +17,6 @@ This is a running log of findings from Triaxis Ventures Private Limited's own li
 This walkthrough is being performed by the user directly, not by Claude Code, because completing it requires creating and authenticating a real account -- an action Claude Code's own operating constraints prohibit it from performing itself (see the exchange in this session where that was explained and the user took over the credentialed steps). Findings are reported by the user as they progress through onboarding and documented here as they're diagnosed and remediated, distinct from the already-closed `docs/SPRINT_5_CLOSEOUT_2026_07_22.md` / `docs/SPRINT_41_QA2_MILESTONE_2026_07_22.md` record, since this walkthrough is still in progress and may surface more findings.
 
 Numbering: findings here are called "Product Issue N," per the user's own naming, since they were surfaced by direct product use rather than by the earlier structured QA audit (Sprint 36) -- they sit outside the original F-001-F-021 numbering.
-
-## Attestation
-
-As stated directly by the user in this session (recorded here as a first-person attestation, not independently verified by Claude Code): both Tenant 0 onboarding attempts documented in this log, and every step of AXXESS's design, product definition, coding, engineering, testing, workflow orchestration, beta feedback collection, and product iteration/remediation across the full Sprint 1-41 program, were performed personally by **Sudipta Koushik Sarmah, Founder & Managing Director of Triaxis Ventures Private Limited** -- the entity building AXXESS TRIaxis. No second human was involved in any of this work; the only assistance used throughout was AI assistant tools and agents (including Claude Code, Codex, and the other tools listed in `docs/SPRINT_41_QA2_MILESTONE_2026_07_22.md` Section 9's spend record).
 
 ## Product Issue 1: No Sign-Up Facility, No OAuth Options -- Tenant 0 Onboarding Stopped
 
