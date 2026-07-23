@@ -6,6 +6,8 @@ This is the canonical milestone record for **Sprint 41 ("QA 2 - Live Verificatio
 
 Nothing technical is re-derived or re-verified here that Sprint 5's own closeout, the four QA closeouts before it, or `docs/SPRINT_1_TO_4_GAP_ANALYSIS_2026_07_22.md` already established -- this document consolidates and re-contextualizes that evidence under the renumbering the user has now specified, and extends it with the specific new content requested.
 
+**Attestation** (as stated directly by the user, recorded here as a first-person attestation rather than something Claude Code independently verified): every part of this program -- design, product definition, coding, engineering, testing, workflow orchestration, beta feedback collection, product iteration and remediation, and both Tenant 0 onboarding attempts (`docs/TENANT_0_ONBOARDING_FINDINGS_2026_07_22.md`) -- was performed personally by **Sudipta Koushik Sarmah, Founder & Managing Director of Triaxis Ventures Private Limited**. No second human was involved; the only assistance used throughout was AI assistant tools and agents, per the spend record in Section 9.
+
 ## 1. Full Program History And Numbering (Sprint 1-41)
 
 | Sprint range | Owner | Name | What it produced |

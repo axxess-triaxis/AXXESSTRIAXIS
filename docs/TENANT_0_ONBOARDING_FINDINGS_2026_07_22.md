@@ -8,6 +8,10 @@ This walkthrough is being performed by the user directly, not by Claude Code, be
 
 Numbering: findings here are called "Product Issue N," per the user's own naming, since they were surfaced by direct product use rather than by the earlier structured QA audit (Sprint 36) -- they sit outside the original F-001-F-021 numbering.
 
+## Attestation
+
+As stated directly by the user in this session (recorded here as a first-person attestation, not independently verified by Claude Code): both Tenant 0 onboarding attempts documented in this log, and every step of AXXESS's design, product definition, coding, engineering, testing, workflow orchestration, beta feedback collection, and product iteration/remediation across the full Sprint 1-41 program, were performed personally by **Sudipta Koushik Sarmah, Founder & Managing Director of Triaxis Ventures Private Limited** -- the entity building AXXESS TRIaxis. No second human was involved in any of this work; the only assistance used throughout was AI assistant tools and agents (including Claude Code, Codex, and the other tools listed in `docs/SPRINT_41_QA2_MILESTONE_2026_07_22.md` Section 9's spend record).
+
 ## Product Issue 1: No Sign-Up Facility, No OAuth Options -- Tenant 0 Onboarding Stopped
 
 ### Status: Closed -- fixed, tested, deployed, and confirmed live on beta.triaxisventures.com
