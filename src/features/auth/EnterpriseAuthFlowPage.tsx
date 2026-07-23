@@ -72,7 +72,7 @@ export function EnterpriseAuthFlowPage({ kind }: { kind: AuthFlowKind }) {
   const [password, setPassword] = useState("");
   const [recoveryToken, setRecoveryToken] = useState("");
   const [displayName, setDisplayName] = useState("");
-  const [message, setMessage] = useState<string | null>(null);
+  const [message, setMessage] = useState<{ tone: "success" | "error" | "info"; text: string } | null>(null);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -105,7 +105,7 @@ export function EnterpriseAuthFlowPage({ kind }: { kind: AuthFlowKind }) {
       .then(async (response) => {
         const body = await response.json().catch(() => ({} as { user?: { needsOnboarding?: boolean }; error?: string }));
         if (!response.ok || !body.user) {
-          setMessage(body.error ?? "Unable to complete sign-in with the selected provider.");
+          setMessage({ tone: "error", text: body.error ?? "Unable to complete sign-in with the selected provider." });
           setBusy(false);
           return;
         }
@@ -113,7 +113,7 @@ export function EnterpriseAuthFlowPage({ kind }: { kind: AuthFlowKind }) {
         router.push(body.user.needsOnboarding ? "/onboarding" : "/dashboard");
       })
       .catch(() => {
-        setMessage("Unable to complete sign-in with the selected provider.");
+        setMessage({ tone: "error", text: "Unable to complete sign-in with the selected provider." });
         setBusy(false);
       });
   }, [kind, router]);
@@ -141,7 +141,8 @@ export function EnterpriseAuthFlowPage({ kind }: { kind: AuthFlowKind }) {
         body: JSON.stringify({ email, password, displayName, accessToken: recoveryToken }),
       });
       const body = await response.json().catch(() => ({} as { message?: string; error?: string; blocker?: string }));
-      setMessage(body.message ?? body.blocker ?? body.error ?? (response.ok ? "Request accepted." : "Request could not be completed."));
+      const text = body.message ?? body.blocker ?? body.error ?? (response.ok ? "Request accepted." : "Request could not be completed.");
+      setMessage({ tone: response.ok ? "success" : "error", text });
       if (kind === "sign-up" && response.ok) trackEvent("sign_up_completed", { flow: "email_password" }, { module_name: "auth", route: "/auth/sign-up" });
       if (kind === "account-delete" && response.ok) trackEvent("account_deletion_started", { flow: "beta_admin_processing" }, { module_name: "settings", route: "/settings/account/delete" });
     } finally {
@@ -197,12 +198,16 @@ export function EnterpriseAuthFlowPage({ kind }: { kind: AuthFlowKind }) {
               <span className="h-px flex-1 bg-[rgba(0,0,0,0.08)]" />
             </div>
             <div className="mt-4">
-              <OAuthProviderButtons onError={setMessage} />
+              <OAuthProviderButtons onError={(text) => setMessage(text ? { tone: "error", text } : null)} />
             </div>
           </>
         )}
 
-        {message && <p className="mt-4 rounded-lg bg-[#F8F9FA] px-3 py-2 text-xs font-medium text-[#0F1117]">{message}</p>}
+        {message && (
+          <p className={`mt-4 rounded-lg px-3 py-2 text-xs font-medium ${message.tone === "error" ? "bg-red-50 text-red-700" : message.tone === "success" ? "bg-emerald-50 text-emerald-700" : "bg-[#F8F9FA] text-[#0F1117]"}`}>
+            {message.text}
+          </p>
+        )}
 
         {kind === "login" && busy ? (
           <p className="mt-5 text-sm text-[#5F6B73]">Completing sign-in...</p>

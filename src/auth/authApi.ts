@@ -1,3 +1,5 @@
+import { parseSupabaseAuthErrorResponse } from "./supabaseAuthError";
+
 type SupabaseAuthResponse = Record<string, unknown> | undefined;
 
 function supabaseAuthConfig() {
@@ -27,7 +29,7 @@ export async function callSupabaseAuth(path: string, body: Record<string, unknow
   });
 
   if (!response.ok) {
-    throw new Error(`Supabase Auth request failed: ${response.status}`);
+    throw await parseSupabaseAuthErrorResponse(response);
   }
 
   const text = await response.text();

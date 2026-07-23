@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import type { UserContext } from "../security/rbac";
 import { userContextFromAuthUser, userContextFromSupabaseRow, type SupabaseUserRow } from "./supabaseUser";
+import { parseSupabaseAuthErrorResponse } from "./supabaseAuthError";
 
 export const accessTokenCookieName = "axxess-access-token";
 export const refreshTokenCookieName = "axxess-refresh-token";
@@ -74,7 +75,7 @@ async function supabaseAuthRequest<TResponse>(path: string, init: RequestInit = 
   });
 
   if (!response.ok) {
-    throw new Error(`Supabase Auth request failed: ${response.status}`);
+    throw await parseSupabaseAuthErrorResponse(response);
   }
 
   const text = await response.text();
