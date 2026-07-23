@@ -1,12 +1,20 @@
 # Sprint 41 - QA 2: Live Verification, Tenant Isolation & Release-Gate Audit - Milestone Record - 2026-07-22
 
+## Attestation Of Authorship (Stated Explicitly, In Full)
+
+**AXXESS TRIaxis was built end to end by one person: Sudipta Koushik Sarmah, Founder & Managing Director of Triaxis Ventures Private Limited.**
+
+This covers, without exception: design, product definition, coding, engineering, testing, workflow orchestration, beta feedback collection, product iteration and remediation across the full Sprint 1-41 program documented in this file, and both Tenant 0 onboarding attempts (`docs/TENANT_0_ONBOARDING_FINDINGS_2026_07_22.md`).
+
+**No second human has been involved in any part of this work, at any point.** The only assistance used throughout has been AI assistant tools and agents -- Claude Code, Codex, Claude Pro, ChatGPT Plus, Microsoft Copilot, and the other tools recorded in Section 9's spend record below.
+
+This is recorded here as the user's own direct, explicit statement -- Claude Code has not independently verified identity or sole authorship (it has no mechanism to), and this record should be read as an attestation, not a third-party audit finding. The same statement is also recorded in `README.md`'s "Provenance" section and `docs/TENANT_0_ONBOARDING_FINDINGS_2026_07_22.md`.
+
 ## 0. What This Document Is
 
 This is the canonical milestone record for **Sprint 41 ("QA 2 - Live Verification, Tenant Isolation & Release-Gate Audit")**, the sprint previously tracked in this repository's documentation as **"Sprint 5"** of the five-sprint QA remediation program (`docs/SPRINT_5_CLOSEOUT_2026_07_22.md`). That document remains in place, unmodified, as the detailed technical closeout for this sprint's own findings ledger and score deltas -- this document supersedes it only as the **numbering and program-context record**, placing that same sprint's work inside the full engineering history of AXXESS (Sprint 1 through Sprint 41), documenting total program spend, and answering the specific questions asked of it: next actionables, gap analysis, delta report, caveats, a fact/partial/untouched breakdown, the complete test and lint ledger, and the deployment narrative including what stalled and what errored.
 
 Nothing technical is re-derived or re-verified here that Sprint 5's own closeout, the four QA closeouts before it, or `docs/SPRINT_1_TO_4_GAP_ANALYSIS_2026_07_22.md` already established -- this document consolidates and re-contextualizes that evidence under the renumbering the user has now specified, and extends it with the specific new content requested.
-
-**Attestation** (as stated directly by the user, recorded here as a first-person attestation rather than something Claude Code independently verified): every part of this program -- design, product definition, coding, engineering, testing, workflow orchestration, beta feedback collection, product iteration and remediation, and both Tenant 0 onboarding attempts (`docs/TENANT_0_ONBOARDING_FINDINGS_2026_07_22.md`) -- was performed personally by **Sudipta Koushik Sarmah, Founder & Managing Director of Triaxis Ventures Private Limited**. No second human was involved; the only assistance used throughout was AI assistant tools and agents, per the spend record in Section 9.
 
 ## 1. Full Program History And Numbering (Sprint 1-41)
 
