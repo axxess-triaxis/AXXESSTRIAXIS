@@ -30,6 +30,19 @@ function saveState(state: EnterpriseOnboardingState) {
   window.localStorage.setItem(storageKey, JSON.stringify(state));
 }
 
+// Names exactly which of isOnboardingComplete's conditions are unmet, instead of one bundled
+// message -- Attempt 3 of the live Tenant 0 walkthrough showed a user misdiagnose a missing-notice
+// failure as a department/workspace bug because the message never said which requirement failed.
+function missingRequirements(state: EnterpriseOnboardingState): string[] {
+  const missing: string[] = [];
+  if (!(state.organizationName || state.invitationCode)) missing.push("organization name or invitation code");
+  if (!state.sector) missing.push("sector");
+  if (!state.role) missing.push("role");
+  const missingNotices = requiredOnboardingNotices.filter((notice) => !state.acceptedNotices.includes(notice));
+  if (missingNotices.length > 0) missing.push(`notices (${missingNotices.join(", ")})`);
+  return missing;
+}
+
 type EnterpriseOnboardingPageProps = {
   step: OnboardingStepId;
 };
@@ -66,7 +79,7 @@ function OnboardingWizard({ step }: EnterpriseOnboardingPageProps) {
   async function continueFlow() {
     if (step === "complete") {
       if (!isOnboardingComplete(state)) {
-        setMessage({ tone: "error", text: "Complete organization, role, workspace and notice steps before provisioning." });
+        setMessage({ tone: "error", text: `Complete the following before provisioning: ${missingRequirements(state).join("; ")}.` });
         return;
       }
 
@@ -105,11 +118,16 @@ function OnboardingWizard({ step }: EnterpriseOnboardingPageProps) {
       return;
     }
 
-    const nextPath = nextOnboardingPath(step, state);
     if (step === "security") {
+      const missingNotices = requiredOnboardingNotices.filter((notice) => !state.acceptedNotices.includes(notice));
+      if (missingNotices.length > 0) {
+        setMessage({ tone: "error", text: `Accept all required notices to continue: ${missingNotices.join(", ")}.` });
+        return;
+      }
+      setMessage(null);
       trackEvent("onboarding_step_completed", { step, notices_accepted: state.acceptedNotices.length }, { module_name: "onboarding", route: "/onboarding/security" });
     }
-    router.push(nextPath as Route);
+    router.push(nextOnboardingPath(step, state) as Route);
   }
 
   if (session.status === "loading") {
