@@ -68,9 +68,43 @@ The user resumed the Tenant 0 walkthrough against the now-confirmed-live Product
 2. **"Create account" is not yet functionally enabled.** The user has deliberately deferred investigating this to a future sprint rather than asking for an immediate fix -- logged here as open, not acted on. One grounded, unconfirmed lead for whoever picks this up: `supabase/config.toml` (this repo's *local* Supabase config, used only by `supabase start`/local dev) declares `enable_signup = true` under both the top-level and `[auth.email]` sections -- but this checkout has never been linked to the real hosted Supabase project (`docs/SUPABASE_CLI.md`: "This checkout is not yet linked to a remote project"), so there is no guarantee the *actual* live project's Auth settings match that local declaration. The live project's own "Enable email signups" toggle (Supabase Dashboard -> Authentication -> Providers -> Email) has never been independently confirmed -- that, or the still-unverified transactional-email deliverability noted in Product Issue 1's follow-ups, are the two most likely candidates, but neither has been confirmed as the actual cause. Not investigated further at the user's direction.
 3. **Google and Microsoft OAuth are not yet enabled** -- expected and already documented in Product Issue 1 as requiring external Google Cloud Console / Azure Portal app registration plus Supabase dashboard configuration. The user has deferred this two sprints out. No new information here; consistent with the known state.
 
-## Attempt 3 Log (2026-07-23) -- In Progress
+## Product Issue 2: Onboarding Wizard Lets An Unauthenticated User Complete All 5 Screens, Then Fails Silently-Opaque At The Finish Line ("Onboarding Workflow Attempt 2")
 
-The walkthrough has moved from the Sign In/Sign Up entry points (Attempts 1-2) to the **onboarding workflow**, reached via the "Onboarding" button present on the same page as the Sign In/Sign Up options (`src/features/auth/EnterpriseAuthFlowPage.tsx`'s persistent `Link href="/onboarding"` button, shown regardless of `kind`). This entry is a placeholder marking the transition; it will be filled in with what the user actually finds -- organization setup, sector selection, workspace creation, whatever `/onboarding`'s flow actually presents -- as soon as that's reported.
+### Status: Diagnosed and code-confirmed; not yet fixed (documentation only, per this request)
+
+### What Happened
+
+Continuing the walkthrough from Attempt 2 (auth entry points), the user proceeded through the full `/onboarding` wizard at `beta.triaxisventures.com`, reaching the very end before being stopped. Full screen-by-screen record, as reported:
+
+1. **Create organization** entry screen -- worked.
+2. **Name of Organization** -- worked; entered `Triaxis Ventures Private Limited`.
+3. **Sector and role selection** -- worked. Sectors offered: Government, Healthcare, NGO/Non-profit, MSME, Startup, Enterprise, Consulting/Advisory (7 options; user selected **Startup**). Roles offered: Super Admin, Organization Admin, Executive, Manager, Employee, Consultant, Guest (7 options; user selected **Super Admin**).
+4. **Department / workspace naming** (both marked optional) -- worked; entered Department `Founder's Office`, Workspace `AXXESS TRIaxis`.
+5. **Security and beta notices** -- worked, and the user flagged this as a genuinely good feature. Four undertakings presented with no supporting explanatory text (Terms of Service, Privacy Policy, AI Usage Notice, Beta Disclaimer) -- the user ticked all four but noted the lack of supporting text as its own minor gap worth fixing later.
+6. **Summary/confirmation screen** -- rendered correctly, showing: Organization `Triaxis Ventures Private Limited`, Sector `Startup`, Role `Super Admin`, Department `Founder's office`, Workspace `AXXESS TRIaxis`, Starting focus `None selected -- empty dashboard`, Notices `4/4 accepted`. Two options presented: "Provision tenant" and "Back to auth" (the latter has been present consistently since the sign-up/sign-in pages). Screenshots were captured of this screen and of the failure below.
+
+**The walkthrough stopped here.** Clicking **"Provision tenant"** returned the message **"Unauthorized"** and did not proceed. No 7th screen was ever reached.
+
+### Diagnosis (code-confirmed, not assumed)
+
+Two facts, both verified directly against the current source:
+
+1. **`/onboarding` and every one of its sub-screens are not gated by authentication at all.** `src/proxy.ts`'s `protectedRoutePrefixes` list (`/app`, `/dashboard`, `/projects`, `/programs`, `/tasks`, `/workflow-records`, `/crm`, `/stakeholders`, `/knowledge`, `/documents`, `/meetings`, `/approvals`, `/analytics`, `/integrations`, `/settings`, `/admin`) does **not** include `/onboarding` -- the edge proxy never redirects an unauthenticated visitor away from it. A search of every page under `src/app/onboarding/` and `src/features/onboarding/` for any authentication check (`useAuth`, `isAuthenticated`, `session.user`) returned **zero matches** -- the entire multi-screen wizard is pure client-side state with no awareness of whether the visitor is actually signed in.
+2. **The only point that checks authentication is the very last step**, `POST /api/onboarding/provision` (`src/app/api/onboarding/provision/route.ts`, lines 7-8): `const session = await getServerAuthSession(true); if (!session) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });` -- this is the exact, literal source of the "Unauthorized" message the user saw.
+
+**Most likely root cause, tying this directly to the still-open Attempt 2 finding:** Attempt 2 logged "Create account" as not yet functionally completing sign-up. If that account was never actually confirmed into a real, session-bearing account, the user had no valid session at any point during this onboarding attempt -- meaning the wizard let them invest five full screens of real data entry before the *first* point in the entire flow that actually checks whether they're signed in. This may not be a second, independent bug so much as the same underlying gap (sign-up not completing) surfacing at a much later, more costly point in the funnel. It has not been independently confirmed whether a genuinely authenticated user (one who successfully signed in first) would hit the same "Unauthorized" result -- that would indicate a distinct, second bug in `provisionTenantForUser` or session-cookie handling across the onboarding flow, rather than a simple consequence of Attempt 2's unresolved issue. Worth testing directly once account creation itself is fixed.
+
+### Independent UX Defect, Regardless Of Root Cause
+
+Even if the root cause turns out to be entirely Attempt 2's unresolved sign-up gap, the onboarding wizard's own design is a defect worth fixing on its own terms: it allows a visitor with no session at all to progress through five real data-entry screens with no warning, and only fails -- with a bare, unexplained "Unauthorized" and no guidance on what to do next -- at the final submission. A production-grade onboarding flow should check for a valid session before allowing entry into the wizard (or at minimum before the final screen), and should never let a real prospect discover they were never signed in only after they've filled out their organization's name, sector, role, and workspace details.
+
+### Not Yet Fixed
+
+Per this request, this entry documents the finding only -- no code change has been made. Candidate fixes for a future sprint: gate `/onboarding` behind a session check (either at the edge via `src/proxy.ts` or client-side at wizard entry), and/or re-verify the session immediately before rendering the final "Provision tenant" screen so a lost/never-established session is caught with a clear, actionable message before the user reaches the confirmation step, not after clicking submit.
+
+### Secondary, Minor Note From The Same Screens
+
+The four security/beta notice checkboxes (Terms of Service, Privacy Policy, AI Usage Notice, Beta Disclaimer) have no supporting explanatory text next to them -- the user flagged this as a real, if minor, gap worth addressing (a checkbox asking someone to accept a "Beta Disclaimer" with no visible text describing what that disclaimer actually says is a compliance-adjacent concern for a real enterprise pilot, not just cosmetic).
 
 ## Log Format For Future Entries
 
