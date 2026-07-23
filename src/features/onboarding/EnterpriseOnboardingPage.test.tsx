@@ -1,6 +1,10 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { EnterpriseOnboardingPage } from "./EnterpriseOnboardingPage";
+
+const authenticatedSessionResponse = () => new Response(JSON.stringify({
+  user: { id: "user_1", organizationId: "org_1", role: "Super Admin", email: "founder@triaxisventures.com", displayName: "Founder" },
+}), { status: 200 });
 
 const pushMock = vi.fn();
 vi.mock("next/navigation", () => ({
@@ -48,5 +52,60 @@ describe("EnterpriseOnboardingPage auth guard (Product Issue 2 remediation, Spri
 
     expect(await screen.findByText(/how should this user enter axxess/i)).toBeInTheDocument();
     expect(screen.queryByText(/sign in required/i)).not.toBeInTheDocument();
+  });
+});
+
+// Attempt 3 of the live Tenant 0 walkthrough (docs/TENANT_0_ONBOARDING_FINDINGS_2026_07_22.md) found
+// that "Continue" advanced past the security-notices screen regardless of how many notices were
+// ticked, then blocked provisioning at the very end with one bundled message that didn't say which
+// requirement failed -- the user misdiagnosed a missing-notice failure as a department/workspace bug.
+describe("EnterpriseOnboardingPage notice enforcement (Sprint 1: Tenant 0 Production Activation)", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    pushMock.mockClear();
+    window.localStorage.clear();
+  });
+
+  it("blocks Continue past the security step until all required notices are accepted, naming what's missing", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => authenticatedSessionResponse()));
+
+    render(<EnterpriseOnboardingPage step="security" />);
+    await screen.findByRole("heading", { name: /security and beta notices/i });
+
+    fireEvent.click(screen.getByText("Terms of Service"));
+    fireEvent.click(screen.getByRole("button", { name: /^continue$/i }));
+
+    expect(await screen.findByText(/accept all required notices to continue/i)).toBeInTheDocument();
+    expect(screen.getByText(/accept all required notices to continue/i).textContent).toMatch(/Privacy Policy/);
+    expect(pushMock).not.toHaveBeenCalled();
+  });
+
+  it("allows Continue past the security step once every required notice is accepted", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => authenticatedSessionResponse()));
+
+    render(<EnterpriseOnboardingPage step="security" />);
+    await screen.findByRole("heading", { name: /security and beta notices/i });
+
+    for (const checkbox of screen.getAllByRole("checkbox")) {
+      fireEvent.click(checkbox);
+    }
+    fireEvent.click(screen.getByRole("button", { name: /^continue$/i }));
+
+    expect(pushMock).toHaveBeenCalledWith("/onboarding/complete");
+  });
+
+  it("names the specific missing requirements on the final step instead of one bundled message", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => authenticatedSessionResponse()));
+
+    render(<EnterpriseOnboardingPage step="complete" />);
+    await screen.findByText(/onboarding needs attention/i);
+
+    fireEvent.click(screen.getByRole("button", { name: /provision tenant/i }));
+
+    const message = await screen.findByText(/complete the following before provisioning/i);
+    expect(message.textContent).toMatch(/organization name or invitation code/);
+    expect(message.textContent).toMatch(/sector/);
+    expect(message.textContent).toMatch(/role/);
+    expect(message.textContent).toMatch(/notices \(Terms of Service, Privacy Policy, AI Usage Notice, Beta Disclaimer\)/);
   });
 });
