@@ -29,9 +29,14 @@ AXXESS is being engineered from the outset to support those requirements.
 
 ## Provenance
 
-AXXESS TRIaxis -- design, product definition, coding, engineering, testing, workflow orchestration, beta feedback collection, product iteration and remediation, and the live Tenant 0 onboarding attempts documented in `docs/TENANT_0_ONBOARDING_FINDINGS_2026_07_22.md` -- was built end to end by **Sudipta Koushik Sarmah, Founder & Managing Director of Triaxis Ventures Private Limited**.
+**The hands-on technical build** -- design, product definition, coding, engineering, testing, workflow orchestration, product iteration and remediation, and the live Tenant 0 onboarding attempts documented in `docs/TENANT_0_ONBOARDING_FINDINGS_2026_07_22.md` -- was executed solely by **Sudipta Koushik Sarmah, Founder & Managing Director of Triaxis Ventures Private Limited**, with AI assistant tools and agents (Claude Code, Codex, Claude Pro, ChatGPT Plus, Microsoft Copilot, and the other tools recorded in `docs/SPRINT_41_QA2_MILESTONE_2026_07_22.md` Section 9's spend record) as the only technical assistance -- no second human was involved in that hands-on execution.
 
-No second human has been involved in any part of this work. The only assistance used throughout has been AI assistant tools and agents (Claude Code, Codex, Claude Pro, ChatGPT Plus, Microsoft Copilot, and the other tools recorded in `docs/SPRINT_41_QA2_MILESTONE_2026_07_22.md` Section 9's spend record).
+**Triaxis Ventures Private Limited is co-founded by Sudipta Koushik Sarmah and Ritashree Mahanta.** Ritashree is Sudipta's life partner and a seasoned healthcare and education professional with 6+ years of experience across 4 Indian states. Her contributions to Triaxis Ventures and AXXESS TRIaxis include:
+
+- Company and product strategy.
+- Objective product feedback and brainstorming, particularly on healthcare- and education-sector workflows.
+- Collecting beta feedback responses from respondents in the healthcare and education sectors.
+- **The company's first cheque.** Ritashree is the startup's first investor, having personally contributed approximately 70% of her income over the last 6-7 months toward the operating runway that has kept both Triaxis Ventures and AXXESS TRIaxis going.
 
 ---
 
