@@ -10,7 +10,7 @@ Numbering: findings here are called "Product Issue N," per the user's own naming
 
 ## Product Issue 1: No Sign-Up Facility, No OAuth Options -- Tenant 0 Onboarding Stopped
 
-### Status: Fixed in code and tests; pushed to both GitHub and GitLab; production redeploy in progress
+### Status: Closed -- fixed, tested, deployed, and confirmed live on beta.triaxisventures.com
 
 ### What Happened
 
@@ -38,7 +38,11 @@ Implemented and verified in this session:
 - 12 new/extended tests added, all passing: `src/features/auth/OAuthProviderButtons.test.tsx` (3), `src/features/auth/EnterpriseAuthFlowPage.test.tsx` (5, new file -- includes a full behavioral test of the OAuth callback: token capture, session exchange, redirect to `/dashboard` or `/onboarding`, and the error path), `src/app/api/auth/oauth/callback/route.test.ts` (4, new file), plus 1 new case in `src/app/auth/page.test.tsx`.
 - Full local verification suite passed: `pnpm run typecheck`, mobile typecheck, `pnpm run lint` (zero warnings), `pnpm run test` (116 test files / 362 tests, up from 113/349), `pnpm run build`, `pnpm run supabase:verify` (unchanged: 27 migrations, 100 RLS-protected tables), `pnpm run mobile:store:release-gate`, `pnpm run mobile:capacitor:store:doctor`.
 - Committed (`32350c9`) and pushed to both GitHub and GitLab (both remotes reachable and in sync as of this fix).
-- **Production redeploy status: attempted twice.** The first attempt did not complete before the session environment restarted overnight, and the live site was confirmed (via `curl` directly against that specific deployment's own URL, bypassing any CDN/alias caching) to still be running the old, pre-fix build the next session. A second deploy was started immediately after that was discovered; see `docs/SPRINT_LOG.md` and `docs/SPRINT_41_QA2_MILESTONE_2026_07_22.md` for the confirmed outcome once it lands, and do not assume the fix is live on `beta.triaxisventures.com` until that confirmation is recorded.
+- **Production redeploy: took three attempts, all diagnosed, none silently retried.**
+  1. First attempt (previous session) never reached the deploy step at all -- its own internal `pnpm run test` gate failed with `[vitest-pool-runner]: Timeout waiting for worker to respond`, `Duration 41472.91s` (over 11 hours), consistent with the session environment sleeping/suspending mid-run overnight and the test workers never recovering when it resumed. Confirmed via the command's own captured output once it finally surfaced.
+  2. Second attempt (this session, after independently confirming via `curl` against the live deployment's own URL -- bypassing any CDN/alias caching -- that the fix was not yet live) ran cleanly end to end: typecheck/lint/test (116 files / 362 tests) all passed, build succeeded, and `vercel deploy --prod` returned `{"status":"ok","readyState":"READY"}` for deployment `dpl_A6FnntX928iN57E1iNkKJzEUkL7o`.
+  3. That new deployment's own `vercel inspect` alias list did not list `beta.triaxisventures.com` explicitly (only the apex/www/vercel.app domains) -- rather than assuming success or failure from that alone, a direct `curl` against `https://beta.triaxisventures.com/auth` was run, which returned the literal strings "Sign up", "Continue with Google", and "Continue with Microsoft" -- confirming the new build was actually being served there regardless of what the alias-list display showed. A follow-up browser screenshot confirmed the same thing visually: the sign-in card now shows Email/Password/Sign in, an "OR" divider, "Continue with Google", "Continue with Microsoft", "Don't have an account? Sign up", and "Open investor preview" -- exactly as built.
+- **Confirmed live** on `beta.triaxisventures.com` as of this update. This is a measured result (direct `curl` + direct browser screenshot against the actual production URL), not an inference from the deploy command's own reported success.
 
 ### What Remediation Does *Not* Cover (External Dependency, Not Resolvable By Code)
 
