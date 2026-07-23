@@ -2,13 +2,13 @@
 
 ## Attestation Of Authorship (Stated Explicitly, In Full)
 
-**AXXESS TRIaxis was built end to end by one person: Sudipta Koushik Sarmah, Founder & Managing Director of Triaxis Ventures Private Limited.**
+**The hands-on technical build of AXXESS TRIaxis was executed solely by Sudipta Koushik Sarmah, Founder & Managing Director of Triaxis Ventures Private Limited.**
 
-This covers, without exception: design, product definition, coding, engineering, testing, workflow orchestration, beta feedback collection, product iteration and remediation across the full Sprint 1-41 program, and both Tenant 0 onboarding attempts documented in this log.
+This covers, without exception: design, product definition, coding, engineering, testing, workflow orchestration, product iteration and remediation across the full Sprint 1-41 program, and both Tenant 0 onboarding attempts documented in this log. AI assistant tools and agents -- Claude Code, Codex, Claude Pro, ChatGPT Plus, Microsoft Copilot, and the other tools recorded in `docs/SPRINT_41_QA2_MILESTONE_2026_07_22.md` Section 9's spend record -- were the only technical assistance used; no second human was involved in that hands-on execution.
 
-**No second human has been involved in any part of this work, at any point.** The only assistance used throughout has been AI assistant tools and agents -- Claude Code, Codex, Claude Pro, ChatGPT Plus, Microsoft Copilot, and the other tools recorded in `docs/SPRINT_41_QA2_MILESTONE_2026_07_22.md` Section 9's spend record.
+**Triaxis Ventures Private Limited is co-founded by Sudipta Koushik Sarmah and Ritashree Mahanta.** Ritashree is Sudipta's life partner and a seasoned healthcare and education professional with 6+ years of experience across 4 Indian states. Her contributions to Triaxis Ventures and AXXESS TRIaxis include company and product strategy; objective product feedback and brainstorming, particularly on healthcare- and education-sector workflows; collecting beta feedback responses from respondents in the healthcare and education sectors -- directly relevant to this log, since healthcare and education are two of AXXESS's own primary regulated-sector markets; and, most significantly, **the company's first cheque** -- Ritashree is the startup's first investor, having personally contributed approximately 70% of her income over the last 6-7 months toward the operating runway that has kept both Triaxis Ventures and AXXESS TRIaxis going.
 
-This is recorded here as the user's own direct, explicit statement -- Claude Code has not independently verified identity or sole authorship (it has no mechanism to), and this record should be read as an attestation, not a third-party audit finding. The same statement is also recorded in `README.md`'s "Provenance" section and `docs/SPRINT_41_QA2_MILESTONE_2026_07_22.md`.
+This is recorded here as the user's own direct, explicit statement -- Claude Code has not independently verified identity, authorship, or the financial details described here (it has no mechanism to), and this record should be read as an attestation, not a third-party audit finding. The same statement is also recorded in `README.md`'s "Provenance" section and `docs/SPRINT_41_QA2_MILESTONE_2026_07_22.md`.
 
 ## Purpose
 
