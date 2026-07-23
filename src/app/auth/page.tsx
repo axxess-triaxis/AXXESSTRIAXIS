@@ -139,6 +139,12 @@ function LoginPanel() {
           />
         </label>
 
+        <p className="text-right text-xs">
+          <Link href={"/auth/forgot-password" as Route} className="font-semibold text-[#8B1E2D] hover:underline">
+            Forgot password?
+          </Link>
+        </p>
+
         {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-xs font-medium text-red-700">{error}</p>}
 
         {showResend && (

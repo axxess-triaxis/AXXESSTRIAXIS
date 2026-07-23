@@ -38,6 +38,15 @@ describe("/auth page", () => {
     expect(screen.getByRole("button", { name: "Continue with Microsoft" })).toBeInTheDocument();
   });
 
+  it("shows a discoverable Forgot password? link pointing at the reset flow (Sprint 1: Tenant 0 Production Activation)", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ user: null }), { status: 401 })));
+
+    render(<AuthPage />);
+    await screen.findByRole("button", { name: /^sign in$/i });
+
+    expect(screen.getByRole("link", { name: /forgot password/i })).toHaveAttribute("href", "/auth/forgot-password");
+  });
+
   it("shows a Resend confirmation email action when sign-in fails because the email is not confirmed, and lets the user request a new link (Sprint 42)", async () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input);
