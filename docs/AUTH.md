@@ -80,7 +80,7 @@ Logging in with this account enables Demo Mode and loads the North East Health M
 
 ## User Profile
 
-Profile updates are stored locally by organization and user. This keeps Sprint 11 profile editing usable without requiring a new Supabase user-profile migration. Production user records still flow through the repository layer and can be promoted to persisted profile tables in Sprint 12.
+For a real Supabase-auth session, editing a profile in Settings calls `PATCH /api/profile`, which writes to the real `profiles` and `users` tables via `updateTenantProfile` (`src/auth/provisioning.ts`) -- this is genuine server-side persistence, not a stub (audited and confirmed in Sprint 1: Tenant 0 Production Activation, 2026-07-23). `src/auth/localProfile.ts`'s `localStorage` layer is a client-side display cache written alongside the real save, and is also the standalone source of truth for the mock-RBAC/local-dev auth path (`NEXT_PUBLIC_AXXESS_AUTH_SHELL=false`) where there is no real Supabase session to persist against.
 
 ## RBAC
 
