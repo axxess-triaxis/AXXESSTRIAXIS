@@ -80,7 +80,7 @@ The user resumed the Tenant 0 walkthrough against the now-confirmed-live Product
 
 ## Product Issue 2: Onboarding Wizard Lets An Unauthenticated User Complete All 5 Screens, Then Fails Silently-Opaque At The Finish Line ("Onboarding Workflow Attempt 2")
 
-### Status: Diagnosed and code-confirmed; not yet fixed (documentation only, per this request)
+### Status: Fixed (Sprint 42) -- code-confirmed and unit-tested; pending a live re-walkthrough to confirm on `beta.triaxisventures.com`
 
 ### What Happened
 
@@ -108,9 +108,22 @@ Two facts, both verified directly against the current source:
 
 Even if the root cause turns out to be entirely Attempt 2's unresolved sign-up gap, the onboarding wizard's own design is a defect worth fixing on its own terms: it allows a visitor with no session at all to progress through five real data-entry screens with no warning, and only fails -- with a bare, unexplained "Unauthorized" and no guidance on what to do next -- at the final submission. A production-grade onboarding flow should check for a valid session before allowing entry into the wizard (or at minimum before the final screen), and should never let a real prospect discover they were never signed in only after they've filled out their organization's name, sector, role, and workspace details.
 
-### Not Yet Fixed
+### Remediation (Sprint 42)
 
-Per this request, this entry documents the finding only -- no code change has been made. Candidate fixes for a future sprint: gate `/onboarding` behind a session check (either at the edge via `src/proxy.ts` or client-side at wizard entry), and/or re-verify the session immediately before rendering the final "Provision tenant" screen so a lost/never-established session is caught with a clear, actionable message before the user reaches the confirmation step, not after clicking submit.
+Implemented and unit-tested in this session, both layers per the "Independent UX Defect" analysis above:
+
+- **Edge-level gate**: added `/onboarding` to `protectedRoutePrefixes` in `src/proxy.ts`. This reuses the exact same mechanism already protecting `/dashboard`, `/projects`, etc. -- an unauthenticated visitor hitting any `/onboarding/*` path is now redirected to `/auth?next=/onboarding...` before the wizard renders at all, with the return path preserved.
+- **Client-side defense-in-depth**: `EnterpriseOnboardingPage.tsx` now wraps its wizard in `<AuthProvider>` and checks `useAuth()` before rendering any step -- a `"Checking session"` loading state while the session resolves, then a `"Sign in required"` guard (reusing the exact `EmptyState` + sign-in-link pattern already used by `src/app/App.tsx` for every other protected route) if no session is found. This covers the edge case the proxy check alone cannot: wizard state is persisted in `localStorage` across page loads, so a session that expires *during* the 5-screen wizard is now caught immediately rather than only surfacing as "Unauthorized" at the final submit. Wizard progress in `localStorage` is left untouched by this guard, so nothing is lost if the user is redirected and signs back in.
+- Left `src/app/api/onboarding/provision/route.ts`'s existing `401` as the final, now-effectively-unreachable defense-in-depth layer -- no change needed there.
+
+### Linkage To The "Create Account" Gap -- Also Addressed (Sprint 42)
+
+This issue's own diagnosis named the still-open "Create account" gap (Attempt 2 Log) as the most likely root cause: if sign-up never produced a real, confirmed session, the user had no valid session at any point during onboarding. Sprint 42 also fixed the underlying diagnosability problem: `src/app/api/auth/sign-up/route.ts` and `src/app/api/auth/login/route.ts` previously caught every Supabase Auth failure with a bare `catch {}` -- no server-side logging, no distinction between causes (already-exists, unconfirmed email, wrong password, misconfiguration). Both routes now parse the real Supabase error code via a new shared helper (`src/auth/supabaseAuthError.ts`), log it server-side, and return a specific, actionable response for the two most likely real causes: `user_already_exists` (409, points to sign-in) and `email_not_confirmed` (401, with a new "Resend confirmation email" action on the sign-in page, wired to a new `POST /api/auth/resend-confirmation` route). This does not yet tell us *which* of those was the actual cause of the original "Create account" gap -- that requires a live re-attempt (see Verification below) -- but it means the next attempt will surface the real reason instead of a generic message.
+
+### Verification (Sprint 42)
+
+- New/extended unit tests, all passing locally: `src/proxy.test.ts` (asserts `/onboarding` is now protected and redirects), `src/features/onboarding/EnterpriseOnboardingPage.test.tsx` (new file -- loading/unauthenticated/authenticated guard states), `src/app/api/auth/sign-up/route.test.ts` (new), `src/app/api/auth/login/route.test.ts` (new), `src/app/api/auth/resend-confirmation/route.test.ts` (new), extended `src/app/auth/page.test.tsx` and `src/features/auth/EnterpriseAuthFlowPage.test.tsx`.
+- **Not yet live-verified.** Per this program's standing rule (see the caveats throughout this log and `docs/SPRINT_41_QA2_MILESTONE_2026_07_22.md`), a passing local test suite is not the same as a live-confirmed fix. The next Tenant 0 walkthrough attempt, once this is deployed, should confirm: (1) visiting `/onboarding` unauthenticated now redirects to `/auth` instead of allowing entry; (2) the real reason behind the original "Create account" gap, now that sign-up/login errors are specific instead of generic; (3) that a fully authenticated user can complete the wizard and successfully provision a tenant with no "Unauthorized" at the final step. This walkthrough requires real credentialed sign-up/sign-in steps, which -- consistent with every other live step in this log -- only the user (not Claude Code) can perform.
 
 ### Secondary, Minor Note From The Same Screens
 

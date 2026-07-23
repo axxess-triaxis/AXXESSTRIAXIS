@@ -17,6 +17,27 @@ describe("route proxy helpers (renamed from middleware.ts in Sprint 5, Next.js 1
     expect(isProtectedRoutePath("/admin/beta-readiness")).toBe(true);
   });
 
+  it("protects /onboarding (Product Issue 2, Sprint 42): the wizard must not be reachable without a session", () => {
+    expect(isProtectedRoutePath("/onboarding")).toBe(true);
+    expect(isProtectedRoutePath("/onboarding/complete")).toBe(true);
+  });
+
+  it("redirects an unauthenticated visit to /onboarding to /auth with a next param pointing back at onboarding", () => {
+    expect(shouldRedirectToLogin("/onboarding", {
+      authShellEnabled: true,
+      demoModeEnabled: false,
+      hasSessionCookie: false,
+    })).toBe(true);
+  });
+
+  it("does not redirect /onboarding once a session cookie is present", () => {
+    expect(shouldRedirectToLogin("/onboarding", {
+      authShellEnabled: true,
+      demoModeEnabled: false,
+      hasSessionCookie: true,
+    })).toBe(false);
+  });
+
   it("leaves public auth and static paths unprotected", () => {
     expect(isProtectedRoutePath("/auth")).toBe(false);
     expect(isProtectedRoutePath("/")).toBe(false);

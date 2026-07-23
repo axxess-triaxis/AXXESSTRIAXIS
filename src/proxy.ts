@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 const protectedRoutePrefixes = [
   "/app",
   "/dashboard",
+  "/onboarding",
   "/projects",
   "/programs",
   "/tasks",

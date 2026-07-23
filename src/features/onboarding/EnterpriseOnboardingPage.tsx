@@ -6,7 +6,10 @@ import Link from "next/link";
 import type { Route } from "next";
 import { useRouter } from "next/navigation";
 import { axxessBetaRoles, axxessSectors, createDefaultOnboardingState, enterpriseOnboardingSteps, isOnboardingComplete, nextOnboardingPath, onboardingGoals, requiredOnboardingNotices, type EnterpriseOnboardingState, type OnboardingStepId } from "../../onboarding/enterpriseOnboarding";
+import { AuthProvider, useAuth } from "../../auth/AuthProvider";
 import { Card } from "../../components/ui/Card";
+import { EmptyState } from "../../components/feedback/EmptyState";
+import { LoadingState } from "../../components/feedback/LoadingState";
 import { SectionHeader } from "../../components/layout/SectionHeader";
 import { trackEvent } from "../../services/analytics";
 
@@ -31,8 +34,22 @@ type EnterpriseOnboardingPageProps = {
   step: OnboardingStepId;
 };
 
+// /onboarding is edge-protected in src/proxy.ts, but wizard state persists in localStorage across
+// page loads, so a session that expires mid-wizard (a real possibility across 5+ screens) would
+// otherwise only be caught by the final provision call's 401 (Product Issue 2). This client-side
+// guard mirrors src/app/App.tsx's loading/unauthenticated pattern so an expired session is caught
+// immediately, with wizard progress preserved for when the user signs back in.
 export function EnterpriseOnboardingPage({ step }: EnterpriseOnboardingPageProps) {
+  return (
+    <AuthProvider>
+      <OnboardingWizard step={step} />
+    </AuthProvider>
+  );
+}
+
+function OnboardingWizard({ step }: EnterpriseOnboardingPageProps) {
   const router = useRouter();
+  const { session, isAuthenticated } = useAuth();
   const [state, setState] = useState<EnterpriseOnboardingState>(() => createDefaultOnboardingState());
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ tone: "success" | "error" | "info"; text: string } | null>(null);
@@ -93,6 +110,26 @@ export function EnterpriseOnboardingPage({ step }: EnterpriseOnboardingPageProps
       trackEvent("onboarding_step_completed", { step, notices_accepted: state.acceptedNotices.length }, { module_name: "onboarding", route: "/onboarding/security" });
     }
     router.push(nextPath as Route);
+  }
+
+  if (session.status === "loading") {
+    return <LoadingState label="Checking session" />;
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#F2F3F5] px-4" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+        <Card className="max-w-md p-8">
+          <EmptyState
+            title="Sign in required"
+            message="Your session is required to continue onboarding. Your progress on this device is saved and will be here when you sign back in."
+          />
+          <a className="mt-5 inline-flex w-full items-center justify-center rounded-lg bg-[#8B1E2D] px-4 py-2 text-sm font-semibold text-white" href="/auth?next=/onboarding">
+            Sign in
+          </a>
+        </Card>
+      </div>
+    );
   }
 
   const currentIndex = Math.max(0, enterpriseOnboardingSteps.findIndex((item) => item.id === step));

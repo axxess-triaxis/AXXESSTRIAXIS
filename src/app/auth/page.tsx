@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { Route } from "next";
 import { useRouter } from "next/navigation";
 import { AuthProvider, useAuth } from "../../auth/AuthProvider";
+import { AuthApiError } from "../../auth/supabaseAuthClient";
 import { Card } from "../../components/ui/Card";
 import { OAuthProviderButtons } from "../../features/auth/OAuthProviderButtons";
 import { AnalyticsProviderShell, useAnalytics } from "../../services/analytics";
@@ -17,6 +18,9 @@ function LoginPanel() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [showResend, setShowResend] = useState(false);
+  const [resendStatus, setResendStatus] = useState<string | null>(null);
+  const [resending, setResending] = useState(false);
 
   async function openInvestorPreview() {
     setSubmitting(true);
@@ -42,6 +46,8 @@ function LoginPanel() {
     event.preventDefault();
     setSubmitting(true);
     setError(null);
+    setShowResend(false);
+    setResendStatus(null);
 
     try {
       const user = await login(email, password);
@@ -57,8 +63,28 @@ function LoginPanel() {
       router.push(user.needsOnboarding ? "/onboarding" : "/dashboard");
     } catch (loginError) {
       setError(loginError instanceof Error ? loginError.message : "Unable to sign in.");
+      setShowResend(loginError instanceof AuthApiError && loginError.code === "email_not_confirmed");
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function resendConfirmation() {
+    setResending(true);
+    setResendStatus(null);
+    try {
+      const response = await fetch("/api/auth/resend-confirmation", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const body = await response.json().catch(() => ({} as { message?: string }));
+      setResendStatus(body.message ?? "If an account exists for that email, a new confirmation link has been sent.");
+    } catch {
+      setResendStatus("Unable to resend the confirmation email right now.");
+    } finally {
+      setResending(false);
     }
   }
 
@@ -114,6 +140,18 @@ function LoginPanel() {
         </label>
 
         {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-xs font-medium text-red-700">{error}</p>}
+
+        {showResend && (
+          <button
+            type="button"
+            onClick={() => void resendConfirmation()}
+            disabled={resending}
+            className="w-full rounded-lg border border-[rgba(139,30,45,0.22)] bg-white px-4 py-2 text-xs font-semibold text-[#8B1E2D] hover:bg-[#8B1E2D]/5 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {resending ? "Sending..." : "Resend confirmation email"}
+          </button>
+        )}
+        {resendStatus && <p className="text-xs text-[#5F6B73]">{resendStatus}</p>}
 
         <button
           type="submit"
