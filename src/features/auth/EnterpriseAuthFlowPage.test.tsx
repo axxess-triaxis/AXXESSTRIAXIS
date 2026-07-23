@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { EnterpriseAuthFlowPage } from "./EnterpriseAuthFlowPage";
 
@@ -24,6 +24,36 @@ describe("EnterpriseAuthFlowPage", () => {
       expect(screen.getByRole("button", { name: "Continue with Google" })).toBeInTheDocument();
       expect(screen.getByRole("button", { name: "Continue with Microsoft" })).toBeInTheDocument();
       expect(screen.getByRole("link", { name: /sign in/i })).toHaveAttribute("href", "/auth");
+    });
+
+    it("shows a success-toned confirmation message after a successful sign-up (Sprint 42)", async () => {
+      vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
+        expect(String(input)).toBe("/api/auth/sign-up");
+        return new Response(JSON.stringify({ ok: true, message: "Check your email to verify the account before onboarding." }), { status: 200 });
+      }));
+
+      render(<EnterpriseAuthFlowPage kind="sign-up" />);
+      fireEvent.change(screen.getByLabelText(/email/i), { target: { value: "new.user@example.com" } });
+      fireEvent.change(screen.getByLabelText(/password/i), { target: { value: "a-strong-password" } });
+      fireEvent.click(screen.getByRole("button", { name: "Create account" }));
+
+      const messageEl = await screen.findByText("Check your email to verify the account before onboarding.");
+      expect(messageEl).toHaveClass("bg-emerald-50");
+    });
+
+    it("shows an error-toned message pointing to sign-in when the account already exists (Sprint 42)", async () => {
+      vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({
+        error: "An account already exists for this email. Sign in instead.",
+        code: "user_already_exists",
+      }), { status: 409 })));
+
+      render(<EnterpriseAuthFlowPage kind="sign-up" />);
+      fireEvent.change(screen.getByLabelText(/email/i), { target: { value: "existing.user@example.com" } });
+      fireEvent.change(screen.getByLabelText(/password/i), { target: { value: "a-strong-password" } });
+      fireEvent.click(screen.getByRole("button", { name: "Create account" }));
+
+      const messageEl = await screen.findByText("An account already exists for this email. Sign in instead.");
+      expect(messageEl).toHaveClass("bg-red-50");
     });
   });
 

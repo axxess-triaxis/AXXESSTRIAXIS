@@ -25,13 +25,49 @@ How it works:
 2. The browser is redirected to that URL, completes the provider's own consent screen, and Supabase redirects back to `/auth/login` with `access_token`/`refresh_token` in the URL fragment.
 3. `EnterpriseAuthFlowPage`'s `login` kind picks up those fragment tokens and `POST`s them to the new `/api/auth/oauth/callback` route, which calls `establishServerSessionFromOAuthTokens` (`src/auth/serverSession.ts`) -- this sets the exact same httpOnly session cookies password login does, then routes the user into `/dashboard` or `/onboarding` depending on whether they already belong to an organization.
 
-**What still needs to happen before Google/Microsoft sign-in actually works, and who needs to do it (not something this codebase or an agent can complete):**
+### Enablement Runbook (External Steps -- Only Triaxis Ventures Can Do These)
 
-- Register a real OAuth application in Google Cloud Console (for Google) and in Azure Portal / Entra ID (for Microsoft), under Triaxis Ventures' own accounts, with the correct authorized redirect URI (Supabase's own callback URL, found in the Supabase dashboard's Auth > Providers page for each provider).
-- Enter the resulting Client ID and Client Secret into the Supabase project's dashboard under **Authentication > Providers > Google** / **Microsoft**, and enable each provider there.
-- Set `NEXT_PUBLIC_AUTH_GOOGLE_ENABLED=true` / `NEXT_PUBLIC_AUTH_MICROSOFT_ENABLED=true` on the Vercel project (see `.env.example`) and redeploy.
+All application code for Google/Microsoft OAuth already exists and works (`OAuthProviderButtons.tsx`, `/api/auth/oauth/start`, `/api/auth/oauth/callback`, `establishServerSessionFromOAuthTokens`). Enabling it for real requires registering real OAuth applications in Google's and Microsoft's own consoles and entering their credentials into Supabase -- these are credentialed, third-party-console actions that Claude Code cannot perform on your behalf under any circumstance, even if asked. No further application code changes are needed to complete this; it is entirely the checklist below.
 
-Until all three of the above are done, the buttons are visible (by design, so a real tenant sees the intended options rather than a hidden feature) but will show the safe "not enabled for this deployment" message when clicked -- this is expected, not a bug, and is not something further code changes can resolve.
+**Step 0 -- Get the exact Supabase redirect URI first.** In the Supabase dashboard, go to **Authentication > Providers**, open the **Google** row (or **Azure**/Microsoft row), and copy the **Callback URL (for OAuth)** shown there verbatim. Do not guess or construct this URL from the project ref -- copy it exactly as Supabase displays it, and use the same value for both Google and Microsoft registrations below.
+
+**Step 1 -- Google Cloud Console (for "Continue with Google"):**
+1. In Google Cloud Console, open **APIs & Services > OAuth consent screen** and configure it (app name, support email, scopes: `email`, `profile`, `openid` is enough).
+2. Go to **APIs & Services > Credentials > Create Credentials > OAuth client ID**, application type **Web application**.
+3. Under **Authorized redirect URIs**, paste the exact Supabase callback URL from Step 0.
+4. Save, then copy the resulting **Client ID** and **Client Secret**.
+
+**Step 2 -- Azure Portal / Entra ID (for "Continue with Microsoft"):**
+1. In Azure Portal, go to **Microsoft Entra ID > App registrations > New registration**.
+2. Under **Redirect URI**, select **Web** and paste the exact Supabase callback URL from Step 0.
+3. After registration, go to **Certificates & secrets > New client secret**, and copy the generated secret value immediately (it is not shown again).
+4. Copy the **Application (client) ID** from the app registration's Overview page.
+
+**Step 3 -- Supabase Dashboard:**
+1. Go to **Authentication > Providers > Google**, paste the Client ID/Secret from Step 1, and enable the toggle.
+2. Go to **Authentication > Providers > Azure (Microsoft)**, paste the Client ID/Secret from Step 2, and enable the toggle.
+
+**Step 4 -- Vercel env vars + redeploy (this part Claude Code can do, once Step 3 is confirmed complete -- these are plain `true`/`false` flags, not secrets):**
+```bash
+npx vercel env add NEXT_PUBLIC_AUTH_GOOGLE_ENABLED production
+npx vercel env add NEXT_PUBLIC_AUTH_MICROSOFT_ENABLED production
+```
+(value `true` for each), then a production redeploy via `scripts/deploy-vercel.mjs`.
+
+**Step 5 -- Live verification (no login required, so Claude Code can do this too):** `curl` `/api/auth/oauth/start?provider=google` and `?provider=microsoft` against the live deployment and confirm `{"ok":true,"authorizeUrl":...}` instead of the `400` "not enabled" response; then confirm in a browser that clicking each button reaches the real Google/Microsoft consent screen.
+
+Until Steps 1-4 are done, the buttons remain visible (by design, so a real tenant sees the intended options rather than a hidden feature) but show the safe "not enabled for this deployment" message when clicked -- this is expected, not a bug.
+
+## Sign-Up/Login Error Diagnosability And Confirmation Resend (Sprint 42)
+
+Before Sprint 42, `/api/auth/sign-up` and `/api/auth/login` both caught every Supabase Auth failure with a bare `catch {}` -- no server-side logging, and every failure (wrong password, unconfirmed email, an account that already exists, a misconfigured project) produced the same generic message. This made a real Tenant 0 "Create account" report undiagnosable from the logs alone.
+
+Both routes now parse the real Supabase error via a shared helper (`src/auth/supabaseAuthError.ts`, `SupabaseAuthError`/`parseSupabaseAuthErrorResponse`), log the real status/code server-side with `console.error`, and return a specific `code` field for the two most actionable cases:
+
+- **Sign-up, `user_already_exists`** -- returns `409` with a message pointing the user at sign-in instead of a generic "unable to create account" error.
+- **Login, `email_not_confirmed`** -- returns `401` with `code: "email_not_confirmed"`. The sign-in page (`src/app/auth/page.tsx`) detects this and shows a **"Resend confirmation email"** action, calling a new `POST /api/auth/resend-confirmation` route (`{email}` -> Supabase's `/auth/v1/resend`, `{type: "signup"}`). This route always returns the same success response regardless of whether the account exists or the resend actually succeeded, to avoid leaking account existence (account enumeration).
+
+All other failure reasons still fall back to the original safe generic message on both routes -- only the two known, actionable codes above get distinct copy. This does not change the underlying Supabase project configuration (e.g., whether email confirmations or SMTP delivery are enabled) -- see `docs/SUPABASE_CLI.md` for that gap, which remains independently unverified.
 
 ## Investor Preview
 
