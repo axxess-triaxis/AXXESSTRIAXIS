@@ -36,6 +36,7 @@ AXXESS is being engineered from the outset to support those requirements.
 - Company and product strategy.
 - Objective product feedback and brainstorming, particularly on healthcare- and education-sector workflows.
 - Collecting beta feedback responses from respondents in the healthcare and education sectors.
+- Participating in 15+ stakeholder consultations and 10+ client scoping calls.
 - **The company's first cheque.** Ritashree is the startup's first investor, having personally contributed approximately 70% of her income over the last 6-7 months toward the operating runway that has kept both Triaxis Ventures and AXXESS TRIaxis going.
 
 ---
