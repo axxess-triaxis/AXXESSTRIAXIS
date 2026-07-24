@@ -15,6 +15,7 @@ import type {
   Organization,
   Program,
   Project,
+  Stakeholder,
   Task,
   User,
   RoleName,
@@ -81,6 +82,7 @@ export interface UsersRepository {
 export type ProgramsRepository = TenantRepository<Program>;
 export type ProjectsRepository = MutableTenantRepository<Project>;
 export type TasksRepository = MutableTenantRepository<Task>;
+export type StakeholdersRepository = MutableTenantRepository<Stakeholder>;
 export type MeetingsRepository = MutableTenantRepository<Meeting>;
 export type NotificationsRepository = MutableTenantRepository<Notification>;
 export type DocumentVersionsRepository = MutableTenantRepository<DocumentVersion>;

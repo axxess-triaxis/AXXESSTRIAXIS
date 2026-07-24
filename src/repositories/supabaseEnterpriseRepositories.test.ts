@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { auditLogsRepository, invitationsRepository, projectsRepository, tasksRepository } from "./supabaseEnterpriseRepositories";
+import { auditLogsRepository, invitationsRepository, projectsRepository, stakeholdersRepository, tasksRepository } from "./supabaseEnterpriseRepositories";
 import type { TenantScope } from "./interfaces";
 
 const scope: TenantScope = {
@@ -275,5 +275,72 @@ describe("Supabase enterprise repositories", () => {
     const [, init] = fetchCall(fetchMock);
     expect(String(init?.body)).toContain("org_public_safety");
     expect(String(init?.body)).not.toContain("org_someone_elses_tenant");
+  });
+
+  // Sprint 5, Priority 4: Stakeholders/CRM had no live repository path at all -- the "Add Contact"
+  // button was a dead end for every real tenant. This proves the new minimal live path is real,
+  // tenant-scoped, and cannot be spoofed into writing under another organization.
+  it("creates a tenant-scoped stakeholder through Supabase REST", async () => {
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify([{
+      id: "stakeholder_1",
+      organization_id: "org_public_safety",
+      name: "Dr. Purnima Bora",
+      affiliation: "District Health Office",
+      role: "Programme Director",
+      relationship_owner_id: "user_raj_anand",
+      influence_score: 50,
+      engagement_level: "medium",
+    }]), { status: 201 }));
+    vi.stubGlobal("fetch", fetchMock);
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://example.supabase.co");
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY", "anon-key");
+
+    const stakeholder = await stakeholdersRepository.create({ ...scope, accessToken: "server-token" }, {
+      name: "Dr. Purnima Bora",
+      affiliation: "District Health Office",
+      role: "Programme Director",
+    });
+
+    expect(stakeholder.name).toBe("Dr. Purnima Bora");
+    const [url, init] = fetchCall(fetchMock);
+    expect(String(url)).toContain("/rest/v1/stakeholders");
+    expect(String(init?.body)).toContain("org_public_safety");
+  });
+
+  it("ignores a spoofed organizationId when creating a stakeholder, always writing the acting session's own org", async () => {
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify([{
+      id: "stakeholder_2",
+      organization_id: "org_public_safety",
+      name: "Spoofed Contact",
+      affiliation: null,
+      role: null,
+      relationship_owner_id: "user_raj_anand",
+      influence_score: 50,
+      engagement_level: "medium",
+    }]), { status: 201 }));
+    vi.stubGlobal("fetch", fetchMock);
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://example.supabase.co");
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY", "anon-key");
+
+    await stakeholdersRepository.create({ ...scope, accessToken: "server-token" }, {
+      organizationId: "org_someone_elses_tenant",
+      name: "Spoofed Contact",
+    } as never);
+
+    const [, init] = fetchCall(fetchMock);
+    expect(String(init?.body)).toContain("org_public_safety");
+    expect(String(init?.body)).not.toContain("org_someone_elses_tenant");
+  });
+
+  it("always scopes stakeholder reads to the requesting tenant", async () => {
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify([]), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://example.supabase.co");
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY", "anon-key");
+
+    await stakeholdersRepository.list({ ...scope, accessToken: "server-token" });
+
+    const [url] = fetchCall(fetchMock);
+    expect(String(url)).toContain("organization_id=eq.org_public_safety");
   });
 });

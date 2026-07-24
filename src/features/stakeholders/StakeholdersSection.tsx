@@ -1,18 +1,67 @@
+import { useEffect, useState } from "react";
 import { DataStateBadge, DemoDataNotice, ModuleHeader, PageShell, SectionCard, StatusBadge, TenantScopeBadge } from "../../components/enterprise";
+import { InlineToast } from "../../components/forms/InlineToast";
 import { EmptyState } from "../../components/feedback/EmptyState";
 import { Avatar } from "../../components/ui/Avatar";
 import { Card } from "../../components/ui/Card";
+import { useAuth } from "../../auth/AuthProvider";
 import { isDemoModeEnabled } from "../../demo/demoMode";
 import { demoStakeholderCards } from "../../lib/demo/demoStakeholders";
 import { applicationServices } from "../../providers/serviceProvider";
+import { tenantScopeFromUser } from "../../repositories/supabaseEnterpriseRepositories";
+import type { Stakeholder } from "../../domain";
 import { Plus } from "lucide-react";
-
-// No live stakeholders/CRM repository exists yet. Illustrative content below is gated behind
-// isDemoModeEnabled(). See DEMO_DATA_LEAKAGE_AUDIT.md.
-const stakeholders = applicationServices.institutionalRepository.getStakeholders();
 
 export const StakeholdersSection = () => {
   const demoMode = isDemoModeEnabled();
+  const { session } = useAuth();
+  const scope = session.user ? tenantScopeFromUser(session.user) : undefined;
+  const [liveStakeholders, setLiveStakeholders] = useState<Stakeholder[]>([]);
+  const [loading, setLoading] = useState(!demoMode);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState({ name: "", affiliation: "", role: "" });
+  const [toast, setToast] = useState<{ tone: "success" | "error" | "info"; message: string } | null>(null);
+  const stakeholders = demoMode ? applicationServices.institutionalRepository.getStakeholders() : [];
+
+  useEffect(() => {
+    if (demoMode || !scope) {
+      setLoading(false);
+      return;
+    }
+    let isMounted = true;
+    setLoading(true);
+    applicationServices.stakeholdersRepository.list(scope, { pageSize: 100 })
+      .then((rows) => { if (isMounted) setLiveStakeholders(rows); })
+      .catch(() => { if (isMounted) setLiveStakeholders([]); })
+      .finally(() => { if (isMounted) setLoading(false); });
+    return () => { isMounted = false; };
+  }, [demoMode, scope]);
+
+  async function addContact() {
+    if (!scope) return;
+    if (!form.name.trim()) {
+      setToast({ tone: "error", message: "Enter a contact name before saving." });
+      return;
+    }
+    setSaving(true);
+    setToast(null);
+    try {
+      const created = await applicationServices.stakeholdersRepository.create(scope, {
+        name: form.name.trim(),
+        affiliation: form.affiliation.trim(),
+        role: form.role.trim() || undefined,
+      } as Partial<Stakeholder> & { name: string });
+      setLiveStakeholders((current) => [created, ...current]);
+      setForm({ name: "", affiliation: "", role: "" });
+      setShowAddForm(false);
+      setToast({ tone: "success", message: `${created.name} added to Stakeholders.` });
+    } catch {
+      setToast({ tone: "error", message: "Could not save this contact. Try again." });
+    } finally {
+      setSaving(false);
+    }
+  }
 
   return (
   <PageShell>
@@ -22,17 +71,58 @@ export const StakeholdersSection = () => {
       description="Relationship strength, linked workflows, follow-ups, and AI-generated briefing suggestions across government, healthcare, NGO, investor, and partner stakeholders."
       badges={[
         <TenantScopeBadge key="tenant" />,
-        <DataStateBadge key="demo" state={demoMode ? "Demo" : "Live"} />,
+        <DataStateBadge key="demo" state={demoMode ? "Demo" : loading ? "Provider-gated" : "Live"} />,
       ]}
       actions={
-        <button className="text-xs bg-[#8B1E2D] text-white px-3 py-2 rounded-lg flex items-center gap-1.5 hover:bg-[#7a1a27]">
+        <button
+          onClick={() => setShowAddForm((current) => !current)}
+          disabled={demoMode}
+          className="text-xs bg-[#8B1E2D] text-white px-3 py-2 rounded-lg flex items-center gap-1.5 hover:bg-[#7a1a27] disabled:cursor-not-allowed disabled:opacity-60"
+        >
           <Plus size={12} /> Add Contact
         </button>
       }
     />
-    {!demoMode && (
+    {toast && <InlineToast tone={toast.tone} message={toast.message} />}
+    {!demoMode && showAddForm && (
+      <Card className="p-4">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+          <input aria-label="Contact name" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} placeholder="Name" className="rounded-lg border border-[rgba(0,0,0,0.12)] bg-white px-3 py-2 text-xs outline-none" />
+          <input aria-label="Affiliation" value={form.affiliation} onChange={(event) => setForm({ ...form, affiliation: event.target.value })} placeholder="Affiliation / organization" className="rounded-lg border border-[rgba(0,0,0,0.12)] bg-white px-3 py-2 text-xs outline-none" />
+          <input aria-label="Role" value={form.role} onChange={(event) => setForm({ ...form, role: event.target.value })} placeholder="Role" className="rounded-lg border border-[rgba(0,0,0,0.12)] bg-white px-3 py-2 text-xs outline-none" />
+        </div>
+        <div className="mt-3 flex gap-2">
+          <button onClick={() => void addContact()} disabled={saving} className="rounded-lg bg-[#8B1E2D] px-3 py-2 text-xs font-semibold text-white hover:bg-[#7a1a27] disabled:opacity-60">Save contact</button>
+          <button onClick={() => setShowAddForm(false)} className="rounded-lg border border-[rgba(0,0,0,0.12)] px-3 py-2 text-xs font-semibold text-[#0F1117] hover:bg-[#F2F3F5]">Cancel</button>
+        </div>
+      </Card>
+    )}
+    {!demoMode && !loading && liveStakeholders.length === 0 && (
       <Card className="p-8">
         <EmptyState message="No stakeholders yet. Add your first contact to start tracking relationships, follow-ups, and linked workflows." />
+      </Card>
+    )}
+    {!demoMode && liveStakeholders.length > 0 && (
+      <Card className="overflow-hidden">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-[rgba(0,0,0,0.06)] bg-[#F8F9FA]">
+              {["Contact", "Affiliation", "Influence", "Engagement"].map((h) => (
+                <th key={h} className="text-left text-[11px] font-semibold text-[#5F6B73] uppercase tracking-wider px-4 py-3">{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {liveStakeholders.map((stakeholder) => (
+              <tr key={stakeholder.id} className="border-b border-[rgba(0,0,0,0.04)]">
+                <td className="px-4 py-3 text-xs font-semibold text-[#0F1117]">{stakeholder.name}</td>
+                <td className="px-4 py-3 text-xs text-[#5F6B73]">{stakeholder.affiliation || "--"}</td>
+                <td className="px-4 py-3 text-xs font-mono text-[#5F6B73]">{stakeholder.influenceScore}</td>
+                <td className="px-4 py-3 text-xs text-[#5F6B73] capitalize">{stakeholder.engagementLevel}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </Card>
     )}
     {demoMode && <DemoDataNotice label="Stakeholder records use one coherent institutional storyline and link back to projects, approvals, documents, and follow-up tasks." />}

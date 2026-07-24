@@ -13,6 +13,7 @@ import type {
   Notification,
   Program,
   Project,
+  Stakeholder,
   Task,
 } from "../domain";
 import type {
@@ -40,6 +41,7 @@ import type {
   ProgramsRepository,
   ProjectsRepository,
   RepositoryQuery,
+  StakeholdersRepository,
   StorageRepository,
   TasksRepository,
   TenantCreateInput,
@@ -211,6 +213,12 @@ export const demoTasksRepository: TasksRepository = mutableRepository<"tasks", T
   priority: "medium",
   status: "pending",
   tags: [],
+}));
+
+export const demoStakeholdersRepository: StakeholdersRepository = mutableRepository<"stakeholders", Stakeholder>("stakeholders", "stakeholder_demo", () => ({
+  affiliation: "",
+  influenceScore: 50,
+  engagementLevel: "medium",
 }));
 
 export const demoMeetingsRepository: MeetingsRepository = mutableRepository<"meetings", Meeting>("meetings", "meeting_demo", () => ({
@@ -442,6 +450,7 @@ export const demoRepositories = {
   organizationsRepository: demoOrganizationsRepository,
   programsRepository: demoProgramsRepository,
   projectsRepository: demoProjectsRepository,
+  stakeholdersRepository: demoStakeholdersRepository,
   storageRepository: demoStorageRepository,
   tasksRepository: demoTasksRepository,
   usersRepository: demoUsersRepository,

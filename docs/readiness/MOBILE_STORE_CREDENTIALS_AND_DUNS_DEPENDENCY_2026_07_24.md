@@ -154,6 +154,25 @@ This blocker can be marked resolved only when:
 - CI/CD or local release tooling can create signed mobile artifacts using company-owned credentials.
 - The app can be submitted to TestFlight/Apple review and Google Play testing/review under Triaxis Ventures Private Limited.
 
+## Sprint 5 Engineering-Side Build/Signing Validation Attempt (2026-07-24)
+
+Per the Sprint 5 prompt's instruction to attempt Android/iOS build and signing validation as far as available secrets allow (without releasing under the founder's individual account, and without marking A-23/A-24 `Yes` absent actual signed-artifact evidence), the following non-credentialed checks were run directly in the Claude Code execution environment:
+
+| Check | Command | Result |
+|---|---|---|
+| Mobile app (Expo) typecheck | `pnpm run mobile:typecheck` | Passed — clean |
+| Mobile store release-readiness gate | `pnpm run mobile:store:release-gate` | Passed — `[mobile-store-release-gate] Release readiness pack verified from .` |
+| Capacitor shell validation | `pnpm run mobile:capacitor:doctor` | Passed with a named gap: native build scaffolding (`apps/mobile-capacitor/android/gradlew`, `apps/mobile-capacitor/android/settings.gradle`, `apps/mobile-capacitor/ios/App/App.xcodeproj/project.pbxproj`) has never been generated in this checkout — these are produced by `cap add android`/`cap add ios`, not present here |
+| Capacitor store readiness doctor | `pnpm run mobile:capacitor:store:doctor` | Passed — `[mobile-store] Store readiness checks passed mode=ci target=all` |
+| Capacitor environment validation | (via `mobile:capacitor:sync` chain) | Passed with named gaps: optional env values not set (`NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `CAPACITOR_SERVER_URL`, `CAPACITOR_ALLOWED_HOSTS`, `ANDROID_APPLICATION_ID`, `IOS_BUNDLE_IDENTIFIER`) |
+| Android keystore generation | (via `prepare-mobile-certificates.mjs`, part of the sync chain) | Explicitly skipped — `[mobile] Android keystore secrets not fully supplied; skipping keystore generation.` (expected; this is the credential gap this document tracks) |
+| EAS CLI authentication | `npx eas-cli@latest whoami` (run from `apps/mobile`) | `Not logged in` — no `EXPO_TOKEN` or equivalent credential is present in this environment, so no EAS cloud build (Android or iOS) can be triggered from here even before reaching Apple/Google company credentials |
+| Native `cap sync` (Android Gradle / iOS CocoaPods sync) | `pnpm --dir apps/mobile-capacitor run sync` | Could not run to completion — this specific execution environment has no `pnpm` binary directly on `PATH` (only reachable via `corepack pnpm`), and the script's own nested `pnpm run ...` calls fail before reaching `cap sync`; `corepack enable` (which would fix this by installing a shim) failed with `EPERM` writing to `C:\Program Files\nodejs\pnpm` — this machine account lacks the filesystem permission to install it. This is a local sandbox limitation, not a credentials gap: the identical script runs correctly in GitHub Actions (`.github/workflows/mobile-capacitor.yml`), which uses `pnpm/action-setup` to register `pnpm` on `PATH` properly |
+| Local Android SDK / Gradle toolchain | `which gradle`, `$ANDROID_HOME` | Not present in this environment at all — independent of credentials, this machine cannot produce a local Android build artifact; that path requires either EAS cloud build or a machine with the Android SDK installed |
+| Local iOS/Xcode toolchain | `which xcodebuild` | Not present — expected, since this is a Windows machine; iOS builds are only ever possible via EAS cloud build (macOS build workers) or a physical/virtual Mac, never locally here, regardless of credential status |
+
+**Conclusion:** every engineering-side check that does not require a live EAS session or company-owned signing credentials passes cleanly. The path is blocked at exactly the two points this document already names — no EAS/Expo account session available in this environment, and no company-owned Apple/Google signing credentials — plus one newly-identified, purely local limitation (this sandbox cannot run the nested `pnpm` sync/build scripts or install Android/iOS SDKs) that does not exist in the project's actual CI environment. No signed artifact was produced. **A-23 and A-24 remain `Blocked`** — confidence raised modestly (A-23: 60% → 65%, A-24: unchanged at 30%, since iOS additionally requires build infrastructure this environment can never provide locally) to reflect that the non-credentialed portion of the pipeline is now concretely verified rather than assumed, not because the underlying credential blocker moved.
+
 ## Due Diligence Note
 
 This document should be read as a governance-strengthening note.

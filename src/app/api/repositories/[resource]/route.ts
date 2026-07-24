@@ -31,6 +31,7 @@ const allowedResources = new Set([
   "notifications",
   "audit_logs",
   "invitations",
+  "stakeholders",
 ]);
 
 type RouteContext = {
@@ -66,7 +67,7 @@ function canWriteResource(resource: ResourceName, role: RoleName) {
   if (resource === "document_activity") {
     return hasRole(role, ["Super Admin", "Organization Admin", "Executive", "Manager", "Employee", "Consultant", "Guest"]);
   }
-  if (resource === "tasks") {
+  if (resource === "tasks" || resource === "stakeholders") {
     return hasRole(role, ["Super Admin", "Organization Admin", "Executive", "Manager", "Employee"]);
   }
   if (resource === "notifications") {
@@ -98,6 +99,7 @@ function validateResourceInput(resource: ResourceName, body: Record<string, unkn
     return "Document activity target and action are required.";
   }
   if (resource === "knowledge_articles" && !title) return "Knowledge article title is required.";
+  if (resource === "stakeholders" && !name) return "Contact name is required.";
   if (resource === "notifications" && (!title || typeof body.body !== "string" || !body.body.trim())) {
     return "Notification title and body are required.";
   }
@@ -156,6 +158,7 @@ const EVIDENCE_RESOURCE_CONFIG: Partial<Record<ResourceName, {
   documents: { singular: "document", actionVerb: "document.created", category: "document-management" },
   knowledge_articles: { singular: "knowledge_article", actionVerb: "knowledge_article.created", category: "knowledge-management" },
   meetings: { singular: "meeting", actionVerb: "meeting.created", category: "meeting-management" },
+  stakeholders: { singular: "stakeholder", actionVerb: "stakeholder.created", category: "stakeholder-management" },
 };
 
 async function recordResourceCreateEvidence(resourceName: ResourceName, scope: TenantScope, result: unknown) {
