@@ -28,15 +28,22 @@ Every sprint must satisfy this checklist. Status below is as of Sprint 1 (2026-0
 | Item | Required Evidence | Status | Confidence |
 |---|---|---|---:|
 | Production URL reflects latest code | Deployment log and commit hash | Yes | 95% |
-| Signup works | Screenshot/log of account creation | Blocked (HITL) | 70% (code) |
-| Login works | Authenticated session screenshot | Blocked (HITL) | 70% (code) |
-| Logout works | Session-cleared proof | Blocked (HITL) | 75% (code) |
+| Signup works | Screenshot/log of account creation | Yes (account created) / No (no visible success state) | 70% |
+| Login works | Authenticated session screenshot | Yes | 95% |
+| Logout works | Session-cleared proof | Yes | 95% |
 | Password reset works | Reset email and completion proof | Blocked (HITL) | 65% (code) |
-| Triaxis tenant exists | Tenant record and UI proof | Blocked (HITL) | 70% (code) |
-| Admin user profile exists | Profile screenshot or DB evidence | Blocked (HITL) | 80% (code) |
-| Role assignment works | Admin/manager/employee role proof | Blocked (HITL) | 60% (code) |
+| Triaxis tenant exists | Tenant record and UI proof | Yes | 95% |
+| Admin user profile exists | Profile screenshot or DB evidence | No | 55% |
+| Role assignment works | Admin/manager/employee role proof | Yes | 90% |
 | Protected routes work | Unauthorized access safely redirected/blocked | Yes | 95% |
 | Sprint 1 closeout exists | Closeout document path | Yes | 100% |
+
+### Sprint 1 Checklist Update (2026-07-24, Post-HITL-Walkthrough)
+
+- **Signup**: account creation itself succeeded (confirmed via a working Supabase confirmation email and a subsequent successful sign-in), but the "Create account" button produced no visible confirmation -- this is now a confirmed defect (not just untested), needing an engineering fix and re-test.
+- **Login, Logout, Triaxis tenant exists, Role assignment**: all live-verified working in the HITL's walkthrough. Tenant 0 provisioning succeeded for the first time in this program's history.
+- **Admin user profile exists**: profile persistence is confirmed real by code audit, but the top-right avatar/profile menu does not navigate anywhere in the live workspace -- the separate sidebar Settings entry was not tested this walkthrough, so this remains open, not closed.
+- Full narrative: `docs/TENANT_0_ONBOARDING_FINDINGS_2026_07_22.md`, "Attempt 4 Log (2026-07-24)".
 
 ## Sprint 2 Checklist: Live Golden Path Execution
 

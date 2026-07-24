@@ -14,6 +14,8 @@ Make Triaxis Ventures Pvt Ltd usable as the first real tenant (Tenant 0).
 
 **Every engineering-side deliverable is complete, tested, and deployed to production. Sprint 1 is not fully closed**, because its own exit criteria require Triaxis Ventures to actually sign up, sign in, and use the product -- a set of credentialed actions Claude Code's own operating constraints prohibit it from performing under any circumstance, on any authorization. What remains is a single HITL walkthrough, not further engineering work.
 
+**Addendum (2026-07-24): the HITL walkthrough happened.** See the full section below. Headline result: **Tenant 0 provisioning succeeded live for the first time in this program's history.** Sprint 1 is substantially advanced but still not formally closeable -- one actionable (A-02) surfaced a confirmed defect rather than closing, and one (A-05) remains untested. Two new, high-priority defects were also flagged directly by the HITL (Investor Preview and the root-domain landing page, both described as broken and investor-facing).
+
 ## Files Changed
 
 - `src/app/auth/page.tsx` -- added a discoverable "Forgot password?" link on the sign-in page (previously the backend/route worked but had no path to discover it, the same class of gap Product Issue 1 already fixed for sign-up).
@@ -132,3 +134,50 @@ The most important single line above is the `/onboarding` redirect: it is the fi
 **One action closes most of this sprint:** sign up (or use the confirmed account from the earlier Tenant 0 walkthrough), confirm the email, sign in, complete the onboarding wizard as Triaxis Ventures Pvt Ltd, and edit your profile once in Settings. That single ~15-30 minute session would very likely move A-02, A-03, A-04, A-05, A-06, A-07, and the onboarding-time half of A-09 from `Blocked` to `Yes` in one pass, since every one of them is blocked on exactly that same walkthrough, not on separate work.
 
 No other founder decision is required to close Sprint 1 -- there is no ambiguous product, business, legal, security, or external-account choice pending. This is purely the one credentialed action Claude Code cannot take on your behalf.
+
+## Addendum (2026-07-24): HITL Walkthrough Completed
+
+The HITL performed the requested walkthrough directly against `beta.triaxisventures.com`, in three parts, then continued into a full live workspace tour. Full narrative: `docs/TENANT_0_ONBOARDING_FINDINGS_2026_07_22.md`, "Attempt 4 Log (2026-07-24)". This section updates the closeout's own conclusions against that new evidence.
+
+### Headline Result
+
+**Tenant 0 provisioning succeeded.** Triaxis Ventures Pvt Ltd was provisioned as a real, live tenant -- the first successful provisioning event in this entire program's history. The HITL landed in a real, authenticated workspace as `sudipta1213`, Super Admin, and went on to create and edit a real task, create a real project, and upload 7 real documents that were classified, chunked, and indexed successfully.
+
+### Actionables: Updated
+
+| Actionable | Prior status | New status | What changed |
+|---|---|---|---|
+| A-02 Create-account success state | Blocked, 70% (code) | **No, 40%** | Real signup produced no visible confirmation -- now a confirmed defect, not an untested item. Needs an engineering fix, not further HITL action. |
+| A-03 Live login flow | Blocked, 70% (code) | **Yes, 95%** | HITL signed in successfully. |
+| A-04 Logout flow | Blocked, 75% (code) | **Yes, 95%** | HITL logged out successfully, returned cleanly to sign-in. |
+| A-05 Password reset flow | Blocked, 65% (code) | Blocked, 65% (code) -- unchanged | Not exercised this walkthrough. |
+| A-06 Tenant 0 provisioning | Blocked, 70% (code) | **Yes, 95%** | Succeeded live. The program's central blocker is closed. |
+| A-07 Profile creation/editing | Blocked, 80% (code) | **No, 55%** | The top-right avatar/profile menu doesn't navigate anywhere; the working Settings sidebar entry was not tested. Mixed result, not closeable yet. |
+| A-09 Role assignment | Blocked, 60% (code) | **Yes, 90% (onboarding-time scope)** | Super Admin role confirmed live and respected throughout; post-onboarding reassignment UI remains correctly deferred to Sprint 3. |
+| A-12 Document upload/import (Sprint 2-scoped) | Not targeted | **Yes, 90%** | Incidentally exercised ahead of schedule -- 7 files across 6 formats uploaded and indexed successfully. |
+
+### New Defects Found During The Live Tour (Not Part Of The Original 8 Targeted Actionables)
+
+- Meeting creation fails ("Meeting could not be saved. Check permissions and required fields.").
+- Stakeholders & CRM "Add Contact" does not work.
+- Documents & Files "Index document" ingestion does not work.
+- Knowledge Hub does not accept ZIP or MP4 uploads -- flagged by the HITL as high-priority, since bulk ingestion depends on ZIP support.
+- The in-app feedback form displays "beta 0.6" instead of the correct "beta 0.7".
+- Nearly the entire admin surface beyond Pilot Command Center, Support Ops, and Mobile Release (Organization, Workspace, Department, Users, Roles, Invitations, Privacy, Compliance, AI Governance, Model Policy, Prompt Approvals, Plugin Runtime, Execution Runs, Usage Limits) is confirmed non-functional placeholder scaffolding -- Sprint 1's own audit found this narrowly for `/admin/roles`; this walkthrough confirms it applies far more broadly.
+
+### Two Problems The HITL Flagged As High Priority
+
+1. **Investor Preview is broken** -- `/auth?next=%2Fdashboard`'s "Continue to workspace" does nothing. The HITL's own words: *"Immediate solution is needed because YC and other investors need to view demo seamlessly."*
+2. **The root domain (`beta.triaxisventures.com`) lands on a stale, dead-end page** showing "Signed In... Ananya Rao is authenticated," with the same broken "Continue to workspace" action. Not yet root-caused -- could be a genuine bug in the investor-preview/demo-mode session path, or a stale demo-mode artifact from earlier browser testing; not yet distinguished.
+
+Neither has been investigated or fixed yet -- documented only, per this session's standing practice of logging a walkthrough fully before any code change, and matching the HITL's own "next sprint" framing for both.
+
+### Revised Recommendation
+
+Sprint 1 remains not formally closeable -- A-02 is a confirmed defect (not a proper `Blocked`), and A-05/A-07 still lack live proof. Recommended order of next action, before Sprint 2 begins:
+
+1. Fix A-02's create-account success-state defect (small, well-scoped).
+2. Investigate and fix the two HITL-flagged high-priority items (Investor Preview, root-domain dead end) -- these affect investor/buyer-facing credibility directly, per the HITL's own framing.
+3. Fix the broken profile-menu entry point and re-test A-07.
+4. HITL tests password reset (A-05) at their convenience.
+5. Only then begin Sprint 2 (Live Golden Path Execution), which depends on a tenant that can already reliably sign in -- now true for the first time, but worth locking in with the above fixes first.
