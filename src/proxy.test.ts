@@ -1,3 +1,4 @@
+import { NextRequest } from "next/server";
 import { describe, expect, it } from "vitest";
 import {
   getBetaRootRedirectUrl,
@@ -6,6 +7,7 @@ import {
   isAuthShellEnabledFromEnv,
   isDemoModeEnabledFromEnv,
   isProtectedRoutePath,
+  proxy,
   shouldRedirectToLogin,
 } from "./proxy";
 
@@ -168,5 +170,38 @@ describe("route proxy helpers (renamed from middleware.ts in Sprint 5, Next.js 1
       demoModeEnabled: false,
       hasSessionCookie: false,
     })).toBe(false);
+  });
+});
+
+// Investor Preview's client-side-only mock session (src/demo/demoMode.ts's localStorage flag) was
+// invisible to this Edge Runtime proxy, so "Continue to workspace" bounced a deliberately-entered
+// demo session straight back to /auth -- only a real Supabase access-token cookie ever satisfied
+// the edge gate. Sprint 1 correction (2026-07-24) adds a non-secret axxess-demo-session cookie the
+// proxy also accepts, closing this gap without weakening the real-session check for anyone else.
+describe("proxy() accepts a demo-session cookie as well as a real access-token cookie (Investor Preview fix, 2026-07-24)", () => {
+  it("redirects to /auth when neither cookie is present", () => {
+    const request = new NextRequest("https://beta.triaxisventures.com/dashboard");
+    const response = proxy(request);
+
+    expect(response.status).toBe(307);
+    expect(response.headers.get("location")).toContain("/auth");
+  });
+
+  it("passes through when the real access-token cookie is present", () => {
+    const request = new NextRequest("https://beta.triaxisventures.com/dashboard", {
+      headers: { cookie: "axxess-access-token=real-token-value" },
+    });
+    const response = proxy(request);
+
+    expect(response.status).not.toBe(307);
+  });
+
+  it("passes through when only the demo-session cookie is present, so Investor Preview reaches the workspace", () => {
+    const request = new NextRequest("https://beta.triaxisventures.com/dashboard", {
+      headers: { cookie: "axxess-demo-session=true" },
+    });
+    const response = proxy(request);
+
+    expect(response.status).not.toBe(307);
   });
 });

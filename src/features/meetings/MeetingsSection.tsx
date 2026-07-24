@@ -51,6 +51,18 @@ function lineArray(value: string) {
   return value.split(/\n|,/).map((item) => item.trim()).filter(Boolean);
 }
 
+const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+// Sprint 2 (Live Golden Path Execution): the "Participants" field is free text, but the
+// database's attendee_ids column is uuid[] (supabase/migrations/20260703083915_sprint7_crud_
+// workflows.sql). Typing anything other than real user IDs there -- exactly what the HITL's
+// walkthrough did -- fails at the database with a type-cast error, surfaced only as the generic
+// "Meeting could not be saved. Check permissions and required fields." This validates it upfront
+// with a specific, actionable message instead of letting a doomed request round-trip and fail.
+export function invalidAttendeeIds(value: string) {
+  return lineArray(value).filter((entry) => !uuidPattern.test(entry));
+}
+
 function meetingForm(meeting?: Meeting): MeetingFormState {
   return {
     title: meeting?.title ?? "",
@@ -123,6 +135,10 @@ export const MeetingsSection = () => {
     const nextErrors: Record<string, string> = {};
     if (!form.title.trim()) nextErrors.title = "Meeting title is required.";
     if (!form.startsAt) nextErrors.startsAt = "Date and time are required.";
+    const badAttendeeIds = invalidAttendeeIds(form.attendeeIds);
+    if (badAttendeeIds.length > 0) {
+      nextErrors.attendeeIds = `Participants must be user IDs (e.g. ${attendeeHint || "user_demo_executive"}), not names or notes -- remove: ${badAttendeeIds.join(", ")}.`;
+    }
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0 && user) {
       analytics.trackEvent("form_validation_failed", { form_name: "meeting", fields: Object.keys(nextErrors) }, {
@@ -315,7 +331,7 @@ export const MeetingsSection = () => {
               <SelectField label="Linked Project" value={form.projectId} options={projectOptions} onChange={(event) => setForm({ ...form, projectId: event.target.value })} disabled={!canManageMeetings || saving} />
               <SelectField label="Linked Program" value={form.programId} options={programOptions} onChange={(event) => setForm({ ...form, programId: event.target.value })} disabled={!canManageMeetings || saving} />
               <TextField label="Linked Stakeholder ID" value={form.stakeholderId} onChange={(event) => setForm({ ...form, stakeholderId: event.target.value })} disabled={!canManageMeetings || saving} />
-              <TextAreaField label="Participants" value={form.attendeeIds} placeholder={attendeeHint || "user_demo_executive, user_district_lead"} onChange={(event) => setForm({ ...form, attendeeIds: event.target.value })} disabled={!canManageMeetings || saving} />
+              <TextAreaField label="Participants" value={form.attendeeIds} error={errors.attendeeIds} placeholder={attendeeHint || "user_demo_executive, user_district_lead"} onChange={(event) => setForm({ ...form, attendeeIds: event.target.value })} disabled={!canManageMeetings || saving} />
               <TextAreaField label="Agenda" value={form.agenda} onChange={(event) => setForm({ ...form, agenda: event.target.value })} disabled={!canManageMeetings || saving} />
               <TextAreaField label="Notes" value={form.notes} onChange={(event) => setForm({ ...form, notes: event.target.value })} disabled={!canManageMeetings || saving} />
               <TextAreaField label="Decisions" value={form.decisions} onChange={(event) => setForm({ ...form, decisions: event.target.value })} disabled={!canManageMeetings || saving} />

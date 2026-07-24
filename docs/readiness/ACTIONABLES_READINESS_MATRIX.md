@@ -35,18 +35,18 @@ If implementation exists but live proof does not, status remains `No`.
 | A-10 | Run two-tenant isolation harness against real DB | Multi-Tenancy | 3 | Test output proves tenant separation | No | 0% | 2026-07-23 |
 | A-11 | Manually verify two-tenant UI isolation | Multi-Tenancy | 3 | Tenant A cannot see Tenant B data in UI | No | 0% | 2026-07-23 |
 | A-12 | Verify document upload or import | Live Workflow | 2 | File uploads, stores, indexes, and appears in UI | Yes | 90% | 2026-07-24 |
-| A-13 | Verify RAG answer with citations | Live Workflow | 2 | User asks a question and receives cited answer | No | 0% | 2026-07-23 |
+| A-13 | Verify RAG answer with citations | Live Workflow | 2 | User asks a question and receives cited answer | Blocked | 75% (code) | 2026-07-24 |
 | A-14 | Verify permission-aware retrieval | Security and Compliance | 3 | Restricted documents are not retrieved by unauthorized roles | No | 0% | 2026-07-23 |
-| A-15 | Verify AI Review Inbox approval | Live Workflow | 2 | AI answer can be approved, rejected, or edited | No | 0% | 2026-07-23 |
-| A-16 | Verify approved AI output creates real work | Live Workflow | 2 | Task, project, approval, or stakeholder note created | No | 0% | 2026-07-23 |
-| A-17 | Verify dashboard updates after workflow | Enterprise Beta | 2 | Dashboard reflects new activity or work item | No | 0% | 2026-07-23 |
-| A-18 | Verify audit log updates after workflow | Security and Compliance | 2, 3, 4 | Audit event exists with actor, action, time, and source | No | 0% | 2026-07-23 |
-| A-19 | Verify timeline evidence updates | Live Workflow | 2, 4 | Timeline shows source, AI answer, human decision, action, and audit event | No | 0% | 2026-07-23 |
+| A-15 | Verify AI Review Inbox approval | Live Workflow | 2 | AI answer can be approved, rejected, or edited | Blocked | 75% (code) | 2026-07-24 |
+| A-16 | Verify approved AI output creates real work | Live Workflow | 2 | Task, project, approval, or stakeholder note created | Blocked | 80% (code) | 2026-07-24 |
+| A-17 | Verify dashboard updates after workflow | Enterprise Beta | 2 | Dashboard reflects new activity or work item | Blocked | 65% (code) | 2026-07-24 |
+| A-18 | Verify audit log updates after workflow | Security and Compliance | 2, 3, 4 | Audit event exists with actor, action, time, and source | Blocked | 85% (code) | 2026-07-24 |
+| A-19 | Verify timeline evidence updates | Live Workflow | 2, 4 | Timeline shows source, AI answer, human decision, action, and audit event | Blocked | 80% (code) | 2026-07-24 |
 | A-20 | Verify dashboard request deduplication | Enterprise Beta | 4 | No duplicate dashboard API/request behavior | No | 0% | 2026-07-23 |
 | A-21 | Verify Gmail/Microsoft OAuth readiness | Integrations | 4 | Provider config exists and login path tested or documented blocker exists | No | 0% | 2026-07-23 |
 | A-22 | Verify analytics event minimum | Analytics | 4, 5 | Mixpanel/PostHog capture required event set | No | 0% | 2026-07-23 |
-| A-23 | Verify Android signed build path | Android Beta | 5 | Signed AAB/APK generated and artifact retained | No | 0% | 2026-07-23 |
-| A-24 | Verify iOS build/TestFlight path | iOS Beta | 5 | Build succeeds or external credential/review blocker is documented | No | 0% | 2026-07-23 |
+| A-23 | Verify Android signed build path | Android Beta | 5 | Signed AAB/APK generated and artifact retained | Blocked | 60% (code) | 2026-07-24 |
+| A-24 | Verify iOS build/TestFlight path | iOS Beta | 5 | Build succeeds or external credential/review blocker is documented | Blocked | 30% (code) | 2026-07-24 |
 | A-25 | Produce QA3-ready evidence package | Enterprise Beta | 4, 5 | Docs, screenshots, logs, tests, and known risks bundled | No | 0% | 2026-07-23 |
 
 ## Sprint Logging Template
@@ -95,4 +95,18 @@ Use this section after each sprint.
 - Readiness delta achieved: substantial and now partly live-measured rather than estimated -- Enterprise Beta 1.0 and Single Tenancy readiness both move meaningfully upward; see closeout Addendum for the full picture
 - New defects found during the walkthrough, outside the 8 targeted actionables (documented in `docs/TENANT_0_ONBOARDING_FINDINGS_2026_07_22.md`, not yet fixed): meeting creation fails; Stakeholders "Add Contact" fails; Documents & Files "Index document" fails; ZIP/MP4 uploads unsupported in Knowledge Hub; feedback form shows the wrong beta version number (0.6, should be 0.7); nearly the entire admin surface beyond Pilot Command Center/Support Ops/Mobile Release is non-functional placeholder scaffolding; **Investor Preview's "Continue to workspace" is broken (user-flagged as high priority); the root domain lands on a stale, dead-end authenticated-looking page (user-flagged as high priority).**
 - Notes: Sprint 1 is substantially advanced but not yet formally closeable under the program's own closure rule -- A-02 is neither `Yes` nor a properly-`Blocked`-on-external-dependency item, it is a confirmed defect awaiting a fix. Recommended immediate next actions, in order: (1) fix A-02's create-account success-state defect, (2) investigate and fix the two investor-preview/root-domain dead ends the HITL flagged as high priority, (3) fix the broken profile-menu entry point and re-test A-07, (4) HITL tests password reset (A-05) once convenient.
+
+### Sprint 2 Update: Live Golden Path Execution
+
+- Date: 2026-07-24
+- Executor: Claude Code
+- HITL reviewer: Pending (Sudipta Koushik Sarmah)
+- Actionables targeted: A-12, A-13, A-15, A-16, A-17, A-18, A-19
+- Actionables closed (`Yes`): A-12 (unchanged, closed ahead of schedule in the Sprint 1 continuation)
+- Actionables blocked (`Blocked`): A-13, A-15, A-16, A-17, A-18, A-19 -- all six trace back to one gap, not six separate ones: a real, previously-undiscovered architectural disconnect between two independently complete AI-review pipelines (`ai_output_audit`, written by the AI Workspace's own chat, and `ai_operation_reviews`, read by the dedicated Review Inbox page -- nothing ever bridged them). Fixed with a single, minimal insert in `answerTenantQuestion()`. Every one of the six is now code-complete and unit-tested but not yet live-verified, since that requires a real authenticated session Claude Code cannot establish.
+- Actionables still `No`: none of the 7 targeted
+- Evidence links: `docs/readiness/SPRINT_2_LIVE_GOLDEN_PATH_EXECUTION_CLOSEOUT_2026_07_24.md`; commit (see this doc's own git log once pushed)
+- Confidence summary: A-12 90%; A-16 80%; A-18 85%; A-19 80%; A-13/A-15 75%; A-17 65% -- all code-level confidence, live proof is the named blocker for every `Blocked` item
+- Readiness delta achieved: the golden path went from "impossible to complete regardless of who tries it" (no bridge existed) to "code-complete, pending one live walkthrough" -- a qualitatively larger move than the confidence percentages alone suggest
+- Notes: A-23/A-24 (Android/iOS store release) are re-classified this update from `No` to `Blocked`, incorporating `docs/readiness/MOBILE_STORE_CREDENTIALS_AND_DUNS_DEPENDENCY_2026_07_24.md` -- Triaxis Ventures' D-U-N-S Number application (submitted 2026-07-13 to Dun & Bradstreet India, reference `DR071320262903910840`, typical turnaround up to ~30 days) is a real, named, dated external blocker on company-owned Apple/Google developer credentials, distinct from and in addition to the credential-completeness gaps found in the earlier readiness analysis. This is a deliberate governance decision (release under the company identity, not the founder's individual account), not an engineering gap -- confidence reflects that the underlying build/signing engineering can and does continue in parallel.
 

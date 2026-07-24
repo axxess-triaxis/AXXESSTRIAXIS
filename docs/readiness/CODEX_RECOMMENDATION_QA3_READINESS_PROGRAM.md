@@ -131,3 +131,11 @@ QA3 must verify:
 AXXESS should not be considered Enterprise Beta 1.0 because it has a sophisticated architecture or strong prototype feedback.
 
 AXXESS should be considered Enterprise Beta 1.0 only when it is live-proven through tenant onboarding, workflow execution, evidence logging, tenant isolation, and external-style QA.
+
+## Repository Access Note
+
+The prior GitHub suspension incident has been resolved. GitHub Support manually cleared the restrictions under Ticket 4589741, and GitHub is restored as the primary source-of-truth and auditable public record. GitLab remains the mirror/fallback repository.
+
+The closure record is documented in:
+
+`docs/readiness/GITHUB_SUSPENSION_APPEAL_CLOSURE_2026_07_24.md`
