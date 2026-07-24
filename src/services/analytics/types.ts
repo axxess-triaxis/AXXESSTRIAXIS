@@ -36,6 +36,7 @@ export type AnalyticsEventName =
   | "sign_up_started"
   | "sign_up_completed"
   | "login_completed"
+  | "profile_updated"
   | "mfa_enrolled"
   | "organization_created"
   | "workspace_created"

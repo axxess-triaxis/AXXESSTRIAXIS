@@ -5,22 +5,22 @@ Closure standard: 80% confidence minimum for every `Yes`
 
 ## Global Sprint Closure Checklist
 
-Every sprint must satisfy this checklist. Status below is as of Sprint 3 (2026-07-24).
+Every sprint must satisfy this checklist. Status below is as of Sprint 4 (2026-07-24).
 
 | Item | Status | Confidence | Evidence |
 |---|---|---:|---|
-| Target actionables reviewed | Yes | 100% | 6 targeted actionables reviewed; see `ACTIONABLES_READINESS_MATRIX.md` Sprint 3 Update |
-| Required implementation completed or blocker documented | Yes | 95% | A real defense-in-depth cross-tenant authorization gap found and fixed (`rbac.ts`, `supabaseEnterpriseRepositories.ts`, `workflowActionRepositories.ts`), plus an invitation-acceptance identity check and a role-change audit log, both previously missing; every remaining item is a named, owned `Blocked` (HITL: a live second tenant, and/or Docker or a non-production Supabase project), not a missing implementation |
+| Target actionables reviewed | Yes | 100% | 6 targeted actionables reviewed; see `ACTIONABLES_READINESS_MATRIX.md` Sprint 4 Update |
+| Required implementation completed or blocker documented | Yes | 92% | Real analytics instrumentation gaps closed (6 previously-undispatched events wired, 1 new event added); a real demo-data-leak in the workflow timeline fallback found and fixed; a badge-overclaim defect across 3 components found and fixed; every remaining item is a named, owned `Blocked` (HITL live session, or external OAuth credential provisioning), not a missing implementation |
 | Typecheck run | Yes | 100% | `pnpm run typecheck` clean |
 | Lint run | Yes | 100% | `pnpm run lint` clean, zero warnings |
-| Tests run | Yes | 100% | See `SPRINT_3_TWO_TENANT_ISOLATION_PERMISSION_PROOF_CLOSEOUT_2026_07_24.md` for the exact file/test counts |
+| Tests run | Yes | 100% | See `SPRINT_4_INTEGRATIONS_ANALYTICS_OPERATIONAL_EVIDENCE_CLOSEOUT_2026_07_24.md` for the exact file/test counts |
 | Build run | Yes | 100% | `pnpm run build` succeeded |
-| Live or local verification evidence captured | Yes | 75% | Every RLS claim verified by direct reading of the actual `create policy` statements in `supabase/migrations/`, not assumed; live two-tenant browser/harness verification is explicitly named as HITL/environment-blocked, not silently skipped |
+| Live or local verification evidence captured | Yes | 80% | Analytics dispatch proven by direct source inspection of shipped code (not assumed); OAuth credential absence confirmed via `npx vercel env ls`, not assumed; live authenticated dashboard/golden-path verification remains explicitly named as HITL-blocked, not silently skipped |
 | Actionables document updated | Yes | 100% | `ACTIONABLES_READINESS_MATRIX.md` |
 | Roadmap document updated | Yes | 100% | `FIVE_SPRINT_ROADMAP_TO_QA3.md` |
 | Checklist document updated | Yes | 100% | This document |
 | Kanban document updated | Yes | 100% | `QA3_READINESS_KANBAN.md` |
-| Sprint closeout document created | Yes | 100% | `SPRINT_3_TWO_TENANT_ISOLATION_PERMISSION_PROOF_CLOSEOUT_2026_07_24.md` |
+| Sprint closeout document created | Yes | 100% | `SPRINT_4_INTEGRATIONS_ANALYTICS_OPERATIONAL_EVIDENCE_CLOSEOUT_2026_07_24.md` |
 | HITL review requested | Yes | 100% | See closeout's "HITL Decision Required" section |
 
 ## Sprint 1 Checklist: Tenant 0 Production Activation
@@ -92,17 +92,24 @@ Every sprint must satisfy this checklist. Status below is as of Sprint 3 (2026-0
 
 | Item | Required Evidence | Status | Confidence |
 |---|---|---|---:|
-| Dashboard duplicate requests removed | Network/log proof | No | 0% |
-| Gmail OAuth app status documented | Provider config proof or blocker | No | 0% |
-| Microsoft OAuth app status documented | Provider config proof or blocker | No | 0% |
-| Selected-message import path verified or blocked | UI/API evidence | No | 0% |
-| Mixpanel captures core events | Live event proof | No | 0% |
-| PostHog captures core events | Live event proof | No | 0% |
-| At least 15 required events documented | Event taxonomy | No | 0% |
-| Audit export includes workflow events | Export proof | No | 0% |
-| Timeline evidence extends beyond projects | Documents/tasks/approvals proof | No | 0% |
-| QA3 evidence folder prepared | Artifact index | No | 0% |
-| Sprint 4 closeout exists | Closeout document path | No | 0% |
+| Dashboard duplicate requests removed | Network/log proof | Blocked (HITL, live auth confirmation) | 85% (code + regression test) |
+| Gmail OAuth app status documented | Provider config proof or blocker | Blocked (external credential provisioning) | 75% (code complete, credentials absent from production) |
+| Microsoft OAuth app status documented | Provider config proof or blocker | Blocked (external credential provisioning) | 75% (code complete, credentials absent from production) |
+| Selected-message import path verified or blocked | UI/API evidence | Yes | 85% (real, session-checked, credential-independent -- `src/app/api/connectors/email/import/route.ts`) |
+| Mixpanel captures core events | Live event proof | Blocked (no `NEXT_PUBLIC_MIXPANEL_TOKEN` in production; falls back to Mock provider by design) | 80% (provider implementation tested, `analytics.test.ts`) |
+| PostHog captures core events | Live event proof | Blocked (no `NEXT_PUBLIC_POSTHOG_KEY` in production; falls back to Mock provider by design) | 80% (provider implementation tested, `analytics.test.ts`) |
+| At least 15 required events documented | Event taxonomy | Yes | 85% (18 categories dispatch-proven, `eventTaxonomy.test.ts`) |
+| Audit export includes workflow events | Export proof | Yes | 85% (`src/app/api/audit-exports/route.ts`, tenant-scoped, real) |
+| Timeline evidence extends beyond projects | Documents/tasks/approvals proof | Yes | 85% (`recordResourceCreateEvidence` covers projects/tasks/documents/knowledge_articles/meetings; RAG/review/role-change events also confirmed) |
+| QA3 evidence folder prepared | Artifact index | Yes | 90% (`docs/qa-artifacts/QA3_READINESS_2026_07_24/INDEX.md`) |
+| Sprint 4 closeout exists | Closeout document path | Yes | 100% |
+
+### Sprint 4 Checklist Update (2026-07-24)
+
+- **Core finding**: analytics instrumentation had the same "declared but never exercised" gap this program keeps finding elsewhere -- 6 of the 20 required event categories were valid `AnalyticsEventName` type entries with zero real dispatch call sites anywhere in the app. Closed with real instrumentation, proven by a dedicated dispatch-proof test suite rather than trusted from the type declaration alone.
+- **Mixpanel/PostHog specifically**: both provider implementations are real and tested (`MixpanelAnalyticsProvider`, `PostHogAnalyticsProvider`, `analytics.test.ts`), but neither has a live project token configured in the production Vercel environment -- the app correctly falls back to `MockAnalyticsProvider` (a safe no-op) rather than crashing or silently dropping events. This is truthful, intentional graceful degradation per `docs/PRIVACY_ANALYTICS.md`'s own design, not a defect -- but it means no live third-party event has actually been observed by either provider yet, hence `Blocked` rather than `Yes`.
+- **Gmail/Microsoft**: the connector OAuth implementation itself is complete and tested; the blocker is purely the 7 missing production environment variables, confirmed absent via `npx vercel env ls`, not a code gap.
+- **Two real, previously-undetected defects found and fixed this sprint** (same pattern as Sprint 3's tenant-authorization finding and the original Sprint 5's Social Alerts finding): the workflow timeline's empty-tenant fallback was fabricating events for genuinely empty real tenants; three components showed an unconditional "Investor Preview" banner to every tenant, live or demo. Full narrative: `docs/readiness/SPRINT_4_INTEGRATIONS_ANALYTICS_OPERATIONAL_EVIDENCE_CLOSEOUT_2026_07_24.md`.
 
 ## Sprint 5 Checklist: Mobile Readiness, Release Gates, and QA3 Preparation
 

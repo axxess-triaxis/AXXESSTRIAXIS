@@ -10,6 +10,7 @@ import { isDemoModeEnabled } from "../../demo/demoMode";
 import { applicationServices } from "../../providers/serviceProvider";
 import { tenantScopeFromUser } from "../../repositories/supabaseEnterpriseRepositories";
 import { useWorkflowTimeline } from "../../hooks/useWorkflowTimeline";
+import { useAnalytics } from "../../services/analytics";
 import { Filter, Plus, Sparkles } from "lucide-react";
 
 // Illustrative content for the investor-demo experience only -- this browse list isn't wired to
@@ -19,6 +20,7 @@ const documents = applicationServices.institutionalRepository.getDocuments();
 
 export const DocumentsSection = () => {
   const { session } = useAuth();
+  const analytics = useAnalytics();
   const scope = session.user ? tenantScopeFromUser(session.user) : undefined;
   const [showIngest, setShowIngest] = useState(false);
   const [ingesting, setIngesting] = useState(false);
@@ -54,6 +56,18 @@ export const DocumentsSection = () => {
       const result = await response.json().catch(() => ({} as { error?: string; chunkCount?: number }));
       if (!response.ok) throw new Error(result.error ?? "Document ingestion failed.");
       setMessage({ tone: "success", text: `Document indexed with ${result.chunkCount ?? 0} governed chunks.` });
+      analytics.trackEvent("document_uploaded", { classification: form.classification, visibility: form.visibility }, {
+        organization_id: scope?.organizationId,
+        user_id: scope?.userId,
+        module_name: "documents",
+        route: "/documents",
+      });
+      analytics.trackEvent("rag_ingestion_completed", { chunk_count: result.chunkCount ?? 0 }, {
+        organization_id: scope?.organizationId,
+        user_id: scope?.userId,
+        module_name: "documents",
+        route: "/documents",
+      });
       setForm({ title: "", bodyText: "", classification: "internal", visibility: "organization" });
     } catch (error) {
       setMessage({ tone: "error", text: error instanceof Error ? error.message : "Document ingestion failed." });
