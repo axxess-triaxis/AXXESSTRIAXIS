@@ -558,11 +558,6 @@ function projectStatusForDatabase(status: unknown) {
   return undefined;
 }
 
-function organizationIdForMutation(scope: TenantScope, input: Record<string, unknown>) {
-  if (scope.role === "Super Admin" && typeof input.organizationId === "string") return input.organizationId;
-  return scope.organizationId;
-}
-
 function nullableString(value: unknown) {
   return typeof value === "string" && value.trim() ? value.trim() : null;
 }
@@ -600,7 +595,7 @@ function documentMutation(scope: TenantScope, input: Record<string, unknown>) {
 
   return compactMutation({
     id: optionalId(input.id),
-    organization_id: organizationIdForMutation(scope, input),
+    organization_id: scope.organizationId,
     project_id: nullableString(input.projectId),
     category_id: nullableString(input.categoryId),
     name,
@@ -649,7 +644,7 @@ function documentUpdateMutation(scope: TenantScope, input: Record<string, unknow
 function documentVersionMutation(scope: TenantScope, input: Record<string, unknown>) {
   return compactMutation({
     id: optionalId(input.id),
-    organization_id: organizationIdForMutation(scope, input),
+    organization_id: scope.organizationId,
     document_id: nullableString(input.documentId),
     version_number: typeof input.versionNumber === "number" ? input.versionNumber : 1,
     file_name: nullableString(input.fileName),
@@ -665,7 +660,7 @@ function categoryMutation(scope: TenantScope, input: Record<string, unknown>) {
   const name = nullableString(input.name);
   return compactMutation({
     id: optionalId(input.id),
-    organization_id: organizationIdForMutation(scope, input),
+    organization_id: scope.organizationId,
     name,
     slug: nullableString(input.slug) ?? slugFromName(name),
     description: nullableString(input.description),
@@ -685,7 +680,7 @@ function categoryUpdateMutation(_scope: TenantScope, input: Record<string, unkno
 function tagMutation(scope: TenantScope, input: Record<string, unknown>) {
   return compactMutation({
     id: optionalId(input.id),
-    organization_id: organizationIdForMutation(scope, input),
+    organization_id: scope.organizationId,
     name: nullableString(input.name),
     color: nullableString(input.color),
   });
@@ -701,7 +696,7 @@ function tagUpdateMutation(_scope: TenantScope, input: Record<string, unknown>) 
 function documentPermissionMutation(scope: TenantScope, input: Record<string, unknown>) {
   return compactMutation({
     id: optionalId(input.id),
-    organization_id: organizationIdForMutation(scope, input),
+    organization_id: scope.organizationId,
     document_id: nullableString(input.documentId),
     principal_type: input.principalType,
     principal_id: nullableString(input.principalId),
@@ -733,7 +728,7 @@ function documentActivityMutation(scope: TenantScope, input: DocumentActivityInp
 function articleMutation(scope: TenantScope, input: Record<string, unknown>) {
   return compactMutation({
     id: optionalId(input.id),
-    organization_id: organizationIdForMutation(scope, input),
+    organization_id: scope.organizationId,
     title: nullableString(input.title),
     body_markdown: nullableString(input.bodyMarkdown),
     summary: nullableString(input.summary),
@@ -762,7 +757,7 @@ function articleUpdateMutation(_scope: TenantScope, input: Record<string, unknow
 
 function projectMutation(scope: TenantScope, input: Record<string, unknown>) {
   return compactMutation({
-    organization_id: organizationIdForMutation(scope, input),
+    organization_id: scope.organizationId,
     program_id: nullableString(input.programId),
     name: nullableString(input.name),
     description: nullableString(input.description),
@@ -797,7 +792,7 @@ function projectUpdateMutation(_scope: TenantScope, input: Record<string, unknow
 
 function taskMutation(scope: TenantScope, input: Record<string, unknown>) {
   return compactMutation({
-    organization_id: organizationIdForMutation(scope, input),
+    organization_id: scope.organizationId,
     program_id: nullableString(input.programId),
     project_id: nullableString(input.projectId),
     title: nullableString(input.title),
@@ -828,7 +823,7 @@ function taskUpdateMutation(_scope: TenantScope, input: Record<string, unknown>)
 
 function meetingMutation(scope: TenantScope, input: Record<string, unknown>) {
   return compactMutation({
-    organization_id: organizationIdForMutation(scope, input),
+    organization_id: scope.organizationId,
     project_id: nullableString(input.projectId),
     program_id: nullableString(input.programId),
     stakeholder_id: nullableString(input.stakeholderId),
@@ -865,7 +860,7 @@ function meetingUpdateMutation(_scope: TenantScope, input: Record<string, unknow
 
 function notificationMutation(scope: TenantScope, input: Record<string, unknown>) {
   return compactMutation({
-    organization_id: organizationIdForMutation(scope, input),
+    organization_id: scope.organizationId,
     user_id: nullableString(input.userId) ?? scope.userId,
     type: input.type ?? "system",
     title: nullableString(input.title),
@@ -902,7 +897,7 @@ function userUpdateMutation(_scope: TenantScope, input: Record<string, unknown>)
 
 function betaFeedbackMutation(scope: TenantScope, input: CreateBetaFeedbackInput) {
   return {
-    organization_id: scope.role === "Super Admin" && input.organizationId ? input.organizationId : scope.organizationId,
+    organization_id: scope.organizationId,
     user_id: input.userId ?? scope.userId,
     feedback_type: input.feedbackType,
     module: input.module,
@@ -1428,7 +1423,10 @@ export const invitationsRepository: InvitationsRepository = {
       method: "POST",
       accessToken: scope.accessToken,
       body: {
-        organization_id: input.organizationId,
+        // Always the acting session's own organization, never input.organizationId -- see
+        // canManageOrganization in src/security/rbac.ts. The caller (POST /api/invitations)
+        // already enforces this too, but the repository must not depend solely on that.
+        organization_id: scope.organizationId,
         email: input.email,
         role: input.role,
         invited_by_user_id: input.invitedByUserId,

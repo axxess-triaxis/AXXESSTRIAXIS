@@ -46,10 +46,14 @@ Existing Sprint 5-11 roles are preserved and mapped forward:
 Tenant isolation is enforced through:
 
 - `organization_id` on tenant-owned tables.
-- `tenant_id` on organizations.
-- `src/security/tenantGuard.ts` for request/resource boundary checks.
+- `tenant_id` on organizations (a self-referential mirror column; see Sprint 3 tenant-model audit note below).
+- Tenant scoping baked into `src/repositories/supabaseEnterpriseRepositories.ts` (`applyRepositoryQuery` on reads, `scope.organizationId`-derived inserts on writes) and `src/security/rbac.ts` (`canManageOrganization`, `assertOrganizationAccess`).
 - RLS policies that require `public.is_org_member(...)` or role checks.
 - Tenant-scoped vector namespaces through `org:{organizationId}:visibility:{scope}`.
+
+### Sprint 3 Tenant-Model Audit Note (2026-07-24)
+
+`src/security/tenantGuard.ts` (`assertTenantBoundary`, `canAccessTenantResource`, `requireTenantResourceAccess`) is correct but **not called by any route or repository** -- it is exercised only by its own unit test. The line above previously listed it as an active enforcement layer; it is not currently wired into request handling. Real enforcement today is the repository-layer `organization_id` scoping plus Postgres RLS listed above. See `docs/readiness/SPRINT_3_TWO_TENANT_ISOLATION_PERMISSION_PROOF_CLOSEOUT_2026_07_24.md` for the full tenant-model audit this note is drawn from.
 
 No resource should be read, indexed, cached, or retrieved for RAG unless the request context and resource organization match.
 

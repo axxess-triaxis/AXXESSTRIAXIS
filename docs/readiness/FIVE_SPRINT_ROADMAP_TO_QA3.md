@@ -109,6 +109,10 @@ Prove that AXXESS is safe for more than one organization.
 
 Sprint 3 is closed only if two tenants can exist simultaneously with no visible, API-level, or RAG-level data leakage.
 
+### Sprint 3 Status (2026-07-24)
+
+**Not closed -- the sprint's real deliverable is a closed, evidenced defense-in-depth security gap, not the six targeted actionables (which mostly remain `Blocked` pending a live two-tenant walkthrough).** The required tenant-model audit found that "Super Admin" is a self-selectable role at onboarding, not a cross-tenant platform-operator role, but several app-layer functions trusted it as if it were one -- letting a self-granted Super Admin claim to act on an arbitrary organization id in invitation creation and several repository writes. This was never exploitable against the live database, because every affected table's Postgres RLS policy independently and correctly checks real per-organization membership rows -- but it was a genuine defense-in-depth violation and a landmine, and a pre-existing test had directly asserted the vulnerable behavior as intended, not caught it. Fixed at the application layer across `src/security/rbac.ts` and `src/repositories/`; also fixed a missing identity check on invitation acceptance and a missing audit log on role changes. A-08, A-10, A-11, and A-14 are newly `Blocked` this sprint, all sharing one blocker: a real second live tenant and/or a non-production Supabase project, which Claude Code cannot create or credential itself (account creation and credential handling are both outside its own operating constraints). See `docs/readiness/SPRINT_3_TWO_TENANT_ISOLATION_PERMISSION_PROOF_CLOSEOUT_2026_07_24.md` for full evidence.
+
 ## Sprint 4: Integrations, Analytics, and Operational Evidence
 
 Expected delta: +12% to +18%
