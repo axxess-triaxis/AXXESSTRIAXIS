@@ -1,7 +1,14 @@
+import type { RoleName } from "../../domain";
 import { isDemoModeEnabled } from "../../demo/demoMode";
 import { isSupabaseAdminConfigured, supabaseAdminRest } from "../../repositories/supabaseAdmin";
 
 export type AiReviewInboxStatus = "pending" | "approved" | "edited" | "rejected" | "escalated";
+
+// Roles that see and decide the full tenant review queue, mirroring exactly the
+// has_any_role_text(organization_id, ['Super Admin', 'Organization Admin']) branch in the
+// ai_operation_reviews RLS policies (supabase/migrations/202607150001_sprint22_23_pilot_command_center.sql).
+// This list must stay in sync with that policy -- it is not a separate app-layer judgment call.
+const AI_REVIEW_ADMIN_ROLES: RoleName[] = ["Super Admin", "Organization Admin"];
 
 export type AiReviewInboxItem = {
   id: string;
@@ -16,11 +23,15 @@ export type AiReviewInboxItem = {
   createdAt: string;
   reviewedAt?: string;
   decisionReason?: string;
+  createdByUserId?: string;
+  reviewerUserId?: string;
 };
 
 type AiReviewRow = {
   id: string;
   organization_id: string;
+  created_by_user_id: string | null;
+  reviewer_user_id: string | null;
   source_audit_id: string | null;
   task_category: string;
   status: AiReviewInboxStatus;
@@ -47,7 +58,29 @@ function toInboxItem(row: AiReviewRow): AiReviewInboxItem {
     createdAt: row.created_at,
     reviewedAt: row.reviewed_at ?? undefined,
     decisionReason: row.decision_reason ?? undefined,
+    createdByUserId: row.created_by_user_id ?? undefined,
+    reviewerUserId: row.reviewer_user_id ?? undefined,
   };
+}
+
+// Sprint 5: GET /api/ai/reviews previously returned every review in the tenant to any
+// authenticated member, regardless of role -- the ai_operation_reviews table's own RLS (never
+// applied here, since this whole service reads via the service-role client) restricts SELECT to
+// the review's creator, its assigned reviewer, or a Super Admin/Organization Admin. This mirrors
+// that policy at the application layer, since a service-role read has no RLS to fall back on.
+export function canViewAiReview(review: Pick<AiReviewInboxItem, "createdByUserId" | "reviewerUserId">, userId: string, role: RoleName): boolean {
+  if (AI_REVIEW_ADMIN_ROLES.includes(role)) return true;
+  if (review.createdByUserId && review.createdByUserId === userId) return true;
+  if (review.reviewerUserId && review.reviewerUserId === userId) return true;
+  return false;
+}
+
+// Mirrors the ai_operation_reviews_reviewer_update RLS policy: reviewer_user_id = auth.uid() or
+// an admin role. A review with no reviewer assigned yet (reviewer_user_id null) can only be
+// decided by an admin -- exactly as the database itself would enforce, not a looser app-layer rule.
+export function canDecideAiReview(review: Pick<AiReviewInboxItem, "reviewerUserId">, userId: string, role: RoleName): boolean {
+  if (AI_REVIEW_ADMIN_ROLES.includes(role)) return true;
+  return Boolean(review.reviewerUserId && review.reviewerUserId === userId);
 }
 
 export function fallbackAiReviewInbox(organizationId: string): AiReviewInboxItem[] {
@@ -85,12 +118,26 @@ export async function listAiReviewInbox(organizationId: string, limit = 25): Pro
   if (!isSupabaseAdminConfigured()) return isDemoModeEnabled() ? fallbackAiReviewInbox(organizationId) : [];
   const query = new URLSearchParams({
     organization_id: `eq.${organizationId}`,
-    select: "id,organization_id,source_audit_id,task_category,status,confidence,human_review_flag,answer_excerpt,citations,created_at,reviewed_at,decision_reason",
+    select: "id,organization_id,created_by_user_id,reviewer_user_id,source_audit_id,task_category,status,confidence,human_review_flag,answer_excerpt,citations,created_at,reviewed_at,decision_reason",
     order: "created_at.desc",
     limit: String(limit),
   });
   const rows = await supabaseAdminRest<AiReviewRow[]>("ai_operation_reviews", { query }).catch(() => []);
   return rows.map(toInboxItem);
+}
+
+// Precise, race-free lookup for a single review by id -- listAiReviewInbox is capped at a page
+// size and ordered by recency, so it cannot be relied on to contain an older review's id.
+export async function getAiReviewById(organizationId: string, reviewId: string): Promise<AiReviewInboxItem | undefined> {
+  if (!isSupabaseAdminConfigured()) return undefined;
+  const query = new URLSearchParams({
+    organization_id: `eq.${organizationId}`,
+    id: `eq.${reviewId}`,
+    select: "id,organization_id,created_by_user_id,reviewer_user_id,source_audit_id,task_category,status,confidence,human_review_flag,answer_excerpt,citations,created_at,reviewed_at,decision_reason",
+    limit: "1",
+  });
+  const rows = await supabaseAdminRest<AiReviewRow[]>("ai_operation_reviews", { query }).catch(() => []);
+  return rows[0] ? toInboxItem(rows[0]) : undefined;
 }
 
 export async function recordAiReviewDecision(input: {

@@ -111,22 +111,35 @@ Every sprint must satisfy this checklist. Status below is as of Sprint 4 (2026-0
 - **Gmail/Microsoft**: the connector OAuth implementation itself is complete and tested; the blocker is purely the 7 missing production environment variables, confirmed absent via `npx vercel env ls`, not a code gap.
 - **Two real, previously-undetected defects found and fixed this sprint** (same pattern as Sprint 3's tenant-authorization finding and the original Sprint 5's Social Alerts finding): the workflow timeline's empty-tenant fallback was fabricating events for genuinely empty real tenants; three components showed an unconditional "Investor Preview" banner to every tenant, live or demo. Full narrative: `docs/readiness/SPRINT_4_INTEGRATIONS_ANALYTICS_OPERATIONAL_EVIDENCE_CLOSEOUT_2026_07_24.md`.
 
-## Sprint 5 Checklist: Mobile Readiness, Release Gates, and QA3 Preparation
+## Sprint 5 Checklist: QA3 Closure, Non-HITL Delta Maximization, and Release-Gate Preparation
 
 | Item | Required Evidence | Status | Confidence |
 |---|---|---|---:|
-| Android signed build generated | AAB/APK artifact or exact blocker | No | 0% |
-| Android release notes/checklist updated | Store-readiness doc | No | 0% |
-| iOS credential status verified | ASC/App Store evidence or blocker | No | 0% |
-| iOS build attempted or blocked with evidence | CI/App Store log | No | 0% |
-| Mobile analytics plan documented | Event taxonomy | No | 0% |
-| Production deployment is current | Commit/deploy hash | No | 0% |
-| QA3 artifact folder complete | Evidence index | No | 0% |
-| All actionables reviewed | A-01 to A-25 updated | No | 0% |
-| Roadmap updated | Sprint 5 closeout | No | 0% |
-| Checklist updated | Checklist status table | No | 0% |
-| Kanban updated | Board/status log | No | 0% |
-| Sprint 5 closeout exists | Closeout document path | No | 0% |
+| Android signed build generated | AAB/APK artifact or exact blocker | Blocked (D-U-N-S/company credential dependency; every non-credentialed engineering check verified) | 65% (code + engineering checks verified) |
+| Android release notes/checklist updated | Store-readiness doc | Yes | 90% (`mobile:store:release-gate` and `mobile:capacitor:store:doctor` both pass) |
+| iOS credential status verified | ASC/App Store evidence or blocker | Blocked (D-U-N-S/company credential dependency, plus no macOS/Xcode toolchain in this environment at all) | 30% (code; also blocked on build infrastructure) |
+| iOS build attempted or blocked with evidence | CI/App Store log | Blocked (see `docs/readiness/MOBILE_STORE_CREDENTIALS_AND_DUNS_DEPENDENCY_2026_07_24.md`, Sprint 5 engineering-side validation section) | 30% (code) |
+| Mobile analytics plan documented | Event taxonomy | Yes | 85% (unchanged from Sprint 4, `docs/ANALYTICS_EVENTS.md`) |
+| AI Review Inbox role/ownership gap fixed | Test evidence | Yes | 95% (`canViewAiReview`/`canDecideAiReview`, mirrors real RLS, `reviewInbox.test.ts` + `route.test.ts`) |
+| Demo/live fallback audit completed across core modules | Audit narrative | Yes | 95% (16/16 modules checked across this program's history; 5 remaining checked clean this sprint) |
+| Stakeholders/CRM scope resolved | Minimally live or honestly deferred | Yes | 90% (Option A -- wired end to end: repository, route, service-provider tiers, UI; `supabaseEnterpriseRepositories.test.ts` + `StakeholdersSection.test.tsx`) |
+| Department/Workspace scope resolved | Minimally live or honestly deferred | Yes | 95% (Option B -- honest relabel from a false "Ready" claim to "Not built"; `OrganizationAdminSection.test.ts`) |
+| QA3 manual walkthrough script exists | Script file | Yes | 100% (`docs/qa-artifacts/QA3_READINESS_2026_07_24/QA3_MANUAL_WALKTHROUGH_SCRIPT.md`, 21 sections) |
+| Production deployment is current | Commit/deploy hash | Yes | 95% (see Sprint 5 closeout for exact commit/deployment ID) |
+| QA3 artifact folder complete | Evidence index | Yes | 95% (`docs/qa-artifacts/QA3_READINESS_2026_07_24/INDEX.md`, updated this sprint) |
+| All actionables reviewed | A-01 to A-25 updated | Yes | 100% |
+| Roadmap updated | Sprint 5 closeout | Yes | 100% |
+| Checklist updated | Checklist status table | Yes | 100% |
+| Kanban updated | Board/status log | Yes | 100% |
+| Sprint 5 closeout exists | Closeout document path | Yes | 100% (`docs/readiness/SPRINT_5_QA3_CLOSURE_NON_HITL_DELTA_CLOSEOUT_2026_07_24.md`) |
+
+### Sprint 5 Checklist Update (2026-07-24)
+
+- **Scope note**: this sprint executed under the newer, more comprehensive Sprint 5 prompt (`docs/readiness/CLAUDE_CODE_SPRINT_5_PROMPT_QA3_NON_HITL_DELTA_2026_07_24.md`, "QA3 Closure, Non-HITL Delta Maximization and Release-Gate Preparation"), which supersedes this table's original mobile-only scope while still covering every item in it.
+- **Real security fix**: `GET /api/ai/reviews` previously returned every review in the tenant to any authenticated member; now filtered to creator/reviewer/admin, mirroring the real `ai_operation_reviews` RLS policies rather than an invented rule.
+- **Real dashboard-metrics bug fix (A-17)**: `pendingApprovals` was reading `institutionalRepository.getApprovals()`, an intentionally-always-empty stub for every live tenant -- so a real approval created via the golden path could never appear on the dashboard. Now reads the real `approvalRequestsRepository` (`approval_requests` table).
+- **Mobile**: every non-credentialed engineering check (typecheck, store-release-gate, Capacitor doctor/store-doctor, environment validation) passes cleanly. The path is blocked at exactly the two points already named in the credentials doc (no EAS/Expo session, no company-owned Apple/Google signing credentials), plus one newly-identified local-environment-only limitation (this sandbox cannot run the nested `pnpm` native-sync scripts or install Android/iOS SDKs -- not present in the project's actual CI). No signed artifact was produced; A-23/A-24 remain `Blocked`.
+- Full narrative: `docs/readiness/SPRINT_5_QA3_CLOSURE_NON_HITL_DELTA_CLOSEOUT_2026_07_24.md`.
 
 ## Mobile Credential Governance Note
 

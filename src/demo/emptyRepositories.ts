@@ -11,6 +11,7 @@ import type {
   Organization,
   Program,
   Project,
+  Stakeholder,
   Task,
   User,
 } from "../domain";
@@ -33,6 +34,7 @@ import type {
   OrganizationsRepository,
   ProgramsRepository,
   ProjectsRepository,
+  StakeholdersRepository,
   StorageRepository,
   TasksRepository,
   TenantRepository,
@@ -217,6 +219,7 @@ export const emptyRepositories = {
   organizationsRepository: emptyOrganizationsRepository,
   programsRepository: emptyReadonlyRepository<Program>() as ProgramsRepository,
   projectsRepository: emptyMutableRepository<Project>("Projects") as ProjectsRepository,
+  stakeholdersRepository: emptyMutableRepository<Stakeholder>("Stakeholders") as StakeholdersRepository,
   storageRepository: emptyStorageRepository,
   tasksRepository: emptyMutableRepository<Task>("Tasks") as TasksRepository,
   usersRepository: emptyUsersRepository,

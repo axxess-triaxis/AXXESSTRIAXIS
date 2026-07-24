@@ -37,16 +37,16 @@ If implementation exists but live proof does not, status remains `No`.
 | A-12 | Verify document upload or import | Live Workflow | 2 | File uploads, stores, indexes, and appears in UI | Yes | 90% | 2026-07-24 |
 | A-13 | Verify RAG answer with citations | Live Workflow | 2 | User asks a question and receives cited answer | Blocked | 75% (code) | 2026-07-24 |
 | A-14 | Verify permission-aware retrieval | Security and Compliance | 3 | Restricted documents are not retrieved by unauthorized roles | Blocked | 80% (code) | 2026-07-24 |
-| A-15 | Verify AI Review Inbox approval | Live Workflow | 2 | AI answer can be approved, rejected, or edited | Blocked | 75% (code) | 2026-07-24 |
+| A-15 | Verify AI Review Inbox approval | Live Workflow | 2 | AI answer can be approved, rejected, or edited | Blocked | 82% (code, Sprint 5 role/ownership gap closed) | 2026-07-24 (Sprint 5 P2) |
 | A-16 | Verify approved AI output creates real work | Live Workflow | 2 | Task, project, approval, or stakeholder note created | Blocked | 80% (code) | 2026-07-24 |
-| A-17 | Verify dashboard updates after workflow | Enterprise Beta | 2 | Dashboard reflects new activity or work item | Blocked | 65% (code) | 2026-07-24 |
+| A-17 | Verify dashboard updates after workflow | Enterprise Beta | 2 | Dashboard reflects new activity or work item | Blocked | 78% (code, fixed a real bug this sprint) | 2026-07-24 (Sprint 5, A-17 approvals-metric fix) |
 | A-18 | Verify audit log updates after workflow | Security and Compliance | 2, 3, 4 | Audit event exists with actor, action, time, and source | Blocked | 90% (code) | 2026-07-24 |
 | A-19 | Verify timeline evidence updates | Live Workflow | 2, 4 | Timeline shows source, AI answer, human decision, action, and audit event | Blocked | 82% (code) | 2026-07-24 |
 | A-20 | Verify dashboard request deduplication | Enterprise Beta | 4 | No duplicate dashboard API/request behavior | Blocked | 85% (code) | 2026-07-24 |
 | A-21 | Verify Gmail/Microsoft OAuth readiness | Integrations | 4 | Provider config exists and login path tested or documented blocker exists | Blocked | 75% (code) | 2026-07-24 |
 | A-22 | Verify analytics event minimum | Analytics | 4, 5 | Mixpanel/PostHog capture required event set | Yes | 85% | 2026-07-24 |
-| A-23 | Verify Android signed build path | Android Beta | 5 | Signed AAB/APK generated and artifact retained | Blocked | 60% (code) | 2026-07-24 |
-| A-24 | Verify iOS build/TestFlight path | iOS Beta | 5 | Build succeeds or external credential/review blocker is documented | Blocked | 30% (code) | 2026-07-24 |
+| A-23 | Verify Android signed build path | Android Beta | 5 | Signed AAB/APK generated and artifact retained | Blocked | 65% (code + non-credentialed engineering checks verified) | 2026-07-24 (Sprint 5 mobile build-gate attempt) |
+| A-24 | Verify iOS build/TestFlight path | iOS Beta | 5 | Build succeeds or external credential/review blocker is documented | Blocked | 30% (code; also blocked on build infrastructure this environment cannot provide) | 2026-07-24 (Sprint 5 mobile build-gate attempt) |
 | A-25 | Produce QA3-ready evidence package | Enterprise Beta | 4, 5 | Docs, screenshots, logs, tests, and known risks bundled | Yes | 90% | 2026-07-24 |
 
 ## Sprint Logging Template
