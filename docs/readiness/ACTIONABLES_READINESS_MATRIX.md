@@ -23,7 +23,7 @@ If implementation exists but live proof does not, status remains `No`.
 
 | ID | Actionable | Readiness State | Sprint Target | Required Evidence | Status | Confidence | Last Updated |
 |---|---|---|---:|---|---|---:|---|
-| A-01 | Deploy latest verified build to production | Enterprise Beta | 1, 5 | Production URL reflects latest intended commit; deployment logs clean | Yes | 95% | 2026-07-23 |
+| A-01 | Deploy latest verified build to production | Enterprise Beta | 1, 5 | Production URL reflects latest intended commit; deployment logs clean | Yes | 97% | 2026-07-24 (Sprint 5, commit `ad0b665`, deployment `dpl_6kKGawAUtbisWEXT7pXrYE79wmKk`) |
 | A-02 | Verify create-account success state | Single Tenancy | 1 | User sees clear confirmation after signup | Blocked | 80% (code) | 2026-07-24 (Sprint 5 pre-work tracker correction) |
 | A-03 | Verify live login flow | Single Tenancy | 1 | Existing user can log in on production | Yes | 95% | 2026-07-24 |
 | A-04 | Verify logout flow | Single Tenancy | 1 | Session ends cleanly and protected routes block access | Yes | 95% | 2026-07-24 |
