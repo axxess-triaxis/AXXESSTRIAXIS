@@ -24,17 +24,17 @@ If implementation exists but live proof does not, status remains `No`.
 | ID | Actionable | Readiness State | Sprint Target | Required Evidence | Status | Confidence | Last Updated |
 |---|---|---|---:|---|---|---:|---|
 | A-01 | Deploy latest verified build to production | Enterprise Beta | 1, 5 | Production URL reflects latest intended commit; deployment logs clean | Yes | 95% | 2026-07-23 |
-| A-02 | Verify create-account success state | Single Tenancy | 1 | User sees clear confirmation after signup | Blocked | 70% (code) | 2026-07-23 |
-| A-03 | Verify live login flow | Single Tenancy | 1 | Existing user can log in on production | Blocked | 70% (code) | 2026-07-23 |
-| A-04 | Verify logout flow | Single Tenancy | 1 | Session ends cleanly and protected routes block access | Blocked | 75% (code) | 2026-07-23 |
+| A-02 | Verify create-account success state | Single Tenancy | 1 | User sees clear confirmation after signup | No | 40% | 2026-07-24 |
+| A-03 | Verify live login flow | Single Tenancy | 1 | Existing user can log in on production | Yes | 95% | 2026-07-24 |
+| A-04 | Verify logout flow | Single Tenancy | 1 | Session ends cleanly and protected routes block access | Yes | 95% | 2026-07-24 |
 | A-05 | Verify password reset flow | Single Tenancy | 1 | Reset email and password update work | Blocked | 65% (code) | 2026-07-23 |
-| A-06 | Verify Tenant 0 organization provisioning | Enterprise Beta | 1 | Triaxis Ventures tenant created live | Blocked | 70% (code) | 2026-07-23 |
-| A-07 | Verify profile creation and editing | Enterprise Beta | 1 | Name, role, department, and avatar placeholder persist | Blocked | 80% (code) | 2026-07-23 |
+| A-06 | Verify Tenant 0 organization provisioning | Enterprise Beta | 1 | Triaxis Ventures tenant created live | Yes | 95% | 2026-07-24 |
+| A-07 | Verify profile creation and editing | Enterprise Beta | 1 | Name, role, department, and avatar placeholder persist | No | 55% | 2026-07-24 |
 | A-08 | Verify user invitation flow | Enterprise Beta | 3 | Invited user receives invite and joins tenant | No | 0% | 2026-07-23 |
-| A-09 | Verify role assignment | Enterprise Beta | 1, 3 | Admin assigns role and UI respects it | Blocked | 60% (code) | 2026-07-23 |
+| A-09 | Verify role assignment | Enterprise Beta | 1, 3 | Admin assigns role and UI respects it | Yes | 90% | 2026-07-24 |
 | A-10 | Run two-tenant isolation harness against real DB | Multi-Tenancy | 3 | Test output proves tenant separation | No | 0% | 2026-07-23 |
 | A-11 | Manually verify two-tenant UI isolation | Multi-Tenancy | 3 | Tenant A cannot see Tenant B data in UI | No | 0% | 2026-07-23 |
-| A-12 | Verify document upload or import | Live Workflow | 2 | File uploads, stores, indexes, and appears in UI | No | 0% | 2026-07-23 |
+| A-12 | Verify document upload or import | Live Workflow | 2 | File uploads, stores, indexes, and appears in UI | Yes | 90% | 2026-07-24 |
 | A-13 | Verify RAG answer with citations | Live Workflow | 2 | User asks a question and receives cited answer | No | 0% | 2026-07-23 |
 | A-14 | Verify permission-aware retrieval | Security and Compliance | 3 | Restricted documents are not retrieved by unauthorized roles | No | 0% | 2026-07-23 |
 | A-15 | Verify AI Review Inbox approval | Live Workflow | 2 | AI answer can be approved, rejected, or edited | No | 0% | 2026-07-23 |
@@ -80,4 +80,19 @@ Use this section after each sprint.
 - Confidence summary: A-01 95%; A-02/A-03/A-06 70%; A-04 75%; A-05 65%; A-07 80%; A-09 60% -- all code-level confidence, not live-proof confidence, since live proof is the named blocker for every `Blocked` item
 - Readiness delta achieved: engineering-side delta is real and deployed (see closeout Section on readiness movement); the founder-facing delta of actually *being* Tenant 0 requires one HITL walkthrough, not yet performed
 - Notes: the single highest-leverage next action for the whole QA3 program is a ~15-30 minute HITL walkthrough (sign up -> confirm email -> sign in -> complete onboarding -> edit profile), since it would very likely close 6 of the 7 `Blocked` items in one pass
+
+### Sprint 1 Update (Continued): HITL Walkthrough Completed
+
+- Date: 2026-07-24
+- Executor: HITL walkthrough (Sudipta Koushik Sarmah), documented by Claude Code
+- HITL reviewer: Self (walkthrough performed directly)
+- Actionables re-reviewed with new live evidence: A-02, A-03, A-04, A-06, A-07, A-09, plus A-12 (Sprint 2-scoped, incidentally exercised)
+- Actionables closed (`Yes`) this update: A-03, A-04, A-06, A-09, A-12 -- **A-06 (Tenant 0 organization provisioning) is the program's headline result: the first successful live tenant provisioning in this program's entire history.**
+- Actionables downgraded from `Blocked` to `No`: A-02 (create-account success state) -- the walkthrough produced a confirmed defect (no visible success feedback on a real signup), not merely an untested item; this is now an engineering task, not a HITL-blocked one. A-07 (profile creation/editing) -- the top-right avatar/profile menu does not navigate anywhere; the separate sidebar Settings entry (confirmed to reach genuinely working, persisted profile editing in this sprint's code audit) was not tested this walkthrough.
+- Actionables still `Blocked`: A-05 (password reset) -- not exercised this walkthrough.
+- Evidence links: `docs/TENANT_0_ONBOARDING_FINDINGS_2026_07_22.md` "Attempt 4 Log (2026-07-24)"; `docs/readiness/SPRINT_1_TENANT_0_PRODUCTION_ACTIVATION_CLOSEOUT.md` Addendum
+- Confidence summary: A-03/A-04/A-06 95%; A-09 90%; A-12 90%; A-02 40% (confirmed defect); A-07 55% (mixed -- persistence confirmed by code, entry point confirmed broken)
+- Readiness delta achieved: substantial and now partly live-measured rather than estimated -- Enterprise Beta 1.0 and Single Tenancy readiness both move meaningfully upward; see closeout Addendum for the full picture
+- New defects found during the walkthrough, outside the 8 targeted actionables (documented in `docs/TENANT_0_ONBOARDING_FINDINGS_2026_07_22.md`, not yet fixed): meeting creation fails; Stakeholders "Add Contact" fails; Documents & Files "Index document" fails; ZIP/MP4 uploads unsupported in Knowledge Hub; feedback form shows the wrong beta version number (0.6, should be 0.7); nearly the entire admin surface beyond Pilot Command Center/Support Ops/Mobile Release is non-functional placeholder scaffolding; **Investor Preview's "Continue to workspace" is broken (user-flagged as high priority); the root domain lands on a stale, dead-end authenticated-looking page (user-flagged as high priority).**
+- Notes: Sprint 1 is substantially advanced but not yet formally closeable under the program's own closure rule -- A-02 is neither `Yes` nor a properly-`Blocked`-on-external-dependency item, it is a confirmed defect awaiting a fix. Recommended immediate next actions, in order: (1) fix A-02's create-account success-state defect, (2) investigate and fix the two investor-preview/root-domain dead ends the HITL flagged as high priority, (3) fix the broken profile-menu entry point and re-test A-07, (4) HITL tests password reset (A-05) once convenient.
 

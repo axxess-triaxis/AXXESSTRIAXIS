@@ -16,7 +16,6 @@ Purpose: Track the five-sprint QA3 readiness program across actionables, status,
 | A-08 Verify user invitation flow | 3 | Claude Code / HITL | 0% | Pending |
 | A-10 Run two-tenant isolation harness against real DB | 3 | Claude Code | 0% | Pending |
 | A-11 Manually verify two-tenant UI isolation | 3 | Claude Code / HITL | 0% | Pending |
-| A-12 Verify document upload or import | 2 | Claude Code | 0% | Pending |
 | A-13 Verify RAG answer with citations | 2 | Claude Code | 0% | Pending |
 | A-14 Verify permission-aware retrieval | 3 | Claude Code | 0% | Pending |
 | A-15 Verify AI Review Inbox approval | 2 | Claude Code | 0% | Pending |
@@ -51,19 +50,20 @@ No cards moved yet.
 
 | Card | Sprint | Owner | Blocker | Next Action | Confidence | Evidence |
 |---|---:|---|---|---|---:|---|
-| A-02 Verify create-account success state | 1 | HITL | Claude Code cannot create accounts under any circumstance | HITL performs one real sign-up on `beta.triaxisventures.com` and confirms the visible confirmation state | 70% (code) | Sign-up route + tone-styled success UI deployed (`dpl_Dd4z3d7kACCVioeSKFgYZeHx89Uo`) |
-| A-03 Verify live login flow | 1 | HITL | Claude Code cannot enter passwords under any circumstance | HITL signs in with the confirmed account | 70% (code) | Login route with specific error codes deployed and non-credentially verified reachable |
-| A-04 Verify logout flow | 1 | HITL | Requires a prior live login, which Claude Code cannot perform | HITL logs out and confirms protected routes then block access | 75% (code) | `AuthProvider.test.tsx` logout-clears-session regression coverage, unchanged this sprint |
-| A-05 Verify password reset flow | 1 | HITL | Completing a reset requires a real email + a real password submission | HITL requests a reset link, completes it, confirms the new password works | 65% (code) | `/auth/forgot-password` now discoverable and live-curl-confirmed; recovery-initiation endpoint returns a safe generic response |
-| A-06 Verify Tenant 0 organization provisioning | 1 | HITL | Provisioning requires a real authenticated session | HITL completes one full onboarding walkthrough as Triaxis Ventures Pvt Ltd | 70% (code) | Product Issue 2 fix live-curl-confirmed (`/onboarding` redirects unauthenticated visitors); `provisionTenantForUser` writes real org/role rows |
-| A-07 Verify profile creation and editing | 1 | HITL | Editing a profile requires a real authenticated session | HITL edits their profile in Settings and confirms it persists across a refresh | 80% (code) | Code-audited this sprint: `/api/profile` genuinely persists to Supabase, not a stub (`docs/AUTH.md` corrected accordingly) |
-| A-09 Verify role assignment | 1, 3 | HITL (onboarding-time) / Claude Code (Sprint 3, reassignment UI) | Onboarding-time assignment requires a real session; post-onboarding role-change UI does not exist yet | HITL confirms role during onboarding walkthrough; role-reassignment UI is correctly deferred to Sprint 3, not built this sprint | 60% (code) | `provisionTenantForUser` writes `role` to the real `users` table; `/admin/roles` confirmed to be a non-functional placeholder page (out of Sprint 1's proportionate scope) |
+| A-02 Verify create-account success state | 1 | Claude Code (fix), then HITL (re-test) | Confirmed defect, not a HITL-only dependency: the HITL performed a real sign-up on 2026-07-24 and saw no visible confirmation, even though the account was created server-side | Investigate why `EnterpriseAuthFlowPage.tsx`'s tone-styled sign-up success message isn't visibly reaching the user; fix; HITL re-tests | 40% | `docs/TENANT_0_ONBOARDING_FINDINGS_2026_07_22.md`, "Attempt 4 Log (2026-07-24)" |
+| A-05 Verify password reset flow | 1 | HITL | Completing a reset requires a real email + a real password submission; not exercised in the 2026-07-24 walkthrough | HITL requests a reset link, completes it, confirms the new password works | 65% (code) | `/auth/forgot-password` now discoverable and live-curl-confirmed; recovery-initiation endpoint returns a safe generic response |
+| A-07 Verify profile creation and editing | 1 | Claude Code (fix entry point), then HITL (re-test) | The top-right avatar/profile menu does not navigate anywhere; the working sidebar Settings entry was not tested | Fix the broken profile-menu entry point; HITL edits their profile via Settings and confirms it persists | 55% | Persistence confirmed genuine by this sprint's code audit; entry point confirmed broken by the 2026-07-24 walkthrough |
 
 ## Closed
 
 | Card | Sprint | Owner | Confidence | Evidence |
 |---|---:|---|---|---:|
 | A-01 Deploy latest verified build to production | 1, 5 | Claude Code | 95% | Commit `59d1fe0` deployed as `dpl_Dd4z3d7kACCVioeSKFgYZeHx89Uo` (READY, production); live-curl-confirmed serving the new build |
+| A-03 Verify live login flow | 1 | HITL | 95% | HITL signed in successfully on `beta.triaxisventures.com`, 2026-07-24 |
+| A-04 Verify logout flow | 1 | HITL | 95% | HITL logged out successfully, returned cleanly to sign-in, 2026-07-24 |
+| A-06 Verify Tenant 0 organization provisioning | 1 | HITL | 95% | **First successful live tenant provisioning in this program's history** -- Triaxis Ventures Pvt Ltd provisioned, real workspace loaded, 2026-07-24 |
+| A-09 Verify role assignment (onboarding-time scope) | 1 | HITL | 90% | Super Admin role confirmed live throughout the workspace; RBAC-gated admin pages accessible, 2026-07-24. Post-onboarding role-reassignment UI remains correctly deferred to Sprint 3 |
+| A-12 Verify document upload or import | 2 | HITL | 90% | Incidentally exercised ahead of schedule: 7 files (PDF/DOCX/MD/PPTX/image/XLSX) uploaded, classified, chunked, and indexed successfully in Knowledge Hub, 2026-07-24 |
 
 ## Sprint Update Template
 
@@ -92,4 +92,17 @@ No cards moved yet.
 - Cards remaining in Backlog: A-08, A-10 through A-25 (unchanged, out of Sprint 1 scope)
 - Evidence added: commit `59d1fe0`; deployment `dpl_Dd4z3d7kACCVioeSKFgYZeHx89Uo`; non-credentialed curl evidence in `docs/readiness/SPRINT_1_TENANT_0_PRODUCTION_ACTIVATION_CLOSEOUT.md`
 - HITL decision: requested -- perform one real Tenant 0 walkthrough (sign up, confirm email, sign in, complete onboarding, edit profile) to close the 7 `Blocked` cards
+
+### Sprint 1 Kanban Update (Continued): HITL Walkthrough Completed
+
+- Date: 2026-07-24
+- Cards moved to Ready: none
+- Cards moved to In Progress: none
+- Cards moved to Review: none
+- Cards moved to Verified: none (moved straight to Closed, since this update itself satisfies the board rule requiring closeout/actionables/roadmap/checklist/Kanban all updated together)
+- Cards moved to Blocked (re-scoped): A-02 and A-07 remain Blocked, but the owner changes from HITL to Claude Code -- both are now confirmed defects needing a fix, not items merely awaiting a HITL action
+- Cards moved to Closed: A-03, A-04, A-06, A-09 (onboarding-time scope), and A-12 (Sprint 2-scoped, incidentally exercised ahead of schedule)
+- Cards remaining in Backlog: A-08, A-10, A-11, A-13 through A-25
+- Evidence added: full walkthrough narrative in `docs/TENANT_0_ONBOARDING_FINDINGS_2026_07_22.md`, "Attempt 4 Log (2026-07-24)"
+- HITL decision: two new high-priority defects were flagged directly by the HITL during this walkthrough and are not yet triaged into a formal card -- Investor Preview's "Continue to workspace" is broken, and the root domain (`beta.triaxisventures.com`) lands on a stale, dead-end authenticated-looking page. Recommend adding these as new actionables (or an unscheduled hotfix) before Sprint 2 begins, given the HITL's own "immediate"/investor-facing framing.
 
