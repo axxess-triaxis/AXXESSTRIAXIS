@@ -21,6 +21,13 @@ const protectedRoutePrefixes = [
 ];
 
 const sessionCookieName = "axxess-access-token";
+// Investor Preview's client-side-only mock session (src/demo/demoMode.ts's localStorage flag) is
+// invisible to this Edge Runtime proxy -- so "Continue to workspace" and the beta-root redirect
+// both bounced a deliberately-entered demo session straight back to /auth, since only a real
+// Supabase access-token cookie ever satisfied this gate. This cookie is non-secret (never used for
+// real authorization -- tenant-scoped API calls still require a real Supabase session) and is set
+// only when a visitor explicitly logs into Investor Preview (src/demo/demoMode.ts).
+const demoSessionCookieName = "axxess-demo-session";
 const apexProductionHost = "triaxisventures.com";
 const canonicalProductionHost = "www.triaxisventures.com";
 const betaProductionHost = "beta.triaxisventures.com";
@@ -148,7 +155,7 @@ export function proxy(request: NextRequest) {
   if (shouldRedirectToLogin(request.nextUrl.pathname, {
     authShellEnabled: isAuthShellEnabled,
     demoModeEnabled: isDemoModeEnabled,
-    hasSessionCookie: Boolean(request.cookies.get(sessionCookieName)),
+    hasSessionCookie: Boolean(request.cookies.get(sessionCookieName)) || Boolean(request.cookies.get(demoSessionCookieName)),
   })) {
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = "/auth";

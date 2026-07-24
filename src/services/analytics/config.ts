@@ -5,8 +5,8 @@ import { PostHogAnalyticsProvider } from "./PostHogAnalyticsProvider";
 import { normalizeAnalyticsProvider } from "./providers";
 import type { AnalyticsProvider, AnalyticsRuntime } from "./types";
 
-export const releaseVersion = "0.6.0-beta";
-export const appVersion = process.env.NEXT_PUBLIC_AXXESS_APP_VERSION ?? "0.6.0";
+export const releaseVersion = "0.7.0-beta";
+export const appVersion = process.env.NEXT_PUBLIC_AXXESS_APP_VERSION ?? "0.7.0";
 
 export function getAnalyticsEnvironment() {
   return process.env.NEXT_PUBLIC_VERCEL_ENV ?? process.env.NODE_ENV ?? "development";

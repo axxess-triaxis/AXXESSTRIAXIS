@@ -32,6 +32,16 @@ export const DocumentsSection = () => {
   const documentTimeline = useWorkflowTimeline(scope, { limit: 5, resourceType: "document" });
 
   async function ingestDocument() {
+    // Sprint 2 (Live Golden Path Execution): the HITL's walkthrough hit the server's own
+    // "Document title and text are required for ingestion." validation error despite the form
+    // visibly showing both fields filled. The server-side check itself is correct; this guard
+    // makes the same requirement checkable and correctable *before* a network round-trip, so an
+    // empty-after-trim field (leading/trailing whitespace only, or a field cleared after a prior
+    // attempt) is caught with specific, actionable copy instead of the generic server message.
+    if (!form.title.trim() || !form.bodyText.trim()) {
+      setMessage({ tone: "error", text: !form.title.trim() ? "Enter a document title before indexing." : "Enter the document text before indexing." });
+      return;
+    }
     setIngesting(true);
     setMessage(null);
     try {

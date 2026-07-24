@@ -75,6 +75,10 @@ Sprint 2 is closed only if a real user can complete:
 
 Document upload -> ask AXXESS -> review cited answer -> approve -> create work -> see dashboard/audit/timeline update.
 
+### Sprint 2 Status (2026-07-24)
+
+**Not closed, but the golden path is now genuinely completable for the first time.** This sprint's core finding: AXXESS had two independently complete AI-review pipelines that had never been connected -- one wired to the AI Workspace's own chat, one wired to the dedicated Review Inbox page -- so the Review Inbox stayed empty no matter how many questions were asked, and no answer could ever reach the already-built approve-to-task pipeline. Fixed with a single, minimal bridge insert; no architecture was rewritten. Also root-caused and fixed the "Meeting could not be saved" bug (a free-text field feeding a genuine `uuid[]` database column) and added upfront validation to the Documents & Files ingestion form. What remains: every step of the golden path is code-complete and unit-tested, but none has been exercised against a real authenticated session -- exactly the same shape of gap Sprint 1 closed with one HITL walkthrough. See `docs/readiness/SPRINT_2_LIVE_GOLDEN_PATH_EXECUTION_CLOSEOUT_2026_07_24.md` for full evidence. Also this sprint: A-23/A-24 (Android/iOS store release, Sprint 5-scoped) were re-classified to `Blocked` ahead of schedule, incorporating the dated, evidenced D-U-N-S Number dependency for Triaxis Ventures Private Limited (`docs/readiness/MOBILE_STORE_CREDENTIALS_AND_DUNS_DEPENDENCY_2026_07_24.md`) -- a real external blocker, not an engineering gap.
+
 ## Sprint 3: Two-Tenant Isolation and Permission Proof
 
 Expected delta: +15% to +20%
@@ -155,6 +159,7 @@ Prepare the product for QA3 and validate mobile release readiness.
 
 - Android signed build path verified or blocked with exact missing credential.
 - iOS build/TestFlight path verified or blocked with exact Apple dependency.
+- Company-account credential dependency documented, including D-U-N-S status.
 - Mobile analytics readiness documented.
 - Production deployment current.
 - QA3 evidence package completed.
@@ -172,4 +177,3 @@ If Sprint 5 closes under the above criteria, immediately conduct:
 **QA3: Exhaustive Beta Readiness Audit**
 
 QA3 must be treated as a formal milestone before claiming Enterprise Beta 1.0 market readiness.
-
