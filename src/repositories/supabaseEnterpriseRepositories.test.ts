@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { auditLogsRepository, projectsRepository, tasksRepository } from "./supabaseEnterpriseRepositories";
+import { auditLogsRepository, invitationsRepository, projectsRepository, tasksRepository } from "./supabaseEnterpriseRepositories";
 import type { TenantScope } from "./interfaces";
 
 const scope: TenantScope = {
@@ -164,10 +164,15 @@ describe("Supabase enterprise repositories", () => {
     expect(String(init?.body)).not.toContain("org_someone_elses_tenant");
   });
 
-  it("honors an explicit organizationId on create only for Super Admin scopes", async () => {
+  it("ignores a spoofed organizationId on create for a Super Admin scope too (cross-tenant write blocked)", async () => {
+    // Sprint 3 finding: "Super Admin" is a self-selectable role at onboarding (see
+    // packages/shared/src/index.ts axxessBetaRoles), not a cross-tenant platform-operator role --
+    // there is no such role in this codebase. This repository must never trust a client-supplied
+    // organizationId for any scope, regardless of role; see canManageOrganization in
+    // src/security/rbac.ts for the matching API-layer fix.
     const fetchMock = vi.fn(async () => new Response(JSON.stringify([{
       id: "project_4",
-      organization_id: "org_platform_target",
+      organization_id: "org_public_safety",
       name: "Cross-Org Admin Project",
       owner_id: "user_raj_anand",
       progress: 0,
@@ -192,7 +197,8 @@ describe("Supabase enterprise repositories", () => {
     });
 
     const [, init] = fetchCall(fetchMock);
-    expect(String(init?.body)).toContain("org_platform_target");
+    expect(String(init?.body)).toContain("org_public_safety");
+    expect(String(init?.body)).not.toContain("org_platform_target");
   });
 
   it("always scopes project reads to the requesting tenant, ignoring any other organization in the query", async () => {
@@ -238,5 +244,36 @@ describe("Supabase enterprise repositories", () => {
     expect(String(url)).toContain("organization_id=eq.org_public_safety");
     expect(init?.method).toBe("PATCH");
     expect(String(init?.body)).toContain("completed");
+  });
+
+  it("ignores a spoofed organizationId when creating an invitation, always writing the acting session's own org (Sprint 3 fix)", async () => {
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify([{
+      id: "invitation_1",
+      organization_id: "org_public_safety",
+      email: "new.hire@example.com",
+      role: "Employee",
+      invited_by_user_id: "user_raj_anand",
+      status: "pending",
+      expires_at: "2026-08-01T00:00:00Z",
+      accepted_at: null,
+      created_at: "2026-07-24T00:00:00Z",
+      updated_at: "2026-07-24T00:00:00Z",
+    }]), { status: 201 }));
+    vi.stubGlobal("fetch", fetchMock);
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://example.supabase.co");
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY", "anon-key");
+
+    await invitationsRepository.create({ ...scope, role: "Super Admin", accessToken: "server-token" }, {
+      organizationId: "org_someone_elses_tenant",
+      email: "new.hire@example.com",
+      role: "Employee",
+      invitedByUserId: "user_raj_anand",
+      tokenHash: "hash",
+      expiresAt: "2026-08-01T00:00:00Z",
+    });
+
+    const [, init] = fetchCall(fetchMock);
+    expect(String(init?.body)).toContain("org_public_safety");
+    expect(String(init?.body)).not.toContain("org_someone_elses_tenant");
   });
 });

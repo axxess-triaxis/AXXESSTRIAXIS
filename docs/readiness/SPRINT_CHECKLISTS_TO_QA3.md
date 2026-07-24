@@ -5,22 +5,22 @@ Closure standard: 80% confidence minimum for every `Yes`
 
 ## Global Sprint Closure Checklist
 
-Every sprint must satisfy this checklist. Status below is as of Sprint 2 (2026-07-24) -- update again at the start of Sprint 3.
+Every sprint must satisfy this checklist. Status below is as of Sprint 3 (2026-07-24).
 
 | Item | Status | Confidence | Evidence |
 |---|---|---:|---|
-| Target actionables reviewed | Yes | 100% | 7 targeted actionables reviewed; see `ACTIONABLES_READINESS_MATRIX.md` Sprint 2 Update |
-| Required implementation completed or blocker documented | Yes | 90% | The AI Review Inbox bridge fix, timeline event addition, document-ingest validation, and meeting-participant validation all shipped; every remaining item is a named, owned `Blocked` (HITL live walkthrough), not a missing implementation |
+| Target actionables reviewed | Yes | 100% | 6 targeted actionables reviewed; see `ACTIONABLES_READINESS_MATRIX.md` Sprint 3 Update |
+| Required implementation completed or blocker documented | Yes | 95% | A real defense-in-depth cross-tenant authorization gap found and fixed (`rbac.ts`, `supabaseEnterpriseRepositories.ts`, `workflowActionRepositories.ts`), plus an invitation-acceptance identity check and a role-change audit log, both previously missing; every remaining item is a named, owned `Blocked` (HITL: a live second tenant, and/or Docker or a non-production Supabase project), not a missing implementation |
 | Typecheck run | Yes | 100% | `pnpm run typecheck` clean |
 | Lint run | Yes | 100% | `pnpm run lint` clean, zero warnings |
-| Tests run | Yes | 100% | 122 files / 399 tests passing (up from 393) |
+| Tests run | Yes | 100% | See `SPRINT_3_TWO_TENANT_ISOLATION_PERMISSION_PROOF_CLOSEOUT_2026_07_24.md` for the exact file/test counts |
 | Build run | Yes | 100% | `pnpm run build` succeeded |
-| Live or local verification evidence captured | Yes | 80% | Sprint 1 carryover gate re-verified live via browser (Investor Preview end-to-end); the golden path itself requires a real authenticated session, explicitly named as HITL-only, not silently skipped |
+| Live or local verification evidence captured | Yes | 75% | Every RLS claim verified by direct reading of the actual `create policy` statements in `supabase/migrations/`, not assumed; live two-tenant browser/harness verification is explicitly named as HITL/environment-blocked, not silently skipped |
 | Actionables document updated | Yes | 100% | `ACTIONABLES_READINESS_MATRIX.md` |
 | Roadmap document updated | Yes | 100% | `FIVE_SPRINT_ROADMAP_TO_QA3.md` |
 | Checklist document updated | Yes | 100% | This document |
 | Kanban document updated | Yes | 100% | `QA3_READINESS_KANBAN.md` |
-| Sprint closeout document created | Yes | 100% | `SPRINT_2_LIVE_GOLDEN_PATH_EXECUTION_CLOSEOUT_2026_07_24.md` |
+| Sprint closeout document created | Yes | 100% | `SPRINT_3_TWO_TENANT_ISOLATION_PERMISSION_PROOF_CLOSEOUT_2026_07_24.md` |
 | HITL review requested | Yes | 100% | See closeout's "HITL Decision Required" section |
 
 ## Sprint 1 Checklist: Tenant 0 Production Activation
@@ -71,16 +71,22 @@ Every sprint must satisfy this checklist. Status below is as of Sprint 2 (2026-0
 
 | Item | Required Evidence | Status | Confidence |
 |---|---|---|---:|
-| Tenant A created | Tenant record/UI proof | No | 0% |
-| Tenant B created | Tenant record/UI proof | No | 0% |
-| Tenant A cannot see Tenant B projects | UI and query proof | No | 0% |
-| Tenant A cannot retrieve Tenant B documents | RAG permission test | No | 0% |
-| User invite works | Invite email/link proof | No | 0% |
-| Role-specific access works | Admin/manager/employee/guest proof | No | 0% |
-| Unauthorized access shows safe copy | No raw Unauthorized errors | No | 0% |
-| Isolation harness passes | Script/test output | No | 0% |
-| Audit logs include tenant/user/action | Audit evidence | No | 0% |
-| Sprint 3 closeout exists | Closeout document path | No | 0% |
+| Tenant A created | Tenant record/UI proof | Yes | 95% (Triaxis Ventures, live since Sprint 1) |
+| Tenant B created | Tenant record/UI proof | Blocked (HITL) | 0% -- no second real tenant exists; Claude Code cannot create accounts |
+| Tenant A cannot see Tenant B projects | UI and query proof | Blocked (HITL/environment) | 70% (code + static RLS review; no live/harness run) |
+| Tenant A cannot retrieve Tenant B documents | RAG permission test | Blocked (HITL) | 80% (code; `governedRag.test.ts` cross-tenant + restricted-role coverage) |
+| User invite works | Invite email/link proof | Blocked (HITL) | 75% (code; tenant-binding and identity-binding gaps fixed this sprint) |
+| Role-specific access works | Admin/manager/employee/guest proof | Yes | 92% (RBAC gates confirmed across `[resource]/route.ts`, `governedRag.ts` restricted-role exclusion) |
+| Unauthorized access shows safe copy | No raw Unauthorized errors | Yes | 90% (confirmed unchanged from Sprint 1/2; no new raw-error paths introduced) |
+| Isolation harness passes | Script/test output | Blocked (environment) | 0% -- `scripts/verify-two-tenant-isolation.mjs` requires Docker or a non-production Supabase project, neither available in this environment; must never target the live production project |
+| Audit logs include tenant/user/action | Audit evidence | Yes | 88% (invitation created/accepted already audited; role/department/status change audit log added this sprint) |
+| Sprint 3 closeout exists | Closeout document path | Yes | 100% |
+
+### Sprint 3 Checklist Update (2026-07-24)
+
+- **Core finding**: a real defense-in-depth cross-tenant authorization gap, not a missing feature -- "Super Admin" is a self-selectable role at onboarding, but several app-layer functions (`canManageOrganization`, `organizationIdForMutation`, `scopeOrganizationId`, `betaFeedbackMutation`, `invitationsRepository.create`) trusted it as a cross-tenant authority, letting a self-granted Super Admin name an arbitrary organization id in a request. Confirmed **not exploitable against the live database** by directly reading the actual RLS policies for every affected table (`is_org_member`/`has_any_role`, both scoped to real per-organization membership rows) -- but a genuine landmine and a documented violation of `docs/SECURITY_ARCHITECTURE.md`'s own operational rule. Fixed at the application layer; a pre-existing test had asserted the vulnerable behavior directly and was flipped to assert the fix.
+- **Two more concrete gaps fixed**: invitation acceptance never checked the accepting user's email against the invited email (bearer-token-only trust); `PATCH /api/repositories/users` never wrote an audit log for role/department/status changes.
+- **Tenant B, the isolation harness, and full UI isolation remain unproven live**: this sprint could not create a second real tenant (account creation is outside Claude Code's own operating constraints) or run `scripts/verify-two-tenant-isolation.mjs` (no Docker, no non-production Supabase project available, and the live production project now holds real Tenant 0 data and must never be its target). Full narrative: `docs/readiness/SPRINT_3_TWO_TENANT_ISOLATION_PERMISSION_PROOF_CLOSEOUT_2026_07_24.md`.
 
 ## Sprint 4 Checklist: Integrations, Analytics, and Operational Evidence
 

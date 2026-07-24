@@ -1,4 +1,3 @@
-import type { EntityId } from "../domain";
 import type { RepositoryQuery, TenantScope } from "./interfaces";
 import { isSupabaseAdminConfigured, supabaseAdminRest } from "./supabaseAdmin";
 import {
@@ -72,10 +71,6 @@ export type WorkflowActionRepository<TResource, TCreateInput> = {
   list(scope: TenantScope, query?: RepositoryQuery): Promise<TResource[]>;
   create(scope: TenantScope, input: TCreateInput): Promise<TResource>;
 };
-
-function scopeOrganizationId(scope: TenantScope, input?: { organizationId?: EntityId }) {
-  return scope.role === "Super Admin" && input?.organizationId ? input.organizationId : scope.organizationId;
-}
 
 function maybeString(value: unknown) {
   return typeof value === "string" && value.trim() ? value.trim() : null;
@@ -154,7 +149,7 @@ function projectUpdateFromRow(row: ProjectUpdateRow): ProjectUpdate {
 
 function approvalInsert(scope: TenantScope, input: CreateApprovalRequestInput) {
   return {
-    organization_id: scopeOrganizationId(scope, input),
+    organization_id: scope.organizationId,
     requested_by_user_id: maybeString(input.requestedByUserId) ?? scope.userId,
     reviewer_user_id: maybeString(input.reviewerUserId),
     source_ai_review_id: maybeString(input.sourceAiReviewId),
@@ -169,7 +164,7 @@ function approvalInsert(scope: TenantScope, input: CreateApprovalRequestInput) {
 
 function stakeholderNoteInsert(scope: TenantScope, input: CreateStakeholderNoteInput) {
   return {
-    organization_id: scopeOrganizationId(scope, input),
+    organization_id: scope.organizationId,
     stakeholder_id: maybeString(input.stakeholderId),
     created_by_user_id: maybeString(input.createdByUserId) ?? scope.userId,
     source_ai_review_id: maybeString(input.sourceAiReviewId),
@@ -185,7 +180,7 @@ function stakeholderNoteInsert(scope: TenantScope, input: CreateStakeholderNoteI
 
 function projectUpdateInsert(scope: TenantScope, input: CreateProjectUpdateInput) {
   return {
-    organization_id: scopeOrganizationId(scope, input),
+    organization_id: scope.organizationId,
     project_id: maybeString(input.projectId),
     created_by_user_id: maybeString(input.createdByUserId) ?? scope.userId,
     source_ai_review_id: maybeString(input.sourceAiReviewId),
@@ -215,7 +210,7 @@ export const approvalRequestsRepository: WorkflowActionRepository<ApprovalReques
     return rows.map(approvalRequestFromRow);
   },
   async create(scope, input) {
-    const organizationId = scopeOrganizationId(scope, input);
+    const organizationId = scope.organizationId;
     if (!isSupabaseAdminConfigured()) {
       return createFallbackApprovalRequest({ ...input, organizationId, requestedByUserId: input.requestedByUserId ?? scope.userId });
     }
@@ -241,7 +236,7 @@ export const stakeholderNotesRepository: WorkflowActionRepository<StakeholderNot
     return rows.map(stakeholderNoteFromRow);
   },
   async create(scope, input) {
-    const organizationId = scopeOrganizationId(scope, input);
+    const organizationId = scope.organizationId;
     if (!isSupabaseAdminConfigured()) {
       return createFallbackStakeholderNote({ ...input, organizationId, createdByUserId: input.createdByUserId ?? scope.userId });
     }
@@ -267,7 +262,7 @@ export const projectUpdatesRepository: WorkflowActionRepository<ProjectUpdate, C
     return rows.map(projectUpdateFromRow);
   },
   async create(scope, input) {
-    const organizationId = scopeOrganizationId(scope, input);
+    const organizationId = scope.organizationId;
     if (!isSupabaseAdminConfigured()) {
       return createFallbackProjectUpdate({ ...input, organizationId, createdByUserId: input.createdByUserId ?? scope.userId });
     }

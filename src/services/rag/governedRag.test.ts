@@ -157,6 +157,25 @@ describe("governed RAG retrieval", () => {
     }));
   });
 
+  it("excludes restricted documents from retrieval for a non-elevated role (Sprint 3 permission-aware RAG proof)", async () => {
+    const restricted = document({
+      id: "doc_restricted",
+      organizationId: "org_1",
+      title: "Restricted Audit Observation",
+      description: "Audit observation for oxygen procurement variance and management response.",
+      classification: "restricted",
+    });
+
+    const chunks = await retrieveInstitutionalContext(repositories({ documents: [restricted] }), {
+      ...scope,
+      role: "Employee",
+    }, {
+      question: "oxygen procurement audit observation variance",
+    });
+
+    expect(chunks.map((chunk) => chunk.sourceId)).not.toContain("doc_restricted");
+  });
+
   it("gives an honest rationale instead of a fabricated one when no source matches", async () => {
     const answer = await answerWithGovernedRag(repositories({ documents: [] }), scope, {
       question: "a question with no authorized institutional context",
