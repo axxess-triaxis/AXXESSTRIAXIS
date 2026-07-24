@@ -287,6 +287,21 @@ export async function PATCH(request: Request, context: RouteContext) {
       resourceType: "users",
       resourceId: id,
     }).catch(() => undefined);
+    // Sprint 3: role/department changes are a tenant-sensitive action and must leave audit
+    // evidence, matching every other admin mutation in this route (see recordResourceCreateEvidence).
+    if (body.role || body.department || body.status) {
+      await auditLogsRepository.record(scope, {
+        action: "user.access_updated",
+        resourceType: "users",
+        resourceId: id,
+        category: "user-management",
+        metadata: {
+          role: body.role ?? null,
+          department: body.department ?? null,
+          status: body.status ?? null,
+        },
+      }).catch(() => undefined);
+    }
   }
 
   return NextResponse.json(result);

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { routeForPath } from "../app/routing/routes";
-import { canAccessRoute, canAccessSection, isRoleName, mockCurrentUserContext, type UserContext } from "./rbac";
+import { assertOrganizationAccess, canAccessRoute, canAccessSection, canManageOrganization, isRoleName, mockCurrentUserContext, type UserContext } from "./rbac";
 
 describe("mock RBAC route guards", () => {
   it("allows organization admin access to admin routes", () => {
@@ -96,5 +96,46 @@ describe("mock RBAC route guards", () => {
     expect(canAccessRoute(mockCurrentUserContext, routeForPath("/admin/support-ops"))).toBe(true);
     expect(canAccessRoute(manager, routeForPath("/admin/plugin-runtime"))).toBe(false);
     expect(canAccessRoute(manager, routeForPath("/admin/model-policy"))).toBe(false);
+  });
+
+  // Sprint 3 finding: "Super Admin" is a self-selectable role at onboarding (packages/shared/src
+  // axxessBetaRoles), not a cross-tenant platform-operator role -- there is no such role in this
+  // codebase. canManageOrganization/assertOrganizationAccess previously let a "Super Admin" scope
+  // manage or claim access to an arbitrary organizationId; both must always match the acting
+  // user's own organization regardless of role.
+  describe("canManageOrganization / assertOrganizationAccess (Sprint 3 tenant-isolation fix)", () => {
+    const superAdminOrgA: UserContext = {
+      id: "user_super_admin",
+      organizationId: "org_a",
+      role: "Super Admin",
+    };
+    const orgAdminOrgA: UserContext = {
+      id: "user_org_admin",
+      organizationId: "org_a",
+      role: "Organization Admin",
+    };
+    const employeeOrgA: UserContext = {
+      id: "user_employee",
+      organizationId: "org_a",
+      role: "Employee",
+    };
+
+    it("allows Super Admin and Organization Admin to manage only their own organization", () => {
+      expect(canManageOrganization(superAdminOrgA, "org_a")).toBe(true);
+      expect(canManageOrganization(orgAdminOrgA, "org_a")).toBe(true);
+    });
+
+    it("blocks a Super Admin from managing a different organization, even by naming its id", () => {
+      expect(canManageOrganization(superAdminOrgA, "org_b")).toBe(false);
+    });
+
+    it("blocks a non-admin role even for their own organization", () => {
+      expect(canManageOrganization(employeeOrgA, "org_a")).toBe(false);
+    });
+
+    it("assertOrganizationAccess throws for any cross-organization id, regardless of role", () => {
+      expect(() => assertOrganizationAccess(superAdminOrgA, "org_b")).toThrow("Cross-organization access denied.");
+      expect(() => assertOrganizationAccess(superAdminOrgA, "org_a")).not.toThrow();
+    });
   });
 });
