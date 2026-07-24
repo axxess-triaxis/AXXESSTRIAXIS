@@ -26,7 +26,7 @@ describe("EnterpriseAuthFlowPage", () => {
       expect(screen.getByRole("link", { name: /sign in/i })).toHaveAttribute("href", "/auth");
     });
 
-    it("shows a success-toned confirmation message after a successful sign-up (Sprint 42)", async () => {
+    it("replaces the form with an unmistakable success panel after a successful sign-up (Sprint 1 correction, 2026-07-24)", async () => {
       vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
         expect(String(input)).toBe("/api/auth/sign-up");
         return new Response(JSON.stringify({ ok: true, message: "Check your email to verify the account before onboarding." }), { status: 200 });
@@ -37,8 +37,14 @@ describe("EnterpriseAuthFlowPage", () => {
       fireEvent.change(screen.getByLabelText(/password/i), { target: { value: "a-strong-password" } });
       fireEvent.click(screen.getByRole("button", { name: "Create account" }));
 
-      const messageEl = await screen.findByText("Check your email to verify the account before onboarding.");
-      expect(messageEl).toHaveClass("bg-emerald-50");
+      expect(await screen.findByText("Account created")).toBeInTheDocument();
+      expect(screen.getAllByText(/new\.user@example\.com/).length).toBeGreaterThan(0);
+      expect(screen.getByRole("link", { name: /go to sign in/i })).toHaveAttribute("href", "/auth");
+
+      // The form itself is gone -- a repeat click on "Create account" is no longer possible,
+      // directly addressing the correction prompt's "duplicate attempts should be discouraged."
+      expect(screen.queryByRole("button", { name: "Create account" })).not.toBeInTheDocument();
+      expect(screen.queryByLabelText(/password/i)).not.toBeInTheDocument();
     });
 
     it("shows an error-toned message pointing to sign-in when the account already exists (Sprint 42)", async () => {

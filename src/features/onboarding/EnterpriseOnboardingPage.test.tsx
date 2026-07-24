@@ -108,4 +108,35 @@ describe("EnterpriseOnboardingPage notice enforcement (Sprint 1: Tenant 0 Produc
     expect(message.textContent).toMatch(/role/);
     expect(message.textContent).toMatch(/notices \(Terms of Service, Privacy Policy, AI Usage Notice, Beta Disclaimer\)/);
   });
+
+  // Sprint 1 correction, P0-03 (2026-07-24): a session that expires in the gap between the
+  // client-side auth guard rendering and the "Provision tenant" click still reaches the server,
+  // which returns a bare 401. Before this fix, that raw "Unauthorized." text flowed straight into
+  // the message shown to the user -- exactly the raw-technical-error class of bug this whole
+  // program has repeatedly flagged as unacceptable in normal onboarding/auth flows.
+  it("never shows the raw server 'Unauthorized' text if the session expires between rendering and clicking Provision tenant", async () => {
+    window.localStorage.setItem("axxess-enterprise-onboarding", JSON.stringify({
+      organizationName: "Triaxis Ventures Private Limited",
+      sector: "Startup",
+      role: "Super Admin",
+      acceptedNotices: ["Terms of Service", "Privacy Policy", "AI Usage Notice", "Beta Disclaimer"],
+    }));
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url === "/api/onboarding/provision") {
+        return new Response(JSON.stringify({ error: "Unauthorized." }), { status: 401 });
+      }
+      return authenticatedSessionResponse();
+    }));
+
+    render(<EnterpriseOnboardingPage step="complete" />);
+    await screen.findByText(/tenant ready for beta/i);
+
+    fireEvent.click(screen.getByRole("button", { name: /provision tenant/i }));
+
+    const message = await screen.findByText(/session expired/i);
+    expect(message.textContent).not.toMatch(/^Unauthorized\.?$/);
+    expect(message.textContent?.toLowerCase()).not.toContain("unauthorized");
+    expect(message.textContent).toMatch(/sign in again/i);
+  });
 });

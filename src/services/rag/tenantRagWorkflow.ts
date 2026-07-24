@@ -14,6 +14,7 @@ import { extractKeywords, summarizeText } from "../nlp/localNlp";
 import { answerWithGovernedRag, canRetrieveDocument, type RagAnswer, type RagCitation } from "./governedRag";
 import { deterministicEmbeddingProvider } from "./embeddings/embeddingProvider";
 import { buildRagIngestionRecord, chunkInstitutionalText } from "./ingestion/ingestionPipeline";
+import { recordWorkflowTimelineEvent } from "../workflows/liveTenantWorkflow";
 
 export type TenantRagRepositories = {
   documentsRepository: DocumentsRepository;
@@ -343,9 +344,36 @@ export async function answerTenantQuestion(
       },
     }).catch(() => []);
     aiOutputAuditId = auditRows[0]?.id;
+
+    // Sprint 2 (Live Golden Path Execution): every generated answer becomes an AI Review Inbox
+    // item, not just ones a caller happens to route there. Before this, ai_output_audit rows
+    // (written above) and ai_operation_reviews rows (what the Review Inbox actually reads, see
+    // src/services/ai/reviewInbox.ts) were two disconnected tables -- nothing ever inserted into
+    // ai_operation_reviews, so the inbox stayed empty no matter how many questions were asked.
+    // Everything downstream of this row existing (approve/reject, "approve and create" ->
+    // createWorkflowActionFromAiReview) was already fully built; this was the one missing write.
+    await supabaseAdminRest("ai_operation_reviews", {
+      method: "POST",
+      body: {
+        organization_id: scope.organizationId,
+        created_by_user_id: scope.userId,
+        source_audit_id: aiOutputAuditId,
+        task_category: "governed_rag_answer",
+        status: "pending",
+        confidence: Number(answer.confidence.toFixed(4)),
+        human_review_flag: answer.humanReviewRequired,
+        answer_excerpt: summarizeText(answer.answer, 1),
+        citations: answer.sources.map((source) => ({
+          title: source.title,
+          sourceId: source.sourceId,
+          excerpt: source.excerpt,
+          score: source.score,
+        })),
+      },
+    }).catch(() => undefined);
   }
 
-  await repositories.auditLogsRepository?.record(scope, {
+  const auditLog = await repositories.auditLogsRepository?.record(scope, {
     action: "rag.answer.generated",
     resourceType: "ai_output_audit",
     resourceId: aiOutputAuditId,
@@ -359,6 +387,30 @@ export async function answerTenantQuestion(
       modelUsed: routeResult.modelUsed,
       latencyMs: routeResult.latencyMs,
       costTier: routeResult.costTier,
+    },
+  }).catch(() => undefined);
+
+  // Sprint 2 (Live Golden Path Execution): the timeline event schema already had an
+  // "ai_answer_generated" / "ai_review" pair defined (workflowEvidence.ts) for exactly this
+  // moment, but nothing ever wrote one -- the golden path's timeline previously jumped straight
+  // from "document_indexed" to "human_decision" with the answer-generation step missing entirely.
+  await recordWorkflowTimelineEvent({
+    organizationId: scope.organizationId,
+    resourceType: "ai_review",
+    resourceId: aiOutputAuditId,
+    eventType: "ai_answer_generated",
+    title: "Cited answer generated",
+    description: answer.answer.slice(0, 200),
+    actorUserId: scope.userId,
+    actorLabel: scope.role,
+    sourceType: "ai_output_audit",
+    sourceId: aiOutputAuditId,
+    auditLogId: auditLog?.id,
+    metadata: {
+      question,
+      confidence: answer.confidence,
+      humanReviewRequired: answer.humanReviewRequired,
+      sourceCount: answer.sources.length,
     },
   }).catch(() => undefined);
 

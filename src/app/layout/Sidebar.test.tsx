@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { AuthProvider } from "../../auth/AuthProvider";
 import { Sidebar } from "./Sidebar";
@@ -53,5 +53,25 @@ describe("Sidebar (Sprint 4 -- badge/count consistency, F-020)", () => {
     await waitFor(() => expect(screen.getByText("Social Alerts")).toBeInTheDocument());
     expect(screen.getByText("4")).toBeInTheDocument();
     expect(screen.getByText("23")).toBeInTheDocument();
+  });
+
+  // Sprint 1 correction, P1 (2026-07-24): the HITL's live walkthrough found that clicking the
+  // profile block (avatar + name + role, bottom of the sidebar) did nothing -- it was a plain,
+  // unwrapped div with no click handler at all, even though the destination (Settings, with a
+  // genuinely working, server-persisted profile-edit form) already existed.
+  it("routes to Settings when the profile block (avatar/name/role) is clicked", async () => {
+    stubAuthenticatedSession();
+    const onSelectSection = vi.fn();
+
+    render(
+      <AuthProvider>
+        <Sidebar active="dashboard" sidebarOpen onSelectSection={onSelectSection} onToggleSidebar={() => {}} />
+      </AuthProvider>,
+    );
+
+    await waitFor(() => expect(screen.getByText("Super Admin")).toBeInTheDocument());
+    fireEvent.click(screen.getByText("Super Admin"));
+
+    expect(onSelectSection).toHaveBeenCalledWith("settings");
   });
 });

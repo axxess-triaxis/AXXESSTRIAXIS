@@ -29,8 +29,8 @@ describe("analytics service contracts", () => {
       event_source: "test",
       timestamp: "2026-07-03T00:00:00.000Z",
       environment: "test",
-      app_version: "0.6.0",
-      release_version: "0.6.0-beta",
+      app_version: "0.7.0",
+      release_version: "0.7.0-beta",
       properties: { project_id: "project_1" },
     });
 
@@ -76,8 +76,8 @@ describe("analytics service contracts", () => {
       route: "/dashboard",
       timestamp: "2026-07-03T00:00:00.000Z",
       environment: "test",
-      app_version: "0.6.0",
-      release_version: "0.6.0-beta",
+      app_version: "0.7.0",
+      release_version: "0.7.0-beta",
       properties: { feedback_type: "Bug", message: "private", permission_to_contact: true },
     });
 
@@ -100,8 +100,8 @@ describe("analytics service contracts", () => {
     const payload = {
       timestamp: "2026-07-03T00:00:00.000Z",
       environment: "test",
-      app_version: "0.6.0",
-      release_version: "0.6.0-beta",
+      app_version: "0.7.0",
+      release_version: "0.7.0-beta",
     };
 
     it("fans every call out to all wrapped providers", () => {

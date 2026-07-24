@@ -5,22 +5,22 @@ Closure standard: 80% confidence minimum for every `Yes`
 
 ## Global Sprint Closure Checklist
 
-Every sprint must satisfy this checklist. Status below is as of Sprint 1 (2026-07-23) -- update again at the start of Sprint 2.
+Every sprint must satisfy this checklist. Status below is as of Sprint 2 (2026-07-24) -- update again at the start of Sprint 3.
 
 | Item | Status | Confidence | Evidence |
 |---|---|---:|---|
-| Target actionables reviewed | Yes | 100% | 8 targeted actionables reviewed; see `ACTIONABLES_READINESS_MATRIX.md` Sprint 1 Update |
-| Required implementation completed or blocker documented | Yes | 90% | Forgot-password link, notices enforcement shipped; every remaining item is a named, owned `Blocked` (HITL credentialed action), not a missing implementation |
+| Target actionables reviewed | Yes | 100% | 7 targeted actionables reviewed; see `ACTIONABLES_READINESS_MATRIX.md` Sprint 2 Update |
+| Required implementation completed or blocker documented | Yes | 90% | The AI Review Inbox bridge fix, timeline event addition, document-ingest validation, and meeting-participant validation all shipped; every remaining item is a named, owned `Blocked` (HITL live walkthrough), not a missing implementation |
 | Typecheck run | Yes | 100% | `pnpm run typecheck` clean |
 | Lint run | Yes | 100% | `pnpm run lint` clean, zero warnings |
-| Tests run | Yes | 100% | 120 files / 387 tests passing (up from 383) |
-| Build run | Yes | 100% | `pnpm run build` succeeded, 116 routes generated |
-| Live or local verification evidence captured | Yes | 85% | Non-credentialed curl evidence against `beta.triaxisventures.com`; credentialed steps explicitly named as HITL-only, not silently skipped |
+| Tests run | Yes | 100% | 122 files / 399 tests passing (up from 393) |
+| Build run | Yes | 100% | `pnpm run build` succeeded |
+| Live or local verification evidence captured | Yes | 80% | Sprint 1 carryover gate re-verified live via browser (Investor Preview end-to-end); the golden path itself requires a real authenticated session, explicitly named as HITL-only, not silently skipped |
 | Actionables document updated | Yes | 100% | `ACTIONABLES_READINESS_MATRIX.md` |
 | Roadmap document updated | Yes | 100% | `FIVE_SPRINT_ROADMAP_TO_QA3.md` |
 | Checklist document updated | Yes | 100% | This document |
 | Kanban document updated | Yes | 100% | `QA3_READINESS_KANBAN.md` |
-| Sprint closeout document created | Yes | 100% | `SPRINT_1_TENANT_0_PRODUCTION_ACTIVATION_CLOSEOUT.md` |
+| Sprint closeout document created | Yes | 100% | `SPRINT_2_LIVE_GOLDEN_PATH_EXECUTION_CLOSEOUT_2026_07_24.md` |
 | HITL review requested | Yes | 100% | See closeout's "HITL Decision Required" section |
 
 ## Sprint 1 Checklist: Tenant 0 Production Activation
@@ -49,17 +49,23 @@ Every sprint must satisfy this checklist. Status below is as of Sprint 1 (2026-0
 
 | Item | Required Evidence | Status | Confidence |
 |---|---|---|---:|
-| Document upload works | Uploaded file visible in tenant | No | 0% |
-| Document indexing works | Search/RAG availability proof | No | 0% |
-| RAG answer works | Question, answer, citations | No | 0% |
-| Sources are displayed | Source card/screenshot | No | 0% |
-| Review Inbox receives answer | Review item visible | No | 0% |
-| Reviewer can approve/reject/edit | Review decision proof | No | 0% |
-| Approved answer creates work | Created task/project/approval/stakeholder note | No | 0% |
-| Dashboard updates | Before/after screenshot | No | 0% |
-| Audit log updates | Audit event proof | No | 0% |
-| Timeline updates | Timeline proof | No | 0% |
-| Sprint 2 closeout exists | Closeout document path | No | 0% |
+| Document upload works | Uploaded file visible in tenant | Yes | 90% |
+| Document indexing works | Search/RAG availability proof | Blocked (HITL) | 70% (code; Documents & Files path, not Knowledge Hub -- see `docs/DOCUMENTS.md`) |
+| RAG answer works | Question, answer, citations | Blocked (HITL) | 75% (code) |
+| Sources are displayed | Source card/screenshot | Blocked (HITL) | 75% (code) |
+| Review Inbox receives answer | Review item visible | Blocked (HITL) | 75% (code; bridge fix this sprint, unit-tested) |
+| Reviewer can approve/reject/edit | Review decision proof | Blocked (HITL) | 75% (code) |
+| Approved answer creates work | Created task/project/approval/stakeholder note | Blocked (HITL) | 80% (code) |
+| Dashboard updates | Before/after screenshot | Blocked (HITL) | 65% (code) |
+| Audit log updates | Audit event proof | Blocked (HITL) | 85% (code) |
+| Timeline updates | Timeline proof | Blocked (HITL) | 80% (code; new `ai_answer_generated` event added this sprint) |
+| Sprint 2 closeout exists | Closeout document path | Yes | 100% |
+
+### Sprint 2 Checklist Update (2026-07-24)
+
+- **Core finding**: two independently complete AI-review pipelines existed with no bridge between them -- `ai_output_audit` (written by the AI Workspace's own chat) and `ai_operation_reviews` (read by the dedicated Review Inbox page). Fixed with one minimal insert; every downstream step (approve, create task, timeline, audit) was already fully built and is now reachable.
+- **Document upload works**: closed, unchanged from the Sprint 1 continuation (Knowledge Hub, 7 files).
+- **Everything else**: code-complete, unit-tested, deployed -- but not live-verified, since that requires a real authenticated session only the HITL can provide. Full narrative: `docs/readiness/SPRINT_2_LIVE_GOLDEN_PATH_EXECUTION_CLOSEOUT_2026_07_24.md`.
 
 ## Sprint 3 Checklist: Two-Tenant Isolation and Permission Proof
 
@@ -109,3 +115,12 @@ Every sprint must satisfy this checklist. Status below is as of Sprint 1 (2026-0
 | Kanban updated | Board/status log | No | 0% |
 | Sprint 5 closeout exists | Closeout document path | No | 0% |
 
+## Mobile Credential Governance Note
+
+The iOS and Android store-release paths are currently blocked by company-credential readiness, not by a decision to release under the founder's individual name.
+
+The governing evidence is documented in:
+
+`docs/readiness/MOBILE_STORE_CREDENTIALS_AND_DUNS_DEPENDENCY_2026_07_24.md`
+
+This blocker should remain visible in Sprint 5 and QA3 readiness assessment until Apple Developer Program and Google Play Console credentials are established under Triaxis Ventures Private Limited.

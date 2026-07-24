@@ -93,7 +93,16 @@ function OnboardingWizard({ step }: EnterpriseOnboardingPageProps) {
           body: JSON.stringify(state),
         });
         const result = await response.json().catch(() => ({} as { error?: string }));
-        if (!response.ok) throw new Error(result.error ?? "Tenant provisioning failed.");
+        if (!response.ok) {
+          // The client-side auth guard above normally keeps an unauthenticated visitor off this
+          // screen entirely, but a session that expires in the gap between rendering and this
+          // click still reaches here -- without this branch, the server's raw "Unauthorized."
+          // text would surface directly to the user (Sprint 1 correction, P0-03, 2026-07-24).
+          if (response.status === 401) {
+            throw new Error("Your session expired while completing onboarding. Sign in again to finish -- your progress on this device is saved.");
+          }
+          throw new Error(result.error ?? "Tenant provisioning failed.");
+        }
         window.localStorage.removeItem(storageKey);
         trackEvent("organization_created", { sector: state.sector, role: state.role }, { module_name: "onboarding", route: "/onboarding/complete" });
 
