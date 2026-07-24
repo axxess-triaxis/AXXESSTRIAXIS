@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { fallbackAiReviewInbox, listAiReviewInbox, recordAiReviewDecision } from "./reviewInbox";
+import { canDecideAiReview, canViewAiReview, fallbackAiReviewInbox, listAiReviewInbox, recordAiReviewDecision } from "./reviewInbox";
 
 describe("AI review inbox", () => {
   beforeEach(() => {
@@ -29,5 +29,52 @@ describe("AI review inbox", () => {
 
     expect(result.status).toBe("approved");
     expect(result.reviewedAt).toBeTruthy();
+  });
+
+  // Sprint 5: GET /api/ai/reviews previously returned every review in the tenant to any
+  // authenticated member. These mirror ai_operation_reviews' own RLS policies exactly
+  // (supabase/migrations/202607150001_sprint22_23_pilot_command_center.sql) at the application
+  // layer, since this service reads via the service-role client and RLS never applies.
+  describe("canViewAiReview (mirrors ai_operation_reviews_member_select RLS)", () => {
+    it("lets the review's creator view it", () => {
+      expect(canViewAiReview({ createdByUserId: "user-1", reviewerUserId: undefined }, "user-1", "Employee")).toBe(true);
+    });
+
+    it("lets the assigned reviewer view it", () => {
+      expect(canViewAiReview({ createdByUserId: "user-1", reviewerUserId: "user-2" }, "user-2", "Employee")).toBe(true);
+    });
+
+    it("lets Super Admin and Organization Admin view any review in the tenant", () => {
+      expect(canViewAiReview({ createdByUserId: "user-1", reviewerUserId: undefined }, "user-99", "Super Admin")).toBe(true);
+      expect(canViewAiReview({ createdByUserId: "user-1", reviewerUserId: undefined }, "user-99", "Organization Admin")).toBe(true);
+    });
+
+    it("denies an unrelated Employee or Guest", () => {
+      expect(canViewAiReview({ createdByUserId: "user-1", reviewerUserId: "user-2" }, "user-3", "Employee")).toBe(false);
+      expect(canViewAiReview({ createdByUserId: "user-1", reviewerUserId: "user-2" }, "user-3", "Guest")).toBe(false);
+    });
+  });
+
+  describe("canDecideAiReview (mirrors ai_operation_reviews_reviewer_update RLS)", () => {
+    it("lets the assigned reviewer decide it", () => {
+      expect(canDecideAiReview({ reviewerUserId: "user-2" }, "user-2", "Employee")).toBe(true);
+    });
+
+    it("lets Super Admin and Organization Admin decide any review, even unassigned", () => {
+      expect(canDecideAiReview({ reviewerUserId: undefined }, "user-99", "Super Admin")).toBe(true);
+      expect(canDecideAiReview({ reviewerUserId: undefined }, "user-99", "Organization Admin")).toBe(true);
+    });
+
+    it("denies the review's own creator when they are not the assigned reviewer and not an admin", () => {
+      // Deliberately stricter than canViewAiReview: creating a review (e.g. asking the question
+      // that generated it) is not sufficient to self-approve it without oversight -- matches the
+      // RLS update policy, which never checks created_by_user_id.
+      expect(canDecideAiReview({ reviewerUserId: undefined }, "user-1", "Employee")).toBe(false);
+    });
+
+    it("denies an unassigned non-admin entirely, including for a review with no reviewer yet", () => {
+      expect(canDecideAiReview({ reviewerUserId: undefined }, "user-3", "Manager")).toBe(false);
+      expect(canDecideAiReview({ reviewerUserId: "user-2" }, "user-3", "Manager")).toBe(false);
+    });
   });
 });

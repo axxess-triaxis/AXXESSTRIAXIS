@@ -20,3 +20,15 @@ describe("OrganizationAdminSection (Sprint 3 -- does not hang, F-014)", () => {
     expect(source).toContain("Your session is required to view Organization Admin.");
   });
 });
+
+describe("OrganizationAdminSection pilot controls (Sprint 5 -- Department/Workspace honesty fix)", () => {
+  it("does not claim the Department map control is Ready, since no department-permission mapping code exists", () => {
+    const controlsBlock = source.slice(source.indexOf("const pilotControls"), source.indexOf("export function OrganizationAdminSection"));
+    const departmentLine = controlsBlock
+      .split("\n")
+      .find((line) => line.includes("Department map"));
+    expect(departmentLine).toBeDefined();
+    expect(departmentLine).not.toContain('status: "Ready"');
+    expect(departmentLine).toContain('status: "Not built"');
+  });
+});

@@ -16,6 +16,7 @@ import type {
   Program,
   Project,
   RoleName,
+  Stakeholder,
   Task,
   User,
 } from "../domain";
@@ -43,6 +44,7 @@ import type {
   ProgramsRepository,
   ProjectsRepository,
   RepositoryQuery,
+  StakeholdersRepository,
   TasksRepository,
   TenantCreateInput,
   TenantRepository,
@@ -68,7 +70,8 @@ export type ResourceName =
   | "notifications"
   | "audit_logs"
   | "invitations"
-  | "beta_feedback";
+  | "beta_feedback"
+  | "stakeholders";
 
 type SupabaseRestOptions = {
   method?: "GET" | "POST" | "PATCH";
@@ -126,6 +129,17 @@ type ProjectRow = {
   start_date: string | null;
   due_date: string | null;
   tags: string[] | null;
+};
+
+type StakeholderRow = {
+  id: string;
+  organization_id: string;
+  name: string;
+  affiliation: string | null;
+  role: string | null;
+  relationship_owner_id: string | null;
+  influence_score: number | string;
+  engagement_level: Stakeholder["engagementLevel"];
 };
 
 type TaskRow = {
@@ -821,6 +835,33 @@ function taskUpdateMutation(_scope: TenantScope, input: Record<string, unknown>)
   });
 }
 
+// Sprint 5, Priority 4: minimal live Stakeholders/CRM path. The stakeholders table and its RLS
+// (supabase/migrations/20260702165736_initial_enterprise_schema.sql) already existed with zero
+// application code ever reading or writing it -- this closes that gap with the same pattern every
+// other tenant-scoped resource in this file already uses, not a new architecture.
+function stakeholderMutation(scope: TenantScope, input: Record<string, unknown>) {
+  return compactMutation({
+    organization_id: scope.organizationId,
+    name: nullableString(input.name),
+    affiliation: nullableString(input.affiliation),
+    role: nullableString(input.role),
+    relationship_owner_id: nullableString(input.relationshipOwnerId) ?? scope.userId,
+    influence_score: typeof input.influenceScore === "number" ? input.influenceScore : 50,
+    engagement_level: input.engagementLevel ?? "medium",
+  });
+}
+
+function stakeholderUpdateMutation(_scope: TenantScope, input: Record<string, unknown>) {
+  return compactMutation({
+    name: input.name === undefined ? undefined : nullableString(input.name),
+    affiliation: input.affiliation === undefined ? undefined : nullableString(input.affiliation),
+    role: input.role === undefined ? undefined : nullableString(input.role),
+    relationship_owner_id: input.relationshipOwnerId === undefined ? undefined : nullableString(input.relationshipOwnerId),
+    influence_score: typeof input.influenceScore === "number" ? input.influenceScore : undefined,
+    engagement_level: input.engagementLevel,
+  });
+}
+
 function meetingMutation(scope: TenantScope, input: Record<string, unknown>) {
   return compactMutation({
     organization_id: scope.organizationId,
@@ -985,6 +1026,24 @@ const projectConfig: ResourceConfig<ProjectRow, Project> = {
   }),
   toInsert: projectMutation,
   toUpdate: projectUpdateMutation,
+};
+
+const stakeholderConfig: ResourceConfig<StakeholderRow, Stakeholder> = {
+  table: "stakeholders",
+  select: "id,organization_id,name,affiliation,role,relationship_owner_id,influence_score,engagement_level",
+  searchColumns: ["name", "affiliation", "role"],
+  defaultOrder: "name.asc",
+  map: (row) => ({
+    id: row.id,
+    organizationId: row.organization_id,
+    name: row.name,
+    affiliation: row.affiliation ?? "",
+    relationshipOwnerId: row.relationship_owner_id ?? undefined,
+    influenceScore: Number(row.influence_score),
+    engagementLevel: row.engagement_level,
+  }),
+  toInsert: stakeholderMutation,
+  toUpdate: stakeholderUpdateMutation,
 };
 
 const taskConfig: ResourceConfig<TaskRow, Task> = {
@@ -1308,6 +1367,7 @@ export const usersRepository: UsersRepository = {
 export const programsRepository: ProgramsRepository = createTenantRepository("programs", programConfig);
 export const projectsRepository: ProjectsRepository = createMutableTenantRepository("projects", projectConfig);
 export const tasksRepository: TasksRepository = createMutableTenantRepository("tasks", taskConfig);
+export const stakeholdersRepository: StakeholdersRepository = createMutableTenantRepository("stakeholders", stakeholderConfig);
 const baseDocumentsRepository = createMutableTenantRepository("documents", documentConfig);
 export const documentVersionsRepository: DocumentVersionsRepository = createMutableTenantRepository("document_versions", documentVersionConfig);
 export const documentCategoriesRepository: DocumentCategoriesRepository = createMutableTenantRepository("document_categories", documentCategoryConfig);
@@ -1542,6 +1602,7 @@ export const resourceRepositories = {
   programs: programsRepository,
   projects: projectsRepository,
   tasks: tasksRepository,
+  stakeholders: stakeholdersRepository,
   documents: documentsRepository,
   document_versions: documentVersionsRepository,
   document_categories: documentCategoriesRepository,
