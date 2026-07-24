@@ -127,7 +127,15 @@ Production build succeeded cleanly. All static and dynamic routes compiled, incl
 
 ## Deployment Status / Production Alias Status
 
-<!-- Filled in immediately after the production deploy step that follows this document's creation. -->
+**Current.** Commit `ad0b665` (this sprint's changes, on top of `348bb13` which itself carried Sprint 3 and Sprint 4's previously-undeployed fixes) was deployed via `npx vercel deploy --prod`.
+
+- Deployment ID: `dpl_6kKGawAUtbisWEXT7pXrYE79wmKk`
+- Deployment URL: `https://axxesstriaxis-83slv1wvi.vercel.app`
+- Status: `READY`, target `production`
+- Aliases confirmed via `vercel inspect`: `triaxisventures.com`, `www.triaxisventures.com`, `beta.triaxisventures.com`, `axxesstriaxis.vercel.app`
+- Live non-credentialed verification: `curl https://beta.triaxisventures.com/auth` returned `HTTP 200` and the literal strings `Sign up`, `Continue with Google`, `Continue with Microsoft` — a clean, unauthenticated login form, not a stale authenticated-looking dead end.
+- An unrelated deployment on a different preview alias (git-ref `8804fa`) remains in `Error` status; it does not carry any production alias and predates this sprint's changes — flagged as out-of-scope, not investigated further.
+- Deployment did not depend on GitHub/GitLab as a mediator — the Vercel CLI deployed directly from the local working tree.
 
 ## Security / Role-Ownership Result
 
