@@ -38,9 +38,9 @@ Make Triaxis Ventures Pvt Ltd usable as the first real tenant.
 
 Sprint 1 is closed only if Triaxis Ventures can sign up/sign in to its tenant, manage a basic user profile, and access protected workspaces without backend errors.
 
-### Sprint 1 Status (2026-07-23)
+### Sprint 1 Status (2026-07-23, updated 2026-07-24)
 
-**Not closed.** Every engineering-side deliverable is complete, tested, and deployed to production (commit `59d1fe0`, deployment `dpl_Dd4z3d7kACCVioeSKFgYZeHx89Uo`), including the previously-undeployed Sprint 42 fix for the "Provision Tenant -> Unauthorized" blocker. Non-credentialed live checks confirm the fix works: an unauthenticated visitor hitting `/onboarding` is now redirected to `/auth` instead of being allowed to complete the wizard. What remains is exactly the exit criteria's own wording -- Triaxis Ventures actually signing up/signing in and completing onboarding -- which requires the HITL to perform, since Claude Code cannot create accounts or enter credentials under any circumstance. See `docs/readiness/SPRINT_1_TENANT_0_PRODUCTION_ACTIVATION_CLOSEOUT.md` for full evidence. Sprint 2 should not begin until this walkthrough closes Sprint 1's blocked actionables, per the program's own sequencing.
+**Still not closed, but the central blocker is resolved.** The HITL performed the requested walkthrough on 2026-07-24: **Tenant 0 provisioning succeeded live** -- the first successful provisioning event in this program's history -- along with live-verified login, logout, and role assignment. What remains: A-02 (create-account success state) surfaced a confirmed defect needing a fix, not a HITL action; A-05 (password reset) and A-07 (profile editing, via a broken menu entry point) still lack live proof. The HITL also flagged two new, high-priority defects during the walkthrough -- a broken Investor Preview and a stale, dead-end root-domain landing page -- both explicitly investor-facing concerns. See `docs/readiness/SPRINT_1_TENANT_0_PRODUCTION_ACTIVATION_CLOSEOUT.md` (including its 2026-07-24 Addendum) for full evidence. Recommended: fix A-02 and the two investor-facing defects before starting Sprint 2.
 
 ## Sprint 2: Live Golden Path Execution
 
