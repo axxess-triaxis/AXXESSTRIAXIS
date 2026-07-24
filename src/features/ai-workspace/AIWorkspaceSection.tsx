@@ -172,6 +172,17 @@ export const AIWorkspaceSection = () => {
         module_name: "ai-workspace",
         route: "/ai-workspace",
       });
+      analytics.trackEvent("rag_answer_generated", {
+        source_count: (result as LiveRagAnswer).sources?.length ?? 0,
+        confidence: (result as LiveRagAnswer).confidence ?? null,
+        human_review_required: (result as LiveRagAnswer).humanReviewRequired ?? null,
+      }, {
+        organization_id: session.user?.organizationId,
+        user_id: session.user?.id,
+        user_role: session.user?.role,
+        module_name: "ai-workspace",
+        route: "/ai-workspace",
+      });
     } catch (error) {
       const timedOut = error instanceof DOMException && error.name === "AbortError";
       setQueryError(

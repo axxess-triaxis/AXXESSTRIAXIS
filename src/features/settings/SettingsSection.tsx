@@ -271,6 +271,7 @@ const departmentOptions = [
 
 function ProfilePanel() {
   const { session, updateProfile } = useAuth();
+  const analytics = useAnalytics();
   const user = session.user;
   const [toast, setToast] = useState<{ tone: "success" | "error" | "info"; message: string } | null>(null);
   const [form, setForm] = useState({
@@ -306,6 +307,13 @@ function ProfilePanel() {
     try {
       await updateProfile(form);
       setToast({ tone: "success", message: "Profile updated." });
+      analytics.trackEvent("profile_updated", { department: form.department }, {
+        organization_id: user.organizationId,
+        user_id: user.id,
+        user_role: user.role,
+        module_name: "settings",
+        route: "/settings",
+      });
     } catch {
       setToast({ tone: "error", message: "Profile could not be updated." });
     }

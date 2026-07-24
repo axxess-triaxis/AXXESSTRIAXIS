@@ -132,6 +132,8 @@ export function EnterpriseAuthFlowPage({ kind }: { kind: AuthFlowKind }) {
 
     if (!copy.endpoint) return;
 
+    if (kind === "sign-up") trackEvent("sign_up_started", { flow: "email_password" }, { module_name: "auth", route: "/auth/sign-up" });
+
     setBusy(true);
     setMessage(null);
     try {

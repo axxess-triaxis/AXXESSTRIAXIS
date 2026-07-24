@@ -435,7 +435,9 @@ export const KnowledgeHubSection = () => {
         }
       />
 
-      <DemoDataNotice label="Knowledge Hub shows seeded policies, SOPs, review notes, and risk documents with metadata, permissions, version posture, and RAG indexing state." />
+      {isDemoModeEnabled() && (
+        <DemoDataNotice label="Knowledge Hub shows seeded policies, SOPs, review notes, and risk documents with metadata, permissions, version posture, and RAG indexing state." />
+      )}
 
       <input
         ref={fileInputRef}

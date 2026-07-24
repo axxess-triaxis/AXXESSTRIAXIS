@@ -88,7 +88,9 @@ export function PilotConversionSection() {
         }
       />
 
-      <DemoDataNotice label="Pilot Conversion uses live pilot readiness events when Supabase is configured, and falls back to seeded investor-preview events for demos." />
+      {state.source === "Demo" && (
+        <DemoDataNotice label="Pilot Conversion uses live pilot readiness events when Supabase is configured, and falls back to seeded investor-preview events for demos." />
+      )}
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <MetricCard label="Pilot health" value={`${health.score}%`} detail={health.status} state={state.source} icon={TrendingUp} />
