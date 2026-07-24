@@ -143,6 +143,10 @@ Move AXXESS from product-functional to operator-visible.
 
 Sprint 4 is closed only if analytics, integration readiness, audit evidence, and operational monitoring are visible enough for serious pilot review.
 
+### Sprint 4 Status (2026-07-24)
+
+**Not closed, but this is the first sprint with a targeted actionable (A-22, analytics) closed to `Yes` on code evidence alone -- no live-authenticated-session caveat required, since a dispatch-proof test suite can and does directly confirm real event instrumentation exists in shipped code.** A-25 (QA3 evidence package) also closed `Yes`. A-18, A-19, A-20, A-21 remain `Blocked`: A-18/A-19 on the same Sprint 2 golden-path-walkthrough dependency (though both gained real new evidence this sprint -- a found-and-fixed timeline demo-data-leak, and a new role-change audit event); A-20 on a live-authenticated dashboard confirmation this program has still never performed; A-21 purely on external OAuth credential provisioning (the connector implementation itself is genuinely complete, contrary to what stale documentation implied). This sprint's audits also found and fixed a second found-not-designed demo-data-leak (the workflow timeline fallback) and a badge-overclaim defect (three components showing an unconditional "Investor Preview" banner to real tenants) -- the same pattern of real, previously-undetected gaps this program keeps surfacing sprint over sprint. See `docs/readiness/SPRINT_4_INTEGRATIONS_ANALYTICS_OPERATIONAL_EVIDENCE_CLOSEOUT_2026_07_24.md` for full evidence.
+
 ## Sprint 5: Mobile Readiness, Release Gates, and QA3 Preparation
 
 Expected delta: +10% to +15%

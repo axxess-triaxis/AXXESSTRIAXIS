@@ -17,6 +17,7 @@ import {
   WorkflowStepCard,
 } from "../../components/enterprise";
 import { Card } from "../../components/ui/Card";
+import { isDemoModeEnabled } from "../../demo/demoMode";
 import type { AuditLog, Invitation, Organization, User } from "../../domain";
 import { applicationServices } from "../../providers/serviceProvider";
 import { tenantScopeFromUser } from "../../repositories/supabaseEnterpriseRepositories";
@@ -122,7 +123,9 @@ export function OrganizationAdminSection() {
         }
       />
 
-      <DemoDataNotice label="Live tenants start clean. Investor Preview uses seeded users, roles, departments, and audit records to demonstrate pilot readiness without mixing with production data." />
+      {isDemoModeEnabled() && (
+        <DemoDataNotice label="Live tenants start clean. Investor Preview uses seeded users, roles, departments, and audit records to demonstrate pilot readiness without mixing with production data." />
+      )}
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <MetricCard label="Pilot users" value={state.users.length} detail={`${admins.length} admin-ready`} state={state.loading ? "Provider-gated" : "Live"} icon={Users} />
