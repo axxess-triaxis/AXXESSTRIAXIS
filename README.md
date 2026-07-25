@@ -41,6 +41,22 @@ AXXESS is being engineered from the outset to support those requirements.
 
 ---
 
+## Evidence and Verification
+
+Every material claim about status, progress, or completion in this repository's documentation is required to trace through **external signal -> product decision -> shipped artifact -> verification -> current status**. This is a standing rule, not a one-time exercise -- formalized in [`CLAUDE.md`](CLAUDE.md).
+
+Start here to trace it:
+
+- [`docs/FOUNDER_EXECUTION_EVIDENCE_GOVERNANCE.md`](docs/FOUNDER_EXECUTION_EVIDENCE_GOVERNANCE.md) -- the standing rule itself, and the index of every canonical evidence file below.
+- [`docs/FOUNDER_EXECUTION_EVIDENCE_INDEX.md`](docs/FOUNDER_EXECUTION_EVIDENCE_INDEX.md) -- the master evidence inventory: founder-stated volumes vs. independently verified counts, source-linked, last audited 2026-07-25.
+- [`docs/MARKET_TO_PRODUCT_EVIDENCE_LEDGER.md`](docs/MARKET_TO_PRODUCT_EVIDENCE_LEDGER.md) -- how external signal (pitch calls, client scoping, stakeholder validation, beta feedback, QA findings) converted into specific product decisions.
+- [`docs/RELEASE_AND_VERIFICATION_EVIDENCE_LEDGER.md`](docs/RELEASE_AND_VERIFICATION_EVIDENCE_LEDGER.md) -- git/PR counts and fresh typecheck/lint/test/build capture, with exact commands and commit hashes.
+- [`docs/UNSUPPORTED_OR_PARTIAL_CLAIMS.md`](docs/UNSUPPORTED_OR_PARTIAL_CLAIMS.md) -- every claim not yet fully evidenced, kept open until a source artifact closes it.
+- [`docs/readiness/PITCH_AND_TRACTION_LOG_2026_07_24.md`](docs/readiness/PITCH_AND_TRACTION_LOG_2026_07_24.md), [`docs/readiness/CLIENT_SCOPING_CALLS_LOG_2026_07_25.md`](docs/readiness/CLIENT_SCOPING_CALLS_LOG_2026_07_25.md), [`docs/readiness/STAKEHOLDER_IDEA_VALIDATION_CALLS_LOG_2026_07_25.md`](docs/readiness/STAKEHOLDER_IDEA_VALIDATION_CALLS_LOG_2026_07_25.md) -- the named, per-conversation source logs behind the investor/pitch, client scoping, and stakeholder idea-validation counts cited above (deduplicated against each other where a name appears in more than one).
+- [`docs/readiness/ACTIONABLES_READINESS_MATRIX.md`](docs/readiness/ACTIONABLES_READINESS_MATRIX.md) and [`docs/readiness/QA3_READINESS_KANBAN.md`](docs/readiness/QA3_READINESS_KANBAN.md) -- the live, evidence-gated progress tracker (`Yes` / `Blocked` / `No`, each with a named owner, confidence score, and evidence citation).
+
+---
+
 # Why We Are Building AXXESS
 
 Enterprise AI adoption is accelerating faster than enterprise AI governance.

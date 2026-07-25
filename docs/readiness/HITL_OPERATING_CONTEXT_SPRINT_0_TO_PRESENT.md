@@ -174,6 +174,18 @@ Documentation should be written so that future reviewers can understand:
 - What the HITL approved.
 - What the next operator should do.
 
+## Evidence Chain Rule
+
+All future material prompts, sprint closeouts, QA logs, release gates, and readiness claims must follow the founder execution evidence rule:
+
+**External signal -> product decision -> changed artifact -> verification -> current status**
+
+This rule is formalized in:
+
+`docs/FOUNDER_EXECUTION_EVIDENCE_GOVERNANCE.md`
+
+If a claim is founder-stated but not yet evidenced in the repository, it must be marked as `Founder-stated, source artifact needed`. If a claim is supported by files, commits, test output, deployment logs, or transcript artifacts, cite the exact source.
+
 ## Governance Implication
 
 Until a fallback founder, partner, collaborator, employee, or operating lead is secured, the repository must treat HITL bandwidth as a critical resource.
@@ -206,4 +218,3 @@ The five-sprint QA3 readiness program must be executed with this single-founder 
 This document does not mark any product sprint complete.
 
 It establishes the governance and operating context for how sprint prompts, product management, engineering execution, and HITL approvals should work from Sprint 0 through the current roadmap and immediate future.
-
