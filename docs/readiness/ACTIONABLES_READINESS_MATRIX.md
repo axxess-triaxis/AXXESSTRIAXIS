@@ -5,6 +5,16 @@ Program: Five-sprint QA3 Readiness Execution Program
 Closure threshold: 80% confidence minimum  
 Status vocabulary: `No`, `Yes`, `Blocked`, `Deferred`
 
+**Scope note (2026-07-25):** the founder has formally signed off on the investor demo
+(hosting, display, data population -- `investor.triaxisventures.com`) as complete. Program focus
+shifts to the live beta (beta 0.7, `landing.triaxisventures.com`) going forward. The
+`investor.triaxisventures.com` track is closed for this program's purposes; no further demo-side
+actionables (e.g. the former "Investor Demo Phase 1: close dataset count gaps + add missing
+entities" task) will be worked unless the founder reopens it. Actionables that describe defects
+*inside the live beta* referencing demo content leaking into `landing.triaxisventures.com` (A-28,
+A-32) are unaffected by this sign-off -- those are beta-side bugs, not demo-side work, and remain
+open.
+
 ## Operating Rules
 
 Every actionable must be reviewed after every sprint.
