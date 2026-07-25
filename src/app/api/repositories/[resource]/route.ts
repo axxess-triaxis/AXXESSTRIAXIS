@@ -54,7 +54,7 @@ function hasRole(role: RoleName, allowed: RoleName[]) {
 }
 
 function canWriteResource(resource: ResourceName, role: RoleName) {
-  if (resource === "users") return hasRole(role, ["Super Admin", "Organization Admin"]);
+  if (resource === "users" || resource === "invitations") return hasRole(role, ["Super Admin", "Organization Admin"]);
   if (resource === "projects" || resource === "meetings") {
     return hasRole(role, ["Super Admin", "Organization Admin", "Executive", "Manager"]);
   }
@@ -305,6 +305,22 @@ export async function PATCH(request: Request, context: RouteContext) {
         },
       }).catch(() => undefined);
     }
+  }
+
+  // Admin panel wiring pass (2026-07-25): a revoked invitation is a tenant-sensitive action
+  // (blocks that token from ever being accepted) and must leave the same audit evidence every
+  // other admin mutation in this route already does.
+  if (resourceName === "invitations" && body.status === "revoked" && result && typeof result === "object") {
+    const target = result as Record<string, unknown>;
+    await auditLogsRepository.record(scope, {
+      action: "invitation.revoked",
+      resourceType: "invitations",
+      resourceId: id,
+      category: "user-management",
+      metadata: {
+        email: target.email ?? null,
+      },
+    }).catch(() => undefined);
   }
 
   return NextResponse.json(result);

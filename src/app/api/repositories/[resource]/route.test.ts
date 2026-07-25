@@ -102,4 +102,15 @@ describe("tenant-scoped repository gateway API (Sprint 2 -- POST /api/repositori
     expect(notifyIndex).toBeGreaterThan(-1);
     expect(auditIndex).toBeGreaterThan(notifyIndex);
   });
+
+  it("requires Super Admin/Organization Admin to revoke an invitation (admin panel wiring pass, 2026-07-25)", () => {
+    expect(routeSource).toContain('if (resource === "users" || resource === "invitations") return hasRole(role, ["Super Admin", "Organization Admin"]);');
+  });
+
+  it("writes an audit log for a revoked invitation", () => {
+    const patchBlock = routeSource.slice(routeSource.indexOf("export async function PATCH"));
+    expect(patchBlock).toContain('resourceName === "invitations" && body.status === "revoked"');
+    expect(patchBlock).toContain('action: "invitation.revoked"');
+    expect(patchBlock).toContain('resourceType: "invitations"');
+  });
 });

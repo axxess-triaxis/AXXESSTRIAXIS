@@ -654,6 +654,35 @@ function UserAdministration() {
     }
   };
 
+  // Admin panel wiring pass (2026-07-25): the "Invitation Administration" panel at /admin/invitations
+  // was a dead placeholder -- redirected to /settings instead of duplicating this real invite UI, and
+  // this is the one real gap it had: no way to revoke a pending invitation once sent.
+  const revokeInvitation = async (invitation: Invitation) => {
+    if (!scope || !canManageUsers) return;
+    setSaving(true);
+    setToast(null);
+    try {
+      await applicationServices.invitationsRepository.update(scope, invitation.id, { status: "revoked" });
+      setInvitations((current) => current.filter((row) => row.id !== invitation.id));
+      setToast({ tone: "success", message: "Invitation revoked." });
+    } catch {
+      const response = await fetch(`/api/repositories/invitations?id=${invitation.id}`, {
+        method: "PATCH",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "revoked" }),
+      }).catch(() => undefined);
+      if (response?.ok) {
+        setInvitations((current) => current.filter((row) => row.id !== invitation.id));
+        setToast({ tone: "success", message: "Invitation revoked." });
+      } else {
+        setToast({ tone: "error", message: "Invitation could not be revoked." });
+      }
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const updateUser = async (target: User, input: Partial<User>) => {
     if (!scope || !canManageUsers) return;
     setSaving(true);
@@ -746,7 +775,16 @@ function UserAdministration() {
                 <div className="text-xs font-semibold text-[#0F1117]">{invitation.email}</div>
                 <div className="text-[11px] text-[#5F6B73]">{invitation.role} · expires {invitation.expiresAt.slice(0, 10)}</div>
               </div>
-              <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700">{invitation.status}</span>
+              <div className="flex items-center gap-2">
+                <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700">{invitation.status}</span>
+                <button
+                  onClick={() => void revokeInvitation(invitation)}
+                  disabled={!canManageUsers || saving}
+                  className="rounded-lg border border-[rgba(0,0,0,0.1)] px-2 py-1 text-[11px] font-semibold text-[#5F6B73] hover:bg-[#F2F3F5] disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  Revoke
+                </button>
+              </div>
             </div>
           ))}
           {invitations.length === 0 && <div className="px-4 py-6 text-center text-xs text-[#5F6B73]">No pending invitations</div>}

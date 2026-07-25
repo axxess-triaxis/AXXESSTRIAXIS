@@ -152,6 +152,7 @@ export type CreateInvitationInput = {
 export interface InvitationsRepository {
   create(scope: TenantScope, input: CreateInvitationInput): Promise<Invitation>;
   listPending(scope: TenantScope, query?: RepositoryQuery): Promise<Invitation[]>;
+  update(scope: TenantScope, id: EntityId, input: TenantUpdateInput<Invitation>): Promise<Invitation>;
 }
 
 export type AuditLogInput = {
