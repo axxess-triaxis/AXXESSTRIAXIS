@@ -426,3 +426,14 @@ Sprint 2 should not begin until the investor route and first-run onboarding bloc
 
 The next Claude Code prompt should be a Sprint 1 correction prompt, not a Sprint 2 expansion prompt.
 
+## Follow-Up: HITL "Attempt 4" (2026-07-24, Post-Sprint-5) -- P0-01 Recurred, Now Root-Caused and Fixed
+
+P0-01 above was marked fixed in the Sprint 1 correction pass ("Fix Investor Preview edge-cookie gap" -- adding the `axxess-demo-session` edge-visible cookie so `src/proxy.ts` could recognize a deliberately-entered demo session). That fix addressed one real gap (the edge middleware couldn't see a client-only demo flag at all) but did not address two others, which the HITL's follow-up live walkthrough on 2026-07-24 reproduced exactly:
+
+1. `/auth`'s "already authenticated" branch treats a demo/investor mock session identically to a real one, and both the public site's "Sign In" and "Open Beta Workspace" buttons shared that one `/auth` route -- so any browser that had ever opened Investor Preview showed the stale "Signed in as Ananya Rao" screen regardless of intent.
+2. The edge-visible demo cookie (12-hour TTL) and the `localStorage` demo flag (no TTL) could desync, making "Continue to workspace" appear completely dead once the cookie lapsed while `localStorage` still reported demo mode active.
+
+Full root cause, fix, files changed, tests, and deployment evidence: `docs/readiness/P0_PUBLIC_ENTRY_INVESTOR_BETA_SPLIT_2026_07_24.md`. Short version: public entry is now split into `/investor` (dedicated, isolated demo entry) and `/landing` (dedicated beta-workspace entry that always clears stale demo state and only treats a genuine Supabase session as "already signed in"), and the cookie/localStorage desync is closed by refreshing the cookie on every app load while demo mode is active.
+
+**Status: fixed and tested, pending HITL re-verification against the two new URLs** (`https://www.triaxisventures.com/investor`, `https://www.triaxisventures.com/landing`) in a fresh/incognito browser profile.
+

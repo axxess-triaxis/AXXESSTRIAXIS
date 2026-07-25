@@ -1,0 +1,113 @@
+# Pitch and Traction Log
+
+Date created: 2026-07-24
+Product: AXXESS TRIaxis
+Company: Triaxis Ventures Private Limited
+Recorded by: Claude Code, from the founder's own account
+Purpose: a running, factual record of who AXXESS has been pitched to, what response each conversation produced, and what (if anything) was offered or declined. This is a founder-reported log, not independently verified evidence -- entries here are recorded as stated, in the same spirit as this program's existing "Honest Limitations" discipline (see `MONOREPO_ARCHITECTURE_AND_BUSINESS_MODEL.md` S7). Where a number or quote is given, it is recorded as given; nothing here should be read as claiming independent verification of pricing intent, promoter scores, or outcomes beyond what the founder reported.
+
+## How To Read This Log
+
+- **Status** marks whether the conversation is complete, ongoing, or awaiting a next step.
+- **Outcome** is exactly what was reported to have happened -- feedback, an offer made, an offer accepted, or an offer declined and why.
+- Entries are numbered in the order reported, not necessarily chronological order of the actual conversations.
+- This log is separate from `docs/readiness/CUSTOMER_ACQUISITION_FUNNEL_2026_07_24.md` (the forward-looking acquisition funnel design) and from `Enterprise beta feedback - Batch 1 (30 responses)/` (the structured, anonymized 30-response beta survey batch already analyzed in `MONOREPO_ARCHITECTURE_AND_BUSINESS_MODEL.md` S6). This log is specifically the named, one-to-one pitch and accelerator/incubator conversation history.
+
+## Enterprise / Institutional Prospects
+
+### 1. Ritu Kumar Mishra -- M&E Head, UNDP Malawi
+
+**Status:** Beta survey completed.
+**Outcome:** Highly impressed. Indicated willingness to pilot within the next 6 months. Described the platform as feeling "AI native." Gave a 90+ promoter score. Indicative pricing discussed at $5,000+/month (~$60,000 ARR).
+
+### 2. Moloy Bora -- ex-Joint Secretary, Government of Assam (retired IAS)
+
+**Status:** Conversation completed.
+**Outcome:** Liked the product. Gave constructive feedback on the workflows.
+
+### 3. Subhadeep Datta -- Associate Professor, Australian university campus in Dubai
+
+**Status:** Demo reviewed.
+**Outcome:** Gave constructive feedback specifically on the GCC go-to-market strategy and on using the GCC market as a beachhead.
+
+## Competitions and Panels
+
+### 4. Panel of judges -- Lemon Ideas' Innopreneurs Season 13
+
+**Status:** Presented (idea stage).
+**Outcome:** Called it a remarkable idea. Panel praised the team's subject-matter depth.
+
+## Incubation Programs
+
+### 5. Nandini Singh -- SIIC, IIT Kanpur
+
+**Status:** Round 2 signed off; proceeding to Round 3 with the Domain Head.
+**Outcome:** Approved progression to the next round of the incubation process.
+
+### 6. Gopal Krishna Dixit -- Domain Head (AI & ML), SIIC, IIT Kanpur
+
+**Status:** Call completed.
+**Outcome:** 45-minute call including Q&A and a live demo walkthrough.
+
+### 7. Sudhanshu Mittal -- Director, NASSCOM; Centre Head, NASSCOM Centre of Excellence Gurugram (AI & IoT)
+
+**Status:** Offer made.
+**Outcome:** 30-minute presentation; walkthrough of the demo link provided in advance. Incubation offered.
+
+## Accelerator / Pre-Accelerator Programs
+
+### 8. Davide Coppola -- VC and Managing Director, Startup Wise Guys
+
+**Status:** Offer declined.
+**Outcome:** 20-minute call including live demo, pitch, and GitHub repo review. Offered entry into the Founders Club (pre-accelerator track) with a 50% discount on the program fee. **Declined, to preserve runway.**
+
+### 9. Polina Stavrovski, O. Disi, K. Jaoudi, K. Jatania -- Plug and Play UAE
+
+**Status:** Round 2 call completed.
+**Outcome:** 45-minute call with the investor team, as part of Round 2 for the Dubai Founders HQ Accelerator, Cohort 2.
+
+### 10. Founder Institute Core Dubai -- Fall 2026 cohort
+
+**Status:** Finalist, awaiting cohort call.
+**Outcome:** Selected on a founder-first basis; awaiting the cohort selection call.
+
+### 11. Forge AI by LevelUp -- Top 20 Founder Residency, Sri Lanka
+
+**Status:** Offer declined.
+**Outcome:** Selected after two rounds of interviews described as very difficult. **Declined, to preserve runway.**
+
+### 12. Down Town Venture Labs
+
+**Status:** Application/pitch presented.
+**Outcome:** Presented for the government NIDHI PoC grant, as an idea-stage startup.
+
+## Recognition / Nomination Processes
+
+### 13. Globalist Entrepreneur Mobility Summit 2026 by Forbes India
+
+**Status:** Founders' Call attended.
+**Outcome:** Attended the Founders' Call as part of the nomination process for Forbes India's Select 200.
+
+### 14. Jose Sarmento -- Web Summit (Lisbon, November 2026)
+
+**Status:** Offer declined.
+**Outcome:** Presented the idea and were cleared for Web Summit Alpha attendance in November 2026. **Declined, to preserve runway.**
+
+## Other
+
+### 15. Various individuals -- potential angels and grantmakers
+
+**Status:** Ongoing.
+**Outcome:** Not itemized individually in this log; tracked as an open, ongoing category rather than named entries.
+
+## Summary Pattern (As Reported)
+
+Reading across all fourteen named entries: the recurring pattern is strong qualitative reception (multiple uses of "impressed," "remarkable," "AI native") combined with a deliberate, repeated founder decision to **decline three separate accelerator/pre-accelerator offers** (Startup Wise Guys' Founders Club, Forge AI's Founder Residency, Web Summit Alpha) explicitly to preserve runway, while continuing to advance further in incubation-style programs that do not carry the same cost/dilution/time trade-off (SIIC IIT Kanpur, NASSCOM CoE Gurugram). This is consistent with the capital-efficiency framing already documented in `MONOREPO_ARCHITECTURE_AND_BUSINESS_MODEL.md` S1.4 (total spend to date approximately $800, current run-rate sustainable on Tier 1 self-serve pricing alone) -- these are recorded here as the same discipline applied to fundraising/accelerator decisions, not just product spend.
+
+## Explicit Non-Claims
+
+Consistent with this program's documentation discipline: this log does not claim any of the following, and none should be inferred from it --
+
+- No accelerator or incubation offer listed above has been accepted; SIIC IIT Kanpur and NASSCOM CoE Gurugram are the only two still actively progressing.
+- No pilot, contract, purchase order, or signed letter of intent exists from any entry in this log. UNDP Malawi's $5,000+/month indicative pricing is a survey response, not a commercial commitment -- this is the same caveat already applied to the broader beta-feedback willingness-to-pay data in `MONOREPO_ARCHITECTURE_AND_BUSINESS_MODEL.md` S6.4.
+- Promoter scores, "AI native" framing, and qualitative praise quoted above are the founder's own recollection of what was said in these conversations, not captured via a formal survey instrument (unlike the 30-response beta feedback batch, which was captured via structured NPS/PMF survey tooling).

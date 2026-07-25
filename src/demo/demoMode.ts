@@ -60,6 +60,18 @@ function setDemoSessionCookie(enabled: boolean) {
     : `${demoSessionCookieName}=; path=/; max-age=0; SameSite=Lax`;
 }
 
+// Attempt 4 (2026-07-24) root cause: the edge-visible axxess-demo-session cookie expires after 12
+// hours, but the localStorage flag isDemoModeEnabled() reads never expires. Once the cookie lapses
+// while localStorage still says demo mode is on, the client renders "Signed in as Ananya Rao" (a
+// pure client-side check) while src/proxy.ts's edge guard sees no valid cookie and bounces
+// /dashboard back to /auth -- which immediately re-renders the same "Signed in" screen, so
+// "Continue to workspace" looks completely dead. Call this once per app load whenever
+// isDemoModeEnabled() is true (AuthProvider does, on mount) to keep the two signals in sync as long
+// as the visitor keeps using the app, without waiting for another explicit login.
+export function refreshDemoSessionCookie() {
+  setDemoSessionCookie(true);
+}
+
 export function setDemoModeEnabled(enabled: boolean) {
   if (typeof window === "undefined" || isDemoModeForcedByEnv()) return;
   window.localStorage.setItem(demoModeStorageKey, enabled ? "true" : "false");

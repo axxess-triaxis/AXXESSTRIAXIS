@@ -452,3 +452,7 @@ Current honest label:
 
 **Tenant 0 provisioned, partially operational, and ready for targeted remediation toward full onboarding.**
 
+## Addendum (2026-07-24): T0-15 and T0-16 Fixed
+
+T0-15 ("Investor preview route", P0) and T0-16 ("Continue to workspace", P0), listed as `Blocked / Broken` above, were reproduced live by the HITL again (own "Attempt 4" report) and this time fully root-caused: `/auth`'s "already authenticated" branch treated a demo/investor mock session identically to a real one, so the public site's "Sign In" and "Open Beta Workspace" links -- which shared that one route -- both showed a stale "Signed in as Ananya Rao" screen with a dead "Continue to workspace" button once a browser had ever opened Investor Preview. Fixed by splitting public entry into dedicated `/investor` and `/landing` routes and closing an underlying cookie/localStorage TTL desync. Full detail: `docs/readiness/P0_PUBLIC_ENTRY_INVESTOR_BETA_SPLIT_2026_07_24.md`, `docs/readiness/TENANT_0_ONBOARDING_ATTEMPTS_2026_07_24.md`. Status: fixed and tested, pending HITL re-verification against `https://www.triaxisventures.com/investor` and `https://www.triaxisventures.com/landing`.
+
