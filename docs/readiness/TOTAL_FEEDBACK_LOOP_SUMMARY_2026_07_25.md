@@ -104,17 +104,29 @@ TRIaxis company-page LinkedIn analytics (Admin view -> Analytics -> Visitors, a 
 from personal-profile analytics) has been provided yet. The personal-profile figures above are
 verified in their own right and are not evidence for or against the brand-page figure.
 
-**Personal Facebook profile -- new claim, no screenshot yet.** The founder additionally stated
-(2026-07-25): personal Facebook profile (a fourth, distinct entity from the "Triaxis Group Private
-Limited" company Page in item 6 above, and from the personal LinkedIn profile above) had
+**Personal Facebook profile -- new claim, correction on verification path.** The founder additionally
+stated (2026-07-25): personal Facebook profile (a fourth, distinct entity from the "Triaxis Group
+Private Limited" company Page in item 6 above, and from the personal LinkedIn profile above) had
 "almost 200,000 views in last 90 days," one viral post in March that alone got "276,000" views, and,
 in the founder's own hedged words, "last 6 months my personal FB profile might have had possibly
-800k-1 million views." **Founder-stated, source artifact needed** for all three figures -- no
-Meta Business Suite screenshot for the personal profile (as opposed to the company Page) has been
-provided. The 800k-1M figure is explicitly a founder estimate ("might have had possibly"), not a
-stated fact, and is recorded here with that same hedge rather than rounded into a firmer number.
-Adding a Meta Business Suite screenshot for the personal profile, filtered to the last 90 days and
-to March specifically for the viral post, would move this to Verified.
+800k-1 million views." **Founder-stated, source artifact needed** for all three figures.
+
+Two corrections to the initial framing of this line, both from the founder (2026-07-25):
+- **Wrong verification path suggested.** Meta Business Suite is for Pages, not personal profiles --
+  a personal profile has no Business Suite analytics to screenshot. The correct panel, if the
+  founder has Professional Mode enabled on the personal profile, is Facebook's own "Professional
+  dashboard" -> Insights/Reach (a lighter-weight analytics view than Business Suite, but the closest
+  equivalent for a personal profile). If Professional Mode is not enabled, no in-app analytics exist
+  for this profile at all, and the figures may be unverifiable by screenshot regardless.
+- **Content category, not just entity, is different.** The founder describes this audience as
+  reading "my journey as a person/founder, balancing startup with fatherhood, entrepreneurship,
+  satire, poetry, noir essays, my writeups on cofounding with life partner" -- explicitly personal-life
+  and literary content, not product or market-signal content. Per this program's evidence-chain rule
+  (external signal -> product decision -> shipped artifact), this reach figure is **founder
+  personal-brand reach, not product-market evidence** in the same sense as the 62 calls, the beta
+  survey, or the QA walkthroughs above -- it doesn't trace to a product decision the way those do.
+  It is recorded here for completeness at the founder's request, but should not be summed with, or
+  presented alongside, the product-evidence figures above as though they were the same category.
 
 ## Rule
 
