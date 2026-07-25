@@ -4,8 +4,8 @@ import type { TenantScope } from "../repositories/interfaces";
 import { buildEnterpriseGoldenPathSnapshot } from "../services/workflows/enterpriseGoldenPath";
 import { useLiveWorkspaceMetrics } from "./useLiveWorkspaceMetrics";
 
-export function useEnterpriseGoldenPath(scope?: TenantScope, user?: UserContext | null) {
-  const metrics = useLiveWorkspaceMetrics(scope);
+export function useEnterpriseGoldenPath(scope?: TenantScope, user?: UserContext | null, refreshToken = 0) {
+  const metrics = useLiveWorkspaceMetrics(scope, refreshToken);
 
   return useMemo(() => buildEnterpriseGoldenPathSnapshot({
     metrics,

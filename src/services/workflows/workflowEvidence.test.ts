@@ -39,14 +39,16 @@ describe("workflow evidence", () => {
 
     expect(indicators.map((indicator) => indicator.id)).toEqual([
       "onboarding",
-      "active-users",
+      "team-provisioning",
       "documents-indexed",
       "pending-ai-reviews",
       "open-tasks",
       "approval-sla",
       "integration-health",
-      "audit-coverage",
+      "audit-readiness",
     ]);
+    expect(indicators.find((indicator) => indicator.id === "team-provisioning")?.label).toBe("Team provisioning");
+    expect(indicators.find((indicator) => indicator.id === "audit-readiness")?.label).toBe("Audit readiness");
     expect(indicators.find((indicator) => indicator.id === "approval-sla")?.tone).toBe("danger");
     expect(indicators.find((indicator) => indicator.id === "integration-health")?.value).toBe("Connected");
   });

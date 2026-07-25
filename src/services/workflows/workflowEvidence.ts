@@ -144,8 +144,11 @@ export function buildTenantHealthIndicators(
       route: snapshot.nextBestAction.route,
     },
     {
-      id: "active-users",
-      label: "Active users",
+      // Deliberately not labeled "Active users": the value is a Ready/Blocked readiness signal for
+      // whether team provisioning is unblocked, not a literal count of active user accounts. Renamed
+      // (Executive Dashboard Sprint ED-1) after this label was found to overclaim what it measures.
+      id: "team-provisioning",
+      label: "Team provisioning",
       value: snapshot.steps.some((step) => step.id === "team-provisioning" && step.status !== "blocked") ? "Ready" : "Blocked",
       detail: "Invite flow and role assignment are available to tenant admins.",
       tone: "info",
@@ -192,10 +195,14 @@ export function buildTenantHealthIndicators(
       route: "/integrations",
     },
     {
-      id: "audit-coverage",
-      label: "Audit coverage",
+      // Deliberately labeled "readiness," not "coverage": the value is a proxy heuristic
+      // (unread notifications or onboarding completion), not a literal query of the audit-log
+      // table. Renamed (Executive Dashboard Sprint ED-1) after this label was found to overclaim a
+      // real audit-log measurement it does not perform.
+      id: "audit-readiness",
+      label: "Audit readiness",
       value: auditTone === "success" ? "Tracked" : "Needs first event",
-      detail: "Workflow actions record actor, source, citation, decision and outcome evidence.",
+      detail: "Proxy readiness signal, not a literal audit-log count. Workflow actions record actor, source, citation, decision and outcome evidence once logged.",
       tone: auditTone,
       route: "/admin/audit-logs",
     },

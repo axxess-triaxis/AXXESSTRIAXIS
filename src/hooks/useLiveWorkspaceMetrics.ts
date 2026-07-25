@@ -12,7 +12,10 @@ function initialMetrics(): LiveWorkspaceMetrics {
   return isDemoModeEnabled() ? getFallbackLiveWorkspaceMetrics() : getZeroLiveWorkspaceMetrics();
 }
 
-export function useLiveWorkspaceMetrics(scope?: TenantScope) {
+// refreshToken is optional and defaults to 0 -- passing an incrementing value (e.g. from a
+// "Refresh" button) forces this effect to re-run and issue a fresh fetch, since scope alone often
+// does not change across a manual refresh.
+export function useLiveWorkspaceMetrics(scope?: TenantScope, refreshToken = 0) {
   const [metrics, setMetrics] = useState<LiveWorkspaceMetrics>(() => initialMetrics());
 
   useEffect(() => {
@@ -22,7 +25,7 @@ export function useLiveWorkspaceMetrics(scope?: TenantScope) {
       .then((value) => { if (mounted) setMetrics(value); })
       .catch(() => { if (mounted) setMetrics(initialMetrics()); });
     return () => { mounted = false; };
-  }, [scope]);
+  }, [scope, refreshToken]);
 
   return metrics;
 }
