@@ -75,21 +75,21 @@ Target: at least 19/27 REAL elements after completion
 
 | ID | Checklist Item | Status | Evidence / Notes |
 |---|---|---|---|
-| ED2-01 | External Signals tile uses repository data or an honest provider-gated state | Not started |  |
-| ED2-02 | Social alert repository/service layer wired if scoped | Not started |  |
-| ED2-03 | Golden Path pending AI review count uses literal AI review count or honest fallback | Not started |  |
-| ED2-04 | Tenant Health Command Center pending AI review count uses literal AI review count or honest fallback | Not started |  |
-| ED2-05 | Audit coverage uses real audit count or formally named proxy | Not started |  |
-| ED2-06 | `getDashboardProjects()` fabricated budget/spent fields removed or replaced | Not started |  |
-| ED2-07 | Recent institutional activity is live or honestly empty, not fake | Not started |  |
-| ED2-08 | Dashboard tests cover AI review counts | Not started |  |
-| ED2-09 | Dashboard tests cover External Signals behavior | Not started |  |
-| ED2-10 | Dashboard tests cover budget/spent no-fabrication behavior | Not started |  |
-| ED2-11 | Typecheck run and passing | Not started |  |
-| ED2-12 | Lint run and passing | Not started |  |
-| ED2-13 | Tests run and passing | Not started |  |
-| ED2-14 | Build run and passing | Not started |  |
-| ED2-15 | REAL/PARTIAL/PLACEHOLDER count updated after ED-2 | Not started |  |
+| ED2-01 | External Signals tile uses repository data or an honest provider-gated state | Done | New `GET /api/social-alerts/status` route evaluates real `X_BEARER_TOKEN`/`META_APP_ID` etc. server-side; tile shows real Connected/Provider-gated status instead of a hardcoded 0 |
+| ED2-02 | Social alert repository/service layer wired if scoped | Done (status only, not full event ingestion) | `getSocialAlertProviderStatus()`/`socialAlertsEnabled()` (pre-existing, real) now correctly evaluated server-side via the new route; a full `social_alert_events` ingestion repository remains unbuilt (bigger than this sprint's scope, no live provider credentials configured to test against regardless) |
+| ED2-03 | Golden Path pending AI review count uses literal AI review count or honest fallback | Done | New `usePendingAiReviewCount` hook, real `GET /api/ai/reviews` data, threaded into `buildEnterpriseGoldenPathSnapshot`'s `pendingAiReviews` input |
+| ED2-04 | Tenant Health Command Center pending AI review count uses literal AI review count or honest fallback | Done | Same hook/value passed into `buildTenantHealthIndicators`'s new `literalPendingAiReviews` param -- also fixed a deeper bug: the THCC tile was previously showing `needsReviewCount` (0 or 1 golden-path-step flag), not a review-item count at all |
+| ED2-05 | Audit coverage uses real audit count or formally named proxy | Done | New `useAuditLogCount` hook, real `GET /api/repositories/audit_logs` data; "Audit readiness" tile shows a real row count when available, falls back to ED-1's honest proxy label otherwise |
+| ED2-06 | `getDashboardProjects()` fabricated budget/spent fields removed or replaced | Done | Removed entirely from `src/features/dashboard/data.ts`; confirmed via test no consumer renders them |
+| ED2-07 | Recent institutional activity is live or honestly empty, not fake | Done | Real tenants now see actual `workflow_timeline_events` (same data already fetched for the Workflow Timeline panel) when events exist, honest empty state otherwise; demo mode unchanged |
+| ED2-08 | Dashboard tests cover AI review counts | Done | `usePendingAiReviewCount.test.ts` (3 tests), `workflowEvidence.test.ts` (+1 test) |
+| ED2-09 | Dashboard tests cover External Signals behavior | Done | `useSocialAlertsStatus.test.ts` (2 tests), `src/app/api/social-alerts/status/route.test.ts` (2 tests) |
+| ED2-10 | Dashboard tests cover budget/spent no-fabrication behavior | Done | `data.test.ts` (+1 test, mocked repository response asserting no `budget`/`spent` keys) |
+| ED2-11 | Typecheck run and passing | Done | exit 0 |
+| ED2-12 | Lint run and passing | Done | exit 0, zero warnings |
+| ED2-13 | Tests run and passing | Done | 138/138 files, 519/519 tests; 1 known worker-timeout infra flake on `data.test.ts` (low free memory, same documented pattern as `RELEASE_AND_VERIFICATION_EVIDENCE_LEDGER.md`'s prior entry) -- independently confirmed passing 3/3 in isolation this same session |
+| ED2-14 | Build run and passing | Done | exit 0, clean |
+| ED2-15 | REAL/PARTIAL/PLACEHOLDER count updated after ED-2 | Done | 24/27 REAL (89%) -- see closeout doc |
 
 ## Sprint ED-2 Exit Gate
 
@@ -135,13 +135,13 @@ The Executive Dashboard remediation program is complete only if:
 
 | Completion Standard | Status | Evidence / Notes |
 |---|---|---|
-| At least 19/27 elements are REAL | Done (after ED-1) | 21/27 (78%) -- exceeds the 19/27 minimum and matches the 21/27 preferred target already, one short of the 22/27 stretch target |
-| No visible dead primary dashboard actions remain | Done (after ED-1) | All 9 dead/mislabeled elements in ED-1's scope fixed; 4 remain out of ED-1 scope (External Signals, Strategic Objectives, AI Recommendations, Risk Heatmap -- ED-2/ED-3 net-new/wiring work) |
-| Proxy metrics are honestly labeled | Done (after ED-1) | "Active users" -> "Team provisioning", "Audit coverage" -> "Audit readiness" |
+| At least 19/27 elements are REAL | Done (after ED-1, exceeded further after ED-2) | 21/27 (78%) after ED-1; **24/27 (89%) after ED-2** -- exceeds the 19/27 minimum, the 21/27 preferred target, and the 22/27 stretch target |
+| No visible dead primary dashboard actions remain | Done (after ED-1) | All 9 dead/mislabeled elements in ED-1's scope fixed; 3 remain out of ED-1/ED-2 scope (Strategic Objectives, AI Recommendations, Risk Heatmap -- ED-3 net-new work) |
+| Proxy metrics are honestly labeled | Done (after ED-1, upgraded to real after ED-2) | "Active users" -> "Team provisioning" (ED-1); "Audit coverage" -> "Audit readiness", proxy upgraded to a real count where available (ED-2) |
 | Investor demo and guided workflow naming are not confused | Done (after ED-1) | "Start guided demo" -> "Start guided setup", with a disambiguating tooltip |
 | Dashboard actions work, navigate, refresh, export, open feedback, or are explicitly deferred | Done (after ED-1) |  |
-| Verification suite passes | See closeout doc | `docs/readiness/EXECUTIVE_DASHBOARD_ED1_CLOSEOUT_2026_07_25.md` |
-| Closeout documents exact before/after counts | Done | Same closeout doc |
+| Verification suite passes | Done | ED-1: `docs/readiness/EXECUTIVE_DASHBOARD_ED1_CLOSEOUT_2026_07_25.md`; ED-2: `docs/readiness/EXECUTIVE_DASHBOARD_ED2_CLOSEOUT_2026_07_25.md` |
+| Closeout documents exact before/after counts | Done | Same closeout docs |
 
 ## Progress Log
 
@@ -157,13 +157,13 @@ The Executive Dashboard remediation program is complete only if:
 
 ### ED-2 Progress
 
-- Date:
-- Executor:
-- Files changed:
-- Items completed:
-- Items blocked:
-- REAL count after sprint:
-- Verification:
+- Date: 2026-07-25
+- Executor: Claude Code
+- Files changed: see `docs/readiness/EXECUTIVE_DASHBOARD_ED2_CLOSEOUT_2026_07_25.md`
+- Items completed: ED2-01 through ED2-15 (all)
+- Items blocked: none
+- REAL count after sprint: 24/27 (89%) -- already exceeds ED-3's own preferred (21/27) and stretch (22/27) targets
+- Verification: typecheck/lint/build clean (exit 0); tests 138/138 files, 519/519 passing with 1 known low-memory worker-timeout infra flake on `data.test.ts` (independently confirmed passing 3/3 in isolation); see closeout doc
 
 ### ED-3 Progress
 
