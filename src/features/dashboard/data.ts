@@ -76,6 +76,11 @@ export async function getDashboardProjects(scope: TenantScope) {
       applicationServices.usersRepository.listByOrganization(scope),
     ]);
 
+    // Executive Dashboard Sprint ED-2: this function previously fabricated budget/spent strings
+    // per array index ("$12.4M"/"$8.2M" for index 0, etc.) regardless of the real tenant's actual
+    // data -- no real project-budget field exists anywhere in this codebase's data model. Removed
+    // rather than replaced with a placeholder, since no consumer of getDashboardProjects() renders
+    // these fields (the fallback/demo path, getDashboardFallbackProjects(), never had them either).
     return projectRecords.map((project, index) => ({
       id: index + 1,
       name: project.name,
@@ -85,8 +90,6 @@ export async function getDashboardProjects(scope: TenantScope) {
       owner: ownerInitialsForProject(project, userRecords),
       dueDate: project.dueDate?.slice(0, 10) ?? "2026-12-31",
       status: statusLabel(project.status),
-      budget: index === 0 ? "$12.4M" : index === 1 ? "$34.6M" : "$19.1M",
-      spent: index === 0 ? "$8.2M" : index === 1 ? "$14.8M" : "$10.5M",
     }));
   } catch {
     return isDemoModeEnabled() ? getDashboardFallbackProjects() : [];

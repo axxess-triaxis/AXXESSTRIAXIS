@@ -25,8 +25,11 @@ import { useEnterpriseGoldenPath } from "../../hooks/useEnterpriseGoldenPath";
 import { useGoldenPathDisplayMode } from "../../hooks/useGoldenPathDisplayMode";
 import { useGuidedDemo } from "../../hooks/useGuidedDemo";
 import { invalidateLiveWorkspaceMetricsCache } from "../../hooks/liveWorkspaceMetricsCache";
+import { useAuditLogCount } from "../../hooks/useAuditLogCount";
 import { useLiveRagHealth } from "../../hooks/useLiveRagHealth";
 import { useLiveWorkspaceMetrics } from "../../hooks/useLiveWorkspaceMetrics";
+import { usePendingAiReviewCount } from "../../hooks/usePendingAiReviewCount";
+import { useSocialAlertsStatus } from "../../hooks/useSocialAlertsStatus";
 import { useWorkflowTimeline } from "../../hooks/useWorkflowTimeline";
 import { demoRecentActivity } from "../../lib/demo/demoActivity";
 import { demoInstitution } from "../../lib/demo/seedData";
@@ -129,7 +132,14 @@ export function DashboardSection() {
   const guidedDemo = useGuidedDemo("dashboard");
   const liveMetrics = useLiveWorkspaceMetrics(tenantScope, refreshToken);
   const ragHealth = useLiveRagHealth(tenantScope, refreshToken);
-  const enterpriseJourney = useEnterpriseGoldenPath(tenantScope, session.user, refreshToken);
+  // Executive Dashboard Sprint ED-2: a real, literal count of pending AI review items (from the
+  // same GET /api/ai/reviews the AI Review Inbox itself uses), replacing the pendingApprovals/10
+  // heuristic previously used by both the Golden Path step and the Tenant Health Command Center tile.
+  const pendingAiReviewCount = usePendingAiReviewCount(tenantScope, refreshToken);
+  const enterpriseJourney = useEnterpriseGoldenPath(tenantScope, session.user, refreshToken, pendingAiReviewCount);
+  const socialAlertsStatus = useSocialAlertsStatus(tenantScope);
+  // Executive Dashboard Sprint ED-2: real audit_logs row count for the "Audit readiness" tile.
+  const auditLogCount = useAuditLogCount(tenantScope, refreshToken);
   const goldenPathDisplayMode = useGoldenPathDisplayMode();
   const workflowTimeline = useWorkflowTimeline(tenantScope, { limit: 6, refreshToken });
 
@@ -232,7 +242,7 @@ export function DashboardSection() {
         displayMode={goldenPathDisplayMode.mode}
         onDisplayModeChange={goldenPathDisplayMode.setMode}
       />
-      <TenantHealthCommandCenter snapshot={enterpriseJourney} metrics={liveMetrics} />
+      <TenantHealthCommandCenter snapshot={enterpriseJourney} metrics={liveMetrics} pendingAiReviewsCount={pendingAiReviewCount} auditLogCount={auditLogCount} />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {demoMode && executiveDemoMetrics.map((metric) => (
@@ -260,10 +270,19 @@ export function DashboardSection() {
         <Card className="p-4 transition-shadow hover:shadow-md">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-semibold uppercase tracking-wide text-[#5F6B73]">External Signals</span>
-            <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700">Review First</span>
+            <span className={socialAlertsStatus.anyLiveProviderConfigured ? "rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700" : "rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700"}>
+              {socialAlertsStatus.anyLiveProviderConfigured ? "Connected" : "Provider-gated"}
+            </span>
           </div>
-          <div className="mt-3 font-mono text-2xl font-semibold text-[#0F1117]">{liveMetrics.socialAlerts}</div>
-          <p className="mt-1 text-xs leading-relaxed text-[#5F6B73]">Social, RSS, and manual alerts queued for human-approved workflow actions.</p>
+          {/* No live social-alert-count query exists yet (see livePlatform.ts's own honest-zero
+              comment) -- showing a real connected/not-connected status instead of a fabricated
+              number that could never change. */}
+          <div className="mt-3 font-mono text-2xl font-semibold text-[#0F1117]">{socialAlertsStatus.anyLiveProviderConfigured ? liveMetrics.socialAlerts : "--"}</div>
+          <p className="mt-1 text-xs leading-relaxed text-[#5F6B73]">
+            {socialAlertsStatus.anyLiveProviderConfigured
+              ? "Social, RSS, and manual alerts queued for human-approved workflow actions."
+              : "Connect X or Facebook to enable live social/RSS alert ingestion."}
+          </p>
         </Card>
       </div>
 
@@ -289,6 +308,18 @@ export function DashboardSection() {
         >
           {demoMode ? (
             <ActivityFeed items={demoRecentActivity} />
+          ) : workflowTimeline.timeline.length > 0 ? (
+            // Executive Dashboard Sprint ED-2: reuses the same real workflow_timeline_events data
+            // already fetched for the Workflow Timeline panel below -- no new fetch, no fabricated
+            // activity. Previously this branch was always an empty state for real tenants even when
+            // real timeline events existed.
+            <ActivityFeed
+              items={workflowTimeline.timeline.map((event) => ({
+                title: event.title,
+                description: event.description,
+                time: new Date(event.createdAt).toLocaleString(),
+              }))}
+            />
           ) : (
             <EmptyState message="No recent activity yet. Activity will appear here as your team works in AXXESS." />
           )}

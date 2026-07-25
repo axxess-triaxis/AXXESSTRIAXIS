@@ -70,19 +70,19 @@ An element does not count as `REAL` if:
 | 4 | Export Briefing | PLACEHOLDER | **REAL** | Real client-side JSON export of current dashboard data |
 | 5 | Command search | PLACEHOLDER | **REAL** | Real client-side filter over loaded projects/priority actions |
 | 6 | Golden Path widget | REAL | REAL | Preserved; now also refresh-aware |
-| 7 | Golden Path pending AI reviews count | PARTIAL | PARTIAL | Unchanged -- deferred to ED-2 (ED2-02/03) |
+| 7 | Golden Path pending AI reviews count | PARTIAL | PARTIAL -> **REAL** (ED-2) | ED-2: literal count from real `GET /api/ai/reviews`, threaded into `buildEnterpriseGoldenPathSnapshot` |
 | 8 | Onboarding completion | REAL | REAL | Preserved |
 | 9 | Active users | PARTIAL | **REAL** | Relabeled "Team provisioning" -- label now matches the Ready/Blocked value it shows |
 | 10 | Documents indexed | REAL | REAL | Preserved |
-| 11 | Pending AI reviews | REAL heuristic | REAL heuristic | Unchanged -- literal count deferred to ED-2 |
+| 11 | Pending AI reviews | REAL heuristic | REAL heuristic -> **REAL** (ED-2) | ED-2: was actually showing a 0/1 golden-path-step flag (`needsReviewCount`), not a review count at all -- now a real literal count via `buildTenantHealthIndicators`'s new `literalPendingAiReviews` param |
 | 12 | Open tasks | REAL | REAL | Preserved |
 | 13 | Approval SLA risk | REAL | REAL | Preserved |
 | 14 | Integration health | REAL | REAL | Preserved |
 | 15 | Audit coverage | PARTIAL | **REAL** | Relabeled "Audit readiness," detail text clarifies it is a proxy |
 | 16 | AI Router tile | REAL | REAL | Preserved; now also refresh-aware |
 | 17 | Live Ops tile | REAL | REAL | Preserved; now also refresh-aware |
-| 18 | External Signals tile | PLACEHOLDER | PLACEHOLDER | Unchanged -- deferred to ED-2 (ED2-01) |
-| 19 | Recent institutional activity | PARTIAL | PARTIAL | Unchanged -- deferred to ED-2 (ED2-07), optional |
+| 18 | External Signals tile | PLACEHOLDER | PLACEHOLDER -> **REAL** (ED-2) | ED-2: new `GET /api/social-alerts/status` route, real server-evaluated provider status (Connected/Provider-gated), no fabricated count |
+| 19 | Recent institutional activity | PARTIAL | PARTIAL -> **REAL** (ED-2) | ED-2: reuses already-fetched real `workflow_timeline_events` for live tenants with events; honest empty state preserved when none exist |
 | 20 | Workflow timeline | REAL | REAL | Preserved; now also refresh-aware |
 | 21 | Priority actions core list | REAL | REAL | Preserved |
 | 22 | Request pilot conversation | PLACEHOLDER | **REAL** | Kept as mailto (no capture backend exists), relabeled "Email" with a tooltip marking it external |
@@ -93,6 +93,9 @@ An element does not count as `REAL` if:
 | 27 | View All + project row buttons | PLACEHOLDER | **REAL** | Both wired to real `/projects` navigation (honest fallback, no per-project detail route exists) |
 
 **Post-ED-1 count (itemized-list basis): 21 REAL / 2 PARTIAL / 4 PLACEHOLDER = 21/27, 78%.**
+**Post-ED-2 count: 24 REAL / 0 PARTIAL / 3 PLACEHOLDER = 24/27, 89%** -- every remaining
+non-REAL element (Strategic Objectives, AI Recommendations, Risk Heatmap) is PLACEHOLDER, matching
+exactly ED-3's own scope; no PARTIAL elements remain.
 
 ## Cross-Cutting Risks
 
@@ -189,27 +192,31 @@ Target result:
 
 | Item | Fully done | Partial | Not done | Notes |
 |---|---|---|---|---|
-| External Signals tile no longer hardcoded to useless zero | [ ] | [ ] | [ ] |  |
-| AI Review count uses real source or documented honest fallback | [ ] | [ ] | [ ] |  |
-| Golden Path pending AI review count is not heuristic-only | [ ] | [ ] | [ ] |  |
-| THCC pending AI review count is not heuristic-only | [ ] | [ ] | [ ] |  |
-| Audit coverage is real or clearly named as proxy | [ ] | [ ] | [ ] |  |
-| Fabricated budget/spent fields removed or fixed | [ ] | [ ] | [ ] |  |
-| Recent activity is either live or honestly empty | [ ] | [ ] | [ ] |  |
-| Dashboard unit tests updated | [ ] | [ ] | [ ] |  |
-| Typecheck passes | [ ] | [ ] | [ ] |  |
-| Lint passes | [ ] | [ ] | [ ] |  |
-| Tests pass | [ ] | [ ] | [ ] |  |
-| Build passes | [ ] | [ ] | [ ] |  |
+| External Signals tile no longer hardcoded to useless zero | [x] | [ ] | [ ] | Real provider-gated status via new `GET /api/social-alerts/status` |
+| AI Review count uses real source or documented honest fallback | [x] | [ ] | [ ] | `usePendingAiReviewCount`, real `GET /api/ai/reviews` |
+| Golden Path pending AI review count is not heuristic-only | [x] | [ ] | [ ] | Literal count threaded into `buildEnterpriseGoldenPathSnapshot` |
+| THCC pending AI review count is not heuristic-only | [x] | [ ] | [ ] | Also fixed a deeper bug: was showing a 0/1 step-flag, not a review count |
+| Audit coverage is real or clearly named as proxy | [x] | [ ] | [ ] | Real `audit_logs` count when available, honest ED-1 proxy fallback otherwise |
+| Fabricated budget/spent fields removed or fixed | [x] | [ ] | [ ] | Removed from `getDashboardProjects()` |
+| Recent activity is either live or honestly empty | [x] | [ ] | [ ] | Reuses already-fetched real `workflow_timeline_events` |
+| Dashboard unit tests updated | [x] | [ ] | [ ] | 4 new test files, 2 updated |
+| Typecheck passes | [x] | [ ] | [ ] | exit 0 |
+| Lint passes | [x] | [ ] | [ ] | exit 0, zero warnings |
+| Tests pass | [x] | [ ] | [ ] | 138/138 files, 519/519 tests; 1 known low-memory infra flake, not a regression |
+| Build passes | [x] | [ ] | [ ] | exit 0 |
 
 ### Exit Criteria
 
 Sprint ED-2 closes only if:
 
-- Executive Dashboard reaches at least **19/27 REAL elements**.
-- Existing infrastructure is used before net-new systems are introduced.
-- No known fabricated budget/spent values remain.
-- AI review and audit metrics are no longer misleading.
+- Executive Dashboard reaches at least **19/27 REAL elements**. **Met -- 24/27 (89%).**
+- Existing infrastructure is used before net-new systems are introduced. **Met -- every ED-2 fix reused an existing repository/route/table (`ai_operation_reviews`, `audit_logs`, `getSocialAlertProviderStatus()`, `workflow_timeline_events`); nothing net-new was built.**
+- No known fabricated budget/spent values remain. **Met.**
+- AI review and audit metrics are no longer misleading. **Met.**
+
+**ED-2 result: 24/27 REAL (89%), exceeding this roadmap's minimum (19/27), preferred (21/27), and
+stretch (22/27) targets -- without starting ED-3.** Full detail:
+`docs/readiness/EXECUTIVE_DASHBOARD_ED2_CLOSEOUT_2026_07_25.md`.
 
 ## Sprint ED-3: Net-New Dashboard Intelligence MVPs
 

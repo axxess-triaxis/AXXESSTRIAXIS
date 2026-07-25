@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { demoUserContext } from "../../demo/demoMode";
 import type { TenantScope } from "../../repositories/interfaces";
 import {
@@ -36,5 +36,37 @@ describe("dashboard fallback data", () => {
     expect(projects.length).toBe(0);
     expect(kpis.map((kpi) => kpi.label)).toContain("Pending Approvals");
     expect(kpis.find((kpi) => kpi.label === "Pending Approvals")?.value).toBe("0");
+  });
+});
+
+describe("getDashboardProjects (Executive Dashboard Sprint ED-2 -- no fabricated budget/spent)", () => {
+  afterEach(() => {
+    vi.doUnmock("../../providers/serviceProvider");
+    vi.resetModules();
+  });
+
+  it("never returns budget/spent fields, even when the underlying repository call succeeds", async () => {
+    vi.resetModules();
+    vi.doMock("../../providers/serviceProvider", () => ({
+      applicationServices: {
+        projectsRepository: {
+          list: vi.fn().mockResolvedValue([
+            { name: "District Outreach Program", progress: 40, riskLevel: "medium", status: "active", dueDate: "2026-12-01T00:00:00.000Z" },
+            { name: "Cold-Chain Modernization", progress: 60, riskLevel: "low", status: "active", dueDate: "2026-11-01T00:00:00.000Z" },
+          ]),
+        },
+        programsRepository: { list: vi.fn().mockResolvedValue([]) },
+        usersRepository: { listByOrganization: vi.fn().mockResolvedValue([]) },
+      },
+    }));
+
+    const { getDashboardProjects: getDashboardProjectsWithMock } = await import("./data");
+    const projects = await getDashboardProjectsWithMock(cleanScope);
+
+    expect(projects.length).toBe(2);
+    for (const project of projects) {
+      expect(project).not.toHaveProperty("budget");
+      expect(project).not.toHaveProperty("spent");
+    }
   });
 });

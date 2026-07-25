@@ -53,6 +53,55 @@ describe("workflow evidence", () => {
     expect(indicators.find((indicator) => indicator.id === "integration-health")?.value).toBe("Connected");
   });
 
+  it("uses a literal pending-AI-review count over the golden path's needsReviewCount when provided (Executive Dashboard Sprint ED-2)", () => {
+    const metrics = { ...getFallbackLiveWorkspaceMetrics(), pendingApprovals: 0 };
+    const snapshot = buildEnterpriseGoldenPathSnapshot({
+      metrics,
+      userRole: "Manager",
+      hasOrganization: true,
+      hasProfile: true,
+      pendingAiReviews: 1,
+    });
+
+    // Without an override: falls back to the golden path's own needsReviewCount (0 or 1, never a
+    // real item count).
+    const withoutOverride = buildTenantHealthIndicators(snapshot, metrics);
+    expect(withoutOverride.find((indicator) => indicator.id === "pending-ai-reviews")?.value).toBe(String(snapshot.needsReviewCount));
+
+    // With a literal override (e.g. from usePendingAiReviewCount, a real ai_operation_reviews
+    // count): the tile shows the real number, even when it diverges from needsReviewCount.
+    const withOverride = buildTenantHealthIndicators(snapshot, metrics, 7);
+    const tile = withOverride.find((indicator) => indicator.id === "pending-ai-reviews");
+    expect(tile?.value).toBe("7");
+    expect(tile?.tone).toBe("warning");
+  });
+
+  it("uses a literal audit_logs count over the proxy heuristic when provided (Executive Dashboard Sprint ED-2)", () => {
+    const metrics = { ...getFallbackLiveWorkspaceMetrics(), unreadNotifications: 0 };
+    const snapshot = buildEnterpriseGoldenPathSnapshot({
+      metrics,
+      userRole: "Manager",
+      hasOrganization: true,
+      hasProfile: true,
+      pendingAiReviews: 0,
+    });
+
+    // Without an override: the proxy heuristic (Tracked/Needs first event), unchanged from ED-1.
+    const withoutOverride = buildTenantHealthIndicators(snapshot, metrics);
+    expect(["Tracked", "Needs first event"]).toContain(withoutOverride.find((indicator) => indicator.id === "audit-readiness")?.value);
+
+    // With a literal override (e.g. from useAuditLogCount, a real audit_logs row count): the tile
+    // shows the real number.
+    const withOverride = buildTenantHealthIndicators(snapshot, metrics, 0, 12);
+    const tile = withOverride.find((indicator) => indicator.id === "audit-readiness");
+    expect(tile?.value).toBe("12");
+    expect(tile?.tone).toBe("success");
+
+    const withZeroOverride = buildTenantHealthIndicators(snapshot, metrics, 0, 0);
+    expect(withZeroOverride.find((indicator) => indicator.id === "audit-readiness")?.value).toBe("0");
+    expect(withZeroOverride.find((indicator) => indicator.id === "audit-readiness")?.tone).toBe("warning");
+  });
+
   it("provides a coherent fallback timeline when live persistence is unavailable", () => {
     const events = fallbackWorkflowTimelineEvents("org-live-pilot");
 
