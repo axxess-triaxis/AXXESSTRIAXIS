@@ -21,7 +21,7 @@ Source: full HITL live walkthrough of the Golden Path checklist on production, 2
 
 None of the above have been fixed yet -- this document tracks work not yet started, per the founder's explicit instruction to log this walkthrough without acting on it.
 
-## Current Status: 6 of 10 Golden Path items correctly mapped; 8 open defects; 0 fixed
+## Current Status: 6 of 10 Golden Path items correctly mapped; 14 open items in the To Do table below (9 from the original walkthrough + 5 from the 2026-07-25 Executive Dashboard walkthrough: A-42 through A-46); 0 fixed
 
 ## Board
 
@@ -49,6 +49,11 @@ None of the above have been fixed yet -- this document tracks work not yet start
 | A-39 | "Send feedback/request support" lands on the Executive Dashboard | (confirmed incorrect) | Medium |
 | A-35 | "Submit Feedback" succeeds with no destination inbox | (confirmed gap) | Medium |
 | A-33 | Roles-administration redirect lands on the Security tab by default | (minor UX refinement) | Low |
+| A-46 | Executive Dashboard's "Tenant Health Command Center" (Strategic Objectives, AI Recommendations, Risk Heatmap) is well-designed but almost entirely placeholder (adjacent to, not strictly inside, the Golden Path checklist itself, but found in the same 2026-07-25 walkthrough and directly named as an Enterprise Beta 1.0 UX priority) | "excellently designed but almost entirely placeholder right now. Needs to go live to boost UX on Enterprise Beta 1.0" | Medium-High -- founder-flagged for beta UX |
+| A-42 | Executive Dashboard has 3 redundant "Send Feedback" entry points; need consolidation to 1 real mailbox-routed form | (founder instruction: consolidate to 1, remove 2) | Medium |
+| A-43 | "Export Briefing" is a clickable placeholder | (confirmed gap) | Low |
+| A-44 | "Start Guided Demo" -- redundancy vs. the (now signed-off) Investor Preview demo unclear; currently a clickable placeholder | (needs founder scope decision) | Low |
+| A-45 | "Command search" bar is non-functional | "almost entirely irrelevant/placeholder" (whole header row) | Low |
 
 ### Blocked
 
