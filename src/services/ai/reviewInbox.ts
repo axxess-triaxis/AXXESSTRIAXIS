@@ -83,33 +83,36 @@ export function canDecideAiReview(review: Pick<AiReviewInboxItem, "reviewerUserI
   return Boolean(review.reviewerUserId && review.reviewerUserId === userId);
 }
 
+const fallbackReviewTemplates: Array<{ taskCategory: string; excerpt: string; citationTitle: string; citationExcerpt: string; status: AiReviewInboxStatus; confidence: number }> = [
+  { taskCategory: "risk_assessment", excerpt: "District oxygen resilience summary requires human review before operational action.", citationTitle: "Oxygen Resilience Risk Register", citationExcerpt: "Immediate governance review required.", status: "pending", confidence: 0.74 },
+  { taskCategory: "compliance_review", excerpt: "Procurement variance evidence should be routed to the finance controller before approval actions are created.", citationTitle: "District Procurement Variance Note", citationExcerpt: "Finance controller review remains open.", status: "escalated", confidence: 0.61 },
+  { taskCategory: "governed_rag_answer", excerpt: "Maternal referral turnaround summary cites two district corridors with above-threshold delay.", citationTitle: "Maternal Referral Network Report", citationExcerpt: "Referral turnaround above target in two corridors.", status: "pending", confidence: 0.79 },
+  { taskCategory: "governed_rag_answer", excerpt: "Immunization cold-chain gap summary identifies a district storage risk.", citationTitle: "Immunization Cold-Chain Upgrade Log", citationExcerpt: "Storage temperature excursion recorded.", status: "approved", confidence: 0.86 },
+  { taskCategory: "workflow_generation", excerpt: "Suggested follow-up task for tuberculosis screening acceleration district review.", citationTitle: "Tuberculosis Screening Acceleration Note", citationExcerpt: "Field team requested district-level review.", status: "pending", confidence: 0.68 },
+  { taskCategory: "compliance_review", excerpt: "Emergency stockpile modernization audit observation needs governance sign-off.", citationTitle: "Emergency Stockpile Audit Observation", citationExcerpt: "Control gap identified in stockpile rotation.", status: "rejected", confidence: 0.52 },
+  { taskCategory: "risk_assessment", excerpt: "Rural diagnostics access risk note flags vendor delivery delay.", citationTitle: "Rural Diagnostics Vendor Risk Note", citationExcerpt: "Delivery delay exceeds contracted SLA.", status: "pending", confidence: 0.71 },
+  { taskCategory: "governed_rag_answer", excerpt: "Hospital discharge coordination summary cites a staffing bottleneck.", citationTitle: "Hospital Discharge Coordination Report", citationExcerpt: "Staffing bottleneck identified on evening shift.", status: "edited", confidence: 0.83 },
+];
+
+// Deterministic, seeded generation so the investor demo AI Review Inbox always shows the same
+// coherent, enterprise-scale queue (~100 items) across sessions -- no randomness.
 export function fallbackAiReviewInbox(organizationId: string): AiReviewInboxItem[] {
-  return [
-    {
-      id: "review-oxygen-risk",
+  const base = new Date("2026-07-15T00:00:00.000Z").getTime();
+  return Array.from({ length: 100 }, (_, index) => {
+    const template = fallbackReviewTemplates[index % fallbackReviewTemplates.length];
+    return {
+      id: `review-demo-${String(index + 1).padStart(3, "0")}`,
       organizationId,
-      sourceAuditId: "pilot-command-ai-review-1",
-      taskCategory: "risk_assessment",
-      status: "pending",
-      confidence: 0.74,
-      humanReviewFlag: true,
-      answerExcerpt: "District oxygen resilience summary requires human review before operational action.",
-      citations: [{ title: "Oxygen Resilience Risk Register", sourceId: "demo-risk-register", excerpt: "Immediate governance review required.", score: 0.84 }],
-      createdAt: "2026-07-15T00:00:00.000Z",
-    },
-    {
-      id: "review-procurement-variance",
-      organizationId,
-      sourceAuditId: "pilot-command-ai-review-2",
-      taskCategory: "compliance_review",
-      status: "escalated",
-      confidence: 0.61,
-      humanReviewFlag: true,
-      answerExcerpt: "Procurement variance evidence should be routed to the finance controller before approval actions are created.",
-      citations: [{ title: "District Procurement Variance Note", sourceId: "demo-procurement-variance", excerpt: "Finance controller review remains open.", score: 0.77 }],
-      createdAt: "2026-07-15T01:00:00.000Z",
-    },
-  ];
+      sourceAuditId: `pilot-command-ai-review-${index + 1}`,
+      taskCategory: template.taskCategory,
+      status: template.status,
+      confidence: template.confidence,
+      humanReviewFlag: template.status === "pending" || template.status === "escalated",
+      answerExcerpt: template.excerpt,
+      citations: [{ title: template.citationTitle, sourceId: `demo-citation-${index + 1}`, excerpt: template.citationExcerpt, score: 0.6 + (index % 4) * 0.1 }],
+      createdAt: new Date(base + index * 45 * 60 * 1000).toISOString(),
+    };
+  });
 }
 
 export async function listAiReviewInbox(organizationId: string, limit = 25): Promise<AiReviewInboxItem[]> {
