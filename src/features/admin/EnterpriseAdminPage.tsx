@@ -9,6 +9,7 @@ import { buildCustomerSuccessLiveOpsSnapshot } from "../../services/pilot/custom
 import { computePilotHealth, createDemoPilotReadinessEvents } from "../../services/pilot/pilotHealth";
 import { buildEnterpriseGoldenPathSnapshot } from "../../services/workflows/enterpriseGoldenPath";
 import { buildMobileStoreLaunchSnapshot } from "../../services/mobile/mobileStoreLaunch";
+import { AdminActionsPanel } from "./AdminActionsPanel";
 import { CustomerSuccessLiveOpsPanel } from "./CustomerSuccessLiveOpsPanel";
 import { MobileStoreLaunchConsole } from "./MobileStoreLaunchConsole";
 import { PilotAcceptancePanel } from "./PilotAcceptancePanel";
@@ -84,10 +85,16 @@ const panelContent: Record<AdminPanelId, { title: string; description: string; a
     evidence: ["compliance_policies", "required evidence list", "audit chain"],
   },
   "ai-governance": {
+    // Admin panel wiring pass (2026-07-25): this panel previously described actions against
+    // ai_output_audit and "RAG permissions"/"human review threshold" controls that have no
+    // backing code anywhere in the app. Repointed to the AI Review Inbox
+    // (ai_operation_reviews via src/services/ai/reviewInbox.ts + /api/ai/reviews), which is
+    // real, tested, and RLS-equivalent-gated -- rather than building a second, overlapping
+    // governance surface against an unbuilt table.
     title: "AI Governance",
-    description: "Configure RAG permissions, AI output review, and high-impact workflow controls.",
-    actions: ["Set human review threshold", "Review RAG permissions", "Inspect AI output audit"],
-    evidence: ["ai_output_audit", "source citations", "confidence score"],
+    description: "Review AI-generated outputs pending human approval before they become accountable work.",
+    actions: ["Review pending AI outputs", "Approve output", "Reject output"],
+    evidence: ["ai_operation_reviews", "reviewer decision", "audit log entry"],
   },
   "model-policy": {
     title: "Model Policy",
@@ -152,6 +159,12 @@ const panelContent: Record<AdminPanelId, { title: string; description: string; a
 };
 
 const panels = Object.keys(panelContent) as AdminPanelId[];
+
+// Admin panel wiring pass (2026-07-25): the "Beta readiness note" below used to sit under every
+// panel's buttons unconditionally, including ones that are now genuinely real -- leaving it
+// there for those would be a false disclaimer sitting under working functionality. See
+// docs/readiness/ADMIN_PANEL_WIRING_ROADMAP_2026_07_25.md for the wired/unwired split.
+const wiredPanels: AdminPanelId[] = ["model-policy", "plugin-runtime", "execution-runs", "ai-governance"];
 
 function pilotAcceptancePreviewSnapshot() {
   const organizationId = "org_north_east_health_mission";
@@ -257,16 +270,7 @@ export function EnterpriseAdminPage({ panel }: { panel: AdminPanelId }) {
             {panel === "pilot-command-center" ? <PilotAcceptancePanel initialSnapshot={pilotAcceptancePreviewSnapshot()} /> : null}
             {panel === "support-ops" ? <CustomerSuccessLiveOpsPanel initialSnapshot={customerSuccessPreviewSnapshot()} /> : null}
             {panel === "mobile-release" ? <MobileStoreLaunchConsole initialSnapshot={mobileStoreLaunchPreviewSnapshot()} /> : null}
-            <Card className="p-5">
-              <h2 className="text-sm font-semibold text-[#0F1117]">Admin actions</h2>
-              <div className="mt-4 grid gap-3 md:grid-cols-3">
-                {content.actions.map((action) => (
-                  <button key={action} className="rounded-lg border border-[rgba(139,30,45,0.22)] bg-white px-3 py-2 text-left text-xs font-semibold text-[#8B1E2D]">
-                    {action}
-                  </button>
-                ))}
-              </div>
-            </Card>
+            <AdminActionsPanel panel={panel} staticActions={content.actions} />
             <Card className="p-5">
               <h2 className="text-sm font-semibold text-[#0F1117]">Evidence required</h2>
               <div className="mt-4 grid gap-3 md:grid-cols-3">
@@ -278,7 +282,9 @@ export function EnterpriseAdminPage({ panel }: { panel: AdminPanelId }) {
             <Card className="p-5">
               <h2 className="text-sm font-semibold text-[#0F1117]">Beta readiness note</h2>
               <p className="mt-2 text-sm leading-relaxed text-[#5F6B73]">
-                This admin surface is wired for Sprint 22 and Sprint 23 enterprise readiness. Live mutation paths use server-only routes, tenant-scoped policies, and audit records before autonomous workflow execution is enabled.
+                {wiredPanels.includes(panel)
+                  ? "These actions call real, server-only routes with tenant-scoped policies and write audit-log evidence -- not a preview."
+                  : "This admin surface is wired for Sprint 22 and Sprint 23 enterprise readiness. Live mutation paths use server-only routes, tenant-scoped policies, and audit records before autonomous workflow execution is enabled."}
               </p>
             </Card>
           </div>

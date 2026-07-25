@@ -355,6 +355,13 @@ export const demoInvitationsRepository: InvitationsRepository = {
   async listPending(scope, query) {
     return clone(scoped(store.invitations, scope, query).filter((invitation) => invitation.status === "pending"));
   },
+  async update(scope, id, input) {
+    const existing = store.invitations.find((invitation) => invitation.organizationId === scope.organizationId && invitation.id === id);
+    if (!existing) throw new Error(`Demo invitation not found: ${id}`);
+    const updated: Invitation = { ...existing, ...input, id, organizationId: existing.organizationId, updatedAt: now() };
+    store = { ...store, invitations: store.invitations.map((invitation) => invitation.id === id ? updated : invitation) };
+    return clone(updated);
+  },
 };
 
 export const demoAuditLogsRepository: AuditLogsRepository = {

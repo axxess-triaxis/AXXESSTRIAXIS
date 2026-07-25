@@ -157,6 +157,9 @@ const emptyInvitationsRepository: InvitationsRepository = {
   async listPending() {
     return [];
   },
+  async update() {
+    throw new Error("Invitations require a connected data backend.");
+  },
 };
 
 const emptyAuditLogsRepository: AuditLogsRepository = {
