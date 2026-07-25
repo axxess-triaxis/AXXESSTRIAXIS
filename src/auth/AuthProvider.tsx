@@ -10,6 +10,7 @@ import {
   isDemoLogin,
   isDemoModeEnabled,
   isDemoModeForcedByEnv,
+  refreshDemoSessionCookie,
   setDemoModeEnabled,
 } from "../demo/demoMode";
 import { clearLiveWorkspaceMetricsCache } from "../hooks/liveWorkspaceMetricsCache";
@@ -71,6 +72,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (isDemoModeEnabled()) {
+      // Keep the edge-visible cookie's TTL in sync with the (non-expiring) localStorage flag on
+      // every app load -- see refreshDemoSessionCookie's own comment for the exact desync this
+      // prevents.
+      refreshDemoSessionCookie();
       setSession(createMockAuthSession());
       return;
     }

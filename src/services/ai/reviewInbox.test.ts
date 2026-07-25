@@ -13,6 +13,18 @@ describe("AI review inbox", () => {
     expect(reviews.some((review) => review.humanReviewFlag)).toBe(true);
   });
 
+  // Investor Demo enterprise-scale dataset pass (2026-07-24): the AI Review Inbox previously
+  // fell back to 2 hardcoded items, far short of a mature-institution feel for investor demos.
+  it("provides an enterprise-scale (100+) deterministic fallback queue with unique ids and a mix of statuses", () => {
+    const reviews = fallbackAiReviewInbox("org-1");
+    expect(reviews.length).toBeGreaterThanOrEqual(100);
+    expect(new Set(reviews.map((review) => review.id)).size).toBe(reviews.length);
+    const statuses = new Set(reviews.map((review) => review.status));
+    expect(statuses.size).toBeGreaterThan(1);
+    // Deterministic: calling twice produces the identical dataset (no randomness).
+    expect(fallbackAiReviewInbox("org-1")).toEqual(reviews);
+  });
+
   it("shows a real tenant an empty inbox instead of fabricated reviews when Supabase isn't configured and demo mode is off", async () => {
     const reviews = await listAiReviewInbox("org-1");
     expect(reviews).toEqual([]);

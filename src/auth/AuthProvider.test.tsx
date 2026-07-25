@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AuthProvider, useAuth } from "./AuthProvider";
+import { demoSessionCookieName, setDemoModeEnabled } from "../demo/demoMode";
 
 const clearLiveWorkspaceMetricsCacheMock = vi.fn();
 vi.mock("../hooks/liveWorkspaceMetricsCache", () => ({
@@ -104,5 +105,22 @@ describe("AuthProvider", () => {
 
     await waitFor(() => expect(screen.getByTestId("status").textContent).toBe("unauthenticated"));
     expect(screen.getByTestId("authed").textContent).toBe("no");
+  });
+
+  it("refreshes the edge-visible demo-session cookie on mount when the (non-expiring) demo-mode flag is already set, so a lapsed cookie never desyncs from a still-active localStorage flag (Attempt 4, 2026-07-24)", async () => {
+    setDemoModeEnabled(true);
+    document.cookie = `${demoSessionCookieName}=; path=/; max-age=0`;
+    expect(document.cookie).not.toContain(`${demoSessionCookieName}=true`);
+
+    render(
+      <AuthProvider>
+        <Harness />
+      </AuthProvider>,
+    );
+
+    await waitFor(() => expect(screen.getByTestId("authed").textContent).toBe("yes"));
+    expect(document.cookie).toContain(`${demoSessionCookieName}=true`);
+
+    setDemoModeEnabled(false);
   });
 });
