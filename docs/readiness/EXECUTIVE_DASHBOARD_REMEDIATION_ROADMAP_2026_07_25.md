@@ -1,29 +1,25 @@
 # Executive Dashboard Remediation Roadmap
 
-Date: 2026-07-25
-Trigger: founder instruction, 2026-07-25 -- *"Executive Dashboard (which includes Golden Path) is
-mainstay of the platform. We need to generate 70-80% delta on current state right now; by
-roadmapping, planning around and checklisting with sub-progress report. Give me list of
-actionables, gaps, things to be fixed exhaustively."*
-Source of the inventory below: a dedicated, read-only code audit of every button, widget, and data
-tile on `src/features/dashboard/DashboardSection.tsx` and its dependencies (Golden Path, Tenant
-Health Command Center, Project Health Monitor, Risk Heatmap, Strategic Objectives, AI
-Recommendations, header actions), cross-referenced against the live HITL walkthrough already
-logged as A-42 through A-46 in `docs/readiness/ACTIONABLES_READINESS_MATRIX.md`. This document is
-the exhaustive list requested -- **no code has been changed.** Execution requires separate
-founder authorization per phase, consistent with this program's standing practice.
+Date created: 2026-07-25  
+Trigger: Founder instruction to generate a 70-80% delta on the Executive Dashboard current state  
+Scope: Executive Dashboard, including Golden Path, Tenant Health Command Center, header actions, router/ops/signals row, recent activity, workflow timeline, priority actions, strategic objectives, AI recommendations, risk heatmap, and Project Health Monitor  
+Execution model: Roadmap and checklist only. No code changes are made by this document.
 
-## How to read this document
+## Objective
 
-Every dashboard element is tagged **REAL** (fully wired to live tenant data), **PARTIAL** (real
-data mixed with a placeholder, mislabel, or weak persistence), or **PLACEHOLDER** (no real backend
-at all, static or dead). The "70-80% delta" the founder asked for is defined here as: raising the
-share of REAL elements from the current baseline to 70-80% of the full inventory, prioritizing the
-elements a customer/investor actually notices first.
+Raise the Executive Dashboard from its current state to a substantially more real, clickable, evidence-backed operating surface.
 
-## Current State Baseline
+The founder-defined target is a **70-80% delta on the current state**.
 
-Counting every distinct interactive element and data tile inventoried below (27 total):
+For this roadmap, the measurable target is:
+
+> Increase REAL dashboard elements from the current baseline of 11/27, or 41%, to at least 19/27, or 70%, with a stretch target of 22/27, or 81%.
+
+This can be achieved without building every net-new dashboard feature. The roadmap prioritizes high-visibility fixes, honest labels, existing infrastructure wiring, and removal of dead affordances.
+
+## Current Baseline
+
+Inventory size: **27 dashboard elements**
 
 | Tag | Count | Share |
 |---|---:|---:|
@@ -31,132 +27,263 @@ Counting every distinct interactive element and data tile inventoried below (27 
 | PARTIAL | 5 | 19% |
 | PLACEHOLDER | 11 | 41% |
 
-**To reach 70-80% REAL, roughly 16-18 of the 27 elements need to end this roadmap in the REAL
-column** -- i.e., closing most of the PARTIAL and PLACEHOLDER items below, not all of them equally;
-the phasing prioritizes the cheapest, highest-visibility fixes first.
+## Target State
 
-## Full Exhaustive Inventory
+| Target | Count | Share |
+|---|---:|---:|
+| Minimum acceptable REAL target | 19 / 27 | 70% |
+| Preferred REAL target | 21 / 27 | 78% |
+| Stretch REAL target | 22 / 27 | 81% |
 
-### Header row
+## Delta Definition
 
-| # | Element | Tag | Evidence | Actionable |
+An element counts as `REAL` only if:
+
+- It is wired to live tenant data, or
+- It performs a real navigation/action, or
+- It displays an honest tenant-safe state backed by real repository/application logic, or
+- It is explicitly and truthfully gated/deferred with no fake affordance.
+
+An element does not count as `REAL` if:
+
+- It is a dead button.
+- It uses hardcoded demo data in live tenant mode.
+- It shows a fake live badge.
+- It has no onClick/action despite appearing clickable.
+- It uses fabricated metrics without label clarity.
+- It overclaims operational readiness.
+
+## Exhaustive Inventory Summary
+
+| # | Element | Current Tag | Primary Action |
+|---:|---|---|---|
+| 1 | Start guided demo | PARTIAL | Rename/reposition to avoid investor-demo collision |
+| 2 | Send feedback header action | PLACEHOLDER | Remove dead mailto; use real feedback pipeline |
+| 3 | Refresh | PLACEHOLDER | Wire to refetch dashboard data |
+| 4 | Export Briefing | PLACEHOLDER | Build minimal export or remove/defer honestly |
+| 5 | Command search | PLACEHOLDER | Build minimal search or relabel/disable honestly |
+| 6 | Golden Path widget | REAL | Preserve |
+| 7 | Golden Path pending AI reviews count | PARTIAL | Replace heuristic with literal AI review count |
+| 8 | Onboarding completion | REAL | Preserve |
+| 9 | Active users | PARTIAL | Relabel proxy or replace with real count |
+| 10 | Documents indexed | REAL | Preserve |
+| 11 | Pending AI reviews | REAL heuristic | Replace with literal count in Phase 2 |
+| 12 | Open tasks | REAL | Preserve |
+| 13 | Approval SLA risk | REAL | Preserve |
+| 14 | Integration health | REAL | Preserve |
+| 15 | Audit coverage | PARTIAL | Relabel proxy or wire real audit count |
+| 16 | AI Router tile | REAL | Preserve |
+| 17 | Live Ops tile | REAL | Preserve |
+| 18 | External Signals tile | PLACEHOLDER | Wire social alert repository layer |
+| 19 | Recent institutional activity | PARTIAL | Optional backlog or real feed |
+| 20 | Workflow timeline | REAL | Preserve |
+| 21 | Priority actions core list | REAL | Preserve |
+| 22 | Request pilot conversation | PLACEHOLDER | Wire capture path or document as external CTA |
+| 23 | Strategic Objectives | PLACEHOLDER | Phase 3 net-new feature |
+| 24 | AI Recommendations | PLACEHOLDER | Phase 3 net-new feature |
+| 25 | Risk Heatmap | PLACEHOLDER | Phase 3 or real aggregate from project risks |
+| 26 | Project list | REAL | Preserve |
+| 27 | View All + project row buttons | PLACEHOLDER | Wire navigation/detail route |
+
+## Cross-Cutting Risks
+
+| ID | Risk | Required Action |
+|---|---|---|
+| A-53 | `getDashboardProjects()` fabricates budget/spent fields | Remove fabricated fields or replace with honest empty/real values |
+| A-54 | Golden Path overlaps with localStorage-only Pilot Onboarding checklist | Product decision: merge, differentiate, or server-persist |
+
+## Recommended Sprint Structure
+
+This roadmap should run as **three tightly scoped remediation sprints**.
+
+If the goal is pure speed, Sprint ED-1 and ED-2 can be combined, but they should still be reported separately to preserve evidence clarity.
+
+## Sprint ED-1: High-Visibility Dead Action Cleanup
+
+Expected delta: **+18 to +25 percentage points**
+
+Target result:
+
+- Move REAL share from 41% to roughly 59-66%.
+- Remove the most embarrassing dead dashboard affordances.
+- Make top-of-page actions trustworthy.
+
+### Actionables
+
+| ID | Action | Acceptance Criteria |
+|---|---|---|
+| ED1-01 | Remove dead dashboard `Send feedback` mailto | Header uses existing Supabase-backed feedback flow or removes duplicate |
+| ED1-02 | Remove dead AI Workspace `Send feedback` mailto if present | Same feedback entry point is used consistently |
+| ED1-03 | Wire `Refresh` | Refresh re-fetches live dashboard metrics/timeline without full reload |
+| ED1-04 | Wire `View All N` | Navigates to Projects & Programs route |
+| ED1-05 | Wire project rows/buttons | Opens relevant project detail route or safe project context |
+| ED1-06 | Relabel `Active users` proxy | Label no longer pretends to be a user count unless real count exists |
+| ED1-07 | Relabel `Audit coverage` proxy | Label reflects proxy/coverage readiness or real audit count |
+| ED1-08 | Rename `Start guided demo` | Avoids confusion with `demo.triaxisventures.com` investor demo |
+| ED1-09 | Decide `Request pilot conversation` behavior | Real capture path, feedback flow, or explicitly external CTA |
+
+### Checklist
+
+| Item | Fully done | Partial | Not done | Notes |
 |---|---|---|---|---|
-| 1 | Start guided demo | PARTIAL | Fully wired (`DashboardSection.tsx:109-111`, `useGuidedDemo.ts`, `GuidedDemoBanner.tsx`), but the name collides with the separate `investor.triaxisventures.com` product -- a naming/product-decision issue, not a broken button | A-44 |
-| 2 | Send feedback (Dashboard header) | PLACEHOLDER | Dead `mailto:` (`DashboardSection.tsx:112-114`) sitting beside an already-real, Supabase-backed feedback pipeline (`BetaFeedbackButton`/`Modal`, global via `AppShell.tsx:61`) | A-42 |
-| 3 | Refresh | PLACEHOLDER | No `onClick` at all (`DashboardSection.tsx:115-117`) | A-47 |
-| 4 | Export Briefing | PLACEHOLDER | No `onClick`, no export service exists anywhere (`DashboardSection.tsx:118-120`) | A-43 |
-| 5 | Command search | PLACEHOLDER | Static decorative `<div>`, not an input (`components/enterprise/index.tsx:336-345`) | A-45 |
+| Dead feedback mailto removed from dashboard | [ ] | [ ] | [ ] |  |
+| Duplicate/dead AI feedback mailto removed or unified | [ ] | [ ] | [ ] |  |
+| Refresh actually refreshes dashboard data | [ ] | [ ] | [ ] |  |
+| Project `View All` navigation works | [ ] | [ ] | [ ] |  |
+| Project row/detail navigation works | [ ] | [ ] | [ ] |  |
+| Active users label is truthful | [ ] | [ ] | [ ] |  |
+| Audit coverage label is truthful | [ ] | [ ] | [ ] |  |
+| Guided demo naming no longer collides with investor demo | [ ] | [ ] | [ ] |  |
+| Pilot conversation CTA is real or honestly external | [ ] | [ ] | [ ] |  |
+| Typecheck passes | [ ] | [ ] | [ ] |  |
+| Lint passes | [ ] | [ ] | [ ] |  |
+| Tests pass | [ ] | [ ] | [ ] |  |
+| Build passes | [ ] | [ ] | [ ] |  |
 
-### Enterprise Golden Path (8-step)
+### Exit Criteria
 
-| # | Element | Tag | Evidence | Actionable |
+Sprint ED-1 closes only if:
+
+- No dead header action remains on the Executive Dashboard.
+- Project navigation is real.
+- Proxy metrics are honestly labeled.
+- The dashboard no longer confuses guided demo with investor demo.
+- Verification is run and documented.
+
+## Sprint ED-2: Existing Infrastructure Wiring
+
+Expected delta: **+10 to +18 percentage points**
+
+Target result:
+
+- Move REAL share to at least 70%.
+- Close the highest-value PARTIAL items.
+- Wire existing but disconnected infrastructure.
+
+### Actionables
+
+| ID | Action | Acceptance Criteria |
+|---|---|---|
+| ED2-01 | External Signals tile wiring | Uses `social_alert_events` / `social_alert_rules` repository data or honest provider-gated state |
+| ED2-02 | Literal AI review count | Golden Path and THCC use real AI Review Inbox count, not `pendingApprovals / 10` |
+| ED2-03 | Audit coverage improvement | Use real audit count if available, otherwise formalize proxy clearly |
+| ED2-04 | Remove fabricated budget/spent values | `getDashboardProjects()` no longer fabricates budget/spent as if real |
+| ED2-05 | Recent institutional activity decision | Either build live feed or keep honest empty state with no overclaim |
+| ED2-06 | Dashboard tests | Tests cover new counts, labels, and external signal behavior |
+
+### Checklist
+
+| Item | Fully done | Partial | Not done | Notes |
 |---|---|---|---|---|
-| 6 | Golden Path widget itself | REAL | Fully wired to live `LiveWorkspaceMetrics` via real repositories (`enterpriseGoldenPath.ts`, `EnterpriseWorkflowJourney.tsx`) | none needed |
-| 7 | Golden Path's `pendingAiReviews` count | PARTIAL | Heuristically derived (`Math.ceil(pendingApprovals / 10)`), never a literal AI Review Inbox count | new, minor -- see Phase 2 |
+| External Signals tile no longer hardcoded to useless zero | [ ] | [ ] | [ ] |  |
+| AI Review count uses real source or documented honest fallback | [ ] | [ ] | [ ] |  |
+| Golden Path pending AI review count is not heuristic-only | [ ] | [ ] | [ ] |  |
+| THCC pending AI review count is not heuristic-only | [ ] | [ ] | [ ] |  |
+| Audit coverage is real or clearly named as proxy | [ ] | [ ] | [ ] |  |
+| Fabricated budget/spent fields removed or fixed | [ ] | [ ] | [ ] |  |
+| Recent activity is either live or honestly empty | [ ] | [ ] | [ ] |  |
+| Dashboard unit tests updated | [ ] | [ ] | [ ] |  |
+| Typecheck passes | [ ] | [ ] | [ ] |  |
+| Lint passes | [ ] | [ ] | [ ] |  |
+| Tests pass | [ ] | [ ] | [ ] |  |
+| Build passes | [ ] | [ ] | [ ] |  |
 
-### Tenant Health Command Center (8 tiles)
+### Exit Criteria
 
-| # | Element | Tag | Evidence | Actionable |
+Sprint ED-2 closes only if:
+
+- Executive Dashboard reaches at least **19/27 REAL elements**.
+- Existing infrastructure is used before net-new systems are introduced.
+- No known fabricated budget/spent values remain.
+- AI review and audit metrics are no longer misleading.
+
+## Sprint ED-3: Net-New Dashboard Intelligence MVPs
+
+Expected delta: **+5 to +12 percentage points**
+
+Target result:
+
+- Push REAL share toward 78-85%.
+- Address highest-value dashboard intelligence placeholders.
+- Avoid overbuilding.
+
+### Actionables
+
+| ID | Action | Acceptance Criteria |
+|---|---|---|
+| ED3-01 | Risk Heatmap MVP | Uses existing project risk levels to generate real count-by-level heatmap |
+| ED3-02 | Strategic Objectives MVP | Adds minimal tenant-scoped objectives model/repository or honest deferred state |
+| ED3-03 | AI Recommendations MVP | Uses curated/admin-authored recommendations or AI Review pattern, not fake AI claims |
+| ED3-04 | A-54 onboarding checklist decision | Merge, differentiate, or server-persist Golden Path vs Pilot Onboarding checklist |
+| ED3-05 | Dashboard evidence closeout | Documents final REAL/PARTIAL/PLACEHOLDER count |
+
+### Checklist
+
+| Item | Fully done | Partial | Not done | Notes |
 |---|---|---|---|---|
-| 8 | Onboarding completion | REAL | `workflowEvidence.ts:139-145` | none |
-| 9 | Active users | PARTIAL | Mislabeled -- shows a Ready/Blocked proxy, not a user count (`workflowEvidence.ts:146-153`) | A-50 |
-| 10 | Documents indexed | REAL | `workflowEvidence.ts:154-161` | none |
-| 11 | Pending AI reviews | REAL (heuristic) | `workflowEvidence.ts:162-169`, same heuristic as #7 | see Phase 2 |
-| 12 | Open tasks | REAL | `workflowEvidence.ts:170-177` | none |
-| 13 | Approval SLA risk | REAL | `workflowEvidence.ts:178-185` | none |
-| 14 | Integration health | REAL | `workflowEvidence.ts:186-193` | none |
-| 15 | Audit coverage | PARTIAL | Proxy heuristic, not a real audit-log query (`workflowEvidence.ts:194-201`) | A-51 |
+| Risk Heatmap no longer hardcoded module constant | [ ] | [ ] | [ ] |  |
+| Risk categories are generic or tenant-configurable, not wrongly health-specific | [ ] | [ ] | [ ] |  |
+| Strategic Objectives has real backend or explicit defer state | [ ] | [ ] | [ ] |  |
+| AI Recommendations avoid fake AI overclaim | [ ] | [ ] | [ ] |  |
+| Golden Path vs Pilot Onboarding overlap resolved | [ ] | [ ] | [ ] |  |
+| Final dashboard inventory updated | [ ] | [ ] | [ ] |  |
+| 70-80% REAL target achieved or blocker documented | [ ] | [ ] | [ ] |  |
+| Typecheck passes | [ ] | [ ] | [ ] |  |
+| Lint passes | [ ] | [ ] | [ ] |  |
+| Tests pass | [ ] | [ ] | [ ] |  |
+| Build passes | [ ] | [ ] | [ ] |  |
 
-### Router/Ops/Signals row
+### Exit Criteria
 
-| # | Element | Tag | Evidence | Actionable |
-|---|---|---|---|---|
-| 16 | AI Router tile | REAL | `DashboardSection.tsx:146-153` | none |
-| 17 | Live Ops tile | REAL | `DashboardSection.tsx:154-161` | none |
-| 18 | External Signals tile | PLACEHOLDER | Hardcoded `0` (honest, not fabricated), but DB tables (`social_alert_events`/`_rules`) and UI (`AlertsSection.tsx`) already exist -- missing repository layer only | new -- see Phase 2 |
+Sprint ED-3 closes only if:
 
-### Activity, timeline, and priority actions
+- Executive Dashboard reaches preferred **21/27 REAL elements** or better; or
+- Any remaining placeholders are explicitly deferred with product rationale and no fake affordance.
 
-| # | Element | Tag | Evidence | Actionable |
-|---|---|---|---|---|
-| 19 | Recent institutional activity | PARTIAL | Correctly demo-gated; honest empty state for real tenants, no live feed built | backlog, optional |
-| 20 | Workflow timeline | REAL | `useWorkflowTimeline.ts` -> real `workflow_timeline_events` table | none |
-| 21 | Priority actions (core list) | REAL | Built from real `actionQueue` | none |
-| 22 | Priority actions' "Request pilot conversation" | PLACEHOLDER | Dead mailto | A-49 |
+## Overall Roadmap Checklist
 
-### Strategic Objectives / AI Recommendations / Risk Heatmap
+| Goal | Target | Status | Notes |
+|---|---:|---|---|
+| Baseline REAL elements | 11/27 | Current | 41% |
+| Minimum REAL target | 19/27 | Not started | 70% |
+| Preferred REAL target | 21/27 | Not started | 78% |
+| Stretch REAL target | 22/27 | Not started | 81% |
+| Dead dashboard buttons removed | All | Not started | Phase ED-1 |
+| Misleading proxy labels corrected | All | Not started | Phase ED-1/ED-2 |
+| Existing disconnected infrastructure wired | Major items | Not started | Phase ED-2 |
+| Fabricated budget/spent removed | Yes | Not started | Phase ED-2 |
+| Net-new placeholders addressed | Top 3 | Not started | Phase ED-3 |
+| Verification documented | Every sprint | Not started | Required |
 
-| # | Element | Tag | Evidence | Actionable |
-|---|---|---|---|---|
-| 23 | Strategic Objectives | PLACEHOLDER | Hardcoded demo array or empty state; **zero backend anywhere** (`data.ts:119-124`) -- confirmed net-new | A-46 |
-| 24 | AI Recommendations | PLACEHOLDER | Hardcoded demo array, dead buttons even in demo mode; **zero backend anywhere** (`data.ts:126-131`) -- confirmed net-new | A-46 |
-| 25 | Risk Heatmap | PLACEHOLDER | Hardcoded module-level constant, **not even demo-gated** -- shown identically to every user regardless of real data; **zero backend anywhere** (`DashboardSection.tsx:48-58`) | A-46 |
+## Recommended Execution Order
 
-### Project Health Monitor
+1. Execute Sprint ED-1 first.
+2. Recount REAL/PARTIAL/PLACEHOLDER.
+3. If REAL share is below 70%, execute Sprint ED-2 immediately.
+4. If REAL share reaches 70-75%, decide whether to continue ED-3 now or after QA3.
+5. Do not start ED-3 before ED-1 and ED-2 unless the founder explicitly prioritizes dashboard intelligence over correctness.
 
-| # | Element | Tag | Evidence | Actionable |
-|---|---|---|---|---|
-| 26 | Project list itself | REAL | Real repositories, correct demo-gating (`data.ts:71-94`) | none |
-| 27 | "View All N" + row buttons | PLACEHOLDER | No `onClick` on either | A-52 |
+## Claude Code Prompt Summary
 
-### Cross-cutting, not in the numbered 27 but scoped here
+When authorized, the implementation prompt should instruct Claude Code to:
 
-- **A-53**: `getDashboardProjects()`'s `budget`/`spent` fields are fabricated per-index strings, not real data -- not currently rendered on the Dashboard itself, but latent risk for any other consumer.
-- **A-54**: the real 8-step Golden Path and a separate, `localStorage`-only-persisted 10-step "Pilot Onboarding checklist" (`BetaOnboardingChecklist.tsx`) overlap in purpose on/near the same page -- product decision needed (merge vs. differentiate).
+- Read this roadmap.
+- Audit `src/features/dashboard/DashboardSection.tsx` and dependencies.
+- Implement ED-1 first.
+- Stop after ED-1 if verification fails.
+- Update this document with progress.
+- Produce a closeout with the new REAL/PARTIAL/PLACEHOLDER count.
+- Do not overclaim hardcoded, heuristic, or proxy metrics as real.
 
-## Roadmap: 3 Phases to 70-80% REAL
+## Completion Standard
 
-### Phase 1 -- Quick fixes (highest visibility, lowest effort, mostly wiring to existing infra)
+The Executive Dashboard remediation program is considered successful only if:
 
-Sub-progress checklist:
+- At least **19/27 elements** are REAL.
+- No visible dead primary dashboard actions remain.
+- Proxy metrics are honestly labeled.
+- Demo/investor naming is not confused with guided workflow.
+- Dashboard actions either work, navigate, refresh, export, open feedback, or are explicitly deferred.
+- Tests and build pass.
+- Closeout documents exact before/after counts.
 
-- [ ] A-42 + A-48: delete both dead "Send Feedback" mailtos (Dashboard header, AI Workspace header); confirm the existing `BetaFeedbackButton`/`BetaFeedbackModal` is the single remaining entry point
-- [ ] A-47: wire "Refresh" to a real re-fetch of `useLiveWorkspaceMetrics`/`useWorkflowTimeline`
-- [ ] A-52: wire "View All N" to the real Projects & Programs route; wire each project row to that project's detail route
-- [ ] A-50: relabel "Active users" to describe what it actually measures (or replace with a real count query -- relabeling is the Phase-1-sized option)
-- [ ] A-51: relabel "Audit coverage" to describe the proxy honestly (or wire a real audit-log count -- relabeling is the Phase-1-sized option)
-- [ ] A-49: product decision -- wire "Request pilot conversation" to a real capture path, or keep as an intentional external CTA and document why
-- [ ] A-43: product decision -- build a minimal real export (e.g., current metrics as JSON/PDF), or remove the button until scoped
-- [ ] A-45: product decision -- build a minimal real search (route/document/task name filter), or relabel as "Coming soon" instead of showing fake affordance
-- [ ] A-44: rename/reposition "Start Guided Demo" to disambiguate from the Investor Preview product (no new build -- the mechanism already works)
-
-**Phase 1 impact:** closes 9 of the 11 current PLACEHOLDER items and 2 of the 5 PARTIAL items using
-mostly-existing infrastructure (the feedback pipeline, navigation routes, and relabeling). This
-alone moves the REAL share from 41% toward roughly 22/27 = ~81% if every item above lands as a
-full fix rather than a relabel -- realistically closer to 70% given some items will land as the
-honest-relabel option rather than a full new-metric build. **This phase alone is likely sufficient
-to hit the founder's 70-80% target.**
-
-### Phase 2 -- Medium wiring (uses existing but disconnected infrastructure)
-
-Sub-progress checklist:
-
-- [ ] External Signals (#18): build the missing repository layer connecting `social_alert_events`/`social_alert_rules` (already in Supabase) to `AlertsSection.tsx` (already built) and this Dashboard tile
-- [ ] Golden Path / THCC `pendingAiReviews` heuristic (#7, #11): pass a literal AI Review Inbox count instead of the `pendingApprovals / 10` derivation
-- [ ] A-54: product decision on the two overlapping onboarding checklists, then implement (merge, or persist the Pilot Onboarding checklist server-side instead of `localStorage`)
-- [ ] A-53: remove or replace the fabricated `budget`/`spent` fields in `getDashboardProjects()`
-
-**Phase 2 impact:** closes the remaining PARTIAL items and one more PLACEHOLDER (External Signals),
-pushing further past the 70-80% target toward full coverage of everything except genuinely net-new
-features.
-
-### Phase 3 -- Net-new builds (no existing infrastructure; each is its own small feature)
-
-Sub-progress checklist:
-
-- [ ] Strategic Objectives: new table + repository + API route + real UI wiring (no existing schema to extend)
-- [ ] AI Recommendations: new table/service, or extend the AI Review Inbox's cited-answer pattern as an architectural template; cheapest MVP is founder/admin-curated recommendations rather than AI-generated ones at first
-- [ ] Risk Heatmap: cheapest real version aggregates existing `project.riskLevel` values into a count-by-level view (no new categories); the current category set (Referral/Budget/Oxygen/...) looks NGO/healthcare-specific and would need a product decision on whether to keep, genericize, or make tenant-configurable
-
-**Phase 3 impact:** the only genuinely net-new feature work in this roadmap. Deliberately sequenced
-last -- Phases 1-2 already reach the requested 70-80% delta without it, and each Phase 3 item is a
-real, separate scoping conversation (data model, what "AI recommends" means without overclaiming,
-whether risk categories are configurable per tenant).
-
-## What This Document Does Not Do
-
-Per the founder's own instruction ("Give me list... exhaustively" -- not "start fixing"), **no code
-has been changed.** Phase 1 is scoped to be startable immediately once authorized; Phases 2-3 need
-their own go/no-go and, in places, an explicit product decision before implementation (marked
-"product decision" above). This mirrors the roadmap-then-authorize pattern already used for
-`docs/readiness/ADMIN_PANEL_WIRING_ROADMAP_2026_07_25.md`.
