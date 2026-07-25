@@ -167,6 +167,17 @@ at needs to be stated plainly, per the founder's own framing (2026-07-25):
   structurally slower and harder to generate than a consumer/no-code product -- it depends on named
   organizational relationships, structured surveys, and multi-step pilot conversations (the 62 calls
   and 28-30-respondent survey above), not viral consumer adoption loops.
+- **Total burn: ~$1,000** -- $550 incorporation, $220 dev/product, $230 everything else (mostly
+  marketing). This reconciles a discrepancy this program had previously flagged as open (see
+  `docs/UNSUPPORTED_OR_PARTIAL_CLAIMS.md`, "Total program spend"): the $220 dev/product figure
+  matches `docs/SPRINT_41_QA2_MILESTONE_2026_07_22.md` section 9's ~$220 exactly, meaning that
+  earlier figure was the dev-only slice of this larger $1,000 total, not a second, competing total.
+  A separate earlier figure (~$800 total / $80 current-phase, `MONOREPO_ARCHITECTURE_AND_BUSINESS_MODEL.md`
+  section 1.4) remains unreconciled against this $1,000 breakdown -- still an open item, not resolved
+  by this one. `Founder-stated, source artifact needed` for the $550/$220/$230 split itself -- no
+  incorporation-fee receipt, dev-tooling subscription record, or marketing spend record is in this
+  repository. Everything shipped and evidenced in this document -- the product, the 62 calls, the
+  beta survey, the 6 walkthroughs, the QA program -- was built on this budget.
 - Notably, the incorporation date (15/03/2026) lines up closely with the visible start of this
   document's own audience-growth data -- the Facebook company Page's viewer chart and the personal
   LinkedIn follower-growth chart both show their ramp beginning in the same window (late
