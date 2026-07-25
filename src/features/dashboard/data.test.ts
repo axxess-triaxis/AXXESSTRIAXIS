@@ -70,3 +70,57 @@ describe("getDashboardProjects (Executive Dashboard Sprint ED-2 -- no fabricated
     }
   });
 });
+
+describe("getDashboardStrategicObjectives (Executive Dashboard Sprint ED-3 -- derived MVP)", () => {
+  afterEach(() => {
+    vi.doUnmock("../../providers/serviceProvider");
+    vi.resetModules();
+  });
+
+  it("derives one objective per real program, averaging that program's own linked projects' progress", async () => {
+    vi.resetModules();
+    vi.doMock("../../providers/serviceProvider", () => ({
+      applicationServices: {
+        programsRepository: {
+          list: vi.fn().mockResolvedValue([
+            { id: "prog-1", name: "District Health Modernization", status: "active" },
+            { id: "prog-2", name: "Empty Program", status: "planning" },
+          ]),
+        },
+        projectsRepository: {
+          list: vi.fn().mockResolvedValue([
+            { programId: "prog-1", progress: 40 },
+            { programId: "prog-1", progress: 60 },
+            { programId: "prog-other", progress: 100 },
+          ]),
+        },
+      },
+    }));
+
+    const { getDashboardStrategicObjectives: getObjectivesWithMock } = await import("./data");
+    const objectives = await getObjectivesWithMock(cleanScope);
+
+    expect(objectives).toHaveLength(2);
+    const linked = objectives.find((objective) => objective.name === "District Health Modernization");
+    expect(linked?.projectCount).toBe(2);
+    expect(linked?.averageProgress).toBe(50);
+    const empty = objectives.find((objective) => objective.name === "Empty Program");
+    expect(empty?.projectCount).toBe(0);
+    expect(empty?.averageProgress).toBe(0);
+  });
+
+  it("returns an empty list, not fabricated objectives, when the repository call fails", async () => {
+    vi.resetModules();
+    vi.doMock("../../providers/serviceProvider", () => ({
+      applicationServices: {
+        programsRepository: { list: vi.fn().mockRejectedValue(new Error("network error")) },
+        projectsRepository: { list: vi.fn().mockResolvedValue([]) },
+      },
+    }));
+
+    const { getDashboardStrategicObjectives: getObjectivesWithMock } = await import("./data");
+    const objectives = await getObjectivesWithMock(cleanScope);
+
+    expect(objectives).toEqual([]);
+  });
+});

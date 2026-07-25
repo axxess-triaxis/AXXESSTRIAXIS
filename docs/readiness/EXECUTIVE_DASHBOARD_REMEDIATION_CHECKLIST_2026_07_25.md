@@ -108,19 +108,19 @@ Target: preferred 21/27 REAL elements, stretch 22/27
 
 | ID | Checklist Item | Status | Evidence / Notes |
 |---|---|---|---|
-| ED3-01 | Risk Heatmap no longer uses hardcoded module constant for live tenants | Not started |  |
-| ED3-02 | Risk Heatmap uses existing project risk aggregation or honest deferred state | Not started |  |
-| ED3-03 | Risk categories are generic, tenant-configurable, or explicitly product-decided | Not started |  |
-| ED3-04 | Strategic Objectives has minimal tenant-scoped backend or honest deferred state | Not started |  |
-| ED3-05 | AI Recommendations avoids fake AI claims | Not started |  |
-| ED3-06 | AI Recommendations uses curated/admin-authored records or existing AI Review pattern | Not started |  |
-| ED3-07 | Golden Path vs Pilot Onboarding checklist overlap resolved by merge/differentiate/server-persist decision | Not started |  |
-| ED3-08 | Final dashboard inventory table updated | Not started |  |
-| ED3-09 | 70-80% REAL target achieved or blocker documented | Not started |  |
-| ED3-10 | Typecheck run and passing | Not started |  |
-| ED3-11 | Lint run and passing | Not started |  |
-| ED3-12 | Tests run and passing | Not started |  |
-| ED3-13 | Build run and passing | Not started |  |
+| ED3-01 | Risk Heatmap no longer uses hardcoded module constant for live tenants | Done | Real per-tenant aggregation of `project.risk` into High/Medium/Low counts |
+| ED3-02 | Risk Heatmap uses existing project risk aggregation or honest deferred state | Done | `aggregateProjectRisk()`, pure function, tested |
+| ED3-03 | Risk categories are generic, tenant-configurable, or explicitly product-decided | Done | Generic High/Medium/Low, not the demo set's health-specific labels |
+| ED3-04 | Strategic Objectives has minimal tenant-scoped backend or honest deferred state | Done | Derived MVP -- `getDashboardStrategicObjectives()`, real programs + linked-project average progress |
+| ED3-05 | AI Recommendations avoids fake AI claims | Done | Labeled "Governance recommendation"/"Operational recommendation," no autonomous-AI claim |
+| ED3-06 | AI Recommendations uses curated/admin-authored records or existing AI Review pattern | Done | Derived from real pending AI reviews + at-risk projects already on the page |
+| ED3-07 | Golden Path vs Pilot Onboarding checklist overlap resolved by merge/differentiate/server-persist decision | Done | Differentiated: "Pilot Onboarding (personal checklist)," labeled browser-local, points to Golden Path for tenant-wide proof |
+| ED3-08 | Final dashboard inventory table updated | Done | 27/27 REAL (100%) -- see roadmap doc's itemized table and closeout doc |
+| ED3-09 | 70-80% REAL target achieved or blocker documented | Done | Exceeded -- 100% |
+| ED3-10 | Typecheck run and passing | Done | exit 0 |
+| ED3-11 | Lint run and passing | Done | exit 0, zero warnings |
+| ED3-12 | Tests run and passing | Done | 140/140 files, 533/533 tests, exit 0 -- clean run, no infra flake this pass |
+| ED3-13 | Build run and passing | Done | exit 0 |
 
 ## Sprint ED-3 Exit Gate
 
@@ -129,19 +129,21 @@ Sprint ED-3 can close only if:
 - Executive Dashboard reaches preferred 21/27 REAL elements or better; or
 - Remaining placeholders are explicitly deferred with product rationale.
 
+**Met -- 27/27 (100%), zero placeholders remain.**
+
 ## Overall Completion Gate
 
 The Executive Dashboard remediation program is complete only if:
 
 | Completion Standard | Status | Evidence / Notes |
 |---|---|---|
-| At least 19/27 elements are REAL | Done (after ED-1, exceeded further after ED-2) | 21/27 (78%) after ED-1; **24/27 (89%) after ED-2** -- exceeds the 19/27 minimum, the 21/27 preferred target, and the 22/27 stretch target |
-| No visible dead primary dashboard actions remain | Done (after ED-1) | All 9 dead/mislabeled elements in ED-1's scope fixed; 3 remain out of ED-1/ED-2 scope (Strategic Objectives, AI Recommendations, Risk Heatmap -- ED-3 net-new work) |
-| Proxy metrics are honestly labeled | Done (after ED-1, upgraded to real after ED-2) | "Active users" -> "Team provisioning" (ED-1); "Audit coverage" -> "Audit readiness", proxy upgraded to a real count where available (ED-2) |
-| Investor demo and guided workflow naming are not confused | Done (after ED-1) | "Start guided demo" -> "Start guided setup", with a disambiguating tooltip |
-| Dashboard actions work, navigate, refresh, export, open feedback, or are explicitly deferred | Done (after ED-1) |  |
-| Verification suite passes | Done | ED-1: `docs/readiness/EXECUTIVE_DASHBOARD_ED1_CLOSEOUT_2026_07_25.md`; ED-2: `docs/readiness/EXECUTIVE_DASHBOARD_ED2_CLOSEOUT_2026_07_25.md` |
-| Closeout documents exact before/after counts | Done | Same closeout docs |
+| At least 19/27 elements are REAL | **Done -- 27/27 (100%) after ED-3** | 21/27 (78%) after ED-1; 24/27 (89%) after ED-2; **27/27 (100%) after ED-3** -- exceeds every target in the roadmap |
+| No visible dead primary dashboard actions remain | Done | All 27 elements resolved across ED-1/ED-2/ED-3 |
+| Proxy metrics are honestly labeled | Done | "Active users" -> "Team provisioning" (ED-1); "Audit coverage" -> "Audit readiness", upgraded to real where available (ED-2) |
+| Investor demo and guided workflow naming are not confused | Done | "Start guided demo" -> "Start guided setup", with a disambiguating tooltip |
+| Dashboard actions work, navigate, refresh, export, open feedback, or are explicitly deferred | Done |  |
+| Verification suite passes | Done | ED-1/ED-2/ED-3 closeout docs, each with exact typecheck/lint/test/build results |
+| Closeout documents exact before/after counts | Done | Same 3 closeout docs |
 
 ## Progress Log
 
@@ -167,11 +169,11 @@ The Executive Dashboard remediation program is complete only if:
 
 ### ED-3 Progress
 
-- Date:
-- Executor:
-- Files changed:
-- Items completed:
-- Items blocked:
-- REAL count after sprint:
-- Verification:
+- Date: 2026-07-25
+- Executor: Claude Code
+- Files changed: see `docs/readiness/EXECUTIVE_DASHBOARD_ED3_CLOSEOUT_2026_07_25.md`
+- Items completed: ED3-01 through ED3-13 (all)
+- Items blocked: none
+- REAL count after sprint: 27/27 (100%) -- program complete, every roadmap target exceeded
+- Verification: typecheck/lint/build clean (exit 0); tests 140/140 files, 533/533 passing, exit 0 (clean run, no infra flake)
 
