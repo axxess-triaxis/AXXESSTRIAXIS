@@ -73,10 +73,30 @@ provided, so the "10,000+ page visits" half of the claim remains unverified. The
 half is close in order of magnitude but should be corrected to **221.1K viewers** -- a different,
 more specific metric than "views," and not yet at 300K.
 
-Separately, founder-stated (2026-07-25, no screenshot yet): "Triaxis Ventures page and AXXESS
-TRIaxis showcase pages get on average 200+ search appearances total every 7 days" on LinkedIn --
-tagged `Founder-stated, source artifact needed` until a LinkedIn analytics screenshot is provided,
-same standard as everything else in this document.
+**LinkedIn -- update, real screenshots provided.** The founder supplied 5 further screenshots, but
+clarified an important attribution point first: these are **personal-profile analytics for Sudipta
+Koushik Sarmah**, not the Triaxis Ventures/AXXESS TRIaxis company or showcase pages -- the founder's
+own words: "I mostly post from my profile tagging Triaxis and AXXESS pages but 70-80% posts are
+related to them." The 70-80% relevance figure is founder-estimated, not verified against a
+per-post breakdown. With that attribution caveat, the personal-profile screenshots (window
+2/1/2026-7/25/2026, ~175 days, captured 2026-07-25) show:
+- **65,325 impressions** (+444% vs. the prior 175 days), 43% in-network / 57% out-of-network
+- **20,470 members reached**
+- **984 social engagements** (817 reactions, 127 comments, 26 reposts, 9 saves, 5 sends), 15 link
+  engagements
+- **2,673 total followers** (+46% vs. the prior 175 days)
+- **509 profile viewers in the past 90 days**, including 13 from State Bank of India, 8 from HDFC
+  Bank, 4 from IIT Guwahati's Udgam, 2 recruiters, 184 who found the profile via LinkedIn's own
+  homepage
+- Top 3 posts by impressions: 6K/90 engagements, 2K/19 engagements, 2K/8 engagements
+
+**This corrects, rather than confirms, the earlier "200+ search appearances every 7 days" claim.**
+The screenshot's own "Profile appearances" panel (window July 14-20, i.e. the most recent 7 days)
+shows **36 search appearances** (0% change) and **4,613 all appearances** (+143%) -- neither figure
+is "200+ search appearances." The verified figure for search appearances specifically is 36/week;
+"200+" does not match either the search-appearances or all-appearances number shown. Recorded as a
+correction, not a confirmation, consistent with the standard applied to every other figure in this
+document.
 
 ## Rule
 
