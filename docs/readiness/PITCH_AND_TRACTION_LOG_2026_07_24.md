@@ -93,16 +93,54 @@ Purpose: a running, factual record of who AXXESS has been pitched to, what respo
 **Status:** Offer declined.
 **Outcome:** Presented the idea and were cleared for Web Summit Alpha attendance in November 2026. **Declined, to preserve runway.**
 
-## Other
+## Mentorship
 
-### 15. Various individuals -- potential angels and grantmakers
+### 15. Sidharth Bezbora -- 4x founder, Antler Alumni, ex-Head of AI Products, Standard Chartered Singapore
 
 **Status:** Ongoing.
-**Outcome:** Not itemized individually in this log; tracked as an open, ongoing category rather than named entries.
+**Outcome:** Mentorship-oriented Q&A running over 1+ month.
+
+## Angel Investor Conversations
+
+### 16. Angshuman Kashyap -- ex-IIT Guwahati, ex-IIM Calcutta, ex-Flipkart, ex-Gulf Marketing Group
+
+**Status:** Pitched.
+**Outcome:** Pitched to him as a potential angel investor.
+
+### 17. Paritosh Verma -- ex-SBI, ex-IIM Calcutta, Founder of Yaary (raised $3M seed from 4 VCs)
+
+**Status:** Pitched.
+**Outcome:** Pitched to him as a potential angel investor.
+
+### 18. David Orban -- Head of Innovation, AI Liwan Group, Abu Dhabi
+
+**Status:** Pitched.
+**Outcome:** Pitched for angel investment and facilitation (UAE market entry/ecosystem support).
+
+## Ecosystem / Connector Relationships
+
+### 19. Amey Purshan -- NASSCOM Bangalore CoE
+
+**Status:** Ongoing.
+**Outcome:** In regular touch over investor connect -- an ongoing introduction/networking relationship, not itself an investment conversation.
+
+### 20. Md. Sufiyan -- Dubai-based founder and startup ecosystem enabler
+
+**Status:** Pitched.
+**Outcome:** Pitched with the specific goal of facilitating a move to the UAE via the Dubai/Abu Dhabi government ecosystem.
+
+## VC Outreach
+
+### 21. 3one4 Capital -- Analyst call
+
+**Status:** Passed.
+**Outcome:** Pitched on an analyst call. Response: **"too early for us."** This is the first entry in this log where the pass came from the investor's side, rather than the founder declining an offer to preserve runway -- recorded here without softening, in keeping with this log's evidence discipline.
 
 ## Summary Pattern (As Reported)
 
-Reading across all fourteen named entries: the recurring pattern is strong qualitative reception (multiple uses of "impressed," "remarkable," "AI native") combined with a deliberate, repeated founder decision to **decline three separate accelerator/pre-accelerator offers** (Startup Wise Guys' Founders Club, Forge AI's Founder Residency, Web Summit Alpha) explicitly to preserve runway, while continuing to advance further in incubation-style programs that do not carry the same cost/dilution/time trade-off (SIIC IIT Kanpur, NASSCOM CoE Gurugram). This is consistent with the capital-efficiency framing already documented in `MONOREPO_ARCHITECTURE_AND_BUSINESS_MODEL.md` S1.4 (total spend to date approximately $800, current run-rate sustainable on Tier 1 self-serve pricing alone) -- these are recorded here as the same discipline applied to fundraising/accelerator decisions, not just product spend.
+Reading across all twenty-one named entries: the recurring pattern is strong qualitative reception (multiple uses of "impressed," "remarkable," "AI native") combined with a deliberate, repeated founder decision to **decline three separate accelerator/pre-accelerator offers** (Startup Wise Guys' Founders Club, Forge AI's Founder Residency, Web Summit Alpha) explicitly to preserve runway, while continuing to advance further in incubation-style programs that do not carry the same cost/dilution/time trade-off (SIIC IIT Kanpur, NASSCOM CoE Gurugram). This is consistent with the capital-efficiency framing already documented in `MONOREPO_ARCHITECTURE_AND_BUSINESS_MODEL.md` S1.4 (total spend to date approximately $800, current run-rate sustainable on Tier 1 self-serve pricing alone) -- these are recorded here as the same discipline applied to fundraising/accelerator decisions, not just product spend.
+
+The angel/VC outreach entries (15-21) add a second, distinct pattern: active, in-progress fundraising conversations across mentorship (Bezbora), direct angel pitches (Kashyap, Verma, Orban), ecosystem/connector relationships (Purshan, Sufiyan), and formal VC outreach (3one4 Capital). Unlike the accelerator entries, none of these has yet produced either a firm offer or, until 3one4 Capital, an explicit pass -- they are recorded here as open, in-progress relationships, not as claimed traction.
 
 ## Explicit Non-Claims
 
@@ -111,3 +149,4 @@ Consistent with this program's documentation discipline: this log does not claim
 - No accelerator or incubation offer listed above has been accepted; SIIC IIT Kanpur and NASSCOM CoE Gurugram are the only two still actively progressing.
 - No pilot, contract, purchase order, or signed letter of intent exists from any entry in this log. UNDP Malawi's $5,000+/month indicative pricing is a survey response, not a commercial commitment -- this is the same caveat already applied to the broader beta-feedback willingness-to-pay data in `MONOREPO_ARCHITECTURE_AND_BUSINESS_MODEL.md` S6.4.
 - Promoter scores, "AI native" framing, and qualitative praise quoted above are the founder's own recollection of what was said in these conversations, not captured via a formal survey instrument (unlike the 30-response beta feedback batch, which was captured via structured NPS/PMF survey tooling).
+- No angel investment, check, term sheet, or formal commitment has been made or received from any entry in the Angel Investor Conversations or Ecosystem/Connector sections -- these are recorded as pitched/ongoing relationships only. 3one4 Capital's "too early for us" is recorded as a genuine pass, not reframed as a future opportunity.
