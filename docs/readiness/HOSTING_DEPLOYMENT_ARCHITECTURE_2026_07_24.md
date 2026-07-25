@@ -52,6 +52,16 @@ Reported the same day the DNS fix above went live: visiting `https://landing.tri
 
 **Deployed:** `vercel deploy --prod` against `triaxis-www-frontend-import` directly (auto-sync is not yet enabled -- see below -- so this required the same manual per-project deploy this program has used throughout). Live verification, same day: `https://landing.triaxisventures.com/` now returns `307 -> /dashboard -> /auth?next=%2Fdashboard`, landing on a genuine sign-in form (`Email`/`Password`/`Sign in`), no chooser, no path to the Demo. `www.triaxisventures.com` and `investor.triaxisventures.com` re-checked and confirmed unaffected.
 
+## Investor Root Fix (Resolved 2026-07-25)
+
+Reported immediately after the Landing Root Fix above: `https://investor.triaxisventures.com/` was serving **stale, pre-hosting-split content** -- old relative links (`/investor`, `/landing`) and old button labels ("Beta Sign Up" / "For Investors"), confirmed via live `curl`. Root cause: the Demo project's production deployment (`triaxis-product-investor-demo`) had never been redeployed since before this session's page.tsx rewrite and hosting split -- it was still serving whatever was live before any of this session's work began.
+
+**Fix:** renamed `betaRootRedirectHosts` to `dashboardRootRedirectHosts` and added `investor.triaxisventures.com` alongside `beta.`/`landing.` in the same root-to-`/dashboard` redirect rule (`src/proxy.ts`, commit `74dde4d`). Because the Demo project has `NEXT_PUBLIC_AXXESS_DEMO_MODE=true` forced at build time, this redirect reaches the Investor Preview with zero friction -- the login gate is skipped entirely for this deployment, so `/dashboard` renders the demo persona immediately. Tests: 2 new cases in `src/proxy.test.ts`, full suite 28/28 passing; typecheck and lint clean.
+
+**Deployed:** `vercel deploy --prod` against `triaxis-product-investor-demo` directly (same manual-per-project mechanism as the Landing fix, since auto-sync is not yet enabled -- see below). This deploy also incidentally fixed the stale content itself, since it picked up every commit since the Demo project was last built, not just this specific fix.
+
+**Live verification, same day:** `https://investor.triaxisventures.com/` now returns `307 -> /dashboard`, landing directly on the demo persona (`Ananya Rao` / `North East Health Mission`), no stale links, no chooser page. `www.triaxisventures.com` and `landing.triaxisventures.com` re-checked and confirmed unaffected.
+
 ## DNS Delegation Status (Resolved 2026-07-25)
 
 **Update:** the founder added the two Wix A records below on 2026-07-25 (via Wix Dashboard -> Domains -> `triaxisventures.com` -> Domain Actions -> Manage DNS Records -> A (Host) -> + Add Record, matching the existing pattern already used for `beta`/`www`). DNS resolved within minutes. The remaining blocker turned out to be TLS certificate issuance, not DNS: `vercel certs ls` showed certificates existed only for `beta.triaxisventures.com`, `triaxisventures.com`, and `www.triaxisventures.com` -- Vercel had not auto-issued certificates for the two new subdomains. Resolved by running `vercel certs issue landing.triaxisventures.com` and `vercel certs issue investor.triaxisventures.com` directly (both returned "Success! Certificate entry ... created").
