@@ -102,6 +102,28 @@ describe("route proxy helpers (renamed from middleware.ts in Sprint 5, Next.js 1
     expect(redirectUrl).toBeNull();
   });
 
+  // Reported 2026-07-25: investor.triaxisventures.com's root showed the shared marketing chooser
+  // with stale pre-hosting-split content (dead relative /investor, /landing links) instead of
+  // going straight into the Investor Preview. Forced demo mode means /dashboard renders with no
+  // auth detour on this deployment, so this redirect alone is sufficient to fix it.
+  it("redirects investor (Demo) root host to dashboard", () => {
+    const redirectUrl = getBetaRootRedirectUrl(
+      new URL("https://investor.triaxisventures.com/"),
+      "investor.triaxisventures.com",
+    );
+
+    expect(redirectUrl?.toString()).toBe("https://investor.triaxisventures.com/dashboard");
+  });
+
+  it("does not redirect non-root investor routes", () => {
+    const redirectUrl = getBetaRootRedirectUrl(
+      new URL("https://investor.triaxisventures.com/dashboard"),
+      "investor.triaxisventures.com",
+    );
+
+    expect(redirectUrl).toBeNull();
+  });
+
   it("normalizes hosts with ports before canonical checks", () => {
     const redirectUrl = getCanonicalHostRedirectUrl(
       new URL("https://triaxisventures.com/dashboard"),
