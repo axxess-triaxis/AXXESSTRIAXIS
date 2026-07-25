@@ -40,7 +40,39 @@ Partitioning is enforced at two independent layers, not one:
 1. **Separate Vercel projects, separate runtimes.** The Demo and Product deployments are not two modes of one running application -- they are two entirely separate build/deploy/serve pipelines with their own environment variables, their own edge network instances, and no shared memory, session store, or request routing of any kind. There is no code path by which a request to `investor.triaxisventures.com` can touch `landing.triaxisventures.com`'s data, or vice versa.
 2. **Deployment-time, not runtime, mode pinning.** The Demo project has `NEXT_PUBLIC_AXXESS_DEMO_MODE=true` baked in at build time (`isDemoModeForcedByEnv()` in `src/demo/demoMode.ts` reads this and unconditionally forces demo mode, bypassing `localStorage`/cookies entirely). Every request this deployment ever serves renders `demoRepositories` (in-memory, seeded, fictional North East Health Mission data) -- it is structurally incapable of reaching the real Supabase backend, since the demo/live repository selection in `src/providers/serviceProvider.ts` is decided by this same env-forced flag before any request is handled. The Product project has this variable unset, so it defaults the other way: real Supabase-backed `resilientRepositories`, real auth required, the demo persona never renders. This is a stronger guarantee than the original architecture's `localStorage`-toggle approach, which was exactly the mechanism that broke down (see the P0 correction doc).
 
-Verified live: `curl https://investor.triaxisventures.com/dashboard` returns the demo persona (Ananya Rao / North East Health Mission) with no session and no toggle; `curl https://landing.triaxisventures.com/dashboard` returns a real `307` redirect to a genuine sign-in form, never the demo persona, also with no session and no toggle. Confirmed by direct HTTP checks, not inferred from configuration alone.
+**Correction (2026-07-25):** an earlier version of this document stated "Verified live: `curl https://investor.triaxisventures.com/dashboard`..." for both subdomains. That claim did not survive a fresh check and is retracted here rather than left standing -- see "DNS Delegation Status" immediately below. Both subdomains currently return `DNS_PROBE_FINISHED_NXDOMAIN` in a browser and `nslookup` fails to resolve either host, so no HTTP request -- let alone a `curl` -- can currently reach either deployment via its intended public URL. The application-layer partitioning described above (two separate Vercel projects, deployment-time env-var pinning) is still real and code/build-verified, but it has not yet been reachable at `investor.triaxisventures.com` / `landing.triaxisventures.com` specifically, because the DNS records that would route those hostnames to Vercel were never created.
+
+## DNS Delegation Status (Verified 2026-07-25 -- Still Blocked, External/HITL-Only)
+
+Both `investor.triaxisventures.com` and `landing.triaxisventures.com` were registered on the Vercel side on 2026-07-13 and have never resolved publicly, confirmed today by three independent checks:
+
+1. **Browser report from the founder (2026-07-25):** both URLs return `DNS_PROBE_FINISHED_NXDOMAIN`.
+2. **`nslookup landing.triaxisventures.com` / `nslookup investor.triaxisventures.com`:** both return `Non-existent domain`. `nslookup triaxisventures.com` (the root domain) resolves fine, to `76.76.21.21` -- so the root domain and `www` are unaffected; only the two new subdomains are missing DNS records entirely.
+3. **`vercel domains inspect landing.triaxisventures.com` / `investor.triaxisventures.com`:** both report the domain as registered under the correct Vercel project but **not configured**:
+
+```
+Nameservers
+  Intended Nameservers    Current Nameservers
+  ns1.vercel-dns.com      ns0.wixdns.net   [X]
+  ns2.vercel-dns.com      ns1.wixdns.net   [X]
+
+WARNING! This Domain is not configured properly. To configure it you should either:
+  a) Set the following record on your DNS provider to continue: `A landing.triaxisventures.com 76.76.21.21` [recommended]
+  b) Change your Domain's nameservers to the intended set detailed above.
+```
+
+(Same output, with `investor` substituted for `landing`, for the second subdomain.)
+
+**Root cause:** `triaxisventures.com`'s nameservers are Wix's (`ns0.wixdns.net`, `ns1.wixdns.net`), confirmed via `nslookup -type=NS triaxisventures.com`, unchanged since the 2026-07-24 architecture decision. Vercel cannot serve a hostname it doesn't control DNS for. Adding the two Vercel projects and subdomains (done 2026-07-13/2026-07-24) was necessary but not sufficient -- a DNS record still has to be created at the actual DNS host, which is Wix, not Vercel.
+
+**Exact remediation required (Wix account access -- cannot be performed from this environment):** in Wix's domain/DNS management for `triaxisventures.com`, add two `A` records:
+
+| Host | Type | Value |
+|---|---|---|
+| `landing` | A | `76.76.21.21` |
+| `investor` | A | `76.76.21.21` |
+
+**Practical consequence in the meantime:** the live Website's "Welcome Aboard" and "Experience AXXESS" buttons (`www.triaxisventures.com`) are currently dead links for any real visitor -- they point at hostnames that don't resolve. This is a genuine, currently-live product defect, not a documentation gap; it has existed since the buttons were added and will persist until the Wix A records above are created.
 
 ## Demo Data Repopulation (For Upcoming Investor Conversations)
 
