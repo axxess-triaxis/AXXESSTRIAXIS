@@ -277,6 +277,35 @@ describe("Supabase enterprise repositories", () => {
     expect(String(init?.body)).not.toContain("org_someone_elses_tenant");
   });
 
+  // Admin panel wiring pass (2026-07-25): closes the one real gap in the invitation flow -- there
+  // was no way to revoke a pending invitation once sent.
+  it("revokes an invitation by PATCHing its status, scoped to the organization", async () => {
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify([{
+      id: "invitation_1",
+      organization_id: "org_public_safety",
+      email: "new.hire@example.com",
+      role: "Employee",
+      invited_by_user_id: "user_raj_anand",
+      status: "revoked",
+      expires_at: "2026-08-01T00:00:00Z",
+      accepted_at: null,
+      created_at: "2026-07-24T00:00:00Z",
+      updated_at: "2026-07-25T00:00:00Z",
+    }]), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://example.supabase.co");
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY", "anon-key");
+
+    const updated = await invitationsRepository.update({ ...scope, accessToken: "server-token" }, "invitation_1", { status: "revoked" });
+
+    expect(updated.status).toBe("revoked");
+    const [url, init] = fetchCall(fetchMock);
+    expect(String(url)).toContain("id=eq.invitation_1");
+    expect(String(url)).toContain("organization_id=eq.org_public_safety");
+    expect(init?.method).toBe("PATCH");
+    expect(String(init?.body)).toContain("revoked");
+  });
+
   // Sprint 5, Priority 4: Stakeholders/CRM had no live repository path at all -- the "Add Contact"
   // button was a dead end for every real tenant. This proves the new minimal live path is real,
   // tenant-scoped, and cannot be spoofed into writing under another organization.

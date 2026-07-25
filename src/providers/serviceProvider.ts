@@ -290,6 +290,10 @@ const resilientRepositories: RepositoryServices = {
       () => liveRepositories.invitationsRepository.listPending(scope, query),
       () => emptyRepositories.invitationsRepository.listPending(scope, query),
     ),
+    update: (scope, id, input) => withResilientFallback(
+      () => liveRepositories.invitationsRepository.update(scope, id, input),
+      () => emptyRepositories.invitationsRepository.update(scope, id, input),
+    ),
   },
   auditLogsRepository: {
     list: (scope, query) => withResilientFallback(

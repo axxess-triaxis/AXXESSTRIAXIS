@@ -1272,6 +1272,15 @@ const notificationConfig: ResourceConfig<NotificationRow, Notification> = {
   toUpdate: notificationUpdateMutation,
 };
 
+// Admin panel wiring pass (2026-07-25): revoke is the only mutation an invitation needs today
+// (pending -> revoked), so this intentionally only accepts status rather than a general-purpose
+// patch surface for a row that's otherwise immutable once created.
+function invitationUpdateMutation(_scope: TenantScope, input: Record<string, unknown>) {
+  return compactMutation({
+    status: input.status,
+  });
+}
+
 const invitationConfig: ResourceConfig<InvitationRow, Invitation> = {
   table: "invitations",
   select: "id,organization_id,email,role,invited_by_user_id,status,expires_at,accepted_at,created_at,updated_at",
@@ -1289,6 +1298,7 @@ const invitationConfig: ResourceConfig<InvitationRow, Invitation> = {
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   }),
+  toUpdate: invitationUpdateMutation,
 };
 
 const auditLogConfig: ResourceConfig<AuditLogRow, AuditLog> = {
@@ -1503,6 +1513,7 @@ export const invitationsRepository: InvitationsRepository = {
     const rows = await listResource("invitations", invitationConfig, scope, query);
     return rows.filter((invitation) => invitation.status === "pending");
   },
+  update: (scope, id, input) => updateResource("invitations", invitationConfig, scope, id, input),
 };
 
 export const auditLogsRepository: AuditLogsRepository = {
@@ -1613,7 +1624,7 @@ export const resourceRepositories = {
   meetings: meetingsRepository,
   notifications: notificationsRepository,
   audit_logs: { list: auditLogsRepository.list, getById: async () => undefined },
-  invitations: { list: invitationsRepository.listPending, getById: async () => undefined },
+  invitations: { list: invitationsRepository.listPending, getById: async () => undefined, update: invitationsRepository.update },
   beta_feedback: { list: betaFeedbackRepository.list, getById: async () => undefined, create: betaFeedbackRepository.create },
 } satisfies Record<ResourceName, {
   list(scope: TenantScope, query?: RepositoryQuery): Promise<unknown[]>;
