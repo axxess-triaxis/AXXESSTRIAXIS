@@ -90,13 +90,19 @@ per-post breakdown. With that attribution caveat, the personal-profile screensho
   homepage
 - Top 3 posts by impressions: 6K/90 engagements, 2K/19 engagements, 2K/8 engagements
 
-**This corrects, rather than confirms, the earlier "200+ search appearances every 7 days" claim.**
-The screenshot's own "Profile appearances" panel (window July 14-20, i.e. the most recent 7 days)
-shows **36 search appearances** (0% change) and **4,613 all appearances** (+143%) -- neither figure
-is "200+ search appearances." The verified figure for search appearances specifically is 36/week;
-"200+" does not match either the search-appearances or all-appearances number shown. Recorded as a
-correction, not a confirmation, consistent with the standard applied to every other figure in this
-document.
+**Correction to this document's own error, not to the founder's claim.** An earlier version of
+this section incorrectly used the personal-profile "36 search appearances/week" figure to correct
+the "200+ search appearances every 7 days" claim. The founder clarified (2026-07-25): the 200+
+figure is about the **Triaxis Ventures and AXXESS TRIaxis brand/company pages**, not the personal
+profile -- two different LinkedIn entities. The personal profile's 36 search appearances (window
+July 14-20) and 4,613 all appearances (+143%) are real and stand as reported above, but they say
+nothing about the brand pages' search-appearance count one way or the other.
+
+**Status, corrected:** the brand pages' "200+ search appearances every 7 days" claim remains
+**Founder-stated, source artifact needed** -- no screenshot of the Triaxis Ventures or AXXESS
+TRIaxis company-page LinkedIn analytics (Admin view -> Analytics -> Visitors, a different panel
+from personal-profile analytics) has been provided yet. The personal-profile figures above are
+verified in their own right and are not evidence for or against the brand-page figure.
 
 ## Rule
 
