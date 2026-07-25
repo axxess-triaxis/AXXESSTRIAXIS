@@ -125,14 +125,29 @@ export function buildWorkflowProgressRecords(
   });
 }
 
+// literalPendingAiReviews (Executive Dashboard Sprint ED-2), when provided, is a real count of
+// pending ai_operation_reviews rows -- used for the "Pending AI reviews" tile's value instead of
+// snapshot.needsReviewCount, which only ever reflects whether the golden path's single
+// "human-review" step is flagged (0 or 1), not an actual review-item count. Omitting it preserves
+// the prior behavior exactly, so existing callers/tests are unaffected.
+// literalAuditLogCount (Executive Dashboard Sprint ED-2), when provided, is a real count of this
+// tenant's audit_logs rows -- used for the "Audit readiness" tile instead of the proxy heuristic
+// (unread notifications or onboarding completion >= 70%). Omitting it preserves the prior proxy
+// behavior exactly, so existing callers/tests are unaffected.
 export function buildTenantHealthIndicators(
   snapshot: EnterpriseGoldenPathSnapshot,
   metrics: LiveWorkspaceMetrics,
+  literalPendingAiReviews?: number,
+  literalAuditLogCount?: number,
 ): TenantHealthIndicator[] {
-  const pendingReview = snapshot.needsReviewCount + Math.max(0, metrics.pendingApprovals);
+  const pendingAiReviewsValue = literalPendingAiReviews ?? snapshot.needsReviewCount;
+  const pendingReview = pendingAiReviewsValue + Math.max(0, metrics.pendingApprovals);
   const approvalRisk = metrics.pendingApprovals >= 20 ? "danger" : metrics.pendingApprovals >= 8 ? "warning" : "success";
   const integrationTone = metrics.integrationConfigured > 0 ? "success" : "warning";
-  const auditTone = metrics.unreadNotifications > 0 || snapshot.completionPercent >= 70 ? "success" : "warning";
+  const hasRealAuditCount = literalAuditLogCount !== undefined;
+  const auditTone = hasRealAuditCount
+    ? ((literalAuditLogCount ?? 0) > 0 ? "success" : "warning")
+    : (metrics.unreadNotifications > 0 || snapshot.completionPercent >= 70 ? "success" : "warning");
 
   return [
     {
@@ -165,9 +180,9 @@ export function buildTenantHealthIndicators(
     {
       id: "pending-ai-reviews",
       label: "Pending AI reviews",
-      value: String(snapshot.needsReviewCount),
+      value: String(pendingAiReviewsValue),
       detail: pendingReview > 0 ? "Human review is protecting consequential output." : "No reviewed output is waiting.",
-      tone: snapshot.needsReviewCount > 0 ? "warning" : "success",
+      tone: pendingAiReviewsValue > 0 ? "warning" : "success",
       route: "/ai-workspace/review-inbox",
     },
     {
@@ -195,14 +210,18 @@ export function buildTenantHealthIndicators(
       route: "/integrations",
     },
     {
-      // Deliberately labeled "readiness," not "coverage": the value is a proxy heuristic
-      // (unread notifications or onboarding completion), not a literal query of the audit-log
-      // table. Renamed (Executive Dashboard Sprint ED-1) after this label was found to overclaim a
-      // real audit-log measurement it does not perform.
+      // Deliberately labeled "readiness," not "coverage": even with a real count (ED-2), this does
+      // not verify every action type actually gets logged, only that logging is active and has
+      // produced N events. Renamed from "Audit coverage" (Executive Dashboard Sprint ED-1) after
+      // that label was found to overclaim a measurement the proxy version did not perform; upgraded
+      // to a real count where available (Sprint ED-2), falling back to the same honest proxy
+      // otherwise.
       id: "audit-readiness",
       label: "Audit readiness",
-      value: auditTone === "success" ? "Tracked" : "Needs first event",
-      detail: "Proxy readiness signal, not a literal audit-log count. Workflow actions record actor, source, citation, decision and outcome evidence once logged.",
+      value: hasRealAuditCount ? String(literalAuditLogCount ?? 0) : (auditTone === "success" ? "Tracked" : "Needs first event"),
+      detail: hasRealAuditCount
+        ? ((literalAuditLogCount ?? 0) > 0 ? "Real audit_logs rows recorded for this tenant." : "No audit events recorded yet.")
+        : "Proxy readiness signal, not a literal audit-log count. Workflow actions record actor, source, citation, decision and outcome evidence once logged.",
       tone: auditTone,
       route: "/admin/audit-logs",
     },
