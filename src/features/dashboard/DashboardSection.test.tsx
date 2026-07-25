@@ -81,3 +81,76 @@ describe("DashboardSection (Executive Dashboard Sprint ED-1)", () => {
     expect(viewAll.closest("a")?.getAttribute("href")).toBe("/projects");
   });
 });
+
+// Executive Dashboard Sprint ED-3 -- Net-New Dashboard Intelligence MVPs. aggregateProjectRisk and
+// deriveDashboardRecommendations' actual logic is covered directly in dashboardIntelligence.test.ts
+// (they're exported pure functions); these tests confirm the honest-empty-state UI wiring for a
+// real tenant with no data yet, which the pure-function tests alone don't exercise.
+describe("DashboardSection (Executive Dashboard Sprint ED-3)", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    window.localStorage.clear();
+  });
+
+  it("Risk Heatmap shows an honest empty state for a real tenant with no projects, not a fabricated live heatmap (ED3-01)", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ user: null }), { status: 401 })));
+    render(
+      <AnalyticsProviderShell provider={new MockAnalyticsProvider()}>
+        <AuthProvider>
+          <DashboardSection />
+        </AuthProvider>
+      </AnalyticsProviderShell>,
+    );
+
+    expect(await screen.findByText("Risk Heatmap")).toBeInTheDocument();
+    expect(screen.getByText(/No projects yet\. Risk levels will appear here/)).toBeInTheDocument();
+    // The old hardcoded, non-demo-gated health-specific categories must never render for a real tenant.
+    expect(screen.queryByText("Oxygen")).not.toBeInTheDocument();
+    expect(screen.queryByText("Referral")).not.toBeInTheDocument();
+  });
+
+  it("AI Recommendations shows an honest empty state for a real tenant with no evidence yet (ED3-03)", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ user: null }), { status: 401 })));
+    render(
+      <AnalyticsProviderShell provider={new MockAnalyticsProvider()}>
+        <AuthProvider>
+          <DashboardSection />
+        </AuthProvider>
+      </AnalyticsProviderShell>,
+    );
+
+    expect(await screen.findByText("AI Recommendations")).toBeInTheDocument();
+    expect(screen.getByText(/No recommendations yet\. Recommendations appear after/)).toBeInTheDocument();
+  });
+
+  it("Strategic Objectives shows an honest empty state for a real tenant with no programs yet (ED3-02)", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ user: null }), { status: 401 })));
+    render(
+      <AnalyticsProviderShell provider={new MockAnalyticsProvider()}>
+        <AuthProvider>
+          <DashboardSection />
+        </AuthProvider>
+      </AnalyticsProviderShell>,
+    );
+
+    expect(await screen.findByText("Strategic Objectives")).toBeInTheDocument();
+    expect(screen.getByText(/No strategic objectives configured yet/)).toBeInTheDocument();
+  });
+
+  it("labels the Pilot Onboarding checklist as personal/local-only, distinct from the Enterprise Golden Path (ED3-04)", async () => {
+    window.localStorage.setItem(demoModeStorageKey, "true");
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ user: null }), { status: 401 })));
+    render(
+      <AnalyticsProviderShell provider={new MockAnalyticsProvider()}>
+        <AuthProvider>
+          <DashboardSection />
+        </AuthProvider>
+      </AnalyticsProviderShell>,
+    );
+
+    const pilotHeading = await screen.findByText("Pilot Onboarding (personal checklist)");
+    expect(pilotHeading).toBeInTheDocument();
+    expect(screen.getByText(/saved to this browser only/)).toBeInTheDocument();
+    expect(await screen.findByText("Enterprise golden path")).toBeInTheDocument();
+  });
+});
