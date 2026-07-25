@@ -36,26 +36,26 @@ Target: 16-18 REAL elements after completion
 
 | ID | Checklist Item | Status | Evidence / Notes |
 |---|---|---|---|
-| ED1-01 | Dashboard header dead `Send feedback` mailto removed or replaced with real feedback pipeline | Not started |  |
-| ED1-02 | AI Workspace/header duplicate feedback dead mailto removed or unified if present | Not started |  |
-| ED1-03 | Single real feedback entry point confirmed through existing BetaFeedbackButton/BetaFeedbackModal | Not started |  |
-| ED1-04 | `Refresh` button wired to real dashboard metric/timeline refetch | Not started |  |
-| ED1-05 | Refresh action has loading/error-safe behavior | Not started |  |
-| ED1-06 | `View All N` in Project Health Monitor routes to Projects & Programs | Not started |  |
-| ED1-07 | Project row/button opens project detail route or safe project context | Not started |  |
-| ED1-08 | `Active users` metric relabeled honestly or replaced with real count | Not started |  |
-| ED1-09 | `Audit coverage` metric relabeled honestly or replaced with real audit count | Not started |  |
-| ED1-10 | `Start guided demo` renamed/repositioned to avoid collision with `demo.triaxisventures.com` investor demo | Not started |  |
-| ED1-11 | `Request pilot conversation` wired to real capture path or explicitly external/deferred | Not started |  |
-| ED1-12 | `Export Briefing` either minimally implemented or honestly disabled/deferred | Not started |  |
-| ED1-13 | Command search either minimally implemented or honestly disabled/relabelled | Not started |  |
-| ED1-14 | No primary dashboard header action remains dead | Not started |  |
-| ED1-15 | Tests added/updated for dashboard action wiring | Not started |  |
-| ED1-16 | Typecheck run and passing | Not started |  |
-| ED1-17 | Lint run and passing | Not started |  |
-| ED1-18 | Tests run and passing | Not started |  |
-| ED1-19 | Build run and passing | Not started |  |
-| ED1-20 | REAL/PARTIAL/PLACEHOLDER count updated after ED-1 | Not started |  |
+| ED1-01 | Dashboard header dead `Send feedback` mailto removed or replaced with real feedback pipeline | Done | Removed from `DashboardSection.tsx`; the already-real, Supabase-backed `BetaFeedbackButton`/`BetaFeedbackModal` (rendered app-wide via `AppShell.tsx`) is the one remaining path |
+| ED1-02 | AI Workspace/header duplicate feedback dead mailto removed or unified if present | Done | Removed from `AIWorkspaceSection.tsx`; same floating feedback button covers this page too |
+| ED1-03 | Single real feedback entry point confirmed through existing BetaFeedbackButton/BetaFeedbackModal | Done | Confirmed via code read: `BetaFeedbackButton.tsx` -> `BetaFeedbackModal.tsx` -> `betaFeedbackRepository.create` -> `POST /api/beta-feedback` -> `beta_feedback` table |
+| ED1-04 | `Refresh` button wired to real dashboard metric/timeline refetch | Done | `handleRefresh()` invalidates the tenant's cached metrics entry and bumps a `refreshToken` threaded into `useLiveWorkspaceMetrics`, `useLiveRagHealth`, `useEnterpriseGoldenPath`, `useWorkflowTimeline` |
+| ED1-05 | Refresh action has loading/error-safe behavior | Done | Reuses `workflowTimeline.loading` as the visible spin state; underlying hooks already fall back safely on fetch failure (pre-existing behavior, unchanged) |
+| ED1-06 | `View All N` in Project Health Monitor routes to Projects & Programs | Done | Now `<a href="/projects">` |
+| ED1-07 | Project row/button opens project detail route or safe project context | Done | No per-project detail route exists (Projects & Programs selects via in-page state, not URL) -- rows route to `/projects`, the honest fallback option |
+| ED1-08 | `Active users` metric relabeled honestly or replaced with real count | Done | Relabeled "Team provisioning" in `workflowEvidence.ts`; value (Ready/Blocked) unchanged, now matches its label |
+| ED1-09 | `Audit coverage` metric relabeled honestly or replaced with real audit count | Done | Relabeled "Audit readiness" with a detail string clarifying it is a proxy, not a literal audit-log count |
+| ED1-10 | `Start guided demo` renamed/repositioned to avoid collision with `demo.triaxisventures.com` investor demo | Done | Renamed "Start guided setup"; added a `title` tooltip distinguishing it from the investor demo |
+| ED1-11 | `Request pilot conversation` wired to real capture path or explicitly external/deferred | Done | Kept as `mailto:` (no lead-capture backend exists), relabeled trailing text "Email" and added a `title` tooltip marking it as an external action |
+| ED1-12 | `Export Briefing` either minimally implemented or honestly disabled/deferred | Done | Real client-side JSON export (metrics, projects, priority actions) via Blob download -- no new backend |
+| ED1-13 | Command search either minimally implemented or honestly disabled/relabelled | Done | New `DashboardCommandSearch` component filters real loaded projects and priority actions client-side |
+| ED1-14 | No primary dashboard header action remains dead | Done | All 4 header actions (guided setup, refresh, export, search) now do something real |
+| ED1-15 | Tests added/updated for dashboard action wiring | Done | `DashboardSection.test.tsx` (new, 6 tests), `useLiveWorkspaceMetrics.test.ts` (new), `liveWorkspaceMetricsCache.test.ts` (+1), `workflowEvidence.test.ts` (updated), `enterpriseComponents.test.tsx` (updated) |
+| ED1-16 | Typecheck run and passing | Done | `pnpm run typecheck` exit 0 |
+| ED1-17 | Lint run and passing | Done | `pnpm run lint` (`--max-warnings=0`) exit 0 |
+| ED1-18 | Tests run and passing | Done | See closeout doc for exact pass/fail counts |
+| ED1-19 | Build run and passing | Done | See closeout doc |
+| ED1-20 | REAL/PARTIAL/PLACEHOLDER count updated after ED-1 | Done | 21/27 REAL (78%) -- see closeout doc for full recount and a flagged baseline-arithmetic discrepancy in this roadmap's own summary table vs. its itemized inventory |
 
 ## Sprint ED-1 Exit Gate
 
@@ -135,25 +135,25 @@ The Executive Dashboard remediation program is complete only if:
 
 | Completion Standard | Status | Evidence / Notes |
 |---|---|---|
-| At least 19/27 elements are REAL | Not started |  |
-| No visible dead primary dashboard actions remain | Not started |  |
-| Proxy metrics are honestly labeled | Not started |  |
-| Investor demo and guided workflow naming are not confused | Not started |  |
-| Dashboard actions work, navigate, refresh, export, open feedback, or are explicitly deferred | Not started |  |
-| Verification suite passes | Not started |  |
-| Closeout documents exact before/after counts | Not started |  |
+| At least 19/27 elements are REAL | Done (after ED-1) | 21/27 (78%) -- exceeds the 19/27 minimum and matches the 21/27 preferred target already, one short of the 22/27 stretch target |
+| No visible dead primary dashboard actions remain | Done (after ED-1) | All 9 dead/mislabeled elements in ED-1's scope fixed; 4 remain out of ED-1 scope (External Signals, Strategic Objectives, AI Recommendations, Risk Heatmap -- ED-2/ED-3 net-new/wiring work) |
+| Proxy metrics are honestly labeled | Done (after ED-1) | "Active users" -> "Team provisioning", "Audit coverage" -> "Audit readiness" |
+| Investor demo and guided workflow naming are not confused | Done (after ED-1) | "Start guided demo" -> "Start guided setup", with a disambiguating tooltip |
+| Dashboard actions work, navigate, refresh, export, open feedback, or are explicitly deferred | Done (after ED-1) |  |
+| Verification suite passes | See closeout doc | `docs/readiness/EXECUTIVE_DASHBOARD_ED1_CLOSEOUT_2026_07_25.md` |
+| Closeout documents exact before/after counts | Done | Same closeout doc |
 
 ## Progress Log
 
 ### ED-1 Progress
 
-- Date:
-- Executor:
-- Files changed:
-- Items completed:
-- Items blocked:
-- REAL count after sprint:
-- Verification:
+- Date: 2026-07-25
+- Executor: Claude Code
+- Files changed: see `docs/readiness/EXECUTIVE_DASHBOARD_ED1_CLOSEOUT_2026_07_25.md`
+- Items completed: ED1-01 through ED1-20 (all)
+- Items blocked: none
+- REAL count after sprint: 21/27 (78%)
+- Verification: see closeout doc for exact typecheck/lint/test/build results
 
 ### ED-2 Progress
 

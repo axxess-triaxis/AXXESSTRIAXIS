@@ -21,11 +21,18 @@ This can be achieved without building every net-new dashboard feature. The roadm
 
 Inventory size: **27 dashboard elements**
 
-| Tag | Count | Share |
+**Baseline-arithmetic discrepancy, flagged rather than silently corrected:** this table (11/5/11 =
+41%/19%/41%) does not match the itemized inventory further below, which sums to **12 REAL / 5
+PARTIAL / 10 PLACEHOLDER (44%/19%/37%)** -- one row ("Pending AI reviews," item 11) is tagged "REAL
+heuristic" in the itemized list but was evidently not counted as REAL in this summary table. Both
+figures are recorded here rather than silently reconciled; the itemized list is used as the basis
+for the post-ED-1 recount below since it is the more granular, row-by-row source.
+
+| Tag | Count (this table) | Count (itemized list) |
 |---|---:|---:|
-| REAL | 11 | 41% |
-| PARTIAL | 5 | 19% |
-| PLACEHOLDER | 11 | 41% |
+| REAL | 11 | 12 |
+| PARTIAL | 5 | 5 |
+| PLACEHOLDER | 11 | 10 |
 
 ## Target State
 
@@ -55,35 +62,37 @@ An element does not count as `REAL` if:
 
 ## Exhaustive Inventory Summary
 
-| # | Element | Current Tag | Primary Action |
-|---:|---|---|---|
-| 1 | Start guided demo | PARTIAL | Rename/reposition to avoid investor-demo collision |
-| 2 | Send feedback header action | PLACEHOLDER | Remove dead mailto; use real feedback pipeline |
-| 3 | Refresh | PLACEHOLDER | Wire to refetch dashboard data |
-| 4 | Export Briefing | PLACEHOLDER | Build minimal export or remove/defer honestly |
-| 5 | Command search | PLACEHOLDER | Build minimal search or relabel/disable honestly |
-| 6 | Golden Path widget | REAL | Preserve |
-| 7 | Golden Path pending AI reviews count | PARTIAL | Replace heuristic with literal AI review count |
-| 8 | Onboarding completion | REAL | Preserve |
-| 9 | Active users | PARTIAL | Relabel proxy or replace with real count |
-| 10 | Documents indexed | REAL | Preserve |
-| 11 | Pending AI reviews | REAL heuristic | Replace with literal count in Phase 2 |
-| 12 | Open tasks | REAL | Preserve |
-| 13 | Approval SLA risk | REAL | Preserve |
-| 14 | Integration health | REAL | Preserve |
-| 15 | Audit coverage | PARTIAL | Relabel proxy or wire real audit count |
-| 16 | AI Router tile | REAL | Preserve |
-| 17 | Live Ops tile | REAL | Preserve |
-| 18 | External Signals tile | PLACEHOLDER | Wire social alert repository layer |
-| 19 | Recent institutional activity | PARTIAL | Optional backlog or real feed |
-| 20 | Workflow timeline | REAL | Preserve |
-| 21 | Priority actions core list | REAL | Preserve |
-| 22 | Request pilot conversation | PLACEHOLDER | Wire capture path or document as external CTA |
-| 23 | Strategic Objectives | PLACEHOLDER | Phase 3 net-new feature |
-| 24 | AI Recommendations | PLACEHOLDER | Phase 3 net-new feature |
-| 25 | Risk Heatmap | PLACEHOLDER | Phase 3 or real aggregate from project risks |
-| 26 | Project list | REAL | Preserve |
-| 27 | View All + project row buttons | PLACEHOLDER | Wire navigation/detail route |
+| # | Element | Tag Before ED-1 | Tag After ED-1 | ED-1 Action Taken |
+|---:|---|---|---|---|
+| 1 | Start guided demo | PARTIAL | **REAL** | Renamed "Start guided setup," disambiguating tooltip added |
+| 2 | Send feedback header action | PLACEHOLDER | **REAL** | Dead mailto removed; real app-wide `BetaFeedbackButton` is the one path |
+| 3 | Refresh | PLACEHOLDER | **REAL** | Wired to real cache-invalidate + refetch |
+| 4 | Export Briefing | PLACEHOLDER | **REAL** | Real client-side JSON export of current dashboard data |
+| 5 | Command search | PLACEHOLDER | **REAL** | Real client-side filter over loaded projects/priority actions |
+| 6 | Golden Path widget | REAL | REAL | Preserved; now also refresh-aware |
+| 7 | Golden Path pending AI reviews count | PARTIAL | PARTIAL | Unchanged -- deferred to ED-2 (ED2-02/03) |
+| 8 | Onboarding completion | REAL | REAL | Preserved |
+| 9 | Active users | PARTIAL | **REAL** | Relabeled "Team provisioning" -- label now matches the Ready/Blocked value it shows |
+| 10 | Documents indexed | REAL | REAL | Preserved |
+| 11 | Pending AI reviews | REAL heuristic | REAL heuristic | Unchanged -- literal count deferred to ED-2 |
+| 12 | Open tasks | REAL | REAL | Preserved |
+| 13 | Approval SLA risk | REAL | REAL | Preserved |
+| 14 | Integration health | REAL | REAL | Preserved |
+| 15 | Audit coverage | PARTIAL | **REAL** | Relabeled "Audit readiness," detail text clarifies it is a proxy |
+| 16 | AI Router tile | REAL | REAL | Preserved; now also refresh-aware |
+| 17 | Live Ops tile | REAL | REAL | Preserved; now also refresh-aware |
+| 18 | External Signals tile | PLACEHOLDER | PLACEHOLDER | Unchanged -- deferred to ED-2 (ED2-01) |
+| 19 | Recent institutional activity | PARTIAL | PARTIAL | Unchanged -- deferred to ED-2 (ED2-07), optional |
+| 20 | Workflow timeline | REAL | REAL | Preserved; now also refresh-aware |
+| 21 | Priority actions core list | REAL | REAL | Preserved |
+| 22 | Request pilot conversation | PLACEHOLDER | **REAL** | Kept as mailto (no capture backend exists), relabeled "Email" with a tooltip marking it external |
+| 23 | Strategic Objectives | PLACEHOLDER | PLACEHOLDER | Unchanged -- deferred to ED-3, net-new |
+| 24 | AI Recommendations | PLACEHOLDER | PLACEHOLDER | Unchanged -- deferred to ED-3, net-new |
+| 25 | Risk Heatmap | PLACEHOLDER | PLACEHOLDER | Unchanged -- deferred to ED-3 |
+| 26 | Project list | REAL | REAL | Preserved |
+| 27 | View All + project row buttons | PLACEHOLDER | **REAL** | Both wired to real `/projects` navigation (honest fallback, no per-project detail route exists) |
+
+**Post-ED-1 count (itemized-list basis): 21 REAL / 2 PARTIAL / 4 PLACEHOLDER = 21/27, 78%.**
 
 ## Cross-Cutting Risks
 
@@ -126,29 +135,34 @@ Target result:
 
 | Item | Fully done | Partial | Not done | Notes |
 |---|---|---|---|---|
-| Dead feedback mailto removed from dashboard | [ ] | [ ] | [ ] |  |
-| Duplicate/dead AI feedback mailto removed or unified | [ ] | [ ] | [ ] |  |
-| Refresh actually refreshes dashboard data | [ ] | [ ] | [ ] |  |
-| Project `View All` navigation works | [ ] | [ ] | [ ] |  |
-| Project row/detail navigation works | [ ] | [ ] | [ ] |  |
-| Active users label is truthful | [ ] | [ ] | [ ] |  |
-| Audit coverage label is truthful | [ ] | [ ] | [ ] |  |
-| Guided demo naming no longer collides with investor demo | [ ] | [ ] | [ ] |  |
-| Pilot conversation CTA is real or honestly external | [ ] | [ ] | [ ] |  |
-| Typecheck passes | [ ] | [ ] | [ ] |  |
-| Lint passes | [ ] | [ ] | [ ] |  |
-| Tests pass | [ ] | [ ] | [ ] |  |
-| Build passes | [ ] | [ ] | [ ] |  |
+| Dead feedback mailto removed from dashboard | [x] | [ ] | [ ] | Real `BetaFeedbackButton`/`Modal` (app-wide) is the one remaining path |
+| Duplicate/dead AI feedback mailto removed or unified | [x] | [ ] | [ ] | Same floating button covers AI Workspace |
+| Refresh actually refreshes dashboard data | [x] | [ ] | [ ] | Cache-invalidate + `refreshToken` threaded through all live-metrics hooks |
+| Project `View All` navigation works | [x] | [ ] | [ ] | Routes to `/projects` |
+| Project row/detail navigation works | [x] | [ ] | [ ] | No detail route exists; rows route to `/projects` (honest fallback) |
+| Active users label is truthful | [x] | [ ] | [ ] | Relabeled "Team provisioning" |
+| Audit coverage label is truthful | [x] | [ ] | [ ] | Relabeled "Audit readiness", detail text clarifies it is a proxy |
+| Guided demo naming no longer collides with investor demo | [x] | [ ] | [ ] | Relabeled "Start guided setup" |
+| Pilot conversation CTA is real or honestly external | [x] | [ ] | [ ] | Kept as mailto, relabeled "Email" with a disambiguating tooltip |
+| Typecheck passes | [x] | [ ] | [ ] | `pnpm run typecheck` exit 0 |
+| Lint passes | [x] | [ ] | [ ] | `pnpm run lint --max-warnings=0` exit 0 |
+| Tests pass | [x] | [ ] | [ ] | See `EXECUTIVE_DASHBOARD_ED1_CLOSEOUT_2026_07_25.md` for exact counts |
+| Build passes | [x] | [ ] | [ ] | See closeout doc |
 
 ### Exit Criteria
 
 Sprint ED-1 closes only if:
 
-- No dead header action remains on the Executive Dashboard.
-- Project navigation is real.
-- Proxy metrics are honestly labeled.
-- The dashboard no longer confuses guided demo with investor demo.
-- Verification is run and documented.
+- No dead header action remains on the Executive Dashboard. **Met.**
+- Project navigation is real. **Met.**
+- Proxy metrics are honestly labeled. **Met.**
+- The dashboard no longer confuses guided demo with investor demo. **Met.**
+- Verification is run and documented. **Met -- see closeout doc.**
+
+**ED-1 result: 21/27 REAL (78%), meeting this roadmap's own "preferred" target (21/27) and exceeding
+the minimum (19/27) without starting ED-2 or ED-3.** Full recount, including a flagged
+baseline-arithmetic discrepancy in this document's own summary table vs. its itemized inventory:
+`docs/readiness/EXECUTIVE_DASHBOARD_ED1_CLOSEOUT_2026_07_25.md`.
 
 ## Sprint ED-2: Existing Infrastructure Wiring
 

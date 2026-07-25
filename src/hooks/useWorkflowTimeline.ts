@@ -14,7 +14,7 @@ type TimelineResponse = {
 
 export function useWorkflowTimeline(
   scope?: TenantScope,
-  options: { limit?: number; resourceType?: WorkflowTimelineResourceType; resourceId?: string } = {},
+  options: { limit?: number; resourceType?: WorkflowTimelineResourceType; resourceId?: string; refreshToken?: number } = {},
 ) {
   const [timeline, setTimeline] = useState<WorkflowTimelineEvent[]>(() => isDemoModeEnabled() ? fallbackWorkflowTimelineEvents(scope?.organizationId ?? "demo-tenant") : []);
   const [loading, setLoading] = useState(false);
@@ -48,7 +48,7 @@ export function useWorkflowTimeline(
       });
 
     return () => controller.abort();
-  }, [options.limit, options.resourceId, options.resourceType, scope?.organizationId]);
+  }, [options.limit, options.resourceId, options.resourceType, options.refreshToken, scope?.organizationId]);
 
   return { timeline, loading };
 }

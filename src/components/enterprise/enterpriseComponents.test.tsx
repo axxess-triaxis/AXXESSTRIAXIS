@@ -136,7 +136,7 @@ describe("enterprise components", () => {
     expect(screen.getByText("Onboarding completion")).toBeInTheDocument();
     expect(screen.getByText("Documents indexed")).toBeInTheDocument();
     expect(screen.getByText("Pending AI reviews")).toBeInTheDocument();
-    expect(screen.getByText("Audit coverage")).toBeInTheDocument();
+    expect(screen.getByText("Audit readiness")).toBeInTheDocument();
   });
 
   it("renders workflow timeline evidence", () => {

@@ -1,11 +1,10 @@
-import { Download, FolderKanban, PlayCircle, Plus, RefreshCw, Sparkles } from "lucide-react";
+import { Download, FolderKanban, PlayCircle, Plus, RefreshCw, Search, Sparkles } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { useAuth } from "../../auth/AuthProvider";
 import { isDemoModeEnabled } from "../../demo/demoMode";
 import {
   ActivityFeed,
-  CommandSearchPlaceholder,
   DataStateBadge,
   DemoDataNotice,
   MetricCard,
@@ -25,6 +24,7 @@ import { StatusBadge } from "../../components/ui/StatusBadge";
 import { useEnterpriseGoldenPath } from "../../hooks/useEnterpriseGoldenPath";
 import { useGoldenPathDisplayMode } from "../../hooks/useGoldenPathDisplayMode";
 import { useGuidedDemo } from "../../hooks/useGuidedDemo";
+import { invalidateLiveWorkspaceMetricsCache } from "../../hooks/liveWorkspaceMetricsCache";
 import { useLiveRagHealth } from "../../hooks/useLiveRagHealth";
 import { useLiveWorkspaceMetrics } from "../../hooks/useLiveWorkspaceMetrics";
 import { useWorkflowTimeline } from "../../hooks/useWorkflowTimeline";
@@ -45,6 +45,70 @@ import {
 
 type DashboardProject = Awaited<ReturnType<typeof getDashboardProjects>>[number];
 
+// A minimal, genuinely working search over data already loaded on this page (projects, priority
+// actions) -- deliberately not a new search index or backend. Executive Dashboard Sprint ED-1
+// replaces the decorative CommandSearchPlaceholder with this on the Dashboard specifically, without
+// changing CommandSearchPlaceholder itself (kept as a general-purpose primitive for other callers).
+function DashboardCommandSearch({
+  projects,
+  actions,
+}: {
+  projects: Pick<DashboardProject, "id" | "name">[];
+  actions: { stepId: string; label: string; route: string }[];
+}) {
+  const [query, setQuery] = useState("");
+  const trimmed = query.trim().toLowerCase();
+  const matchingActions = trimmed ? actions.filter((action) => action.label.toLowerCase().includes(trimmed)).slice(0, 5) : [];
+  const matchingProjects = trimmed ? projects.filter((project) => project.name.toLowerCase().includes(trimmed)).slice(0, 5) : [];
+  const hasResults = matchingActions.length > 0 || matchingProjects.length > 0;
+
+  return (
+    <div className="relative">
+      <div className="flex items-center gap-2 rounded-lg border border-[rgba(15,17,23,0.1)] bg-white px-3 py-2 text-xs text-[#5F6B73]">
+        <Search size={14} className="text-[#8B1E2D]" aria-hidden="true" />
+        <input
+          type="text"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="Search projects and priority actions"
+          aria-label="Search projects and priority actions"
+          className="flex-1 border-none bg-transparent text-xs text-[#0F1117] outline-none placeholder:text-[#5F6B73]"
+        />
+        {query && (
+          <button type="button" onClick={() => setQuery("")} className="text-[10px] font-semibold text-[#5F6B73] hover:text-[#0F1117]">
+            Clear
+          </button>
+        )}
+      </div>
+      {trimmed.length > 0 && (
+        <div className="absolute z-20 mt-1 w-full rounded-lg border border-[rgba(15,17,23,0.08)] bg-white p-2 shadow-lg">
+          {!hasResults && <p className="px-2 py-1 text-xs text-[#5F6B73]">No matches for &ldquo;{query}&rdquo;.</p>}
+          {matchingActions.length > 0 && (
+            <div className="mb-1">
+              <p className="px-2 text-[10px] font-semibold uppercase tracking-wide text-[#5F6B73]">Priority actions</p>
+              {matchingActions.map((action) => (
+                <a key={action.stepId} href={action.route} className="block rounded px-2 py-1 text-xs text-[#0F1117] hover:bg-[#F2F3F5]">
+                  {action.label}
+                </a>
+              ))}
+            </div>
+          )}
+          {matchingProjects.length > 0 && (
+            <div>
+              <p className="px-2 text-[10px] font-semibold uppercase tracking-wide text-[#5F6B73]">Projects</p>
+              {matchingProjects.map((project) => (
+                <a key={project.id} href="/projects" className="block rounded px-2 py-1 text-xs text-[#0F1117] hover:bg-[#F2F3F5]">
+                  {project.name}
+                </a>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 const heatmap = [
   { label: "Referral", level: 3 },
   { label: "Budget", level: 2 },
@@ -61,12 +125,49 @@ export function DashboardSection() {
   const { session } = useAuth();
   const tenantScope = useMemo(() => session.user ? dashboardScopeForUser(session.user) : undefined, [session.user]);
   const [projects, setProjects] = useState<DashboardProject[]>(() => (isDemoModeEnabled() ? getDashboardFallbackProjects() : []));
+  const [refreshToken, setRefreshToken] = useState(0);
   const guidedDemo = useGuidedDemo("dashboard");
-  const liveMetrics = useLiveWorkspaceMetrics(tenantScope);
-  const ragHealth = useLiveRagHealth(tenantScope);
-  const enterpriseJourney = useEnterpriseGoldenPath(tenantScope, session.user);
+  const liveMetrics = useLiveWorkspaceMetrics(tenantScope, refreshToken);
+  const ragHealth = useLiveRagHealth(tenantScope, refreshToken);
+  const enterpriseJourney = useEnterpriseGoldenPath(tenantScope, session.user, refreshToken);
   const goldenPathDisplayMode = useGoldenPathDisplayMode();
-  const workflowTimeline = useWorkflowTimeline(tenantScope, { limit: 6 });
+  const workflowTimeline = useWorkflowTimeline(tenantScope, { limit: 6, refreshToken });
+
+  // Real refresh: drops this tenant's cached metrics entry so the next fetch is fresh, then bumps
+  // refreshToken so every hook above (which all key off it) re-runs. workflowTimeline.loading is
+  // reused as the visible "is refreshing" signal rather than adding a second, redundant loading state.
+  function handleRefresh() {
+    if (tenantScope) invalidateLiveWorkspaceMetricsCache(tenantScope);
+    setRefreshToken((token) => token + 1);
+  }
+
+  // Real, minimal export: a client-side JSON snapshot of what is already on this page -- no new
+  // backend/export service. Deliberately scoped this way for Executive Dashboard Sprint ED-1 (no
+  // net-new dashboard intelligence); a richer export format is a later-sprint decision.
+  function handleExportBriefing() {
+    const payload = {
+      exportedAt: new Date().toISOString(),
+      organizationId: tenantScope?.organizationId ?? null,
+      onboardingCompletionPercent: enterpriseJourney.completionPercent,
+      liveMetrics,
+      priorityActions: enterpriseJourney.actionQueue.map((action) => ({ label: action.label, route: action.route })),
+      projects: projects.map((project) => ({
+        name: project.name,
+        status: project.status,
+        progress: project.progress,
+        risk: project.risk,
+      })),
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `axxess-executive-briefing-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
 
   useEffect(() => {
     if (!tenantScope) return;
@@ -106,16 +207,13 @@ export function DashboardSection() {
         ]}
         actions={
           <div className="flex items-center gap-2">
-            <button onClick={guidedDemo.startDemo} className="flex items-center gap-1.5 rounded-lg bg-[#0F1117] px-3 py-2 text-xs font-semibold text-white hover:bg-[#1D2430]">
-              <PlayCircle size={13} /> Start guided demo
+            <button onClick={guidedDemo.startDemo} className="flex items-center gap-1.5 rounded-lg bg-[#0F1117] px-3 py-2 text-xs font-semibold text-white hover:bg-[#1D2430]" title="An in-app product walkthrough of AXXESS -- not the separate investor demo at investor.triaxisventures.com">
+              <PlayCircle size={13} /> Start guided setup
             </button>
-            <a href="mailto:founders@triaxis.ventures?subject=AXXESS%20feedback" className="flex items-center gap-1.5 rounded-lg border border-[rgba(15,17,23,0.1)] px-3 py-2 text-xs font-semibold text-[#5F6B73] hover:bg-[#F2F3F5]">
-              Send feedback
-            </a>
-            <button className="text-xs text-[#5F6B73] flex items-center gap-1.5 hover:text-[#0F1117] transition-colors">
-              <RefreshCw size={12} /> Refresh
+            <button onClick={handleRefresh} className="text-xs text-[#5F6B73] flex items-center gap-1.5 hover:text-[#0F1117] transition-colors">
+              <RefreshCw size={12} className={workflowTimeline.loading ? "animate-spin" : ""} /> Refresh
             </button>
-            <button className="text-xs bg-[#8B1E2D] text-white px-3 py-2 rounded-lg flex items-center gap-1.5 hover:bg-[#7a1a27] transition-colors">
+            <button onClick={handleExportBriefing} className="text-xs bg-[#8B1E2D] text-white px-3 py-2 rounded-lg flex items-center gap-1.5 hover:bg-[#7a1a27] transition-colors">
               <Download size={12} /> Export Briefing
             </button>
           </div>
@@ -125,7 +223,7 @@ export function DashboardSection() {
       {demoMode && (
         <DemoDataNotice label="The dashboard is preloaded to look like a 6-12 month institutional operating environment while live repositories remain tenant-isolated." />
       )}
-      <CommandSearchPlaceholder />
+      <DashboardCommandSearch projects={projects} actions={enterpriseJourney.actionQueue} />
 
       {session.user && <BetaOnboardingChecklist user={session.user} projectCount={projects.length} />}
 
@@ -206,9 +304,13 @@ export function DashboardSection() {
               <span className="text-[#8B1E2D]">Open</span>
             </a>
           ))}
-          <a href="mailto:founders@triaxis.ventures?subject=AXXESS%20pilot%20request" className="flex items-center justify-between rounded-lg border border-[rgba(15,17,23,0.08)] px-3 py-2 text-xs font-semibold text-[#0F1117] hover:bg-[#F8F9FA]">
+          <a
+            href="mailto:founders@triaxis.ventures?subject=AXXESS%20pilot%20request"
+            className="flex items-center justify-between rounded-lg border border-[rgba(15,17,23,0.08)] px-3 py-2 text-xs font-semibold text-[#0F1117] hover:bg-[#F8F9FA]"
+            title="Opens your email client -- there is no in-app pilot-request inbox yet"
+          >
             Request pilot conversation
-            <span className="text-[#8B1E2D]">Open</span>
+            <span className="text-[#8B1E2D]">Email</span>
           </a>
         </div>
       </SectionCard>
@@ -278,7 +380,7 @@ export function DashboardSection() {
         <Card className="lg:col-span-2 p-5">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-semibold text-[#0F1117] text-sm">Project Health Monitor</h3>
-            <button className="text-xs text-[#8B1E2D] font-medium hover:underline">View All {projects.length}</button>
+            <a href="/projects" className="text-xs text-[#8B1E2D] font-medium hover:underline">View All {projects.length}</a>
           </div>
           <div className="space-y-2.5">
             {projects.length === 0 && (
@@ -297,7 +399,10 @@ export function DashboardSection() {
               />
             )}
             {projects.slice(0, 5).map((project) => (
-              <button key={project.id} className="flex w-full items-center gap-3 p-2.5 rounded-lg hover:bg-[#F2F3F5] transition-colors text-left">
+              // No per-project detail route exists yet (Projects & Programs selects a project via
+              // in-page state, not a URL) -- navigating to /projects is the honest option rather than
+              // a fabricated deep link. See EXECUTIVE_DASHBOARD_REMEDIATION_ROADMAP_2026_07_25.md.
+              <a key={project.id} href="/projects" className="flex w-full items-center gap-3 p-2.5 rounded-lg hover:bg-[#F2F3F5] transition-colors text-left">
                 <Avatar initials={project.owner} />
                 <span className="flex-1 min-w-0">
                   <span className="flex items-center gap-2 mb-1">
@@ -312,7 +417,7 @@ export function DashboardSection() {
                   </span>
                 </span>
                 <StatusBadge status={project.status} />
-              </button>
+              </a>
             ))}
           </div>
         </Card>
