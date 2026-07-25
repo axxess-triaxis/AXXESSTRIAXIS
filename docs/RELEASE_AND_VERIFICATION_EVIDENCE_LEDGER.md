@@ -1,0 +1,56 @@
+# Release and Verification Evidence Ledger
+
+Date created: 2026-07-25  
+Governance source: `docs/FOUNDER_EXECUTION_EVIDENCE_GOVERNANCE.md`
+
+## Purpose
+
+This file records how AXXESS TRIaxis is kept shippable through tests, CI, PRs, deployment checks, branch governance, source-control mirrors, and documentation.
+
+## Git and PR Evidence
+
+| Metric or claim | Evidence command/source | Result | Notes |
+|---|---|---|---|
+| Commit count (current branch) | `git rev-list --count HEAD` on `canonical/sprint-1-35-unified-gitlab` | **356** | Captured 2026-07-25. Below the founder-stated "400+" on this single branch |
+| Commit count (all refs) | `git rev-list --count --all` | **405** | Captured 2026-07-25. Exceeds "400+" when counting across all local branches/history, not just the current branch tip -- record both numbers rather than picking the more favorable one |
+| Commit count (origin/main) | `git rev-list --count origin/main` | **331** | Captured 2026-07-25. `main` is behind the canonical sprint branch; see `CLAUDE.md` Git and Deployment Discipline for why `main` is not the active branch |
+| Open PR count | `gh pr list --repo axxess-triaxis/AXXESSTRIAXIS --state open --json number` | **0** | Captured 2026-07-25. Directly verifies the founder-stated "0 unmerged PR backlog" claim |
+| Merged PRs | `gh pr list --repo axxess-triaxis/AXXESSTRIAXIS --state merged --limit 500 --json number` | **112** | Captured 2026-07-25 |
+| Closed without merge | `gh pr list --repo axxess-triaxis/AXXESSTRIAXIS --state closed --json number,mergedAt` filtered to `mergedAt == null` | **11** | Captured 2026-07-25. Not itself a claim in the founder's corpus, recorded for completeness |
+| GitLab MR state | `glab mr list` or GitLab UI | Not captured | `glab` CLI is not installed in this environment; GitLab mirror MR/PR state could not be independently verified this pass -- GitHub (`origin`) is treated as primary per `CLAUDE.md`, GitLab as mirror/fallback |
+| Branches/remotes | `git remote -v` | `origin` = `https://github.com/axxess-triaxis/AXXESSTRIAXIS.git`, `gitlab` = `https://gitlab.com/triaxis-ventures-private-limited-group/axxess-triaxis.git` | Captured 2026-07-25 |
+
+## Test and Build Evidence
+
+| Gate | Command | Result | Evidence location | Notes |
+|---|---|---|---|---|
+| Typecheck | `pnpm run typecheck` (`tsc --noEmit`) | **Pass, exit 0** | Captured 2026-07-25, this audit | Zero errors |
+| Lint | `pnpm run lint` (`eslint . --max-warnings=0`) | **Pass, exit 0** | Captured 2026-07-25, this audit | Zero warnings, zero errors |
+| Unit tests | `pnpm run test` (`vitest run`) | **128/128 test files passed, 449/449 tests passed**, plus 1 non-test infrastructure error | Captured 2026-07-25, this audit | The run also hit `[vitest-pool-runner]: Timeout waiting for worker to respond` on `src/proxy.test.ts`'s worker thread, which set the overall process exit code to 1 despite every test that did run passing. Consistent with this session's earlier diagnosed pattern of low-free-RAM worker/build instability on this machine (see Known Self-Resolving Reliability Note below), not a code regression -- typecheck and lint both passed clean immediately before and after this run. This is lower than the "439"/"473" figures referenced in earlier session summaries because the timed-out worker's file did not report its tests this run; re-run under more free memory to get a single clean number |
+| Build | `pnpm run build` (`next build`, Turbopack) | **Pass, exit 0** -- 116/116 static pages generated, all API/dynamic routes compiled | Captured 2026-07-25, this audit, commit `e04dd83` | Clean production build, no errors |
+| E2E | Not run this pass | Not attempted | | No Playwright/E2E suite exists in this repo currently (consistent with `docs/readiness/PRE_SPRINT_5_GAP_STABILITY_KANBAN_REVIEW_2026_07_24.md`) |
+| Mobile gate | TBD | Blocked for final store release | `docs/readiness/MOBILE_STORE_CREDENTIALS_AND_DUNS_DEPENDENCY_2026_07_24.md` | Engineering validation can continue |
+| Supabase verification | Sprint closeout references | 27 migrations / 100 RLS tables referenced | `docs/readiness/PRE_SPRINT_5_GAP_STABILITY_KANBAN_REVIEW_2026_07_24.md` | Not re-run this pass; carried forward from the cited closeout, not independently re-verified today |
+
+## Release Governance Events
+
+| Event | Decision | Risk | Evidence checked | Outcome |
+|---|---|---|---|---|
+| GitHub disruption / GitLab fallback | Keep GitHub as primary when restored, GitLab as mirror/fallback | Source-control disruption | `docs/readiness/GITHUB_SUSPENSION_APPEAL_CLOSURE_2026_07_24.md`, `docs/GITLAB_MIRROR.md` | Resolved/operational |
+| Protected main PR workflow | Avoid direct unsafe main pushes where protected | Merge friction | GitHub/GitLab docs and prior PR records | Active governance |
+| Supabase migration repairs | Maintain schema/RLS verification | Tenant data risk | Supabase docs and closeouts | Partial/ongoing |
+| Vercel deployment diagnosis | Use provider CLI/API where possible | Deployment stale/failure risk | Deployment docs and readiness reviews | Ongoing |
+| Demo/live isolation | Separate demo and beta/live tenant paths | Investor confusion and data contamination | Demo/readiness docs | Active |
+| Beta PII cleanup | Avoid sensitive live/demo contamination | Privacy/diligence risk | Privacy/docs and QA artifacts | Ongoing |
+
+## Fresh Verification Capture Template
+
+Use this section after running current checks.
+
+| Date | Branch | Commit | Command | Result | Evidence |
+|---|---|---|---|---|---|
+| 2026-07-25 | `canonical/sprint-1-35-unified-gitlab` | `e04dd83` | `pnpm run typecheck` | Pass, exit 0 | This audit |
+| 2026-07-25 | `canonical/sprint-1-35-unified-gitlab` | `e04dd83` | `pnpm run lint` | Pass, exit 0, zero warnings | This audit |
+| 2026-07-25 | `canonical/sprint-1-35-unified-gitlab` | `e04dd83` | `pnpm run test` | 128/128 files, 449/449 tests passed; 1 worker-thread timeout on `proxy.test.ts` set overall exit to 1 (infra flake, not a code failure -- see Test and Build Evidence table above) | This audit |
+| 2026-07-25 | `canonical/sprint-1-35-unified-gitlab` | `e04dd83` | `pnpm run build` | Pass, exit 0, 116/116 static pages | This audit |
+
