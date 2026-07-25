@@ -28,7 +28,7 @@ If implementation exists but live proof does not, status remains `No`.
 | A-03 | Verify live login flow | Single Tenancy | 1 | Existing user can log in on production | Yes | 95% | 2026-07-24 |
 | A-04 | Verify logout flow | Single Tenancy | 1 | Session ends cleanly and protected routes block access | Yes | 95% | 2026-07-24 |
 | A-05 | Verify password reset flow | Single Tenancy | 1 | Reset email and password update work | Blocked | 65% (code) | 2026-07-23 |
-| A-06 | Verify Tenant 0 organization provisioning | Enterprise Beta | 1 | Triaxis Ventures tenant created live | Yes | 95% | 2026-07-24 |
+| A-06 | Verify Tenant 0 organization provisioning | Enterprise Beta | 1 | Triaxis Ventures tenant created live | Yes | 95% | 2026-07-24. **Second real tenant provisioned 2026-07-25:** HITL reports "Tenant 0.5" (NEPDSIC) provisioned live, onboarding in progress at time of writing -- HITL-reported, not yet screenshot-evidenced. A second, independently provisioned real tenant strengthens confidence in the provisioning path generally and creates a real second tenant that could support future two-tenant isolation testing (A-10/A-11), though isolation itself remains unverified until those actionables are separately closed |
 | A-07 | Verify profile creation and editing | Enterprise Beta | 1 | Name, role, department, and avatar placeholder persist | Blocked | 82% (code) | 2026-07-24 (Sprint 5 pre-work tracker correction) |
 | A-08 | Verify user invitation flow | Enterprise Beta | 3 | Invited user receives invite and joins tenant | Blocked | 75% (code) | 2026-07-24 |
 | A-09 | Verify role assignment | Enterprise Beta | 1, 3 | Admin assigns role and UI respects it | Yes | 92% | 2026-07-24 |
