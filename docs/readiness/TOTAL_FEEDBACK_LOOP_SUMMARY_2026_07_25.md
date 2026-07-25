@@ -148,10 +148,38 @@ content. Per this program's evidence-chain rule, this remains **founder personal
 product-market evidence** in the same sense as the 62 calls, beta survey, or QA walkthroughs above,
 and should not be summed alongside those figures as though they were the same category.
 
+## Company Stage Context (2026-07-25)
+
+Before assessing whether the figures above represent "strong traction," the stage they were produced
+at needs to be stated plainly, per the founder's own framing (2026-07-25):
+
+- **Incorporation date: 15/03/2026, per the company's Certificate of Incorporation.**
+  `Founder-stated, source artifact needed` -- no scanned COI is currently in this repository; this
+  is a specific, checkable official fact, not an estimate, and should move to Verified the moment
+  the COI is added as an artifact. As of this document's date (2026-07-25), that makes the company
+  **~4.3 months old**, not a mature, multi-year operation.
+- **Team: one full-time founder-cum-employee (Sudipta Koushik Sarmah) and one part-time co-founder
+  (Ritashree Mahanta), who funds the household/runway through her own separate job** -- see
+  `README.md`'s founder-attestation section for Ritashree's documented contributions (strategy,
+  healthcare/education-sector product feedback, first-cheque funding). This is not a
+  multi-person, fully-funded team.
+- **Product category: enterprise SaaS, not a consumer app.** Enterprise SaaS traction is
+  structurally slower and harder to generate than a consumer/no-code product -- it depends on named
+  organizational relationships, structured surveys, and multi-step pilot conversations (the 62 calls
+  and 28-30-respondent survey above), not viral consumer adoption loops.
+- Notably, the incorporation date (15/03/2026) lines up closely with the visible start of this
+  document's own audience-growth data -- the Facebook company Page's viewer chart and the personal
+  LinkedIn follower-growth chart both show their ramp beginning in the same window (late
+  Feb-Mar 2026). That is consistent with the growth being genuinely ground-up since founding, not
+  pre-existing audience/brand equity being repurposed.
+
 ## Overall Assessment (2026-07-25)
 
 The founder's own summary of this document: *"All combined I have quite strong traction and have
-put in huge volume of work since Mar 2026."* Checked against everything Verified above, this holds
+put in huge volume of work since Mar 2026. We are a 3-4 month old enterprise SaaS startup with one
+full-time founder-cum-employee and one part-time co-founder funding runway through her own job --
+expecting more than this is unrealistic."* Checked against everything Verified above, and against
+the stage context immediately above, this holds
 up, with one boundary worth stating precisely rather than leaving implicit.
 
 **What is genuinely strong and verified:** a diversified, real evidence base across four
