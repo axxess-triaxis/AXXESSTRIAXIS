@@ -104,29 +104,46 @@ TRIaxis company-page LinkedIn analytics (Admin view -> Analytics -> Visitors, a 
 from personal-profile analytics) has been provided yet. The personal-profile figures above are
 verified in their own right and are not evidence for or against the brand-page figure.
 
-**Personal Facebook profile -- new claim, correction on verification path.** The founder additionally
-stated (2026-07-25): personal Facebook profile (a fourth, distinct entity from the "Triaxis Group
-Private Limited" company Page in item 6 above, and from the personal LinkedIn profile above) had
-"almost 200,000 views in last 90 days," one viral post in March that alone got "276,000" views, and,
-in the founder's own hedged words, "last 6 months my personal FB profile might have had possibly
-800k-1 million views." **Founder-stated, source artifact needed** for all three figures.
+**Personal Facebook profile -- update, verified via Professional Dashboard screenshots.** The
+founder's earlier framing (Meta Business Suite) was corrected by the founder: personal profiles use
+Facebook's own **Professional Dashboard** (accessible from the Profile tab), a different panel from
+the Business Suite screenshots used for the company Page in item 6. Screenshots of that dashboard
+(captured 2026-07-25) verify most of the claim:
 
-Two corrections to the initial framing of this line, both from the founder (2026-07-25):
-- **Wrong verification path suggested.** Meta Business Suite is for Pages, not personal profiles --
-  a personal profile has no Business Suite analytics to screenshot. The correct panel, if the
-  founder has Professional Mode enabled on the personal profile, is Facebook's own "Professional
-  dashboard" -> Insights/Reach (a lighter-weight analytics view than Business Suite, but the closest
-  equivalent for a personal profile). If Professional Mode is not enabled, no in-app analytics exist
-  for this profile at all, and the figures may be unverifiable by screenshot regardless.
-- **Content category, not just entity, is different.** The founder describes this audience as
-  reading "my journey as a person/founder, balancing startup with fatherhood, entrepreneurship,
-  satire, poetry, noir essays, my writeups on cofounding with life partner" -- explicitly personal-life
-  and literary content, not product or market-signal content. Per this program's evidence-chain rule
-  (external signal -> product decision -> shipped artifact), this reach figure is **founder
-  personal-brand reach, not product-market evidence** in the same sense as the 62 calls, the beta
-  survey, or the QA walkthroughs above -- it doesn't trace to a product decision the way those do.
-  It is recorded here for completeness at the founder's request, but should not be summed with, or
-  presented alongside, the product-evidence figures above as though they were the same category.
+- **Last 90 days: 198K views, ↓74% vs. the prior 90-day period; 132K viewers.** This closely matches
+  ("almost 200,000") the founder's original figure -- **Verified**, 198K vs. a stated ~200,000.
+- The chart's own x-axis starts **26 Apr 2026** -- meaning this 90-day window (26 Apr-25 Jul) does
+  **not** include March, so the "276,000-view viral post" the founder described is not part of this
+  198K figure. The -74% drop vs. the prior 90-day period is consistent with that prior period
+  (which would include March) having been substantially higher -- directionally supports, without
+  independently confirming, the "800k-1 million over 6 months" estimate, since two non-overlapping
+  90-day periods (one containing the viral post, one not) could plausibly sum into that range. Still
+  **Founder-stated, source artifact needed** for the specific 276,000 (March) and 800k-1M (6-month)
+  figures -- a screenshot filtered to the March period or to a full 180-day window would verify
+  these directly instead of by inference.
+- **Most recent 28 days (Dashboard tab):** 43,035 views (+164%), 864 interactions (+357%), -21 net
+  followers (-310%) -- a real, separate, more recent snapshot, **Verified**.
+
+**Ad spend, cost-efficiency -- verified figures, plus the founder's own interpretation.** Ad Center
+screenshot (last 90 days): **Sudipta Koushik Sarmah spent Rs.4,878.91 on 33 ads**, reaching **61.1K
+people**, generating **8.56K post engagements** and **2.29K link clicks**. Computed cost-per-metric
+from these figures: **~Rs.0.08 per person reached, ~Rs.0.57 per engagement, ~Rs.2.13 per link click**.
+These raw figures are Verified (screenshot-sourced, arithmetic only).
+
+The founder's stated explanation -- "the ad spend efficiency is mostly due to founder brand and
+quality of writing that Meta boosts on its own" -- is **the founder's own interpretation, not a
+figure Meta's dashboard discloses or this document can verify**. Meta does not publish a
+"brand/writing-quality" attribution metric; ad delivery efficiency depends on multiple undisclosed
+factors (targeting, creative format, relevance score, audience overlap with organic reach) that
+cannot be disentangled from these screenshots alone. Recorded as the founder's causal explanation,
+distinct from the verified cost-per-metric numbers above it.
+
+**Content category note, unchanged.** This entity's audience reads "my journey as a person/founder,
+balancing startup with fatherhood, entrepreneurship, satire, poetry, noir essays, my writeups on
+cofounding with life partner" -- personal-life and literary content, not product or market-signal
+content. Per this program's evidence-chain rule, this remains **founder personal-brand reach, not
+product-market evidence** in the same sense as the 62 calls, beta survey, or QA walkthroughs above,
+and should not be summed alongside those figures as though they were the same category.
 
 ## Rule
 
