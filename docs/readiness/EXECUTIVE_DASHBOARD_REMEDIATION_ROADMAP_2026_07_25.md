@@ -86,9 +86,9 @@ An element does not count as `REAL` if:
 | 20 | Workflow timeline | REAL | REAL | Preserved; now also refresh-aware |
 | 21 | Priority actions core list | REAL | REAL | Preserved |
 | 22 | Request pilot conversation | PLACEHOLDER | **REAL** | Kept as mailto (no capture backend exists), relabeled "Email" with a tooltip marking it external |
-| 23 | Strategic Objectives | PLACEHOLDER | PLACEHOLDER | Unchanged -- deferred to ED-3, net-new |
-| 24 | AI Recommendations | PLACEHOLDER | PLACEHOLDER | Unchanged -- deferred to ED-3, net-new |
-| 25 | Risk Heatmap | PLACEHOLDER | PLACEHOLDER | Unchanged -- deferred to ED-3 |
+| 23 | Strategic Objectives | PLACEHOLDER | PLACEHOLDER -> **REAL** (ED-3) | ED-3: derived MVP -- each real program becomes an objective card, progress = real average of that program's own linked projects, no fabricated target |
+| 24 | AI Recommendations | PLACEHOLDER | PLACEHOLDER -> **REAL** (ED-3) | ED-3: derived MVP -- recommendations built from real pending AI reviews and at-risk projects already loaded on the page, labeled "Governance recommendation"/"Operational recommendation" (no autonomous-AI claim); dead buttons in both demo and live modes now navigate to real destinations |
+| 25 | Risk Heatmap | PLACEHOLDER | PLACEHOLDER -> **REAL** (ED-3) | ED-3: aggregates each tenant's own real project risk levels into High/Medium/Low counts, generic (not the demo set's health-specific categories); demo mode keeps its illustrative set, clearly separated; honest empty state with 0 projects |
 | 26 | Project list | REAL | REAL | Preserved |
 | 27 | View All + project row buttons | PLACEHOLDER | **REAL** | Both wired to real `/projects` navigation (honest fallback, no per-project detail route exists) |
 
@@ -96,6 +96,12 @@ An element does not count as `REAL` if:
 **Post-ED-2 count: 24 REAL / 0 PARTIAL / 3 PLACEHOLDER = 24/27, 89%** -- every remaining
 non-REAL element (Strategic Objectives, AI Recommendations, Risk Heatmap) is PLACEHOLDER, matching
 exactly ED-3's own scope; no PARTIAL elements remain.
+**Post-ED-3 count: 27 REAL / 0 PARTIAL / 0 PLACEHOLDER = 27/27, 100%.** Caveat, stated deliberately
+rather than left implicit: 100% REAL means no element shows fabricated live-tenant data, a dead
+action, or an overclaiming label -- it does not mean every element is a fully-featured platform.
+Strategic Objectives and AI Recommendations in particular are explicitly-scoped MVPs (derived from
+existing programs/projects/reviews, not a full OKR or AI-generation system) per this roadmap's own
+non-negotiables. Full detail: `docs/readiness/EXECUTIVE_DASHBOARD_ED3_CLOSEOUT_2026_07_25.md`.
 
 ## Cross-Cutting Risks
 
@@ -242,39 +248,44 @@ Target result:
 
 | Item | Fully done | Partial | Not done | Notes |
 |---|---|---|---|---|
-| Risk Heatmap no longer hardcoded module constant | [ ] | [ ] | [ ] |  |
-| Risk categories are generic or tenant-configurable, not wrongly health-specific | [ ] | [ ] | [ ] |  |
-| Strategic Objectives has real backend or explicit defer state | [ ] | [ ] | [ ] |  |
-| AI Recommendations avoid fake AI overclaim | [ ] | [ ] | [ ] |  |
-| Golden Path vs Pilot Onboarding overlap resolved | [ ] | [ ] | [ ] |  |
-| Final dashboard inventory updated | [ ] | [ ] | [ ] |  |
-| 70-80% REAL target achieved or blocker documented | [ ] | [ ] | [ ] |  |
-| Typecheck passes | [ ] | [ ] | [ ] |  |
-| Lint passes | [ ] | [ ] | [ ] |  |
-| Tests pass | [ ] | [ ] | [ ] |  |
-| Build passes | [ ] | [ ] | [ ] |  |
+| Risk Heatmap no longer hardcoded module constant | [x] | [ ] | [ ] | Real per-tenant project-risk aggregation for live tenants; demo mode's constant kept, clearly gated |
+| Risk categories are generic or tenant-configurable, not wrongly health-specific | [x] | [ ] | [ ] | "High/Medium/Low risk projects," not the demo set's "Oxygen"/"Referral"/etc. |
+| Strategic Objectives has real backend or explicit defer state | [x] | [ ] | [ ] | Derived MVP from real programs/projects (Option B); honest empty state if no programs |
+| AI Recommendations avoid fake AI overclaim | [x] | [ ] | [ ] | Labeled "Governance recommendation"/"Operational recommendation," derived from real pending reviews/at-risk projects |
+| Golden Path vs Pilot Onboarding overlap resolved | [x] | [ ] | [ ] | Kept both, explicitly differentiated: "Pilot Onboarding (personal checklist)," labeled local-only, points to Golden Path for tenant-wide proof |
+| Final dashboard inventory updated | [x] | [ ] | [ ] | 27/27 REAL (100%) -- see closeout doc |
+| 70-80% REAL target achieved or blocker documented | [x] | [ ] | [ ] | Exceeded -- 100% |
+| Typecheck passes | [x] | [ ] | [ ] | exit 0 |
+| Lint passes | [x] | [ ] | [ ] | exit 0, zero warnings |
+| Tests pass | [x] | [ ] | [ ] | 140/140 files, 533/533 tests, exit 0 (clean run, no infra flake this pass) |
+| Build passes | [x] | [ ] | [ ] | exit 0 |
 
 ### Exit Criteria
 
 Sprint ED-3 closes only if:
 
-- Executive Dashboard reaches preferred **21/27 REAL elements** or better; or
-- Any remaining placeholders are explicitly deferred with product rationale and no fake affordance.
+- Executive Dashboard reaches preferred **21/27 REAL elements** or better; or remaining placeholders
+  are explicitly deferred with product rationale and no fake affordance. **Met -- 27/27 (100%), zero
+  placeholders remain.**
+
+**ED-3 result: 27/27 REAL (100%).** Full detail, including the deliberate caveat that 100% REAL
+does not mean "feature-complete platform" (Strategic Objectives/AI Recommendations are explicitly
+MVP-scoped per this roadmap's own non-negotiables): `docs/readiness/EXECUTIVE_DASHBOARD_ED3_CLOSEOUT_2026_07_25.md`.
 
 ## Overall Roadmap Checklist
 
 | Goal | Target | Status | Notes |
 |---|---:|---|---|
-| Baseline REAL elements | 11/27 | Current | 41% |
-| Minimum REAL target | 19/27 | Not started | 70% |
-| Preferred REAL target | 21/27 | Not started | 78% |
-| Stretch REAL target | 22/27 | Not started | 81% |
-| Dead dashboard buttons removed | All | Not started | Phase ED-1 |
-| Misleading proxy labels corrected | All | Not started | Phase ED-1/ED-2 |
-| Existing disconnected infrastructure wired | Major items | Not started | Phase ED-2 |
-| Fabricated budget/spent removed | Yes | Not started | Phase ED-2 |
-| Net-new placeholders addressed | Top 3 | Not started | Phase ED-3 |
-| Verification documented | Every sprint | Not started | Required |
+| Baseline REAL elements | 11/27 (or 12/27 itemized-list basis) | Done | 41% (44% itemized) |
+| Minimum REAL target | 19/27 | **Met (ED-1)** | 70% |
+| Preferred REAL target | 21/27 | **Met (ED-1)** | 78% |
+| Stretch REAL target | 22/27 | **Met (ED-2)** | 81% |
+| Dead dashboard buttons removed | All | **Done** | Phase ED-1 |
+| Misleading proxy labels corrected | All | **Done** | Phase ED-1/ED-2 |
+| Existing disconnected infrastructure wired | Major items | **Done** | Phase ED-2 |
+| Fabricated budget/spent removed | Yes | **Done** | Phase ED-2 |
+| Net-new placeholders addressed | Top 3 | **Done, all 3** | Phase ED-3 |
+| Verification documented | Every sprint | **Done, all 3 sprints** | Required |
 
 ## Recommended Execution Order
 
@@ -300,11 +311,18 @@ When authorized, the implementation prompt should instruct Claude Code to:
 
 The Executive Dashboard remediation program is considered successful only if:
 
-- At least **19/27 elements** are REAL.
-- No visible dead primary dashboard actions remain.
-- Proxy metrics are honestly labeled.
-- Demo/investor naming is not confused with guided workflow.
-- Dashboard actions either work, navigate, refresh, export, open feedback, or are explicitly deferred.
-- Tests and build pass.
-- Closeout documents exact before/after counts.
+- At least **19/27 elements** are REAL. **Met and exceeded -- 27/27 (100%) after ED-3.**
+- No visible dead primary dashboard actions remain. **Met.**
+- Proxy metrics are honestly labeled. **Met.**
+- Demo/investor naming is not confused with guided workflow. **Met.**
+- Dashboard actions either work, navigate, refresh, export, open feedback, or are explicitly deferred. **Met.**
+- Tests and build pass. **Met -- see ED-1/ED-2/ED-3 closeout docs for exact commands and counts.**
+- Closeout documents exact before/after counts. **Met.**
+
+**Program status: complete as of ED-3 (2026-07-25).** Three sequential sprints
+(`EXECUTIVE_DASHBOARD_ED1_CLOSEOUT_2026_07_25.md`, `..._ED2_...`, `..._ED3_...`) moved the Executive
+Dashboard from 41% (11/27, or 44%/12/27 on the itemized-list basis this program used going forward)
+REAL to 100% (27/27) REAL, with zero net-new large systems built -- every fix either removed a dead
+affordance, honestly relabeled a proxy, wired existing infrastructure, or built a deliberately small
+MVP explicitly scoped to avoid the roadmap's own "do not overbuild" constraints.
 

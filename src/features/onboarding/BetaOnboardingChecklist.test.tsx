@@ -39,7 +39,7 @@ describe("BetaOnboardingChecklist", () => {
       </AnalyticsProviderShell>,
     );
 
-    expect(screen.getByText("Pilot Onboarding")).toBeInTheDocument();
+    expect(screen.getByText("Pilot Onboarding (personal checklist)")).toBeInTheDocument();
     expect(screen.getByText("Create first project")).toBeInTheDocument();
     expect(screen.getByText("Ask first AI/RAG question")).toBeInTheDocument();
     expect(screen.getByText("View audit trail")).toBeInTheDocument();
@@ -83,24 +83,24 @@ describe("BetaOnboardingChecklist", () => {
     // testUser has an organizationId, so the "organization" step auto-completes immediately --
     // that is the only step done for a brand-new tenant with zero projects.
     const { unmount } = renderChecklist(0);
-    expect(screen.getByText("1 of 10 complete - first 10 minutes of a real tenant")).toBeInTheDocument();
+    expect(screen.getByText(/1 of 10 complete -- your own first-10-minutes checklist/)).toBeInTheDocument();
     unmount();
 
     // Re-mounting with the same (honest, unchanged) projectCount must reproduce the exact same
     // progress -- reading from localStorage again must not silently advance any step.
     renderChecklist(0);
-    expect(screen.getByText("1 of 10 complete - first 10 minutes of a real tenant")).toBeInTheDocument();
+    expect(screen.getByText(/1 of 10 complete -- your own first-10-minutes checklist/)).toBeInTheDocument();
   });
 
   it("only advances the 'first_project' step once a real project genuinely exists, and that advance persists across reloads", () => {
     const { unmount } = renderChecklist(0);
-    expect(screen.getByText("1 of 10 complete - first 10 minutes of a real tenant")).toBeInTheDocument();
+    expect(screen.getByText(/1 of 10 complete -- your own first-10-minutes checklist/)).toBeInTheDocument();
     unmount();
 
     // A durable state change (the tenant now genuinely has 1 project) is the only thing allowed
     // to move progress -- this simulates returning to the dashboard after Sprint 2's real project
     // creation path succeeded. organization + first_project are now both done.
     renderChecklist(1);
-    expect(screen.getByText("2 of 10 complete - first 10 minutes of a real tenant")).toBeInTheDocument();
+    expect(screen.getByText(/2 of 10 complete -- your own first-10-minutes checklist/)).toBeInTheDocument();
   });
 });

@@ -93,8 +93,8 @@ export function BetaOnboardingChecklist({ user, projectCount }: BetaOnboardingCh
     <Card className="p-4">
       <div className="mb-3 flex items-center justify-between">
         <div>
-          <h3 className="text-sm font-semibold text-[#0F1117]">Pilot Onboarding</h3>
-          <p className="mt-0.5 text-xs text-[#5F6B73]">{completed} of {steps.length} complete - first 10 minutes of a real tenant</p>
+          <h3 className="text-sm font-semibold text-[#0F1117]">Pilot Onboarding (personal checklist)</h3>
+          <p className="mt-0.5 text-xs text-[#5F6B73]">{completed} of {steps.length} complete -- your own first-10-minutes checklist, saved to this browser only. For tenant-wide workflow proof, see the Enterprise Golden Path below.</p>
         </div>
         <span className="rounded-full bg-[#F2F3F5] px-2.5 py-1 font-mono text-[10px] text-[#5F6B73]">{progressPercent}%</span>
       </div>

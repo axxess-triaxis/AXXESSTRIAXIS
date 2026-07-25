@@ -36,11 +36,13 @@ import { demoInstitution } from "../../lib/demo/seedData";
 import { executiveDemoMetrics } from "../../lib/demo/demoMetrics";
 import { BetaOnboardingChecklist } from "../onboarding/BetaOnboardingChecklist";
 import {
-  dashboardAiRecommendations,
-  dashboardObjectives,
+  demoAiRecommendations,
+  demoObjectives,
   dashboardScopeForUser,
+  type DashboardStrategicObjective,
   getDashboardFallbackProjects,
   getDashboardProjects,
+  getDashboardStrategicObjectives,
   governanceAlerts,
   performanceData,
   workloadData,
@@ -112,7 +114,8 @@ function DashboardCommandSearch({
   );
 }
 
-const heatmap = [
+// Illustrative demo-only categories -- must only ever render in demo mode. See DEMO_DATA_LEAKAGE_AUDIT.md.
+const demoHeatmap = [
   { label: "Referral", level: 3 },
   { label: "Budget", level: 2 },
   { label: "Oxygen", level: 3 },
@@ -124,10 +127,64 @@ const heatmap = [
   { label: "Staffing", level: 1 },
 ];
 
+// Executive Dashboard Sprint ED-3: real Risk Heatmap MVP for live tenants -- aggregates each
+// project's own risk level (already real, rendered elsewhere via RiskBadge) into a count-by-band
+// view, deliberately generic (not the demo set's health/NGO-specific categories like "Oxygen" or
+// "Referral"), since a live tenant's projects have no inherent relationship to those labels.
+export function aggregateProjectRisk(projects: Pick<DashboardProject, "risk">[]) {
+  let high = 0;
+  let medium = 0;
+  let low = 0;
+  for (const project of projects) {
+    if (project.risk === "urgent" || project.risk === "high") high += 1;
+    else if (project.risk === "medium") medium += 1;
+    else low += 1;
+  }
+  return [
+    { label: "High risk projects", level: 3 as const, count: high },
+    { label: "Medium risk projects", level: 2 as const, count: medium },
+    { label: "Low risk projects", level: 1 as const, count: low },
+  ];
+}
+
+type DashboardRecommendation = {
+  id: string;
+  title: string;
+  type: "Governance recommendation" | "Operational recommendation";
+  route: string;
+};
+
+// Executive Dashboard Sprint ED-3: AI Recommendations MVP for live tenants -- derived entirely
+// from real evidence already loaded on this page (pending AI reviews, at-risk projects), not an
+// autonomous-AI-generated insight. Labeled "Governance recommendation"/"Operational recommendation"
+// rather than claiming AI authorship it doesn't have, per the roadmap's Option B guidance.
+export function deriveDashboardRecommendations(pendingAiReviewCount: number, projects: DashboardProject[]): DashboardRecommendation[] {
+  const recommendations: DashboardRecommendation[] = [];
+  if (pendingAiReviewCount > 0) {
+    recommendations.push({
+      id: "pending-ai-reviews",
+      title: `${pendingAiReviewCount} AI output${pendingAiReviewCount === 1 ? "" : "s"} awaiting your review`,
+      type: "Governance recommendation",
+      route: "/ai-workspace/review-inbox",
+    });
+  }
+  const atRiskProjects = projects.filter((project) => project.risk === "high" || project.risk === "urgent");
+  for (const project of atRiskProjects.slice(0, 3)) {
+    recommendations.push({
+      id: `at-risk-${project.id}`,
+      title: `${project.name} is flagged ${project.risk} risk -- review recommended`,
+      type: "Operational recommendation",
+      route: "/projects",
+    });
+  }
+  return recommendations;
+}
+
 export function DashboardSection() {
   const { session } = useAuth();
   const tenantScope = useMemo(() => session.user ? dashboardScopeForUser(session.user) : undefined, [session.user]);
   const [projects, setProjects] = useState<DashboardProject[]>(() => (isDemoModeEnabled() ? getDashboardFallbackProjects() : []));
+  const [objectives, setObjectives] = useState<DashboardStrategicObjective[]>([]);
   const [refreshToken, setRefreshToken] = useState(0);
   const guidedDemo = useGuidedDemo("dashboard");
   const liveMetrics = useLiveWorkspaceMetrics(tenantScope, refreshToken);
@@ -201,6 +258,26 @@ export function DashboardSection() {
       isMounted = false;
     };
   }, [tenantScope]);
+
+  // Executive Dashboard Sprint ED-3: Strategic Objectives, derived from real programs -- a genuine
+  // fetch failure must leave a real tenant with an honest empty list, never demo content.
+  useEffect(() => {
+    if (!tenantScope) return;
+
+    let isMounted = true;
+    getDashboardStrategicObjectives(tenantScope)
+      .then((objectiveRows) => {
+        if (!isMounted) return;
+        setObjectives(objectiveRows);
+      })
+      .catch(() => {
+        if (isMounted) setObjectives([]);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [tenantScope, refreshToken]);
 
   const demoMode = isDemoModeEnabled();
 
@@ -354,7 +431,7 @@ export function DashboardSection() {
           </div>
           {demoMode ? (
             <div className="space-y-4">
-              {dashboardObjectives.map((objective) => (
+              {demoObjectives.map((objective) => (
                 <div key={objective.name}>
                   <div className="flex items-center justify-between mb-1.5">
                     <span className="text-xs font-medium text-[#0F1117]">{objective.name}</span>
@@ -377,8 +454,27 @@ export function DashboardSection() {
                 </div>
               ))}
             </div>
+          ) : objectives.length > 0 ? (
+            // Executive Dashboard Sprint ED-3: each card is a real program, "progress" is the real
+            // average progress of that program's own linked projects -- not a fabricated target.
+            <div className="space-y-4">
+              {objectives.map((objective) => (
+                <div key={objective.id}>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-xs font-medium text-[#0F1117]">{objective.name}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-mono text-[#5F6B73]">{objective.averageProgress}% avg -- {objective.projectCount} project{objective.projectCount === 1 ? "" : "s"}</span>
+                      <StatusBadge status={objective.status} />
+                    </div>
+                  </div>
+                  <div className="h-2 bg-[#F2F3F5] rounded-full overflow-hidden">
+                    <div className="h-full rounded-full bg-[#8B1E2D] transition-all" style={{ width: `${objective.averageProgress}%` }} />
+                  </div>
+                </div>
+              ))}
+            </div>
           ) : (
-            <EmptyState message="No strategic objectives configured yet." />
+            <EmptyState message="No strategic objectives configured yet. Create a program to see it tracked here." />
           )}
         </Card>
 
@@ -391,19 +487,37 @@ export function DashboardSection() {
           </div>
           {demoMode ? (
             <div className="space-y-3">
-              {dashboardAiRecommendations.map((recommendation, index) => (
-                <button key={index} className="flex w-full items-start gap-2.5 p-2.5 rounded-lg bg-[#F2F3F5] hover:bg-[#EAEBEE] transition-colors text-left">
+              {demoAiRecommendations.map((recommendation, index) => (
+                <a key={index} href="/ai-workspace/review-inbox" className="flex w-full items-start gap-2.5 p-2.5 rounded-lg bg-[#F2F3F5] hover:bg-[#EAEBEE] transition-colors text-left">
                   <span className={`w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0 ${recommendation.urgency === "urgent" ? "bg-red-500" : recommendation.urgency === "high" ? "bg-amber-500" : "bg-blue-500"}`} />
                   <span>
                     <span className="block text-xs text-[#0F1117] font-medium leading-snug">{recommendation.title}</span>
                     <span className="text-[10px] text-[#5F6B73] font-mono">{recommendation.type}</span>
                   </span>
-                </button>
+                </a>
               ))}
             </div>
-          ) : (
-            <EmptyState message="No AI recommendations yet. These appear as AXXESS learns from your organization's activity." />
-          )}
+          ) : (() => {
+            const recommendations = deriveDashboardRecommendations(pendingAiReviewCount, projects);
+            return recommendations.length > 0 ? (
+              // Executive Dashboard Sprint ED-3: real recommendations derived from real evidence
+              // already on this page (pending AI reviews, at-risk projects) -- not an autonomous-AI
+              // claim, and each one navigates to a real destination instead of a dead button.
+              <div className="space-y-3">
+                {recommendations.map((recommendation) => (
+                  <a key={recommendation.id} href={recommendation.route} className="flex w-full items-start gap-2.5 p-2.5 rounded-lg bg-[#F2F3F5] hover:bg-[#EAEBEE] transition-colors text-left">
+                    <span className="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0 bg-amber-500" />
+                    <span>
+                      <span className="block text-xs text-[#0F1117] font-medium leading-snug">{recommendation.title}</span>
+                      <span className="text-[10px] text-[#5F6B73] font-mono">{recommendation.type}</span>
+                    </span>
+                  </a>
+                ))}
+              </div>
+            ) : (
+              <EmptyState message="No recommendations yet. Recommendations appear after AI reviews, approvals, or at-risk projects exist." />
+            );
+          })()}
         </Card>
       </div>
 
@@ -455,21 +569,42 @@ export function DashboardSection() {
 
         <Card className="p-5">
           <h3 className="font-semibold text-[#0F1117] text-sm mb-4">Risk Heatmap</h3>
-          <div className="grid grid-cols-3 gap-1.5 mb-3">
-            {heatmap.map((risk) => (
-              <div
-                key={risk.label}
-                className="rounded-lg p-2 text-center"
-                style={{
-                  backgroundColor: risk.level === 3 ? "#FEF2F2" : risk.level === 2 ? "#FFFBEB" : "#F0FDF4",
-                  border: `1px solid ${risk.level === 3 ? "#FECACA" : risk.level === 2 ? "#FDE68A" : "#BBF7D0"}`,
-                }}
-              >
-                <div className={`text-[10px] font-semibold ${risk.level === 3 ? "text-red-700" : risk.level === 2 ? "text-amber-700" : "text-emerald-700"}`}>{risk.label}</div>
-                <div className={`text-[10px] font-mono ${risk.level === 3 ? "text-red-500" : risk.level === 2 ? "text-amber-500" : "text-emerald-500"}`}>{risk.level === 3 ? "HIGH" : risk.level === 2 ? "MED" : "LOW"}</div>
-              </div>
-            ))}
-          </div>
+          {demoMode ? (
+            <div className="grid grid-cols-3 gap-1.5 mb-3">
+              {demoHeatmap.map((risk) => (
+                <div
+                  key={risk.label}
+                  className="rounded-lg p-2 text-center"
+                  style={{
+                    backgroundColor: risk.level === 3 ? "#FEF2F2" : risk.level === 2 ? "#FFFBEB" : "#F0FDF4",
+                    border: `1px solid ${risk.level === 3 ? "#FECACA" : risk.level === 2 ? "#FDE68A" : "#BBF7D0"}`,
+                  }}
+                >
+                  <div className={`text-[10px] font-semibold ${risk.level === 3 ? "text-red-700" : risk.level === 2 ? "text-amber-700" : "text-emerald-700"}`}>{risk.label}</div>
+                  <div className={`text-[10px] font-mono ${risk.level === 3 ? "text-red-500" : risk.level === 2 ? "text-amber-500" : "text-emerald-500"}`}>{risk.level === 3 ? "HIGH" : risk.level === 2 ? "MED" : "LOW"}</div>
+                </div>
+              ))}
+            </div>
+          ) : projects.length > 0 ? (
+            // Real aggregation of this tenant's own project risk levels -- no fabricated categories.
+            <div className="grid grid-cols-3 gap-1.5 mb-3">
+              {aggregateProjectRisk(projects).map((risk) => (
+                <div
+                  key={risk.label}
+                  className="rounded-lg p-2 text-center"
+                  style={{
+                    backgroundColor: risk.level === 3 ? "#FEF2F2" : risk.level === 2 ? "#FFFBEB" : "#F0FDF4",
+                    border: `1px solid ${risk.level === 3 ? "#FECACA" : risk.level === 2 ? "#FDE68A" : "#BBF7D0"}`,
+                  }}
+                >
+                  <div className={`text-[10px] font-semibold ${risk.level === 3 ? "text-red-700" : risk.level === 2 ? "text-amber-700" : "text-emerald-700"}`}>{risk.label}</div>
+                  <div className={`text-sm font-mono font-semibold ${risk.level === 3 ? "text-red-500" : risk.level === 2 ? "text-amber-500" : "text-emerald-500"}`}>{risk.count}</div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <EmptyState message="No projects yet. Risk levels will appear here once projects exist." />
+          )}
           <div className="flex items-center justify-between text-[10px] text-[#5F6B73]">
             <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-emerald-200 inline-block" />Low</span>
             <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-amber-200 inline-block" />Medium</span>
