@@ -99,7 +99,7 @@ Evidence:
 
 Status:
 
-Partial. Code and Vercel project/env-var separation are live and deployed. DNS delegation for `investor.triaxisventures.com` and `landing.triaxisventures.com` is external/HITL-only (Wix registrar A-records) and was pending as of 2026-07-24 -- see `HOSTING_DEPLOYMENT_ARCHITECTURE_2026_07_24.md` for the exact pending action.
+Partial. Code and Vercel project/env-var separation are live and deployed (confirmed via `vercel domains inspect`: both subdomains are correctly registered against their intended Vercel projects). DNS delegation for `investor.triaxisventures.com` and `landing.triaxisventures.com` remains external/HITL-only (two Wix registrar A-records) and was re-confirmed still not done on 2026-07-25 -- `nslookup` returns `Non-existent domain` for both hostnames, and the founder independently reported `DNS_PROBE_FINISHED_NXDOMAIN` in-browser the same day. **Live consequence:** the Website's "Welcome Aboard" / "Experience AXXESS" buttons currently point at unreachable hostnames for any real visitor. See `HOSTING_DEPLOYMENT_ARCHITECTURE_2026_07_24.md`'s "DNS Delegation Status" section for the exact required records and evidence.
 
 ### Auth, Onboarding, RBAC and Tenant Isolation
 
