@@ -25,6 +25,8 @@ These jurisdictions increasingly require AI systems to satisfy expectations arou
 
 AXXESS is being engineered from the outset to support those requirements.
 
+**Pitch deck:** [`docs/pitch-deck/Triaxis_Ventures_Pitch_Deck_2026-07-23.pdf`](docs/pitch-deck/Triaxis_Ventures_Pitch_Deck_2026-07-23.pdf) (dated 2026-07-23).
+
 ---
 
 ## Provenance
