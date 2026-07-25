@@ -81,6 +81,27 @@ describe("route proxy helpers (renamed from middleware.ts in Sprint 5, Next.js 1
     expect(redirectUrl).toBeNull();
   });
 
+  // Reported 2026-07-25: landing.triaxisventures.com's root fell through to the shared marketing
+  // chooser page (which links out to the Demo) instead of going straight into the beta workspace,
+  // since it was never added alongside beta.triaxisventures.com in this redirect rule.
+  it("redirects landing (Product/beta) root host to dashboard", () => {
+    const redirectUrl = getBetaRootRedirectUrl(
+      new URL("https://landing.triaxisventures.com/"),
+      "landing.triaxisventures.com",
+    );
+
+    expect(redirectUrl?.toString()).toBe("https://landing.triaxisventures.com/dashboard");
+  });
+
+  it("does not redirect non-root landing routes", () => {
+    const redirectUrl = getBetaRootRedirectUrl(
+      new URL("https://landing.triaxisventures.com/auth"),
+      "landing.triaxisventures.com",
+    );
+
+    expect(redirectUrl).toBeNull();
+  });
+
   it("normalizes hosts with ports before canonical checks", () => {
     const redirectUrl = getCanonicalHostRedirectUrl(
       new URL("https://triaxisventures.com/dashboard"),

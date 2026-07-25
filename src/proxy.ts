@@ -31,6 +31,13 @@ const demoSessionCookieName = "axxess-demo-session";
 const apexProductionHost = "triaxisventures.com";
 const canonicalProductionHost = "www.triaxisventures.com";
 const betaProductionHost = "beta.triaxisventures.com";
+// Product/beta entry point added in the Sprint 5+ hosting split (docs/readiness/
+// HOSTING_DEPLOYMENT_ARCHITECTURE_2026_07_24.md). Without this host in the same root-redirect
+// rule as `beta.triaxisventures.com`, its `/` fell through to the shared marketing chooser page
+// (src/app/page.tsx) -- which links out to the Demo -- instead of going straight into the beta
+// workspace. Reported 2026-07-25: visiting the root showed a path to the Demo from a domain that
+// is supposed to be beta-only.
+const betaRootRedirectHosts = new Set([betaProductionHost, "landing.triaxisventures.com"]);
 const marketingOnlyPathname = "/";
 
 const workspaceRoutePrefixes = ["/auth", ...protectedRoutePrefixes];
@@ -65,13 +72,13 @@ export function getCanonicalHostRedirectUrl(url: URL, host: string | null) {
 
 export function getBetaRootRedirectUrl(url: URL, host: string | null) {
   const normalizedHost = normalizeHost(host);
-  if (!normalizedHost || normalizedHost !== betaProductionHost || url.pathname !== "/") {
+  if (!normalizedHost || !betaRootRedirectHosts.has(normalizedHost) || url.pathname !== "/") {
     return null;
   }
 
   const redirectUrl = new URL(url.toString());
   redirectUrl.protocol = "https:";
-  redirectUrl.host = betaProductionHost;
+  redirectUrl.host = normalizedHost;
   redirectUrl.pathname = "/dashboard";
   return redirectUrl;
 }
