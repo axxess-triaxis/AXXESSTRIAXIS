@@ -119,8 +119,11 @@ the Business Suite screenshots used for the company Page in item 6. Screenshots 
   independently confirming, the "800k-1 million over 6 months" estimate, since two non-overlapping
   90-day periods (one containing the viral post, one not) could plausibly sum into that range. Still
   **Founder-stated, source artifact needed** for the specific 276,000 (March) and 800k-1M (6-month)
-  figures -- a screenshot filtered to the March period or to a full 180-day window would verify
-  these directly instead of by inference.
+  figures. Correction to this document's own prior suggestion: the founder confirmed Facebook's
+  Professional Dashboard for personal profiles does not offer a 180-day (or custom 6-month) range --
+  only 90 days / 28 days / 7 days / Today presets are available, per the screenshots' own selector.
+  There is no direct in-app screenshot that could verify a 6-month total; the -74% period-over-period
+  drop noted above is the closest available indirect signal, not a substitute for a direct figure.
 - **Most recent 28 days (Dashboard tab):** 43,035 views (+164%), 864 interactions (+357%), -21 net
   followers (-310%) -- a real, separate, more recent snapshot, **Verified**.
 
