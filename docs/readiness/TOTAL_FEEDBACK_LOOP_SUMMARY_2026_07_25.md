@@ -104,6 +104,18 @@ TRIaxis company-page LinkedIn analytics (Admin view -> Analytics -> Visitors, a 
 from personal-profile analytics) has been provided yet. The personal-profile figures above are
 verified in their own right and are not evidence for or against the brand-page figure.
 
+**Personal Facebook profile -- new claim, no screenshot yet.** The founder additionally stated
+(2026-07-25): personal Facebook profile (a fourth, distinct entity from the "Triaxis Group Private
+Limited" company Page in item 6 above, and from the personal LinkedIn profile above) had
+"almost 200,000 views in last 90 days," one viral post in March that alone got "276,000" views, and,
+in the founder's own hedged words, "last 6 months my personal FB profile might have had possibly
+800k-1 million views." **Founder-stated, source artifact needed** for all three figures -- no
+Meta Business Suite screenshot for the personal profile (as opposed to the company Page) has been
+provided. The 800k-1M figure is explicitly a founder estimate ("might have had possibly"), not a
+stated fact, and is recorded here with that same hedge rather than rounded into a firmer number.
+Adding a Meta Business Suite screenshot for the personal profile, filtered to the last 90 days and
+to March specifically for the viral post, would move this to Verified.
+
 ## Rule
 
 No figure in this document should be revised without adding or citing a source artifact, per
