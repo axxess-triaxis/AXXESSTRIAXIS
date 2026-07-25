@@ -11,6 +11,11 @@ AXXESS TRIaxis has been developed through a founder-led market-to-product execut
 
 This index is not marketing copy. It exists to show, with source-linked evidence, how external signal and product execution connect.
 
+**Plain-language rollup:** `docs/readiness/TOTAL_FEEDBACK_LOOP_SUMMARY_2026_07_25.md` states the
+full external-signal-to-product feedback loop (calls, survey depth, founder walkthroughs, QA
+sprints, social reach) in six lines, each checked against this index's own source artifacts -- the
+document to hand an external reader who needs the numbers once, correctly.
+
 ## Evidence Inventory
 
 | Evidence type | Founder-stated volume | Verified volume | Source locations | Status |
