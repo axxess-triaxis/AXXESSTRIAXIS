@@ -31,13 +31,20 @@ const demoSessionCookieName = "axxess-demo-session";
 const apexProductionHost = "triaxisventures.com";
 const canonicalProductionHost = "www.triaxisventures.com";
 const betaProductionHost = "beta.triaxisventures.com";
-// Product/beta entry point added in the Sprint 5+ hosting split (docs/readiness/
-// HOSTING_DEPLOYMENT_ARCHITECTURE_2026_07_24.md). Without this host in the same root-redirect
-// rule as `beta.triaxisventures.com`, its `/` fell through to the shared marketing chooser page
-// (src/app/page.tsx) -- which links out to the Demo -- instead of going straight into the beta
-// workspace. Reported 2026-07-25: visiting the root showed a path to the Demo from a domain that
-// is supposed to be beta-only.
-const betaRootRedirectHosts = new Set([betaProductionHost, "landing.triaxisventures.com"]);
+// Product/beta and Demo/investor entry points added in the Sprint 5+ hosting split (docs/readiness/
+// HOSTING_DEPLOYMENT_ARCHITECTURE_2026_07_24.md). Without these hosts in the same root-redirect
+// rule as `beta.triaxisventures.com`, their `/` fell through to the shared marketing chooser page
+// (src/app/page.tsx) -- landing.triaxisventures.com linked out to the Demo (reported 2026-07-25),
+// and investor.triaxisventures.com showed stale pre-split content with dead relative links
+// (reported the same day) instead of going straight into its own single-purpose experience. On
+// investor.triaxisventures.com specifically, this redirect reaches the demo persona with zero
+// friction -- forced demo mode (NEXT_PUBLIC_AXXESS_DEMO_MODE=true) skips the login gate entirely
+// for that deployment, so `/dashboard` renders immediately, no auth detour.
+const dashboardRootRedirectHosts = new Set([
+  betaProductionHost,
+  "landing.triaxisventures.com",
+  "investor.triaxisventures.com",
+]);
 const marketingOnlyPathname = "/";
 
 const workspaceRoutePrefixes = ["/auth", ...protectedRoutePrefixes];
@@ -72,7 +79,7 @@ export function getCanonicalHostRedirectUrl(url: URL, host: string | null) {
 
 export function getBetaRootRedirectUrl(url: URL, host: string | null) {
   const normalizedHost = normalizeHost(host);
-  if (!normalizedHost || !betaRootRedirectHosts.has(normalizedHost) || url.pathname !== "/") {
+  if (!normalizedHost || !dashboardRootRedirectHosts.has(normalizedHost) || url.pathname !== "/") {
     return null;
   }
 
