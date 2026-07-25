@@ -56,10 +56,27 @@ exist: QA remediation 1 (Sprint 37 overall, `docs/SPRINT_1_CLOSEOUT_2026_07_22.m
 individual-sprint count across all three programs is **7** (1 + 1 + 5).
 
 **6. 300,000+ social media views, 10,000+ social media page visits.**
-**Founder-stated, source artifact needed.** No repository artifact -- no analytics export,
-screenshot, or dashboard link -- currently supports either figure. Not disputed, simply
-unverifiable from repo state today. Add a LinkedIn/Instagram/X analytics export or a
-`docs/readiness/`-style dated log to move this to Verified.
+**Partial -- real evidence, different number than stated.** Founder-provided screenshots of Meta
+Business Suite (Facebook Page "Triaxis Group Private Limited," verified/blue-check, 1,002
+followers), captured and reported 2026-07-25, show for the reporting window (~25 Mar-1 Jul 2026,
+per the chart's own x-axis; two visible spikes around late March and mid-May, flat afterward --
+the page's own UI separately notes "You haven't posted to Facebook in 62 days"):
+- **Viewers: 221.1K** (Meta's "Viewers" metric = unique accounts reached, not a raw "views" count;
+  no separate total-Views figure was visible in the screenshots provided)
+- **Content interactions: 4.5K**
+- **Top 4 posts by viewers:** 47.0K, 46.3K, 38.0K, 11.0K
+- **Content-interaction breakdown:** Links 2.59K, Photos 1.86K, Multi-photo 60, Text 6, Stories 2
+- **Published content in the window:** 39 photos, 30 links, 4 texts, 0 stories
+
+No "Page visits" metric (a distinct Meta Business Suite figure) was visible in the screenshots
+provided, so the "10,000+ page visits" half of the claim remains unverified. The "300,000+ views"
+half is close in order of magnitude but should be corrected to **221.1K viewers** -- a different,
+more specific metric than "views," and not yet at 300K.
+
+Separately, founder-stated (2026-07-25, no screenshot yet): "Triaxis Ventures page and AXXESS
+TRIaxis showcase pages get on average 200+ search appearances total every 7 days" on LinkedIn --
+tagged `Founder-stated, source artifact needed` until a LinkedIn analytics screenshot is provided,
+same standard as everything else in this document.
 
 ## Rule
 
