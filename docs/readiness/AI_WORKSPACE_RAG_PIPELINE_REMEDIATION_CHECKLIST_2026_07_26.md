@@ -43,6 +43,29 @@ Roadmap source: `docs/readiness/AI_WORKSPACE_RAG_PIPELINE_REMEDIATION_ROADMAP_20
 | RAG2-15 | Build passes | Done | See closeout doc. |
 | RAG2-16 | RAG-2 closeout created | Done | `docs/readiness/RAG_REMEDIATION_SPRINT_2_ANSWER_QUALITY_CLOSEOUT_2026_07_26.md`. |
 
+## Sprint RAG-3 Checklist
+
+| ID | Item | Status | Evidence / Notes |
+|---|---|---|---|
+| RAG3-01 | Approved "Create Stakeholder Note" review visible in Stakeholders & CRM | Done (code shipped, pending HITL live confirmation) | Root cause: the note was already being created as a real, tenant-scoped row with full linkage -- `StakeholdersSection.tsx` just never fetched or displayed the notes table. New `GET /api/stakeholders/notes` route + a real "AI-escalated notes" list section. |
+| RAG3-02 | CRM contact creation preserves AI review id, question, answer, citations, confidence, actor, tenant, timestamp | Done | Confirmed already true pre-Sprint-3 for the note-creation path itself (Sprint 2's `createApprovedAction()` fix); this sprint's contribution was making the resulting note *visible*, not the linkage itself. |
+| RAG3-03 | Unauthorized user cannot create CRM handoff from a restricted review | Done (pre-existing) | Already covered by the Sprint 5 `POST /api/ai/reviews` 403 test -- the authorization gate runs before any workflow action (including stakeholder_note) can be created. No new test needed, coverage re-confirmed. |
+| RAG3-04 | Live contact creation no longer inserts fake influence/engagement | Done | `stakeholderMutation()` defaults changed from `50`/`"medium"` to `0`/`"unrated"`; form now has real, optional Influence/Engagement inputs. |
+| RAG3-05 | Demo contact creation remains demo-scoped | Done (unchanged) | Demo stakeholder cards are a separate, already-isolated dataset (`demoStakeholderCards`) -- not touched this sprint. |
+| RAG3-06 | Contact fields persist correctly when user supplies real values | Done | Tested: supplying Influence 78 / Engagement "high" sends exactly those values through. |
+| RAG3-07 | Approvals Export Report performs a real action or is honestly disabled | Done (code shipped, pending HITL live confirmation) | New `GET /api/approvals` (real tenant-scoped queue) + real JSON-download Export Report button (mirrors the existing Export Briefing pattern) + `POST /api/approvals/export` audit event. |
+| RAG3-08 | Export respects tenant/role boundaries | Done | `GET /api/approvals` is session-authed and organization-scoped; tested with a cross-org row excluded. |
+| RAG3-09 | Export audit event written | Done | Tested: `POST /api/approvals/export` writes a real `approvals.export_report` audit log entry with the approval count. |
+| RAG3-10 | Feedback submission persists with user/tenant/route/message/timestamp | Done (unchanged, re-confirmed) | Already true pre-Sprint-3 via `betaFeedbackRepository.create()`; re-confirmed while reading the pipeline for the email-routing fix. |
+| RAG3-11 | Feedback routed/prepared for email to `triaxisgrp@gmail.com` | Done (code shipped, delivery NOT live-verified) | `feedbackEmail.ts` (new) sends via the same Resend provider `invitationEmail.ts` uses. Per this sprint's own non-negotiable, delivery itself is explicitly not claimed verified -- see A-65's matrix entry and A-08's precedent (same provider, same unconfirmed-in-production status). |
+| RAG3-12 | Missing email config does not lose feedback, shows safe status | Done | `sendFeedbackNotificationEmail()` returns an honest `"not-configured"` status when `RESEND_API_KEY` is absent; wrapped in try/catch so an exception can never fail the feedback submission itself. |
+| RAG3-13 | A-55/A-56/A-61/A-62/A-63 reconfirmed after Sprints 1-2 | Done | See `RAG_REMEDIATION_FINAL_EVIDENCE_PACKAGE_2026_07_26.md`. |
+| RAG3-14 | Typecheck passes | Done | `pnpm run typecheck` -- 0 errors. |
+| RAG3-15 | Lint passes | Done | `pnpm run lint --max-warnings=0` -- 0 warnings, 0 errors. |
+| RAG3-16 | Tests pass | Done | See closeout doc for exact file/test counts. |
+| RAG3-17 | Build passes | Done | See closeout doc. |
+| RAG3-18 | RAG-3 closeout and final evidence package created | Done | `docs/readiness/RAG_REMEDIATION_SPRINT_3_WORKFLOW_POLISH_CLOSEOUT_2026_07_26.md`, `docs/readiness/RAG_REMEDIATION_FINAL_EVIDENCE_PACKAGE_2026_07_26.md`. |
+
 ## Overall Completion Gate
 
 | Completion Standard | Status | Evidence / Notes |

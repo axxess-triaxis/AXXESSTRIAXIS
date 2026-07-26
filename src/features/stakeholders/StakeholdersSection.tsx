@@ -10,7 +10,22 @@ import { demoStakeholderCards } from "../../lib/demo/demoStakeholders";
 import { applicationServices } from "../../providers/serviceProvider";
 import { tenantScopeFromUser } from "../../repositories/supabaseEnterpriseRepositories";
 import type { Stakeholder } from "../../domain";
-import { Plus } from "lucide-react";
+import type { StakeholderNote } from "../../services/workflows/workflowActionRecords";
+import { Plus, Sparkles } from "lucide-react";
+
+const engagementOptions: { value: Stakeholder["engagementLevel"]; label: string }[] = [
+  { value: "unrated", label: "Unrated (default)" },
+  { value: "low", label: "Low" },
+  { value: "medium", label: "Medium" },
+  { value: "high", label: "High" },
+];
+
+function engagementBadgeClass(level: Stakeholder["engagementLevel"]) {
+  if (level === "high") return "bg-emerald-50 text-emerald-700";
+  if (level === "medium") return "bg-amber-50 text-amber-700";
+  if (level === "low") return "bg-gray-100 text-gray-600";
+  return "bg-gray-50 text-gray-400 italic";
+}
 
 export const StakeholdersSection = () => {
   const demoMode = isDemoModeEnabled();
@@ -20,8 +35,10 @@ export const StakeholdersSection = () => {
   const [loading, setLoading] = useState(!demoMode);
   const [showAddForm, setShowAddForm] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({ name: "", affiliation: "", role: "" });
+  const [form, setForm] = useState({ name: "", affiliation: "", role: "", influenceScore: "", engagementLevel: "unrated" as Stakeholder["engagementLevel"] });
   const [toast, setToast] = useState<{ tone: "success" | "error" | "info"; message: string } | null>(null);
+  const [notes, setNotes] = useState<StakeholderNote[]>([]);
+  const [notesLoading, setNotesLoading] = useState(!demoMode);
   const stakeholders = demoMode ? applicationServices.institutionalRepository.getStakeholders() : [];
 
   useEffect(() => {
@@ -38,10 +55,35 @@ export const StakeholdersSection = () => {
     return () => { isMounted = false; };
   }, [demoMode, scope]);
 
+  // RAG Remediation Sprint 3 (A-57): AI Review Inbox "Create Stakeholder Note" escalations were
+  // already persisted as real, tenant-scoped stakeholder_notes rows, but nothing here ever fetched
+  // them -- the founder's walkthrough found no trace of the escalation because this section only
+  // ever queried Contacts, never Notes. This closes that visibility gap.
+  useEffect(() => {
+    if (demoMode || !scope) {
+      setNotesLoading(false);
+      return;
+    }
+    let isMounted = true;
+    setNotesLoading(true);
+    fetch("/api/stakeholders/notes", { credentials: "include" })
+      .then((response) => response.ok ? response.json() : { notes: [] })
+      .then((data: { notes?: StakeholderNote[] }) => { if (isMounted) setNotes(data.notes ?? []); })
+      .catch(() => { if (isMounted) setNotes([]); })
+      .finally(() => { if (isMounted) setNotesLoading(false); });
+    return () => { isMounted = false; };
+  }, [demoMode, scope]);
+
   async function addContact() {
     if (!scope) return;
     if (!form.name.trim()) {
       setToast({ tone: "error", message: "Enter a contact name before saving." });
+      return;
+    }
+    const trimmedInfluence = form.influenceScore.trim();
+    const influenceScore = trimmedInfluence ? Number(trimmedInfluence) : undefined;
+    if (trimmedInfluence && (Number.isNaN(influenceScore) || influenceScore! < 0 || influenceScore! > 100)) {
+      setToast({ tone: "error", message: "Influence must be a number between 0 and 100, or left blank." });
       return;
     }
     setSaving(true);
@@ -51,9 +93,15 @@ export const StakeholdersSection = () => {
         name: form.name.trim(),
         affiliation: form.affiliation.trim(),
         role: form.role.trim() || undefined,
+        // RAG Remediation Sprint 3 (A-58): only pass real, user-supplied values -- previously this
+        // form collected neither field at all, so the repository layer silently substituted a
+        // fabricated 50/"medium" for every live contact. Omitting them here lets the repository's
+        // own honest 0/"unrated" default apply until someone provides a real assessment.
+        influenceScore,
+        engagementLevel: form.engagementLevel === "unrated" ? undefined : form.engagementLevel,
       } as Partial<Stakeholder> & { name: string });
       setLiveStakeholders((current) => [created, ...current]);
-      setForm({ name: "", affiliation: "", role: "" });
+      setForm({ name: "", affiliation: "", role: "", influenceScore: "", engagementLevel: "unrated" });
       setShowAddForm(false);
       setToast({ tone: "success", message: `${created.name} added to Stakeholders.` });
     } catch {
@@ -91,6 +139,19 @@ export const StakeholdersSection = () => {
           <input aria-label="Affiliation" value={form.affiliation} onChange={(event) => setForm({ ...form, affiliation: event.target.value })} placeholder="Affiliation / organization" className="rounded-lg border border-[rgba(0,0,0,0.12)] bg-white px-3 py-2 text-xs outline-none" />
           <input aria-label="Role" value={form.role} onChange={(event) => setForm({ ...form, role: event.target.value })} placeholder="Role" className="rounded-lg border border-[rgba(0,0,0,0.12)] bg-white px-3 py-2 text-xs outline-none" />
         </div>
+        <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+          <label className="block">
+            <span className="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-[#5F6B73]">Influence (0-100, optional)</span>
+            <input aria-label="Influence score" type="number" min={0} max={100} value={form.influenceScore} onChange={(event) => setForm({ ...form, influenceScore: event.target.value })} placeholder="Leave blank if unrated" className="w-full rounded-lg border border-[rgba(0,0,0,0.12)] bg-white px-3 py-2 text-xs outline-none" />
+          </label>
+          <label className="block">
+            <span className="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-[#5F6B73]">Engagement (optional)</span>
+            <select aria-label="Engagement level" value={form.engagementLevel} onChange={(event) => setForm({ ...form, engagementLevel: event.target.value as Stakeholder["engagementLevel"] })} className="w-full rounded-lg border border-[rgba(0,0,0,0.12)] bg-white px-3 py-2 text-xs outline-none">
+              {engagementOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+            </select>
+          </label>
+        </div>
+        <p className="mt-2 text-[10px] text-[#5F6B73]">Influence and engagement are left unrated unless you supply them -- AXXESS does not fabricate a relationship-intelligence score for a contact no one has assessed yet.</p>
         <div className="mt-3 flex gap-2">
           <button onClick={() => void addContact()} disabled={saving} className="rounded-lg bg-[#8B1E2D] px-3 py-2 text-xs font-semibold text-white hover:bg-[#7a1a27] disabled:opacity-60">Save contact</button>
           <button onClick={() => setShowAddForm(false)} className="rounded-lg border border-[rgba(0,0,0,0.12)] px-3 py-2 text-xs font-semibold text-[#0F1117] hover:bg-[#F2F3F5]">Cancel</button>
@@ -117,12 +178,45 @@ export const StakeholdersSection = () => {
               <tr key={stakeholder.id} className="border-b border-[rgba(0,0,0,0.04)]">
                 <td className="px-4 py-3 text-xs font-semibold text-[#0F1117]">{stakeholder.name}</td>
                 <td className="px-4 py-3 text-xs text-[#5F6B73]">{stakeholder.affiliation || "--"}</td>
-                <td className="px-4 py-3 text-xs font-mono text-[#5F6B73]">{stakeholder.influenceScore}</td>
-                <td className="px-4 py-3 text-xs text-[#5F6B73] capitalize">{stakeholder.engagementLevel}</td>
+                <td className="px-4 py-3 text-xs font-mono text-[#5F6B73]">{stakeholder.engagementLevel === "unrated" ? "--" : stakeholder.influenceScore}</td>
+                <td className="px-4 py-3 text-xs">
+                  <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium capitalize ${engagementBadgeClass(stakeholder.engagementLevel)}`}>
+                    {stakeholder.engagementLevel}
+                  </span>
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
+      </Card>
+    )}
+    {!demoMode && (
+      <Card className="p-4">
+        <div className="mb-3 flex items-center gap-2">
+          <Sparkles size={14} className="text-[#8B1E2D]" />
+          <h3 className="text-sm font-semibold text-[#0F1117]">AI-escalated notes</h3>
+        </div>
+        {notesLoading ? (
+          <p className="text-xs text-[#5F6B73]">Checking for AI-escalated notes...</p>
+        ) : notes.length === 0 ? (
+          <EmptyState message="No AI-escalated stakeholder notes yet. Approving an AI Review Inbox item with 'Create Stakeholder Note' will add one here." />
+        ) : (
+          <div className="space-y-3">
+            {notes.map((note) => (
+              <div key={note.id} className="rounded-lg border border-[rgba(0,0,0,0.08)] p-3">
+                <div className="flex items-start justify-between gap-2">
+                  <h4 className="text-xs font-semibold text-[#0F1117]">{note.title}</h4>
+                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium capitalize ${note.sentiment === "risk" || note.sentiment === "urgent" ? "bg-red-50 text-red-700" : "bg-[#F2F3F5] text-[#5F6B73]"}`}>{note.sentiment}</span>
+                </div>
+                <p className="mt-1.5 whitespace-pre-line text-[11px] leading-relaxed text-[#5F6B73]">{note.body}</p>
+                <p className="mt-2 text-[10px] text-[#5F6B73]">
+                  {note.sourceAiReviewId ? `From AI review ${note.sourceAiReviewId.slice(0, 8)} - ` : ""}
+                  {new Date(note.createdAt).toLocaleDateString()}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
       </Card>
     )}
     {demoMode && <DemoDataNotice label="Stakeholder records use one coherent institutional storyline and link back to projects, approvals, documents, and follow-up tasks." />}
