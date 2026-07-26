@@ -12,6 +12,7 @@ import { isSupabaseAdminConfigured, supabaseAdminRest } from "../../repositories
 import { routeAiRequest } from "../ai/router/aiRouter";
 import { extractKeywords, summarizeText } from "../nlp/localNlp";
 import { answerWithGovernedRag, canRetrieveDocument, type RagAnswer, type RagCitation } from "./governedRag";
+import { buildConfidenceExplanation } from "./confidenceExplanation";
 import { deterministicEmbeddingProvider } from "./embeddings/embeddingProvider";
 import { buildRagIngestionRecord, chunkInstitutionalText } from "./ingestion/ingestionPipeline";
 import { recordWorkflowTimelineEvent } from "../workflows/liveTenantWorkflow";
@@ -97,22 +98,24 @@ function storagePathForDocument(scope: TenantScope, title: string) {
   return `organizations/${scope.organizationId}/documents/manual-ingest/${Date.now()}-${slug}.txt`;
 }
 
-function contextAnswer(question: string, citations: RagCitation[]) {
+// RAG Remediation Sprint 2 (A-55/WS1): this previously closed with a third sentence --
+// "The strongest evidence relates to {extractKeywords(question + context)}" -- that echoed
+// keywords from the QUESTION itself back at the reader, which reads as a grounded finding even
+// when the actual retrieved context is weak or empty-ish. Removed. The remaining two clauses were
+// already genuinely grounded (a real extractive summary of the real retrieved citation excerpts,
+// per governedRag.ts's local synthesis) and stay; the source list at the end names the *actual*
+// documents used, not derived keywords, so a reader can verify the claim against a real source.
+function contextAnswer(citations: RagCitation[]) {
   const context = citations.map((citation) => citation.excerpt).join(" ");
   if (!context.trim()) {
     return "No authorized institutional source matched this question. A human review is required before any answer is used.";
   }
+  const sourceTitles = [...new Set(citations.map((citation) => citation.title))];
   return [
     "Based on the authorized tenant sources,",
     summarizeText(context, 3).replace(/\.$/, ""),
-    `The strongest evidence relates to ${extractKeywords(`${question} ${context}`, 5).join(", ")}.`,
+    `(source${sourceTitles.length === 1 ? "" : "s"}: ${sourceTitles.join("; ")}).`,
   ].join(" ");
-}
-
-function confidenceForCitations(citations: RagCitation[]) {
-  if (citations.length === 0) return 0;
-  const average = citations.reduce((sum, citation) => sum + citation.score, 0) / citations.length;
-  return Math.min(0.96, Math.max(0.42, average + 0.28));
 }
 
 function permittedRoleAllowlist(scope: TenantScope, document: Document) {
@@ -348,16 +351,30 @@ export async function answerTenantQuestion(
 ): Promise<RagAnswer & { aiOutputAuditId?: string; modelUsed?: string; providerUsed?: string; latencyMs?: number; costTier?: string }> {
   const limit = options.limit ?? 5;
   const citations = await persistentCitationsForQuestion(repositories, scope, question, limit);
-  const baseAnswer = citations.length
-    ? {
-      answer: contextAnswer(question, citations),
-      confidence: confidenceForCitations(citations),
+  let baseAnswer: RagAnswer;
+  if (citations.length) {
+    const rawConfidence = Math.min(0.96, Math.max(0.42, citations.reduce((sum, citation) => sum + citation.score, 0) / citations.length + 0.28));
+    const { confidence, explanation } = buildConfidenceExplanation({
+      citations,
+      rawConfidence,
       humanReviewRequired: citations.some((citation) => citation.score < 0.5),
+      // Known limitation (documented in the RAG Remediation Sprint 2 closeout): RagCitation does
+      // not carry document classification for this persistent-chunk path, unlike governedRag.ts's
+      // in-memory path, so restricted-source detection isn't available here yet.
+      hasRestrictedSource: false,
+    });
+    baseAnswer = {
+      answer: contextAnswer(citations),
+      confidence,
+      humanReviewRequired: explanation.humanReviewRequired,
       sources: citations,
       keywords: extractKeywords(question, 6),
       rationale: `Synthesized from ${citations.length} governed source${citations.length === 1 ? "" : "s"} (top match: "${citations[0].title}", ${Math.round(citations[0].score * 100)}% relevance).`,
-    } satisfies RagAnswer
-    : await answerWithGovernedRag(repositories, scope, { question, limit });
+      confidenceExplanation: explanation,
+    };
+  } else {
+    baseAnswer = await answerWithGovernedRag(repositories, scope, { question, limit });
+  }
 
   const routeResult = await routeAiRequest({
     prompt: `${question}\n\nAuthorized source summary:\n${baseAnswer.sources.map((source) => `${source.title}: ${source.excerpt}`).join("\n")}`,
@@ -433,6 +450,15 @@ export async function answerTenantQuestion(
           excerpt: source.excerpt,
           score: source.score,
         })),
+        // RAG Remediation Sprint 2 (A-63): the review row previously carried only a one-sentence
+        // excerpt of the answer and never the original question at all, so anything created from
+        // an approved review (createWorkflowActionFromAiReview) could not include either -- fixed
+        // by using the existing ai_operation_reviews.metadata jsonb column (no migration needed).
+        metadata: {
+          question,
+          fullAnswer: answer.answer,
+          confidenceExplanation: answer.confidenceExplanation,
+        },
       },
     }).catch(() => undefined);
   }

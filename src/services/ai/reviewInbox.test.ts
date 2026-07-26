@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { canDecideAiReview, canViewAiReview, fallbackAiReviewInbox, listAiReviewInbox, recordAiReviewDecision } from "./reviewInbox";
+import { canDecideAiReview, canViewAiReview, fallbackAiReviewInbox, listAiReviewInbox, recordAiReviewDecision, toInboxItem, type AiReviewRow } from "./reviewInbox";
 
 describe("AI review inbox", () => {
   beforeEach(() => {
@@ -64,6 +64,62 @@ describe("AI review inbox", () => {
     it("denies an unrelated Employee or Guest", () => {
       expect(canViewAiReview({ createdByUserId: "user-1", reviewerUserId: "user-2" }, "user-3", "Employee")).toBe(false);
       expect(canViewAiReview({ createdByUserId: "user-1", reviewerUserId: "user-2" }, "user-3", "Guest")).toBe(false);
+    });
+  });
+
+  // RAG Remediation Sprint 2 (A-63): question/fullAnswer/confidenceExplanation are read out of
+  // ai_operation_reviews.metadata, not dedicated columns -- this covers that mapping directly.
+  describe("toInboxItem (RAG Remediation Sprint 2, A-63 metadata mapping)", () => {
+    function row(overrides: Partial<AiReviewRow> = {}): AiReviewRow {
+      return {
+        id: "review-1",
+        organization_id: "org-1",
+        created_by_user_id: "user-1",
+        reviewer_user_id: null,
+        source_audit_id: "audit-1",
+        task_category: "governed_rag_answer",
+        status: "pending",
+        confidence: "0.81",
+        human_review_flag: true,
+        answer_excerpt: "Oxygen resilience summary.",
+        citations: [],
+        metadata: null,
+        created_at: "2026-07-26T00:00:00.000Z",
+        reviewed_at: null,
+        decision_reason: null,
+        ...overrides,
+      };
+    }
+
+    it("surfaces question, fullAnswer, and confidenceExplanation when present in metadata", () => {
+      const item = toInboxItem(row({
+        metadata: {
+          question: "What is the oxygen resilience risk?",
+          fullAnswer: "The full, non-excerpted answer text.",
+          confidenceExplanation: {
+            sourceMatchStrength: 0.8,
+            relevantChunkCount: 2,
+            sourceAuthorizationStatus: "fully_authorized",
+            citationCoverage: 1,
+            answerMode: "local_extractive_summary",
+            humanReviewRequired: true,
+          },
+        },
+      }));
+
+      expect(item.question).toBe("What is the oxygen resilience risk?");
+      expect(item.fullAnswer).toBe("The full, non-excerpted answer text.");
+      expect(item.confidenceExplanation?.answerMode).toBe("local_extractive_summary");
+    });
+
+    it("leaves question/fullAnswer/confidenceExplanation undefined for older rows with no metadata", () => {
+      const item = toInboxItem(row({ metadata: null }));
+
+      expect(item.question).toBeUndefined();
+      expect(item.fullAnswer).toBeUndefined();
+      expect(item.confidenceExplanation).toBeUndefined();
+      // The review is still usable -- answerExcerpt/citations remain the fallback, not an error.
+      expect(item.answerExcerpt).toBe("Oxygen resilience summary.");
     });
   });
 
