@@ -1,6 +1,7 @@
 import type { RoleName } from "../../domain";
 import { isDemoModeEnabled } from "../../demo/demoMode";
 import { isSupabaseAdminConfigured, supabaseAdminRest } from "../../repositories/supabaseAdmin";
+import type { RagConfidenceExplanation } from "../rag/confidenceExplanation";
 
 export type AiReviewInboxStatus = "pending" | "approved" | "edited" | "rejected" | "escalated";
 
@@ -25,9 +26,16 @@ export type AiReviewInboxItem = {
   decisionReason?: string;
   createdByUserId?: string;
   reviewerUserId?: string;
+  /** RAG Remediation Sprint 2 (A-63): the original question, full (non-excerpted) answer, and
+   * confidence explanation, when the source_audit_id -> ai_operation_reviews write included them
+   * in metadata (see tenantRagWorkflow.ts's answerTenantQuestion). Not present on older rows or
+   * reviews created by a non-RAG task category. */
+  question?: string;
+  fullAnswer?: string;
+  confidenceExplanation?: RagConfidenceExplanation;
 };
 
-type AiReviewRow = {
+export type AiReviewRow = {
   id: string;
   organization_id: string;
   created_by_user_id: string | null;
@@ -39,12 +47,15 @@ type AiReviewRow = {
   human_review_flag: boolean;
   answer_excerpt: string | null;
   citations: AiReviewInboxItem["citations"] | null;
+  metadata: { question?: string; fullAnswer?: string; confidenceExplanation?: RagConfidenceExplanation } | null;
   created_at: string;
   reviewed_at: string | null;
   decision_reason: string | null;
 };
 
-function toInboxItem(row: AiReviewRow): AiReviewInboxItem {
+// Exported for direct unit testing of the metadata -> question/fullAnswer/confidenceExplanation
+// mapping (RAG Remediation Sprint 2, A-63) without needing a live Supabase-backed integration test.
+export function toInboxItem(row: AiReviewRow): AiReviewInboxItem {
   return {
     id: row.id,
     organizationId: row.organization_id,
@@ -60,6 +71,9 @@ function toInboxItem(row: AiReviewRow): AiReviewInboxItem {
     decisionReason: row.decision_reason ?? undefined,
     createdByUserId: row.created_by_user_id ?? undefined,
     reviewerUserId: row.reviewer_user_id ?? undefined,
+    question: row.metadata?.question,
+    fullAnswer: row.metadata?.fullAnswer,
+    confidenceExplanation: row.metadata?.confidenceExplanation,
   };
 }
 
@@ -121,7 +135,7 @@ export async function listAiReviewInbox(organizationId: string, limit = 25): Pro
   if (!isSupabaseAdminConfigured()) return isDemoModeEnabled() ? fallbackAiReviewInbox(organizationId) : [];
   const query = new URLSearchParams({
     organization_id: `eq.${organizationId}`,
-    select: "id,organization_id,created_by_user_id,reviewer_user_id,source_audit_id,task_category,status,confidence,human_review_flag,answer_excerpt,citations,created_at,reviewed_at,decision_reason",
+    select: "id,organization_id,created_by_user_id,reviewer_user_id,source_audit_id,task_category,status,confidence,human_review_flag,answer_excerpt,citations,metadata,created_at,reviewed_at,decision_reason",
     order: "created_at.desc",
     limit: String(limit),
   });
@@ -136,7 +150,7 @@ export async function getAiReviewById(organizationId: string, reviewId: string):
   const query = new URLSearchParams({
     organization_id: `eq.${organizationId}`,
     id: `eq.${reviewId}`,
-    select: "id,organization_id,created_by_user_id,reviewer_user_id,source_audit_id,task_category,status,confidence,human_review_flag,answer_excerpt,citations,created_at,reviewed_at,decision_reason",
+    select: "id,organization_id,created_by_user_id,reviewer_user_id,source_audit_id,task_category,status,confidence,human_review_flag,answer_excerpt,citations,metadata,created_at,reviewed_at,decision_reason",
     limit: "1",
   });
   const rows = await supabaseAdminRest<AiReviewRow[]>("ai_operation_reviews", { query }).catch(() => []);

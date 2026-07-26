@@ -51,6 +51,8 @@ RAG-1 closes only if:
 
 ## Sprint RAG-2: Answer Quality, Review Flow, and Navigation Fixes
 
+**Status: Closed, with one item explicitly not claimed resolved.** See `docs/readiness/RAG_REMEDIATION_SPRINT_2_ANSWER_QUALITY_CLOSEOUT_2026_07_26.md`. Confidence explainability (A-56), review-to-work fidelity (A-63), and the A-64/A-59 navigation bugs are done. A-55/A-13 (real document answer quality, live-confirmed) remain not-yet-provable from this environment -- see the closeout's required HITL retest steps.
+
 Goal:
 
 Prove whether answer quality is fixed once real content is indexed, then address navigation/workflow correctness.
