@@ -437,6 +437,9 @@ export const demoStorageRepository: StorageRepository = {
       expiresIn: input.expiresIn ?? 600,
     };
   },
+  async uploadDocumentFile(input) {
+    return { path: input.path };
+  },
 };
 
 export const demoRepositories = {

@@ -258,11 +258,12 @@ export const KnowledgeHubSection = () => {
     setSaving(true);
     setToast(null);
     const uploadedDocuments: Document[] = [];
+    const failures: string[] = [];
 
     for (const file of uploads) {
       const validationError = validateDocumentUpload({ fileName: file.name, mimeType: file.type, sizeBytes: file.size });
       if (validationError) {
-        setToast({ tone: "error", message: validationError });
+        failures.push(`${file.name}: ${validationError}`);
         continue;
       }
 
@@ -294,17 +295,7 @@ export const KnowledgeHubSection = () => {
       };
 
       try {
-        const intent = await applicationServices.storageRepository.createDocumentUploadIntent({
-          path: storagePath,
-          fileName: file.name,
-          mimeType: file.type,
-          sizeBytes: file.size,
-        });
-        await fetch(intent.signedUrl, {
-          method: "PUT",
-          headers: { "Content-Type": file.type || "application/octet-stream" },
-          body: file,
-        });
+        await applicationServices.storageRepository.uploadDocumentFile({ path: storagePath, file });
         const saved = await applicationServices.documentsRepository.create(scope, payload);
         await applicationServices.documentVersionsRepository.create(scope, {
           id: versionId,
@@ -321,8 +312,9 @@ export const KnowledgeHubSection = () => {
           metadata: { fileName: file.name, sizeBytes: file.size },
         }).catch(() => undefined);
         uploadedDocuments.push(saved);
-      } catch {
-        uploadedDocuments.push(payload);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Upload failed.";
+        failures.push(`${file.name}: ${message}`);
       }
     }
 
@@ -330,6 +322,16 @@ export const KnowledgeHubSection = () => {
       setDocuments((rows) => [...uploadedDocuments, ...rows]);
       setSelectedDocument(uploadedDocuments[0]);
       setRenameValue(uploadedDocuments[0].name);
+    }
+
+    if (failures.length > 0) {
+      setToast({
+        tone: uploadedDocuments.length > 0 ? "info" : "error",
+        message: uploadedDocuments.length > 0
+          ? `${uploadedDocuments.length} uploaded, ${failures.length} failed -- ${failures.join("; ")}`
+          : failures.join("; "),
+      });
+    } else if (uploadedDocuments.length > 0) {
       setToast({
         tone: "success",
         message: uploadedDocuments.length === 1 ? "Document uploaded." : `${uploadedDocuments.length} documents uploaded.`,

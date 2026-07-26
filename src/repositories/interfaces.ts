@@ -205,6 +205,7 @@ export interface StorageRepository {
   getSignedDownloadUrl(path: string): Promise<string>;
   createDocumentUploadIntent(input: DocumentStorageRequest): Promise<DocumentStorageIntent>;
   createDocumentDownloadIntent(input: DocumentStorageRequest): Promise<DocumentStorageIntent>;
+  uploadDocumentFile(input: DocumentFileUploadRequest): Promise<DocumentFileUploadResult>;
 }
 
 export type DocumentStorageRequest = {
@@ -221,4 +222,16 @@ export type DocumentStorageIntent = {
   signedUrl: string;
   token?: string;
   expiresIn: number;
+};
+
+// Uploads route through our own same-origin API (browser -> our server -> Supabase Storage)
+// instead of a browser -> Supabase-signed-URL PUT, which depends on Supabase's own CORS/edge
+// behavior for every request shape. See docs/readiness/ for the incident this replaced.
+export type DocumentFileUploadRequest = {
+  path: string;
+  file: File;
+};
+
+export type DocumentFileUploadResult = {
+  path: string;
 };

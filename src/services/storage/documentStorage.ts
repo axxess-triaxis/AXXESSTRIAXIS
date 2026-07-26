@@ -1,5 +1,11 @@
 import type { DocumentKind } from "../../domain";
-import type { DocumentStorageIntent, DocumentStorageRequest, StorageRepository } from "../../repositories/interfaces";
+import type {
+  DocumentFileUploadRequest,
+  DocumentFileUploadResult,
+  DocumentStorageIntent,
+  DocumentStorageRequest,
+  StorageRepository,
+} from "../../repositories/interfaces";
 
 export const DOCUMENT_STORAGE_BUCKET = "axxess-documents";
 export const MAX_DOCUMENT_UPLOAD_BYTES = 50 * 1024 * 1024;
@@ -113,6 +119,25 @@ async function requestStorageIntent(action: "upload" | "download", input: Docume
   return await response.json() as DocumentStorageIntent;
 }
 
+async function uploadDocumentFile(input: DocumentFileUploadRequest): Promise<DocumentFileUploadResult> {
+  const formData = new FormData();
+  formData.append("path", input.path);
+  formData.append("file", input.file, input.file.name);
+
+  const response = await fetch("/api/documents/upload", {
+    method: "POST",
+    credentials: "include",
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const payload = await response.json().catch(() => ({})) as { error?: string };
+    throw new Error(payload.error ?? "Document upload failed.");
+  }
+
+  return await response.json() as DocumentFileUploadResult;
+}
+
 export const documentStorageRepository: StorageRepository = {
   async getSignedUploadUrl(path) {
     return (await requestStorageIntent("upload", { path })).signedUrl;
@@ -126,4 +151,5 @@ export const documentStorageRepository: StorageRepository = {
   createDocumentDownloadIntent(input) {
     return requestStorageIntent("download", input);
   },
+  uploadDocumentFile,
 };
