@@ -202,6 +202,9 @@ const emptyStorageRepository: StorageRepository = {
   async createDocumentDownloadIntent() {
     throw new Error("Storage requires a connected data backend.");
   },
+  async uploadDocumentFile() {
+    throw new Error("Storage requires a connected data backend.");
+  },
 };
 
 export const emptyRepositories = {
