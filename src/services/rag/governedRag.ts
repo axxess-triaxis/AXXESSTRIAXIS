@@ -1,6 +1,7 @@
 import type { AuditLogsRepository, DocumentsRepository, DocumentPermissionsRepository, KnowledgeArticlesRepository, TenantScope } from "../../repositories/interfaces";
 import type { Document, DocumentPermission, KnowledgeArticle, RoleName } from "../../domain";
 import { extractKeywords, summarizeText, tokenize } from "../nlp/localNlp";
+import { buildConfidenceExplanation, type RagConfidenceExplanation } from "./confidenceExplanation";
 
 export type RagSourceType = "document" | "knowledge-article";
 
@@ -37,6 +38,8 @@ export type RagAnswer = {
    * decorative label. Computed from the actual matched sources, so it stays honest when there
    * are zero sources (a real "no match" answer) as well as when there are several. */
   rationale: string;
+  /** RAG Remediation Sprint 2 (A-56): what the confidence number actually measures. */
+  confidenceExplanation: RagConfidenceExplanation;
 };
 
 export type RagRepositories = {
@@ -173,8 +176,8 @@ export async function retrieveInstitutionalContext(repositories: RagRepositories
 export async function answerWithGovernedRag(repositories: RagRepositories, scope: TenantScope, query: RagQuery): Promise<RagAnswer> {
   const chunks = await retrieveInstitutionalContext(repositories, scope, query);
   const topText = chunks.map((chunk) => chunk.text).join(" ");
-  const confidence = chunks.length === 0 ? 0 : Math.min(0.96, chunks.reduce((sum, chunk) => sum + chunk.score, 0) / chunks.length + 0.35);
-  const humanReviewRequired = confidence < 0.62 || chunks.some((chunk) => chunk.classification === "restricted");
+  const rawConfidence = chunks.length === 0 ? 0 : Math.min(0.96, chunks.reduce((sum, chunk) => sum + chunk.score, 0) / chunks.length + 0.35);
+  const hasRestrictedSource = chunks.some((chunk) => chunk.classification === "restricted");
   const answer = chunks.length
     ? summarizeText(topText, 3)
     : "No authorized institutional source matched this question. A human review is required before any answer is used.";
@@ -183,19 +186,30 @@ export async function answerWithGovernedRag(repositories: RagRepositories, scope
     ? "No authorized institutional source matched this question closely enough to generate a governed answer."
     : `Synthesized from ${chunks.length} governed source${chunks.length === 1 ? "" : "s"} (top match: "${chunks[0].title}", ${Math.round(chunks[0].score * 100)}% relevance).`;
 
+  const sources = chunks.map((chunk) => ({
+    sourceType: chunk.sourceType,
+    sourceId: chunk.sourceId,
+    title: chunk.title,
+    score: chunk.score,
+    excerpt: summarizeText(chunk.text, 1),
+  }));
+
+  const { confidence, explanation } = buildConfidenceExplanation({
+    citations: sources,
+    rawConfidence,
+    // Preserves the pre-Sprint-2 threshold (confidence < 0.62) as one of the human-review triggers.
+    humanReviewRequired: rawConfidence < 0.62 || hasRestrictedSource,
+    hasRestrictedSource,
+  });
+
   const result: RagAnswer = {
     answer,
     confidence,
-    humanReviewRequired,
+    humanReviewRequired: explanation.humanReviewRequired,
     keywords: extractKeywords(query.question),
     rationale,
-    sources: chunks.map((chunk) => ({
-      sourceType: chunk.sourceType,
-      sourceId: chunk.sourceId,
-      title: chunk.title,
-      score: chunk.score,
-      excerpt: summarizeText(chunk.text, 1),
-    })),
+    sources,
+    confidenceExplanation: explanation,
   };
 
   await repositories.auditLogsRepository?.record(scope, {

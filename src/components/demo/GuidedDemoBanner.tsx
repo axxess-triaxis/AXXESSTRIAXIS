@@ -36,7 +36,7 @@ export function GuidedDemoBanner({ activeSection, onNavigate }: { activeSection:
             </a>
           ) : (
             <button type="button" onClick={demo.goNext} className="rounded-lg bg-[#8B1E2D] px-3 py-2 text-xs font-semibold text-white hover:bg-[#7a1a27]">
-              {demo.currentStep.cta}
+              {demo.nextStep.cta}
             </button>
           )}
           <button type="button" onClick={demo.stopDemo} className="rounded-lg px-3 py-2 text-xs font-semibold text-[#5F6B73] hover:bg-[#F2F3F5]">

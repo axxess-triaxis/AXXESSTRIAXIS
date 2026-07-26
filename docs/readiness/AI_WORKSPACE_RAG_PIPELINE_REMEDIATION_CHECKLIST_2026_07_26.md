@@ -26,22 +26,22 @@ Roadmap source: `docs/readiness/AI_WORKSPACE_RAG_PIPELINE_REMEDIATION_ROADMAP_20
 
 | ID | Item | Status | Evidence / Notes |
 |---|---|---|---|
-| RAG2-01 | Real uploaded document indexed through new/updated path | Not started |  |
-| RAG2-02 | Real document query re-run after stale placeholder removal | Not started |  |
-| RAG2-03 | Answer reflects real document content or generator blocker documented | Not started |  |
-| RAG2-04 | Answer-generation path audited | Not started |  |
-| RAG2-05 | Confidence score computation documented | Not started |  |
-| RAG2-06 | AI Review Inbox receives real answer with content/citations | Not started |  |
-| RAG2-07 | Created task/approval carries answer content/context as expected | Not started |  |
-| RAG2-08 | `Ask AI Workspace` routes correctly | Not started |  |
-| RAG2-09 | `Review Approval Queue` routes correctly | Not started |  |
-| RAG2-10 | CRM escalation path verified or honestly deferred | Not started |  |
-| RAG2-11 | Feedback notification requirement to `triaxisgrp@gmail.com` implemented or blocked | Not started |  |
-| RAG2-12 | Typecheck passes | Not started |  |
-| RAG2-13 | Lint passes | Not started |  |
-| RAG2-14 | Tests pass | Not started |  |
-| RAG2-15 | Build passes | Not started |  |
-| RAG2-16 | RAG-2 closeout created | Not started |  |
+| RAG2-01 | Real uploaded document indexed through new/updated path | Not attempted (no live/credentialed access) | This environment has no Supabase credentials and no production browser session -- indexing a real document on production requires the HITL. See required retest steps in the closeout doc. |
+| RAG2-02 | Real document query re-run after stale placeholder removal | Not attempted (same reason) | |
+| RAG2-03 | Answer reflects real document content or generator blocker documented | Partially done | Code-level proof that the answer generator genuinely synthesizes from real retrieved chunk text (not a keyword-echo/stub) is established with a dedicated test suite (`tenantRagWorkflow.answerGrounding.test.ts`) using real indexed content and the real embedding provider. What remains undone is the live production confirmation that A-55's specific symptom is resolved -- that requires the retest above. |
+| RAG2-04 | Answer-generation path audited | Done | See `docs/RAG.md`'s new Sprint 2 section: no real external LLM exists anywhere in this codebase; every answer is a deterministic local extractive summary; the AI router's own generated text was being silently discarded (only its confidence/metadata were used) -- now documented. |
+| RAG2-05 | Confidence score computation documented | Done | `src/services/rag/confidenceExplanation.ts` (new) -- `RagConfidenceExplanation` object with source match strength, chunk count, authorization status, citation coverage, answer mode, human-review flag, and capped-reason; surfaced in AI Workspace UI and persisted in `ai_operation_reviews.metadata`. |
+| RAG2-06 | AI Review Inbox receives real answer with content/citations | Done (already real pre-Sprint-2) | Confirmed unchanged from Sprint 1 findings -- citations/confidence/review routing already worked; extended this sprint to also carry the original question and full answer. |
+| RAG2-07 | Created task/approval carries answer content/context as expected | Done | `liveTenantWorkflow.ts`'s `createApprovedAction()` now includes the original question and full (non-excerpted) answer in every created record's description; `confidenceExplanation` and `question` added to the structured `metadata` for approval requests, stakeholder notes, and project updates (the three record types whose domain types have a `metadata` column). Task and Meeting have no `metadata` column (schema constraint) -- they get the enriched description text only. |
+| RAG2-08 | `Ask AI Workspace` routes correctly | Done | Root-caused to a single shared bug with RAG2-09 (see below) -- fixed in `useGuidedDemo.ts`/`GuidedDemoBanner.tsx`. |
+| RAG2-09 | `Review Approval Queue` routes correctly | Done | Both A-64 and A-59 were the same bug: the guided-demo "Next" button displayed the *current* step's own cta label but its `onClick` (`goNext()`) navigated to the *next* step's section. Every step's own `cta` already named its own section correctly. Fixed by displaying the destination step's own `cta`, with zero change to navigation logic. Covered by `useGuidedDemo.test.tsx`. |
+| RAG2-10 | CRM escalation path verified or honestly deferred | Deferred | Out of this sprint's targeted scope (A-57 is a "supporting navigation defect" only "if directly blocking validation" per the sprint prompt; it is not) -- not investigated this pass. |
+| RAG2-11 | Feedback notification requirement to `triaxisgrp@gmail.com` implemented or blocked | Deferred | Same reasoning as RAG2-10 (A-65) -- out of this sprint's targeted actionable list. |
+| RAG2-12 | Typecheck passes | Done | `pnpm run typecheck` -- 0 errors. |
+| RAG2-13 | Lint passes | Done | `pnpm run lint --max-warnings=0` -- 0 warnings, 0 errors. |
+| RAG2-14 | Tests pass | Done | See closeout doc for exact file/test counts. |
+| RAG2-15 | Build passes | Done | See closeout doc. |
+| RAG2-16 | RAG-2 closeout created | Done | `docs/readiness/RAG_REMEDIATION_SPRINT_2_ANSWER_QUALITY_CLOSEOUT_2026_07_26.md`. |
 
 ## Overall Completion Gate
 
@@ -49,9 +49,9 @@ Roadmap source: `docs/readiness/AI_WORKSPACE_RAG_PIPELINE_REMEDIATION_ROADMAP_20
 |---|---|---|
 | Stale placeholder is no longer retrievable in live RAG | Done (RAG-1 scope) | Archiving now genuinely excludes a document from retrieval (RAG1-02); the HITL must still perform the archive action itself in Knowledge Hub -- see closeout for the retest step. |
 | Knowledge Hub document can be selected for indexing | Done (RAG-1 scope) | RAG1-03 through RAG1-07. |
-| Real document can produce cited answer or precise blocker is known | Deferred to RAG-2 | Requires the HITL to actually perform the archive + select + paste-text + re-query retest steps; RAG-1 builds the mechanism, RAG-2 (per the roadmap) verifies the answer-quality outcome. |
-| Review-to-work mechanics preserve answer/citation context | Deferred to RAG-2 | Out of RAG-1 scope per the roadmap (RAG2-04/RAG2-06/RAG2-07). |
-| Confidence score is explainable | Deferred to RAG-2 | Out of RAG-1 scope per the roadmap (RAG2-03). |
-| Navigation misroutes are fixed | Deferred to RAG-2 | Out of RAG-1 scope per the roadmap (RAG2-05/RAG2-06). |
-| Full verification suite passes | Done | `pnpm run typecheck`, `pnpm --dir apps/mobile run typecheck`, `pnpm run lint --max-warnings=0` all pass; see closeout doc for full test/build counts. `pnpm run test:rag` and `pnpm run test:security` do not exist as scripts in this repository -- documented, not fabricated. |
+| Real document can produce cited answer or precise blocker is known | Partial -- code-level proof done, live proof still requires HITL | Answer-generation is proven (by test, with real embeddings) to genuinely synthesize from real retrieved content, not a stub -- but the live production confirmation of A-55's specific symptom still requires the HITL retest (archive stale doc, select + index real doc, re-query, compare). |
+| Review-to-work mechanics preserve answer/citation context | Done (RAG-2 scope) | RAG2-07. |
+| Confidence score is explainable | Done (RAG-2 scope) | RAG2-05. |
+| Navigation misroutes are fixed | Done (RAG-2 scope, A-64/A-59) | RAG2-08/RAG2-09. |
+| Full verification suite passes | Done | `pnpm run typecheck`, `pnpm --dir apps/mobile run typecheck`, `pnpm run lint --max-warnings=0` all pass; see RAG-1 and RAG-2 closeout docs for full test/build counts. `pnpm run test:rag` and `pnpm run test:security` do not exist as scripts in this repository -- documented, not fabricated. |
 

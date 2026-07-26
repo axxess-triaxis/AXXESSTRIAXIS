@@ -23,6 +23,7 @@ import { useAnalytics } from "../../services/analytics";
 import { getAiRouterStatusSnapshot } from "../../services/ai/router/aiRouter";
 import { languageCoverage } from "../../services/nlp/modelRegistry";
 import { answerWithGovernedRag, type RagAnswer } from "../../services/rag/governedRag";
+import { summarizeConfidenceExplanation } from "../../services/rag/confidenceExplanation";
 import {
   AlertTriangle,
   ArrowUpRight,
@@ -52,6 +53,14 @@ const fallbackRagAnswer: RagAnswer = {
   humanReviewRequired: false,
   keywords: ["oxygen", "maternal", "stockout", "district", "variance"],
   rationale: "Synthesized from 3 governed sources (top match: \"Dibrugarh Risk Register - Oxygen Resilience\", 91% relevance).",
+  confidenceExplanation: {
+    sourceMatchStrength: 0.91,
+    relevantChunkCount: 3,
+    sourceAuthorizationStatus: "fully_authorized",
+    citationCoverage: 1,
+    answerMode: "local_extractive_summary",
+    humanReviewRequired: false,
+  },
   sources: [
     {
       sourceType: "document",
@@ -86,6 +95,14 @@ const emptyRagAnswer: RagAnswer = {
   keywords: [],
   rationale: "",
   sources: [],
+  confidenceExplanation: {
+    sourceMatchStrength: 0,
+    relevantChunkCount: 0,
+    sourceAuthorizationStatus: "fully_authorized",
+    citationCoverage: 0,
+    answerMode: "no_authorized_source",
+    humanReviewRequired: false,
+  },
 };
 
 function initialRagAnswer(): RagAnswer {
@@ -381,6 +398,11 @@ export const AIWorkspaceSection = () => {
                         {ragAnswer.aiOutputAuditId && <AuditTrailBadge eventId={ragAnswer.aiOutputAuditId} />}
                         {ragAnswer.providerUsed && <span className="rounded-full bg-[#F2F3F5] px-2 py-0.5 text-[10px] font-semibold text-[#5F6B73]">{ragAnswer.providerUsed} - {ragAnswer.costTier ?? "cost logged"}</span>}
                       </div>
+                      {ragAnswer.confidenceExplanation && (
+                        <p className="mt-1 text-[10px] leading-relaxed text-[#5F6B73]">
+                          Why this score: {summarizeConfidenceExplanation(ragAnswer.confidenceExplanation)}
+                        </p>
+                      )}
                       <div className="mt-3 flex flex-wrap items-center gap-2">
                         <button onClick={() => void reviewAnswer("approved")} disabled={reviewing || !ragAnswer.aiOutputAuditId} className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60">
                           {reviewing ? "Recording..." : "Approve action"}

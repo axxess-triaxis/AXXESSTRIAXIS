@@ -271,8 +271,14 @@ async function createApprovedAction(
   input: AiReviewWorkflowActionInput & { actionType: ReviewWorkflowActionType },
 ) {
   const title = input.actionTitle?.trim() || defaultActionTitle(input.review, input.actionType);
+  // RAG Remediation Sprint 2 (A-63): previously this description omitted the original question
+  // entirely (AiReviewInboxItem never carried it) and only the answer's one-sentence excerpt, not
+  // the full approved answer -- a reviewer opening the created task/approval/note could not tell
+  // what was actually asked. Both are now sourced from ai_operation_reviews.metadata (populated in
+  // tenantRagWorkflow.ts's answerTenantQuestion) when present.
   const description = [
-    input.review.answerExcerpt,
+    input.review.question ? `Question: ${input.review.question}` : undefined,
+    input.review.fullAnswer ?? input.review.answerExcerpt,
     input.notes ? `Reviewer notes: ${input.notes}` : undefined,
     input.review.citations.length ? `Sources: ${input.review.citations.map((citation) => citation.title ?? citation.sourceId).filter(Boolean).join(", ")}` : undefined,
   ].filter(Boolean).join("\n\n");
@@ -280,7 +286,9 @@ async function createApprovedAction(
     source: "ai_review",
     reviewId: input.review.id,
     sourceAuditId: input.review.sourceAuditId,
+    question: input.review.question,
     confidence: input.review.confidence,
+    confidenceExplanation: input.review.confidenceExplanation,
     citations: input.review.citations,
     decisionNotes: input.notes,
   };
@@ -339,7 +347,7 @@ async function createApprovedAction(
       attendeeIds: [scope.userId],
       agenda: description,
       decisions: [],
-      actionItems: [input.review.answerExcerpt],
+      actionItems: [input.review.fullAnswer ?? input.review.answerExcerpt],
       status: "scheduled",
     });
     return { resourceType: "meeting" as const, meeting };
