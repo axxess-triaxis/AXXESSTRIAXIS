@@ -839,6 +839,12 @@ function taskUpdateMutation(_scope: TenantScope, input: Record<string, unknown>)
 // (supabase/migrations/20260702165736_initial_enterprise_schema.sql) already existed with zero
 // application code ever reading or writing it -- this closes that gap with the same pattern every
 // other tenant-scoped resource in this file already uses, not a new architecture.
+// RAG Remediation Sprint 3 (A-58): this previously defaulted influence_score to 50 and
+// engagement_level to "medium" whenever the caller didn't supply them -- values that read as a
+// real assessment (mid-tier influence, real engagement signal) when nothing was ever actually
+// assessed. A brand-new contact now honestly reports 0 / "unrated" until a real value is supplied,
+// matching the table's own column default of 0 for influence_score rather than overriding it with
+// a fabricated mid-point.
 function stakeholderMutation(scope: TenantScope, input: Record<string, unknown>) {
   return compactMutation({
     organization_id: scope.organizationId,
@@ -846,8 +852,8 @@ function stakeholderMutation(scope: TenantScope, input: Record<string, unknown>)
     affiliation: nullableString(input.affiliation),
     role: nullableString(input.role),
     relationship_owner_id: nullableString(input.relationshipOwnerId) ?? scope.userId,
-    influence_score: typeof input.influenceScore === "number" ? input.influenceScore : 50,
-    engagement_level: input.engagementLevel ?? "medium",
+    influence_score: typeof input.influenceScore === "number" ? input.influenceScore : 0,
+    engagement_level: input.engagementLevel ?? "unrated",
   });
 }
 

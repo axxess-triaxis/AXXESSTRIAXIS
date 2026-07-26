@@ -111,7 +111,9 @@ export interface Stakeholder {
   affiliation: string;
   relationshipOwnerId?: EntityId;
   influenceScore: number;
-  engagementLevel: "low" | "medium" | "high";
+  /** "unrated" (RAG Remediation Sprint 3, A-58): the honest default before anyone supplies a real
+   * assessment -- distinct from "low," which asserts a real (if weak) signal was actually rated. */
+  engagementLevel: "unrated" | "low" | "medium" | "high";
 }
 
 export interface Document {
