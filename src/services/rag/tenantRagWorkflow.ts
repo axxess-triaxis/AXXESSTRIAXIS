@@ -34,6 +34,16 @@ export type TenantDocumentIngestInput = {
   classification?: Document["classification"];
   tags?: string[];
   projectId?: string;
+  /**
+   * RAG Remediation Sprint 1 (RAG1-03/04/05/06): when set, index an already-uploaded Knowledge Hub
+   * document instead of creating a new, disconnected document record. The document's real
+   * title/owner/visibility/classification/tags/category are preserved from the existing row --
+   * input.title/visibility/classification/tags are ignored in this mode so the indexed chunks can
+   * never drift from the document's actual governed metadata. bodyText is still required: this
+   * codebase has no PDF/DOCX text-extraction pipeline (see docs/DOCUMENTS.md), so the HITL supplies
+   * the text to index for the selected document rather than the system inventing it.
+   */
+  documentId?: string;
 };
 
 export type TenantDocumentIngestResult = {
@@ -43,6 +53,7 @@ export type TenantDocumentIngestResult = {
   indexId: string;
   tags: string[];
   humanReviewRequired: boolean;
+  reindexedExistingDocument: boolean;
 };
 
 type RagChunkRow = {
@@ -115,46 +126,97 @@ export async function ingestTenantDocument(
   scope: TenantScope,
   input: TenantDocumentIngestInput,
 ): Promise<TenantDocumentIngestResult> {
-  const title = input.title.trim();
   const bodyText = input.bodyText.trim();
-  if (!title || !bodyText) throw new Error("Document title and text are required for ingestion.");
+  if (!bodyText) throw new Error("Document text is required for ingestion.");
 
-  const document = await repositories.documentsRepository.create(scope, {
-    organizationId: scope.organizationId,
-    name: title,
-    title,
-    description: summarizeText(bodyText, 2),
-    storagePath: storagePathForDocument(scope, title),
-    fileName: input.fileName ?? `${title}.txt`,
-    fileSize: bodyText.length,
-    mimeType: input.mimeType ?? "text/plain",
-    documentType: "text",
-    visibility: input.visibility ?? "organization",
-    classification: input.classification ?? "internal",
-    ownerId: scope.userId,
-    createdByUserId: scope.userId,
-    updatedByUserId: scope.userId,
-    tags: input.tags?.length ? input.tags : extractKeywords(bodyText, 6),
-    projectId: input.projectId,
-  });
+  let document: Document;
+  let versionNumber = 1;
+  const reindexingExisting = Boolean(input.documentId);
 
-  await repositories.documentVersionsRepository.create(scope, {
-    organizationId: scope.organizationId,
-    documentId: document.id,
-    versionNumber: 1,
-    fileName: document.fileName ?? `${title}.txt`,
-    fileSize: bodyText.length,
-    mimeType: document.mimeType,
-    storagePath: document.storagePath,
-    checksum: textHash(bodyText),
-    createdByUserId: scope.userId,
-  }).catch(() => undefined);
+  if (input.documentId) {
+    const existing = await repositories.documentsRepository.getById(scope, input.documentId);
+    if (!existing || existing.organizationId !== scope.organizationId) {
+      throw new Error("Selected document was not found for this organization.");
+    }
+    if (existing.status === "deleted") {
+      throw new Error("Cannot index a deleted document.");
+    }
+    // RAG1-05/06: reuse the real document's own metadata (title/owner/visibility/classification/
+    // tags/category) rather than trusting whatever the ingest form happens to submit -- this is
+    // what guarantees indexed chunks can never drift from the document's actual governed metadata.
+    document = await repositories.documentsRepository.update(scope, existing.id, {
+      description: summarizeText(bodyText, 2),
+    }).catch(() => existing);
 
-  await repositories.documentsRepository.recordActivity(scope, {
-    documentId: document.id,
-    action: "uploaded",
-    metadata: { source: "manual-ingest", textHash: textHash(bodyText) },
-  }).catch(() => undefined);
+    const priorVersions = await repositories.documentVersionsRepository
+      .list(scope, { pageSize: 500 })
+      .catch(() => [] as Awaited<ReturnType<TenantRagRepositories["documentVersionsRepository"]["list"]>>);
+    versionNumber = priorVersions.filter((version) => version.documentId === existing.id).length + 1;
+
+    await repositories.documentVersionsRepository.create(scope, {
+      organizationId: scope.organizationId,
+      documentId: document.id,
+      versionNumber,
+      fileName: document.fileName ?? `${document.title ?? document.name}.txt`,
+      fileSize: bodyText.length,
+      mimeType: document.mimeType,
+      storagePath: document.storagePath,
+      checksum: textHash(bodyText),
+      createdByUserId: scope.userId,
+    }).catch(() => undefined);
+
+    // "edited" is the closest fit in the existing document_activity action enum (DB check
+    // constraint in 202607040001_sprint9_knowledge_hub.sql) -- adding a dedicated "indexed" value
+    // would need its own migration, out of scope for this sprint. The metadata source field below
+    // is what actually distinguishes a re-index event from a plain metadata edit.
+    await repositories.documentsRepository.recordActivity(scope, {
+      documentId: document.id,
+      action: "edited",
+      metadata: { source: "knowledge-hub-select", event: "indexed", textHash: textHash(bodyText) },
+    }).catch(() => undefined);
+  } else {
+    const title = input.title.trim();
+    if (!title) throw new Error("Document title and text are required for ingestion.");
+
+    document = await repositories.documentsRepository.create(scope, {
+      organizationId: scope.organizationId,
+      name: title,
+      title,
+      description: summarizeText(bodyText, 2),
+      storagePath: storagePathForDocument(scope, title),
+      fileName: input.fileName ?? `${title}.txt`,
+      fileSize: bodyText.length,
+      mimeType: input.mimeType ?? "text/plain",
+      documentType: "text",
+      visibility: input.visibility ?? "organization",
+      classification: input.classification ?? "internal",
+      ownerId: scope.userId,
+      createdByUserId: scope.userId,
+      updatedByUserId: scope.userId,
+      tags: input.tags?.length ? input.tags : extractKeywords(bodyText, 6),
+      projectId: input.projectId,
+    });
+
+    await repositories.documentVersionsRepository.create(scope, {
+      organizationId: scope.organizationId,
+      documentId: document.id,
+      versionNumber: 1,
+      fileName: document.fileName ?? `${title}.txt`,
+      fileSize: bodyText.length,
+      mimeType: document.mimeType,
+      storagePath: document.storagePath,
+      checksum: textHash(bodyText),
+      createdByUserId: scope.userId,
+    }).catch(() => undefined);
+
+    await repositories.documentsRepository.recordActivity(scope, {
+      documentId: document.id,
+      action: "uploaded",
+      metadata: { source: "manual-ingest", textHash: textHash(bodyText) },
+    }).catch(() => undefined);
+  }
+
+  const title = document.title ?? document.name;
 
   const ingestionRecord = buildRagIngestionRecord(document, bodyText);
   const chunks = chunkInstitutionalText(bodyText);
@@ -214,6 +276,7 @@ export async function ingestTenantDocument(
       indexId: ingestionRecord.indexId,
       tags: ingestionRecord.tags,
       persistentChunks: isSupabaseAdminConfigured(),
+      reindexedExistingDocument: reindexingExisting,
     },
   }).catch(() => undefined);
 
@@ -224,6 +287,7 @@ export async function ingestTenantDocument(
     indexId: ingestionRecord.indexId,
     tags: ingestionRecord.tags,
     humanReviewRequired: ingestionRecord.humanReviewRequired,
+    reindexedExistingDocument: reindexingExisting,
   };
 }
 

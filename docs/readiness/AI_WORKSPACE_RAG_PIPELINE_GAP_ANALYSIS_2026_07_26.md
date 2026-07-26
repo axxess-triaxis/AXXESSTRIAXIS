@@ -1,118 +1,176 @@
-# AI Workspace / RAG Pipeline -- Gap Analysis
+# AI Workspace / RAG Pipeline Gap Analysis
 
-Date: 2026-07-26 (documenting a live HITL walkthrough conducted 2026-07-25)
-Source: full HITL live walkthrough of AI Workspace, AI Review Inbox, Knowledge Hub, Documents &
-Files, Tasks & Workflow, Stakeholders & CRM, Approvals & Governance, Social Alerts, Analytics &
-Reports, and Settings (Organization/Security/Integrations/Users/Permissions/AI Configuration) on
-production, 2026-07-25. Findings recorded verbatim where quoted, not paraphrased into a softer claim,
-matching this program's standing practice (see `docs/readiness/GOLDEN_PATH_COMPLETION_KANBAN_2026_07_25.md`
-for the prior walkthrough using the same discipline). New actionables logged as A-55 through A-65 in
-`docs/readiness/ACTIONABLES_READINESS_MATRIX.md` and `docs/readiness/QA3_READINESS_KANBAN.md`; this
-document is a purpose-built synthesis over that same evidence, not a separate source of truth.
-**No code has been changed as part of this walkthrough or this document -- log only.**
+Date documented: 2026-07-26  
+Walkthrough date: 2026-07-25  
+Source: Live HITL walkthrough of AI Workspace, AI Review Inbox, Knowledge Hub, Documents & Files, Tasks & Workflow, Stakeholders & CRM, Approvals & Governance, Social Alerts, Analytics & Reports, and Settings on production  
+Scope: AI Workspace, governed RAG, Knowledge Hub indexing, AI Review Inbox, review-to-work workflows, and related navigation/configuration gaps  
+Status: Evidence log and remediation analysis only. No code changed by this document.
 
 ## Why This Matters
 
-The AI Review Inbox and governed RAG pipeline are the core differentiator this program has staked
-the product on -- "governance-native, human-in-the-loop" AI, per `README.md`'s own opening line. This
-walkthrough is the first time a HITL has exercised the full pipeline end to end on a real tenant with
-real uploaded documents, rather than in isolated code review or against demo data. The result is
-genuinely mixed: the **governance mechanics** (citations, confidence display, human-review gating,
-the 5-way decision workflow, audit trail) are confirmed real and working. The **answer quality**
-(does the AI actually read and summarize the real document you uploaded) is not yet confirmed working,
-and the walkthrough surfaced a specific, plausible root cause rather than leaving it a mystery.
+The AI Review Inbox and governed RAG pipeline are the core differentiators of AXXESS TRIaxis.
 
-## What's Verified Working (Do Not Re-Investigate)
+The product positioning is governance-native, human-in-the-loop institutional AI. This walkthrough is therefore materially important because it exercised the full AI/RAG/review workflow on a real tenant with real uploaded documents, rather than only through isolated code review or demo data.
+
+The finding is mixed and precise:
+
+- Governance mechanics are real and working in important places.
+- Answer quality is not yet confirmed working.
+- The likely cause is not necessarily fake answer generation; it may be that the RAG system is faithfully answering from a stale placeholder indexed document.
+
+This distinction matters. It changes the fix sequence.
+
+## What Is Verified Working
+
+These capabilities should not be re-investigated unless later regressions appear.
 
 | Capability | Evidence |
 |---|---|
-| AI Review Inbox 5-option HITL decision workflow | Real: "Create Task" + "Approve and Create" on a real pending review produced a real task, visible in Tasks & Workflow, with a real audit trail (`Audit 26d722e1`, actor `Super Admin`, real timestamps) in the Review-to-work timeline |
-| 5 workflow-destination options each route to their own real workspace | "Create Task," "Create approval request," "Create Project Update," "Create Stakeholder note," "Create meeting follow up" -- HITL's own words: "Fantastic workflow as each 5 options leads to 5 different workspaces with each having their own workflows" |
-| Honest zero-confidence state for an unanswerable query | Query "Hi" correctly produced 0% confidence, "No authorized institutional source matched this question." HITL's own words: "The 0% confidence is great and accurate" |
-| Task completion UI | Ticking a task correctly marks it "Completed" with a strikethrough, task detail view shows real status/priority/assignee/due-date fields |
-| Knowledge Hub upload | 3 real PDFs uploaded successfully (Triaxis Ventures Readme 2, Beta Feedback Default Report, Triaxis Ventures pitch deck) |
-| Social Alerts provider-gating | Founder explicitly confirmed this is fine as-is: "Fine for now as provider gating is for later addressal" |
-| Analytics & Reports honest placeholder | Founder explicitly confirmed: "fine for now" |
+| AI Review Inbox 5-option HITL decision workflow | Real `Create Task` plus `Approve and Create` on a real pending review produced a real task visible in Tasks & Workflow, with real audit trail `Audit 26d722e1`, actor Super Admin, and real timestamps in the Review-to-work timeline |
+| Five workflow-destination options route to their own workspaces | `Create Task`, `Create approval request`, `Create Project Update`, `Create Stakeholder note`, and `Create meeting follow up` each route to distinct workspaces with their own workflows |
+| Honest zero-confidence state for unanswerable query | Query `Hi` produced 0% confidence and `No authorized institutional source matched this question`; founder explicitly called this accurate |
+| Task completion UI | Ticking a task marks it `Completed` with strikethrough; task detail view shows status, priority, assignee, and due-date fields |
+| Knowledge Hub upload | Three real PDFs uploaded successfully: Triaxis Ventures Readme 2, Beta Feedback Default Report, and Triaxis Ventures pitch deck |
+| Social Alerts provider-gating | Founder explicitly confirmed provider gating is fine for now |
+| Analytics & Reports honest placeholder | Founder explicitly confirmed this is fine for now |
 
-## The Central Finding: RAG Answer Quality, Not Yet Confirmed Working
+## Central Finding
 
-Three actionables (A-55, A-61, A-62) describe one connected problem, not three independent bugs.
-Stating the chain plainly:
+The central problem is **RAG answer quality is not yet confirmed working**.
 
-1. **A-61**: the founder uploaded a real 30-page pitch deck to Knowledge Hub, but it never appeared
-   as a selectable candidate for indexing on Documents & Files -- the only indexing input available
-   is a "paste governable text" box, impractical for a real document of that length. The founder's
-   own proposed fix is specific: add a HITL-triggered "select from an already-uploaded Knowledge Hub
-   document" option, explicitly **not** automatic bulk-indexing of every upload.
-2. **A-62**: because of (1), the only document actually indexed for governed retrieval is a stale
-   "Pitch deck" entry from a day earlier (Jul 24), whose content is literally placeholder text
-   ("Tenant 0 dummy data"). The founder flagged this entry itself as "redundant, supposed to go."
-3. **A-55**: every RAG query in this walkthrough returned answer text following the same pattern --
-   "Based on the authorized tenant sources, Tenant 0 dummy data. The strongest evidence relates to
-   [echoed query keywords]." This is consistent with the RAG pipeline correctly citing its only
-   available source (the stale placeholder from (2)) -- in which case the citation/retrieval
-   mechanism itself may be working exactly as designed, and the "dummy"-looking answers are an
-   honest reflection of dummy indexed content, not a sign that answer generation is faked.
+Three actionables describe one connected chain:
 
-**What this analysis does not do:** assert which of the two hypotheses in A-55 is correct. That
-requires a code-level read of the answer-generation path (does it call a real model/local synthesis
-step against the indexed chunks, or does it template-fill from the query alone regardless of indexed
-content?) before scoping a fix. Recommended first step for whoever picks up A-55: remove the stale
-entry (A-62), index the real pitch deck through whatever indexing path exists today (even the
-inconvenient "paste text" one, as a diagnostic), and re-run the same "Summarize [document]" query --
-if the answer changes to reflect real pitch-deck content, A-55's root cause is confirmed as (1) from
-the two hypotheses in the actionable, not the response generator itself, and A-61 becomes the real
-priority.
+- `A-61`: No practical way to select an already-uploaded Knowledge Hub document for indexing in Documents & Files.
+- `A-62`: A stale placeholder document remains in the live RAG index.
+- `A-55`: RAG answers return a templated/dummy-pattern response.
 
-## Full Actionable List From This Walkthrough
+These should be treated as one root-cause chain, not three unrelated bugs.
 
-**New (11):**
+## Root-Cause Chain
 
-| ID | One-line summary | Priority signal |
+### Step 1: Real document upload happened in Knowledge Hub
+
+The founder uploaded a real 30-page pitch deck to Knowledge Hub.
+
+However, that uploaded document did not appear as a selectable candidate for indexing in Documents & Files.
+
+Current indexing path:
+
+- A paste-only `governable text` box.
+
+Problem:
+
+- Pasting a 30-page pitch deck is not a realistic workflow.
+
+Founder-specified fix:
+
+- Add a HITL-triggered option to select from an already-uploaded Knowledge Hub document for indexing.
+- Do not automatically bulk-index every upload.
+
+### Step 2: Only stale placeholder content was actually indexed
+
+Because Knowledge Hub documents cannot be selected for indexing, the only indexed governed-retrieval document appears to be a stale `Pitch deck` entry from 2026-07-24.
+
+Its content is placeholder text:
+
+> Tenant 0 dummy data
+
+Founder judgement:
+
+> Redundant, supposed to go.
+
+### Step 3: RAG answers reflect the stale indexed source
+
+During the walkthrough, RAG answers followed this pattern:
+
+> Based on the authorized tenant sources, Tenant 0 dummy data. The strongest evidence relates to [echoed query keywords].
+
+This could mean:
+
+1. The RAG retrieval/citation mechanism is working correctly but only has a dummy indexed source available; or
+2. The answer generator is templated and does not truly synthesize from indexed content.
+
+This document does **not** assert which hypothesis is correct.
+
+## Diagnostic Recommendation
+
+Recommended first diagnostic sequence:
+
+1. Remove or archive the stale placeholder indexed entry (`A-62`).
+2. Index the real pitch deck through whatever path exists today, even if the paste-text route is inconvenient.
+3. Re-run the same `Summarize [document]` query.
+4. Compare the answer.
+
+Expected interpretation:
+
+- If the answer changes and reflects real pitch-deck content, `A-55` is primarily an indexing/source-content problem.
+- If the answer remains templated/dummy-pattern despite real indexed content, `A-55` is an answer-generation problem.
+
+If the first outcome occurs, `A-61` becomes the highest-priority fix.
+
+## New Actionables From This Walkthrough
+
+| ID | Summary | Priority |
 |---|---|---|
-| A-55 | RAG answers return templated/dummy-pattern text | High -- core product mechanic |
-| A-56 | Confidence score computation is an opaque "black box" | Medium -- trust/UX |
-| A-57 | AI Review Inbox escalate-to-CRM path doesn't visibly flow | Medium -- workflow correctness |
-| A-58 | CRM "Create Contact" auto-populates fake Influence/Engagement | Low-Medium -- cosmetic but misleading |
-| A-59 | "Review Approval Queue" routes to the wrong screen | Medium -- navigation |
-| A-60 | "Export Report" (Approvals & Governance) is a dead button | Low |
-| A-61 | No way to select a Knowledge Hub document for indexing except pasting its full text | High -- blocks realistic document use |
-| A-62 | Stale placeholder document remains in the live RAG index | High -- directly explains A-55's symptom |
-| A-63 | Unclear if "Create Task/Approval from Answer" carries the answer's content | Medium -- needs investigation before judging |
-| A-64 | "Ask AI Workspace" routes to Tasks & Workflow, not AI Workspace | Medium -- navigation |
-| A-65 | "Send Feedback" should notify triaxisgrp@gmail.com | Medium -- founder-specified requirement, needs config check |
+| A-55 | RAG answers return templated/dummy-pattern text | High |
+| A-56 | Confidence score computation is an opaque black box | Medium |
+| A-57 | AI Review Inbox escalate-to-CRM path does not visibly flow | Medium |
+| A-58 | CRM `Create Contact` auto-populates fake Influence/Engagement | Low-Medium |
+| A-59 | `Review Approval Queue` routes to the wrong screen | Medium |
+| A-60 | `Export Report` in Approvals & Governance is a dead button | Low |
+| A-61 | No way to select a Knowledge Hub document for indexing except pasting full text | High |
+| A-62 | Stale placeholder document remains in live RAG index | High |
+| A-63 | Unclear if `Create Task/Approval from Answer` carries the answer content | Medium |
+| A-64 | `Ask AI Workspace` routes to Tasks & Workflow, not AI Workspace | Medium |
+| A-65 | `Send Feedback` should notify `triaxisgrp@gmail.com` | Medium |
 
-**Re-confirmed from earlier walkthroughs (same-day, second pass -- already tracked, not new):**
+## Reconfirmed Earlier Actionables
+
+These were reconfirmed in the same-day second pass and are already tracked.
 
 | ID | Finding |
 |---|---|
-| A-08 | Invitation emails still not delivered -- 2 more real invitations sent, neither arrived. Founder has elevated urgency: this now blocks planned Tenant 0 -> Tenant 0.5 cross-tenant testing |
-| A-28 | Organization tab still shows the investor-demo dataset (North East Health Mission) on Tenant 0's real Settings |
-| A-29 | Security tab's 6 "Configure" buttons still dead ends |
-| A-30 | Permission Matrix still discloses all 6 roles' full capability schema to any viewer |
+| A-08 | Invitation emails still not delivered; now blocks Tenant 0 to Tenant 0.5 cross-tenant testing |
+| A-28 | Organization tab still shows investor-demo dataset on Tenant 0 real Settings |
+| A-29 | Security tab's six `Configure` buttons still dead-end |
+| A-30 | Permission Matrix still discloses all six roles' full capability schema to any viewer |
 | A-31 | AI Configuration tab still fully static/placeholder |
-| -- | Integrations tab error (already logged in a prior session, re-confirmed, no new ID needed) |
-
-**A-13 (Verify RAG answer with citations) evidence updated, status unchanged (`Blocked`):** the
-citation/confidence/human-review UI mechanics are now confirmed real; the answer-content quality
-gap (A-55) is the reason this stays `Blocked` rather than moving to `Yes`.
+| A-13 | RAG answer with citations remains blocked: citation/confidence/review UI mechanics are real, but answer-content quality remains unresolved |
 
 ## Sequencing Recommendation
 
-1. **A-62 then A-61** -- removing the stale placeholder and building a real Knowledge-Hub-to-index
-   path is very likely the fastest way to get a true read on A-55, per the analysis above.
-2. **A-55** -- re-assess once (1) is done; may resolve on its own, or may reveal a genuine
-   answer-generation gap requiring separate work.
-3. **A-08** -- independent, founder-elevated priority (blocks cross-tenant testing).
-4. **A-64, A-59** -- small navigation fixes, same family as the ED-1 mis-routed-link fixes already
-   closed this session.
-5. **A-56, A-57, A-58, A-60, A-63, A-65** -- lower urgency or need-investigation items, sequence
-   after the above once the founder authorizes work to begin.
+Recommended order:
 
-## Evidence
+1. `A-62`: Remove stale placeholder indexed document.
+2. `A-61`: Build Knowledge Hub document selection for indexing.
+3. `A-55`: Re-test answer quality after real document indexing.
+4. `A-08`: Fix invitation email delivery because it blocks cross-tenant testing.
+5. `A-64` and `A-59`: Fix small navigation misroutes.
+6. `A-56`, `A-57`, `A-58`, `A-60`, `A-63`, `A-65`: Investigate or fix after the core RAG source chain is corrected.
 
-All findings sourced from the HITL's own reported walkthrough, 2026-07-25, recorded verbatim (not
-paraphrased into a softer claim) in `docs/readiness/ACTIONABLES_READINESS_MATRIX.md` (A-08, A-13,
-A-28 through A-31, A-55 through A-65) and `docs/readiness/QA3_READINESS_KANBAN.md`. This document
-adds no new claims beyond that evidence -- it re-sequences it into a connected root-cause analysis
-for one specific area (the AI Workspace/RAG pipeline) rather than a flat actionable list.
+## What This Document Does Not Claim
+
+This document does not claim:
+
+- That RAG answer generation is fake.
+- That the retrieval/citation mechanism is broken.
+- That the AI Review Inbox is broken.
+- That the review-to-work workflow is broken.
+- That the product has achieved Enterprise Beta 1.0 readiness.
+
+This document claims only:
+
+- The governance/review mechanics are materially working.
+- RAG answer quality is not yet proven.
+- The stale indexed placeholder and missing Knowledge Hub-to-index selection path are the most likely immediate blockers.
+
+## Evidence Sources
+
+All findings are sourced from the HITL's reported production walkthrough on 2026-07-25 and the corresponding actionables in:
+
+- `docs/readiness/ACTIONABLES_READINESS_MATRIX.md`
+- `docs/readiness/QA3_READINESS_KANBAN.md`
+- `docs/readiness/GOLDEN_PATH_COMPLETION_KANBAN_2026_07_25.md`
+
+This document adds synthesis and sequencing only. It does not add new factual claims beyond that walkthrough evidence.
+

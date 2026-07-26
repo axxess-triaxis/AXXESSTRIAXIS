@@ -1,0 +1,97 @@
+# AI Workspace / RAG Pipeline Remediation Roadmap
+
+Date created: 2026-07-26  
+Source analysis: `docs/readiness/AI_WORKSPACE_RAG_PIPELINE_GAP_ANALYSIS_2026_07_26.md`  
+Objective: Convert the governed RAG pipeline from mechanically promising but answer-quality-unproven into a credible real-document workflow.
+
+## Target Outcome
+
+After remediation, a real Tenant 0 user should be able to:
+
+1. Upload a document in Knowledge Hub.
+2. Select that uploaded document for governed indexing.
+3. Remove/archive stale placeholder indexed content.
+4. Ask a question about the real document.
+5. Receive a cited answer reflecting the document content.
+6. Send the answer into AI Review Inbox.
+7. Approve/create work from that answer.
+8. Preserve audit/timeline evidence.
+
+## Sprint Structure
+
+This roadmap should run in two tightly scoped sprints.
+
+## Sprint RAG-1: Source Integrity and Knowledge Hub-to-Index Path
+
+**Status: Closed.** See `docs/readiness/RAG_REMEDIATION_SPRINT_1_SOURCE_INTEGRITY_CLOSEOUT_2026_07_26.md` and `AI_WORKSPACE_RAG_PIPELINE_REMEDIATION_CHECKLIST_2026_07_26.md` for full evidence. Per this sprint's own non-negotiables, RAG-2 has not been started.
+
+Goal:
+
+Fix the source integrity problem first.
+
+### Actionables
+
+| ID | Action | Acceptance Criteria |
+|---|---|---|
+| RAG1-01 | Locate indexed stale `Pitch deck` / `Tenant 0 dummy data` record | Exact source identified |
+| RAG1-02 | Remove, archive, or clearly exclude stale placeholder from live RAG retrieval | Live retrieval no longer uses stale dummy content |
+| RAG1-03 | Add Knowledge Hub document selection for indexing | User can select an uploaded Knowledge Hub document for governed indexing |
+| RAG1-04 | Keep indexing HITL-triggered | No automatic bulk-indexing of every upload |
+| RAG1-05 | Preserve tenant and permission metadata | Indexed chunks retain organization/department/visibility context |
+| RAG1-06 | Add tests for Knowledge Hub to indexing path | Tests cover document selection and metadata propagation |
+
+### Exit Criteria
+
+RAG-1 closes only if:
+
+- Stale placeholder is removed/excluded.
+- A real uploaded Knowledge Hub document can be selected for indexing.
+- Indexing preserves tenant/permission metadata.
+- Tests and build pass.
+
+## Sprint RAG-2: Answer Quality, Review Flow, and Navigation Fixes
+
+Goal:
+
+Prove whether answer quality is fixed once real content is indexed, then address navigation/workflow correctness.
+
+### Actionables
+
+| ID | Action | Acceptance Criteria |
+|---|---|---|
+| RAG2-01 | Re-run real document query after RAG-1 | Answer reflects real document content or generator gap is proven |
+| RAG2-02 | Investigate answer generation path | Determine whether generation synthesizes chunks or templates query |
+| RAG2-03 | Document confidence score computation | Confidence source becomes explainable to user/reviewer |
+| RAG2-04 | Verify AI Review Inbox carries answer content into task/approval | Created work item includes answer/context/citation where expected |
+| RAG2-05 | Fix `Ask AI Workspace` misroute | Routes to AI Workspace |
+| RAG2-06 | Fix `Review Approval Queue` misroute | Routes to correct approval/review queue |
+| RAG2-07 | Check escalate-to-CRM visible flow | CRM path either works or is honestly deferred |
+| RAG2-08 | Fix feedback notification requirement | `Send Feedback` notification path to `triaxisgrp@gmail.com` configured or blocker documented |
+
+### Exit Criteria
+
+RAG-2 closes only if:
+
+- A real document query produces a credible cited answer, or the precise generator blocker is documented.
+- Misrouted navigation is fixed.
+- Review-to-work content carryover is verified.
+- Confidence computation is documented.
+- Tests and build pass.
+
+## Lower-Priority Follow-Ups
+
+| ID | Item | Reason |
+|---|---|---|
+| A-58 | CRM fake Influence/Engagement defaults | Misleading but not core RAG blocker |
+| A-60 | Approvals `Export Report` dead button | Low urgency |
+| A-57 | CRM escalation visible flow | Important, but after source/answer quality |
+
+## Success Criteria
+
+This remediation program is successful only if:
+
+- `A-61` is closed or substantially resolved.
+- `A-62` is closed.
+- `A-55` is reclassified based on real diagnostic evidence.
+- `A-13` can move closer to `Yes` because the answer content quality is proven or the remaining blocker is specific.
+
