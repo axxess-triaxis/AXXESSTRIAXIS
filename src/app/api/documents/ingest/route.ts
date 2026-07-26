@@ -25,6 +25,7 @@ export async function POST(request: Request) {
     classification?: "public" | "internal" | "confidential" | "restricted";
     tags?: string[];
     projectId?: string;
+    documentId?: string;
   };
 
   try {
@@ -45,6 +46,7 @@ export async function POST(request: Request) {
       classification: body.classification,
       tags: body.tags,
       projectId: body.projectId,
+      documentId: body.documentId,
     });
     const timelineEvent = await recordWorkflowTimelineEvent({
       organizationId: scope.organizationId,

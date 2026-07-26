@@ -93,7 +93,11 @@ function similarity(question: string, text: string) {
 
 export function canRetrieveDocument(scope: TenantScope, document: Document, permissions: DocumentPermission[]) {
   if (document.organizationId !== scope.organizationId) return false;
-  if (document.status === "deleted") return false;
+  // RAG Remediation Sprint 1 (RAG1-02): archived documents were previously still retrievable --
+  // only "deleted" was excluded -- so archiving a stale/placeholder document from Knowledge Hub
+  // had no effect on live RAG retrieval. This is the safe, non-destructive cleanup path: archive
+  // (already a real, existing UI action) now genuinely removes a document from governed retrieval.
+  if (document.status === "deleted" || document.status === "archived") return false;
   if (scope.role === "Super Admin") return true;
   if (document.classification === "restricted" && !elevatedRoles.includes(scope.role)) return false;
   if (document.visibility === "private") {

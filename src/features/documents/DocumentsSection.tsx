@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "../../auth/AuthProvider";
 import { SectionHeader } from "../../components/layout/SectionHeader";
 import { WorkflowTimelinePanel } from "../../components/enterprise/WorkflowTimelinePanel";
 import { EmptyState } from "../../components/feedback/EmptyState";
 import { Card } from "../../components/ui/Card";
 import { isDemoModeEnabled } from "../../demo/demoMode";
+import type { Document } from "../../domain";
 import { applicationServices } from "../../providers/serviceProvider";
 import { tenantScopeFromUser } from "../../repositories/supabaseEnterpriseRepositories";
 import { useWorkflowTimeline } from "../../hooks/useWorkflowTimeline";
@@ -18,10 +19,18 @@ import { Filter, Plus, Sparkles } from "lucide-react";
 // is not). Gated behind isDemoModeEnabled(). See DEMO_DATA_LEAKAGE_AUDIT.md.
 const documents = applicationServices.institutionalRepository.getDocuments();
 
+// RAG Remediation Sprint 1 (RAG1-03/08): documents a HITL user can pick as an indexing target.
+// Excludes archived/deleted rows for the same reason governedRag.ts's canRetrieveDocument does --
+// an archived document should not be selectable for (re-)indexing into live governed retrieval.
+export function selectableDocumentsForIndexing(candidates: Document[]): Document[] {
+  return candidates.filter((document) => document.status !== "archived" && document.status !== "deleted");
+}
+
 export const DocumentsSection = () => {
   const { session } = useAuth();
+  const user = session.user;
   const analytics = useAnalytics();
-  const scope = session.user ? tenantScopeFromUser(session.user) : undefined;
+  const scope = user ? tenantScopeFromUser(user) : undefined;
   const [showIngest, setShowIngest] = useState(false);
   const [ingesting, setIngesting] = useState(false);
   const [message, setMessage] = useState<{ tone: "success" | "error" | "info"; text: string } | null>(null);
@@ -31,7 +40,25 @@ export const DocumentsSection = () => {
     classification: "internal",
     visibility: "organization",
   });
+  const [indexableDocuments, setIndexableDocuments] = useState<Document[]>([]);
+  const [selectedDocumentId, setSelectedDocumentId] = useState("");
   const documentTimeline = useWorkflowTimeline(scope, { limit: 5, resourceType: "document" });
+
+  const loadIndexableDocuments = useCallback(async () => {
+    if (!scope) return;
+    try {
+      const rows = await applicationServices.documentsRepository.list(scope, { pageSize: 500 });
+      setIndexableDocuments(selectableDocumentsForIndexing(rows));
+    } catch {
+      setIndexableDocuments([]);
+    }
+  }, [scope]);
+
+  useEffect(() => {
+    if (showIngest) void loadIndexableDocuments();
+  }, [showIngest, loadIndexableDocuments]);
+
+  const selectedDocument = indexableDocuments.find((document) => document.id === selectedDocumentId);
 
   async function ingestDocument() {
     // Sprint 2 (Live Golden Path Execution): the HITL's walkthrough hit the server's own
@@ -40,8 +67,12 @@ export const DocumentsSection = () => {
     // makes the same requirement checkable and correctable *before* a network round-trip, so an
     // empty-after-trim field (leading/trailing whitespace only, or a field cleared after a prior
     // attempt) is caught with specific, actionable copy instead of the generic server message.
-    if (!form.title.trim() || !form.bodyText.trim()) {
-      setMessage({ tone: "error", text: !form.title.trim() ? "Enter a document title before indexing." : "Enter the document text before indexing." });
+    if (!selectedDocumentId && !form.title.trim()) {
+      setMessage({ tone: "error", text: "Enter a document title before indexing." });
+      return;
+    }
+    if (!form.bodyText.trim()) {
+      setMessage({ tone: "error", text: "Enter the document text before indexing." });
       return;
     }
     setIngesting(true);
@@ -51,11 +82,16 @@ export const DocumentsSection = () => {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, documentId: selectedDocumentId || undefined }),
       });
-      const result = await response.json().catch(() => ({} as { error?: string; chunkCount?: number }));
+      const result = await response.json().catch(() => ({} as { error?: string; chunkCount?: number; reindexedExistingDocument?: boolean }));
       if (!response.ok) throw new Error(result.error ?? "Document ingestion failed.");
-      setMessage({ tone: "success", text: `Document indexed with ${result.chunkCount ?? 0} governed chunks.` });
+      setMessage({
+        tone: "success",
+        text: result.reindexedExistingDocument
+          ? `"${selectedDocument?.title ?? selectedDocument?.name ?? "Document"}" indexed with ${result.chunkCount ?? 0} governed chunks.`
+          : `Document indexed with ${result.chunkCount ?? 0} governed chunks.`,
+      });
       analytics.trackEvent("document_uploaded", { classification: form.classification, visibility: form.visibility }, {
         organization_id: scope?.organizationId,
         user_id: scope?.userId,
@@ -69,6 +105,8 @@ export const DocumentsSection = () => {
         route: "/documents",
       });
       setForm({ title: "", bodyText: "", classification: "internal", visibility: "organization" });
+      setSelectedDocumentId("");
+      void loadIndexableDocuments();
     } catch (error) {
       setMessage({ tone: "error", text: error instanceof Error ? error.message : "Document ingestion failed." });
     } finally {
@@ -97,30 +135,62 @@ export const DocumentsSection = () => {
         <Card className="mb-4 p-4">
           <div className="mb-3 flex items-center gap-2">
             <Sparkles size={14} className="text-[#8B1E2D]" />
-            <h3 className="text-sm font-semibold text-[#0F1117]">Ingest governed document text</h3>
+            <h3 className="text-sm font-semibold text-[#0F1117]">Index a document for governed retrieval</h3>
           </div>
+          <label className="mb-3 block">
+            <span className="mb-1 block text-[11px] font-semibold text-[#0F1117]">Index an uploaded document</span>
+            <select
+              value={selectedDocumentId}
+              onChange={(event) => setSelectedDocumentId(event.target.value)}
+              className="w-full rounded-lg border border-[rgba(0,0,0,0.12)] bg-white px-3 py-2 text-sm outline-none focus:border-[#8B1E2D]"
+            >
+              <option value="">New document (paste text only)</option>
+              {indexableDocuments.map((document) => (
+                <option key={document.id} value={document.id}>{document.title ?? document.name}</option>
+              ))}
+            </select>
+            {indexableDocuments.length === 0 && (
+              <span className="mt-1 block text-[11px] text-[#5F6B73]">No uploaded Knowledge Hub documents are available yet -- upload one in Knowledge Hub first, or paste text below to create a new one.</span>
+            )}
+          </label>
           <div className="grid gap-3 md:grid-cols-2">
             <label className="block">
               <span className="mb-1 block text-[11px] font-semibold text-[#0F1117]">Document title</span>
-              <input value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} className="w-full rounded-lg border border-[rgba(0,0,0,0.12)] bg-white px-3 py-2 text-sm outline-none focus:border-[#8B1E2D]" />
+              {selectedDocument ? (
+                <div className="w-full rounded-lg border border-[rgba(0,0,0,0.08)] bg-[#F8F9FA] px-3 py-2 text-sm text-[#5F6B73]">{selectedDocument.title ?? selectedDocument.name}</div>
+              ) : (
+                <input value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} className="w-full rounded-lg border border-[rgba(0,0,0,0.12)] bg-white px-3 py-2 text-sm outline-none focus:border-[#8B1E2D]" />
+              )}
             </label>
             <div className="grid grid-cols-2 gap-2">
               <label className="block">
                 <span className="mb-1 block text-[11px] font-semibold text-[#0F1117]">Classification</span>
-                <select value={form.classification} onChange={(event) => setForm({ ...form, classification: event.target.value })} className="w-full rounded-lg border border-[rgba(0,0,0,0.12)] bg-white px-3 py-2 text-sm outline-none focus:border-[#8B1E2D]">
-                  {["public", "internal", "confidential", "restricted"].map((value) => <option key={value} value={value}>{value}</option>)}
-                </select>
+                {selectedDocument ? (
+                  <div className="w-full rounded-lg border border-[rgba(0,0,0,0.08)] bg-[#F8F9FA] px-3 py-2 text-sm text-[#5F6B73] capitalize">{selectedDocument.classification ?? "internal"}</div>
+                ) : (
+                  <select value={form.classification} onChange={(event) => setForm({ ...form, classification: event.target.value })} className="w-full rounded-lg border border-[rgba(0,0,0,0.12)] bg-white px-3 py-2 text-sm outline-none focus:border-[#8B1E2D]">
+                    {["public", "internal", "confidential", "restricted"].map((value) => <option key={value} value={value}>{value}</option>)}
+                  </select>
+                )}
               </label>
               <label className="block">
                 <span className="mb-1 block text-[11px] font-semibold text-[#0F1117]">Visibility</span>
-                <select value={form.visibility} onChange={(event) => setForm({ ...form, visibility: event.target.value })} className="w-full rounded-lg border border-[rgba(0,0,0,0.12)] bg-white px-3 py-2 text-sm outline-none focus:border-[#8B1E2D]">
-                  {["private", "department", "organization", "shared"].map((value) => <option key={value} value={value}>{value}</option>)}
-                </select>
+                {selectedDocument ? (
+                  <div className="w-full rounded-lg border border-[rgba(0,0,0,0.08)] bg-[#F8F9FA] px-3 py-2 text-sm text-[#5F6B73] capitalize">{selectedDocument.visibility ?? "organization"}</div>
+                ) : (
+                  <select value={form.visibility} onChange={(event) => setForm({ ...form, visibility: event.target.value })} className="w-full rounded-lg border border-[rgba(0,0,0,0.12)] bg-white px-3 py-2 text-sm outline-none focus:border-[#8B1E2D]">
+                    {["private", "department", "organization", "shared"].map((value) => <option key={value} value={value}>{value}</option>)}
+                  </select>
+                )}
               </label>
             </div>
           </div>
+          {selectedDocument && (
+            <p className="mt-2 text-[11px] text-[#5F6B73]">Title, classification, and visibility are inherited from the selected document and cannot be changed here.</p>
+          )}
           <label className="mt-3 block">
             <span className="mb-1 block text-[11px] font-semibold text-[#0F1117]">Document text</span>
+            <span className="mb-1 block text-[11px] text-[#5F6B73]">Automatic text extraction from PDFs and other files isn&apos;t available yet -- paste the text to index below.</span>
             <textarea value={form.bodyText} onChange={(event) => setForm({ ...form, bodyText: event.target.value })} rows={6} className="w-full rounded-lg border border-[rgba(0,0,0,0.12)] bg-white px-3 py-2 text-sm outline-none focus:border-[#8B1E2D]" />
           </label>
           {message && <p className={`mt-3 rounded-lg px-3 py-2 text-xs font-medium ${message.tone === "error" ? "bg-red-50 text-red-700" : "bg-emerald-50 text-emerald-700"}`}>{message.text}</p>}
