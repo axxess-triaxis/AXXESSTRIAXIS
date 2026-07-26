@@ -66,3 +66,19 @@ There are two separate document-facing surfaces in the product, and only one of 
 **Practical implication:** to exercise the real golden path (ask a governed question and get a cited answer), a document's text must go through Documents & Files' "Index document" action, not (or not only) a Knowledge Hub upload. Making Knowledge Hub uploads also perform real chunking/embedding, and making its status panel reflect genuine indexing state instead of a cosmetic one, is a real gap worth closing in a future sprint -- it was not attempted in Sprint 2 to keep this sprint's scope to the smallest blocker in the golden path itself, not a broader module-completion effort.
 
 **ZIP upload** (bulk ingestion) remains unimplemented -- it requires real archive extraction (an unzip library, iterating contained files, ingesting each individually), which is not a trivial, sprint-scoped change. Deferred to a future bulk-ingestion sprint, as flagged in `docs/readiness/TENANT_0_ONBOARDING_ATTEMPTS_2026_07_24.md`.
+
+## Indexing a Knowledge Hub Document (RAG Remediation Sprint 1, 2026-07-26)
+
+Before this sprint, the gap above was worse in practice than it sounds: Documents & Files' "Index document" form always *created a new, disconnected document record* from pasted title/text, even if the same document had already been uploaded through Knowledge Hub. There was no way to attach indexed text to an existing document -- only to spawn a second, unrelated one with a similar title.
+
+`POST /api/documents/ingest` (`ingestTenantDocument()` in `src/services/rag/tenantRagWorkflow.ts`) now accepts an optional `documentId`. When set:
+
+- The existing document is looked up via `documentsRepository.getById()` and verified to belong to the caller's organization (cross-tenant reindex attempts throw).
+- Deleted documents cannot be reindexed.
+- The document's own real `title`/`visibility`/`classification`/`tags`/`ownerId`/`categoryId` are reused -- the ingest form's title/visibility/classification/tags inputs are ignored in this mode, so indexed chunk metadata can never drift from the document's actual governed state.
+- A new `document_versions` row is appended (version number computed from existing versions for that document, not hardcoded to 1).
+- `document_activity` records an `"edited"` action with `metadata.event = "indexed"` (the `document_activity.action` DB check constraint does not have a dedicated `"indexed"` value; adding one would need its own migration, out of this sprint's scope).
+
+`src/features/documents/DocumentsSection.tsx` exposes this as a document selector ("Index an uploaded document") populated from the tenant's real, non-archived, non-deleted documents (`selectableDocumentsForIndexing()`). Selecting "New document (paste text only)" (the default) preserves the original create-a-new-document behavior unchanged.
+
+**Still not solved:** PDF/DOCX text extraction. Selecting a document does not auto-populate its text -- the HITL still pastes the text to index, with the UI now saying so explicitly ("Automatic text extraction from PDFs and other files isn't available yet"). What changed is that the resulting chunks attach to the correct, already-governed document record instead of creating an orphan duplicate.

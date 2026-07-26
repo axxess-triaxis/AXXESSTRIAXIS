@@ -176,6 +176,29 @@ describe("governed RAG retrieval", () => {
     expect(chunks.map((chunk) => chunk.sourceId)).not.toContain("doc_restricted");
   });
 
+  it("excludes archived documents from retrieval (RAG Remediation Sprint 1, RAG1-02/09)", async () => {
+    const archived = document({
+      id: "doc_archived",
+      organizationId: "org_1",
+      title: "Stale Pitch Deck Placeholder",
+      description: "Tenant 0 dummy data placeholder text used for an earlier pipeline test.",
+      status: "archived",
+    });
+    const active = document({
+      id: "doc_active",
+      organizationId: "org_1",
+      title: "Real Institutional Note",
+      description: "Tenant 0 dummy data reference case for active retrieval comparison.",
+    });
+
+    const chunks = await retrieveInstitutionalContext(repositories({ documents: [archived, active] }), scope, {
+      question: "tenant 0 dummy data",
+    });
+
+    expect(chunks.map((chunk) => chunk.sourceId)).not.toContain("doc_archived");
+    expect(chunks.map((chunk) => chunk.sourceId)).toContain("doc_active");
+  });
+
   it("gives an honest rationale instead of a fabricated one when no source matches", async () => {
     const answer = await answerWithGovernedRag(repositories({ documents: [] }), scope, {
       question: "a question with no authorized institutional context",

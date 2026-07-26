@@ -146,6 +146,8 @@ Status:
 
 Partial. Requires live walkthrough evidence.
 
+**Update 2026-07-26 (RAG Remediation Sprint 1):** the live walkthrough referenced above happened on 2026-07-25 and is documented in `docs/readiness/AI_WORKSPACE_RAG_PIPELINE_GAP_ANALYSIS_2026_07_26.md`. Two of the three connected findings from that walkthrough (A-61: no Knowledge Hub document selector; A-62: stale placeholder document still retrievable) had code fixes shipped 2026-07-26 -- see `docs/readiness/RAG_REMEDIATION_SPRINT_1_SOURCE_INTEGRITY_CLOSEOUT_2026_07_26.md`. Both remain `Blocked` in `ACTIONABLES_READINESS_MATRIX.md`, not `Yes`, pending an HITL live retest on production. The third (A-55: templated/dummy-pattern answers) is explicitly **not** claimed resolved -- it requires the HITL to perform the retest (archive the stale document, index a real one, re-query) before either hypothesis in A-55 can be confirmed. Status remains Partial.
+
 ### Mobile and Store Readiness
 
 Problem:

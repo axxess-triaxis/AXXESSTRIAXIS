@@ -23,7 +23,7 @@ function repositories(): TenantRagRepositories {
       async create(_scope, input) {
         const document: Document = {
           id: `doc-${documents.length + 1}`,
-          organizationId: scope.organizationId,
+          organizationId: String(input.organizationId ?? scope.organizationId),
           name: String(input.name ?? input.title),
           title: String(input.title ?? input.name),
           description: String(input.description ?? ""),
@@ -33,8 +33,8 @@ function repositories(): TenantRagRepositories {
           mimeType: String(input.mimeType ?? "text/plain"),
           documentType: "text",
           status: "active",
-          visibility: "organization",
-          classification: "internal",
+          visibility: (input.visibility as Document["visibility"]) ?? "organization",
+          classification: (input.classification as Document["classification"]) ?? "internal",
           ownerId: scope.userId,
           createdByUserId: scope.userId,
           currentVersion: 1,
@@ -110,6 +110,58 @@ describe("tenant RAG workflow", () => {
     expect(result.document.organizationId).toBe(scope.organizationId);
     expect(result.chunkCount).toBeGreaterThan(0);
     expect(repo.auditLogsRepository?.record).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ action: "document.ingested" }));
+  });
+
+  it("indexes an existing Knowledge Hub document instead of creating a duplicate (RAG Remediation Sprint 1, RAG1-03/04/05/06)", async () => {
+    const repo = repositories();
+    // Simulate a document uploaded through Knowledge Hub: a real documents row with real
+    // governed metadata already set, but never chunked (Knowledge Hub itself never indexes).
+    const uploaded = await repo.documentsRepository.create(scope, {
+      organizationId: scope.organizationId,
+      name: "district-sop.pdf",
+      title: "District SOP",
+      storagePath: "organizations/org/documents/district-sop.pdf",
+      fileName: "district-sop.pdf",
+      fileSize: 4096,
+      mimeType: "application/pdf",
+      visibility: "department",
+      classification: "confidential",
+      tags: ["sop"],
+    });
+
+    const result = await ingestTenantDocument(repo, scope, {
+      title: "This title should be ignored",
+      bodyText: "The district SOP requires biomedical maintenance sign-off before oxygen manifold servicing.",
+      documentId: uploaded.id,
+    });
+
+    expect(result.document.id).toBe(uploaded.id);
+    expect(result.reindexedExistingDocument).toBe(true);
+    // The document's own real metadata is preserved, not overwritten by the ingest form's input.
+    expect(result.document.title).toBe("District SOP");
+    expect(result.document.visibility).toBe("department");
+    expect(result.document.classification).toBe("confidential");
+    expect(await repo.documentsRepository.list(scope)).toHaveLength(1);
+    expect(repo.documentsRepository.recordActivity).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ documentId: uploaded.id, action: "edited", metadata: expect.objectContaining({ event: "indexed" }) }));
+  });
+
+  it("refuses to index a document belonging to another organization (tenant isolation)", async () => {
+    const repo = repositories();
+    const uploaded = await repo.documentsRepository.create(scope, {
+      organizationId: "org-other",
+      name: "other-org-doc.pdf",
+      title: "Other Org Document",
+      storagePath: "organizations/org-other/documents/other-org-doc.pdf",
+      fileName: "other-org-doc.pdf",
+      fileSize: 100,
+      mimeType: "application/pdf",
+    });
+
+    await expect(ingestTenantDocument(repo, scope, {
+      title: "ignored",
+      bodyText: "Attempted cross-tenant reindex.",
+      documentId: uploaded.id,
+    })).rejects.toThrow(/not found for this organization/i);
   });
 
   it("answers questions only from tenant-authorized repository context when persistent chunks are unavailable", async () => {
