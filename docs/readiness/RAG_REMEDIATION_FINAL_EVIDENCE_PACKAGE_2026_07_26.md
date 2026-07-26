@@ -28,11 +28,11 @@ This is the pilot-readiness consolidation of the three-sprint RAG Remediation pr
 | A-58 | CRM "Create Contact" fabricates Influence (50)/Engagement (medium) | `Yes` (code-complete and tested; live UI unconfirmed) | Signal: "This influence score (50) and Engagement (Medium) should not be placeholder and should not autopopulate" -> Decision: honest default + real optional inputs -> Artifact: `stakeholderMutation()` defaults changed to `0`/`"unrated"`; form gained Influence/Engagement fields -> Verification: 3 new component tests -> Status: mechanism complete, not HITL-viewed live |
 | A-59 | "Review Approval Queue" routes to Analytics & Dashboard | `Yes` (code-complete and tested; live UI unconfirmed) | Signal: clicking the link landed on the wrong screen -> Decision: root-cause the guided-demo Next-button mismatch -> Artifact: `useGuidedDemo.ts`/`GuidedDemoBanner.tsx` fix (same root cause as A-64) -> Verification: 1 regression test tracing the exact case -> Status: fixed, not HITL-viewed live |
 | A-60 | "Export Report" (Approvals & Governance) is a dead/absent button | `Yes` (code-complete and tested; live UI and delivery unconfirmed) | Signal: button clickable but does nothing -> Decision: build a minimal real export -> Artifact: code search found no such button existed at all; built `GET /api/approvals` (real live queue) + real JSON export + `POST /api/approvals/export` audit event -> Verification: 3 route/component tests -> Status: mechanism complete, not HITL-viewed live |
-| A-61 | No way to select a Knowledge Hub document for indexing | `Blocked` (code shipped, pending HITL live retest) | Signal: "Paste governable text... is highly inconvenient" -> Decision: add a document selector -> Artifact: `DocumentsSection.tsx` selector + `ingestTenantDocument(documentId)` reindex path -> Verification: Sprint 1 test suite -> Status: not HITL-exercised live |
+| A-61 | No way to select a Knowledge Hub document for indexing | `Yes` (**live-confirmed 2026-07-26** -- see Addendum below) | Signal: "Paste governable text... is highly inconvenient" -> Decision: add a document selector -> Artifact: `DocumentsSection.tsx` selector + `ingestTenantDocument(documentId)` reindex path -> Verification: Sprint 1 test suite, then a separate same-day incident (A-66) blocking the retest, fixed and HITL-confirmed -> Status: live-exercised, confirmed working |
 | A-62 | Stale placeholder document remains retrievable | `No` (mechanism fixed 2026-07-26, pending HITL action + confirmation) | Signal: "This governed RAG doc is redundant, supposed to go" -> Decision: make Archive genuinely exclude a document from retrieval -> Artifact: `canRetrieveDocument()` in `governedRag.ts` now excludes archived, not only deleted, documents -> Verification: dedicated test -> Status: the HITL still needs to actually archive the document in production |
 | A-63 | Unclear whether approved AI answers carry content into created work | `Yes` (code-complete and tested; live-unconfirmed) | Signal: "Does answer from RAG feed into these options automatically is to be ascertained" -> Decision: audit and fix -> Artifact: `ai_operation_reviews.metadata` now stores question/fullAnswer/confidenceExplanation, carried into every created record -> Verification: `liveTenantWorkflow.test.ts` end-to-end tests -> Status: mechanism complete, not HITL-viewed live |
 | A-64 | "Ask AI Workspace" routes to Tasks & Workflow | `Yes` (code-complete and tested; live UI unconfirmed) | Same root cause and fix as A-59 -- see above |
-| A-65 | Feedback should notify `triaxisgrp@gmail.com` | `Blocked` (code shipped, delivery explicitly NOT verified) | Signal: "'Send Feedback' anywhere should lead to a form, the responses of which flow to triaxisgrp@gmail.com" -> Decision: add a real send attempt on the existing, already-reliable feedback pipeline -> Artifact: `feedbackEmail.ts` (new), wired into `POST /api/beta-feedback` -> Verification: 7 unit/route tests, honest not-configured/sent/failed states -> Status: whether `RESEND_API_KEY` is actually set and valid in production, and whether mail actually arrives, is unconfirmed -- identical open question to A-08 on the same provider |
+| A-65 | Feedback should notify `triaxisgrp@gmail.com` | `Blocked` (code shipped, delivery **confirmed absent**, not merely unverified) | Signal: "'Send Feedback' anywhere should lead to a form, the responses of which flow to triaxisgrp@gmail.com" -> Decision: add a real send attempt on the existing, already-reliable feedback pipeline -> Artifact: `feedbackEmail.ts` (new), wired into `POST /api/beta-feedback` -> Verification: 7 unit/route tests, honest not-configured/sent/failed states -> Status: **confirmed 2026-07-26** via `vercel env ls production` against `triaxis-www-frontend-import` -- `RESEND_API_KEY` is not present in production at all. Requires founder action (Vercel Dashboard); identical open question to A-08 on the same provider |
 
 ## What Is Verified Working (Code-Level, Tested)
 
@@ -75,3 +75,42 @@ Screens/workflows to test manually on production, in order:
 - Made the full review-to-work chain (question, answer, citations, confidence) traceable end to end.
 
 What it has not done, and cannot do from this environment, is the one thing A-13's own acceptance criteria requires: a real HITL asking a real question on production and receiving a cited answer they can verify against a document they actually uploaded. Per this program's own non-negotiable ("Do not claim RAG is fully production-grade unless the evidence supports that claim"), A-13 stays `Blocked` until that retest happens. The retest steps above are exactly what would need to pass for it to move.
+
+## Addendum (2026-07-26, Later Same Day): A-61 Retest Attempted, Hit a New Defect, Fixed, Re-Confirmed
+
+The HITL began exactly the retest this document called for in step 2 above, and it did not initially
+pass -- which is exactly what this evidence-discipline process is for. Full detail:
+`KNOWLEDGE_HUB_UPLOAD_PERSISTENCE_INCIDENT_CLOSEOUT_2026_07_26.md`.
+
+**What happened, in order:**
+
+1. **Prerequisite discovered first:** production had not been redeployed since 2026-07-25 16:16 IST
+   -- none of Executive Dashboard ED-1/2/3 or RAG Remediation Sprints 1-3 had ever reached
+   `triaxis-www-frontend-import`/`triaxis-product-investor-demo` in production, despite being
+   code-complete and tested in this repository. Fixed by redeploying both projects (full
+   verification suite re-run clean beforehand).
+2. **A-61 retest began, hit a new defect (A-66):** the HITL uploaded a real document to Knowledge
+   Hub; it showed "Document uploaded" but never appeared in the Documents & Files selector and did
+   not survive a session refresh. Root cause: a silent local-only fallback in
+   `KnowledgeHubSection.tsx` masking a genuine failure in the browser's direct upload to Supabase
+   Storage (confirmed via DevTools: a `404` on the upload's CORS preflight). This is a **different**
+   defect from anything A-61/A-62 originally described -- discovered only because the retest this
+   document called for was actually attempted.
+3. **Fixed same day:** uploads now proxy through a new same-origin route
+   (`src/app/api/documents/upload`) instead of a direct browser-to-Supabase-Storage PUT. 6 new
+   tests; full suite 148/148 files, 585/585 tests; typecheck/lint/build clean. Deployed to production
+   (commit `e4b27b7`, deployment `dpl_2gMEom4p5uGkjwjUqpC9vnLUwUbH`).
+4. **A-61 retest re-attempted and passed:** HITL confirmed the upload succeeded for real, appeared in
+   the Documents & Files selector, and survived a session refresh. A-61 moves to `Yes` in
+   `ACTIONABLES_READINESS_MATRIX.md` on this direct live evidence.
+5. **A-55/A-62/A-13's own retest (archive the stale document, re-query, compare) is still
+   outstanding** -- A-66 removed the technical blocker that made it impossible, but the retest itself
+   has not yet been performed as of this addendum.
+6. **One incidental, unrelated finding surfaced during diagnosis:** `SUPABASE_SERVICE_ROLE_KEY` in
+   `triaxis-www-frontend-import` production is not a valid token (rejected as `Invalid Compact JWS`
+   by a direct, disposable diagnostic call). Tracked as A-67. Nothing in this program's tested paths
+   depends on this key, so it caused no confirmed defect -- but it is real, unresolved, and requires
+   founder action to rotate.
+7. **A-65/A-08 confirmed, not just suspected, blocked:** `RESEND_API_KEY` is verified absent from
+   `triaxis-www-frontend-import` production entirely (`vercel env ls production`, 16 vars present,
+   none named `RESEND_API_KEY`).
