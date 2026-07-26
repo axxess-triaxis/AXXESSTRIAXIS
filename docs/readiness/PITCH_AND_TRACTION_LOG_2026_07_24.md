@@ -41,7 +41,7 @@ Purpose: a running, factual record of who AXXESS has been pitched to, what respo
 
 ### 5. Nandini Singh -- SIIC, IIT Kanpur
 
-**Status:** Round 2 signed off; proceeding to Round 3 with the Domain Head.
+**Status:** Round 2 signed off; proceeding to Round 3 with the Domain Head. **Update, 2026-07-26 (founder-reported): Round 3 has now appeared; awaiting incubation confirmation.**
 **Outcome:** Approved progression to the next round of the incubation process.
 
 ### 6. Gopal Krishna Dixit -- Domain Head (AI & ML), SIIC, IIT Kanpur
@@ -51,29 +51,29 @@ Purpose: a running, factual record of who AXXESS has been pitched to, what respo
 
 ### 7. Sudhanshu Mittal -- Director, NASSCOM; Centre Head, NASSCOM Centre of Excellence Gurugram (AI & IoT)
 
-**Status:** Offer made.
+**Status:** Offer made. **Update, 2026-07-26 (founder-reported): incubation offer stands; now awaiting documentation to formalize it.**
 **Outcome:** 30-minute presentation; walkthrough of the demo link provided in advance. Incubation offered.
 
 ### 8. SINE -- Society for Innovation and Entrepreneurship, IIT Bombay
 
-**Status:** Deferred by the incubator.
+**Status:** Deferred by the incubator. **Update, 2026-07-26 (founder-reported): now actively reapplying** -- consistent with the original "revisit post-MVP" deferral, this is the founder acting on that deferral, not a new outcome from SINE itself.
 **Outcome:** Told to revisit post-MVP for incubation -- an explicit, honest deferral rather than a rejection or an offer, recorded here without reframing.
 
 ## Accelerator / Pre-Accelerator Programs
 
 ### 9. Davide Coppola -- VC and Managing Director, Startup Wise Guys
 
-**Status:** Offer declined.
+**Status:** Offer declined. **Reconfirmed 2026-07-26 (founder-reported): no change.**
 **Outcome:** 20-minute call including live demo, pitch, and GitHub repo review. Offered entry into the Founders Club (pre-accelerator track) with a 50% discount on the program fee. **Declined, to preserve runway.**
 
 ### 10. Polina Stavrovski, O. Disi, K. Jaoudi, K. Jatania -- Plug and Play UAE
 
-**Status:** Round 2 call completed.
+**Status:** Round 2 call completed. **Update, 2026-07-26 (founder-reported): Round 2 has now appeared/concluded; awaiting further communication.**
 **Outcome:** 45-minute call with the investor team, as part of Round 2 for the Dubai Founders HQ Accelerator, Cohort 2.
 
 ### 11. Founder Institute Core Dubai -- Fall 2026 cohort
 
-**Status:** Finalist, awaiting cohort call.
+**Status:** Finalist, awaiting cohort call. **Reconfirmed 2026-07-26 (founder-reported): no change -- still finalist, still awaiting cohort confirmation.**
 **Outcome:** Selected on a founder-first basis; awaiting the cohort selection call.
 
 ### 12. Forge AI by LevelUp -- Top 20 Founder Residency, Sri Lanka
@@ -83,7 +83,7 @@ Purpose: a running, factual record of who AXXESS has been pitched to, what respo
 
 ### 13. Down Town Venture Labs
 
-**Status:** Application/pitch presented.
+**Status:** Application/pitch presented. **Update, 2026-07-26 (founder-reported): status is "Ongoing" -- grant conversations now specifically named as NRL Ideation, in addition to the NIDHI PoC grant below.**
 **Outcome:** Presented for the government NIDHI PoC grant, as an idea-stage startup.
 
 ## Recognition / Nomination Processes
@@ -138,7 +138,7 @@ Purpose: a running, factual record of who AXXESS has been pitched to, what respo
 
 ### 22. 3one4 Capital -- Analyst call
 
-**Status:** Passed.
+**Status:** Passed. **Reconfirmed 2026-07-26 (founder-reported): no change.**
 **Outcome:** Pitched on an analyst call. Response: **"too early for us."** This is the first entry in this log where the pass came from the investor's side, rather than the founder declining an offer to preserve runway -- recorded here without softening, in keeping with this log's evidence discipline.
 
 ## Summary Pattern (As Reported)
@@ -148,6 +148,26 @@ Reading across all twenty-two named entries: the recurring pattern is strong qua
 Two entries stand apart from the "impressed" pattern, recorded here just as plainly: **SINE IIT Bombay deferred incubation until post-MVP**, and **3one4 Capital passed** on an analyst call ("too early for us"). Both are genuine, unreframed signals that AXXESS is still viewed by some evaluators as pre-incubation/pre-investment stage -- consistent with, not contradicting, the honest-limitations framing already established across this program's documentation.
 
 The angel/VC outreach entries (16-22) add a second, distinct pattern: active, in-progress fundraising conversations across mentorship (Bezbora), direct angel pitches (Kashyap, Verma, Orban), ecosystem/connector relationships (Purshan, Sufiyan), and formal VC outreach (3one4 Capital). Unlike the accelerator entries, none of these has yet produced either a firm offer or, apart from 3one4 Capital's pass, a decisive outcome -- they are recorded here as open, in-progress relationships, not as claimed traction.
+
+## Status Update, 2026-07-26 (Founder-Reported)
+
+The founder supplied a status refresh on 8 of the entries above, in-session. Recorded inline on each
+affected entry above; summarized here for a single point of reference:
+
+| Entry | Change |
+|---|---|
+| #5/#6 SIIC, IIT Kanpur | Genuine progress: Round 2 -> Round 3 has now appeared, awaiting incubation confirmation |
+| #7 NASSCOM CoE Gurugram | Incubation offer stands, now awaiting documentation to formalize |
+| #8 SINE, IIT Bombay | Founder is now actively reapplying, per the original "revisit post-MVP" deferral |
+| #9 Startup Wise Guys | No change (reconfirmed) |
+| #10 Plug and Play UAE | Round 2 has appeared/concluded, awaiting further communication |
+| #11 Founder Institute Core Dubai | No change (reconfirmed) |
+| #13 Down Town Venture Labs | Status updated to "Ongoing"; grant conversation specifically named as NRL Ideation alongside the existing NIDHI PoC grant |
+| #22 3one4 Capital | No change (reconfirmed) |
+
+As with every entry in this log, this update is recorded as reported, not independently verified --
+no documentation, confirmation email, or other artifact was supplied alongside the status refresh
+itself.
 
 ## Explicit Non-Claims
 
