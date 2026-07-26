@@ -336,6 +336,10 @@ const resilientRepositories: RepositoryServices = {
       () => liveRepositories.storageRepository.createDocumentDownloadIntent(input),
       () => emptyRepositories.storageRepository.createDocumentDownloadIntent(input),
     ),
+    uploadDocumentFile: (input) => withResilientFallback(
+      () => liveRepositories.storageRepository.uploadDocumentFile(input),
+      () => emptyRepositories.storageRepository.uploadDocumentFile(input),
+    ),
   },
 };
 
