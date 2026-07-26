@@ -97,3 +97,32 @@ This remediation program is successful only if:
 - `A-55` is reclassified based on real diagnostic evidence.
 - `A-13` can move closer to `Yes` because the answer content quality is proven or the remaining blocker is specific.
 
+## Sprint RAG-3: Workflow Polish, Feedback Routing and Pilot-Ready RAG Evidence
+
+**Status: Closed.** Added 2026-07-26 to pick up this roadmap's own "Lower-Priority Follow-Ups" (A-58, A-60, A-57) plus A-65, and to package a final pilot-ready evidence summary. See `docs/readiness/RAG_REMEDIATION_SPRINT_3_WORKFLOW_POLISH_CLOSEOUT_2026_07_26.md` and `docs/readiness/RAG_REMEDIATION_FINAL_EVIDENCE_PACKAGE_2026_07_26.md`.
+
+Goal:
+
+Convert the pipeline from "technically improved" into "pilot-reviewable" -- close the AI Review Inbox-to-CRM visibility gap, stop fabricating relationship intelligence on new contacts, make Approvals Export Report real, route beta feedback toward `triaxisgrp@gmail.com`, and reconfirm A-55/A-56/A-61/A-62/A-63 after Sprints 1-2.
+
+### Actionables
+
+| ID | Action | Acceptance Criteria |
+|---|---|---|
+| RAG3-01 | Fix A-57 AI Review Inbox to CRM handoff | Approved "Create Stakeholder Note" review is visible in Stakeholders & CRM |
+| RAG3-02 | Fix A-58 fake CRM auto-population | Live contact creation no longer fabricates Influence/Engagement |
+| RAG3-03 | Fix A-60 Approvals Export Report | Real tenant-scoped export with audit event, or honestly disabled |
+| RAG3-04 | Fix A-65 feedback routing | Feedback routed/configured toward `triaxisgrp@gmail.com`, never silently dropped |
+| RAG3-05 | Package final RAG remediation evidence | A-55 through A-65 status table with evidence chain and HITL validation script |
+
+### Exit Criteria
+
+RAG-3 closes only if:
+
+- AI Review Inbox to CRM handoff is real or honestly scoped.
+- CRM contact creation no longer creates fake live-tenant intelligence.
+- Approvals Export Report is real or honestly disabled.
+- Feedback is persisted and routed/configured toward `triaxisgrp@gmail.com`.
+- A final RAG remediation evidence package exists.
+- Tests and build pass.
+
