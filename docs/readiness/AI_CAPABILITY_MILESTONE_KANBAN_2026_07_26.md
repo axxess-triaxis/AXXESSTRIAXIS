@@ -49,7 +49,7 @@ connected.
 - [ ] Plugin-runtime and execution-runs admin panels' underlying capabilities (dry-run job execution,
       plugin scope revocation) HITL-confirmed live in production
 
-## Current Status: 7 of 11 exit criteria code-complete and tested; 1 requires live delivery confirmation; 1 requires live HITL confirmation of admin actions; 1 (real LLM) is a known, documented capability gap; the RAG sub-board itself is 6 of 10
+## Current Status: 7 of 11 exit criteria code-complete and tested; 1 requires live delivery confirmation (now confirmed *blocked*, not merely unverified -- see A-65 below); 1 requires live HITL confirmation of admin actions; 1 (real LLM) is a known, documented capability gap; the RAG sub-board itself is 8 of 11 (2 of those live-HITL-confirmed as of 2026-07-26); one new, unrelated infrastructure gap found and tracked (A-67, invalid service-role key)
 
 ## Board
 
@@ -63,13 +63,14 @@ connected.
 | A-58 -- CRM fabricated defaults removed | `stakeholderMutation()` defaults changed to `0`/`"unrated"`; form gained real optional Influence/Engagement inputs | Sprint 3 closeout, commit `c85165a` |
 | A-60 -- Approvals Export Report real | `GET /api/approvals` (real live queue, previously absent entirely) + real JSON export + `POST /api/approvals/export` audit event | Sprint 3 closeout, commit `c85165a` |
 | A-65 -- Feedback email routing wired | `src/services/email/feedbackEmail.ts` (new), sends toward `triaxisgrp@gmail.com` via the same Resend provider `invitationEmail.ts` uses | Sprint 3 closeout, commit `c85165a` |
-| RAG answer engine grounding + explainability | See `RAG_CAPABILITY_MILESTONE_KANBAN_2026_07_26.md` | Sprints 1-2 |
+| RAG answer engine grounding + explainability | See `RAG_CAPABILITY_MILESTONE_KANBAN_2026_07_26.md` (now 2 of its items live-HITL-confirmed, not just code-tested, as of 2026-07-26) | Sprints 1-2 |
+| Knowledge Hub document uploads genuinely persist (A-66, newly discovered and fixed 2026-07-26) | Uploads previously showed a fake success and silently failed to persist -- new same-origin upload proxy fixes this; HITL live-confirmed | `KNOWLEDGE_HUB_UPLOAD_PERSISTENCE_INCIDENT_CLOSEOUT_2026_07_26.md`, commit `e4b27b7` |
 
 ### Code-Shipped, Pending Live Confirmation (2)
 
 | Card | What's shipped | What's still open | Priority |
 |---|---|---|---|
-| A-65 delivery | Real send attempt with honest not-configured/sent/failed status | Whether `RESEND_API_KEY` is set and valid in production, and whether a real submission arrives -- identical open question to A-08 on the same provider | Medium |
+| A-65 delivery | Real send attempt with honest not-configured/sent/failed status | **Confirmed 2026-07-26** (not merely unverified): `vercel env ls production` against `triaxis-www-frontend-import` shows `RESEND_API_KEY` is genuinely absent from production. Requires the founder to add it via the Vercel Dashboard -- identical open question to A-08 on the same provider | Medium |
 | Plugin-runtime / execution-runs admin actions | Real backend wiring (`/api/plugins/runtime`, `/api/execution/jobs`) | Not yet clicked and confirmed live in production by an Organization Admin | Medium |
 
 ### Known, Documented Capability Gap (not a defect -- an unaddressed positioning-vs-mechanism gap)
@@ -77,6 +78,12 @@ connected.
 | Item | Why it's flagged here rather than fixed |
 |---|---|
 | No real external LLM provider anywhere in this codebase | Every sprint prompt's explicit non-negotiable was "do not rewrite the RAG architecture." Confirmed via code read of `src/services/ai/providers/index.ts` (`remotePlaceholderProvider` is an explicit stub) during Sprint 2. This is the single largest gap between the product's stated positioning ("governance-native, human-in-the-loop AI" per `README.md`) and its current mechanism -- tracked in `docs/UNSUPPORTED_OR_PARTIAL_CLAIMS.md`, not silently carried as if resolved |
+
+### Newly Discovered, Unresolved (found while diagnosing A-66, not caused by it)
+
+| Item | Status |
+|---|---|
+| `SUPABASE_SERVICE_ROLE_KEY` in `triaxis-www-frontend-import` production is not a valid token (`400 Invalid Compact JWS` on a direct diagnostic call) | Tracked as A-67 in `ACTIONABLES_READINESS_MATRIX.md`. Nothing in today's fix depends on this key, so it caused no confirmed user-visible defect -- but any admin/cron path relying on service-role privileges would silently fail. Requires founder action (rotate in Vercel Dashboard); cannot be done from this environment |
 
 ### Closed
 
@@ -99,5 +106,7 @@ their originating actionables/commits, carried into this board as already-Code-C
 
 All findings sourced from already-published program evidence -- this document adds no new claims. See
 `RAG_CAPABILITY_MILESTONE_KANBAN_2026_07_26.md`, `docs/readiness/ACTIONABLES_READINESS_MATRIX.md`,
-`docs/RAG.md`, `docs/UNSUPPORTED_OR_PARTIAL_CLAIMS.md`, and the three RAG Remediation Sprint closeout
-docs (commits `0ed228e`, `d3436c0`, `c85165a`) plus the admin panel wiring commit `ed51942`.
+`docs/RAG.md`, `docs/UNSUPPORTED_OR_PARTIAL_CLAIMS.md`,
+`KNOWLEDGE_HUB_UPLOAD_PERSISTENCE_INCIDENT_CLOSEOUT_2026_07_26.md`, and the three RAG Remediation
+Sprint closeout docs (commits `0ed228e`, `d3436c0`, `c85165a`) plus the admin panel wiring commit
+`ed51942` and the upload-persistence fix commit `e4b27b7`.
