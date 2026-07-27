@@ -38,6 +38,15 @@ significant budget. It is captured here as directional intent so it isn't lost, 
 scoping pass -- folding unscoped infrastructure and data-partnership work into an AI-router sprint
 plan would understate its actual size and risk.
 
+**Update, 2026-07-27:** Tiers 4 and 5 also carry fully tailored enterprise pricing, per-user-role --
+the role system this maps onto already exists and is verified in code (`src/security/rbac.ts`):
+Super Admin, Organization Admin, Executive, Manager, Employee, Consultant, Guest (7 roles, used
+today for feature-level access control across the product). Storage model: **Tier 5 gets full
+physical storage**; **Tier 4 gets a cost-based choice between physical and cloud storage**, decided
+per-tenant alongside its routing-API cost tradeoffs. Neither the per-role pricing model nor the
+storage-tier mechanism exists in code yet -- both are new scope, to be broken into sprint items once
+Tier 4/5 gets its own scoping pass (see above).
+
 Regional specialization layered across tiers 3-5 depending on geography: **Sarvam** (Indic
 languages), **Jais** (Core42/G42, Arabic -- UAE-origin, reinforces the sovereignty narrative for
 Gulf government/enterprise buyers, not just a cost play), **Falcon** (TII, Arabic/general), and a
@@ -120,21 +129,30 @@ Goal: replace the stub with one genuinely working remote adapter before building
 top of it. Highest leverage target is OpenRouter, since it fronts multiple Tier 1-3 models through
 one integration.
 
-- [ ] Add `OPENROUTER_API_KEY` to env schema and `getAiProviderConfigurations()`
-- [ ] Add `kimi` and `deepseek` to `AiProviderName` and `providerCapabilities` (both `mode: "remote"`,
-      `costTier: "low"`, capabilities/languages verified against real model documentation, not
-      copied from openai's list)
-- [ ] Build a real adapter (`src/services/ai/providers/openRouterProvider.ts`) implementing
+- [x] Add `OPENROUTER_API_KEY` to env schema and `getAiProviderConfigurations()`
+- [x] Add `kimi` and `deepseek` to `AiProviderName` and `providerCapabilities` (both `mode: "remote"`,
+      `costTier: "low"`; model slugs and pricing verified directly against openrouter.ai's own model
+      pages 2026-07-27, not guessed -- `moonshotai/kimi-k2`, `deepseek/deepseek-chat`)
+- [x] Build a real adapter (`src/services/ai/providers/openRouterProvider.ts`) implementing
       `AiProviderAdapter.complete()` against OpenRouter's actual chat-completions API, parameterized
-      by model slug -- one adapter factory serving both `kimi` and `deepseek` configs
-- [ ] Replace the flat `perThousandTokenEstimate` heuristic for these two providers with real
-      cost calculation from OpenRouter's response `usage` + published per-model pricing
+      by model slug -- one adapter factory serving both `kimi` and `deepseek` configs. Fails closed,
+      honestly: a missing key, non-OK response, or thrown error all return a clearly-labeled,
+      low-confidence (0.3) result that forces human review, never a fake success.
+- [x] Replace the flat `perThousandTokenEstimate` heuristic for these two providers with real
+      cost calculation from OpenRouter's response `usage` + published per-model pricing -- new
+      `actualCostUsd`/`usage` fields on `AiProviderCompletion`, consumed by `routeAiRequest()` in
+      preference to the pre-call estimate when present
 - [ ] Decide and implement: Grok/Gemini via OpenRouter too, or direct APIs (see Founder Action Items)
-- [ ] Tests: mocked-fetch adapter tests (same `vi.stubGlobal("fetch", ...)` pattern already used
-      throughout this codebase), plus a `routeAiRequest()` integration test proving a real
-      classification -> policy -> adapter -> response round trip for at least one non-local provider
-- [ ] Live verification: one real, HITL-confirmed AI Workspace query actually served by a real
-      external model, not `local` -- the first time this will have happened in this program
+      -- deferred, not required for kimi/deepseek to work
+- [x] Tests: 5 mocked-fetch adapter tests (`openRouterProvider.test.ts`) covering missing-key,
+      success-with-real-cost-math, non-OK response, thrown fetch error, and empty-content cases;
+      plus a `routeAiRequest()` integration test proving the real classification -> policy ->
+      adapter -> response round trip end to end, including real cost flowing through to
+      `AiRouteResult.estimatedCostUsd`. Full suite green: typecheck/lint/25 AI-service tests passing.
+- [ ] **Live verification still outstanding**: one real, HITL-confirmed AI Workspace query actually
+      served by kimi or deepseek in production -- requires you to add `OPENROUTER_API_KEY` to
+      Vercel first (same pattern as `RESEND_API_KEY` earlier in this program: code is real and
+      tested, live proof needs your credential)
 
 ### Sprint 2 -- Sovereign/Regional Specialists: Jais, Falcon, Sarvam
 
@@ -192,10 +210,22 @@ and close out this roadmap with genuine end-to-end evidence across all tiers -- 
 
 ## Board
 
+### Code-Complete and Tested
+
+| Item | Evidence |
+|---|---|
+| Sprint 1 -- OpenRouter adapter for kimi/deepseek, real API calls, real cost calculation | `src/services/ai/providers/openRouterProvider.ts` (new), `openRouterProvider.test.ts` (5 tests), `aiRouter.test.ts` integration test; typecheck/lint/25 AI-service tests all clean |
+
+### Code-Shipped, Pending Live HITL Confirmation
+
+| Item | What's needed |
+|---|---|
+| Sprint 1 live proof | `OPENROUTER_API_KEY` added to Vercel production env (founder action), then one real AI Workspace query confirmed served by kimi/deepseek |
+
 ### Not Started
 
-All items above -- this roadmap is scoping only as of 2026-07-27. No code has been written against
-it yet.
+Sprints 2-4, and the unscoped Tier 4/5 infrastructure/data-acquisition/per-role-pricing/storage
+work described above.
 
 ## Evidence
 
