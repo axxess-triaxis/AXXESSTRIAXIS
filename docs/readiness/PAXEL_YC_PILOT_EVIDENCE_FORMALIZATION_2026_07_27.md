@@ -52,19 +52,25 @@ per-user role-change controls). `A-39`: the "Send feedback" checklist step was h
 `/dashboard`, which has no feedback surface -- it now directly opens the app's existing, real
 `BetaFeedbackButton`/`BetaFeedbackModal` instead of navigating away. All four: typecheck, lint
 (zero warnings), and the full test suite (152 files / 605 tests, up from 148/595 pre-fix) pass; 8 new
-tests added directly covering these fixes. **Status per this repo's own evidence-chain discipline:**
-code-complete and test-verified, but **not yet HITL-confirmed live in production** -- moved to
-`Yes (code + test shipped 2026-07-27, pending HITL live confirmation)` in the matrix, the same
-vocabulary already used for A-50/51/56/57, not silently upgraded to a plain `Yes`.
+tests added directly covering these fixes. **Deployed to `landing.triaxisventures.com` the same day**
+(`dpl_8QvjWHsaUFGAqDdqVCaB6CJb3WNd`), with explicit founder confirmation before deploying.
+**HITL live-retested post-deploy, same day: A-36, A-37, and A-39 are confirmed working and closed**
+(founder's own words: "Invite Pilot team: Lands on 'Settings' correct page, has option to invite
+team. Assign roles - Lands at 'Users' has functionality to assign role. Send feedback - Correctly
+opens on feedback form. Close all 3."). **A-35 remains pending** -- deployed, but not yet separately
+confirmed that a real submission now appears in the new Feedback Inbox (the founder's earlier
+feedback screenshot was submitted against the pre-fix deployment).
 
 **Original 2026-07-27 finding (superseded by the fix above, kept for the record):** `A-41` (Golden
 Path step-to-workspace mapping, the closest tracked proxy for this question) showed 6 of 10 Golden
 Path items correctly mapped and 4 confirmed incorrect. "Almost fully used" did not match a
 documented 4-of-10 open failure rate at the time this document was first written.
-**Recommended formal statement (updated):** "10 of 10 Golden Path workflow entry points are now
-code-and-test-verified as correctly routed; the 4 that were confirmed broken as of 2026-07-25 were
-fixed and tested the same day the pilot-readiness question was raised (2026-07-27), pending a live
-HITL walkthrough to close the loop."
+**Recommended formal statement (updated, post-live-retest):** "9 of 10 Golden Path workflow entry
+points are live HITL-confirmed correctly routed as of 2026-07-27; the 10th (feedback-submission
+visibility in the admin inbox) is code-and-test-verified and deployed, pending a final live check
+that a real submission appears there. All 4 defects found in the 2026-07-25 walkthrough were
+root-caused, fixed, tested, and deployed the same day the pilot-readiness question was raised
+(2026-07-27); 3 of the 4 are now live-confirmed closed by the founder."
 
 ### 5. Are errors clustered around auth, upload, RAG, or workspace loading, and how much is rectified?
 
@@ -97,12 +103,14 @@ HITL walkthrough to close the loop."
 > upload-persistence-and-indexing loop (a real production defect found, fixed, and live-confirmed the
 > same day), AI Review conversion into real Tasks (live-verified) and Stakeholder Notes (fixed,
 > pending live confirmation), and a Golden Path workflow-routing map that was 6-of-10 correct as of
-> 2026-07-25, with all 4 remaining routing defects root-caused, fixed, and test-verified the same day
-> this assessment was prepared (2026-07-27), pending a live HITL walkthrough to confirm in production.
-> The program has produced 12 dated remediation closeout documents across at least 6 distinct HITL
-> walkthrough sessions, currently tracking 67 actionables at 36 confirmed-working-or-fixed-pending-live-proof
-> / 19 blocked-on-external-dependency / 12 confirmed-defect. A precise defect-rectification percentage
-> for auth/upload/RAG/workspace-loading specifically has not yet been computed and is not claimed.
+> 2026-07-25, with all 4 remaining routing defects root-caused, fixed, tested, and deployed the same
+> day this assessment was prepared (2026-07-27) -- 3 of the 4 (Invite Pilot Team, Assign Roles, Send
+> Feedback) are now live HITL-confirmed closed in production; the 4th (feedback-submission inbox
+> visibility) is deployed and pending a final live check. The program has produced 12 dated
+> remediation closeout documents across at least 6 distinct HITL walkthrough sessions, currently
+> tracking 67 actionables at 36 confirmed-working-or-fixed / 19 blocked-on-external-dependency / 12
+> confirmed-defect. A precise defect-rectification percentage for auth/upload/RAG/workspace-loading
+> specifically has not yet been computed and is not claimed.
 
 ## What Would Strengthen This Before Submission
 
