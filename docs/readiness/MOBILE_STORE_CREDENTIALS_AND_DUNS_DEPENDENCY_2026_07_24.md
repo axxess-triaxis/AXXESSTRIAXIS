@@ -70,6 +70,15 @@ The general turnaround time for free D-U-N-S issuance can be up to approximately
 
 This external dependency is therefore being tracked as a credential/governance blocker, not as a product-engineering failure.
 
+**Update, 2026-07-27 (founder-reported):** still pending. 14 days elapsed since the 2026-07-13
+8:40 AM IST submission; up to ~16 days remain within the stated 30-day free-issuance window
+(expected by approximately 2026-08-12). Founder confirms this remains the specific, sole blocker on
+company-owned Apple Developer Program and Google Play Console credentials -- re-confirmed the same
+day a real (unsigned, non-store) Capacitor preview build was independently triggered for the first
+time via `mobile-capacitor.yml`, which requires no company credentials at all. See
+`MOBILE_RELEASE_READINESS_KANBAN_2026_07_27.md` for that build's status and the full current picture
+of what is and is not blocked by this dependency.
+
 ## Governance Position
 
 AXXESS TRIaxis should not be released under an individual founder account if the intended product owner and operating company is Triaxis Ventures Private Limited.

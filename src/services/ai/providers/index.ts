@@ -1,6 +1,9 @@
 import { getAiProviderConfigurations } from "../model-routing-policy";
 import type { AiProviderAdapter } from "../types";
 import { localAiProvider } from "./localProvider";
+import { createOpenRouterProvider } from "./openRouterProvider";
+
+const openRouterBackedProviders = new Set(["kimi", "deepseek"]);
 
 function remotePlaceholderProvider(config: ReturnType<typeof getAiProviderConfigurations>[number]): AiProviderAdapter {
   return {
@@ -16,8 +19,14 @@ function remotePlaceholderProvider(config: ReturnType<typeof getAiProviderConfig
 }
 
 export function buildAiProviderAdapters(env: NodeJS.ProcessEnv = process.env): AiProviderAdapter[] {
-  return getAiProviderConfigurations(env).map((config) => (
-    config.name === "local" ? { ...localAiProvider, config: { ...localAiProvider.config, ...config, configured: config.configured || localAiProvider.config.configured, status: config.configured ? "configured" : localAiProvider.config.status } } : remotePlaceholderProvider(config)
-  ));
+  return getAiProviderConfigurations(env).map((config) => {
+    if (config.name === "local") {
+      return { ...localAiProvider, config: { ...localAiProvider.config, ...config, configured: config.configured || localAiProvider.config.configured, status: config.configured ? "configured" : localAiProvider.config.status } };
+    }
+    if (openRouterBackedProviders.has(config.name)) {
+      return createOpenRouterProvider(config, env);
+    }
+    return remotePlaceholderProvider(config);
+  });
 }
 
