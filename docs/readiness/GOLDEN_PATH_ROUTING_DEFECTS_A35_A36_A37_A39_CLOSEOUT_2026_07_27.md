@@ -121,20 +121,33 @@ time):
   - `pnpm run test` -- **152 test files passed, 605 tests passed** (up from 150 files/595 tests
     before this change).
   - `pnpm run build` -- see exact result in "Exact File / Commit / PR / Deployment State" below.
-- **Not verified**: no HITL live walkthrough of these four fixes in production has occurred yet.
-  Per this repo's own status vocabulary, all four are recorded as
-  `Yes (code + test shipped 2026-07-27, pending HITL live confirmation)` in
-  `ACTIONABLES_READINESS_MATRIX.md` -- the same vocabulary already used for A-50/51/56/57 --
-  not silently upgraded to a plain `Yes`.
+- **HITL live walkthrough, post-deploy, same day:** see "Live Deployment and HITL Confirmation"
+  below -- A-36/A-37/A-39 are now live-confirmed and closed; A-35 remains pending a direct check.
+
+## Live Deployment and HITL Confirmation (2026-07-27, Same Day)
+
+With explicit founder confirmation, this fix was deployed to production
+(`vercel deploy --prod` against `triaxis-www-frontend-import`, deployment
+`dpl_8QvjWHsaUFGAqDdqVCaB6CJb3WNd`, aliased to `landing.triaxisventures.com`). The prior production
+deployment had been built ~5 hours before this fix's commit, which is why the founder's first live
+re-test (before this deploy) still showed the old broken behavior -- not a flaw in the fix itself.
+
+After the deploy, the founder live-retested all three navigation-routing items and confirmed, in
+their own words:
+- **A-36**: "Lands on 'Settings' correct page, has option to invite team." **Closed.**
+- **A-37**: "Lands at 'Users' has functionality to assign role." **Closed.**
+- **A-39**: "Correctly opens on feedback form." **Closed.**
+
+All three moved from `Yes (code + test shipped 2026-07-27, pending HITL live confirmation)` to a
+plain `Yes` (96% confidence) in `ACTIONABLES_READINESS_MATRIX.md`.
 
 ## What Remains Partial or Blocked
 
-- **Live HITL confirmation** that clicking "Invite Pilot Team" and "Assign Roles" in the real,
-  deployed Golden Path checklist now lands on the Users tab (not Security), that "Send feedback"
-  now opens the real modal in place, and that a real submitted feedback item now appears in the new
-  Product Analytics Feedback Inbox. This requires a deployment to production plus a real HITL
-  session -- both outside this agent's own authority to perform unprompted per this repo's
-  deployment discipline.
+- **A-35** was deployed in the same production push but has **not** been separately HITL-confirmed:
+  the founder's earlier feedback-submission screenshot was made against the pre-fix deployment, so
+  it does not prove the new Feedback Inbox (`/admin/product-analytics`) actually displays it. Kept at
+  `Yes (code + test shipped 2026-07-27, pending HITL live confirmation)` -- not silently upgraded --
+  pending a direct check that a real submission now appears there.
 - **A-38** (the adjacent "Back" navigation defect from the Security landing) remains open and
   unfixed -- explicitly out of scope for this pass.
 - **`BetaReadinessSection.tsx`'s feedback metric** remains count-only; not consolidated with the new
@@ -160,8 +173,7 @@ Docs updated same pass: `ACTIONABLES_READINESS_MATRIX.md` (A-35/A-36/A-37/A-39 m
 (Question 4 updated with this fix, recommended formal statement revised),
 `QA3_EXECUTIVE_SUMMARY_2026_07_26.md` (actionables and test-count rows refreshed).
 
-Branch: `canonical/sprint-1-35-unified-gitlab`. Not yet committed as of this document's writing --
-commit and push (to `origin` and `gitlab`, per this repo's established dual-remote practice) follow
-in the same session. No deployment to production has been performed or requested in this pass;
-per `CLAUDE.md`'s git/deployment discipline, that requires explicit confirmation in the current
-conversation.
+Branch: `canonical/sprint-1-35-unified-gitlab`. Committed as `0883b30`, pushed to both `origin` and
+`gitlab`. Deployed to production with explicit founder confirmation in this conversation:
+`vercel deploy --prod` against `triaxis-www-frontend-import`, deployment
+`dpl_8QvjWHsaUFGAqDdqVCaB6CJb3WNd`, aliased to `landing.triaxisventures.com`.
