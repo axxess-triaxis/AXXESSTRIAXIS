@@ -17,7 +17,7 @@ type BetaOnboardingChecklistProps = {
   projectCount: number;
 };
 
-const steps: { id: OnboardingStepId; label: string; route: string; detail: string }[] = [
+const steps: { id: OnboardingStepId; label: string; route: string; detail: string; action?: "open-feedback" }[] = [
   { id: "organization", label: "Confirm organization", route: "/admin/organization", detail: "Tenant profile, sector, owner, and live/demo separation" },
   { id: "invite_team_member", label: "Invite pilot team", route: "/admin/invitations", detail: "Sponsor, department lead, manager, and first employee" },
   { id: "role_assignment", label: "Assign roles", route: "/admin/roles", detail: "Organization Admin, Executive, Manager, Employee, Guest" },
@@ -27,7 +27,10 @@ const steps: { id: OnboardingStepId; label: string; route: string; detail: strin
   { id: "first_task", label: "Create first task", route: "/tasks", detail: "Task created from workflow or AI answer" },
   { id: "first_approval", label: "Request first approval", route: "/approvals", detail: "Human decision with policy note and audit trail" },
   { id: "view_audit_trail", label: "View audit trail", route: "/admin/audit-logs", detail: "Evidence chain for pilot sponsor and compliance review" },
-  { id: "send_feedback", label: "Send feedback / request support", route: "/dashboard", detail: "Capture pilot friction, interest, and next meeting" },
+  // A-39 fix (2026-07-27): this used to route to /dashboard, which has no feedback surface at all.
+  // The real feedback form is the always-mounted BetaFeedbackButton/BetaFeedbackModal (id
+  // "beta-feedback-trigger" in AppShell) -- open it directly instead of navigating away.
+  { id: "send_feedback", label: "Send feedback / request support", route: "/dashboard", detail: "Capture pilot friction, interest, and next meeting", action: "open-feedback" },
 ];
 
 export function BetaOnboardingChecklist({ user, projectCount }: BetaOnboardingChecklistProps) {
@@ -114,9 +117,19 @@ export function BetaOnboardingChecklist({ user, projectCount }: BetaOnboardingCh
                   <span className="mt-1 block leading-relaxed">{step.detail}</span>
                 </span>
               </button>
-              <a href={step.route} className="mt-3 inline-flex items-center gap-1 text-[11px] font-semibold text-[#8B1E2D]">
-                Open <ArrowRight size={11} />
-              </a>
+              {step.action === "open-feedback" ? (
+                <button
+                  type="button"
+                  onClick={() => document.getElementById("beta-feedback-trigger")?.click()}
+                  className="mt-3 inline-flex items-center gap-1 text-[11px] font-semibold text-[#8B1E2D]"
+                >
+                  Open <ArrowRight size={11} />
+                </button>
+              ) : (
+                <a href={step.route} className="mt-3 inline-flex items-center gap-1 text-[11px] font-semibold text-[#8B1E2D]">
+                  Open <ArrowRight size={11} />
+                </a>
+              )}
             </div>
           );
         })}
