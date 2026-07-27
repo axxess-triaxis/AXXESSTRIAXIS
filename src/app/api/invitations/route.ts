@@ -4,6 +4,7 @@ import { getServerAuthSession } from "../../../auth/serverSession";
 import { canManageOrganization, isRoleName } from "../../../security/rbac";
 import { auditLogsRepository, invitationsRepository, notificationsRepository, tenantScopeFromUser } from "../../../repositories/supabaseEnterpriseRepositories";
 import { sendInvitationEmail } from "../../../services/email/invitationEmail";
+import { getPostHogClient } from "../../../lib/posthog-server";
 
 type InvitationRequest = {
   organizationId?: string;
@@ -91,6 +92,20 @@ export async function POST(request: Request) {
     resourceType: "invitation",
     resourceId: invitation.id,
   }).catch(() => undefined);
+
+  const posthog = getPostHogClient();
+  if (posthog) {
+    posthog.capture({
+      distinctId: session.user.id,
+      event: "invitation_sent",
+      properties: {
+        invited_role: role,
+        organization_id: organizationId,
+        email_delivery: emailDelivery.status,
+      },
+    });
+    await posthog.flush();
+  }
 
   return NextResponse.json({
     ...invitation,

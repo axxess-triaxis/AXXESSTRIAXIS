@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { signInServerSide } from "../../../../auth/serverSession";
 import { auditLogsRepository } from "../../../../repositories/supabaseEnterpriseRepositories";
+import { getPostHogClient } from "../../../../lib/posthog-server";
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null) as { email?: string; password?: string } | null;
@@ -25,6 +26,28 @@ export async function POST(request: Request) {
       category: "authentication",
       metadata: { email },
     }).catch(() => undefined);
+
+    const posthog = getPostHogClient();
+    if (posthog) {
+      posthog.identify({
+        distinctId: session.user.id,
+        properties: {
+          email: session.user.email ?? email,
+          user_role: session.user.role,
+          organization_id: session.user.organizationId,
+        },
+      });
+      posthog.capture({
+        distinctId: session.user.id,
+        event: "user_login",
+        properties: {
+          auth_method: "password",
+          user_role: session.user.role,
+          organization_id: session.user.organizationId,
+        },
+      });
+      await posthog.flush();
+    }
 
     return NextResponse.json({ user: session.user });
   } catch {
