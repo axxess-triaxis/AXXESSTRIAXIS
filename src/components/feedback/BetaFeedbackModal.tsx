@@ -1,10 +1,8 @@
 "use client";
 
 import { ExternalLink, Send, X } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useAnalytics } from "../../services/analytics";
-import { applicationServices } from "../../providers/serviceProvider";
-import { tenantScopeFromUser } from "../../repositories/supabaseEnterpriseRepositories";
 import type { BetaFeedbackType } from "../../domain";
 import type { UserContext } from "../../security/rbac";
 import { InlineToast } from "../forms/InlineToast";
@@ -39,7 +37,6 @@ const ratings = ["1", "2", "3", "4", "5"].map((value) => ({ value, label: value 
 
 export function BetaFeedbackModal({ user, moduleName, route, onClose }: BetaFeedbackModalProps) {
   const analytics = useAnalytics();
-  const scope = useMemo(() => tenantScopeFromUser(user), [user]);
   const [feedbackType, setFeedbackType] = useState<BetaFeedbackType>("General Feedback");
   const [selectedModule, setSelectedModule] = useState(moduleName || "Dashboard");
   const [rating, setRating] = useState("4");
@@ -67,18 +64,32 @@ export function BetaFeedbackModal({ user, moduleName, route, onClose }: BetaFeed
 
     setSubmitting(true);
     try {
-      await applicationServices.betaFeedbackRepository.create(scope, {
-        feedbackType,
-        module: selectedModule,
-        rating: Number(rating),
-        message: message.trim(),
-        permissionToContact,
-        metadata: {
-          route,
-          release_version: analytics.releaseVersion,
-          event_source: "client",
-        },
+      // A-65 fix (2026-07-27): this used to write directly to betaFeedbackRepository.create(),
+      // which persists the row but never sends the "flows to triaxisgrp@gmail.com" notification
+      // email -- that only happens in POST /api/beta-feedback's sendFeedbackNotificationEmail()
+      // call. Going through the route is what actually delivers the email.
+      const response = await fetch("/api/beta-feedback", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          feedbackType,
+          module: selectedModule,
+          rating: Number(rating),
+          message: message.trim(),
+          permissionToContact,
+          metadata: {
+            route,
+            release_version: analytics.releaseVersion,
+            event_source: "client",
+          },
+        }),
       });
+
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({})) as { error?: string };
+        throw new Error(payload.error ?? "Feedback could not be saved right now.");
+      }
 
       analytics.trackEvent("feedback_submitted", {
         feedback_type: feedbackType,
@@ -95,8 +106,8 @@ export function BetaFeedbackModal({ user, moduleName, route, onClose }: BetaFeed
 
       setMessage("");
       setToast({ tone: "success", message: "Feedback submitted. Thank you." });
-    } catch {
-      setToast({ tone: "error", message: "Feedback could not be saved right now." });
+    } catch (error) {
+      setToast({ tone: "error", message: error instanceof Error ? error.message : "Feedback could not be saved right now." });
     } finally {
       setSubmitting(false);
     }

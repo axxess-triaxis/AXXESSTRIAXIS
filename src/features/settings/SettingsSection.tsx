@@ -618,15 +618,23 @@ function UserAdministration() {
     setSaving(true);
     setToast(null);
     try {
-      await applicationServices.invitationsRepository.create(scope, {
-        organizationId: scope.organizationId,
-        email: inviteEmail.trim().toLowerCase(),
-        role: inviteRole,
-        invitedByUserId: scope.userId,
-        tokenHash: "client-issued-invitation",
-        expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7).toISOString(),
+      // A-08/A-65 fix (2026-07-27): this used to write directly to the invitations repository's
+      // create method, which persists the invitation but never sends the actual invite email --
+      // that only happens in POST /api/invitations's sendInvitationEmail() call. Going through the
+      // route is what actually delivers the email, and lets us tell the admin the truth about
+      // whether it sent.
+      const response = await fetch("/api/invitations", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: inviteEmail.trim().toLowerCase(), role: inviteRole }),
       });
-      analytics.trackEvent("user_invited", { invited_role: inviteRole }, {
+      const payload = await response.json().catch(() => ({})) as { error?: string; emailDelivery?: string };
+      if (!response.ok) {
+        throw new Error(payload.error ?? "Invitation could not be created.");
+      }
+
+      analytics.trackEvent("user_invited", { invited_role: inviteRole, email_delivery: payload.emailDelivery }, {
         organization_id: scope.organizationId,
         user_id: scope.userId,
         user_role: scope.role,
@@ -634,29 +642,17 @@ function UserAdministration() {
         route: "/settings",
       });
       setInviteEmail("");
-      setToast({ tone: "success", message: "Invitation created." });
+      setToast({
+        tone: payload.emailDelivery === "sent" ? "success" : "info",
+        message: payload.emailDelivery === "sent"
+          ? "Invitation created and emailed."
+          : payload.emailDelivery === "not-configured"
+            ? "Invitation created, but email delivery is not configured yet -- share the invite link manually."
+            : "Invitation created, but the email could not be sent.",
+      });
       await loadUsers();
-    } catch {
-      const response = await fetch("/api/invitations", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: inviteEmail.trim().toLowerCase(), role: inviteRole }),
-      }).catch(() => undefined);
-      if (response?.ok) {
-        analytics.trackEvent("user_invited", { invited_role: inviteRole, invite_path: "api" }, {
-          organization_id: scope.organizationId,
-          user_id: scope.userId,
-          user_role: scope.role,
-          module_name: "settings",
-          route: "/settings",
-        });
-        setInviteEmail("");
-        setToast({ tone: "success", message: "Invitation created." });
-        await loadUsers();
-      } else {
-        setToast({ tone: "error", message: "Invitation could not be created." });
-      }
+    } catch (error) {
+      setToast({ tone: "error", message: error instanceof Error ? error.message : "Invitation could not be created." });
     } finally {
       setSaving(false);
     }
