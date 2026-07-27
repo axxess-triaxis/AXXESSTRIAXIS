@@ -4,7 +4,7 @@ const contentSecurityPolicy = [
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob:",
   "font-src 'self' data:",
-  "connect-src 'self' https://*.supabase.co https://api.mixpanel.com https://*.mixpanel.com https://us.i.posthog.com https://app.posthog.com https://*.posthog.com",
+  "connect-src 'self' https://*.supabase.co https://api.mixpanel.com https://*.mixpanel.com https://us.i.posthog.com https://us-assets.i.posthog.com https://app.posthog.com https://*.posthog.com",
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "form-action 'self'",
@@ -15,6 +15,23 @@ const nextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
   typedRoutes: true,
+  skipTrailingSlashRedirect: true,
+  async rewrites() {
+    return [
+      {
+        source: "/ingest/static/:path*",
+        destination: "https://us-assets.i.posthog.com/static/:path*",
+      },
+      {
+        source: "/ingest/array/:path*",
+        destination: "https://us-assets.i.posthog.com/array/:path*",
+      },
+      {
+        source: "/ingest/:path*",
+        destination: "https://us.i.posthog.com/:path*",
+      },
+    ];
+  },
   async headers() {
     return [
       {
