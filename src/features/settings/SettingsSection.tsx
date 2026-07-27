@@ -19,8 +19,16 @@ import { getPilotIntegrations } from "../../services/integrations/pluginRegistry
 import { languageCoverage } from "../../services/nlp/modelRegistry";
 import { Building2, Calendar, Check, CheckCircle2, Database, FileText, MessageSquare, RotateCcw, Save, Send, Settings, ShieldCheck, Sparkles, UserPlus, X, XCircle } from "lucide-react";
 
+export const validTabs = ["profile", "organization", "security", "integrations", "users", "permissions", "ai configuration", "demo"];
+
+export function initialTabFromLocation(): string {
+  if (typeof window === "undefined") return "security";
+  const requested = new URLSearchParams(window.location.search).get("tab")?.toLowerCase();
+  return requested && validTabs.includes(requested) ? requested : "security";
+}
+
 export const SettingsSection = () => {
-  const [tab, setTab] = useState("security");
+  const [tab, setTab] = useState(initialTabFromLocation);
   const tabs = ["Profile", "Organization", "Security", "Integrations", "Users", "Permissions", "AI Configuration", "Demo"];
 
   return (

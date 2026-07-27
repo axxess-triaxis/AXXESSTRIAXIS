@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AnalyticsProviderShell } from "../../services/analytics";
 import { MockAnalyticsProvider } from "../../services/analytics/MockAnalyticsProvider";
@@ -102,5 +102,32 @@ describe("BetaOnboardingChecklist", () => {
     // creation path succeeded. organization + first_project are now both done.
     renderChecklist(1);
     expect(screen.getByText(/2 of 10 complete -- your own first-10-minutes checklist/)).toBeInTheDocument();
+  });
+
+  it("A-39 fix: 'Send feedback / request support' opens the real feedback trigger instead of navigating to /dashboard", () => {
+    const trigger = document.createElement("button");
+    trigger.id = "beta-feedback-trigger";
+    document.body.appendChild(trigger);
+    const clickSpy = vi.fn();
+    trigger.addEventListener("click", clickSpy);
+
+    renderChecklist(0);
+    const card = screen.getByText("Send feedback / request support").closest("div.rounded-lg") as HTMLElement;
+    const openControl = within(card).getByText("Open").closest("button, a") as HTMLElement;
+
+    expect(openControl.tagName).toBe("BUTTON");
+    fireEvent.click(openControl);
+    expect(clickSpy).toHaveBeenCalledTimes(1);
+
+    document.body.removeChild(trigger);
+  });
+
+  it("still uses a real navigable link (not the feedback trigger) for other steps", () => {
+    renderChecklist(0);
+    const card = screen.getByText("Create first task").closest("div.rounded-lg") as HTMLElement;
+    const openControl = within(card).getByText("Open").closest("button, a") as HTMLElement;
+
+    expect(openControl.tagName).toBe("A");
+    expect(openControl).toHaveAttribute("href", "/tasks");
   });
 });
