@@ -86,9 +86,13 @@ export async function sendFeedbackNotificationEmail(input: { feedback: BetaFeedb
     cache: "no-store",
   });
 
-  const payload = await response.json().catch(() => ({})) as { id?: string; message?: string; error?: string };
+  const payload = await response.json().catch(() => ({})) as { id?: string; message?: string; error?: string; name?: string };
   if (!response.ok) {
-    return { status: "failed", provider: "resend", error: payload.message ?? payload.error ?? `Resend request failed with ${response.status}` };
+    const error = payload.message ?? payload.error ?? `Resend request failed with ${response.status}`;
+    // A-65 debugging (2026-07-27): same reasoning as invitationEmail.ts -- log the real Resend
+    // response so a live failure is diagnosable from `vercel logs`, not just a generic UI toast.
+    console.error("[feedbackEmail] Resend send failed", { status: response.status, name: payload.name, error });
+    return { status: "failed", provider: "resend", error };
   }
 
   return { status: "sent", provider: "resend", providerMessageId: payload.id };
