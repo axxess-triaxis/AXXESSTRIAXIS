@@ -50,3 +50,26 @@ describe("SettingsSection (Sprint 3 -- audited, does not hang)", () => {
     expect(loadUsersBlock).toContain("Unable to load user administration data.");
   });
 });
+
+describe("inviteUser (A-08/A-65 fix -- 'Send Invite' must actually send the invite email)", () => {
+  // invitationsRepository.create() is a raw Supabase write with no email step; only
+  // POST /api/invitations calls sendInvitationEmail(). Before this fix, inviteUser() called the
+  // repository directly and only fell back to the route if that direct write *threw* -- meaning a
+  // normal, successful invite never sent an email. This locks in that the route is now the one
+  // and only path, not a catch-block fallback.
+  const inviteBlock = source.slice(source.indexOf("const inviteUser ="), source.indexOf("const revokeInvitation ="));
+
+  it("calls POST /api/invitations as the primary path", () => {
+    expect(inviteBlock).toContain('fetch("/api/invitations"');
+    expect(inviteBlock).toContain('method: "POST"');
+  });
+
+  it("does not write directly to invitationsRepository.create, bypassing email delivery", () => {
+    expect(inviteBlock).not.toContain("invitationsRepository.create");
+  });
+
+  it("surfaces the real email-delivery outcome to the admin instead of a blanket 'created' toast", () => {
+    expect(inviteBlock).toContain("emailDelivery");
+    expect(inviteBlock).toContain("not-configured");
+  });
+});

@@ -1,0 +1,114 @@
+# Feedback Email, Invite Email, and OAuth Sign-In -- Roadmap (2026-07-27)
+
+Date: 2026-07-27
+Branch: `canonical/sprint-1-35-unified-gitlab`
+Governance source: `CLAUDE.md`'s evidence-chain discipline
+Goals, as given by the founder:
+1. "Send Feedback" button, when provided feedback, sends it to `triaxisgrp@gmail.com`.
+2. "Invite Team", when provided an email and "Send Invite" is clicked, actually sends a mail
+   invite to the entered email.
+3. OAuth enabled on the "Sign In" form for Gmail and Microsoft.
+
+## Evidence-First Finding (Read Before Planning Any New Build)
+
+Before writing any new code, the existing codebase was audited for all three goals. **All three are
+substantially further along than a fresh build would assume** -- this is not starting from zero:
+
+| Goal | Backend | Frontend wiring | Blocker |
+|---|---|---|---|
+| 1. Feedback email | `src/services/email/feedbackEmail.ts` -- real Resend integration, hardcoded default recipient `triaxisgrp@gmail.com` (exact requested address), already called from `POST /api/beta-feedback` | **Bug found**: `BetaFeedbackModal.tsx`'s `submitFeedback()` calls `applicationServices.betaFeedbackRepository.create()` directly -- a raw Supabase write with no email step -- and never calls the `/api/beta-feedback` route that actually sends the email | (a) code bug above, (b) `RESEND_API_KEY` absent from production |
+| 2. Invite email | `src/services/email/invitationEmail.ts` -- real Resend integration, already called from `POST /api/invitations` | **Same bug class**: `SettingsSection.tsx`'s `inviteUser()` calls `applicationServices.invitationsRepository.create()` directly as its primary path, only falling back to `fetch("/api/invitations")` if that direct write throws -- which it normally won't | (a) code bug above, (b) `RESEND_API_KEY` absent, (c) `NEXT_PUBLIC_APP_URL` absent (invite links would resolve to `http://localhost:3000`) |
+| 3. OAuth (Google + Microsoft) | `/api/auth/oauth/start` (builds a real Supabase Auth `authorize` URL) + `/api/auth/oauth/callback` (exchanges tokens, establishes a real server session, audit-logs `auth.login`) -- both real, both tested | `OAuthProviderButtons.tsx` is already rendered on the real Sign In form (`EnterpriseAuthFlowPage.tsx:236`), already calls `/api/auth/oauth/start` and redirects to the returned URL | Gated off by `NEXT_PUBLIC_AUTH_GOOGLE_ENABLED` / `NEXT_PUBLIC_AUTH_MICROSOFT_ENABLED` (both absent -> both disabled); Supabase Auth itself has no Google/Azure provider configured (no OAuth app exists yet in Google Cloud Console or Microsoft Entra); `NEXT_PUBLIC_APP_URL` also feeds the OAuth redirect target |
+
+Verified via `vercel env ls production` against `triaxis-www-frontend-import`, 2026-07-27: none of
+`RESEND_API_KEY`, `NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_AUTH_GOOGLE_ENABLED`,
+`NEXT_PUBLIC_AUTH_MICROSOFT_ENABLED` exist in production today.
+
+**Practical consequence:** this is not a 3-feature build. It is two real, narrow bug fixes (email
+sending is wired but bypassed) plus a set of founder-only external actions (API keys, OAuth app
+registration) that this agent cannot perform per its own operating constraints -- consistent with
+every prior email/API-key/OAuth-adjacent blocker already tracked in this program
+(`RESEND_API_KEY` is A-08/A-65; `SUPABASE_SERVICE_ROLE_KEY` is A-67; every third-party credential
+this session -- OpenRouter, Tinybird, Mixpanel/PostHog -- has followed the same "Claude Code
+does not create accounts or enter credentials" boundary).
+
+## Sprint Plan
+
+### Sprint 1 (this session, engineering-only, no founder action needed)
+
+1. Fix `BetaFeedbackModal.tsx`: route `submitFeedback()` through `POST /api/beta-feedback` (the
+   route that actually calls `sendFeedbackNotificationEmail`) instead of writing directly to
+   `betaFeedbackRepository.create()`. Preserve the existing UX (success/error toast, message reset).
+2. Fix `SettingsSection.tsx`'s `inviteUser()`: make `POST /api/invitations` (the route that
+   actually calls `sendInvitationEmail`) the primary path, not a catch-block fallback. Preserve
+   existing UX (toast, invite list refresh, disabled-while-saving state).
+3. Add/update tests proving each UI action now hits the email-sending route, not just the
+   repository, using the same mocking pattern already established in this repo
+   (`vi.mock("../../providers/serviceProvider", ...)` / route-level tests with a mocked `fetch`).
+4. Run full verification suite (typecheck/lint/test/build) and update
+   `ACTIONABLES_READINESS_MATRIX.md` A-08/A-65 with this specific finding and fix.
+5. Write this roadmap + a closeout doc once Sprint 1 lands.
+
+### Sprint 2 (founder action required -- cannot be performed by this agent)
+
+Per this agent's own operating constraints (no account creation, no entering credentials into any
+system, no changing production security/account settings without explicit per-action confirmation):
+
+1. **Add `RESEND_API_KEY` to Vercel production** (`triaxis-www-frontend-import`). Founder already
+   has a Resend account from earlier email-delivery work this program; if not, sign up at
+   resend.com, verify a sending domain (or use the `onboarding@resend.dev` test sender already
+   coded as the default `from` address), generate an API key, add it in Vercel -> Project Settings
+   -> Environment Variables -> `RESEND_API_KEY` -> Production.
+2. **Add `NEXT_PUBLIC_APP_URL`** to Vercel production, value `https://landing.triaxisventures.com`
+   -- this is a public URL, not a secret, but is still a production configuration change this
+   agent will not make without your explicit go-ahead in chat. Needed so invitation links and the
+   OAuth redirect target resolve to the real domain instead of `localhost:3000`.
+3. **Register a Google OAuth 2.0 Client** in Google Cloud Console: create/select a project, configure
+   the OAuth consent screen, create an OAuth Client ID (type: Web application), authorized redirect
+   URI = `https://<your-supabase-project-ref>.supabase.co/auth/v1/callback` (exact URL is in
+   Supabase Dashboard -> Authentication -> Providers -> Google once you open it).
+4. **Register a Microsoft Entra ID (Azure AD) app** for Microsoft sign-in: App registrations -> New
+   registration, add a client secret, same redirect URI pattern (Supabase calls this provider
+   "Azure").
+5. **Enter both sets of credentials into Supabase Dashboard** -> Authentication -> Providers ->
+   enable Google and Azure, paste each Client ID/Secret, save.
+6. **Set `NEXT_PUBLIC_AUTH_GOOGLE_ENABLED=true` and `NEXT_PUBLIC_AUTH_MICROSOFT_ENABLED=true`** in
+   Vercel production once step 5 is done.
+7. Redeploy (this agent can run the deploy itself once you confirm, same as today's Golden Path
+   deploy).
+
+### Sprint 3 (live HITL verification, after Sprint 2 unblocks)
+
+1. Submit a real "Send Feedback" and confirm an email arrives at `triaxisgrp@gmail.com`.
+2. Send a real "Invite Team" invite to a real test address and confirm the email arrives with a
+   working accept link (not pointing at `localhost`).
+3. Click "Continue with Google" and "Continue with Microsoft" on the real Sign In form and confirm
+   each completes a real sign-in.
+4. Update `ACTIONABLES_READINESS_MATRIX.md` with live confirmation, matching this program's existing
+   `Yes (code + test shipped, pending HITL live confirmation)` -> `Yes` (live) pattern.
+
+## Checklist
+
+- [x] Sprint 1.1 -- Fix `BetaFeedbackModal.tsx` to route through `/api/beta-feedback`
+- [x] Sprint 1.2 -- Fix `SettingsSection.tsx` `inviteUser()` to route through `/api/invitations`
+- [x] Sprint 1.3 -- Tests for both fixes (5 new: 2 in `BetaFeedbackModal.test.tsx`, 3 in
+      `SettingsSection.test.ts`)
+- [x] Sprint 1.4 -- Full verification suite clean (typecheck, lint zero-warnings, 153 files / 610
+      tests, build)
+- [x] Sprint 1.5 -- Matrix updated (A-08, A-65), closeout doc written
+      (`EMAIL_DELIVERY_SPRINT1_CLOSEOUT_2026_07_27.md`); commit/push next
+- [ ] Sprint 2.1 -- `RESEND_API_KEY` added to production (founder)
+- [ ] Sprint 2.2 -- `NEXT_PUBLIC_APP_URL` added to production (founder confirms; agent can execute)
+- [ ] Sprint 2.3 -- Google OAuth Client registered in Google Cloud Console (founder)
+- [ ] Sprint 2.4 -- Microsoft Entra app registered (founder)
+- [ ] Sprint 2.5 -- Both providers configured in Supabase Dashboard (founder)
+- [ ] Sprint 2.6 -- `NEXT_PUBLIC_AUTH_GOOGLE_ENABLED` / `NEXT_PUBLIC_AUTH_MICROSOFT_ENABLED` set to
+      `true` in production (founder confirms; agent can execute)
+- [ ] Sprint 2.7 -- Redeploy
+- [ ] Sprint 3.1 -- Live feedback email confirmed
+- [ ] Sprint 3.2 -- Live invite email confirmed
+- [ ] Sprint 3.3 -- Live Google sign-in confirmed
+- [ ] Sprint 3.4 -- Live Microsoft sign-in confirmed
+- [ ] Sprint 3.5 -- Matrix closed out on live evidence
+
+Starting Sprint 1 now.
