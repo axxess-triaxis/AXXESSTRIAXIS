@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerAuthSession } from "../../../../auth/serverSession";
 import { provisionTenantForUser, type TenantProvisioningInput } from "../../../../auth/provisioning";
 import { auditLogsRepository, tenantScopeFromUser } from "../../../../repositories/supabaseEnterpriseRepositories";
+import { getPostHogClient } from "../../../../lib/posthog-server";
 
 export async function POST(request: Request) {
   const session = await getServerAuthSession(true);
@@ -33,6 +34,27 @@ export async function POST(request: Request) {
         acceptedNotices: body.acceptedNotices ?? [],
       },
     }).catch(() => undefined);
+
+    const posthog = getPostHogClient();
+    if (posthog) {
+      posthog.identify({
+        distinctId: result.user.id,
+        properties: {
+          user_role: result.user.role,
+          organization_id: result.organization.id,
+        },
+      });
+      posthog.capture({
+        distinctId: result.user.id,
+        event: "organization_created",
+        properties: {
+          organization_id: result.organization.id,
+          sector: body.sector ?? null,
+          user_role: result.user.role,
+        },
+      });
+      await posthog.flush();
+    }
 
     return NextResponse.json(result);
   } catch (error) {
