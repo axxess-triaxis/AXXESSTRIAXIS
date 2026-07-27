@@ -24,8 +24,7 @@ the high end:
 ### Tier 4/5: Infrastructure and Data Ambitions (Directional, Not Yet Scoped)
 
 Founder direction (2026-07-27) for Tier 4 includes running models in **sandboxed environments
-using Kubernetes** (and at least one other named tool not yet confirmed -- see open question below)
-and grounding RAG in **localized training/retrieval data sourced from government partnership APIs,
+using Kubernetes** and grounding RAG in **localized training/retrieval data sourced from government partnership APIs,
 public web crawl, and purchased datasets from data-labeling vendors (Mercor, Micro1, Alignerr, Scale
 AI)**. Tier 5 envisions airgapped infrastructure, permanent contextual memory, and physical storage,
 in a "Palantir for the Global South" positioning, with a possible bespoke foundation model further
@@ -38,9 +37,6 @@ significant budget. It is captured here as directional intent so it isn't lost, 
 **deliberately not broken into sprint checklist items in this document** until it has its own
 scoping pass -- folding unscoped infrastructure and data-partnership work into an AI-router sprint
 plan would understate its actual size and risk.
-
-**Open question, not guessed at:** "Kubernetes, Graham etc" -- Kubernetes is clear; the second named
-tool needs confirmation before it's recorded as a real part of the plan.
 
 Regional specialization layered across tiers 3-5 depending on geography: **Sarvam** (Indic
 languages), **Jais** (Core42/G42, Arabic -- UAE-origin, reinforces the sovereignty narrative for
