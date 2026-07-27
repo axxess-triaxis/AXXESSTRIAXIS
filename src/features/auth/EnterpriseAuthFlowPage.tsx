@@ -94,6 +94,7 @@ export function EnterpriseAuthFlowPage({ kind }: { kind: AuthFlowKind }) {
 
     setBusy(true);
     setMessage(null);
+    if (kind === "sign-up") trackEvent("sign_up_started", { flow: "email_password" }, { module_name: "auth", route: "/auth/sign-up" });
     try {
       const response = await fetch(copy.endpoint, {
         method: "POST",
