@@ -21,6 +21,9 @@ export async function routeAiRequest(request: AiPromptRequest, env: NodeJS.Proce
   const adapter = adapters.find((candidate) => candidate.config.name === provider.name) ?? adapters.find((candidate) => candidate.config.name === "local")!;
   const completion = await adapter.complete(request, classification);
   const humanReviewRequired = routeDecision.requiresHumanApproval || completion.confidence < 0.62 || classification.sensitivity === "restricted";
+  // A provider that actually executed a live call reports real token-based cost, which supersedes
+  // the router's pre-call estimate (computed before the real request was even made).
+  const estimatedCostUsd = completion.actualCostUsd ?? routeDecision.estimatedCostUsd;
 
   return {
     answer: completion.text,
@@ -34,7 +37,7 @@ export async function routeAiRequest(request: AiPromptRequest, env: NodeJS.Proce
     auditId: makeAuditId(),
     latencyMs: completion.latencyMs ?? Date.now() - startedAt,
     costTier: provider.costTier,
-    estimatedCostUsd: routeDecision.estimatedCostUsd,
+    estimatedCostUsd,
     policyId: routeDecision.policy.policyId,
     gatewayTags: routeDecision.gatewayTags,
     approvalReason: routeDecision.approvalReason,
