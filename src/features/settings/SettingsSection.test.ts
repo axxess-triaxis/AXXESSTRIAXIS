@@ -1,8 +1,39 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
+import { initialTabFromLocation } from "./SettingsSection";
 
 const source = readFileSync(join(process.cwd(), "src/features/settings/SettingsSection.tsx"), "utf8");
+
+function setLocationSearch(search: string) {
+  window.history.pushState({}, "", `/settings${search}`);
+}
+
+describe("initialTabFromLocation (A-36/A-37 fix -- respects ?tab= intent instead of always defaulting to Security)", () => {
+  afterEach(() => {
+    window.history.pushState({}, "", "/settings");
+  });
+
+  it("defaults to security when no tab is requested", () => {
+    setLocationSearch("");
+    expect(initialTabFromLocation()).toBe("security");
+  });
+
+  it("honors ?tab=users (the real Invite Pilot Team / role-change destination)", () => {
+    setLocationSearch("?tab=users");
+    expect(initialTabFromLocation()).toBe("users");
+  });
+
+  it("honors ?tab=permissions", () => {
+    setLocationSearch("?tab=permissions");
+    expect(initialTabFromLocation()).toBe("permissions");
+  });
+
+  it("falls back to security for an unrecognized tab value rather than rendering nothing", () => {
+    setLocationSearch("?tab=not-a-real-tab");
+    expect(initialTabFromLocation()).toBe("security");
+  });
+});
 
 describe("SettingsSection (Sprint 3 -- audited, does not hang)", () => {
   it("does not gate its main render behind an unresolved loading flag", () => {
