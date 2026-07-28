@@ -8,7 +8,7 @@ import { SectionHeader } from "../../components/layout/SectionHeader";
 import { Avatar } from "../../components/ui/Avatar";
 import { Card } from "../../components/ui/Card";
 import { demoDatasetSummary } from "../../demo/demoDataset";
-import { isDemoModeEnabled, isDemoModeForcedByEnv, resetDemoEnvironment, setDemoModeEnabled } from "../../demo/demoMode";
+import { getRuntimeMode, isDemoModeEnabled, isDemoModeForcedByEnv, resetDemoEnvironment, setDemoModeEnabled } from "../../demo/demoMode";
 import type { Invitation, RoleName, User } from "../../domain";
 import { applicationServices } from "../../providers/serviceProvider";
 import { tenantScopeFromUser } from "../../repositories/supabaseEnterpriseRepositories";
@@ -378,7 +378,8 @@ function ProfilePanel() {
 function OrganizationPanel() {
   const { session } = useAuth();
   const user = session.user;
-  const demoActive = isDemoModeEnabled();
+  const runtimeMode = getRuntimeMode(Boolean(user));
+  const demoActive = runtimeMode === "demo";
   const mode = demoActive ? "Investor Preview" : "Production";
   const scope = useMemo(() => user ? tenantScopeFromUser(user) : undefined, [user]);
   const [liveOrg, setLiveOrg] = useState<{ name: string; projects: number; documents: number } | null>(null);

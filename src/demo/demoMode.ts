@@ -53,6 +53,20 @@ export function isDemoModeEnabled() {
   return window.localStorage.getItem(demoModeStorageKey) === "true";
 }
 
+export type RuntimeMode = "demo" | "live-tenant" | "unauthenticated";
+
+// TP-2 (2026-07-28): a thin composition of the two signals that were being checked ad hoc (and
+// sometimes only one of the two, which is exactly how the A-28 failure class happened) across
+// several components -- isDemoModeEnabled() and whether a real session exists. Not a new state
+// machine, not a replacement for isDemoModeEnabled() itself (still the source of truth for "demo"),
+// just one small, named place to get the three-way answer instead of re-deriving it per call site.
+// "Investor Preview" is this same "demo" state under different user-facing copy, not a fourth
+// distinct runtime state -- there is no separate flag for it anywhere in this codebase.
+export function getRuntimeMode(isAuthenticated: boolean): RuntimeMode {
+  if (isDemoModeEnabled()) return "demo";
+  return isAuthenticated ? "live-tenant" : "unauthenticated";
+}
+
 function setDemoSessionCookie(enabled: boolean) {
   if (typeof document === "undefined") return;
   document.cookie = enabled
