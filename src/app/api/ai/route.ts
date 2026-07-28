@@ -3,6 +3,7 @@ import { getServerAuthSession } from "../../../auth/serverSession";
 import { auditLogsRepository, tenantScopeFromUser } from "../../../repositories/supabaseEnterpriseRepositories";
 import { routeAiRequest } from "../../../services/ai/router/aiRouter";
 import type { AiPromptRequest, AiRoutingContext } from "../../../services/ai/types";
+import { getPostHogClient } from "../../../lib/posthog-server";
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => undefined) as Partial<AiPromptRequest> | undefined;
@@ -48,6 +49,24 @@ export async function POST(request: Request) {
       gatewayTags: result.gatewayTags,
     },
   }).catch(() => undefined);
+
+  const posthog = getPostHogClient();
+  if (posthog) {
+    posthog.capture({
+      distinctId: session.user.id,
+      event: "ai_query_submitted",
+      properties: {
+        organization_id: session.user.organizationId,
+        user_role: session.user.role,
+        provider_used: result.providerUsed,
+        model_used: result.modelUsed,
+        latency_ms: result.latencyMs,
+        human_review_required: result.humanReviewRequired,
+        cost_tier: result.costTier,
+      },
+    });
+    await posthog.flush();
+  }
 
   return NextResponse.json(result);
 }
