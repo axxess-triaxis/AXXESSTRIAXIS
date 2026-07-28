@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerAuthSession } from "../../../../auth/serverSession";
+import { isDemoModeEnabled } from "../../../../demo/demoMode";
+import { applicationServices } from "../../../../providers/serviceProvider";
 import { persistMobileStoreLaunchSnapshot, type MobileStoreLaunchAction } from "../../../../repositories/mobileStoreLaunchRepository";
 import { auditLogsRepository, tenantScopeFromUser } from "../../../../repositories/supabaseEnterpriseRepositories";
 import { canManageOrganization } from "../../../../security/rbac";
@@ -7,10 +9,20 @@ import { buildMobileStoreLaunchSnapshot } from "../../../../services/mobile/mobi
 
 const actions = new Set<MobileStoreLaunchAction>(["snapshot_recorded", "reviewer_provisioned", "rollout_updated"]);
 
+// TP-2 (2026-07-28): this used to hardcode "North East Health Mission" unconditionally, so any
+// real tenant's Mobile Release console showed the demo institution's name regardless of who was
+// actually signed in -- the same failure class as A-28, just never HITL-walked on this specific
+// admin page before. Only the genuinely seeded/preview deployment shows the demo name now.
 async function buildRuntimeSnapshot(session: NonNullable<Awaited<ReturnType<typeof getServerAuthSession>>>) {
+  const scope = tenantScopeFromUser(session.user, session.accessToken);
+  const organizationName = isDemoModeEnabled()
+    ? "North East Health Mission"
+    : (await applicationServices.organizationsRepository.getById(scope, session.user.organizationId).catch(() => undefined))?.name
+      ?? "Organization setup pending";
+
   return buildMobileStoreLaunchSnapshot({
     organizationId: session.user.organizationId,
-    organizationName: "North East Health Mission",
+    organizationName,
     env: process.env,
   });
 }

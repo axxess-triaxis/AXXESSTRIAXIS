@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../../auth/AuthProvider";
 import { EnterpriseWorkflowJourney } from "../../components/enterprise/EnterpriseWorkflowJourney";
-import { isDemoModeEnabled } from "../../demo/demoMode";
+import { getRuntimeMode, isDemoModeEnabled } from "../../demo/demoMode";
 import {
   AuditTrailBadge,
   ConfidenceBadge,
@@ -132,7 +132,14 @@ export const AIWorkspaceSection = () => {
   const [ragAnswer, setRagAnswer] = useState<LiveRagAnswer>(() => initialRagAnswer());
 
   useEffect(() => {
-    if (!tenantScope) return;
+    // TP-2 (2026-07-28): this used to fire unconditionally for every tenant, running a
+    // demo-institution-specific sample question against that tenant's own real RAG pipeline on
+    // every AI Workspace load -- pointless (and potentially confusing if it ever matched a real
+    // document) for a live tenant with no connection to "North East Health Mission." Restricted to
+    // demo mode, where this sample question is a deliberate, meaningful showcase against the
+    // seeded dataset; a real tenant now starts from a genuinely empty state and asks its own
+    // question.
+    if (!tenantScope || getRuntimeMode(Boolean(session.user)) !== "demo") return;
 
     let isMounted = true;
     void answerWithGovernedRag(applicationServices, tenantScope, {
@@ -149,7 +156,7 @@ export const AIWorkspaceSection = () => {
     return () => {
       isMounted = false;
     };
-  }, [tenantScope]);
+  }, [tenantScope, session.user]);
 
   const QUERY_TIMEOUT_MS = 20_000;
 

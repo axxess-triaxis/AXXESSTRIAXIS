@@ -372,4 +372,42 @@ describe("Supabase enterprise repositories", () => {
     const [url] = fetchCall(fetchMock);
     expect(String(url)).toContain("organization_id=eq.org_public_safety");
   });
+
+  // TP-2 (2026-07-28): the shared updateResource() factory combines the record id and the
+  // caller's own organization_id in the *same* PATCH filter, so an attempt to update a record id
+  // that belongs to a different tenant matches zero rows server-side instead of silently
+  // succeeding (or silently no-op'ing without the caller knowing why). This is the concrete
+  // mechanism behind "Project/task API rejects cross-tenant resource access."
+  it("combines the record id and the caller's own organization_id in the same update filter, never the record's own claimed org", async () => {
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify([{
+      id: "task_1",
+      organization_id: "org_public_safety",
+      title: "Updated title",
+      status: "in-progress",
+      priority: "medium",
+    }]), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://example.supabase.co");
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY", "anon-key");
+
+    await tasksRepository.update({ ...scope, accessToken: "server-token" }, "task_1", { title: "Updated title" });
+
+    const [url] = fetchCall(fetchMock);
+    expect(String(url)).toContain("id=eq.task_1");
+    expect(String(url)).toContain("organization_id=eq.org_public_safety");
+  });
+
+  it("an update targeting a different tenant's record id matches zero rows and throws, rather than silently succeeding", async () => {
+    // A real cross-tenant PATCH matches nothing server-side (the id belongs to another
+    // organization's rows), so PostgREST returns an empty array -- this asserts the client-side
+    // code treats that as a hard failure, not a quiet success.
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify([]), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://example.supabase.co");
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY", "anon-key");
+
+    await expect(
+      tasksRepository.update({ ...scope, accessToken: "server-token" }, "task_belonging_to_other_tenant", { title: "Should not apply" }),
+    ).rejects.toThrow();
+  });
 });
