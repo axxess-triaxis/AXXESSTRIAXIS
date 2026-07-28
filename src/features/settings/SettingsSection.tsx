@@ -133,46 +133,43 @@ export const SettingsSection = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <Card className="p-5">
             <h3 className="text-sm font-semibold text-[#0F1117] mb-4">AI Engine Configuration</h3>
+            {/* SA-2 (2026-07-28): these switches rendered as active toggles for every role but had
+                no onClick handler and no persisted per-tenant policy to write to -- a dead-toggle
+                defect, same class as the Security tab's SA-1 fix. No safe write path exists yet
+                (see tenantModelPolicy.ts -- policy is computed fresh per request, never persisted
+                per organization), so these stay disabled with an honest reason rather than
+                fabricating admin editability. Tracked as SA-3 scope if per-tenant policy
+                persistence is built. */}
             <div className="space-y-4">
               {[
-                { label: "Human-in-the-Loop for all write actions", enabled: true },
-                { label: "Multilingual response support", enabled: true },
-                { label: "Document auto-summarization on upload", enabled: true },
-                { label: "Proactive risk alerting", enabled: true },
-                { label: "Predictive milestone forecasting (Beta)", enabled: false },
+                { label: "Human-in-the-Loop for all write actions", enabled: true, reason: "Enforced platform default -- not tenant-configurable yet" },
+                { label: "Multilingual response support", enabled: true, reason: "Enforced platform default -- not tenant-configurable yet" },
+                { label: "Document auto-summarization on upload", enabled: true, reason: "Enforced platform default -- not tenant-configurable yet" },
+                { label: "Proactive risk alerting", enabled: true, reason: "Enforced platform default -- not tenant-configurable yet" },
+                { label: "Predictive milestone forecasting (Beta)", enabled: false, reason: "Requires admin setup" },
               ].map((setting, i) => (
-                <div key={i} className="flex items-center justify-between">
-                  <span className="text-sm text-[#0F1117]">{setting.label}</span>
-                  <button className={`relative w-10 h-5.5 rounded-full transition-colors ${setting.enabled ? "bg-[#8B1E2D]" : "bg-[#D1D5DB]"}`}>
+                <div key={i} className="flex items-center justify-between gap-3">
+                  <div>
+                    <div className="text-sm text-[#0F1117]">{setting.label}</div>
+                    <div className="text-[11px] text-[#9AA1A6]">{setting.reason}</div>
+                  </div>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={setting.enabled}
+                    aria-label={`${setting.label}: ${setting.reason}`}
+                    disabled
+                    aria-disabled="true"
+                    title={setting.reason}
+                    className={`relative w-10 h-5.5 flex-shrink-0 cursor-not-allowed rounded-full opacity-60 transition-colors ${setting.enabled ? "bg-[#8B1E2D]" : "bg-[#D1D5DB]"}`}
+                  >
                     <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${setting.enabled ? "translate-x-5" : "translate-x-0.5"}`} />
                   </button>
                 </div>
               ))}
             </div>
           </Card>
-          <Card className="p-5">
-            <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-[#0F1117]">AI Usage Statistics</h3>
-              <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-800">Illustrative, not yet tenant-tracked</span>
-            </div>
-            {/* A-31: these were previously shown as unlabeled hard numbers identical for every
-                tenant regardless of real activity -- honestly labeling them (not a per-tenant
-                usage pipeline, which is separate, larger work) instead of implying they are live. */}
-            <div className="grid grid-cols-2 gap-3">
-              {[
-                { label: "Queries This Month", value: "2,847" },
-                { label: "Documents Analyzed", value: "1,231" },
-                { label: "Summaries Generated", value: "643" },
-                { label: "Actions Approved", value: "187" },
-              ].map((s, i) => (
-                <div key={i} className="bg-[#F8F9FA] rounded-lg p-3 text-center">
-                  <div className="text-lg font-bold text-[#8B1E2D] font-mono">{s.value}</div>
-                  <div className="text-[11px] text-[#5F6B73] mt-0.5">{s.label}</div>
-                </div>
-              ))}
-            </div>
-            <p className="mt-3 text-[11px] leading-relaxed text-[#5F6B73]">Sample figures pending a real per-tenant AI usage aggregation pipeline -- tracked separately, not this tenant&apos;s actual activity.</p>
-          </Card>
+          <AiUsageStatisticsPanel />
           <AiRoutingProvidersPanel />
           <LanguageCoveragePanel />
         </div>
@@ -182,8 +179,110 @@ export const SettingsSection = () => {
   );
 };
 
+type AiUsageEvent = {
+  provider?: string;
+  task_category?: string;
+  estimated_cost_usd?: number;
+  human_review_required?: boolean;
+};
+
+function AiUsageStatisticsPanel() {
+  const [state, setState] = useState<{ status: "loading" | "real" | "unavailable"; events: AiUsageEvent[] }>({ status: "loading", events: [] });
+
+  // SA-2 (2026-07-28): this card previously showed hardcoded numbers identical for every tenant,
+  // labeled "Illustrative, not yet tenant-tracked" (A-31 partial fix, Sprint TP-1). GET
+  // /api/ai/model-policy already queries this organization's own ai_usage_ledger rows -- wiring to
+  // it here replaces the illustrative label with real counts when usage exists, an honest "no
+  // usage yet" empty state when the tenant genuinely has none, and falls back to the same
+  // illustrative label (unchanged) only if the real fetch itself fails.
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/ai/model-policy", { credentials: "include" })
+      .then((response) => (response.ok ? response.json() : Promise.reject(new Error("request failed"))))
+      .then((payload: { recentUsage?: AiUsageEvent[] }) => {
+        if (cancelled) return;
+        setState({ status: "real", events: Array.isArray(payload.recentUsage) ? payload.recentUsage : [] });
+      })
+      .catch(() => {
+        if (!cancelled) setState({ status: "unavailable", events: [] });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (state.status === "loading") {
+    return (
+      <Card className="p-5">
+        <h3 className="text-sm font-semibold text-[#0F1117] mb-4">AI Usage Statistics</h3>
+        <p className="text-xs text-[#5F6B73]">Loading this organization&apos;s AI usage...</p>
+      </Card>
+    );
+  }
+
+  if (state.status === "unavailable") {
+    return (
+      <Card className="p-5">
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-[#0F1117]">AI Usage Statistics</h3>
+          <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-800">Illustrative, not yet tenant-tracked</span>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          {[
+            { label: "Queries This Month", value: "2,847" },
+            { label: "Documents Analyzed", value: "1,231" },
+            { label: "Summaries Generated", value: "643" },
+            { label: "Actions Approved", value: "187" },
+          ].map((s, i) => (
+            <div key={i} className="bg-[#F8F9FA] rounded-lg p-3 text-center">
+              <div className="text-lg font-bold text-[#8B1E2D] font-mono">{s.value}</div>
+              <div className="text-[11px] text-[#5F6B73] mt-0.5">{s.label}</div>
+            </div>
+          ))}
+        </div>
+        <p className="mt-3 text-[11px] leading-relaxed text-[#5F6B73]">Sample figures pending a real per-tenant AI usage aggregation pipeline -- tracked separately, not this tenant&apos;s actual activity.</p>
+      </Card>
+    );
+  }
+
+  const events = state.events;
+  const humanReviewCount = events.filter((event) => event.human_review_required).length;
+  const providersUsed = new Set(events.map((event) => event.provider).filter(Boolean)).size;
+  const totalCostUsd = events.reduce((sum, event) => sum + (event.estimated_cost_usd ?? 0), 0);
+
+  return (
+    <Card className="p-5">
+      <div className="mb-4 flex items-center justify-between">
+        <h3 className="text-sm font-semibold text-[#0F1117]">AI Usage Statistics</h3>
+        <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">Live tenant data (most recent 20 events)</span>
+      </div>
+      {events.length === 0 ? (
+        <p className="text-xs text-[#5F6B73]">No AI usage logged yet for this organization.</p>
+      ) : (
+        <>
+          <div className="grid grid-cols-2 gap-3">
+            {[
+              { label: "Events Logged", value: String(events.length) },
+              { label: "Providers Used", value: String(providersUsed) },
+              { label: "Required Human Review", value: String(humanReviewCount) },
+              { label: "Estimated Cost (USD)", value: `$${totalCostUsd.toFixed(4)}` },
+            ].map((s, i) => (
+              <div key={i} className="bg-[#F8F9FA] rounded-lg p-3 text-center">
+                <div className="text-lg font-bold text-[#8B1E2D] font-mono">{s.value}</div>
+                <div className="text-[11px] text-[#5F6B73] mt-0.5">{s.label}</div>
+              </div>
+            ))}
+          </div>
+          <p className="mt-3 text-[11px] leading-relaxed text-[#5F6B73]">Computed from this organization&apos;s {events.length} most recent logged AI requests.</p>
+        </>
+      )}
+    </Card>
+  );
+}
+
 function AiRoutingProvidersPanel() {
   const status = getAiRouterStatusSnapshot();
+  const noExternalProviderConfigured = status.configuredCount === 0;
 
   return (
     <Card className="p-5">
@@ -191,6 +290,13 @@ function AiRoutingProvidersPanel() {
         <h3 className="text-sm font-semibold text-[#0F1117]">AI Routing & Providers</h3>
         <span className="rounded-full bg-[#8B1E2D]/8 px-2 py-0.5 text-[10px] font-semibold text-[#8B1E2D]">{status.mode}</span>
       </div>
+      {/* SA-2 (2026-07-28): the mode badge alone ("demo") can read as "this data is fake" when it
+          is actually a real, load-bearing routing-mode flag (see model-routing-policy.ts -- it also
+          governs whether the local provider is force-enabled). This caption ties the label to the
+          real signal (configuredCount) instead of changing the flag's own behavior. */}
+      <p className="mb-3 text-[11px] text-[#5F6B73]">
+        {noExternalProviderConfigured ? "No external provider configured -- local deterministic fallback active." : `${status.configuredCount} external provider(s) configured for this deployment.`}
+      </p>
       <div className="space-y-2">
         {status.providers.map((provider) => (
           <div key={provider.name} className="flex items-center justify-between rounded-lg bg-[#F8F9FA] p-3 text-xs">
@@ -471,30 +577,49 @@ function OrganizationPanel() {
   );
 }
 
+// SA-2 (2026-07-28) / A-30: this matrix used to render every role's full capability description to
+// any viewer regardless of their own role. Founder's own words: "We do not want permission schema
+// for other user categories visible to any user" / "Need not be visible except one's own role."
+// Super Admin and Organization Admin (the roles that actually manage permissions) still see the
+// full reference matrix, clearly labeled as such; every other role sees only their own row.
+const permissionMatrix: { role: RoleName; access: string }[] = [
+  { role: "Super Admin", access: "All organizations, governance, users, audit" },
+  { role: "Organization Admin", access: "Tenant administration, users, documents, approvals" },
+  { role: "Executive", access: "Executive dashboards, analytics, approvals, knowledge" },
+  { role: "Manager", access: "Programs, tasks, meetings, knowledge, project governance" },
+  { role: "Employee", access: "Assigned work, documents, meetings, knowledge" },
+  { role: "Guest", access: "Read-only approved knowledge and documents" },
+];
+
 function PermissionsPanel() {
-  const matrix = [
-    { role: "Super Admin", access: "All organizations, governance, users, audit" },
-    { role: "Organization Admin", access: "Tenant administration, users, documents, approvals" },
-    { role: "Executive", access: "Executive dashboards, analytics, approvals, knowledge" },
-    { role: "Manager", access: "Programs, tasks, meetings, knowledge, project governance" },
-    { role: "Employee", access: "Assigned work, documents, meetings, knowledge" },
-    { role: "Guest", access: "Read-only approved knowledge and documents" },
-  ];
+  const { session } = useAuth();
+  const user = session.user;
+  const canManagePermissions = Boolean(user && ["Super Admin", "Organization Admin"].includes(user.role));
+  const ownRow = permissionMatrix.find((item) => item.role === user?.role);
+  const visibleMatrix = canManagePermissions ? permissionMatrix : ownRow ? [ownRow] : [];
 
   return (
     <Card className="overflow-hidden">
       <div className="border-b border-[rgba(0,0,0,0.06)] bg-[#F8F9FA] px-4 py-3">
-        <div className="flex items-center gap-2">
-          <ShieldCheck size={15} className="text-[#8B1E2D]" />
-          <h3 className="text-sm font-semibold text-[#0F1117]">Permission Matrix</h3>
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <ShieldCheck size={15} className="text-[#8B1E2D]" />
+            <h3 className="text-sm font-semibold text-[#0F1117]">{canManagePermissions ? "Permission Matrix (Reference)" : "Your Permissions"}</h3>
+          </div>
+          {user && <span className="text-[11px] text-[#5F6B73]">Signed in as <span className="font-semibold text-[#0F1117]">{user.role}</span></span>}
         </div>
       </div>
-      {matrix.map((item) => (
+      {visibleMatrix.map((item) => (
         <div key={item.role} className="grid grid-cols-1 gap-2 border-b border-[rgba(0,0,0,0.04)] px-4 py-3 text-xs md:grid-cols-[180px_1fr]">
           <span className="font-semibold text-[#0F1117]">{item.role}</span>
           <span className="text-[#5F6B73]">{item.access}</span>
         </div>
       ))}
+      {!canManagePermissions && (
+        <div className="px-4 py-3 text-[11px] leading-relaxed text-[#5F6B73]">
+          You do not have permission to manage roles. The full permission schema is visible to Organization Admins and Super Admins only.
+        </div>
+      )}
     </Card>
   );
 }

@@ -294,3 +294,34 @@ No cards moved yet.
 - HITL decision: requested -- live-confirm the avatar now opens Profile, and that the 6 Security
   tab controls now read as clearly disabled-with-reason rather than dead links, on
   `landing.triaxisventures.com`.
+
+### Sprint SA-2 Kanban Update: AI Configuration and Permissions Hardening
+
+- Date: 2026-07-28
+- Fixed: Permissions tab (`PermissionsPanel`) disclosed the full 6-role capability schema to every
+  viewer. Now role-gated: Super Admin/Organization Admin see the full reference matrix, clearly
+  labeled; every other role sees only their own row plus an honest denial note. Directly
+  implements the founder's own stated preference ("Need not be visible except one's own role").
+  4 new tests (`SettingsSection.permissions.test.tsx`). Card updated: A-30, `No` -> `Yes (code +
+  test, pending HITL)`.
+- Fixed: AI Configuration tab's 5 "AI Engine Configuration" toggles had no `onClick` at all --
+  same dead-toggle class as SA-1's Security tab fix. No persisted per-tenant policy exists to write
+  to, so disabled with honest per-item reasons rather than fabricating admin editability.
+- Fixed: AI Usage Statistics card now fetches this organization's own real usage from the
+  pre-existing `GET /api/ai/model-policy` route (already queries `ai_usage_ledger` scoped to the
+  session's `organizationId`) -- real counts when usage exists, an honest empty state when it
+  genuinely has none, illustrative label (unchanged) only as a fetch-failure fallback.
+- Fixed: AI Routing & Providers' "demo" mode badge -- confirmed real and behaviorally load-bearing
+  (also gates local-provider fallback), not fake -- now carries an honest caption tied to the real
+  `configuredCount` signal so it reads correctly instead of looking like fake/demo data.
+- Confirmed, not changed: Language & NLP Coverage panel already renders a real, honest
+  per-language model-readiness registry, not a placeholder claim.
+- 8 new tests total this sprint (`SettingsSection.permissions.test.tsx`,
+  `SettingsSection.aiConfig.test.tsx`). Cards updated: A-31, `No` -> `Yes (code + test, pending
+  HITL)`.
+- Evidence added: `docs/readiness/SETTINGS_ADMIN_SA2_CLOSEOUT_2026_07_28.md`;
+  `src/features/settings/SettingsSection.permissions.test.tsx`;
+  `src/features/settings/SettingsSection.aiConfig.test.tsx`
+- HITL decision: requested -- live-confirm on `landing.triaxisventures.com` that a non-admin role
+  sees only their own Permissions row, and that the AI Configuration tab no longer presents static
+  numbers as live tenant activity.
