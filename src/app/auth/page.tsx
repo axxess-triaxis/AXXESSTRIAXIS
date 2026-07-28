@@ -8,6 +8,7 @@ import { AuthProvider, useAuth } from "../../auth/AuthProvider";
 import { AuthApiError } from "../../auth/supabaseAuthClient";
 import { Card } from "../../components/ui/Card";
 import { OAuthProviderButtons } from "../../features/auth/OAuthProviderButtons";
+import { PhoneOtpSignIn } from "../../features/auth/PhoneOtpSignIn";
 import { AnalyticsProviderShell, useAnalytics } from "../../services/analytics";
 
 function LoginPanel() {
@@ -174,8 +175,9 @@ function LoginPanel() {
         <span className="h-px flex-1 bg-[rgba(0,0,0,0.08)]" />
       </div>
 
-      <div className="mt-4">
+      <div className="mt-4 space-y-3">
         <OAuthProviderButtons onError={setError} />
+        <PhoneOtpSignIn onError={setError} />
       </div>
 
       <p className="mt-4 text-center text-sm text-[#5F6B73]">
