@@ -158,12 +158,15 @@ server-to-server Supabase Auth calls (request OTP, verify OTP), following the ex
       against `/auth/v1/authorize?provider=azure` returned
       `{"error_code":"validation_failed","msg":"Unsupported provider: provider is not enabled"}`
 - [ ] Sprint 2.5 -- Azure provider configured in Supabase Dashboard (founder) -- not yet done
-- [ ] Sprint 2.6 -- `NEXT_PUBLIC_AUTH_GOOGLE_ENABLED` / `NEXT_PUBLIC_AUTH_MICROSOFT_ENABLED` set to
-      `true` in production (founder confirms; agent can execute) -- Google could go live
-      independently of Microsoft right now if desired
+- [x] Sprint 2.6 (Google only) -- `NEXT_PUBLIC_AUTH_GOOGLE_ENABLED=true` set in production and
+      deployed (`dpl_GCmqt1WbGVsKmCWWoS7uJqYESJLg`), 2026-07-28. Confirmed live via
+      `GET /api/auth/oauth/start?provider=google` on the real domain, now returns a real
+      `authorizeUrl`. Microsoft's flag stays unset until 2.4/2.5 are done.
 - [ ] Sprint 3.1 -- Live feedback email confirmed -- blocked on 2.1b
 - [ ] Sprint 3.2 -- Live invite email confirmed -- blocked on 2.1b
-- [ ] Sprint 3.3 -- Live Google sign-in confirmed -- blocked on 2.6
+- [ ] Sprint 3.3 -- Live Google sign-in confirmed -- code-path confirmed live via direct API check;
+      **still needs a real HITL click-through** (click "Continue with Google" on the real form,
+      complete Google's consent screen, land back signed in)
 - [ ] Sprint 3.4 -- Live Microsoft sign-in confirmed -- blocked on 2.4/2.5/2.6
 - [ ] Sprint 3.5 -- Matrix closed out on live evidence
 - [x] Sprint 4 engineering -- phone/OTP code-complete, tested, typecheck/lint/build clean
