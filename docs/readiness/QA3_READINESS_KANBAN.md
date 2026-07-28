@@ -238,3 +238,30 @@ No cards moved yet.
   Center, and Customer Success Live Ops, confirm each shows the real tenant's own name; separately
   confirm Investor Preview is unaffected). TP-3 (the isolation harness + live two-tenant UI proof)
   is the next sprint in this program, not started.
+
+### Sprint TP-3 Kanban Update: Real Two-Tenant Proof and Non-Leakage Release Gate
+
+- Date: 2026-07-28
+- Deployment confirmed: all TP-1/TP-2 code is live on `landing.triaxisventures.com`, deployment
+  `dpl_GPQHYbu6A8PGMi8xWc9SEtkLC52Y`, built from commit `343620f` -- see
+  `PRODUCTION_DEPLOYMENT_CURRENCY_NOTE_2026_07_28.md`.
+- Cards updated in place, still `Blocked`, new evidence: A-10 (Docker daemon/staging-project
+  environment re-checked directly, confirmed still unavailable; `pnpm run supabase:verify` now
+  passes clean -- 100/100 tables RLS-protected, one pre-existing permissive-predicate warning --
+  strengthening code-level confidence without substituting for the harness's live proof), A-11
+  (full 18-screen-per-tenant walkthrough checklist now exists, not yet executed)
+- Cards updated in place, still `Yes (code + test, pending HITL)`, new evidence: A-28, A-69 (both
+  now confirmed *deployed* to production, not just committed -- deployment currency and live
+  correctness are tracked as separate claims, only the first is closed)
+- New infrastructure this sprint (not itself an actionable): `pnpm run test:tenant-boundaries`
+  release gate, running the 6 test files covering every tenant-boundary fix from TP-1/TP-2/TP-3
+  (38 tests) on demand or in CI.
+- No new tenant-leakage defect found this sprint -- scope was proof/gate infrastructure, not a
+  fresh code sweep (TP-2 already covered that).
+- Evidence added: `docs/readiness/TENANT_PARTITIONING_TP3_CLOSEOUT_2026_07_28.md`;
+  `docs/readiness/TENANT_PARTITIONING_ISOLATION_HARNESS_RUNBOOK_2026_07_28.md`;
+  `docs/readiness/TENANT_PARTITIONING_LIVE_TWO_TENANT_WALKTHROUGH_2026_07_28.md`;
+  `package.json` (`test:tenant-boundaries` script)
+- HITL decision: requested -- (1) execute the live two-tenant walkthrough checklist and record
+  results; (2) either enable a local Docker daemon or provision a non-production Supabase
+  branch/staging project so the isolation harness can finally run for A-10.
