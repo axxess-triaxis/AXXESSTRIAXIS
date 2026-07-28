@@ -8,6 +8,9 @@ Goals, as given by the founder:
 2. "Invite Team", when provided an email and "Send Invite" is clicked, actually sends a mail
    invite to the entered email.
 3. OAuth enabled on the "Sign In" form for Gmail and Microsoft.
+4. **Added 2026-07-28**, founder's own words -- "For phone OAuth, can we add a tag in Sign
+   Up/Sign In? It might be very convenient product feature" -- phone/SMS OTP sign-in (via Twilio,
+   per founder decision after a cost comparison) as a fourth sign-in method.
 
 ## Evidence-First Finding (Read Before Planning Any New Build)
 
@@ -87,6 +90,42 @@ system, no changing production security/account settings without explicit per-ac
 4. Update `ACTIONABLES_READINESS_MATRIX.md` with live confirmation, matching this program's existing
    `Yes (code + test shipped, pending HITL live confirmation)` -> `Yes` (live) pattern.
 
+### Sprint 4 (added 2026-07-28) -- Phone/SMS OTP sign-in via Twilio
+
+Founder decision after a cost comparison (Twilio vs. MessageBird vs. Vonage vs. India-specific
+aggregators): start with Twilio for the mixed India/international audience; revisit a
+cost-optimized dual-provider split only once real volume justifies the extra engineering. This is
+architecturally simpler than OAuth -- no browser redirect to a third party, just two direct
+server-to-server Supabase Auth calls (request OTP, verify OTP), following the exact
+`signInServerSide`/`establishServerSessionFromOAuthTokens` pattern `serverSession.ts` already uses.
+
+**Engineering (this agent, no founder action needed) -- done 2026-07-28:**
+- `src/auth/authApi.ts`: added `phoneAuthEnabled()`, gated on `NEXT_PUBLIC_AUTH_PHONE_ENABLED`
+  (same "always visible, honest about readiness" pattern as `authProviderEnabled`).
+- `src/auth/serverSession.ts`: added `verifyPhoneOtpServerSide(phone, token)`, calling Supabase's
+  `POST /auth/v1/verify` with `{ type: "sms", phone, token }` and reusing `resolveUser` +
+  `setServerAuthCookies` exactly like `signInServerSide`.
+- `POST /api/auth/phone/start` (new): requests an OTP via `callSupabaseAuth("otp", { phone })`.
+- `POST /api/auth/phone/verify` (new): verifies the code, establishes the session, audit-logs
+  `auth.login` with `method: "phone_otp"`.
+- `src/features/auth/PhoneOtpSignIn.tsx` (new): two-step UI (phone number -> code), wired into both
+  real auth surfaces -- `src/app/auth/page.tsx` (Sign In) and `EnterpriseAuthFlowPage.tsx`'s
+  sign-up branch (Sign Up), directly below the existing OAuth buttons.
+- 19 new tests across 4 files (`authApi.test.ts`, `phone/start/route.test.ts`,
+  `phone/verify/route.test.ts`, `PhoneOtpSignIn.test.tsx`); typecheck/lint/build clean.
+
+**Founder action required (cannot be performed by this agent):**
+1. Create a Twilio account (twilio.com) if one doesn't already exist, and a Messaging Service /
+   phone number capable of sending SMS.
+2. Copy the Twilio **Account SID**, **Auth Token**, and the **Twilio phone number** (or Messaging
+   Service SID) you'll send from.
+3. In **Supabase Dashboard -> Authentication -> Providers -> Phone**, enable Phone sign-in, choose
+   **Twilio** as the SMS provider, and paste in the Account SID / Auth Token / sender number.
+4. Tell this agent once step 3 is done -- it will set `NEXT_PUBLIC_AUTH_PHONE_ENABLED=true` in
+   Vercel production and deploy (same pattern as the Google/Microsoft flags).
+5. Live HITL retest: request a code on the real Sign In form, receive the real SMS, verify it signs
+   in successfully.
+
 ## Checklist
 
 - [x] Sprint 1.1 -- Fix `BetaFeedbackModal.tsx` to route through `/api/beta-feedback`
@@ -96,19 +135,38 @@ system, no changing production security/account settings without explicit per-ac
 - [x] Sprint 1.4 -- Full verification suite clean (typecheck, lint zero-warnings, 153 files / 610
       tests, build)
 - [x] Sprint 1.5 -- Matrix updated (A-08, A-65), closeout doc written
-      (`EMAIL_DELIVERY_SPRINT1_CLOSEOUT_2026_07_27.md`); commit/push next
-- [ ] Sprint 2.1 -- `RESEND_API_KEY` added to production (founder)
-- [ ] Sprint 2.2 -- `NEXT_PUBLIC_APP_URL` added to production (founder confirms; agent can execute)
-- [ ] Sprint 2.3 -- Google OAuth Client registered in Google Cloud Console (founder)
-- [ ] Sprint 2.4 -- Microsoft Entra app registered (founder)
-- [ ] Sprint 2.5 -- Both providers configured in Supabase Dashboard (founder)
+      (`EMAIL_DELIVERY_SPRINT1_CLOSEOUT_2026_07_27.md`); committed and pushed (`c56da8f`)
+- [x] Sprint 2.1 -- `RESEND_API_KEY` added to production -- first attempt landed on the wrong
+      Vercel project (`axxesstriaxis`, the marketing site, not `triaxis-www-frontend-import`);
+      corrected 2026-07-28, confirmed present via `vercel env ls production`
+- [x] Sprint 2.2 -- `NEXT_PUBLIC_APP_URL` added to production (`https://landing.triaxisventures.com`
+      -- founder's message had a typo, `.com` was missing, corrected and confirmed before adding)
+- [x] Sprint 2.7 (partial) -- Deployed twice (`dpl_FXhpJqit6eozh8nAssdpjHHZGg3s` for the key/URL
+      addition, `dpl_GveAxArUWsMoSPdPTXTAvJUfQGp1` after adding diagnostic Resend-error logging)
+- [ ] **Sprint 2.1b (blocking, live-diagnosed 2026-07-28)** -- despite being present, the Resend key
+      itself is being rejected: production logs show
+      `{ status: 401, name: 'validation_error', error: 'API key is invalid' }` from Resend for both
+      feedback and invitation sends. Founder asked to regenerate the key in the Resend dashboard and
+      re-add it (delete + fresh add, not edit-in-place) to rule out a paste/truncation error --
+      **not yet re-confirmed**.
+- [x] Sprint 2.3 -- Google OAuth Client registered in Google Cloud Console and **already configured
+      in Supabase** -- confirmed 2026-07-28 by calling Supabase's own
+      `/auth/v1/authorize?provider=google` directly (no dashboard login needed): returns a real
+      `302` to a live Google consent screen. Only the `NEXT_PUBLIC_AUTH_GOOGLE_ENABLED` flag (2.6)
+      and a deploy remain for Google specifically.
+- [ ] Sprint 2.4 -- Microsoft Entra app registered (founder) -- **not yet done**, same live check
+      against `/auth/v1/authorize?provider=azure` returned
+      `{"error_code":"validation_failed","msg":"Unsupported provider: provider is not enabled"}`
+- [ ] Sprint 2.5 -- Azure provider configured in Supabase Dashboard (founder) -- not yet done
 - [ ] Sprint 2.6 -- `NEXT_PUBLIC_AUTH_GOOGLE_ENABLED` / `NEXT_PUBLIC_AUTH_MICROSOFT_ENABLED` set to
-      `true` in production (founder confirms; agent can execute)
-- [ ] Sprint 2.7 -- Redeploy
-- [ ] Sprint 3.1 -- Live feedback email confirmed
-- [ ] Sprint 3.2 -- Live invite email confirmed
-- [ ] Sprint 3.3 -- Live Google sign-in confirmed
-- [ ] Sprint 3.4 -- Live Microsoft sign-in confirmed
+      `true` in production (founder confirms; agent can execute) -- Google could go live
+      independently of Microsoft right now if desired
+- [ ] Sprint 3.1 -- Live feedback email confirmed -- blocked on 2.1b
+- [ ] Sprint 3.2 -- Live invite email confirmed -- blocked on 2.1b
+- [ ] Sprint 3.3 -- Live Google sign-in confirmed -- blocked on 2.6
+- [ ] Sprint 3.4 -- Live Microsoft sign-in confirmed -- blocked on 2.4/2.5/2.6
 - [ ] Sprint 3.5 -- Matrix closed out on live evidence
-
-Starting Sprint 1 now.
+- [x] Sprint 4 engineering -- phone/OTP code-complete, tested, typecheck/lint/build clean
+      (2026-07-28)
+- [ ] Sprint 4 founder actions -- Twilio account + Supabase Phone provider config, not yet done
+- [ ] Sprint 4 live HITL retest -- blocked on the above

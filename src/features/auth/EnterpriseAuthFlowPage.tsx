@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { Card } from "../../components/ui/Card";
 import { trackEvent } from "../../services/analytics";
 import { OAuthProviderButtons } from "./OAuthProviderButtons";
+import { PhoneOtpSignIn } from "./PhoneOtpSignIn";
 
 type AuthFlowKind = "sign-up" | "login" | "forgot-password" | "reset-password" | "mfa-enroll" | "mfa-challenge" | "security" | "account-delete" | "privacy";
 
@@ -232,8 +233,9 @@ export function EnterpriseAuthFlowPage({ kind }: { kind: AuthFlowKind }) {
               or
               <span className="h-px flex-1 bg-[rgba(0,0,0,0.08)]" />
             </div>
-            <div className="mt-4">
+            <div className="mt-4 space-y-3">
               <OAuthProviderButtons onError={(text) => setMessage(text ? { tone: "error", text } : null)} />
+              <PhoneOtpSignIn onError={(text) => setMessage(text ? { tone: "error", text } : null)} />
             </div>
           </>
         )}
