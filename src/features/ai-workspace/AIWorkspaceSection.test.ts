@@ -23,4 +23,11 @@ describe("AIWorkspaceSection (Sprint 3 -- does not hang, no raw backend error te
     expect(source).toContain("Sign in to record this review decision.");
     expect(source).toContain("Your role does not have permission to record this decision.");
   });
+
+  it("TP-2 (A-28 failure class): the sample 'North East Health Mission' RAG query only auto-fires in demo mode, not for every real tenant", () => {
+    const queryIndex = source.indexOf("North East Health Mission district risks");
+    expect(queryIndex).toBeGreaterThan(-1);
+    const precedingBlock = source.slice(Math.max(0, queryIndex - 400), queryIndex);
+    expect(precedingBlock).toContain('getRuntimeMode(Boolean(session.user)) !== "demo"');
+  });
 });

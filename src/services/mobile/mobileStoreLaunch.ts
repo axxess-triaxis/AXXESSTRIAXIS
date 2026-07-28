@@ -324,7 +324,7 @@ export function buildMobileStoreLaunchSnapshot(input: BuildMobileStoreLaunchInpu
 
   return {
     organizationId: input.organizationId,
-    organizationName: input.organizationName ?? "North East Health Mission",
+    organizationName: input.organizationName ?? "Organization setup pending",
     generatedAt,
     status,
     readinessScore,

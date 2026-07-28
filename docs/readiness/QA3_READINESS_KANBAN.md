@@ -204,3 +204,37 @@ No cards moved yet.
 - No numbered actionable changed status -- this defect was never assigned an A-XX ID.
 - Evidence added: `docs/readiness/P0_PUBLIC_ENTRY_INVESTOR_BETA_SPLIT_2026_07_24.md`; `docs/readiness/TENANT_0_ONBOARDING_ATTEMPTS_2026_07_24.md`; `src/app/landing/page.test.tsx`; `src/app/investor/page.test.tsx`; `src/app/page.test.tsx`; `src/demo/demoMode.test.ts`; `src/auth/AuthProvider.test.tsx`
 - HITL decision: requested -- retest both new URLs (`https://www.triaxisventures.com/investor`, `https://www.triaxisventures.com/landing`) directly per the retest instructions in the new closeout document, in a fresh/incognito browser profile to avoid any further stale local state from earlier walkthroughs.
+
+### Sprint TP-1 + TP-2 Kanban Update: Tenant Partitioning & Non-Leakage Hardening Program
+
+- Date: 2026-07-28
+- Trigger: HITL live report -- Triaxis Ventures' real Settings > Organization tab showed the
+  investor-demo institution "North East Health Mission." Formalized by Codex as a dedicated
+  three-sprint program (TP-1/TP-2/TP-3), distinct from the original QA3 five-sprint program.
+- Cards moved to Verified (code + test, pending HITL live confirmation -- not plain Closed): A-28
+  (the original Settings leak, TP-1), A-69 (new -- the same failure class found in 3 more admin
+  surfaces during TP-2's audit: Mobile Release console, Pilot Command Center, Customer Success
+  Live Ops, and an unconditional demo RAG query in AI Workspace)
+- Cards updated in place, still `Blocked`, unchanged status but new evidence: A-10 (repository
+  audit confirms explicit `organization_id` filtering exists at the application layer, not RLS
+  alone -- except for the Super Admin role, which this harness would specifically prove or
+  disprove), A-11 (now blocked purely on a HITL walkthrough, not infrastructure, since NEPDSIC
+  already exists as a second real tenant)
+- Cards remaining Backlog: A-29 (Security tab dead Configure buttons + static permissions table),
+  A-30 (static Permissions matrix) -- named as TP-2 follow-ups, not actioned this pass, both too
+  large for "safe, obvious" scope and neither is a demo/tenant identity leak
+- Evidence added: `docs/readiness/TENANT_PARTITIONING_TP1_CLOSEOUT_2026_07_28.md`;
+  `docs/readiness/TENANT_PARTITIONING_TP2_CLOSEOUT_2026_07_28.md`;
+  `docs/readiness/TENANT_PARTITIONING_DEMO_REFERENCE_INVENTORY_2026_07_28.md`;
+  `docs/readiness/TENANT_PARTITIONING_REPOSITORY_BOUNDARY_AUDIT_2026_07_28.md`;
+  `docs/readiness/TENANT_PARTITIONING_API_BOUNDARY_AUDIT_2026_07_28.md`;
+  `src/features/settings/OrganizationPanel.test.tsx`;
+  `src/services/pilot/pilotAcceptanceRuntime.test.ts`;
+  `src/features/ai-workspace/AIWorkspaceSection.test.ts` (extended);
+  `src/repositories/supabaseEnterpriseRepositories.test.ts` (extended);
+  `src/app/api/rag/query/route.test.ts`
+- HITL decision: requested -- exact live checks listed in both closeout documents (sign in as
+  Triaxis Ventures and NEPDSIC, open Settings > Organization, Mobile Release, Pilot Command
+  Center, and Customer Success Live Ops, confirm each shows the real tenant's own name; separately
+  confirm Investor Preview is unaffected). TP-3 (the isolation harness + live two-tenant UI proof)
+  is the next sprint in this program, not started.
