@@ -265,3 +265,32 @@ No cards moved yet.
 - HITL decision: requested -- (1) execute the live two-tenant walkthrough checklist and record
   results; (2) either enable a local Docker daemon or provision a non-production Supabase
   branch/staging project so the isolation harness can finally run for A-10.
+
+### Sprint SA-1 Kanban Update: Profile, Organization and Obvious Settings Dead Ends
+
+- Date: 2026-07-28
+- Fixed: top-bar avatar (`TopBar.tsx`) was a purely decorative element with no click target at
+  all -- now a real `Link` to `/settings?tab=profile`, matching the standard enterprise-SaaS
+  "click your avatar to open your profile" affordance. 3 new tests (`TopBar.test.tsx`).
+- Fixed (partially, per this sprint's own scope): Security tab's 6 "Configure" buttons
+  (`SettingsSection.tsx`) had no `onClick` handler at all. No real per-item configuration screen
+  exists anywhere in the app to route them to, so -- per this sprint's explicit instruction -- all
+  6 are now genuinely `disabled` with an honest, short reason instead of an active-looking no-op.
+  2 new tests (`SettingsSection.security.test.tsx`). Card updated: A-29, `No` -> `Partially fixed
+  (code + test, pending HITL)`, since the row's original literal criterion ("leads to a real
+  settings screen") is still unmet by design -- only the dead-click UX defect is resolved.
+- Confirmed, not changed: Organization tab (A-28) -- re-ran its existing 4-test regression suite
+  before touching adjacent Settings code, no regression. Profile tab -- confirmed it is already a
+  real, live-session-backed panel (`ProfilePanel`, `useAuth().session`), not demo-fallback; now
+  also the new avatar link's destination. Users tab / invite email delivery (A-08) -- confirmed
+  `inviteUser()` already surfaces honest `emailDelivery` status from the 2026-07-27 fix; not
+  touched this sprint, no new evidence, card left unchanged.
+- Also confirmed, not fixed: the Role-Based Permissions table's original "empty cells" finding
+  (part of A-29) does not reproduce in current code -- it renders static, hardcoded per-role
+  Check/X data, not empty cells. Its staticness (identical for every tenant) remains open,
+  adjacent to A-30.
+- Evidence added: `docs/readiness/SETTINGS_ADMIN_SA1_CLOSEOUT_2026_07_28.md`;
+  `src/app/layout/TopBar.test.tsx`; `src/features/settings/SettingsSection.security.test.tsx`
+- HITL decision: requested -- live-confirm the avatar now opens Profile, and that the 6 Security
+  tab controls now read as clearly disabled-with-reason rather than dead links, on
+  `landing.triaxisventures.com`.

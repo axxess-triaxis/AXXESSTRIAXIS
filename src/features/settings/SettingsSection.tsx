@@ -52,12 +52,12 @@ export const SettingsSection = () => {
             <h3 className="text-sm font-semibold text-[#0F1117] mb-4">Security Status</h3>
             <div className="space-y-3">
               {[
-                { label: "Multi-Factor Authentication", status: true, detail: "TOTP + Hardware Key" },
-                { label: "Single Sign-On (SAML 2.0)", status: true, detail: "Azure AD configured" },
-                { label: "Audit Logging", status: true, detail: "All actions · 7-year retention" },
-                { label: "End-to-End Encryption", status: true, detail: "AES-256 at rest + TLS 1.3 in transit" },
-                { label: "IP Allowlisting", status: false, detail: "Not configured" },
-                { label: "Session Timeout", status: true, detail: "8 hours inactivity" },
+                { label: "Multi-Factor Authentication", status: true, detail: "TOTP + Hardware Key", configureDisabledReason: "Pending production security configuration" },
+                { label: "Single Sign-On (SAML 2.0)", status: true, detail: "Azure AD configured", configureDisabledReason: "Managed by tenant policy" },
+                { label: "Audit Logging", status: true, detail: "All actions · 7-year retention", configureDisabledReason: "Managed by tenant policy" },
+                { label: "End-to-End Encryption", status: true, detail: "AES-256 at rest + TLS 1.3 in transit", configureDisabledReason: "Managed by tenant policy" },
+                { label: "IP Allowlisting", status: false, detail: "Not configured", configureDisabledReason: "Requires organization admin setup" },
+                { label: "Session Timeout", status: true, detail: "8 hours inactivity", configureDisabledReason: "Pending production security configuration" },
               ].map((item, i) => (
                 <div key={i} className="flex items-center gap-3 py-2 border-b border-[rgba(0,0,0,0.04)] last:border-0">
                   {item.status ? <CheckCircle2 size={15} className="text-emerald-500 flex-shrink-0" /> : <XCircle size={15} className="text-red-400 flex-shrink-0" />}
@@ -65,7 +65,20 @@ export const SettingsSection = () => {
                     <div className="text-xs font-semibold text-[#0F1117]">{item.label}</div>
                     <div className="text-[11px] text-[#5F6B73]">{item.detail}</div>
                   </div>
-                  <button className="text-[11px] text-[#8B1E2D] hover:underline">Configure</button>
+                  {/* SA-1 (2026-07-28): every "Configure" button here was a plain <button> with
+                      no onClick at all -- a real dead end, not a placeholder-styled one. None of
+                      these 6 items has a real configuration screen yet. Disabled with an honest,
+                      specific reason instead of leaving an active-looking control that does
+                      nothing when clicked. */}
+                  <button
+                    type="button"
+                    disabled
+                    aria-disabled="true"
+                    title={item.configureDisabledReason}
+                    className="cursor-not-allowed text-[11px] text-[#9AA1A6]"
+                  >
+                    {item.configureDisabledReason}
+                  </button>
                 </div>
               ))}
             </div>
