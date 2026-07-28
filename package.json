@@ -66,6 +66,7 @@
     "test": "vitest run --config vitest.config.mjs",
     "test:coverage": "vitest run --config vitest.config.mjs --coverage",
     "test:e2e": "playwright test",
+    "test:tenant-boundaries": "vitest run --config vitest.config.mjs src/features/settings/OrganizationPanel.test.tsx src/services/pilot/pilotAcceptanceRuntime.test.ts src/features/ai-workspace/AIWorkspaceSection.test.ts src/repositories/supabaseEnterpriseRepositories.test.ts src/app/api/rag/query/route.test.ts src/app/api/ai/reviews/route.test.ts",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "vercel:link": "vercel link",
