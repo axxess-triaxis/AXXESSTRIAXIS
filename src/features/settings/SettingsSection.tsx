@@ -138,7 +138,13 @@ export const SettingsSection = () => {
             </div>
           </Card>
           <Card className="p-5">
-            <h3 className="text-sm font-semibold text-[#0F1117] mb-4">AI Usage Statistics</h3>
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-[#0F1117]">AI Usage Statistics</h3>
+              <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-800">Illustrative, not yet tenant-tracked</span>
+            </div>
+            {/* A-31: these were previously shown as unlabeled hard numbers identical for every
+                tenant regardless of real activity -- honestly labeling them (not a per-tenant
+                usage pipeline, which is separate, larger work) instead of implying they are live. */}
             <div className="grid grid-cols-2 gap-3">
               {[
                 { label: "Queries This Month", value: "2,847" },
@@ -152,6 +158,7 @@ export const SettingsSection = () => {
                 </div>
               ))}
             </div>
+            <p className="mt-3 text-[11px] leading-relaxed text-[#5F6B73]">Sample figures pending a real per-tenant AI usage aggregation pipeline -- tracked separately, not this tenant&apos;s actual activity.</p>
           </Card>
           <AiRoutingProvidersPanel />
           <LanguageCoveragePanel />
@@ -370,13 +377,58 @@ function ProfilePanel() {
 
 function OrganizationPanel() {
   const { session } = useAuth();
-  const mode = isDemoModeEnabled() ? "Investor Preview" : "Production";
-  const metrics = [
-    { label: "Organization", value: demoDatasetSummary.organizationName },
-    { label: "Mode", value: mode },
-    { label: "Projects", value: demoDatasetSummary.projects.toLocaleString() },
-    { label: "Documents", value: demoDatasetSummary.documents.toLocaleString() },
-  ];
+  const user = session.user;
+  const demoActive = isDemoModeEnabled();
+  const mode = demoActive ? "Investor Preview" : "Production";
+  const scope = useMemo(() => user ? tenantScopeFromUser(user) : undefined, [user]);
+  const [liveOrg, setLiveOrg] = useState<{ name: string; projects: number; documents: number } | null>(null);
+  const [loading, setLoading] = useState(!demoActive);
+
+  // TP-01 fix: this panel used to render demoDatasetSummary unconditionally, so a real tenant's
+  // own Settings page showed the seeded investor-demo institution ("North East Health Mission")
+  // instead of its own organization -- a real cross-tenant-looking data leak, root-caused
+  // 2026-07-28. Demo/Investor Preview mode still shows the seeded dataset (correct, unchanged);
+  // live tenants now query their own organization record and real project/document counts.
+  useEffect(() => {
+    if (demoActive || !scope || !user?.organizationId) {
+      setLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setLoading(true);
+    Promise.all([
+      applicationServices.organizationsRepository.getById(scope, user.organizationId),
+      applicationServices.projectsRepository.list(scope, { pageSize: 100 }),
+      applicationServices.documentsRepository.list(scope, { pageSize: 100 }),
+    ])
+      .then(([organization, projects, documents]) => {
+        if (cancelled) return;
+        setLiveOrg({ name: organization?.name ?? "", projects: projects.length, documents: documents.length });
+      })
+      .catch(() => {
+        if (!cancelled) setLiveOrg(null);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [demoActive, scope, user?.organizationId]);
+
+  const metrics = demoActive
+    ? [
+        { label: "Organization", value: demoDatasetSummary.organizationName },
+        { label: "Mode", value: mode },
+        { label: "Projects", value: demoDatasetSummary.projects.toLocaleString() },
+        { label: "Documents", value: demoDatasetSummary.documents.toLocaleString() },
+      ]
+    : [
+        { label: "Organization", value: loading ? "Loading..." : liveOrg?.name || "Not set up yet" },
+        { label: "Mode", value: mode },
+        { label: "Projects", value: loading ? "..." : (liveOrg?.projects ?? 0).toLocaleString() },
+        { label: "Documents", value: loading ? "..." : (liveOrg?.documents ?? 0).toLocaleString() },
+      ];
 
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
