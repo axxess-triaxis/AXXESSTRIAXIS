@@ -1,4 +1,6 @@
 import { AlertTriangle, Bell, CheckCircle2, FolderKanban, LogOut, Search, ShieldCheck } from "lucide-react";
+import Link from "next/link";
+import type { Route } from "next";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Avatar } from "../../components/ui/Avatar";
 import { demoModeChangedEvent, demoResetEvent, isDemoModeEnabled } from "../../demo/demoMode";
@@ -213,7 +215,17 @@ export function TopBar({ activeLabel, notifOpen, user, onToggleNotifications, on
         </div>
 
         <div className="flex items-center gap-2 rounded-lg px-2 py-1">
-          <Avatar initials={user.avatarInitials ?? "AU"} color="bg-[#8B1E2D]" />
+          {/* SA-1: this used to be a purely decorative <Avatar>, no click target at all -- the
+              top-right avatar is the single most standard "open my profile" affordance in
+              enterprise SaaS, and this one did nothing. Direct navigation to the existing,
+              already-real Profile tab, matching this file's own Link usage elsewhere. */}
+          <Link
+            href={"/settings?tab=profile" as Route}
+            aria-label="Open profile"
+            className="flex h-8 w-8 items-center justify-center rounded-lg transition-opacity hover:opacity-80"
+          >
+            <Avatar initials={user.avatarInitials ?? "AU"} color="bg-[#8B1E2D]" />
+          </Link>
           <button
             onClick={onLogout}
             className="flex h-7 w-7 items-center justify-center rounded-lg text-[#5F6B73] transition-colors hover:bg-[#F2F3F5] hover:text-[#0F1117]"
