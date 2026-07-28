@@ -64,3 +64,11 @@ export function authProviderEnabled(provider: "google" | "microsoft" | "apple") 
   const key = `NEXT_PUBLIC_AUTH_${provider.toUpperCase()}_ENABLED`;
   return process.env[key] === "true";
 }
+
+// Phone/SMS OTP is not an OAuth redirect (no authorize URL, no third-party consent screen) -- it's
+// two direct Supabase Auth calls (request OTP, verify OTP) gated on Supabase having an SMS
+// provider (e.g. Twilio) configured. Kept as its own flag/function rather than folding into
+// authProviderEnabled's Provider union, since the two flows are shaped differently end to end.
+export function phoneAuthEnabled() {
+  return process.env.NEXT_PUBLIC_AUTH_PHONE_ENABLED === "true";
+}

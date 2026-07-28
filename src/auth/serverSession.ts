@@ -131,6 +131,22 @@ export async function establishServerSessionFromOAuthTokens(accessToken: string,
   return { accessToken, refreshToken, user };
 }
 
+// Phone sign-in's "request OTP" step (POST /auth/v1/otp with { phone }) needs no session -- it
+// just tells Supabase to ask the configured SMS provider (e.g. Twilio) to text a code. See
+// callSupabaseAuth in authApi.ts for that half. This is the second half: once the user has the
+// code, POST /auth/v1/verify with { type: "sms", phone, token } returns the same
+// access_token/refresh_token/user shape as password sign-in, so it can reuse resolveUser and
+// setServerAuthCookies exactly like signInServerSide does.
+export async function verifyPhoneOtpServerSide(phone: string, token: string): Promise<ServerSession> {
+  const payload = await supabaseAuthRequest<SupabasePasswordResponse>("verify", {
+    method: "POST",
+    body: JSON.stringify({ type: "sms", phone, token }),
+  });
+  const user = await resolveUser(payload.access_token, payload.user);
+  await setServerAuthCookies(payload.access_token, payload.refresh_token, payload.expires_in);
+  return { accessToken: payload.access_token, refreshToken: payload.refresh_token, user };
+}
+
 async function refreshServerSession(refreshToken: string) {
   const payload = await supabaseAuthRequest<SupabasePasswordResponse>("token?grant_type=refresh_token", {
     method: "POST",
