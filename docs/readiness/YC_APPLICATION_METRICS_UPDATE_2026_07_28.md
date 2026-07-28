@@ -27,6 +27,28 @@ pending D-U-N-S number) -- not unbuilt product surface. If a single honest sente
 > blocked on an external, named dependency or are confirmed, logged defects -- there is no single
 > completion percentage that fairly represents beta readiness.
 
+### If a single "% readiness" figure must be quoted
+
+**Web (beta 0.7.0): 53%** -- computed as confirmed-working items / total tracked items (36/68),
+the only unbiased, complete-coverage methodology available (an average of the matrix's own
+per-item confidence scores was considered and rejected: only 32 of 68 rows carry a numeric
+confidence value at all, so an average of just those is a biased subset, not a fair total).
+Composition matters more than the headline number: of the 47% not counted as working, 31 points
+(21 items) are external-dependency-blocked, not missing engineering; only 16 points (11 items) are
+confirmed, logged defects.
+
+**Android: 70%** -- from `ACTIONABLES_READINESS_MATRIX.md` A-23's own confidence score, raised from
+65% to 70% on 2026-07-27 evidence: a real, non-skipped `android-preview` CI job (GitHub Actions run
+`30240678884`) completed successfully, producing a real preview build artifact through the actual
+pipeline -- not just non-credentialed local checks. Held at 70%, not higher, because this is an
+unsigned preview artifact; the *signed* AAB/APK this actionable requires is still blocked on
+company Google Play credentials (same D-U-N-S dependency as iOS).
+
+**iOS: 30%** -- from A-24's own confidence score, unchanged. No `ios-preview` CI job has completed
+successfully to date (cancelled both attempts, 2026-07-14 and 2026-07-27); iOS additionally
+requires macOS build infrastructure this environment can never provide locally, on top of the same
+credential blocker Android shares.
+
 ## Mobile
 
 | Platform | Status | Evidence |
