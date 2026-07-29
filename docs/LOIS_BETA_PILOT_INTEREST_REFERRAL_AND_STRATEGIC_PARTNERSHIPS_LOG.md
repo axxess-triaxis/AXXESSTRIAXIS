@@ -30,14 +30,14 @@ than treated as verified. Applied below to entries where a pilot has not yet sta
 
 ## Summary Table
 
-| # | Organization | Type | Status | Source File |
-|---|---|---|---|---|
-| 1 | Sakura Law Chambers | Signed engagement letter (referral/strategic collaboration) | Signed, active | `Sakura signed engagement letter_signed.pdf` |
-| 2 | Imprints Production -- Pilot 1 | LOI / beta interest email | **Onboarded (founder-confirmed)** | `LOI 1 Imprints Production.pdf` |
-| 3 | Ekora Hive -- Pilot 2 | LOI / beta interest email | **Onboarded (live-verified)** | `LOI 2 Ekora.pdf` |
-| 4 | Mahanta & Sons Filling Station | LOI / beta interest letter | LOI received | `LOI 3 - 3 customers (...).pdf` |
-| 5 | Trimurti Blocks & Pavers | LOI / beta interest letter | LOI received | `LOI 3 - 3 customers (...).pdf` |
-| 6 | P. D. Wine Shop | LOI / beta interest letter | LOI received | `LOI 3 - 3 customers (...).pdf` |
+| # | Organization | Type | Sector | Proprietor | Status | Source File |
+|---|---|---|---|---|---|---|
+| 1 | Sakura Law Chambers | Signed engagement letter (referral/strategic collaboration) | -- | Shradhanjali Sarma | Signed, active | `Sakura signed engagement letter_signed.pdf` |
+| 2 | Imprints Production -- Pilot 1 | LOI / beta interest email | Startup | Mr. Prajnyan Ballav Goswami | **Onboarded (founder-confirmed); $20-30 advance offered orally, not yet collected pending IDFC First Bank current account** | `LOI 1 Imprints Production.pdf` |
+| 3 | Ekora Hive -- Pilot 2 | LOI / beta interest email | Startup | Mrs. Diksha Rajkhowa | **Onboarded (live-verified); $20-30 advance offered orally, not yet collected pending IDFC First Bank current account** | `LOI 2 Ekora.pdf` |
+| 4 | Mahanta & Sons Filling Station | LOI / beta interest letter | -- | Pollob Mahanta | LOI received | `LOI 3 - 3 customers (...).pdf` |
+| 5 | Trimurti Blocks & Pavers | LOI / beta interest letter | -- | Pollob Mahanta | LOI received | `LOI 3 - 3 customers (...).pdf` |
+| 6 | P. D. Wine Shop | LOI / beta interest letter | -- | Pollob Mahanta | LOI received | `LOI 3 - 3 customers (...).pdf` |
 
 ---
 
@@ -69,7 +69,8 @@ see `docs/LOIS_ENGAGEMENT_LETTERS_AND_STRATEGIC_PARTNERSHIPS.md`, Section 1.
 
 ## 2. Imprints Production -- Pilot 1
 
-**Contact:** Prajnyan Goswami, Proprietor
+**Contact:** Mr. Prajnyan Ballav Goswami, Proprietor (LOI itself signed "Prajnyan Goswami"; full
+name per founder, 2026-07-29)
 **Location:** Jorhat, Assam
 **Status:** **Onboarding complete (2026-07-29, founder-confirmed).** Pilot 1, the first pilot
 tenant to attempt real provisioning. LOI received (email dated Wed, Jul 29, 2026, 9:37 AM, from
@@ -80,7 +81,12 @@ access" ahead of commercial launch
 **Commercial intent:** Yes, post-launch, subject to pricing/terms -- the letter states they are
 "highly interested in implementing AXXESS across our group of companies as soon as it officially
 launches commercially" and are "happy to discuss the pricing, terms, and conditions once it is
-fully market-ready"
+fully market-ready". **Founder-stated, source artifact needed (2026-07-29, oral commitment, not a
+signed document):** offered a $20-30 advance payment for AXXESS TRIaxis. Not yet collected --
+Triaxis Ventures' current/business account is still in processing with IDFC First Bank, and the
+founder is deliberately not accepting the advance into a founder/co-founder personal account, to
+avoid a compliance mistake. No advance has actually been received; this is an oral commitment
+only, not a payment or a written agreement.
 **Scope:** Group of companies (exact number/names of entities not stated in source document)
 **Pilot start date:** 2026-07-29 (onboarding attempt observed same day)
 **Tenant provisioned:** **Yes -- Founder-stated, source artifact needed.** The onboarding wizard
@@ -106,7 +112,7 @@ here since no pilot has started)
 
 ## 3. Ekora Hive -- Pilot 2
 
-**Contact:** Diksha Rajkhowa, Proprietor
+**Contact:** Mrs. Diksha Rajkhowa, Proprietor
 **Location:** Not stated in source document
 **Status:** **Onboarding complete (2026-07-29, live)** -- Pilot 2, the first pilot tenant to
 successfully reach a live, provisioned workspace. LOI received (email dated Wed, Jul 29, 2026,
@@ -117,7 +123,12 @@ rollout" to "evaluate your workflows and services in advance"
 **Commercial intent:** Yes, post-launch, subject to pricing/terms -- the letter states they are
 "writing to formally express our intent to deploy AXXESS across our group once it is officially
 launched for commercial use" and are "perfectly comfortable deferring the finalization of pricing,
-licensing terms, and commercial conditions until the product is fully market-ready"
+licensing terms, and commercial conditions until the product is fully market-ready". **Founder-
+stated, source artifact needed (2026-07-29, oral commitment, not a signed document):** offered a
+$20-30 advance payment for AXXESS TRIaxis. Not yet collected -- Triaxis Ventures' current/business
+account is still in processing with IDFC First Bank, and the founder is deliberately not accepting
+the advance into a founder/co-founder personal account, to avoid a compliance mistake. No advance
+has actually been received; this is an oral commitment only, not a payment or a written agreement.
 **Scope:** Group ("across our group" -- exact number/names of entities not stated in source
 document)
 **Pilot start date:** 2026-07-29
