@@ -166,23 +166,32 @@ server-to-server Supabase Auth calls (request OTP, verify OTP), following the ex
 - [ ] Sprint 3.2 -- Live invite email confirmed -- blocked on 2.1b
 - [x] Sprint 3.3 -- Google sign-in OAuth-start confirmed live -- direct production check
       `GET /api/auth/oauth/start?provider=google` returns a real Supabase `authorizeUrl`.
-- [ ] Sprint 3.3b -- Full Google browser click-through confirmed -- **attempted 2026-07-29, two
-      sequential defects found, not yet closed**:
-      1. First attempt: Google rejected with "Access blocked: This app's request is invalid --
-         Error 400: redirect_uri_mismatch." Root cause: the `redirect_uri` sent did not match any
-         URI registered as Authorized in the Google Cloud Console OAuth Client Supabase's Google
+- [ ] Sprint 3.3b -- Full Google browser click-through confirmed -- **attempted 2026-07-29, three
+      sequential defects found so far, not yet closed**:
+      1. Google rejected with "Access blocked: This app's request is invalid -- Error 400:
+         redirect_uri_mismatch." Root cause: the `redirect_uri` sent did not match any URI
+         registered as Authorized in the Google Cloud Console OAuth Client Supabase's Google
          provider uses. **Fixed** by the founder adding
          `https://vnliomnfabaicvvvfwia.supabase.co/auth/v1/callback` to that Client's Authorized
          redirect URIs -- confirmed working on retry (Google's account-chooser and consent screens
          both completed cleanly).
-      2. Second attempt (same session, immediately after): after completing Google's consent
-         screen, the browser landed on `vercel.com/login?next=%2Fsso-api%3Furl%3D...` -- Vercel's
-         own Deployment Protection SSO wall -- instead of the AXXESS TRIaxis app, because the
-         request targeted the raw `.vercel.app` deployment hostname rather than the custom
-         `landing.triaxisventures.com` domain. See A-72 in `ACTIONABLES_READINESS_MATRIX.md` for
-         the two candidate root causes (Supabase Site URL/Redirect URLs configuration, or Vercel
-         Deployment Protection settings) and the exact dashboard checks needed -- neither is
-         inspectable from this session's CLI access.
+      2. After completing Google's consent screen, the browser landed on
+         `vercel.com/login?next=%2Fsso-api%3Furl%3D...` -- Vercel's own Deployment Protection SSO
+         wall -- instead of the AXXESS TRIaxis app, because Supabase's post-login redirect targeted
+         the raw `.vercel.app` deployment hostname rather than the custom
+         `landing.triaxisventures.com` domain. **Fixed and confirmed** by the founder reconfiguring
+         both Site URL and Redirect URLs in Supabase Dashboard -> Authentication -> URL
+         Configuration to the custom domain -- root cause was Supabase's URL Configuration, not
+         Vercel's Deployment Protection settings. See A-72.
+      3. Retrying now gets past the Vercel wall and reaches
+         `https://landing.triaxisventures.com/auth/login?error=server_error&error_code=unexpected_failure&error_description=Unable+to+exchange+external+code%3A+4%2F0A...`
+         -- a **Supabase-side failure**: GoTrue received Google's authorization code but its own
+         server-to-server exchange of that code with Google's token endpoint failed, before any
+         session token was ever generated. Classic causes: the Google Client Secret (or Client ID)
+         stored in Supabase Dashboard -> Authentication -> Providers -> Google is stale, mistyped,
+         or belongs to a different OAuth Client than the one fixed in step 1. See A-73 for the exact
+         fix path -- needs the founder to re-copy the current Client ID/Secret from Google Cloud
+         Console into Supabase's Google provider settings.
 - [ ] Sprint 3.4 -- Live Microsoft sign-in confirmed -- blocked on 2.4/2.5/2.6
 - [ ] Sprint 3.5 -- Matrix closed out on live evidence
 - [x] Sprint 4 engineering -- phone/OTP code-complete, tested, typecheck/lint/build clean
