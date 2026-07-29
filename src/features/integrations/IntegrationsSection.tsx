@@ -90,7 +90,18 @@ export const IntegrationsSection = () => {
   const [notionPreview, setNotionPreview] = useState<{ pageId: string; title: string; bodyPreview: string } | null>(null);
   const [importingNotion, setImportingNotion] = useState(false);
   const [notionToast, setNotionToast] = useState<{ tone: "success" | "error" | "info"; message: string } | null>(null);
-  const mailboxMessages = liveMailboxMessages.length ? liveMailboxMessages : selectedMailboxMessages;
+  // SA-2b (2026-07-29): this used to fall back to the illustrative NEMH sample messages
+  // unconditionally whenever a real tenant hadn't loaded a real inbox yet -- a real tenant who
+  // just connected a real Gmail/Microsoft account saw fake seeded content indistinguishable from
+  // their own real mailbox, with no "example" labeling. Same failure class as A-28/
+  // DEMO_DATA_LEAKAGE_AUDIT.md, via an empty-state fallback rather than an unconditional render.
+  // Now gated behind isDemoModeEnabled(), matching this file's own stated intent for the rest of
+  // its illustrative content.
+  const mailboxMessages = liveMailboxMessages.length
+    ? liveMailboxMessages
+    : isDemoModeEnabled()
+      ? selectedMailboxMessages
+      : [];
 
   function selectMailboxMessage(message: SelectedMailboxMessage) {
     setEmailForm({
@@ -278,7 +289,18 @@ export const IntegrationsSection = () => {
         </div>
         <div className="grid w-full gap-2 lg:max-w-md">
           <div className="rounded-lg border border-[rgba(15,17,23,0.08)] bg-[#F8F9FA] p-2">
-            <div className="mb-2 text-[10px] font-semibold uppercase text-[#5F6B73]">{liveMailboxMessages.length ? "Live Microsoft mailbox messages" : "Selected mailbox messages"}</div>
+            <div className="mb-2 text-[10px] font-semibold uppercase text-[#5F6B73]">
+              {liveMailboxMessages.length
+                ? "Live Microsoft mailbox messages"
+                : isDemoModeEnabled()
+                  ? "Selected mailbox messages (illustrative)"
+                  : "Selected mailbox messages"}
+            </div>
+            {mailboxMessages.length === 0 && (
+              <p className="px-1 py-2 text-[11px] leading-relaxed text-[#5F6B73]">
+                Connect Gmail or Microsoft above, then load your inbox to see real messages here.
+              </p>
+            )}
             <div className="grid gap-2">
               {mailboxMessages.map((message) => (
                 <button
