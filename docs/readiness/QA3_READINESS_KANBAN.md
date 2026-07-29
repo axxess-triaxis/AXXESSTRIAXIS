@@ -325,3 +325,29 @@ No cards moved yet.
 - HITL decision: requested -- live-confirm on `landing.triaxisventures.com` that a non-admin role
   sees only their own Permissions row, and that the AI Configuration tab no longer presents static
   numbers as live tenant activity.
+
+### Sprint SI-1 Kanban Update: Tenant Meeting & Scheduling Connectors
+
+- Date: 2026-07-29
+- Origin: founder pasted a generic Calendly embed snippet and, on follow-up, clarified the real
+  need -- every pilot tenant should be able to link their own Google Calendar/Meet, Zoom, and
+  Microsoft Teams, not a single Triaxis-owned Calendly link.
+- Audit: Gmail/Outlook/Slack/Calendly/Airtable/HubSpot/Notion already had real per-tenant OAuth
+  connectors. Google Calendar and Microsoft Teams existed only as catalogue placeholders
+  (`pilotEnabled: false`, no real OAuth contract); Zoom did not exist anywhere.
+- Added: 3 new real OAuth connector contracts (`google_calendar`, `teams`, `zoom`) on the existing
+  provider-agnostic OAuth engine (`connectorContract.ts`, `oauthProvider.ts`) -- no new
+  architecture, no database migration (provider_id is free text, not an enum). Flipped
+  `google_calendar`/`teams` to pilot-enabled and added `zoom` as a new catalogue entry
+  (`pluginRegistry.ts`), so all 3 now appear in the Settings quick-connect grid.
+- 10 new tests across `connectorContract.test.ts`, `oauthProvider.test.ts`, `pluginRegistry.test.ts`.
+  Card added: A-70, new, `Blocked` -- code/tests complete, but no tenant can connect until the
+  founder registers real OAuth apps in Google Cloud Console, Zoom App Marketplace, and Microsoft
+  Entra, and sets the client id/secret env vars in production.
+- Flagged, not independently verified: Zoom's exact OAuth scope strings need confirming against
+  Zoom's current App Marketplace docs before going live -- noted directly in code.
+- Evidence added: `docs/readiness/SETTINGS_ADMIN_SI1_CLOSEOUT_2026_07_29.md`
+- HITL decision: requested -- register OAuth apps for Google Calendar (add the Calendar scope to
+  the existing Google app), Zoom (new app), and Microsoft Teams (add scopes to the existing
+  Microsoft app), then set `ZOOM_CLIENT_ID`/`ZOOM_CLIENT_SECRET` in production (Google/Microsoft
+  reuse existing env vars).
