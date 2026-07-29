@@ -99,7 +99,13 @@ Supabase's `organizations` table using the production service-role key, but
 `SUPABASE_SERVICE_ROLE_KEY` is stored in Vercel as a write-only "Sensitive" variable and could not
 be retrieved via CLI even by this session, which otherwise has production access -- an intentional
 Vercel security control, not something to work around. Status recorded as founder-confirmed rather
-than independently database-verified.
+than independently database-verified. **2026-07-29, later same day -- partial independent
+confirmation:** a screenshot of Supabase Dashboard -> Authentication -> Users shows a real
+`auth.users` row -- display name "Imprints", email imprintsprod@gmail.com, UID
+`9adcaff6-74bb-48c7-8ade-43862ecac30a` -- see `docs/readiness/PRODUCTION_TENANT_ROSTER_2026_07_29.md`.
+This confirms the Auth user exists but not independently the matching `organizations` row, since
+that table isn't visible in this screenshot; kept as founder-confirmed rather than fully
+database-verified for the tenant record itself.
 **Users invited:** Not confirmed
 **Primary workflows:** Not stated in source document
 **Success criteria:** Founder-stated, source artifact needed -- tenant provisioned; tenant
