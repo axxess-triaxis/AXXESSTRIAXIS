@@ -35,17 +35,12 @@ blocked per A-73 at last check) -- every account here was created via password/e
 - **NEPDSIC (`sudiptakoushiks@gmail.com`)** = Tenant 0.5, the second real tenant used for TP-1/
   TP-2/TP-3's tenant-isolation testing this session.
 
-## Open Question, Not Yet Resolved
+## Second "Triaxis Ventures" Account -- Resolved
 
 **Two accounts are both named "Triaxis Ventures"** -- `sudipta1213@gmail.com` (established) and
 `triaxisgrp@gmail.com` (new, UID `a4ce5ec0-...`). `triaxisgrp@gmail.com` also appeared earlier this
 session as the last-signed-in Google account shown during Google OAuth testing (the account chooser
-screenshot for A-72/A-73). Two plausible, unconfirmed explanations:
-1. A second real team member/admin account under the same organization, using a different email.
-2. A duplicate/test account created incidentally during OAuth testing (e.g., a fresh sign-up
-   triggered while testing the Google sign-in flow), which may or may not correspond to a real,
-   separately-provisioned "Triaxis Ventures" organization row distinct from Tenant 0.
-
-Not resolved here -- would need either a direct look at the `organizations` table (blocked on the
-same `SUPABASE_SERVICE_ROLE_KEY` write-only-variable limitation noted in
-`PILOT1_IMPRINTS_ONBOARDING_INCIDENT_2026_07_29.md`) or the founder's own confirmation of intent.
+screenshot for A-72/A-73). **Founder-confirmed, 2026-07-29: deliberate second admin account, used
+to route SMTP and app integrations.** Not a duplicate or an accidental sign-up -- intentional
+infrastructure separation (e.g., email/integration credentials tied to a distinct account from the
+founder's own primary sign-in identity). No further action needed; not tracked as an anomaly.
