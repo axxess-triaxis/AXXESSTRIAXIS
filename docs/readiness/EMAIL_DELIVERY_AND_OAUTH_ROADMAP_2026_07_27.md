@@ -164,9 +164,16 @@ server-to-server Supabase Auth calls (request OTP, verify OTP), following the ex
       `authorizeUrl`. Microsoft's flag stays unset until 2.4/2.5 are done.
 - [ ] Sprint 3.1 -- Live feedback email confirmed -- blocked on 2.1b
 - [ ] Sprint 3.2 -- Live invite email confirmed -- blocked on 2.1b
-- [ ] Sprint 3.3 -- Live Google sign-in confirmed -- code-path confirmed live via direct API check;
-      **still needs a real HITL click-through** (click "Continue with Google" on the real form,
-      complete Google's consent screen, land back signed in)
+- [x] Sprint 3.3 -- Google sign-in OAuth-start confirmed live -- direct production check
+      `GET /api/auth/oauth/start?provider=google` returns a real Supabase `authorizeUrl`.
+- [ ] Sprint 3.3b -- Full Google browser click-through confirmed -- **attempted 2026-07-29, found a
+      real defect, not yet closed**: clicking "Continue with Google" reaches Google's consent
+      screen, but Google rejects with "Access blocked: This app's request is invalid -- Error 400:
+      redirect_uri_mismatch." The `redirect_uri` sent does not match any URI registered as
+      Authorized in the Google Cloud Console OAuth Client Supabase's Google provider uses. Fix
+      needs a founder action in Google Cloud Console: add
+      `https://vnliomnfabaicvvvfwia.supabase.co/auth/v1/callback` to that Client's Authorized
+      redirect URIs, then retry.
 - [ ] Sprint 3.4 -- Live Microsoft sign-in confirmed -- blocked on 2.4/2.5/2.6
 - [ ] Sprint 3.5 -- Matrix closed out on live evidence
 - [x] Sprint 4 engineering -- phone/OTP code-complete, tested, typecheck/lint/build clean
