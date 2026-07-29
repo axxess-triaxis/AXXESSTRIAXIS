@@ -35,6 +35,9 @@ than treated as verified. Applied below to entries where a pilot has not yet sta
 | 1 | Sakura Law Chambers | Signed engagement letter (referral/strategic collaboration) | Signed, active | `Sakura signed engagement letter_signed.pdf` |
 | 2 | Imprints Production | LOI / beta interest email | LOI received | `LOI 1 Imprints Production.pdf` |
 | 3 | Ekora Hive | LOI / beta interest email | LOI received | `LOI 2 Ekora.pdf` |
+| 4 | Mahanta & Sons Filling Station | LOI / beta interest letter | LOI received | `LOI 3 - 3 customers (...).pdf` |
+| 5 | Trimurti Blocks & Pavers | LOI / beta interest letter | LOI received | `LOI 3 - 3 customers (...).pdf` |
+| 6 | P. D. Wine Shop | LOI / beta interest letter | LOI received | `LOI 3 - 3 customers (...).pdf` |
 
 ---
 
@@ -115,9 +118,43 @@ here since no pilot has started)
 
 ---
 
+## 4-6. Mahanta & Sons Filling Station / Trimurti Blocks & Pavers / P. D. Wine Shop
+
+One shared LOI letter names all three as a single proprietor's group of firms/companies. Logged
+as three separate customer entries per the founder's instruction, since each is a distinct
+business the founder intends to onboard independently, while noting they share one signatory,
+one contact point, and one location.
+
+**Contact (shared across all 3):** Pollob Mahanta, Proprietor. Cell: 94350 38833 / 99574 71233.
+Email: pollobmahanta@gmail.com
+**Location (shared across all 3):** Office Address: Rangoli Pother, P.O. -- Rangoli Pother,
+Naharkatia, District -- Dibrugarh (Assam), Pin-786610
+**Status:** LOI received (letter dated 28/07/2026, addressed "Dear Triaxis Ventures team"; letterhead
+is "M/s Mahanta & Son's Filling Station," an authorized Nayara Energy franchisee)
+**Beta access requested:** Yes -- explicitly states "We are also looking to register on your
+platform and take a beta look at its services and workflow"
+**Commercial intent:** Yes, post-launch, subject to pricing/terms -- the letter states "We feel
+that the product is suitable for our group; and we want to implement it in our group of companies
+as soon [as] you launch commercially" and "We can decide final pricing, terms and conditions once
+your product is market ready"
+**Scope:** Explicitly named group of 3: (1) Mahanta & Sons Filling Station, (2) Trimurti Blocks &
+Pavers, (3) P. D. Wine Shop
+**Pilot start date:** Not stated in source document
+**Tenant provisioned:** No
+**Users invited:** No
+**Primary workflows:** Not stated in source document
+**Success criteria:** Founder-stated, source artifact needed -- tenant provisioned; tenant
+declares full workflow experienced (via survey form); tenant completes Pilot Experience Survey,
+expected ~7-14 days after pilot start (standard definition, see note above; not yet applicable
+here since no pilot has started)
+**Next meeting:** Not stated in source document
+
+---
+
 ## Pending / Expected (Not Yet Received)
 
-Per founder's note (2026-07-28): 3-4 additional LOIs expected from other proprietors/founders,
-covering 7-8 prospective customers, over the following 3-4 days. Entries 2 and 3 above are the
-first of that batch. **Add each further LOI as a new numbered entry above**, sourced directly from
-its own document, once received.
+Per founder's note (2026-07-28): 3-4 additional LOI documents expected from other proprietors/
+founders, covering 7-8 prospective customers, over the following 3-4 days. **3 of those LOI
+documents received so far** (Imprints Production, Ekora Hive, and the Mahanta group letter),
+together covering **5 of the expected 7-8 customers** (1 + 1 + 3). **Add each further LOI as a
+new numbered entry above**, sourced directly from its own document, once received.
