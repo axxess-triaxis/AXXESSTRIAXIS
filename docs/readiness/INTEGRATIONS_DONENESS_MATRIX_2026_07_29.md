@@ -25,8 +25,8 @@ of a completed, successful live test.
 | Connector | Doneness | Evidence |
 |---|---|---|
 | Zoom | 60% | `ZOOM_CLIENT_ID`/`SECRET` set; founder live-tested "Connect Zoom" and the resulting Zoom sign-in URL confirms our authorize-request is correctly formed (right client_id, redirect_uri, state, scopes) -- Zoom accepted it. **Full round trip (sign-in + consent + landing back connected) not yet confirmed by the founder** |
-| Google Calendar (+ Meet) | 40% | Credentials complete (`GOOGLE_CLIENT_ID`/`SECRET`/`AXXESS_TOKEN_VAULT_KEY` all set), but founder-tested and **currently failing** with `Error 400: redirect_uri_mismatch` -- the connector's exact redirect URI (`.../api/connectors/oauth/callback?provider=google_calendar`) is not yet registered in Google Cloud Console. Fix identified, not yet applied |
-| Google Drive | 40% | Same as Google Calendar -- same credentials, same `redirect_uri_mismatch` failure, same fix pending |
+| Google Calendar (+ Meet) | 30% | Credentials complete (`GOOGLE_CLIENT_ID`/`SECRET`/`AXXESS_TOKEN_VAULT_KEY` all set). `redirect_uri_mismatch` fix identified. **New blocker found same day, not yet fixed:** even once redirect URI is corrected, Google's own consent screen returns `Error 403: access_denied` -- the OAuth Client is in "Testing" publishing status with no Test users added. See A-75 |
+| Google Drive | 30% | Same as Google Calendar -- same credentials, same two sequential blockers (`redirect_uri_mismatch`, then Google's Testing-mode access_denied), same fixes pending |
 | Gmail (connector, distinct from Gmail email/password sign-in) | Unconfirmed | Pre-existing from before this session ("already real" per earlier program history), not re-tested live in this session. Given the same exact-match redirect URI requirement just discovered for Calendar/Drive, its own `?provider=gmail` redirect URI may or may not already be registered -- not verified either way this session |
 | Microsoft Teams | 0% | No credentials at all -- `MICROSOFT_CLIENT_ID`/`SECRET` unset. Code-complete, never tested |
 
