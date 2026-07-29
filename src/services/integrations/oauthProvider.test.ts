@@ -79,6 +79,60 @@ describe("OAuth provider flow", () => {
     expect(calendlyConfig.missing).toContain("CALENDLY_CLIENT_SECRET");
   });
 
+  it("reports Zoom's own missing env vars, not Google/Microsoft's (Sprint SI-1)", () => {
+    const zoomConfig = getOAuthProviderConfiguration("zoom", { NEXT_PUBLIC_APP_URL: "https://app.axxess.test" } as unknown as NodeJS.ProcessEnv);
+    expect(zoomConfig.configured).toBe(false);
+    expect(zoomConfig.missing).toContain("ZOOM_CLIENT_ID");
+    expect(zoomConfig.missing).toContain("ZOOM_CLIENT_SECRET");
+    expect(zoomConfig.missing).not.toContain("GOOGLE_CLIENT_ID");
+    expect(zoomConfig.missing).not.toContain("MICROSOFT_CLIENT_ID");
+  });
+
+  it("Google Calendar and Teams report as configured once their shared Google/Microsoft credentials are present (Sprint SI-1)", () => {
+    const sharedEnv = {
+      GOOGLE_CLIENT_ID: "google-client",
+      GOOGLE_CLIENT_SECRET: "google-secret",
+      MICROSOFT_CLIENT_ID: "microsoft-client",
+      MICROSOFT_CLIENT_SECRET: "microsoft-secret",
+      NEXT_PUBLIC_APP_URL: "https://app.axxess.test",
+      AXXESS_TOKEN_VAULT_KEY: "test-token-vault-key-with-at-least-32-characters",
+    } as unknown as NodeJS.ProcessEnv;
+    expect(getOAuthProviderConfiguration("google_calendar", sharedEnv).configured).toBe(true);
+    expect(getOAuthProviderConfiguration("teams", sharedEnv).configured).toBe(true);
+    expect(getOAuthProviderConfiguration("google_drive", sharedEnv).configured).toBe(true);
+  });
+
+  it("exchanges a Zoom auth code via the shared generic flow, using Zoom's own client credentials", async () => {
+    const fetcher = vi.fn(async () => new Response(JSON.stringify({
+      access_token: "zoom-access-token",
+      refresh_token: "zoom-refresh-token",
+      expires_in: 3600,
+      scope: "meeting:write meeting:read",
+      token_type: "Bearer",
+    }), { status: 200, headers: { "Content-Type": "application/json" } }));
+
+    const exchange = await exchangeOAuthCode({
+      providerId: "zoom",
+      organizationId: "org-1",
+      userId: "user-1",
+      code: "code-1",
+      redirectUri: "https://app.axxess.test/api/connectors/oauth/callback?provider=zoom",
+      env: {
+        AXXESS_OAUTH_STATE_SECRET: "test-secret",
+        ZOOM_CLIENT_ID: "zoom-client",
+        ZOOM_CLIENT_SECRET: "zoom-secret",
+        NEXT_PUBLIC_APP_URL: "https://app.axxess.test",
+        AXXESS_TOKEN_VAULT_KEY: "test-token-vault-key-with-at-least-32-characters",
+      } as unknown as NodeJS.ProcessEnv,
+      fetcher,
+      now: 1000,
+    });
+
+    expect(fetcher).toHaveBeenCalledOnce();
+    expect(exchange.tokenReference).toMatch(/^vault:zoom:/);
+    expect(exchange.scope).toEqual(["meeting:write", "meeting:read"]);
+  });
+
   it("exchanges a Slack auth code the same way as Gmail, via the shared generic flow", async () => {
     const fetcher = vi.fn(async () => new Response(JSON.stringify({
       access_token: "slack-access-token",
