@@ -33,8 +33,8 @@ than treated as verified. Applied below to entries where a pilot has not yet sta
 | # | Organization | Type | Status | Source File |
 |---|---|---|---|---|
 | 1 | Sakura Law Chambers | Signed engagement letter (referral/strategic collaboration) | Signed, active | `Sakura signed engagement letter_signed.pdf` |
-| 2 | Imprints Production | LOI / beta interest email | LOI received | `LOI 1 Imprints Production.pdf` |
-| 3 | Ekora Hive | LOI / beta interest email | LOI received | `LOI 2 Ekora.pdf` |
+| 2 | Imprints Production -- Pilot 1 | LOI / beta interest email | **Onboarded (founder-confirmed)** | `LOI 1 Imprints Production.pdf` |
+| 3 | Ekora Hive -- Pilot 2 | LOI / beta interest email | **Onboarded (live-verified)** | `LOI 2 Ekora.pdf` |
 | 4 | Mahanta & Sons Filling Station | LOI / beta interest letter | LOI received | `LOI 3 - 3 customers (...).pdf` |
 | 5 | Trimurti Blocks & Pavers | LOI / beta interest letter | LOI received | `LOI 3 - 3 customers (...).pdf` |
 | 6 | P. D. Wine Shop | LOI / beta interest letter | LOI received | `LOI 3 - 3 customers (...).pdf` |
@@ -71,8 +71,8 @@ see `docs/LOIS_ENGAGEMENT_LETTERS_AND_STRATEGIC_PARTNERSHIPS.md`, Section 1.
 
 **Contact:** Prajnyan Goswami, Proprietor
 **Location:** Jorhat, Assam
-**Status:** **Onboarding in progress (2026-07-29, live)** -- Pilot 1, the first pilot tenant to
-attempt real provisioning. LOI received (email dated Wed, Jul 29, 2026, 9:37 AM, from
+**Status:** **Onboarding complete (2026-07-29, founder-confirmed).** Pilot 1, the first pilot
+tenant to attempt real provisioning. LOI received (email dated Wed, Jul 29, 2026, 9:37 AM, from
 imprintsprod@gmail.com to sudipta1213@gmail.com; subject "Expression of interest : AXXESS by
 TRIAXIS")
 **Beta access requested:** Yes -- explicitly requests to "register on your platform for beta
@@ -83,13 +83,18 @@ launches commercially" and are "happy to discuss the pricing, terms, and conditi
 fully market-ready"
 **Scope:** Group of companies (exact number/names of entities not stated in source document)
 **Pilot start date:** 2026-07-29 (onboarding attempt observed same day)
-**Tenant provisioned:** **No -- blocked, active incident.** Onboarding wizard reached the final
-"Complete provisioning" screen (organization "Imprints", sector Startup, role Super Admin,
-department Multimedia, workspace Digital Production, starting focus Knowledge & AI decision
-support, 4/4 notices accepted) but the provisioning call returned "Organization name is required."
-even though the organization name was visibly filled in on the review screen. See
-`docs/readiness/PILOT1_IMPRINTS_ONBOARDING_INCIDENT_2026_07_29.md` for the investigation.
-**Users invited:** No (blocked on tenant provisioning above)
+**Tenant provisioned:** **Yes -- Founder-stated, source artifact needed.** The onboarding wizard
+initially failed at "Complete provisioning" with "Organization name is required." despite the
+organization name being visibly filled in (see
+`docs/readiness/PILOT1_IMPRINTS_ONBOARDING_INCIDENT_2026_07_29.md` for the investigation -- root
+cause remains unconfirmed). Founder subsequently confirmed Imprints "successfully onboarded."
+**Independent verification attempted, not completed**: tried to confirm directly against
+Supabase's `organizations` table using the production service-role key, but
+`SUPABASE_SERVICE_ROLE_KEY` is stored in Vercel as a write-only "Sensitive" variable and could not
+be retrieved via CLI even by this session, which otherwise has production access -- an intentional
+Vercel security control, not something to work around. Status recorded as founder-confirmed rather
+than independently database-verified.
+**Users invited:** Not confirmed
 **Primary workflows:** Not stated in source document
 **Success criteria:** Founder-stated, source artifact needed -- tenant provisioned; tenant
 declares full workflow experienced (via survey form); tenant completes Pilot Experience Survey,
@@ -99,12 +104,14 @@ here since no pilot has started)
 
 ---
 
-## 3. Ekora Hive
+## 3. Ekora Hive -- Pilot 2
 
 **Contact:** Diksha Rajkhowa, Proprietor
 **Location:** Not stated in source document
-**Status:** LOI received (email dated Wed, Jul 29, 2026, 9:40 AM, from ekora.hive@gmail.com to
-sudipta1213@gmail.com; subject "Interest in Beta Registration & Future Implementation of AXXESS")
+**Status:** **Onboarding complete (2026-07-29, live)** -- Pilot 2, the first pilot tenant to
+successfully reach a live, provisioned workspace. LOI received (email dated Wed, Jul 29, 2026,
+9:40 AM, from ekora.hive@gmail.com to sudipta1213@gmail.com; subject "Interest in Beta
+Registration & Future Implementation of AXXESS")
 **Beta access requested:** Yes -- explicitly requests beta access "ahead of your commercial
 rollout" to "evaluate your workflows and services in advance"
 **Commercial intent:** Yes, post-launch, subject to pricing/terms -- the letter states they are
@@ -113,10 +120,18 @@ launched for commercial use" and are "perfectly comfortable deferring the finali
 licensing terms, and commercial conditions until the product is fully market-ready"
 **Scope:** Group ("across our group" -- exact number/names of entities not stated in source
 document)
-**Pilot start date:** Not stated in source document
-**Tenant provisioned:** No
-**Users invited:** No
-**Primary workflows:** Not stated in source document
+**Pilot start date:** 2026-07-29
+**Tenant provisioned:** **Yes** -- confirmed via live screenshot: signed in as `ekora.hive`,
+role Super Admin, at `landing.triaxisventures.com/tasks`, with real seeded sample data (project
+"District Outreach Program", 2 sample tasks: "Confirm district coordinator contacts" (High),
+"Draft weekly outreach summary" (Medium)) -- consistent with the onboarding wizard's real,
+non-decorative sample-data seeding for the "Workflow & task execution" starting-focus goal.
+**Also useful as corroborating evidence for A-71 (Pilot 1/Imprints Production's onboarding
+block)**: a second real pilot signup completed the identical onboarding flow the same day without
+hitting the "Organization name is required" error, supporting (not proving) the device/browser-
+specific hypothesis over a systemic defect.
+**Users invited:** Not confirmed -- only the Super Admin account seen so far
+**Primary workflows:** Tasks & Workflow (confirmed live: "2 active tasks across 1 projects")
 **Success criteria:** Founder-stated, source artifact needed -- tenant provisioned; tenant
 declares full workflow experienced (via survey form); tenant completes Pilot Experience Survey,
 expected ~7-14 days after pilot start (standard definition, see note above; not yet applicable

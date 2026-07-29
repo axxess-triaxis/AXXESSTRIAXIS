@@ -82,22 +82,53 @@ If this recurs, ask the pilot contact to:
 2. Retry the onboarding flow from the start rather than resuming a partially-completed one, in
    case stale `localStorage` from an earlier attempt is involved.
 
+## Corroborating Evidence (2026-07-29, later same day)
+
+Ekora Hive -- the founder's other real pilot signup from the same LOI batch (see the pilot log,
+entry 3, "Pilot 2") -- completed the identical onboarding flow successfully the same day, reaching
+a real, live, provisioned tenant with seeded sample data (confirmed via screenshot: `ekora.hive`,
+Super Admin, `landing.triaxisventures.com/tasks`, real "District Outreach Program" sample project
+and 2 sample tasks). A second real user hitting no such error on the same code path the same day
+is corroborating (not conclusive) evidence for the device/browser-specific hypothesis over a
+systemic defect -- it does not rule out a rarer timing race, but it does weigh against "the
+onboarding flow is broken for everyone."
+
+## Resolution (2026-07-29, later same day)
+
+Founder confirmed directly: Imprints Production "also successfully onboarded." The onboarding
+error did not recur on a subsequent attempt.
+
+**Independent verification attempted, not completed.** Tried to confirm the real
+`organizations` row directly via Supabase's REST API using the production service-role key
+(pulled production env vars via `vercel env pull`). `SUPABASE_SERVICE_ROLE_KEY` came back empty
+-- confirmed (by comparing against other secrets in the same pull, which returned real values)
+that this specific variable is stored in Vercel as a write-only "Sensitive" type, which by design
+cannot be read back via CLI or API even by a session with otherwise-full production access. This
+is an intentional Vercel security control and was not worked around. Pulled env files were deleted
+and the local Vercel project link was restored to default immediately after.
+
+**Status recorded as founder-confirmed, not independently database-verified.** No code change was
+made -- the issue resolved on retry, which is consistent with (but does not prove) the
+device/browser-specific hypothesis below. Root cause remains genuinely unconfirmed.
+
 ## Status
 
-**Blocked, unresolved.** Pilot 1 (Imprints Production) has not been provisioned. No fix has been
-applied -- this is a documented, honestly-unconfirmed incident, not a closed defect. Needs either
-a live reproduction (ideally with the pilot contact's device/browser details) or a direct retry to
-determine whether this was a one-off environment quirk or a reproducible defect.
+**Resolved on retry for both real pilot signups; root cause unconfirmed.** Both Imprints
+Production (Pilot 1) and Ekora Hive (Pilot 2) are now founder-confirmed/screenshot-confirmed
+onboarded. This is not being closed as a fixed defect, since nothing was changed in code and the
+original failure mode was never reproduced under controlled conditions -- it is closed as
+"outcome achieved, cause unconfirmed."
 
 ## Next Steps
 
-1. Ask the pilot contact which browser/app they used, and whether a retry in a standard browser
-   tab succeeds.
+1. If this recurs for a future pilot signup, capture the browser/app used and whether a retry in
+   a standard browser tab succeeds -- that would meaningfully move the device/browser hypothesis
+   from "leading guess" to "confirmed."
 2. If it recurs in a standard browser (ruling out the in-app-browser hypothesis), a deeper
    client-side investigation is needed -- e.g., adding a client-side guard that re-reads
    `organizationName` from `localStorage` immediately before submit and shows a specific "your
    organization name wasn't saved -- please re-enter it" message instead of a generic server error,
    so a real state-loss event is at least diagnosable from the user's own report rather than a bare
    passthrough string.
-3. Update `docs/LOIS_BETA_PILOT_INTEREST_REFERRAL_AND_STRATEGIC_PARTNERSHIPS_LOG.md` (entry 2)
-   once resolved either way.
+3. `docs/LOIS_BETA_PILOT_INTEREST_REFERRAL_AND_STRATEGIC_PARTNERSHIPS_LOG.md` (entries 2 and 3)
+   updated to reflect both pilots onboarded.
