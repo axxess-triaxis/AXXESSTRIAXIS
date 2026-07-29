@@ -20,6 +20,7 @@ export type ProductivityPlugin = {
 const envMap: Record<string, string> = {
   gmail: "GOOGLE_CLIENT_ID",
   google_calendar: "GOOGLE_CLIENT_ID",
+  zoom: "ZOOM_CLIENT_ID",
   google_drive: "GOOGLE_CLIENT_ID",
   outlook: "MICROSOFT_CLIENT_ID",
   teams: "MICROSOFT_CLIENT_ID",
@@ -43,10 +44,15 @@ const envMap: Record<string, string> = {
 
 const basePlugins: Omit<ProductivityPlugin, "configured">[] = [
   { id: "gmail", name: "Gmail", category: "email", useCases: ["stakeholder follow-up", "approval reminders"], requiredScopes: ["gmail.send", "gmail.readonly"], pilotEnabled: true, webhookSupport: true, requiredRoles: ["Organization Admin"], auditEvents: ["plugin.gmail.connected", "email.followup.sent"] },
-  { id: "google_calendar", name: "Google Calendar", category: "calendar", useCases: ["review meetings", "field visits"], requiredScopes: ["calendar.events"], pilotEnabled: false, webhookSupport: true, requiredRoles: ["Manager"], auditEvents: ["calendar.event.created"] },
-  { id: "google_drive", name: "Google Drive", category: "storage", useCases: ["document import", "evidence sync"], requiredScopes: ["drive.readonly"], pilotEnabled: false, webhookSupport: true, requiredRoles: ["Organization Admin"], auditEvents: ["drive.document.imported"] },
+  // Sprint SI-1 (2026-07-29): google_calendar, teams, and google_drive flipped from
+  // infrastructure-only to pilot-enabled, and zoom added as a brand-new entry, per the founder's
+  // request that every tenant be able to link their own Google Calendar/Meet, Google Drive, Zoom,
+  // and Microsoft Teams -- see connectorContract.ts for the real OAuth contracts backing these.
+  { id: "google_calendar", name: "Google Calendar", category: "calendar", useCases: ["review meetings", "field visits", "pilot kickoff calls (Google Meet)"], requiredScopes: ["calendar.events", "calendar.readonly"], pilotEnabled: true, webhookSupport: true, requiredRoles: ["Manager"], auditEvents: ["calendar.event.created"] },
+  { id: "zoom", name: "Zoom", category: "calendar", useCases: ["pilot kickoff calls", "review meetings"], requiredScopes: ["meeting:write", "meeting:read"], pilotEnabled: true, webhookSupport: true, requiredRoles: ["Manager"], auditEvents: ["zoom.meeting.created"] },
+  { id: "google_drive", name: "Google Drive", category: "storage", useCases: ["document import", "evidence sync"], requiredScopes: ["drive.readonly"], pilotEnabled: true, webhookSupport: true, requiredRoles: ["Organization Admin"], auditEvents: ["drive.document.imported"] },
   { id: "outlook", name: "Microsoft Outlook", category: "email", useCases: ["executive email", "meeting follow-up"], requiredScopes: ["Mail.Send"], pilotEnabled: true, webhookSupport: true, requiredRoles: ["Organization Admin"], auditEvents: ["outlook.message.sent"] },
-  { id: "teams", name: "Microsoft Teams", category: "messaging", useCases: ["team notifications", "governance alerts"], requiredScopes: ["ChannelMessage.Send"], pilotEnabled: false, webhookSupport: true, requiredRoles: ["Organization Admin"], auditEvents: ["teams.alert.sent"] },
+  { id: "teams", name: "Microsoft Teams", category: "messaging", useCases: ["team notifications", "governance alerts", "pilot kickoff calls"], requiredScopes: ["OnlineMeetings.ReadWrite", "Calendars.ReadWrite"], pilotEnabled: true, webhookSupport: true, requiredRoles: ["Organization Admin"], auditEvents: ["teams.alert.sent", "teams.meeting.created"] },
   { id: "slack", name: "Slack", category: "messaging", useCases: ["ops alerts", "task notifications"], requiredScopes: ["chat:write", "channels:read"], pilotEnabled: true, webhookSupport: true, requiredRoles: ["Organization Admin"], auditEvents: ["slack.notification.sent"] },
   { id: "calendly", name: "Calendly", category: "calendar", useCases: ["review meeting scheduling", "stakeholder booking links"], requiredScopes: [], pilotEnabled: true, webhookSupport: true, requiredRoles: ["Manager"], auditEvents: ["calendly.event.created"] },
   { id: "whatsapp_business", name: "WhatsApp Business", category: "messaging", useCases: ["field reminders", "stakeholder updates"], requiredScopes: ["messages"], pilotEnabled: false, webhookSupport: true, requiredRoles: ["Organization Admin"], auditEvents: ["whatsapp.message.queued"] },

@@ -17,7 +17,7 @@ import { getAiRouterStatusSnapshot } from "../../services/ai/router/aiRouter";
 import { useAnalytics } from "../../services/analytics";
 import { getPilotIntegrations } from "../../services/integrations/pluginRegistry";
 import { languageCoverage } from "../../services/nlp/modelRegistry";
-import { Building2, Calendar, Check, CheckCircle2, Database, FileText, MessageSquare, RotateCcw, Save, Send, Settings, ShieldCheck, Sparkles, UserPlus, X, XCircle } from "lucide-react";
+import { Building2, Calendar, Check, CheckCircle2, Database, FileText, HardDrive, MessageSquare, RotateCcw, Save, Send, Settings, ShieldCheck, Sparkles, UserPlus, Video, X, XCircle } from "lucide-react";
 
 export const validTabs = ["profile", "organization", "security", "integrations", "users", "permissions", "ai configuration", "demo"];
 
@@ -321,6 +321,10 @@ const quickConnectIcons: Record<string, typeof MessageSquare> = {
   airtable: Database,
   hubspot: Building2,
   notion: FileText,
+  google_calendar: Calendar,
+  zoom: Video,
+  teams: Video,
+  google_drive: HardDrive,
 };
 
 function IntegrationsQuickConnectPanel() {

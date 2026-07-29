@@ -70,6 +70,10 @@ const oauthClientEnvVars: Record<ConnectorProviderId, { clientId: string; client
   airtable: { clientId: "AIRTABLE_CLIENT_ID", clientSecret: "AIRTABLE_CLIENT_SECRET" },
   hubspot: { clientId: "HUBSPOT_CLIENT_ID", clientSecret: "HUBSPOT_CLIENT_SECRET" },
   notion: { clientId: "NOTION_CLIENT_ID", clientSecret: "NOTION_CLIENT_SECRET" },
+  google_calendar: { clientId: "GOOGLE_CLIENT_ID", clientSecret: "GOOGLE_CLIENT_SECRET" },
+  zoom: { clientId: "ZOOM_CLIENT_ID", clientSecret: "ZOOM_CLIENT_SECRET" },
+  teams: { clientId: "MICROSOFT_CLIENT_ID", clientSecret: "MICROSOFT_CLIENT_SECRET" },
+  google_drive: { clientId: "GOOGLE_CLIENT_ID", clientSecret: "GOOGLE_CLIENT_SECRET" },
 };
 
 export function generatePkceVerifier() {

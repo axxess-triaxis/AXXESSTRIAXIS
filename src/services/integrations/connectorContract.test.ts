@@ -49,6 +49,39 @@ describe("connector contract", () => {
     expect(calendlyUrl).not.toContain("scope=");
   });
 
+  it("exposes tenant-owned Google Calendar, Zoom, and Microsoft Teams meeting/scheduling contracts (Sprint SI-1)", () => {
+    // 2026-07-29: each tenant links their own meeting/scheduling provider rather than a single
+    // shared Calendly link. Google Calendar and Teams reuse the existing gmail/microsoft OAuth
+    // endpoints and client credentials (one Google/Microsoft app can request multiple scopes);
+    // Zoom is a brand-new provider with its own client credentials.
+    expect(getConnectorContract("google_calendar")?.requiredScopes).toContain("https://www.googleapis.com/auth/calendar.events");
+    expect(getConnectorContract("google_calendar")?.authorizationUrl).toBe(getConnectorContract("gmail")?.authorizationUrl);
+    expect(getConnectorContract("zoom")?.requiredScopes).toContain("meeting:write");
+    expect(getConnectorContract("teams")?.requiredScopes).toContain("OnlineMeetings.ReadWrite");
+    expect(getConnectorContract("teams")?.authorizationUrl).toBe(getConnectorContract("microsoft")?.authorizationUrl);
+    expect(getConnectorContract("google_drive")?.requiredScopes).toContain("https://www.googleapis.com/auth/drive.readonly");
+    expect(getConnectorContract("google_drive")?.authorizationUrl).toBe(getConnectorContract("gmail")?.authorizationUrl);
+  });
+
+  it("builds a Google Calendar OAuth URL with the same offline/consent params as Gmail, and a standalone Zoom URL with its own client id", () => {
+    const env = {
+      NODE_ENV: "test",
+      GOOGLE_CLIENT_ID: "google-client",
+      ZOOM_CLIENT_ID: "zoom-client",
+      NEXT_PUBLIC_APP_URL: "https://app.axxess.local",
+    } as unknown as NodeJS.ProcessEnv;
+
+    const calendarUrl = buildConnectorOAuthUrl("google_calendar", "state-cal", env);
+    expect(calendarUrl).toContain("client_id=google-client");
+    expect(calendarUrl).toContain("access_type=offline");
+    expect(calendarUrl).toContain("redirect_uri=");
+    expect(calendarUrl).toContain("provider%3Dgoogle_calendar");
+
+    const zoomUrl = buildConnectorOAuthUrl("zoom", "state-zoom", env);
+    expect(zoomUrl).toContain("client_id=zoom-client");
+    expect(zoomUrl).not.toContain("access_type");
+  });
+
   it("previews selected emails before creating workspace records", () => {
     const preview = previewSelectedEmailImport({
       providerId: "gmail",
