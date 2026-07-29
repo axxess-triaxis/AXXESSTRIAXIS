@@ -166,8 +166,8 @@ server-to-server Supabase Auth calls (request OTP, verify OTP), following the ex
 - [ ] Sprint 3.2 -- Live invite email confirmed -- blocked on 2.1b
 - [x] Sprint 3.3 -- Google sign-in OAuth-start confirmed live -- direct production check
       `GET /api/auth/oauth/start?provider=google` returns a real Supabase `authorizeUrl`.
-- [ ] Sprint 3.3b -- Full Google browser click-through confirmed -- **attempted 2026-07-29, three
-      sequential defects found so far, not yet closed**:
+- [x] Sprint 3.3b -- Full Google browser click-through confirmed -- **attempted 2026-07-29, three
+      sequential defects found and all resolved same day, founder-confirmed working end to end**:
       1. Google rejected with "Access blocked: This app's request is invalid -- Error 400:
          redirect_uri_mismatch." Root cause: the `redirect_uri` sent did not match any URI
          registered as Authorized in the Google Cloud Console OAuth Client Supabase's Google
@@ -189,9 +189,10 @@ server-to-server Supabase Auth calls (request OTP, verify OTP), following the ex
          server-to-server exchange of that code with Google's token endpoint failed, before any
          session token was ever generated. Classic causes: the Google Client Secret (or Client ID)
          stored in Supabase Dashboard -> Authentication -> Providers -> Google is stale, mistyped,
-         or belongs to a different OAuth Client than the one fixed in step 1. See A-73 for the exact
-         fix path -- needs the founder to re-copy the current Client ID/Secret from Google Cloud
-         Console into Supabase's Google provider settings.
+         or belongs to a different OAuth Client than the one fixed in step 1. **Fixed and
+         confirmed:** founder's own words, "Credential mapping was wrong" -- corrected the Client
+         ID/Secret in Supabase's Google provider settings. Google sign-in now completes end to end.
+         See A-73.
 - [ ] Sprint 3.4 -- Live Microsoft sign-in confirmed -- blocked on 2.4/2.5/2.6
 - [ ] Sprint 3.5 -- Matrix closed out on live evidence
 - [x] Sprint 4 engineering -- phone/OTP code-complete, tested, typecheck/lint/build clean

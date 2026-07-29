@@ -15,8 +15,8 @@ of a completed, successful live test.
 | Method | Doneness | Evidence |
 |---|---|---|
 | Email/password | 100% | Long-established, real accounts exist and sign in daily this session (`sudipta1213@gmail.com` and others) |
-| **Phone/SMS OTP (Twilio)** | **100%** | Founder: **"Twilio - OTP works."** Supabase settings confirm `phone: true`, `sms_provider: "twilio"`. The only OAuth/SMS-style method meeting the full bar today |
-| Google sign-in | 45% | Real progress this session (redirect_uri_mismatch fixed, Vercel Deployment Protection wall fixed) but currently blocked on A-73 (Supabase "Unable to exchange external code" -- Google Client ID/Secret stored in Supabase's own provider config likely stale/mismatched). Not yet a completed successful sign-in |
+| **Phone/SMS OTP (Twilio)** | **100%** | Founder: **"Twilio - OTP works."** Supabase settings confirm `phone: true`, `sms_provider: "twilio"`. |
+| **Google sign-in** | **100%** | Three sequential defects (redirect_uri_mismatch, Vercel Deployment Protection wall, Supabase credential-mapping error) all found and fixed same day. Founder confirmed a full Google sign-in now completes end to end. See A-26/A-73 |
 | Microsoft sign-in | 0% | Confirmed disabled: `azure: false` in Supabase settings, no `MICROSOFT_CLIENT_ID`/`SECRET` set anywhere |
 | Sign in with Zoom (Supabase's built-in social provider) | Unclear | Supabase settings show `zoom: true` -- but this is a *login-identity* provider, unrelated to the Zoom *connector* below. Never discussed as an intended feature; worth confirming whether this was deliberately enabled or should be turned off |
 
@@ -108,8 +108,9 @@ registrar/DNS), not a tenant-facing product integration. Not scored here.
 
 ## Summary
 
-Only **one** integration meets the strict 100% bar today: **phone/SMS OTP sign-in via Twilio**.
+**Two** integrations meet the strict 100% bar today: **phone/SMS OTP sign-in via Twilio**, and
+**Google sign-in** (resolved same day, after three sequential defects were found and fixed).
 Everything else is somewhere between "not configured at all" and "credentials complete, live test
-in progress or actively failing" -- none has both a completed real-workflow use and founder
-certification yet, including the ones this session made the most progress on (Zoom, Google
-Calendar/Drive, Google sign-in).
+in progress or actively failing" -- none of the rest has both a completed real-workflow use and
+founder certification yet, including Zoom and Google Calendar/Drive, which made real progress this
+session but are not yet fully working end to end.
