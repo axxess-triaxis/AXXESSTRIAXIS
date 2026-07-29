@@ -196,5 +196,8 @@ server-to-server Supabase Auth calls (request OTP, verify OTP), following the ex
 - [ ] Sprint 3.5 -- Matrix closed out on live evidence
 - [x] Sprint 4 engineering -- phone/OTP code-complete, tested, typecheck/lint/build clean
       (2026-07-28)
-- [ ] Sprint 4 founder actions -- Twilio account + Supabase Phone provider config, not yet done
-- [ ] Sprint 4 live HITL retest -- blocked on the above
+- [x] Sprint 4 founder actions -- Twilio account created, configured as Supabase's Phone provider
+      (confirmed 2026-07-29 via Supabase's own `/auth/v1/settings`: `"phone": true`,
+      `"sms_provider": "twilio"`); `NEXT_PUBLIC_AUTH_PHONE_ENABLED` set in production
+- [x] Sprint 4 live HITL retest -- **founder-confirmed 2026-07-29: "Twilio - OTP works."** Real
+      end-to-end phone sign-in completed live. See A-68.
