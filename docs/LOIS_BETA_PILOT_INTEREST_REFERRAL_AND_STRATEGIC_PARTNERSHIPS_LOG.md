@@ -67,12 +67,14 @@ see `docs/LOIS_ENGAGEMENT_LETTERS_AND_STRATEGIC_PARTNERSHIPS.md`, Section 1.
 
 ---
 
-## 2. Imprints Production
+## 2. Imprints Production -- Pilot 1
 
 **Contact:** Prajnyan Goswami, Proprietor
 **Location:** Jorhat, Assam
-**Status:** LOI received (email dated Wed, Jul 29, 2026, 9:37 AM, from imprintsprod@gmail.com to
-sudipta1213@gmail.com; subject "Expression of interest : AXXESS by TRIAXIS")
+**Status:** **Onboarding in progress (2026-07-29, live)** -- Pilot 1, the first pilot tenant to
+attempt real provisioning. LOI received (email dated Wed, Jul 29, 2026, 9:37 AM, from
+imprintsprod@gmail.com to sudipta1213@gmail.com; subject "Expression of interest : AXXESS by
+TRIAXIS")
 **Beta access requested:** Yes -- explicitly requests to "register on your platform for beta
 access" ahead of commercial launch
 **Commercial intent:** Yes, post-launch, subject to pricing/terms -- the letter states they are
@@ -80,9 +82,14 @@ access" ahead of commercial launch
 launches commercially" and are "happy to discuss the pricing, terms, and conditions once it is
 fully market-ready"
 **Scope:** Group of companies (exact number/names of entities not stated in source document)
-**Pilot start date:** Not stated in source document
-**Tenant provisioned:** No
-**Users invited:** No
+**Pilot start date:** 2026-07-29 (onboarding attempt observed same day)
+**Tenant provisioned:** **No -- blocked, active incident.** Onboarding wizard reached the final
+"Complete provisioning" screen (organization "Imprints", sector Startup, role Super Admin,
+department Multimedia, workspace Digital Production, starting focus Knowledge & AI decision
+support, 4/4 notices accepted) but the provisioning call returned "Organization name is required."
+even though the organization name was visibly filled in on the review screen. See
+`docs/readiness/PILOT1_IMPRINTS_ONBOARDING_INCIDENT_2026_07_29.md` for the investigation.
+**Users invited:** No (blocked on tenant provisioning above)
 **Primary workflows:** Not stated in source document
 **Success criteria:** Founder-stated, source artifact needed -- tenant provisioned; tenant
 declares full workflow experienced (via survey form); tenant completes Pilot Experience Survey,
