@@ -74,6 +74,13 @@ const oauthClientEnvVars: Record<ConnectorProviderId, { clientId: string; client
   zoom: { clientId: "ZOOM_CLIENT_ID", clientSecret: "ZOOM_CLIENT_SECRET" },
   teams: { clientId: "MICROSOFT_CLIENT_ID", clientSecret: "MICROSOFT_CLIENT_SECRET" },
   google_drive: { clientId: "GOOGLE_CLIENT_ID", clientSecret: "GOOGLE_CLIENT_SECRET" },
+  linear: { clientId: "LINEAR_CLIENT_ID", clientSecret: "LINEAR_CLIENT_SECRET" },
+  github: { clientId: "GITHUB_CLIENT_ID", clientSecret: "GITHUB_CLIENT_SECRET" },
+  google_sheets: { clientId: "GOOGLE_CLIENT_ID", clientSecret: "GOOGLE_CLIENT_SECRET" },
+  google_docs: { clientId: "GOOGLE_CLIENT_ID", clientSecret: "GOOGLE_CLIENT_SECRET" },
+  google_slides: { clientId: "GOOGLE_CLIENT_ID", clientSecret: "GOOGLE_CLIENT_SECRET" },
+  whatsapp_business: { clientId: "WHATSAPP_BUSINESS_CLIENT_ID", clientSecret: "WHATSAPP_BUSINESS_CLIENT_SECRET" },
+  x_twitter: { clientId: "X_CLIENT_ID", clientSecret: "X_CLIENT_SECRET" },
 };
 
 export function generatePkceVerifier() {
@@ -225,7 +232,10 @@ export async function exchangeOAuthCode(input: {
     }
     response = await (input.fetcher ?? fetch)(contract.tokenUrl, {
       method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      // GitHub's token endpoint returns application/x-www-form-urlencoded unless the request asks
+      // for JSON explicitly -- every other provider here already returns JSON regardless of this
+      // header, so sending it unconditionally is safe and fixes GitHub without a special case.
+      headers: { "Content-Type": "application/x-www-form-urlencoded", Accept: "application/json" },
       body,
       cache: "no-store",
     });

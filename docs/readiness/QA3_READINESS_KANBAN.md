@@ -351,3 +351,29 @@ No cards moved yet.
   the existing Google app), Zoom (new app), and Microsoft Teams (add scopes to the existing
   Microsoft app), then set `ZOOM_CLIENT_ID`/`ZOOM_CLIENT_SECRET` in production (Google/Microsoft
   reuse existing env vars).
+
+### Connector Batch Update (2026-07-30): Linear, GitHub, Google Sheets/Docs/Slides, WhatsApp Business, X
+
+- Date: 2026-07-30
+- Origin: founder-scoped work while reviewing product alignment against YC RFS themes across the
+  last 4 batches (Government software, AI for Governments, Company Brain/AI Operating System for
+  Companies/SaaS Challengers/Software for Agents, AI-Native Compliance Architecture) -- founder's
+  own framing: implement only where genuine overlap already exists with the product's own market
+  findings/TAM-SAM-SOM/GTM, not "build for YC."
+- Audit: Notion/Slack/HubSpot (already real, pre-existing) and MS Teams (real since SI-1) needed
+  no code -- only production credentials, already requested via the standard naming convention.
+- Added: 2 catalogue-only connectors extended to real OAuth contracts (Linear, GitHub); 3 new
+  Google-based connectors reusing the existing Google OAuth app (Sheets, Docs, Slides); 1
+  catalogue-only connector extended with an explicit Meta-verification caveat (WhatsApp Business);
+  1 brand-new PKCE-required connector (X/Twitter).
+- Incidental fix: GitHub's OAuth token endpoint defaults to form-encoded responses, not JSON --
+  `exchangeOAuthCode` now sends `Accept: application/json` unconditionally (safe for every
+  existing provider, all of which already return JSON regardless).
+- 9 new tests across `connectorContract.test.ts`/`oauthProvider.test.ts`; exact-list/count
+  assertions in `pluginRegistry.test.ts` updated (18 pilot-enabled connectors, up from 11).
+- Card added: A-77, `Blocked` -- code/tests complete, zero production credentials exist for any of
+  the 7 new/extended providers.
+- HITL decision: requested -- register OAuth apps in Linear/GitHub/Meta/X developer consoles, set
+  the corresponding env vars, register each new Google-based redirect URI in the same Google Cloud
+  OAuth Client used for Calendar/Drive, then live-test at least one connect-and-import cycle per
+  provider.
