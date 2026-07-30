@@ -82,6 +82,40 @@ describe("connector contract", () => {
     expect(zoomUrl).not.toContain("access_type");
   });
 
+  it("exposes the 2026-07-30 connector batch (Linear, GitHub, Google Sheets/Docs/Slides, WhatsApp Business, X)", () => {
+    expect(getConnectorContract("linear")?.requiredScopes).toEqual(["read", "write"]);
+    expect(getConnectorContract("github")?.requiredScopes).toContain("repo");
+    expect(getConnectorContract("google_sheets")?.requiredScopes).toContain("https://www.googleapis.com/auth/spreadsheets.readonly");
+    expect(getConnectorContract("google_sheets")?.authorizationUrl).toBe(getConnectorContract("gmail")?.authorizationUrl);
+    expect(getConnectorContract("google_docs")?.requiredScopes).toContain("https://www.googleapis.com/auth/documents.readonly");
+    expect(getConnectorContract("google_slides")?.requiredScopes).toContain("https://www.googleapis.com/auth/presentations.readonly");
+    expect(getConnectorContract("whatsapp_business")?.requiredScopes).toContain("whatsapp_business_messaging");
+    // X mandates PKCE for OAuth 2.0 user-context authorization, same branch as Airtable.
+    expect(getConnectorContract("x_twitter")?.requiresPkce).toBe(true);
+    expect(getConnectorContract("x_twitter")?.requiredScopes).toContain("tweet.write");
+  });
+
+  it("builds a GitHub OAuth URL and a PKCE-required X OAuth URL", () => {
+    const env = {
+      NODE_ENV: "test",
+      GITHUB_CLIENT_ID: "github-client",
+      X_CLIENT_ID: "x-client",
+      NEXT_PUBLIC_APP_URL: "https://app.axxess.local",
+    } as unknown as NodeJS.ProcessEnv;
+
+    const githubUrl = buildConnectorOAuthUrl("github", "state-github", env);
+    expect(githubUrl).toContain("client_id=github-client");
+    expect(githubUrl).not.toContain("access_type");
+
+    // X requires a code_challenge -- without one, buildConnectorOAuthUrl must return undefined
+    // rather than send an invalid PKCE-less request, same as Airtable's existing behavior.
+    expect(buildConnectorOAuthUrl("x_twitter", "state-x", env)).toBeUndefined();
+    const xUrl = buildConnectorOAuthUrl("x_twitter", "state-x", env, { codeChallenge: "challenge-value" });
+    expect(xUrl).toContain("client_id=x-client");
+    expect(xUrl).toContain("code_challenge=challenge-value");
+    expect(xUrl).toContain("code_challenge_method=S256");
+  });
+
   it("previews selected emails before creating workspace records", () => {
     const preview = previewSelectedEmailImport({
       providerId: "gmail",
