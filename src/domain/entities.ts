@@ -156,6 +156,9 @@ export interface DocumentVersion {
   mimeType: string;
   storagePath: string;
   checksum?: string;
+  extractedText?: string;
+  extractionMethod?: "text-layer" | "ocr" | "docx" | "plain";
+  extractionTruncated?: boolean;
   createdByUserId?: EntityId;
   createdAt: ISODateTime;
 }

@@ -19,6 +19,9 @@ allowBuilds:
   core-js: true
   esbuild: true
   sharp: true
+  # postinstall is just opencollective-postinstall (a harmless funding-message script) -- verified
+  # by reading node_modules/.pnpm/tesseract.js@7.0.0/node_modules/tesseract.js/package.json.
+  tesseract.js: true
   unrs-resolver: true
 overrides:
   postcss: 8.5.16
