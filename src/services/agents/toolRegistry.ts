@@ -1,7 +1,8 @@
 import { supabaseAdminRest } from "../../repositories/supabaseAdmin";
 import type { TenantScope, DocumentsRepository, DocumentPermissionsRepository, KnowledgeArticlesRepository } from "../../repositories/interfaces";
-import type { Document, DocumentPermission, KnowledgeArticle, Project, Task } from "../../domain";
+import type { Document, DocumentPermission, KnowledgeArticle, Meeting, Project, Stakeholder, Task } from "../../domain";
 import { answerWithGovernedRag } from "../rag/governedRag";
+import { routeAiRequest } from "../ai/router/aiRouter";
 import type { AgentCapability, AgentScope } from "../../security/agentScope";
 
 export type McpToolContent = { type: "text"; text: string };
@@ -11,6 +12,12 @@ export type McpToolDefinition = {
   name: string;
   description: string;
   requiredCapability: AgentCapability;
+  // Agentic Infrastructure Phase 2 (2026-07-30): "auto" executes immediately (Phase 1's elevated
+  // access, unchanged). "critical" is gated by src/app/api/agents/mcp/route.ts -- it only
+  // executes if an active src/services/agents/agentGrantsRepository.ts grant already exists for
+  // this connection+tool; otherwise a real approval_requests row is created and the call returns
+  // pending instead of running.
+  criticality: "auto" | "critical";
   inputSchema: {
     type: "object";
     properties: Record<string, unknown>;
@@ -197,6 +204,7 @@ const queryKnowledgeHubTool: McpToolDefinition = {
   name: "query_knowledge_hub",
   description: "Ask a question against this tenant's governed Knowledge Hub (documents and knowledge articles). Returns a synthesized answer with cited sources and a confidence score.",
   requiredCapability: "query_knowledge_hub",
+  criticality: "auto",
   inputSchema: {
     type: "object",
     properties: {
@@ -245,6 +253,7 @@ const createTaskTool: McpToolDefinition = {
   name: "create_task",
   description: "Create a real task in this tenant's workspace. Executes immediately -- no human approval step (Phase 1 elevated-access agent path).",
   requiredCapability: "create_task",
+  criticality: "auto",
   inputSchema: {
     type: "object",
     properties: {
@@ -314,6 +323,7 @@ const listProjectsTool: McpToolDefinition = {
   name: "list_projects",
   description: "List this tenant's projects, most recently due first.",
   requiredCapability: "list_projects",
+  criticality: "auto",
   inputSchema: {
     type: "object",
     properties: {
@@ -334,7 +344,245 @@ const listProjectsTool: McpToolDefinition = {
   },
 };
 
-export const agentToolRegistry: McpToolDefinition[] = [createTaskTool, queryKnowledgeHubTool, listProjectsTool];
+type MeetingRow = {
+  id: string; organization_id: string; project_id: string | null; program_id: string | null;
+  stakeholder_id: string | null; title: string; starts_at: string; ends_at: string | null;
+  attendee_ids: string[] | null; agenda: string | null; notes: string | null;
+  decisions: string[] | null; action_items: string[] | null; status: string;
+};
+
+function mapMeetingRow(row: MeetingRow): Meeting {
+  return {
+    id: row.id,
+    organizationId: row.organization_id,
+    projectId: row.project_id ?? undefined,
+    programId: row.program_id ?? undefined,
+    stakeholderId: row.stakeholder_id ?? undefined,
+    title: row.title,
+    startsAt: row.starts_at,
+    endsAt: row.ends_at ?? undefined,
+    attendeeIds: row.attendee_ids ?? [],
+    agenda: row.agenda ?? undefined,
+    notes: row.notes ?? undefined,
+    decisions: row.decisions ?? [],
+    actionItems: row.action_items ?? [],
+    status: row.status as Meeting["status"],
+  };
+}
+
+const createMeetingTool: McpToolDefinition = {
+  name: "create_meeting",
+  description: "Schedule a real meeting in this tenant's workspace, notifying real attendees. Requires human approval unless this connection has been granted Always Allow for this tool.",
+  requiredCapability: "create_meeting",
+  criticality: "critical",
+  inputSchema: {
+    type: "object",
+    properties: {
+      title: { type: "string" },
+      startsAt: { type: "string", description: "ISO datetime." },
+      endsAt: { type: "string", description: "ISO datetime." },
+      projectId: { type: "string" },
+      programId: { type: "string" },
+      stakeholderId: { type: "string" },
+      agenda: { type: "string" },
+      notes: { type: "string" },
+      attendeeIds: { type: "array", items: { type: "string" } },
+    },
+    required: ["title", "startsAt"],
+  },
+  async handler(scope, args) {
+    const title = typeof args.title === "string" ? args.title.trim() : "";
+    const startsAt = typeof args.startsAt === "string" ? args.startsAt : "";
+    if (!title || !startsAt) return { content: [{ type: "text", text: "title and startsAt are required." }], isError: true };
+
+    const rows = await supabaseAdminRest<MeetingRow[]>("meetings", {
+      method: "POST",
+      body: {
+        organization_id: scope.organizationId,
+        project_id: typeof args.projectId === "string" ? args.projectId : null,
+        program_id: typeof args.programId === "string" ? args.programId : null,
+        stakeholder_id: typeof args.stakeholderId === "string" ? args.stakeholderId : null,
+        title,
+        starts_at: startsAt,
+        ends_at: typeof args.endsAt === "string" ? args.endsAt : null,
+        attendee_ids: Array.isArray(args.attendeeIds) ? args.attendeeIds : [],
+        agenda: typeof args.agenda === "string" ? args.agenda : null,
+        notes: typeof args.notes === "string" ? args.notes : null,
+        decisions: [],
+        action_items: [],
+        status: "scheduled",
+        created_by_user_id: scope.issuedByUserId ?? null,
+        owner_role: scope.issuedByRole ?? "Organization Admin",
+      },
+    });
+    const row = rows?.[0];
+    if (!row) return { content: [{ type: "text", text: "Meeting was not returned by Supabase." }], isError: true };
+    return textResult(mapMeetingRow(row));
+  },
+};
+
+const createProjectTool: McpToolDefinition = {
+  name: "create_project",
+  description: "Create a real project in this tenant's workspace. Requires human approval unless this connection has been granted Always Allow for this tool.",
+  requiredCapability: "create_project",
+  criticality: "critical",
+  inputSchema: {
+    type: "object",
+    properties: {
+      name: { type: "string" },
+      description: { type: "string" },
+      programId: { type: "string" },
+      startDate: { type: "string" },
+      dueDate: { type: "string" },
+      priority: { type: "string", enum: ["low", "medium", "high", "urgent"] },
+    },
+    required: ["name"],
+  },
+  async handler(scope, args) {
+    const name = typeof args.name === "string" ? args.name.trim() : "";
+    if (!name) return { content: [{ type: "text", text: "name is required." }], isError: true };
+
+    const rows = await supabaseAdminRest<ProjectRow[]>("projects", {
+      method: "POST",
+      body: {
+        organization_id: scope.organizationId,
+        program_id: typeof args.programId === "string" ? args.programId : null,
+        name,
+        description: typeof args.description === "string" ? args.description : null,
+        owner_id: scope.issuedByUserId ?? null,
+        progress: 0,
+        risk_level: "medium",
+        priority: typeof args.priority === "string" ? args.priority : "medium",
+        status: "planning",
+        start_date: typeof args.startDate === "string" ? args.startDate : null,
+        due_date: typeof args.dueDate === "string" ? args.dueDate : null,
+        tags: [],
+        created_by_user_id: scope.issuedByUserId ?? null,
+        owner_role: scope.issuedByRole ?? "Organization Admin",
+      },
+    });
+    const row = rows?.[0];
+    if (!row) return { content: [{ type: "text", text: "Project was not returned by Supabase." }], isError: true };
+    return textResult(mapProjectRow(row));
+  },
+};
+
+type StakeholderRow = {
+  id: string; organization_id: string; name: string; affiliation: string | null;
+  relationship_owner_id: string | null; influence_score: number; engagement_level: string;
+};
+
+function mapStakeholderRow(row: StakeholderRow): Stakeholder {
+  return {
+    id: row.id,
+    organizationId: row.organization_id,
+    name: row.name,
+    affiliation: row.affiliation ?? "",
+    relationshipOwnerId: row.relationship_owner_id ?? undefined,
+    influenceScore: Number(row.influence_score),
+    engagementLevel: row.engagement_level as Stakeholder["engagementLevel"],
+  };
+}
+
+const listStakeholdersTool: McpToolDefinition = {
+  name: "list_stakeholders",
+  description: "List this tenant's stakeholders (a flat CRM-style contact list -- not a relationship graph).",
+  requiredCapability: "list_stakeholders",
+  criticality: "auto",
+  inputSchema: {
+    type: "object",
+    properties: {
+      limit: { type: "number", description: "Max stakeholders to return (default 50, max 100)." },
+    },
+  },
+  async handler(scope, args) {
+    const limit = Math.min(Math.max(typeof args.limit === "number" ? args.limit : 50, 1), 100);
+    const rows = await supabaseAdminRest<StakeholderRow[]>("stakeholders", {
+      query: new URLSearchParams({
+        select: "id,organization_id,name,affiliation,relationship_owner_id,influence_score,engagement_level",
+        organization_id: `eq.${scope.organizationId}`,
+        order: "name.asc",
+        limit: String(limit),
+      }),
+    });
+    return textResult((rows ?? []).map(mapStakeholderRow));
+  },
+};
+
+const createStakeholderTool: McpToolDefinition = {
+  name: "create_stakeholder",
+  description: "Add a real stakeholder to this tenant's CRM. Requires human approval unless this connection has been granted Always Allow for this tool.",
+  requiredCapability: "create_stakeholder",
+  criticality: "critical",
+  inputSchema: {
+    type: "object",
+    properties: {
+      name: { type: "string" },
+      affiliation: { type: "string" },
+    },
+    required: ["name"],
+  },
+  async handler(scope, args) {
+    const name = typeof args.name === "string" ? args.name.trim() : "";
+    if (!name) return { content: [{ type: "text", text: "name is required." }], isError: true };
+
+    const rows = await supabaseAdminRest<StakeholderRow[]>("stakeholders", {
+      method: "POST",
+      body: {
+        organization_id: scope.organizationId,
+        name,
+        affiliation: typeof args.affiliation === "string" ? args.affiliation : null,
+        relationship_owner_id: scope.issuedByUserId ?? null,
+        // Honest defaults, matching this repo's own convention (RAG Remediation Sprint 3, A-58) --
+        // never fabricate a mid-point score/rating nobody has actually assessed.
+        influence_score: 0,
+        engagement_level: "unrated",
+      },
+    });
+    const row = rows?.[0];
+    if (!row) return { content: [{ type: "text", text: "Stakeholder was not returned by Supabase." }], isError: true };
+    return textResult(mapStakeholderRow(row));
+  },
+};
+
+const queryExternalModelTool: McpToolDefinition = {
+  name: "query_external_model",
+  description: "Route an open-ended prompt through AXXESS's own governed OpenRouter-backed AI router (same path /api/ai uses). Requires human approval unless this connection has been granted Always Allow for this tool.",
+  requiredCapability: "query_external_model",
+  criticality: "critical",
+  inputSchema: {
+    type: "object",
+    properties: {
+      prompt: { type: "string" },
+    },
+    required: ["prompt"],
+  },
+  async handler(scope, args) {
+    const prompt = typeof args.prompt === "string" ? args.prompt.trim() : "";
+    if (!prompt) return { content: [{ type: "text", text: "prompt is required." }], isError: true };
+
+    const result = await routeAiRequest({
+      prompt,
+      context: {
+        organizationId: scope.organizationId,
+        userId: scope.issuedByUserId ?? scope.agentConnectionId,
+        userRole: scope.issuedByRole ?? "Organization Admin",
+      },
+    });
+    return textResult(result);
+  },
+};
+
+export const agentToolRegistry: McpToolDefinition[] = [
+  createTaskTool,
+  queryKnowledgeHubTool,
+  listProjectsTool,
+  createMeetingTool,
+  createProjectTool,
+  listStakeholdersTool,
+  createStakeholderTool,
+  queryExternalModelTool,
+];
 
 export function getAgentTool(name: string): McpToolDefinition | undefined {
   return agentToolRegistry.find((tool) => tool.name === name);

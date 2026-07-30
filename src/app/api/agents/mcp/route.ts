@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 import { resolveAgentScopeFromApiKey, recordAgentToolAuditEvent } from "../../../../services/agents/agentConnectionRepository";
-import { agentScopeHasCapability } from "../../../../security/agentScope";
+import { hasGrant } from "../../../../services/agents/agentGrantsRepository";
+import { approvalRequestsRepository } from "../../../../repositories/workflowActionRepositories";
+import { agentScopeHasCapability, type AgentScope } from "../../../../security/agentScope";
 import { agentToolRegistry, getAgentTool } from "../../../../services/agents/toolRegistry";
+import type { RoleName } from "../../../../domain";
 
 // Agentic Infrastructure Phase 1 (2026-07-30): a real MCP (Model Context Protocol) server over the
 // Streamable HTTP transport -- a single POST endpoint speaking JSON-RPC 2.0 -- per the founder's
@@ -26,6 +29,17 @@ function rpcResult(id: string | number | null, result: unknown) {
 
 function rpcError(id: string | number | null, code: number, message: string) {
   return NextResponse.json({ jsonrpc: "2.0", id, error: { code, message } });
+}
+
+// approvalRequestsRepository.create() takes a TenantScope (organizationId/userId/role) -- an
+// agent has no human session, so this attributes the request to the human who issued the
+// connection's key, same as toolRegistry.ts's own writes (created_by_user_id, owner_role).
+function tenantScopeForApproval(scope: AgentScope) {
+  return {
+    organizationId: scope.organizationId,
+    userId: scope.issuedByUserId ?? scope.agentConnectionId,
+    role: (scope.issuedByRole ?? "Organization Admin") as RoleName,
+  };
 }
 
 export async function POST(request: Request) {
@@ -70,6 +84,27 @@ export async function POST(request: Request) {
     if (!agentScopeHasCapability(scope, tool.requiredCapability)) {
       await recordAgentToolAuditEvent(scope, { toolName, success: false, errorMessage: "capability not granted" });
       return rpcError(body.id, -32001, `This agent connection does not have the ${tool.requiredCapability} capability.`);
+    }
+
+    // Agentic Infrastructure Phase 2 (2026-07-30): critical tools (anything real-world-visible --
+    // notifies people, writes an external-facing record, or spends money on an external model
+    // call) don't execute on a caller's say-so alone. They need either a standing "Always Allow"
+    // grant (src/services/agents/agentGrantsRepository.ts) or a fresh human decision -- so this
+    // creates a real approval_requests row and returns pending instead of running the handler.
+    if (tool.criticality === "critical") {
+      const granted = await hasGrant(scope.agentConnectionId, tool.name);
+      if (!granted) {
+        const approval = await approvalRequestsRepository.create(tenantScopeForApproval(scope), {
+          title: `Agent (${scope.provider}) wants to call ${tool.name}`,
+          description: `Connection ${scope.agentConnectionId} requested ${tool.name} with arguments: ${JSON.stringify(toolArgs)}`,
+          priority: "high",
+          metadata: { agentConnectionId: scope.agentConnectionId, toolName: tool.name, provider: scope.provider, args: toolArgs },
+        });
+        await recordAgentToolAuditEvent(scope, { toolName, success: false, argsSummary: toolArgs, errorMessage: "pending_approval" });
+        return rpcResult(body.id, {
+          content: [{ type: "text", text: JSON.stringify({ status: "pending_approval", approvalRequestId: approval.id }) }],
+        });
+      }
     }
 
     try {
