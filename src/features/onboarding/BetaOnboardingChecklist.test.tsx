@@ -130,4 +130,33 @@ describe("BetaOnboardingChecklist", () => {
     expect(openControl.tagName).toBe("A");
     expect(openControl).toHaveAttribute("href", "/tasks");
   });
+
+  it("auto-completes upload_document, first_task, and first_approval from real counts, without requiring a manual click", () => {
+    render(
+      <AnalyticsProviderShell provider={new MockAnalyticsProvider()}>
+        <BetaOnboardingChecklist
+          user={testUser}
+          projectCount={0}
+          documentCount={2}
+          taskCount={5}
+          approvalCount={1}
+        />
+      </AnalyticsProviderShell>,
+    );
+
+    // organization (has orgId) + upload_document + first_task + first_approval = 4, no manual click.
+    expect(screen.getByText(/4 of 10 complete -- your own first-10-minutes checklist/)).toBeInTheDocument();
+    for (const label of ["Upload first document", "Create first task", "Request first approval"]) {
+      const card = screen.getByText(label).closest("div.rounded-lg") as HTMLElement;
+      expect(card.className).toContain("border-emerald-200");
+    }
+  });
+
+  it("does not auto-complete upload_document/first_task/first_approval when the real counts are zero", () => {
+    renderChecklist(0);
+    for (const label of ["Upload first document", "Create first task", "Request first approval"]) {
+      const card = screen.getByText(label).closest("div.rounded-lg") as HTMLElement;
+      expect(card.className).not.toContain("border-emerald-200");
+    }
+  });
 });
