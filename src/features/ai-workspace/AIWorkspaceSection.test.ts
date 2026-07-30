@@ -42,4 +42,19 @@ describe("AIWorkspaceSection (Sprint 3 -- does not hang, no raw backend error te
     expect(source).toContain('fetch("/api/ai/model-policy"');
     expect(source).toContain("setRouterStatus(data.router)");
   });
+
+  it("2026-07-30: suggestion chips are live -- clicking one asks the question, not a decorative placeholder", () => {
+    // Founder-reported: "hovering options over query space are simply placeholders."
+    expect(source).toContain("onClick={() => { setInput(suggestion); void askGovernedQuestion(suggestion); }}");
+    expect(source).toContain("async function askGovernedQuestion(overrideQuestion?: string)");
+  });
+
+  it("2026-07-30: pressing Enter in the question input submits, not only the send button", () => {
+    // Founder-reported: "'Send' button has to be pressed... Query should be simply executable by pressing 'Enter'."
+    const onKeyDownIndex = source.indexOf("onKeyDown={(event) => {");
+    expect(onKeyDownIndex).toBeGreaterThan(-1);
+    const handlerBlock = source.slice(onKeyDownIndex, onKeyDownIndex + 200);
+    expect(handlerBlock).toContain('event.key === "Enter"');
+    expect(handlerBlock).toContain("void askGovernedQuestion()");
+  });
 });

@@ -10,6 +10,7 @@ import type {
 } from "../../repositories/interfaces";
 import { isSupabaseAdminConfigured, supabaseAdminRest } from "../../repositories/supabaseAdmin";
 import { routeAiRequest } from "../ai/router/aiRouter";
+import { openRouterBackedProviders } from "../ai/providers";
 import { extractKeywords, summarizeText } from "../nlp/localNlp";
 import { answerWithGovernedRag, canRetrieveDocument, type RagAnswer, type RagCitation } from "./governedRag";
 import { buildConfidenceExplanation } from "./confidenceExplanation";
@@ -391,10 +392,24 @@ export async function answerTenantQuestion(
     },
   });
 
+  // 2026-07-30: routeAiRequest was already being called here, but only routeResult.confidence was
+  // ever used -- routeResult.answer (the model's actual synthesized text) was silently discarded,
+  // and the final answer always stayed baseAnswer's local extractive summary. Founder-reported:
+  // "I still do not see AI routing working; default is RAGpull." Fixed: when the router genuinely
+  // reached a live OpenRouter-backed model (kimi/deepseek) with real output -- not
+  // remotePlaceholderProvider's stub text for providers like OpenAI/Anthropic with no live adapter
+  // yet -- use that grounded synthesis as the answer instead of the local one.
+  const isLiveModelAnswer = baseAnswer.sources.length > 0
+    && openRouterBackedProviders.has(routeResult.providerUsed)
+    && Boolean(routeResult.answer?.trim());
   const answer = {
     ...baseAnswer,
+    answer: isLiveModelAnswer ? routeResult.answer : baseAnswer.answer,
     confidence: Math.min(baseAnswer.confidence, routeResult.confidence),
     humanReviewRequired: baseAnswer.humanReviewRequired || routeResult.humanReviewRequired,
+    confidenceExplanation: isLiveModelAnswer
+      ? { ...baseAnswer.confidenceExplanation, answerMode: "model_synthesis" as const }
+      : baseAnswer.confidenceExplanation,
   };
 
   let aiOutputAuditId: string | undefined;

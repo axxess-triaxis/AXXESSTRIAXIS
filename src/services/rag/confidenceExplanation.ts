@@ -15,7 +15,7 @@ import type { RagCitation } from "./governedRag";
 export const LOCAL_SYNTHESIS_CONFIDENCE_CEILING = 0.85;
 const WEAK_CITATION_SCORE_THRESHOLD = 0.3;
 
-export type RagAnswerMode = "local_extractive_summary" | "no_authorized_source";
+export type RagAnswerMode = "local_extractive_summary" | "model_synthesis" | "no_authorized_source";
 
 export type RagSourceAuthorizationStatus = "fully_authorized" | "restricted_source";
 
@@ -88,7 +88,9 @@ export function summarizeConfidenceExplanation(explanation: RagConfidenceExplana
     `${explanation.relevantChunkCount} source${explanation.relevantChunkCount === 1 ? "" : "s"}`,
     `${Math.round(explanation.sourceMatchStrength * 100)}% top match strength`,
     explanation.sourceAuthorizationStatus === "restricted_source" ? "includes a restricted source" : "fully authorized sources",
-    "local deterministic synthesis (no external model provider configured)",
+    explanation.answerMode === "model_synthesis"
+      ? "synthesized by a live external model, grounded in the sources above"
+      : "local deterministic synthesis (no external model provider configured)",
   ];
   return parts.join(", ") + (explanation.cappedReason ? ` -- ${explanation.cappedReason}` : "");
 }
