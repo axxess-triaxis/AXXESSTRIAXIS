@@ -3,7 +3,10 @@ import type { AiProviderAdapter } from "../types";
 import { localAiProvider } from "./localProvider";
 import { createOpenRouterProvider } from "./openRouterProvider";
 
-const openRouterBackedProviders = new Set(["kimi", "deepseek"]);
+// Exported so callers (e.g. governedRag.ts) can tell a genuinely live model call apart from
+// remotePlaceholderProvider's stub response -- both can share a similar-looking AiRouteResult
+// shape, so provider identity is the only reliable signal.
+export const openRouterBackedProviders = new Set(["kimi", "deepseek"]);
 
 function remotePlaceholderProvider(config: ReturnType<typeof getAiProviderConfigurations>[number]): AiProviderAdapter {
   return {
