@@ -20,9 +20,13 @@ vi.mock("../../auth/AuthProvider", async (importOriginal) => {
 
 import { ApprovalsSection } from "./ApprovalsSection";
 
-function stubApprovalsFetch(approvals: Array<Record<string, unknown>> = []) {
-  vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
+function stubApprovalsFetch(approvals: Array<Record<string, unknown>> = [], decideResponses: Record<string, Record<string, unknown>> = {}) {
+  vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = String(input);
+    if (init?.method === "PATCH" && url.includes("/api/approvals/")) {
+      const id = url.split("/api/approvals/")[1];
+      return new Response(JSON.stringify(decideResponses[id] ?? { approval: { ...approvals.find((a) => a.id === id), status: "approved" }, grantCreated: false }), { status: 200 });
+    }
     if (url.includes("/api/approvals/export")) {
       return new Response(JSON.stringify({ ok: true, auditLogId: "audit-1" }), { status: 200 });
     }
@@ -114,5 +118,62 @@ describe("ApprovalsSection live queue and Export Report (RAG Remediation Sprint 
     });
 
     clickSpy.mockRestore();
+  });
+});
+
+describe("ApprovalsSection real decide actions (Agentic Infrastructure Phase 2, 2026-07-30)", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    window.localStorage.clear();
+    state.user = null;
+  });
+
+  it("shows real Approve/Reject buttons for a pending approval when the viewer can decide (Manager+)", async () => {
+    state.user = { id: "user-1", organizationId: "org-1", role: "Manager" };
+    stubApprovalsFetch([{ id: "approval-1", organizationId: "org-1", title: "Agent (openai) wants to call create_meeting", status: "pending", priority: "high", createdAt: "2026-07-26T00:00:00.000Z", metadata: {} }]);
+
+    render(<ApprovalsSection />);
+    await waitFor(() => expect(screen.getByText(/Agent \(openai\) wants to call create_meeting/)).toBeInTheDocument());
+
+    expect(screen.getByRole("button", { name: "Approve" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Reject" })).toBeInTheDocument();
+  });
+
+  it("hides decide actions from a role below Manager", async () => {
+    state.user = { id: "user-1", organizationId: "org-1", role: "Employee" };
+    stubApprovalsFetch([{ id: "approval-1", organizationId: "org-1", title: "Agent (openai) wants to call create_meeting", status: "pending", priority: "high", createdAt: "2026-07-26T00:00:00.000Z", metadata: {} }]);
+
+    render(<ApprovalsSection />);
+    await waitFor(() => expect(screen.getByText(/Agent \(openai\) wants to call create_meeting/)).toBeInTheDocument());
+
+    expect(screen.queryByRole("button", { name: "Approve" })).not.toBeInTheDocument();
+    expect(screen.getByText("Requires Manager or above")).toBeInTheDocument();
+  });
+
+  it("shows an 'Approve + always allow' option only for agent-originated pending approvals", async () => {
+    state.user = { id: "user-1", organizationId: "org-1", role: "Manager" };
+    stubApprovalsFetch([
+      { id: "approval-agent", organizationId: "org-1", title: "Agent wants to call create_meeting", status: "pending", priority: "high", createdAt: "2026-07-26T00:00:00.000Z", metadata: { agentConnectionId: "conn-1", toolName: "create_meeting" } },
+      { id: "approval-human", organizationId: "org-1", title: "A human-originated approval", status: "pending", priority: "high", createdAt: "2026-07-26T00:00:00.000Z", metadata: {} },
+    ]);
+
+    render(<ApprovalsSection />);
+    await waitFor(() => expect(screen.getByText("Agent wants to call create_meeting")).toBeInTheDocument());
+
+    expect(screen.getAllByRole("button", { name: "Approve + always allow" })).toHaveLength(1);
+  });
+
+  it("clicking Approve calls the real PATCH endpoint and updates the row to approved", async () => {
+    state.user = { id: "user-1", organizationId: "org-1", role: "Manager" };
+    stubApprovalsFetch([{ id: "approval-1", organizationId: "org-1", title: "Agent wants to call create_meeting", status: "pending", priority: "high", createdAt: "2026-07-26T00:00:00.000Z", metadata: {} }], {
+      "approval-1": { approval: { id: "approval-1", organizationId: "org-1", title: "Agent wants to call create_meeting", status: "approved", priority: "high", createdAt: "2026-07-26T00:00:00.000Z", metadata: {} }, grantCreated: false },
+    });
+
+    render(<ApprovalsSection />);
+    await waitFor(() => expect(screen.getByRole("button", { name: "Approve" })).toBeInTheDocument());
+    fireEvent.click(screen.getByRole("button", { name: "Approve" }));
+
+    await waitFor(() => expect(screen.queryByRole("button", { name: "Approve" })).not.toBeInTheDocument());
+    expect(screen.getByText("approved")).toBeInTheDocument();
   });
 });

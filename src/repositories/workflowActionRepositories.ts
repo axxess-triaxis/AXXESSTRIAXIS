@@ -72,6 +72,15 @@ export type WorkflowActionRepository<TResource, TCreateInput> = {
   create(scope: TenantScope, input: TCreateInput): Promise<TResource>;
 };
 
+export type DecideApprovalRequestInput = {
+  status: "approved" | "rejected";
+  decisionReason?: string;
+};
+
+export type ApprovalRequestsRepository = WorkflowActionRepository<ApprovalRequest, CreateApprovalRequestInput> & {
+  decide(scope: TenantScope, id: string, input: DecideApprovalRequestInput): Promise<ApprovalRequest>;
+};
+
 function maybeString(value: unknown) {
   return typeof value === "string" && value.trim() ? value.trim() : null;
 }
@@ -196,7 +205,7 @@ function projectUpdateInsert(scope: TenantScope, input: CreateProjectUpdateInput
   };
 }
 
-export const approvalRequestsRepository: WorkflowActionRepository<ApprovalRequest, CreateApprovalRequestInput> = {
+export const approvalRequestsRepository: ApprovalRequestsRepository = {
   async list(scope, query) {
     if (!isSupabaseAdminConfigured()) return [];
     const params = new URLSearchParams({
@@ -219,6 +228,32 @@ export const approvalRequestsRepository: WorkflowActionRepository<ApprovalReques
       body: approvalInsert(scope, input),
     });
     return rows[0] ? approvalRequestFromRow(rows[0]) : createFallbackApprovalRequest({ ...input, organizationId, requestedByUserId: input.requestedByUserId ?? scope.userId });
+  },
+  // Agentic Infrastructure Phase 2 (2026-07-30): the only decide/approve/reject mutation for
+  // approval_requests -- previously this table only had list/create; ApprovalsSection.tsx's
+  // Approve/Reject buttons only ever existed in its demo-mode illustrative cards (gated behind
+  // isDemoModeEnabled(), touching local React state only, which is correct for demo content) --
+  // the LIVE approvals table had no action buttons at all. This is what makes a real decision
+  // possible for both a human reviewing the live queue and the MCP route resolving a pending
+  // agent tool-call approval.
+  async decide(scope, id, input) {
+    if (!isSupabaseAdminConfigured()) throw new Error("Approval decisions require Supabase admin configuration.");
+    const rows = await supabaseAdminRest<ApprovalRequestRow[]>("approval_requests", {
+      method: "PATCH",
+      query: new URLSearchParams({
+        id: `eq.${id}`,
+        organization_id: `eq.${scope.organizationId}`,
+      }),
+      body: {
+        status: input.status,
+        decision_reason: maybeString(input.decisionReason ?? null),
+        reviewer_user_id: scope.userId,
+        decided_at: new Date().toISOString(),
+      },
+    });
+    const row = rows[0];
+    if (!row) throw new Error("Approval request was not found for this organization.");
+    return approvalRequestFromRow(row);
   },
 };
 
