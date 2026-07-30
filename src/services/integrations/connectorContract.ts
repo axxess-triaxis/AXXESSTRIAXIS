@@ -246,7 +246,9 @@ const connectorContracts: Record<ConnectorProviderId, ConnectorContract> = {
     authType: "oauth2",
     authorizationUrl: "https://accounts.google.com/o/oauth2/v2/auth",
     tokenUrl: "https://oauth2.googleapis.com/token",
-    requiredScopes: ["https://www.googleapis.com/auth/spreadsheets.readonly"],
+    // Full read-write (not .readonly): founder wants editability -- writing back into a connected
+    // sheet (e.g. budget tracker updates), not just importing.
+    requiredScopes: ["https://www.googleapis.com/auth/spreadsheets"],
     webhookSupported: false,
     tenantOwned: true,
     auditEvents: ["connector.google_sheets.oauth.started", "connector.google_sheets.oauth.connected", "connector.google_sheets.range.imported"],
@@ -258,7 +260,8 @@ const connectorContracts: Record<ConnectorProviderId, ConnectorContract> = {
     authType: "oauth2",
     authorizationUrl: "https://accounts.google.com/o/oauth2/v2/auth",
     tokenUrl: "https://oauth2.googleapis.com/token",
-    requiredScopes: ["https://www.googleapis.com/auth/documents.readonly"],
+    // Full read-write (not .readonly): founder wants editability, not just import.
+    requiredScopes: ["https://www.googleapis.com/auth/documents"],
     webhookSupported: false,
     tenantOwned: true,
     auditEvents: ["connector.google_docs.oauth.started", "connector.google_docs.oauth.connected", "connector.google_docs.document.imported"],
@@ -270,7 +273,8 @@ const connectorContracts: Record<ConnectorProviderId, ConnectorContract> = {
     authType: "oauth2",
     authorizationUrl: "https://accounts.google.com/o/oauth2/v2/auth",
     tokenUrl: "https://oauth2.googleapis.com/token",
-    requiredScopes: ["https://www.googleapis.com/auth/presentations.readonly"],
+    // Full read-write (not .readonly): founder wants editability, not just import.
+    requiredScopes: ["https://www.googleapis.com/auth/presentations"],
     webhookSupported: false,
     tenantOwned: true,
     auditEvents: ["connector.google_slides.oauth.started", "connector.google_slides.oauth.connected", "connector.google_slides.deck.imported"],

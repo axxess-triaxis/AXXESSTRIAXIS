@@ -85,10 +85,11 @@ describe("connector contract", () => {
   it("exposes the 2026-07-30 connector batch (Linear, GitHub, Google Sheets/Docs/Slides, WhatsApp Business, X)", () => {
     expect(getConnectorContract("linear")?.requiredScopes).toEqual(["read", "write"]);
     expect(getConnectorContract("github")?.requiredScopes).toContain("repo");
-    expect(getConnectorContract("google_sheets")?.requiredScopes).toContain("https://www.googleapis.com/auth/spreadsheets.readonly");
+    // Full read-write scopes (not .readonly): editability, not just import -- founder requirement.
+    expect(getConnectorContract("google_sheets")?.requiredScopes).toContain("https://www.googleapis.com/auth/spreadsheets");
     expect(getConnectorContract("google_sheets")?.authorizationUrl).toBe(getConnectorContract("gmail")?.authorizationUrl);
-    expect(getConnectorContract("google_docs")?.requiredScopes).toContain("https://www.googleapis.com/auth/documents.readonly");
-    expect(getConnectorContract("google_slides")?.requiredScopes).toContain("https://www.googleapis.com/auth/presentations.readonly");
+    expect(getConnectorContract("google_docs")?.requiredScopes).toContain("https://www.googleapis.com/auth/documents");
+    expect(getConnectorContract("google_slides")?.requiredScopes).toContain("https://www.googleapis.com/auth/presentations");
     expect(getConnectorContract("whatsapp_business")?.requiredScopes).toContain("whatsapp_business_messaging");
     // X mandates PKCE for OAuth 2.0 user-context authorization, same branch as Airtable.
     expect(getConnectorContract("x_twitter")?.requiresPkce).toBe(true);
