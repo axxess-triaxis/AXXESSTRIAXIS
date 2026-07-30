@@ -15,6 +15,9 @@ import {
 type BetaOnboardingChecklistProps = {
   user: UserContext;
   projectCount: number;
+  documentCount?: number;
+  taskCount?: number;
+  approvalCount?: number;
 };
 
 const steps: { id: OnboardingStepId; label: string; route: string; detail: string; action?: "open-feedback" }[] = [
@@ -33,19 +36,29 @@ const steps: { id: OnboardingStepId; label: string; route: string; detail: strin
   { id: "send_feedback", label: "Send feedback / request support", route: "/dashboard", detail: "Capture pilot friction, interest, and next meeting", action: "open-feedback" },
 ];
 
-export function BetaOnboardingChecklist({ user, projectCount }: BetaOnboardingChecklistProps) {
+export function BetaOnboardingChecklist({ user, projectCount, documentCount = 0, taskCount = 0, approvalCount = 0 }: BetaOnboardingChecklistProps) {
   const analytics = useAnalytics();
   const repository = useMemo(() => new LocalOnboardingProgressRepository(), []);
   const [progress, setProgress] = useState<OnboardingProgress>(() => defaultOnboardingProgress);
 
+  // Most steps below are still click-to-check (genuinely no reliable existing signal for "invited
+  // a team member," "assigned a role," "asked an AI question," "viewed the audit trail," or "sent
+  // feedback" without new tracking infrastructure). But upload_document/first_task/first_approval
+  // DO have real counts already computed elsewhere on this same dashboard (liveMetrics) -- this
+  // previously required a redundant manual click even after the real action already happened,
+  // which is exactly why a user doing real work would see some steps never tick. Auto-detect from
+  // real data wherever it already exists, same pattern as organization/first_project below.
   useEffect(() => {
     const loaded = repository.load(user.id);
     setProgress({
       ...loaded,
       organization: Boolean(user.organizationId) || loaded.organization,
       first_project: projectCount > 0 || loaded.first_project,
+      upload_document: documentCount > 0 || loaded.upload_document,
+      first_task: taskCount > 0 || loaded.first_task,
+      first_approval: approvalCount > 0 || loaded.first_approval,
     });
-  }, [projectCount, repository, user.id, user.organizationId]);
+  }, [approvalCount, documentCount, projectCount, repository, taskCount, user.id, user.organizationId]);
 
   useEffect(() => {
     repository.save(user.id, progress);

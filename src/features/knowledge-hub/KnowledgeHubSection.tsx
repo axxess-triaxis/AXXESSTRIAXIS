@@ -247,9 +247,14 @@ export const KnowledgeHubSection = () => {
 
   const searchResults = useMemo(() => localDocumentSearch(documents, articles, query), [articles, documents, query]);
   const ingestionStatus = useMemo(() => {
-    const records = documents.slice(0, 250).map((document) => buildRagIngestionRecord(document, document.description));
+    // Deleted (and archived -- excluded from RAG retrieval by canRetrieveDocument()) documents stay
+    // in `documents` forever (soft delete, for audit history) -- this previously counted them as
+    // still "Uploaded"/"Indexed"/"Ready" here even though they no longer appear in the Documents
+    // tab or answer any AI question, so the header stats never dropped after a real delete/archive.
+    const liveDocuments = documents.filter((document) => document.status !== "deleted" && document.status !== "archived");
+    const records = liveDocuments.slice(0, 250).map((document) => buildRagIngestionRecord(document, document.description));
     return {
-      uploaded: documents.length,
+      uploaded: liveDocuments.length,
       classified: records.length,
       chunked: records.reduce((sum, record) => sum + record.chunkCount, 0),
       indexed: records.filter((record) => record.stage === "ready").length,
@@ -807,8 +812,13 @@ export const KnowledgeHubSection = () => {
                     <RefreshCw size={13} /> Restore
                   </button>
                 ) : (
-                  <button onClick={() => void updateDocument(selectedDocument, { status: "archived", archivedAt: new Date().toISOString() }, "Document archived.")} disabled={!canWrite || saving} className="flex items-center justify-center gap-1.5 rounded-lg border border-[rgba(0,0,0,0.1)] px-3 py-2 text-xs text-[#5F6B73] hover:bg-[#F2F3F5] disabled:opacity-60">
-                    <Archive size={13} /> Archive
+                  <button
+                    onClick={() => void updateDocument(selectedDocument, { status: "archived", archivedAt: new Date().toISOString() }, "Document archived and removed from AI/RAG indexing.")}
+                    disabled={!canWrite || saving}
+                    title="Removes this document from AI Workspace answers without deleting it. Restore any time from the Archived tab."
+                    className="flex items-center justify-center gap-1.5 rounded-lg border border-[rgba(0,0,0,0.1)] px-3 py-2 text-xs text-[#5F6B73] hover:bg-[#F2F3F5] disabled:opacity-60"
+                  >
+                    <Archive size={13} /> Un-index (Archive)
                   </button>
                 )}
                 <button onClick={() => void updateDocument(selectedDocument, { status: "deleted", deletedAt: new Date().toISOString() }, "Document deleted.")} disabled={!canWrite || saving} className="flex items-center justify-center gap-1.5 rounded-lg border border-red-100 px-3 py-2 text-xs text-red-700 hover:bg-red-50 disabled:opacity-60">

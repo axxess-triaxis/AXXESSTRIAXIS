@@ -35,6 +35,7 @@ import { demoRecentActivity } from "../../lib/demo/demoActivity";
 import { demoInstitution } from "../../lib/demo/seedData";
 import { executiveDemoMetrics } from "../../lib/demo/demoMetrics";
 import { BetaOnboardingChecklist } from "../onboarding/BetaOnboardingChecklist";
+import { SampleDataBanner } from "./SampleDataBanner";
 import {
   demoAiRecommendations,
   demoObjectives,
@@ -312,7 +313,19 @@ export function DashboardSection() {
       )}
       <DashboardCommandSearch projects={projects} actions={enterpriseJourney.actionQueue} />
 
-      {session.user && <BetaOnboardingChecklist user={session.user} projectCount={projects.length} />}
+      {session.user && (
+        <SampleDataBanner canRemove={["Super Admin", "Organization Admin", "Executive", "Manager"].includes(session.user.role)} />
+      )}
+
+      {session.user && (
+        <BetaOnboardingChecklist
+          user={session.user}
+          projectCount={projects.length}
+          documentCount={liveMetrics.ragReadyDocuments}
+          taskCount={liveMetrics.openTasks}
+          approvalCount={liveMetrics.pendingApprovals}
+        />
+      )}
 
       <EnterpriseWorkflowJourney
         snapshot={enterpriseJourney}
