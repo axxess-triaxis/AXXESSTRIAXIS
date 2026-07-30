@@ -196,6 +196,9 @@ type DocumentVersionRow = {
   mime_type: string;
   storage_path: string;
   checksum: string | null;
+  extracted_text: string | null;
+  extraction_method: string | null;
+  extraction_truncated: boolean | null;
   created_by_user_id: string | null;
   created_at: string;
 };
@@ -666,6 +669,9 @@ function documentVersionMutation(scope: TenantScope, input: Record<string, unkno
     mime_type: nullableString(input.mimeType),
     storage_path: nullableString(input.storagePath),
     checksum: nullableString(input.checksum),
+    extracted_text: nullableString(input.extractedText),
+    extraction_method: nullableString(input.extractionMethod),
+    extraction_truncated: typeof input.extractionTruncated === "boolean" ? input.extractionTruncated : undefined,
     created_by_user_id: scope.userId,
   });
 }
@@ -1114,7 +1120,7 @@ const documentConfig: ResourceConfig<DocumentRow, Document> = {
 
 const documentVersionConfig: ResourceConfig<DocumentVersionRow, DocumentVersion> = {
   table: "document_versions",
-  select: "id,organization_id,document_id,version_number,file_name,file_size,mime_type,storage_path,checksum,created_by_user_id,created_at",
+  select: "id,organization_id,document_id,version_number,file_name,file_size,mime_type,storage_path,checksum,extracted_text,extraction_method,extraction_truncated,created_by_user_id,created_at",
   searchColumns: ["file_name", "mime_type"],
   defaultOrder: "created_at.desc",
   map: (row) => ({
@@ -1127,6 +1133,9 @@ const documentVersionConfig: ResourceConfig<DocumentVersionRow, DocumentVersion>
     mimeType: row.mime_type,
     storagePath: row.storage_path,
     checksum: row.checksum ?? undefined,
+    extractedText: row.extracted_text ?? undefined,
+    extractionMethod: (row.extraction_method as DocumentVersion["extractionMethod"]) ?? undefined,
+    extractionTruncated: row.extraction_truncated ?? undefined,
     createdByUserId: row.created_by_user_id ?? undefined,
     createdAt: row.created_at,
   }),

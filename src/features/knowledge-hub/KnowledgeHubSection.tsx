@@ -66,6 +66,56 @@ const visibilityOptions: { value: DocumentVisibility; label: string }[] = [
   { value: "shared", label: "Shared" },
 ];
 
+type UploadExtraction = {
+  supported: boolean;
+  text: string;
+  method?: "text-layer" | "ocr" | "docx" | "plain";
+  truncated: boolean;
+  pagesProcessed?: number;
+  totalPages?: number;
+  reason?: string;
+};
+
+// Honest post-upload status: only reports success when text was actually indexed. Extraction
+// running server-side inside /api/documents/upload (see documentTextExtraction.ts) never silently
+// indexes an empty or unsupported file -- this mirrors that back to the user.
+function describeExtraction(extraction: UploadExtraction | undefined): string {
+  if (!extraction) return "Uploaded. Indexing status unavailable.";
+  if (!extraction.supported) {
+    return extraction.reason ? `Not indexed: ${extraction.reason}` : "Not indexed: extraction was not supported for this file.";
+  }
+  if (extraction.method === "ocr") {
+    return extraction.truncated
+      ? `Indexed via OCR (first ${extraction.pagesProcessed} of ${extraction.totalPages} pages).`
+      : "Indexed via OCR.";
+  }
+  if (extraction.truncated) {
+    return `Indexed for search (truncated to the first ${extraction.pagesProcessed ?? "N"} of ${extraction.totalPages ?? "?"} pages).`;
+  }
+  return "Indexed for search.";
+}
+
+async function ingestExtractedText(input: {
+  documentId: string;
+  title: string;
+  bodyText: string;
+  fileName: string;
+  mimeType: string;
+  extractionMethod?: UploadExtraction["method"];
+  extractionTruncated?: boolean;
+}) {
+  const response = await fetch("/api/documents/ingest", {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  if (!response.ok) {
+    const payload = await response.json().catch(() => ({})) as { error?: string };
+    throw new Error(payload.error ?? "Failed to index extracted text.");
+  }
+}
+
 function formatBytes(size?: number) {
   if (!size) return "Size pending";
   if (size < 1024 * 1024) return `${Math.ceil(size / 1024)} KB`;
@@ -259,6 +309,7 @@ export const KnowledgeHubSection = () => {
     setToast(null);
     const uploadedDocuments: Document[] = [];
     const failures: string[] = [];
+    const indexingStatuses: string[] = [];
 
     for (const file of uploads) {
       const validationError = validateDocumentUpload({ fileName: file.name, mimeType: file.type, sizeBytes: file.size });
@@ -295,7 +346,7 @@ export const KnowledgeHubSection = () => {
       };
 
       try {
-        await applicationServices.storageRepository.uploadDocumentFile({ path: storagePath, file });
+        const uploadResult = await applicationServices.storageRepository.uploadDocumentFile({ path: storagePath, file });
         const saved = await applicationServices.documentsRepository.create(scope, payload);
         await applicationServices.documentVersionsRepository.create(scope, {
           id: versionId,
@@ -312,6 +363,25 @@ export const KnowledgeHubSection = () => {
           metadata: { fileName: file.name, sizeBytes: file.size },
         }).catch(() => undefined);
         uploadedDocuments.push(saved);
+
+        const extraction = uploadResult.extraction as UploadExtraction | undefined;
+        if (extraction?.supported && extraction.text.trim()) {
+          try {
+            await ingestExtractedText({
+              documentId: saved.id,
+              title: payload.title ?? file.name,
+              bodyText: extraction.text,
+              fileName: file.name,
+              mimeType: file.type || "application/octet-stream",
+              extractionMethod: extraction.method,
+              extractionTruncated: extraction.truncated,
+            });
+          } catch {
+            indexingStatuses.push(`${file.name}: uploaded but indexing failed -- index manually via Documents & Files.`);
+            continue;
+          }
+        }
+        indexingStatuses.push(`${file.name}: ${describeExtraction(extraction)}`);
       } catch (error) {
         const message = error instanceof Error ? error.message : "Upload failed.";
         failures.push(`${file.name}: ${message}`);
@@ -324,17 +394,19 @@ export const KnowledgeHubSection = () => {
       setRenameValue(uploadedDocuments[0].name);
     }
 
+    const allIndexed = uploadedDocuments.length > 0 && indexingStatuses.every((status) => status.includes(": Indexed"));
+
     if (failures.length > 0) {
       setToast({
         tone: uploadedDocuments.length > 0 ? "info" : "error",
         message: uploadedDocuments.length > 0
-          ? `${uploadedDocuments.length} uploaded, ${failures.length} failed -- ${failures.join("; ")}`
+          ? `${uploadedDocuments.length} uploaded, ${failures.length} failed -- ${failures.join("; ")}. ${indexingStatuses.join(" ")}`
           : failures.join("; "),
       });
     } else if (uploadedDocuments.length > 0) {
       setToast({
-        tone: "success",
-        message: uploadedDocuments.length === 1 ? "Document uploaded." : `${uploadedDocuments.length} documents uploaded.`,
+        tone: allIndexed ? "success" : "info",
+        message: uploadedDocuments.length === 1 ? indexingStatuses[0] : indexingStatuses.join(" "),
       });
     }
     setSaving(false);

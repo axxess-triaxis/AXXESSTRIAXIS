@@ -6,6 +6,13 @@ import {
   documentPathBelongsToOrganization,
   validateDocumentUpload,
 } from "../../../../services/storage/documentStorage";
+import { extractDocumentText } from "../../../../services/rag/ingestion/documentTextExtraction";
+
+// OCR fallback (PDF page rendering + Tesseract recognition) needs meaningfully more time than a
+// plain upload. Default Next.js route duration is too short for that path.
+// NOTE: this requires the Vercel plan tier to support 60s function duration (Hobby defaults to
+// 10s) -- flagged, not assumed; confirm the plan tier before relying on this in production.
+export const maxDuration = 60;
 
 function getSupabaseConfig() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, "");
@@ -55,6 +62,8 @@ export async function POST(request: Request) {
   }
 
   try {
+    const fileBytes = await file.arrayBuffer();
+
     const uploadResponse = await fetch(
       `${config.url}/storage/v1/object/${DOCUMENT_STORAGE_BUCKET}/${encodeStoragePath(path)}`,
       {
@@ -64,7 +73,7 @@ export async function POST(request: Request) {
           Authorization: `Bearer ${session.accessToken}`,
           "Content-Type": file.type || "application/octet-stream",
         },
-        body: await file.arrayBuffer(),
+        body: fileBytes,
         cache: "no-store",
       },
     );
@@ -87,7 +96,15 @@ export async function POST(request: Request) {
       },
     }).catch(() => undefined);
 
-    return NextResponse.json({ path });
+    const extraction = await extractDocumentText(Buffer.from(fileBytes), file.type || "application/octet-stream")
+      .catch((error) => ({
+        supported: false as const,
+        text: "",
+        truncated: false,
+        reason: error instanceof Error ? error.message : "Text extraction failed.",
+      }));
+
+    return NextResponse.json({ path, extraction });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unable to upload document.";
     return NextResponse.json({ error: message }, { status: 502 });
