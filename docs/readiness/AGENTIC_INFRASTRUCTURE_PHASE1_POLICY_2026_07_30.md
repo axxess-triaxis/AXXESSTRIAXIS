@@ -96,23 +96,45 @@ and not fixed as part of this pass -- see `governedRag.ts`/`route.ts`'s existing
 
 ## Implementation Status (A-78)
 
-Added to `docs/readiness/ACTIONABLES_READINESS_MATRIX.md` as A-78. Status: **Blocked** -- code is
-real, tested, and builds clean, but zero production credentials exist yet (no tenant has actually
-generated a key and connected a real agent), matching this repo's `Yes` bar of "founder has
-actually tested and certified... in a real workflow," which requires a live HITL step this pass
-cannot self-certify.
+Added to `docs/readiness/ACTIONABLES_READINESS_MATRIX.md` as A-78. **Founder-set status framing
+(2026-07-30), recorded verbatim as the standing status for this item:**
 
-| Item | Status |
+> Agentic Infrastructure Phase 1 is code-complete, verified, but not production-certified yet.
+> Blocked: code-complete and fully verified locally; pending production migration, deployment,
+> and live MCP test. Not `Yes` yet. Why: the product rule has been consistent -- code + tests are
+> not the same as live tenant certification.
+
+| Area | Status |
 |---|---|
-| `agent_connections` migration, RLS enabled, service-role only | Shipped, `pnpm run supabase:verify` passed |
-| API key issuance/hash/revoke (`agentConnectionVault.ts`, `agentConnectionRepository.ts`) | Shipped, unit-tested |
-| MCP server (`POST /api/agents/mcp`, initialize/tools list/tools call) | Shipped, unit-tested |
-| 3 Phase 1 tools (create_task, query_knowledge_hub, list_projects) | Shipped, unit-tested |
-| Elevated-access bypass in `pluginRuntime.ts` | Shipped, unit-tested; not yet wired to any Phase 1 tool (see Soft Constraints) |
-| Settings UI (Agent Connections panel) | Shipped, source-verified |
-| Live migration applied to production Supabase | **Blocked** -- requires founder/HITL action, not run this pass (schema change to a live database is outside what this pass should do unattended) |
-| Deploy to production | **Blocked** -- not deployed this pass, pending explicit confirmation |
-| Real agent (ChatGPT/Claude/Copilot) completing a live call | **Blocked** -- Phase 2 scope per the approved plan; cannot be self-certified by automated tests |
+| Architecture | Complete |
+| Security model | Complete |
+| MCP endpoint | Complete |
+| Agent key model | Complete |
+| Tool registry | Complete |
+| Audit logging | Complete |
+| Tests | Complete, 707 passing |
+| Build | Complete |
+| Supabase migration file | Complete |
+| Production Supabase migration applied | Blocked / pending HITL |
+| Production deployment | Blocked / pending HITL |
+| Live curl/MCP test | Blocked until migration + deploy |
+| Real OpenAI/Claude/Copilot external agent connected | Phase 2 |
+
+**Exactly 3 remaining steps to move A-78 off `Blocked`**, all HITL (this session should not take
+them unattended -- schema changes to production and production deploys require explicit
+confirmation per this repo's git/deployment discipline):
+
+1. Apply the new `agent_connections` migration to production Supabase.
+2. Deploy current code to `landing.triaxisventures.com`.
+3. Generate one real agent key (Settings > Integrations > Agent Connections) and run a live MCP
+   call: `tools/list`, then `create_task`, then confirm the task row in `tasks` and the audit row
+   in `audit_logs`.
+
+**Once all 3 pass**, the claim may be upgraded to: "AXXESS supports tenant-scoped inbound MCP
+agent access for OpenAI/Claude-style external agents, with hashed keys, explicit tools, tenant
+isolation and audit logging." **Do not claim Microsoft Copilot is fully connected even then** --
+Phase 1 lets a tenant issue a Copilot-labeled key, but no Copilot Studio adapter exists to
+actually consume it (Phase 2 scope, see Access Model above).
 
 ## Verification Evidence (exact commands, exact results)
 
