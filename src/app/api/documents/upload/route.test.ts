@@ -43,6 +43,31 @@ const orgId = "org-1";
 const validPath = `organizations/${orgId}/documents/doc-1/versions/v1/report.pdf`;
 const validFile = new File(["file-bytes"], "report.pdf", { type: "application/pdf" });
 
+// Hand-built minimal valid PDF (correct xref byte offsets) so the extraction wiring can be
+// proven against a real PDF parse, not just the honest-failure path for garbage bytes.
+function buildMinimalPdf(contentStream: string): Buffer {
+  const objects = [
+    "1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n",
+    "2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n",
+    "3 0 obj\n<< /Type /Page /Parent 2 0 R /Resources << /Font << /F1 4 0 R >> >> /MediaBox [0 0 500 200] /Contents 5 0 R >>\nendobj\n",
+    "4 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj\n",
+    `5 0 obj\n<< /Length ${contentStream.length} >>\nstream\n${contentStream}\nendstream\nendobj\n`,
+  ];
+  let body = "%PDF-1.4\n";
+  const offsets: number[] = [];
+  for (const object of objects) {
+    offsets.push(body.length);
+    body += object;
+  }
+  const xrefStart = body.length;
+  let xref = `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
+  for (const offset of offsets) {
+    xref += `${String(offset).padStart(10, "0")} 00000 n \n`;
+  }
+  const trailer = `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefStart}\n%%EOF`;
+  return Buffer.from(body + xref + trailer, "latin1");
+}
+
 describe("POST /api/documents/upload", () => {
   afterEach(() => {
     state.session = null;
@@ -89,13 +114,33 @@ describe("POST /api/documents/upload", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     const response = await POST(requestWith({ path: validPath, file: validFile }));
-    const body = await response.json() as { path?: string };
+    const body = await response.json() as { path?: string; extraction?: { supported: boolean; reason?: string } };
 
     expect(response.status).toBe(200);
     expect(body.path).toBe(validPath);
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(recordedAudits).toHaveLength(1);
     expect(recordedAudits[0].action).toBe("document.uploaded");
+    // "file-bytes" isn't a real PDF -- extraction should fail honestly, not crash the upload.
+    expect(body.extraction?.supported).toBe(false);
+  });
+
+  it("extracts real text from an actual PDF and returns it alongside the upload", async () => {
+    state.session = { user: { id: "user-1", organizationId: orgId, role: "Manager" }, accessToken: "user-token" };
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://example.supabase.co");
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY", "anon-key");
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ Key: validPath }), { status: 200 })));
+
+    const pdfBytes = buildMinimalPdf("BT /F1 24 Tf 20 100 Td (Real PDF Content) Tj ET");
+    const realPdf = new File([pdfBytes], "report.pdf", { type: "application/pdf" });
+
+    const response = await POST(requestWith({ path: validPath, file: realPdf }));
+    const body = await response.json() as { extraction?: { supported: boolean; method?: string; text: string } };
+
+    expect(response.status).toBe(200);
+    expect(body.extraction?.supported).toBe(true);
+    expect(body.extraction?.method).toBe("text-layer");
+    expect(body.extraction?.text).toContain("Real PDF Content");
   });
 
   it("surfaces a real 502 error, without a fake success, when Supabase Storage rejects the write", async () => {

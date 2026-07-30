@@ -232,6 +232,17 @@ export type DocumentFileUploadRequest = {
   file: File;
 };
 
+export type DocumentUploadExtractionResult = {
+  supported: boolean;
+  text: string;
+  method?: "text-layer" | "ocr" | "docx" | "plain";
+  truncated: boolean;
+  pagesProcessed?: number;
+  totalPages?: number;
+  reason?: string;
+};
+
 export type DocumentFileUploadResult = {
   path: string;
+  extraction?: DocumentUploadExtractionResult;
 };

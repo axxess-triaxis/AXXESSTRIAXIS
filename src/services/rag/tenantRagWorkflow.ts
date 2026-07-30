@@ -46,6 +46,13 @@ export type TenantDocumentIngestInput = {
    * the text to index for the selected document rather than the system inventing it.
    */
   documentId?: string;
+  /**
+   * Set when bodyText came from automatic extraction (documentTextExtraction.ts) rather than a
+   * human pasting text -- persisted onto the created document_versions row so callers and the UI
+   * can be honest about how the indexed text was actually produced.
+   */
+  extractionMethod?: "text-layer" | "ocr" | "docx" | "plain";
+  extractionTruncated?: boolean;
 };
 
 export type TenantDocumentIngestResult = {
@@ -166,6 +173,9 @@ export async function ingestTenantDocument(
       mimeType: document.mimeType,
       storagePath: document.storagePath,
       checksum: textHash(bodyText),
+      extractedText: input.extractionMethod ? bodyText : undefined,
+      extractionMethod: input.extractionMethod,
+      extractionTruncated: input.extractionTruncated,
       createdByUserId: scope.userId,
     }).catch(() => undefined);
 
