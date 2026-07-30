@@ -52,4 +52,12 @@ describe("IntegrationsSection (Sprint 3 -- does not hang, no raw backend error t
     expect(source).toContain("no human approval step");
     expect(source).toContain("shown once below and never stored");
   });
+
+  it("uses real brand logos (simple-icons) on the pilot/infrastructure connector cards and agent connection rows, not text-only tiles (2026-07-30)", () => {
+    expect(source).toContain('import { BrandIcon } from "../../components/ui/BrandIcon"');
+    expect(source).toContain('import { brandIcons } from "../../components/ui/brandIcons"');
+    expect(source).toContain("brandIcons[plugin.id]");
+    expect(source).toContain("brandIcons[provider.providerId]");
+    expect(source).toContain("brandIcons[connection.provider]");
+  });
 });
