@@ -5,6 +5,8 @@ import { useAuth } from "../../auth/AuthProvider";
 import { SectionHeader } from "../../components/layout/SectionHeader";
 import { InlineToast } from "../../components/forms/InlineToast";
 import { Card } from "../../components/ui/Card";
+import { BrandIcon } from "../../components/ui/BrandIcon";
+import { brandIcons } from "../../components/ui/brandIcons";
 import { EmptyState } from "../../components/feedback/EmptyState";
 import { isDemoModeEnabled } from "../../demo/demoMode";
 import { applicationServices } from "../../providers/serviceProvider";
@@ -12,6 +14,7 @@ import { previewSelectedEmailImport, type ConnectorProviderId, type EmailImportP
 import type { MicrosoftGraphMailboxMessageSummary } from "../../services/integrations/microsoftGraphMailbox";
 import type { NotionPageSummary } from "../../services/integrations/notionPages";
 import { getIntegrationHealth, getInfrastructureOnlyIntegrations, getPilotIntegrations } from "../../services/integrations/pluginRegistry";
+import { Layers } from "lucide-react";
 
 // Illustrative connector gallery for the investor-demo experience only -- real connector status
 // comes from getIntegrationHealth()/getProductivityPluginRegistry() below, which are live. Gated
@@ -439,20 +442,28 @@ export const IntegrationsSection = () => {
         </div>
       </div>
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-        {pilotIntegrations.map((plugin) => (
-          <div key={plugin.id} className="rounded-xl border border-[rgba(0,0,0,0.06)] bg-[#F8F9FA] p-3">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <div className="text-sm font-semibold text-[#0F1117]">{plugin.name}</div>
-                <div className="mt-0.5 font-mono text-[11px] uppercase text-[#5F6B73]">{plugin.category}</div>
+        {pilotIntegrations.map((plugin) => {
+          const brandIcon = brandIcons[plugin.id];
+          return (
+            <div key={plugin.id} className="rounded-xl border border-[rgba(0,0,0,0.06)] bg-[#F8F9FA] p-3">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white">
+                    {brandIcon ? <BrandIcon icon={brandIcon} size={16} /> : <Layers size={14} className="text-[#5F6B73]" />}
+                  </div>
+                  <div>
+                    <div className="text-sm font-semibold text-[#0F1117]">{plugin.name}</div>
+                    <div className="mt-0.5 font-mono text-[11px] uppercase text-[#5F6B73]">{plugin.category}</div>
+                  </div>
+                </div>
+                <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${plugin.configured ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"}`}>
+                  {plugin.configured ? "configured" : "gated"}
+                </span>
               </div>
-              <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${plugin.configured ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"}`}>
-                {plugin.configured ? "configured" : "gated"}
-              </span>
+              <p className="mt-2 text-xs leading-relaxed text-[#5F6B73]">{plugin.useCases.join(" - ")}</p>
             </div>
-            <p className="mt-2 text-xs leading-relaxed text-[#5F6B73]">{plugin.useCases.join(" - ")}</p>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </Card>
 
@@ -464,11 +475,15 @@ export const IntegrationsSection = () => {
         </p>
       </div>
       <div className="flex flex-wrap gap-2">
-        {infrastructureOnlyIntegrations.map((plugin) => (
-          <span key={plugin.id} className="rounded-full border border-[rgba(0,0,0,0.08)] bg-[#F8F9FA] px-3 py-1 text-[11px] font-medium text-[#5F6B73]">
-            {plugin.name}
-          </span>
-        ))}
+        {infrastructureOnlyIntegrations.map((plugin) => {
+          const brandIcon = brandIcons[plugin.id];
+          return (
+            <span key={plugin.id} className="inline-flex items-center gap-1.5 rounded-full border border-[rgba(0,0,0,0.08)] bg-[#F8F9FA] px-3 py-1 text-[11px] font-medium text-[#5F6B73]">
+              {brandIcon && <BrandIcon icon={brandIcon} size={12} />}
+              {plugin.name}
+            </span>
+          );
+        })}
       </div>
     </Card>
   </div>
@@ -590,12 +605,18 @@ function EnterpriseConnectorCredentialsPanel() {
         {providers.map((provider) => {
           const status = statusFor(provider.providerId);
           const isOpen = openProviderId === provider.providerId;
+          const brandIcon = brandIcons[provider.providerId];
           return (
             <div key={provider.providerId} className="rounded-xl border border-[rgba(0,0,0,0.06)] bg-[#F8F9FA] p-3">
               <div className="flex items-start justify-between gap-3">
-                <div>
-                  <div className="text-sm font-semibold text-[#0F1117]">{provider.displayName}</div>
-                  <div className="mt-0.5 font-mono text-[11px] uppercase text-[#5F6B73]">{provider.category}</div>
+                <div className="flex items-center gap-2">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white">
+                    {brandIcon ? <BrandIcon icon={brandIcon} size={16} /> : <Layers size={14} className="text-[#5F6B73]" />}
+                  </div>
+                  <div>
+                    <div className="text-sm font-semibold text-[#0F1117]">{provider.displayName}</div>
+                    <div className="mt-0.5 font-mono text-[11px] uppercase text-[#5F6B73]">{provider.category}</div>
+                  </div>
                 </div>
                 <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${status === "configured" ? "bg-emerald-50 text-emerald-700" : status === "revoked" ? "bg-gray-100 text-gray-600" : "bg-amber-50 text-amber-700"}`}>
                   {status === "configured" ? "configured" : status === "revoked" ? "revoked" : "not configured"}
@@ -796,11 +817,18 @@ function AgentConnectionsPanel() {
       </div>
       {connections.length > 0 && (
         <div className="mt-4 grid gap-2">
-          {connections.map((connection) => (
+          {connections.map((connection) => {
+            const brandIcon = brandIcons[connection.provider];
+            return (
             <div key={connection.id} className="flex items-center justify-between rounded-lg border border-[rgba(0,0,0,0.06)] bg-[#F8F9FA] px-3 py-2">
-              <div>
-                <div className="text-xs font-semibold text-[#0F1117]">{connection.label} <span className="font-normal text-[#5F6B73]">({agentProviderOptions.find((option) => option.id === connection.provider)?.label})</span></div>
-                <div className="mt-0.5 font-mono text-[11px] text-[#5F6B73]">{connection.apiKeyPrefix}&hellip;</div>
+              <div className="flex items-center gap-2">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white">
+                  {brandIcon ? <BrandIcon icon={brandIcon} size={14} /> : <Layers size={12} className="text-[#5F6B73]" />}
+                </div>
+                <div>
+                  <div className="text-xs font-semibold text-[#0F1117]">{connection.label} <span className="font-normal text-[#5F6B73]">({agentProviderOptions.find((option) => option.id === connection.provider)?.label})</span></div>
+                  <div className="mt-0.5 font-mono text-[11px] text-[#5F6B73]">{connection.apiKeyPrefix}&hellip;</div>
+                </div>
               </div>
               <div className="flex items-center gap-2">
                 <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${connection.status === "active" ? "bg-emerald-50 text-emerald-700" : "bg-gray-100 text-gray-600"}`}>{connection.status}</span>
@@ -816,7 +844,8 @@ function AgentConnectionsPanel() {
                 )}
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </Card>
