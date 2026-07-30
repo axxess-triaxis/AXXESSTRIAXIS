@@ -51,6 +51,41 @@ describe("plugin runtime", () => {
     expect("approvalRequired" in decision && decision.approvalRequired).toBe(true);
   });
 
+  it("Agentic Infrastructure Phase 1 (2026-07-30): a connected agent's write skips the human-approval hold, but only for callerType 'agent'", () => {
+    const snapshot = buildPluginRuntimeSnapshot({
+      organizationId: "org-1",
+      env: { GOOGLE_CLIENT_ID: "configured" } as unknown as NodeJS.ProcessEnv,
+      installations: [{
+        id: "plugin-installation-1",
+        organizationId: "org-1",
+        pluginId: "gmail",
+        status: "connected",
+        grantedScopes: ["gmail.send", "gmail.readonly"],
+      }],
+    });
+
+    const agentDecision = evaluatePluginAction(snapshot, {
+      organizationId: "org-1",
+      userId: "agent-conn-1",
+      userRole: "Organization Admin",
+      pluginId: "gmail",
+      action: "send_message",
+      callerType: "agent",
+    });
+    expect(agentDecision.allowed).toBe(true);
+    expect("approvalRequired" in agentDecision && agentDecision.approvalRequired).toBe(false);
+
+    const humanDecision = evaluatePluginAction(snapshot, {
+      organizationId: "org-1",
+      userId: "user-admin",
+      userRole: "Organization Admin",
+      pluginId: "gmail",
+      action: "send_message",
+    });
+    expect(humanDecision.allowed).toBe(true);
+    expect("approvalRequired" in humanDecision && humanDecision.approvalRequired).toBe(true);
+  });
+
   it("only marks pilot-enabled connectors as available before real credentials exist; the rest are honestly provider-gated", () => {
     // Regression test: defaultStatus() used to check plugin.demoConnector, which was true for
     // every one of the ~20 catalogued plugins, so every unconfigured connector reported as

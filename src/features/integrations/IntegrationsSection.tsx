@@ -394,6 +394,8 @@ export const IntegrationsSection = () => {
 
     <EnterpriseConnectorCredentialsPanel />
 
+    <AgentConnectionsPanel />
+
     <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
       {[
         ["Adapters catalogued", pluginHealth.total],
@@ -650,6 +652,173 @@ function EnterpriseConnectorCredentialsPanel() {
           );
         })}
       </div>
+    </Card>
+  );
+}
+
+const agentProviderOptions: Array<{ id: "openai" | "anthropic" | "microsoft_copilot"; label: string }> = [
+  { id: "openai", label: "OpenAI" },
+  { id: "anthropic", label: "Anthropic" },
+  { id: "microsoft_copilot", label: "Microsoft Copilot" },
+];
+
+type AgentConnectionSummary = {
+  id: string;
+  provider: "openai" | "anthropic" | "microsoft_copilot";
+  label: string;
+  apiKeyPrefix: string;
+  status: "active" | "revoked";
+  createdAt: string;
+};
+
+// Agentic Infrastructure Phase 1 (2026-07-30): lets a tenant admin issue an AXXESS API key for an
+// external AI agent platform to connect to the real MCP server at /api/agents/mcp
+// (src/app/api/agents/mcp/route.ts). Not an OAuth redirect like the connectors above -- AXXESS is
+// the one issuing a credential here, so this mirrors EnterpriseConnectorCredentialsPanel's
+// generate/list/revoke shape rather than the OAuth "Connect" buttons elsewhere on this page.
+function AgentConnectionsPanel() {
+  const { session } = useAuth();
+  const [connections, setConnections] = useState<AgentConnectionSummary[]>([]);
+  const [provider, setProvider] = useState<"openai" | "anthropic" | "microsoft_copilot">("openai");
+  const [label, setLabel] = useState("");
+  const [issuedKey, setIssuedKey] = useState<{ provider: string; rawApiKey: string } | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [toast, setToast] = useState<{ tone: "success" | "error" | "info"; message: string } | null>(null);
+  const canManage = Boolean(session.user && ["Super Admin", "Organization Admin"].includes(session.user.role));
+
+  useEffect(() => {
+    if (!canManage) return;
+    let isMounted = true;
+    fetch("/api/agents/connections", { credentials: "include", cache: "no-store" })
+      .then((response) => response.json())
+      .then((result: { connections?: AgentConnectionSummary[] }) => {
+        if (isMounted) setConnections(result.connections ?? []);
+      })
+      .catch(() => undefined);
+    return () => {
+      isMounted = false;
+    };
+  }, [canManage]);
+
+  async function generateKey() {
+    setSaving(true);
+    setToast(null);
+    try {
+      const response = await fetch("/api/agents/connections", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ provider, label: label.trim() || undefined }),
+      });
+      const result = await response.json().catch(() => ({} as { connection?: AgentConnectionSummary; rawApiKey?: string; error?: string }));
+      if (!response.ok || !result.connection || !result.rawApiKey) {
+        throw new Error(result.error ?? "Generating an agent API key failed.");
+      }
+      setConnections((current) => [result.connection as AgentConnectionSummary, ...current]);
+      setIssuedKey({ provider, rawApiKey: result.rawApiKey });
+      setLabel("");
+    } catch (error) {
+      setToast({ tone: "error", message: error instanceof Error ? error.message : "Generating an agent API key failed." });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function revoke(connection: AgentConnectionSummary) {
+    setSaving(true);
+    setToast(null);
+    try {
+      const response = await fetch(`/api/agents/connections?id=${connection.id}`, { method: "DELETE", credentials: "include" });
+      if (!response.ok) throw new Error("Revoking the agent connection failed.");
+      setConnections((current) => current.map((item) => (item.id === connection.id ? { ...item, status: "revoked" } : item)));
+      setToast({ tone: "success", message: `${connection.label} revoked.` });
+    } catch (error) {
+      setToast({ tone: "error", message: error instanceof Error ? error.message : "Revoking the agent connection failed." });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (!canManage) return null;
+
+  return (
+    <Card className="p-5">
+      <div className="mb-4">
+        <h3 className="text-sm font-semibold text-[#0F1117]">Agent Connections</h3>
+        <p className="mt-1 max-w-2xl text-xs leading-relaxed text-[#5F6B73]">
+          Issue an API key so a connected OpenAI, Anthropic, or Microsoft Copilot agent can call this workspace&apos;s real MCP server directly -- creating tasks, listing projects, and querying the Knowledge Hub. Agent-issued write actions execute immediately with no human approval step (elevated access, since you already vetted the agent provider when you generated its key). The key is shown once below and never stored -- copy it now.
+        </p>
+      </div>
+      {toast && <div className="mb-3"><InlineToast tone={toast.tone} message={toast.message} /></div>}
+      {issuedKey && (
+        <div className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 p-3">
+          <p className="text-xs font-semibold text-emerald-800">New {agentProviderOptions.find((option) => option.id === issuedKey.provider)?.label} key -- copy it now, it will not be shown again:</p>
+          <div className="mt-2 flex items-center gap-2">
+            <code className="flex-1 overflow-x-auto rounded bg-white px-2 py-1.5 text-[11px] text-[#0F1117]">{issuedKey.rawApiKey}</code>
+            <button
+              type="button"
+              onClick={() => { void navigator.clipboard?.writeText(issuedKey.rawApiKey); setToast({ tone: "success", message: "Key copied to clipboard." }); }}
+              className="rounded-lg border border-emerald-300 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-emerald-800 hover:bg-emerald-100"
+            >
+              Copy
+            </button>
+            <button type="button" onClick={() => setIssuedKey(null)} className="rounded-lg px-2.5 py-1.5 text-[11px] font-semibold text-[#5F6B73] hover:bg-white">Dismiss</button>
+          </div>
+        </div>
+      )}
+      <div className="flex flex-wrap items-end gap-2">
+        <label className="text-xs">
+          <span className="mb-1 block font-semibold text-[#0F1117]">Provider</span>
+          <select
+            value={provider}
+            onChange={(event) => setProvider(event.target.value as typeof provider)}
+            className="rounded-lg border border-[rgba(0,0,0,0.12)] bg-white px-3 py-2 text-xs outline-none"
+          >
+            {agentProviderOptions.map((option) => <option key={option.id} value={option.id}>{option.label}</option>)}
+          </select>
+        </label>
+        <input
+          aria-label="Connection label"
+          type="text"
+          placeholder="Label (optional)"
+          value={label}
+          onChange={(event) => setLabel(event.target.value)}
+          className="rounded-lg border border-[rgba(0,0,0,0.12)] bg-white px-3 py-2 text-xs outline-none"
+        />
+        <button
+          type="button"
+          onClick={() => void generateKey()}
+          disabled={saving}
+          className="rounded-lg bg-[#8B1E2D] px-3 py-2 text-xs font-semibold text-white hover:bg-[#7a1a27] disabled:opacity-60"
+        >
+          Generate key
+        </button>
+      </div>
+      {connections.length > 0 && (
+        <div className="mt-4 grid gap-2">
+          {connections.map((connection) => (
+            <div key={connection.id} className="flex items-center justify-between rounded-lg border border-[rgba(0,0,0,0.06)] bg-[#F8F9FA] px-3 py-2">
+              <div>
+                <div className="text-xs font-semibold text-[#0F1117]">{connection.label} <span className="font-normal text-[#5F6B73]">({agentProviderOptions.find((option) => option.id === connection.provider)?.label})</span></div>
+                <div className="mt-0.5 font-mono text-[11px] text-[#5F6B73]">{connection.apiKeyPrefix}&hellip;</div>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${connection.status === "active" ? "bg-emerald-50 text-emerald-700" : "bg-gray-100 text-gray-600"}`}>{connection.status}</span>
+                {connection.status === "active" && (
+                  <button
+                    type="button"
+                    onClick={() => void revoke(connection)}
+                    disabled={saving}
+                    className="rounded-lg border border-[rgba(0,0,0,0.12)] px-2.5 py-1 text-[11px] font-semibold text-[#0F1117] hover:bg-[#F2F3F5] disabled:opacity-60"
+                  >
+                    Revoke
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </Card>
   );
 }

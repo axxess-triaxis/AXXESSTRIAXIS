@@ -44,4 +44,12 @@ describe("IntegrationsSection (Sprint 3 -- does not hang, no raw backend error t
   it("shows an honest empty state for a real tenant with no loaded mailbox messages", () => {
     expect(source).toContain("Connect Gmail or Microsoft above, then load your inbox to see real messages here.");
   });
+
+  it("Agentic Infrastructure Phase 1 (2026-07-30): Agent Connections panel talks to the real /api/agents/connections endpoint, gated to admins, and warns about no approval step", () => {
+    expect(source).toContain("<AgentConnectionsPanel />");
+    expect(source).toContain('fetch("/api/agents/connections"');
+    expect(source).toContain('["Super Admin", "Organization Admin"].includes(session.user.role)');
+    expect(source).toContain("no human approval step");
+    expect(source).toContain("shown once below and never stored");
+  });
 });
