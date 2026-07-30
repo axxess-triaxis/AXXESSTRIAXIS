@@ -181,8 +181,8 @@ export const AIWorkspaceSection = () => {
 
   const QUERY_TIMEOUT_MS = 20_000;
 
-  async function askGovernedQuestion() {
-    const question = input.trim();
+  async function askGovernedQuestion(overrideQuestion?: string) {
+    const question = (overrideQuestion ?? input).trim();
     if (!question) return;
 
     setQuerying(true);
@@ -460,7 +460,13 @@ export const AIWorkspaceSection = () => {
                   "Identify missing documents",
                   "Generate board note",
                 ].map((suggestion) => (
-                  <button key={suggestion} className="text-[11px] text-[#5F6B73] border border-[rgba(0,0,0,0.1)] px-2.5 py-1 rounded-full hover:border-[#8B1E2D] hover:text-[#8B1E2D] transition-colors">
+                  <button
+                    key={suggestion}
+                    type="button"
+                    disabled={querying}
+                    onClick={() => { setInput(suggestion); void askGovernedQuestion(suggestion); }}
+                    className="text-[11px] text-[#5F6B73] border border-[rgba(0,0,0,0.1)] px-2.5 py-1 rounded-full hover:border-[#8B1E2D] hover:text-[#8B1E2D] transition-colors disabled:cursor-not-allowed disabled:opacity-60"
+                  >
                     {suggestion}
                   </button>
                 ))}
@@ -470,6 +476,12 @@ export const AIWorkspaceSection = () => {
                 <input
                   value={input}
                   onChange={(event) => setInput(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                      void askGovernedQuestion();
+                    }
+                  }}
                   placeholder="Ask AXXESS about portfolios, approvals, risks, or cited institutional documents"
                   className="flex-1 bg-transparent text-sm text-[#0F1117] placeholder:text-[#5F6B73] outline-none"
                 />
