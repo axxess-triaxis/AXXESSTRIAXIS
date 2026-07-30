@@ -20,7 +20,6 @@ import { useGoldenPathDisplayMode } from "../../hooks/useGoldenPathDisplayMode";
 import { applicationServices } from "../../providers/serviceProvider";
 import { tenantScopeFromUser } from "../../repositories/supabaseEnterpriseRepositories";
 import { useAnalytics } from "../../services/analytics";
-import { getAiRouterStatusSnapshot } from "../../services/ai/router/aiRouter";
 import { languageCoverage } from "../../services/nlp/modelRegistry";
 import { answerWithGovernedRag, type RagAnswer } from "../../services/rag/governedRag";
 import { summarizeConfidenceExplanation } from "../../services/rag/confidenceExplanation";
@@ -42,7 +41,8 @@ import {
   Users,
 } from "lucide-react";
 
-const aiRouterStatus = getAiRouterStatusSnapshot();
+type AiRouterProviderStatus = { name: string; displayName: string; configured: boolean; status: string };
+type AiRouterStatus = { mode: string; defaultProvider: string; configuredCount: number; providers: AiRouterProviderStatus[] };
 
 // Illustrative content for the investor-demo experience only -- gated behind isDemoModeEnabled()
 // everywhere it's used. A real tenant must never see this presented as a live AI answer.
@@ -130,6 +130,27 @@ export const AIWorkspaceSection = () => {
   const [reviewing, setReviewing] = useState(false);
   const [reviewMessage, setReviewMessage] = useState<string | null>(null);
   const [ragAnswer, setRagAnswer] = useState<LiveRagAnswer>(() => initialRagAnswer());
+  const [routerStatus, setRouterStatus] = useState<AiRouterStatus | null>(null);
+
+  // 2026-07-30: this used to call getAiRouterStatusSnapshot() directly at module load -- a server
+  // function reading process.env.OPENAI_API_KEY etc. -- but this component runs client-side, where
+  // non-NEXT_PUBLIC_ env vars are never available (stripped at build time). It always reported
+  // every remote provider "missing_credentials" and mode "demo" regardless of real production
+  // configuration. GET /api/ai/model-policy already computes this server-side and already exists
+  // (used elsewhere for AI policy preview) -- fetching it here is the fix, not new infrastructure.
+  useEffect(() => {
+    if (!session.user) return;
+    let isMounted = true;
+    fetch("/api/ai/model-policy", { credentials: "include", cache: "no-store" })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data: { router?: AiRouterStatus } | null) => {
+        if (isMounted && data?.router) setRouterStatus(data.router);
+      })
+      .catch(() => undefined);
+    return () => {
+      isMounted = false;
+    };
+  }, [session.user]);
 
   useEffect(() => {
     // TP-2 (2026-07-28): this used to fire unconditionally for every tenant, running a
@@ -477,27 +498,33 @@ export const AIWorkspaceSection = () => {
         <div className="space-y-4">
           <Card className="p-4">
             <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-[#0F1117]">AI Router</h3>
-            <div className="grid grid-cols-2 gap-2">
-              {[
-                ["Mode", aiRouterStatus.mode],
-                ["Default", aiRouterStatus.defaultProvider],
-                ["Remote", aiRouterStatus.configuredCount],
-                ["Providers", aiRouterStatus.providers.length],
-              ].map(([label, value]) => (
-                <div key={label} className="rounded-lg bg-[#F8F9FA] p-2">
-                  <div className="font-mono text-[10px] uppercase text-[#5F6B73]">{label}</div>
-                  <div className="mt-1 text-sm font-semibold text-[#0F1117]">{value}</div>
+            {routerStatus ? (
+              <>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    ["Mode", routerStatus.mode],
+                    ["Default", routerStatus.defaultProvider],
+                    ["Remote", routerStatus.configuredCount],
+                    ["Providers", routerStatus.providers.length],
+                  ].map(([label, value]) => (
+                    <div key={label} className="rounded-lg bg-[#F8F9FA] p-2">
+                      <div className="font-mono text-[10px] uppercase text-[#5F6B73]">{label}</div>
+                      <div className="mt-1 text-sm font-semibold text-[#0F1117]">{value}</div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-            <div className="mt-3 space-y-1.5">
-              {aiRouterStatus.providers.slice(0, 4).map((provider) => (
-                <div key={provider.name} className="flex items-center justify-between text-[11px]">
-                  <span className="font-medium text-[#0F1117]">{provider.displayName}</span>
-                  <span className={provider.configured ? "text-emerald-700" : "text-[#5F6B73]"}>{provider.status}</span>
+                <div className="mt-3 space-y-1.5">
+                  {routerStatus.providers.slice(0, 4).map((provider) => (
+                    <div key={provider.name} className="flex items-center justify-between text-[11px]">
+                      <span className="font-medium text-[#0F1117]">{provider.displayName}</span>
+                      <span className={provider.configured ? "text-emerald-700" : "text-[#5F6B73]"}>{provider.status}</span>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+              </>
+            ) : (
+              <p className="text-[11px] text-[#5F6B73]">Loading real router status&hellip;</p>
+            )}
           </Card>
 
           <Card className="p-4">

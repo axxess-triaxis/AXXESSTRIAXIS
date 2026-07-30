@@ -30,4 +30,16 @@ describe("AIWorkspaceSection (Sprint 3 -- does not hang, no raw backend error te
     const precedingBlock = source.slice(Math.max(0, queryIndex - 400), queryIndex);
     expect(precedingBlock).toContain('getRuntimeMode(Boolean(session.user)) !== "demo"');
   });
+
+  it("2026-07-30: the AI Router panel fetches real status server-side instead of calling a server-env function from client code (always reported missing_credentials in production)", () => {
+    // Regression: getAiRouterStatusSnapshot() reads process.env.OPENAI_API_KEY etc. directly. This
+    // component has no "use client" of its own and renders inside the app's client shell, so a
+    // module-level call ran in the browser, where non-NEXT_PUBLIC_ env vars are never present --
+    // every remote provider always reported "missing_credentials" and mode always "demo",
+    // regardless of real production configuration. Confirmed live 2026-07-30.
+    expect(source).not.toContain('from "../../services/ai/router/aiRouter"');
+    expect(source).not.toMatch(/const aiRouterStatus = /);
+    expect(source).toContain('fetch("/api/ai/model-policy"');
+    expect(source).toContain("setRouterStatus(data.router)");
+  });
 });
