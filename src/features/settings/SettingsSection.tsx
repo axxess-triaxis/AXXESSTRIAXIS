@@ -15,7 +15,7 @@ import { tenantScopeFromUser } from "../../repositories/supabaseEnterpriseReposi
 import { markPostDemoSatisfactionPromptPending } from "../../hooks/usePostDemoSatisfactionPrompt";
 import { useAnalytics } from "../../services/analytics";
 import { getPilotIntegrations } from "../../services/integrations/pluginRegistry";
-import { Building2, Calendar, Check, CheckCircle2, Database, FileText, HardDrive, MessageSquare, RotateCcw, Save, Send, Settings, ShieldCheck, Sparkles, UserPlus, Video, X, XCircle } from "lucide-react";
+import { Building2, Calendar, Check, CheckCircle2, Database, FileSpreadsheet, FileText, Github, HardDrive, Layers, MessageCircle, MessageSquare, Presentation, RotateCcw, Save, Send, Settings, ShieldCheck, Sparkles, UserPlus, Video, X, XCircle } from "lucide-react";
 
 // SA-3 (2026-07-29): "AI Configuration" removed entirely -- founder's own words, "I don't think
 // this tab is user relevant anymore with OpenRouter coming in" (routing is now a single unified
@@ -148,6 +148,12 @@ const quickConnectIcons: Record<string, typeof MessageSquare> = {
   zoom: Video,
   teams: Video,
   google_drive: HardDrive,
+  linear: Layers,
+  github: Github,
+  google_sheets: FileSpreadsheet,
+  google_docs: FileText,
+  google_slides: Presentation,
+  whatsapp_business: MessageCircle,
 };
 
 function IntegrationsQuickConnectPanel() {
@@ -181,6 +187,11 @@ function IntegrationsQuickConnectPanel() {
             {plugin.id === "calendly" && (
               <p className="mb-3 rounded-lg bg-amber-50 px-2.5 py-2 text-[11px] leading-relaxed text-amber-800">
                 Calendly&apos;s API requires a Standard plan or higher on the account you connect -- it isn&apos;t available on Calendly&apos;s free tier. This is a cost on your own Calendly subscription, not an AXXESS charge.
+              </p>
+            )}
+            {plugin.id === "whatsapp_business" && (
+              <p className="mb-3 rounded-lg bg-amber-50 px-2.5 py-2 text-[11px] leading-relaxed text-amber-800">
+                Requires a Meta Business Manager account with a verified, provisioned WhatsApp Business Account (WABA) and Meta App Review approval -- connecting here alone does not complete WhatsApp Business setup.
               </p>
             )}
             {canConnect ? (
