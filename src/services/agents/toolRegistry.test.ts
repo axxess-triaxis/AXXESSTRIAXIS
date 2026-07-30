@@ -6,6 +6,8 @@ const state = {
   documentPermissions: [] as unknown[],
   taskInsertResponse: [] as unknown[],
   projects: [] as unknown[],
+  meetings: [] as unknown[],
+  stakeholders: [] as unknown[],
   calls: [] as Array<{ table: string; options: Record<string, unknown> }>,
 };
 
@@ -18,8 +20,15 @@ vi.mock("../../repositories/supabaseAdmin", () => ({
     if (table === "document_permissions") return state.documentPermissions;
     if (table === "tasks") return state.taskInsertResponse;
     if (table === "projects") return state.projects;
+    if (table === "meetings") return state.meetings;
+    if (table === "stakeholders") return state.stakeholders;
     return undefined;
   },
+}));
+
+const routeAiRequestMock = vi.fn();
+vi.mock("../ai/router/aiRouter", () => ({
+  routeAiRequest: (...args: unknown[]) => routeAiRequestMock(...args),
 }));
 
 import { agentToolRegistry, getAgentTool } from "./toolRegistry";
@@ -29,7 +38,7 @@ const scope: AgentScope = {
   organizationId: "org-1",
   agentConnectionId: "conn-1",
   provider: "anthropic",
-  capabilities: ["create_task", "query_knowledge_hub", "list_projects"],
+  capabilities: ["create_task", "query_knowledge_hub", "list_projects", "create_meeting", "create_project", "list_stakeholders", "create_stakeholder", "query_external_model"],
   issuedByUserId: "user-1",
   issuedByRole: "Organization Admin",
 };
@@ -45,16 +54,28 @@ describe("agentToolRegistry", () => {
     state.documentPermissions = [];
     state.taskInsertResponse = [];
     state.projects = [];
+    state.meetings = [];
+    state.stakeholders = [];
     state.calls = [];
+    routeAiRequestMock.mockReset();
     vi.clearAllMocks();
   });
 
-  it("registers exactly the 3 Phase 1 tools with matching required capabilities", () => {
-    expect(agentToolRegistry.map((tool) => tool.name).sort()).toEqual(["create_task", "list_projects", "query_knowledge_hub"]);
-    expect(getAgentTool("create_task")?.requiredCapability).toBe("create_task");
-    expect(getAgentTool("query_knowledge_hub")?.requiredCapability).toBe("query_knowledge_hub");
-    expect(getAgentTool("list_projects")?.requiredCapability).toBe("list_projects");
+  it("registers exactly the 3 Phase 1 tools (auto) plus the 5 Phase 2 tools (critical, except list_stakeholders)", () => {
+    expect(agentToolRegistry.map((tool) => tool.name).sort()).toEqual([
+      "create_meeting", "create_project", "create_stakeholder", "create_task",
+      "list_projects", "list_stakeholders", "query_external_model", "query_knowledge_hub",
+    ]);
     expect(getAgentTool("nonexistent")).toBeUndefined();
+
+    const autoTools = ["create_task", "query_knowledge_hub", "list_projects", "list_stakeholders"];
+    const criticalTools = ["create_meeting", "create_project", "create_stakeholder", "query_external_model"];
+    for (const name of autoTools) expect(getAgentTool(name)?.criticality).toBe("auto");
+    for (const name of criticalTools) expect(getAgentTool(name)?.criticality).toBe("critical");
+
+    for (const tool of agentToolRegistry) {
+      expect(tool.requiredCapability).toBe(tool.name);
+    }
   });
 
   it("create_task rejects a missing title without hitting Supabase", async () => {
@@ -151,5 +172,98 @@ describe("agentToolRegistry", () => {
     const answer = resultJson(result) as { sources: unknown[]; humanReviewRequired: boolean };
     expect(answer.sources).toHaveLength(0);
     expect(answer.humanReviewRequired).toBe(true);
+  });
+
+  it("create_meeting rejects a missing title/startsAt without hitting Supabase", async () => {
+    const result = await getAgentTool("create_meeting")!.handler(scope, { title: "Kickoff" });
+    expect(result.isError).toBe(true);
+    expect(state.calls).toHaveLength(0);
+  });
+
+  it("create_meeting inserts a real meeting row, organization-scoped, honest empty defaults, attributed to the issuing admin", async () => {
+    state.meetings = [{
+      id: "meeting-1", organization_id: "org-1", project_id: null, program_id: null, stakeholder_id: null,
+      title: "Pilot kickoff", starts_at: "2026-08-01T10:00:00.000Z", ends_at: null,
+      attendee_ids: [], agenda: null, notes: null, decisions: [], action_items: [], status: "scheduled",
+    }];
+
+    const result = await getAgentTool("create_meeting")!.handler(scope, { title: "Pilot kickoff", startsAt: "2026-08-01T10:00:00.000Z" });
+
+    expect(result.isError).toBeUndefined();
+    const body = state.calls[0].options.body as Record<string, unknown>;
+    expect(state.calls[0].table).toBe("meetings");
+    expect(body.organization_id).toBe("org-1");
+    expect(body.status).toBe("scheduled");
+    expect(body.decisions).toEqual([]);
+    expect(body.created_by_user_id).toBe("user-1");
+    expect(resultJson(result).id).toBe("meeting-1");
+  });
+
+  it("create_project rejects a missing name without hitting Supabase", async () => {
+    const result = await getAgentTool("create_project")!.handler(scope, {});
+    expect(result.isError).toBe(true);
+    expect(state.calls).toHaveLength(0);
+  });
+
+  it("create_project inserts a real project row with honest starting defaults (progress 0, status planning)", async () => {
+    state.projects = [{
+      id: "proj-2", organization_id: "org-1", program_id: null, name: "Barpeta rollout",
+      description: null, owner_id: "user-1", progress: 0, risk_level: "medium", priority: "medium",
+      status: "planning", start_date: null, due_date: null, tags: [],
+    }];
+
+    const result = await getAgentTool("create_project")!.handler(scope, { name: "Barpeta rollout" });
+
+    const body = state.calls[0].options.body as Record<string, unknown>;
+    expect(state.calls[0].table).toBe("projects");
+    expect(body.progress).toBe(0);
+    expect(body.status).toBe("planning");
+    expect(body.owner_id).toBe("user-1");
+    expect(resultJson(result).id).toBe("proj-2");
+  });
+
+  it("list_stakeholders reads only the caller's organization", async () => {
+    state.stakeholders = [{ id: "sh-1", organization_id: "org-1", name: "Dr. Purnima Bora", affiliation: "Mission Secretariat", relationship_owner_id: null, influence_score: 0, engagement_level: "unrated" }];
+
+    const result = await getAgentTool("list_stakeholders")!.handler(scope, {});
+
+    const query = state.calls[0].options.query as URLSearchParams;
+    expect(query.get("organization_id")).toBe("eq.org-1");
+    const stakeholders = resultJson(result) as unknown as Array<{ name: string }>;
+    expect(stakeholders[0].name).toBe("Dr. Purnima Bora");
+  });
+
+  it("create_stakeholder rejects a missing name without hitting Supabase", async () => {
+    const result = await getAgentTool("create_stakeholder")!.handler(scope, {});
+    expect(result.isError).toBe(true);
+    expect(state.calls).toHaveLength(0);
+  });
+
+  it("create_stakeholder defaults to honest unrated/zero-influence, never a fabricated mid-point", async () => {
+    state.stakeholders = [{ id: "sh-2", organization_id: "org-1", name: "New Contact", affiliation: null, relationship_owner_id: "user-1", influence_score: 0, engagement_level: "unrated" }];
+
+    await getAgentTool("create_stakeholder")!.handler(scope, { name: "New Contact" });
+
+    const body = state.calls[0].options.body as Record<string, unknown>;
+    expect(body.influence_score).toBe(0);
+    expect(body.engagement_level).toBe("unrated");
+  });
+
+  it("query_external_model rejects a missing prompt without calling routeAiRequest", async () => {
+    const result = await getAgentTool("query_external_model")!.handler(scope, {});
+    expect(result.isError).toBe(true);
+    expect(routeAiRequestMock).not.toHaveBeenCalled();
+  });
+
+  it("query_external_model reuses the real routeAiRequest, no new AI-calling code", async () => {
+    routeAiRequestMock.mockResolvedValue({ answer: "42", providerUsed: "kimi", humanReviewRequired: false });
+
+    const result = await getAgentTool("query_external_model")!.handler(scope, { prompt: "What is the answer?" });
+
+    expect(routeAiRequestMock).toHaveBeenCalledWith(expect.objectContaining({
+      prompt: "What is the answer?",
+      context: expect.objectContaining({ organizationId: "org-1", userId: "user-1", userRole: "Organization Admin" }),
+    }));
+    expect(resultJson(result).answer).toBe("42");
   });
 });

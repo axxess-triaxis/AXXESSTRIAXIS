@@ -172,3 +172,178 @@ actually consume it (Phase 2 scope, see Access Model above).
   every connection currently gets all 3.
 - Microsoft Copilot Studio's own connector/manifest adapter does not exist yet -- a Copilot admin
   cannot yet configure this MCP server from within Copilot Studio without Phase 2 work.
+
+## A-79: Agentic Actionables Pop-up Requirement
+
+Founder policy decision (2026-07-30): every agentic orchestration that produces a synthesis,
+insight, optimization recommendation, summary, or informational answer should immediately offer a
+next-action prompt to the user instead of ending at passive output.
+
+Required UX pattern:
+
+> What do you want me to do with this, `{firstName}`?
+
+The first name must come from the authenticated user's profile/session when available. If the first
+name is unavailable, use a neutral fallback that does not expose demo or placeholder identity.
+
+Required action options:
+
+1. Create or edit task
+2. Set up, modify, or reschedule meeting
+3. Create or edit reminder
+4. Create or edit program
+5. Create or edit project
+6. Save stakeholder mapping matrix
+7. Store insights in Notion
+8. Make analytics dashboard
+9. Create slides/PPT
+10. Create doc/Notion
+11. Create Sheets/Excel
+12. Integrate into next query
+13. Other -- user provides free-text instruction
+14. Nothing for now, thank you
+
+Second-step confirmation requirement:
+
+After the user chooses one of the action options above, the app must open a second, action-specific
+confirmation pop-up before routing or writing anything. The second pop-up should use language
+appropriate to the selected action, for example:
+
+- Task / project / program / document / sheet / slide actions: `Create` / `Edit`
+- Meeting actions: `Create` / `Cancel` / `Reschedule`
+- Reminder actions: `Create` / `Edit`
+- Stakeholder or insight-capture actions: `Store` / `Note for now`
+- Binary approval-style actions: `Yes` / `No`
+- Free-text `Other`: ask the user what they want done, then confirm before taking action
+- `Nothing for now, thank you`: dismiss without routing or writing
+
+The second-step choice must route the user to the correct workspace or open the correct creation
+surface:
+
+- tasks -> Tasks & Workflow
+- meetings -> Meetings & Decisions
+- reminders -> the current reminder/task-reminder surface, or an honest pending state if not yet
+  available
+- programs/projects -> Projects & Programs
+- stakeholder mapping -> Stakeholders & CRM
+- analytics dashboard -> Analytics & Reports
+- slides/PPT -> the slide/export surface when available, otherwise honest pending/export state
+- documents/Notion -> Documents & Files, Knowledge Hub, or Notion integration depending on action
+- sheets/Excel -> spreadsheet/export surface when available, otherwise honest pending/export state
+- integrate into next query -> AI Workspace with the selected output carried as structured context
+
+Implementation notes for the next sprint:
+
+- This should apply to agentic/RAG/AI outputs that create useful work product, not to every
+  low-level API response.
+- It should be role- and tenant-aware: options that require unavailable integrations or permissions
+  should be disabled with an honest reason, not silently shown as working.
+- It should reuse existing creation paths wherever possible: tasks, meetings, projects, programs,
+  stakeholder notes, documents, spreadsheets, slides, dashboards, and Notion storage.
+- It should not auto-create records without user confirmation.
+- The second-step confirmation must occur before any write, route transition, export, or external
+  integration handoff that changes state.
+- It should audit the user's selected follow-up action.
+- It should support "Integrate into next query" by carrying the selected output forward as
+  structured context for the next AI/RAG request.
+- It should treat "Nothing for now, thank you" as an explicit close/dismiss action, not a failure.
+
+Status: **New actionable, not implemented in Phase 1.** This is a Phase 2/next-sprint workflow layer
+on top of the Phase 1 MCP/agent infrastructure.
+
+## Standing Acceptance Criteria for Agentic Action Follow-through
+
+Founder acceptance rule (2026-07-30, amended same day), applies to A-79 and future agentic
+workflow actionables:
+
+1. Claude Code / Codex first checks off the item after implementation and verification, marking
+   whether the user-facing request is fully responded to at code/test level.
+2. The founder performs a live walkthrough in the deployed product.
+3. Any issues, bugs, stale data, placeholders, dead ends, confusing copy, routing failures, missing
+   audit rows, or tenant/demo leakage found during walkthrough are logged as actionables.
+4. Claude Code / Codex debugs and performs the required remediation: UX optimization, stale-data
+   cleanup, placeholder cleanup, screen/flow transition fixes, routing fixes, failure-state fixes,
+   and any other required rectification.
+5. The founder performs any required re-check and explicitly signs off before the issue is closed.
+6. Claude Code / Codex closes the issue only after documenting the whole process, steps, evidence,
+   decisions, and rationale in a closeout document.
+
+Therefore, no A-79-related feature should be marked `Yes` merely because code, tests, lint, and
+build pass. It may be marked code-complete or blocked-pending-HITL, but final closure requires live
+walkthrough, remediation of found issues, founder sign-off, and a closeout document.
+
+## A-78 Extension: Approval/Always-Allow Gating & Additional Agent Tools (2026-07-30)
+
+Scoped and built the same day as A-78's initial rollout prep, under the same Plan Mode discipline
+(a dedicated plan was reviewed and approved before implementation -- see the approved plan for
+`AGENTIC_RISK_REGISTER_2026_07_30.md`'s "Overbroad tool access" and "Auto-action without consent"
+rows, both of which this closes). This is **not** A-79 (the Agentic Actionables pop-up UX layer) --
+it is backend infrastructure A-79 will eventually call into for several of its 14 action options
+(create/edit task, set up meeting, create/edit project, save stakeholder mapping matrix), matching
+`CONNECTOR_CREDENTIAL_READINESS_MATRIX_2026_07_30.md`'s and the Rollout Runbook's own framing of
+this as part of "the final committed agentic batch" for A-78, not a separately numbered actionable.
+
+### What changed
+
+- **Approval/Always-Allow gating** (the core deliverable): a new `agent_action_grants` table
+  (`supabase/migrations/20260730130000_agent_action_grants.sql`, RLS service-role-only, mirrors
+  `agent_connections`'s access model) plus `src/services/agents/agentGrantsRepository.ts`
+  (`hasGrant`/`createGrant`/`listGrants`/`revokeGrant`). Every `McpToolDefinition`
+  (`src/services/agents/toolRegistry.ts`) now carries a `criticality: "auto" | "critical"` field.
+  The MCP route (`src/app/api/agents/mcp/route.ts`) checks for an active grant before executing a
+  critical tool; with none, it writes a real `approval_requests` row (reusing, not duplicating, the
+  existing repository) and returns `pending_approval` instead of executing.
+- **The missing decide/approve/reject mutation, now added**: `approvalRequestsRepository` gained a
+  `.decide()` method (`src/repositories/workflowActionRepositories.ts`) and a new route
+  `PATCH /api/approvals/[id]` -- previously `approval_requests` only had list/create, and
+  `ApprovalsSection.tsx`'s live table had no action buttons at all (its demo-mode illustrative
+  cards had Approve/Reject touching only local state, correctly, since that's demo content -- the
+  live table itself was missing real actions entirely). Real Approve/Reject buttons now exist on
+  the live table, including an "Approve + always allow" option for agent-originated approvals that
+  creates a grant.
+- **4 new critical tools + 1 unchanged auto tool re-classified for clarity**:
+  `create_meeting`, `create_project`, `create_stakeholder` (all critical -- real-world-visible
+  writes), `list_stakeholders` (auto -- read-only), and `query_external_model` (critical -- reuses
+  `routeAiRequest()`, the exact same OpenRouter-backed router `/api/ai` already uses, unchanged --
+  no new AI-calling code). `create_task`/`query_knowledge_hub`/`list_projects` (A-78 Phase 1) stay
+  `auto`, unchanged behavior.
+- **Settings UI**: `AgentConnectionsPanel` (`IntegrationsSection.tsx`) gained an "Always-allowed
+  tools" sub-panel per connection with a revoke action, so grants are never invisible.
+- **A real bug found and fixed in passing**: `ApprovalsSection.tsx`'s `scope` was rebuilt fresh on
+  every render (not memoized), so its data-fetch effect refired on every re-render, including the
+  one a real decide action causes -- silently clobbering the optimistic UI update back to stale
+  data. Fixed with `useMemo`, caught by a real (not mocked-away) test.
+
+### What did not change / explicitly deferred
+
+- `create_program` -- `ProgramsRepository` has no insert path in this codebase at all
+  (`TenantRepository<Program>`, not `MutableTenantRepository`); adding one is a product decision
+  (should programs be independently agent-creatable, or only via a higher-level workflow?) out of
+  scope here.
+- Full integration-calling (Slack send, HubSpot create, etc.) and real analytics-dashboard
+  aggregation remain out of scope, per the same reasoning as A-78's original policy doc above --
+  zero existing outbound-action code for any catalogued provider, and analytics data is still
+  fixture-only for live tenants.
+- Grant expiry/periodic review -- `AGENTIC_RISK_REGISTER_2026_07_30.md`'s "Stale grants /
+  always-allow risk" row flags this correctly: grants persist indefinitely once created, revoke is
+  manual-only, there is no expiry timestamp or review-reminder UI. Real, named, tracked gap --
+  `revokeGrant` exists and is tested, but nothing prompts a periodic re-review.
+
+### Verification (evidence, not "should work")
+
+- `pnpm run typecheck`, `pnpm --dir apps/mobile run typecheck`, `pnpm run lint`
+  (`eslint . --max-warnings=0`), `pnpm run build`, `pnpm run supabase:verify` -- all exit 0.
+- `pnpm run test` (`vitest run --config vitest.config.mjs`) -- **178 test files passed, 753 tests
+  passed** (up from A-78's 171/707; +7 new/extended test files, +46 tests covering: grant
+  hash/upsert/revoke behavior, the `.decide()` mutation (approve/reject, org-scoped, missing-row
+  and admin-not-configured failure paths), the new PATCH endpoint's admin-only gating and
+  conditional grant creation, the MCP route's grant-check/pending-approval/executes-when-granted
+  branches, each new tool's insert shape and honest defaults, and the real `ApprovalsSection`
+  decide-button behavior including the memoization fix above).
+- **Not done this pass, matching A-78's own standing rule**: this code is **uncommitted**. Per
+  `AGENTIC_PHASE1_PRODUCTION_ROLLOUT_RUNBOOK_2026_07_30.md`'s Step 1 ("Confirm Clean Commit... no
+  uncommitted code in `src/app/api/agents`... no uncommitted agent migration"), this extension is
+  not yet part of a state the rollout runbook can be run against. No live migration, no deploy, no
+  live MCP verification of the grant/approval path has been attempted -- flagged honestly, not
+  fabricated, matching the exact discipline `YC_INVESTOR_AGENTIC_EVIDENCE_UPDATE_2026_07_30.md`
+  already states for A-78 itself.

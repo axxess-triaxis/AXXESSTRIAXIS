@@ -7,7 +7,20 @@ describe("agentScope", () => {
   });
 
   it("lists exactly the 3 tools Phase 1 ships as capabilities", () => {
-    expect(allAgentCapabilities).toEqual(["create_task", "query_knowledge_hub", "list_projects"]);
+    expect(allAgentCapabilities).toEqual(expect.arrayContaining(["create_task", "query_knowledge_hub", "list_projects"]));
+  });
+
+  it("Phase 2 (2026-07-30): lists the 5 new capabilities alongside Phase 1's, still every-tool-granted (no per-tenant toggle UI yet)", () => {
+    expect(allAgentCapabilities).toEqual([
+      "create_task",
+      "query_knowledge_hub",
+      "list_projects",
+      "create_meeting",
+      "create_project",
+      "list_stakeholders",
+      "create_stakeholder",
+      "query_external_model",
+    ]);
   });
 
   it("reports capability membership without mutating the scope", () => {
