@@ -14,8 +14,10 @@ import { applicationServices } from "../../providers/serviceProvider";
 import { tenantScopeFromUser } from "../../repositories/supabaseEnterpriseRepositories";
 import { markPostDemoSatisfactionPromptPending } from "../../hooks/usePostDemoSatisfactionPrompt";
 import { useAnalytics } from "../../services/analytics";
-import { getPilotIntegrations } from "../../services/integrations/pluginRegistry";
-import { Building2, Calendar, Check, CheckCircle2, Database, FileSpreadsheet, FileText, Github, HardDrive, Layers, MessageCircle, MessageSquare, Presentation, RotateCcw, Save, Send, Settings, ShieldCheck, Sparkles, UserPlus, Video, X, XCircle } from "lucide-react";
+import { getProductivityPluginRegistry } from "../../services/integrations/pluginRegistry";
+import { BrandIcon } from "../../components/ui/BrandIcon";
+import { brandIcons } from "../../components/ui/brandIcons";
+import { Building2, Calendar, Check, CheckCircle2, CheckSquare, Cloud, Database, FileSignature, FileSpreadsheet, FileText, Github, HardDrive, IndianRupee, Kanban, Layers, ListTodo, MessageCircle, MessageSquare, Presentation, RotateCcw, Save, Send, Settings, ShieldCheck, Sparkles, UserPlus, Video, X, XCircle } from "lucide-react";
 
 // SA-3 (2026-07-29): "AI Configuration" removed entirely -- founder's own words, "I don't think
 // this tab is user relevant anymore with OpenRouter coming in" (routing is now a single unified
@@ -138,6 +140,9 @@ export const SettingsSection = () => {
   );
 };
 
+// Fallback for the providers simple-icons has no accurate mark for (brand-owner takedown
+// history -- see brandIcons.ts) or that aren't in the icon library at all. Real brandIcons.ts
+// entries take priority over this map wherever both exist.
 const quickConnectIcons: Record<string, typeof MessageSquare> = {
   slack: MessageSquare,
   calendly: Calendar,
@@ -147,6 +152,7 @@ const quickConnectIcons: Record<string, typeof MessageSquare> = {
   google_calendar: Calendar,
   zoom: Video,
   teams: Video,
+  outlook: FileText,
   google_drive: HardDrive,
   linear: Layers,
   github: Github,
@@ -154,32 +160,44 @@ const quickConnectIcons: Record<string, typeof MessageSquare> = {
   google_docs: FileText,
   google_slides: Presentation,
   whatsapp_business: MessageCircle,
+  jira: Kanban,
+  trello: ListTodo,
+  asana: CheckSquare,
+  salesforce: Cloud,
+  docusign: FileSignature,
+  razorpay: IndianRupee,
 };
 
 function IntegrationsQuickConnectPanel() {
   const { session } = useAuth();
-  // Per PRE_DEMO_ACTIONABLES.md A13/A14/A15: Settings surfaces only the connectors this release
-  // actually ships a working connect flow for, not the full integrations catalogue (that full
-  // catalogue lives at /integrations, split into pilot vs. infrastructure-only). Email connectors
-  // (Gmail, Microsoft) get their own dedicated card in IntegrationsSection.tsx instead of this
-  // generic quick-connect grid, so they're excluded here.
-  const quickConnectPlugins = getPilotIntegrations().filter((plugin) => plugin.id !== "gmail" && plugin.id !== "outlook");
+  // 2026-07-30: previously showed only pilot-enabled connectors, excluding Gmail/Outlook entirely
+  // (they had no card anywhere on this tab) -- founder flagged the tab as "looking patchy" with
+  // integrations missing. Now shows the full catalogue so nothing is silently absent; each tile's
+  // badge honestly reflects its real state (configured / gated on credentials / not yet built) so
+  // a "coming soon" tile is never presented as connectable.
+  const quickConnectPlugins = getProductivityPluginRegistry();
   const canConnect = Boolean(session.user && ["Super Admin", "Organization Admin"].includes(session.user.role));
 
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
       {quickConnectPlugins.map((plugin) => {
-        const Icon = quickConnectIcons[plugin.id] ?? MessageSquare;
+        const brandIcon = brandIcons[plugin.id];
+        const FallbackIcon = quickConnectIcons[plugin.id] ?? MessageSquare;
+        const badge = plugin.configured
+          ? { tone: "bg-emerald-50 text-emerald-700", label: "configured" }
+          : plugin.pilotEnabled
+            ? { tone: "bg-amber-50 text-amber-700", label: "provider-gated for production credentials" }
+            : { tone: "bg-gray-100 text-gray-600", label: "catalogued -- not yet available" };
         return (
           <Card key={plugin.id} className="p-5">
             <div className="mb-3 flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#8B1E2D]/8 text-[#8B1E2D]">
-                <Icon size={18} />
+                {brandIcon ? <BrandIcon icon={brandIcon} size={20} /> : <FallbackIcon size={18} />}
               </div>
               <div>
                 <h3 className="text-sm font-semibold text-[#0F1117]">{plugin.name}</h3>
-                <span className={`mt-0.5 inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold ${plugin.configured ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"}`}>
-                  {plugin.configured ? "configured" : "provider-gated for production credentials"}
+                <span className={`mt-0.5 inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold ${badge.tone}`}>
+                  {badge.label}
                 </span>
               </div>
             </div>
@@ -194,7 +212,9 @@ function IntegrationsQuickConnectPanel() {
                 Requires a Meta Business Manager account with a verified, provisioned WhatsApp Business Account (WABA) and Meta App Review approval -- connecting here alone does not complete WhatsApp Business setup.
               </p>
             )}
-            {canConnect ? (
+            {!plugin.pilotEnabled ? (
+              <p className="text-[11px] text-[#5F6B73]">No connect flow ships yet for {plugin.name} -- tracked for a future release, not available to connect today.</p>
+            ) : canConnect ? (
               <a
                 href={`/api/connectors/oauth/start?provider=${plugin.id}`}
                 className="inline-flex items-center gap-2 rounded-lg border border-[rgba(139,30,45,0.22)] bg-white px-3 py-2 text-xs font-semibold text-[#8B1E2D] hover:bg-[#8B1E2D]/5"
