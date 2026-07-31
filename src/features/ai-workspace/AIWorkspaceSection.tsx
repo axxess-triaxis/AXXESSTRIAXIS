@@ -24,12 +24,9 @@ import { languageCoverage } from "../../services/nlp/modelRegistry";
 import { answerWithGovernedRag, type RagAnswer } from "../../services/rag/governedRag";
 import { summarizeConfidenceExplanation } from "../../services/rag/confidenceExplanation";
 import {
-  AlertTriangle,
-  ArrowUpRight,
   CalendarDays,
   Check,
   CheckCircle2,
-  CheckSquare,
   FileText,
   FolderKanban,
   Paperclip,
@@ -599,27 +596,6 @@ export const AIWorkspaceSection = () => {
                   <p className="mt-1 text-xs font-semibold leading-snug text-[#0F1117]">{source.title}</p>
                   <p className="mt-1 line-clamp-2 text-[11px] leading-relaxed text-[#5F6B73]">{source.excerpt}</p>
                 </div>
-              ))}
-            </div>
-          </Card>
-
-          <Card className="p-4">
-            <h3 className="text-xs font-semibold text-[#0F1117] uppercase tracking-wider mb-3">Session Actions</h3>
-            <div className="space-y-1.5">
-              {[
-                { label: "Generate District Action List", icon: CheckSquare, status: "ready" },
-                { label: "Schedule Secretariat Review", icon: CalendarDays, status: "ready" },
-                { label: "Create Approval Packet", icon: ShieldCheck, status: "pending-review" },
-                { label: "Update Risk Register", icon: AlertTriangle, status: "ready" },
-              ].map((action, i) => (
-                <button key={i} className="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-[#F2F3F5] transition-colors group">
-                  <div className="flex items-center gap-2">
-                    <action.icon size={13} className="text-[#5F6B73] group-hover:text-[#8B1E2D] transition-colors" />
-                    <span className="text-xs text-[#0F1117]">{action.label}</span>
-                  </div>
-                  {action.status === "pending-review" && <span className="text-[10px] text-amber-600 font-medium">Review req.</span>}
-                  {action.status === "ready" && <ArrowUpRight size={11} className="text-[#5F6B73] opacity-0 group-hover:opacity-100 transition-opacity" />}
-                </button>
               ))}
             </div>
           </Card>
