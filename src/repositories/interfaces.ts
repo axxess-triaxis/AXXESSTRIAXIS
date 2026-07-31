@@ -244,5 +244,4 @@ export type DocumentUploadExtractionResult = {
 
 export type DocumentFileUploadResult = {
   path: string;
-  extraction?: DocumentUploadExtractionResult;
 };

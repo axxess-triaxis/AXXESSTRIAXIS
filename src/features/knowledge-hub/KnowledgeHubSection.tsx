@@ -77,8 +77,9 @@ type UploadExtraction = {
 };
 
 // Honest post-upload status: only reports success when text was actually indexed. Extraction
-// running server-side inside /api/documents/upload (see documentTextExtraction.ts) never silently
-// indexes an empty or unsupported file -- this mirrors that back to the user.
+// (see documentTextExtraction.ts, called via POST /api/documents/extract once the file has
+// landed in storage) never silently indexes an empty or unsupported file -- this mirrors that
+// back to the user.
 function describeExtraction(extraction: UploadExtraction | undefined): string {
   if (!extraction) return "Uploaded. Indexing status unavailable.";
   if (!extraction.supported) {
@@ -93,6 +94,22 @@ function describeExtraction(extraction: UploadExtraction | undefined): string {
     return `Indexed for search (truncated to the first ${extraction.pagesProcessed ?? "N"} of ${extraction.totalPages ?? "?"} pages).`;
   }
   return "Indexed for search.";
+}
+
+async function extractUploadedDocument(input: { path: string; mimeType: string }): Promise<UploadExtraction | undefined> {
+  try {
+    const response = await fetch("/api/documents/extract", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    });
+    if (!response.ok) return undefined;
+    const payload = await response.json().catch(() => ({})) as { extraction?: UploadExtraction };
+    return payload.extraction;
+  } catch {
+    return undefined;
+  }
 }
 
 async function ingestExtractedText(input: {
@@ -351,7 +368,7 @@ export const KnowledgeHubSection = () => {
       };
 
       try {
-        const uploadResult = await applicationServices.storageRepository.uploadDocumentFile({ path: storagePath, file });
+        await applicationServices.storageRepository.uploadDocumentFile({ path: storagePath, file });
         const saved = await applicationServices.documentsRepository.create(scope, payload);
         await applicationServices.documentVersionsRepository.create(scope, {
           id: versionId,
@@ -369,7 +386,7 @@ export const KnowledgeHubSection = () => {
         }).catch(() => undefined);
         uploadedDocuments.push(saved);
 
-        const extraction = uploadResult.extraction as UploadExtraction | undefined;
+        const extraction = await extractUploadedDocument({ path: storagePath, mimeType: file.type || "application/octet-stream" });
         if (extraction?.supported && extraction.text.trim()) {
           try {
             await ingestExtractedText({
