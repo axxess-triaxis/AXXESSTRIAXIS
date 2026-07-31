@@ -81,6 +81,11 @@ describe("POST /api/documents/upload (chunk)", () => {
       expect(url).toBe(`https://example.supabase.co/storage/v1/object/axxess-documents/organizations/${orgId}/_upload-chunks/${validUploadId}/0`);
       expect(init?.method).toBe("POST");
       expect((init?.headers as Record<string, string>).Authorization).toBe("Bearer user-token");
+      // Real regression: the bucket's allowed_mime_types allowlist does not include
+      // "application/octet-stream" (the old default), so Supabase rejected every temp chunk write
+      // in production even though the final assembled object used the correct mimeType. The chunk
+      // write must use the real file mimeType too, not a generic default.
+      expect((init?.headers as Record<string, string>)["Content-Type"]).toBe("application/pdf");
       return new Response(JSON.stringify({ Key: "ok" }), { status: 200 });
     });
     vi.stubGlobal("fetch", fetchMock);

@@ -168,6 +168,13 @@ const quickConnectIcons: Record<string, typeof MessageSquare> = {
   razorpay: IndianRupee,
 };
 
+// pluginRegistry.ts's catalogue ids are display-only and don't all match connectorContract.ts's
+// real OAuth provider ids -- "outlook" is the one live mismatch (the OAuth contract calls it
+// "microsoft", since one Entra app registration backs both Outlook mail and Teams). Sending the
+// catalogue id straight through as ?provider= 404/400'd on connect. Everything else already
+// matches 1:1, so this only needs to remap the one known exception, not build a full alias table.
+const CONNECTOR_OAUTH_PROVIDER_ID: Record<string, string> = { outlook: "microsoft" };
+
 function IntegrationsQuickConnectPanel() {
   const { session } = useAuth();
   // 2026-07-30: previously showed only pilot-enabled connectors, excluding Gmail/Outlook entirely
@@ -216,7 +223,7 @@ function IntegrationsQuickConnectPanel() {
               <p className="text-[11px] text-[#5F6B73]">No connect flow ships yet for {plugin.name} -- tracked for a future release, not available to connect today.</p>
             ) : canConnect ? (
               <a
-                href={`/api/connectors/oauth/start?provider=${plugin.id}`}
+                href={`/api/connectors/oauth/start?provider=${CONNECTOR_OAUTH_PROVIDER_ID[plugin.id] ?? plugin.id}`}
                 className="inline-flex items-center gap-2 rounded-lg border border-[rgba(139,30,45,0.22)] bg-white px-3 py-2 text-xs font-semibold text-[#8B1E2D] hover:bg-[#8B1E2D]/5"
               >
                 Connect {plugin.name}

@@ -49,7 +49,11 @@ export async function POST(request: Request) {
 
   try {
     const chunkBytes = await request.arrayBuffer();
-    await putStorageObject(config, tempChunkPath(session.user.organizationId, uploadId, chunkIndex), chunkBytes, session.accessToken);
+    // The bucket's allowed_mime_types allowlist (202607040001_sprint9_knowledge_hub.sql) does not
+    // include "application/octet-stream" -- writing a temp chunk with that generic content-type
+    // gets rejected by Supabase Storage's own bucket policy. Use the real file's mimeType (already
+    // validated above) for the chunk write too, not just the final assembled object.
+    await putStorageObject(config, tempChunkPath(session.user.organizationId, uploadId, chunkIndex), chunkBytes, session.accessToken, mimeType);
     return NextResponse.json({ ok: true, chunkIndex });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unable to upload document chunk.";
