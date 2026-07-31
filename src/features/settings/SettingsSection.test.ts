@@ -73,3 +73,20 @@ describe("inviteUser (A-08/A-65 fix -- 'Send Invite' must actually send the invi
     expect(inviteBlock).toContain("not-configured");
   });
 });
+
+describe("Integrations quick-connect (outlook -> microsoft OAuth provider id, live-confirmed 2026-07-31)", () => {
+  // Real bug: pluginRegistry.ts's catalogue id for the Microsoft Outlook tile is "outlook" (a
+  // display-only id), but connectorContract.ts's real OAuth provider id for it is "microsoft"
+  // (one Entra app registration backs Outlook + Teams). The "Connect Microsoft Outlook" button
+  // built its link straight from the catalogue id, so GET /api/connectors/oauth/start?provider=
+  // outlook always 400'd ("Unsupported connector provider.") -- confirmed via live production
+  // logs, not assumed.
+  it("maps the display-only 'outlook' catalogue id to the real 'microsoft' OAuth provider id", () => {
+    expect(source).toContain('CONNECTOR_OAUTH_PROVIDER_ID: Record<string, string> = { outlook: "microsoft" }');
+  });
+
+  it("builds the connect link through the mapping, not the raw catalogue id", () => {
+    expect(source).toContain("href={`/api/connectors/oauth/start?provider=${CONNECTOR_OAUTH_PROVIDER_ID[plugin.id] ?? plugin.id}`}");
+    expect(source).not.toContain("href={`/api/connectors/oauth/start?provider=${plugin.id}`}");
+  });
+});
