@@ -1,53 +1,40 @@
 import type { AiProviderAdapter, AiProviderConfig } from "../types";
 import { checkProviderBudgetHeadroom, recordProviderSpend } from "../aiSpendGuard";
 
-// Model slugs and per-token pricing verified directly against openrouter.ai's own model pages
-// (2026-07-27) -- not guessed. Pricing is a point-in-time snapshot; OpenRouter pricing changes,
-// so this is read as "best known at implementation time," matching this program's own evidence
-// discipline (see GLOBAL_GTM_AI_ROUTER_ROADMAP_2026_07_27.md Non-Negotiables).
-const OPENROUTER_MODEL_SLUG: Partial<Record<AiProviderConfig["name"], string>> = {
-  kimi: "moonshotai/kimi-k2",
-  deepseek: "deepseek/deepseek-chat",
-};
+const OPENAI_ENDPOINT = "https://api.openai.com/v1/chat/completions";
+const OPENAI_MODEL = "gpt-4o-mini";
+const OPENAI_BUDGET_PROVIDER = "openai";
 
-const OPENROUTER_PRICING_PER_TOKEN: Partial<Record<AiProviderConfig["name"], { prompt: number; completion: number }>> = {
-  kimi: { prompt: 0.00000057, completion: 0.0000023 },
-  deepseek: { prompt: 0.0000002002, completion: 0.0000008001 },
-};
+// Pricing verified against OpenAI's own published pricing at implementation time (2026-07-31),
+// same "best known when written, may drift" honesty convention as openRouterProvider.ts.
+const OPENAI_PRICING_PER_TOKEN = { prompt: 0.00000015, completion: 0.0000006 };
 
-const OPENROUTER_ENDPOINT = "https://openrouter.ai/api/v1/chat/completions";
-
-// Kimi and DeepSeek share one OpenRouter account/credit pool -- the spend guard tracks and checks
-// against that shared balance, not per-model, matching how OpenRouter itself bills.
-const OPENROUTER_BUDGET_PROVIDER = "openrouter";
-
-type OpenRouterChatResponse = {
+type OpenAiChatResponse = {
   choices?: Array<{ message?: { content?: string } }>;
   usage?: { prompt_tokens?: number; completion_tokens?: number };
 };
 
-export function createOpenRouterProvider(
+export function createOpenAiProvider(
   config: AiProviderConfig,
   env: NodeJS.ProcessEnv = process.env,
 ): AiProviderAdapter {
-  const modelSlug = OPENROUTER_MODEL_SLUG[config.name];
-  const pricing = OPENROUTER_PRICING_PER_TOKEN[config.name];
-
   return {
     config,
     async complete(request) {
       const startedAt = Date.now();
-      const apiKey = env.OPENROUTER_API_KEY;
+      const apiKey = env.OPENAI_API_KEY;
 
-      if (!apiKey || !modelSlug) {
+      if (!apiKey) {
         return {
-          text: `${config.displayName} is not fully configured (missing OpenRouter API key or model mapping). No live model call was made.`,
+          text: `${config.displayName} is not fully configured (missing OpenAI API key). No live model call was made.`,
           confidence: 0.3,
           latencyMs: Date.now() - startedAt,
         };
       }
 
-      const budget = await checkProviderBudgetHeadroom(OPENROUTER_BUDGET_PROVIDER);
+      // Fail closed: real, billed calls to the founder's own OpenAI account only proceed once the
+      // spend guard confirms real headroom below the account's safety margin. See aiSpendGuard.ts.
+      const budget = await checkProviderBudgetHeadroom(OPENAI_BUDGET_PROVIDER);
       if (!budget.ok) {
         return {
           text: `${config.displayName} call skipped: ${budget.reason}`,
@@ -57,16 +44,14 @@ export function createOpenRouterProvider(
       }
 
       try {
-        const response = await fetch(OPENROUTER_ENDPOINT, {
+        const response = await fetch(OPENAI_ENDPOINT, {
           method: "POST",
           headers: {
             Authorization: `Bearer ${apiKey}`,
             "Content-Type": "application/json",
-            "HTTP-Referer": env.NEXT_PUBLIC_APP_URL ?? "https://landing.triaxisventures.com",
-            "X-Title": "AXXESS TRIaxis",
           },
           body: JSON.stringify({
-            model: modelSlug,
+            model: OPENAI_MODEL,
             messages: [{ role: "user", content: request.prompt }],
           }),
         });
@@ -79,13 +64,11 @@ export function createOpenRouterProvider(
           };
         }
 
-        const payload = await response.json() as OpenRouterChatResponse;
+        const payload = await response.json() as OpenAiChatResponse;
         const text = payload.choices?.[0]?.message?.content;
         const promptTokens = payload.usage?.prompt_tokens ?? 0;
         const completionTokens = payload.usage?.completion_tokens ?? 0;
-        const actualCostUsd = pricing
-          ? Number((promptTokens * pricing.prompt + completionTokens * pricing.completion).toFixed(6))
-          : undefined;
+        const actualCostUsd = Number((promptTokens * OPENAI_PRICING_PER_TOKEN.prompt + completionTokens * OPENAI_PRICING_PER_TOKEN.completion).toFixed(6));
 
         if (!text) {
           return {
@@ -95,8 +78,8 @@ export function createOpenRouterProvider(
           };
         }
 
-        if (actualCostUsd) {
-          await recordProviderSpend(OPENROUTER_BUDGET_PROVIDER, actualCostUsd);
+        if (actualCostUsd > 0) {
+          await recordProviderSpend(OPENAI_BUDGET_PROVIDER, actualCostUsd);
         }
 
         return {

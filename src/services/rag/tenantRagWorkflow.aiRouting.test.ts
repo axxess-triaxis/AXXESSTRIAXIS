@@ -84,11 +84,11 @@ describe("answerTenantQuestion + AI routing (2026-07-30 fix)", () => {
     expect(answer.confidenceExplanation.answerMode).toBe("model_synthesis");
   });
 
-  it("keeps the local extractive-summary answer when the router only reached the placeholder stub (e.g. OpenAI, no live adapter yet)", async () => {
+  it("keeps the local extractive-summary answer when the router only reached the placeholder stub (e.g. Anthropic, no live adapter yet)", async () => {
     routeAiRequestMock.mockResolvedValue({
-      answer: "OpenAI / ChatGPT is configured as an adapter-ready provider for rag_answer. Live completion calls remain provider-gated until production credentials, policy review, and audit sampling are enabled.",
-      providerUsed: "openai",
-      modelUsed: "openai-adapter",
+      answer: "Anthropic / Claude is configured as an adapter-ready provider for rag_answer. Live completion calls remain provider-gated until production credentials, policy review, and audit sampling are enabled.",
+      providerUsed: "anthropic",
+      modelUsed: "anthropic-adapter",
       confidence: 0.74,
       humanReviewRequired: false,
     });
