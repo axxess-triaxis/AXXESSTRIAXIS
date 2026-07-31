@@ -1,4 +1,5 @@
 import type { AiProviderAdapter, AiProviderConfig } from "../types";
+import { checkProviderBudgetHeadroom, recordProviderSpend } from "../aiSpendGuard";
 
 // Model slugs and per-token pricing verified directly against openrouter.ai's own model pages
 // (2026-07-27) -- not guessed. Pricing is a point-in-time snapshot; OpenRouter pricing changes,
@@ -15,6 +16,10 @@ const OPENROUTER_PRICING_PER_TOKEN: Partial<Record<AiProviderConfig["name"], { p
 };
 
 const OPENROUTER_ENDPOINT = "https://openrouter.ai/api/v1/chat/completions";
+
+// Kimi and DeepSeek share one OpenRouter account/credit pool -- the spend guard tracks and checks
+// against that shared balance, not per-model, matching how OpenRouter itself bills.
+const OPENROUTER_BUDGET_PROVIDER = "openrouter";
 
 type OpenRouterChatResponse = {
   choices?: Array<{ message?: { content?: string } }>;
@@ -37,6 +42,15 @@ export function createOpenRouterProvider(
       if (!apiKey || !modelSlug) {
         return {
           text: `${config.displayName} is not fully configured (missing OpenRouter API key or model mapping). No live model call was made.`,
+          confidence: 0.3,
+          latencyMs: Date.now() - startedAt,
+        };
+      }
+
+      const budget = await checkProviderBudgetHeadroom(OPENROUTER_BUDGET_PROVIDER);
+      if (!budget.ok) {
+        return {
+          text: `${config.displayName} call skipped: ${budget.reason}`,
           confidence: 0.3,
           latencyMs: Date.now() - startedAt,
         };
@@ -79,6 +93,10 @@ export function createOpenRouterProvider(
             confidence: 0.3,
             latencyMs: Date.now() - startedAt,
           };
+        }
+
+        if (actualCostUsd) {
+          await recordProviderSpend(OPENROUTER_BUDGET_PROVIDER, actualCostUsd);
         }
 
         return {

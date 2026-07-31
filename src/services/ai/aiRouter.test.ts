@@ -1,6 +1,16 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { getAiRouterStatusSnapshot, routeAiRequest } from "./router/aiRouter";
 
+// The 2026-07-31 spend guard (aiSpendGuard.ts) fails closed when Supabase admin config is
+// unavailable -- exactly the founder-required behavior -- so a real provider call now depends on
+// a budget row existing with headroom. Mocked here with ample headroom so this suite can still
+// exercise the live-call path in isolation, same as tenantRagWorkflow.aiRouting.test.ts already
+// does for the same dependency.
+vi.mock("../../repositories/supabaseAdmin", () => ({
+  isSupabaseAdminConfigured: () => true,
+  supabaseAdminRest: vi.fn(async () => [{ provider: "openrouter", budget_ceiling_usd: 20, spent_usd: 0 }]),
+}));
+
 describe("AI router", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
