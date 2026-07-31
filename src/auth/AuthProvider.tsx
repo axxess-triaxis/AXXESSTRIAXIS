@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { featureFlags } from "../config/featureFlags";
 import {
   cleanTenantUserContext,
@@ -94,6 +94,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return () => {
       isMounted = false;
+    };
+  }, []);
+
+  // A session revoked server-side (absolute 24h cap, or the founder's "force logout everywhere"
+  // requirement) needs a live tab to actually notice -- otherwise a tab left open would keep acting
+  // authenticated until the user happened to trigger a fetch. Re-checking on focus/visibility is
+  // the standard low-cost mechanism; it is not a literal instant push to a fully idle background
+  // tab (no websocket/polling infrastructure exists here for that), but it covers the reported
+  // case (a tab or window being returned to) honestly.
+  const sessionRef = useRef(session);
+  useEffect(() => {
+    sessionRef.current = session;
+  }, [session]);
+
+  useEffect(() => {
+    if (!featureFlags.enableAuthShell) return;
+
+    function revalidateOnReturn() {
+      if (document.visibilityState !== "visible") return;
+      const current = sessionRef.current;
+      if (current.status !== "authenticated" || current.source !== "supabase-auth") return;
+
+      fetchServerSession()
+        .then((serverSession) => {
+          if (!serverSession) {
+            setSession({ status: "unauthenticated", source: "supabase-auth", user: null });
+          }
+        })
+        .catch(() => undefined);
+    }
+
+    document.addEventListener("visibilitychange", revalidateOnReturn);
+    window.addEventListener("focus", revalidateOnReturn);
+    return () => {
+      document.removeEventListener("visibilitychange", revalidateOnReturn);
+      window.removeEventListener("focus", revalidateOnReturn);
     };
   }, []);
 
