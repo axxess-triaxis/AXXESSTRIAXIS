@@ -119,23 +119,58 @@ async function requestStorageIntent(action: "upload" | "download", input: Docume
   return await response.json() as DocumentStorageIntent;
 }
 
+// Vercel serverless functions cap an incoming request body at ~4.5MB; this stays safely under
+// that so every chunk POST to our own same-origin route succeeds regardless of how large the
+// whole file is (up to the 50MB bucket limit). See KNOWLEDGE_HUB_UPLOAD_PERSISTENCE_INCIDENT
+// _CLOSEOUT_2026_07_26.md for why this is chunked through our own API rather than a direct
+// browser-to-Supabase-Storage signed-URL PUT.
+const UPLOAD_CHUNK_BYTES = 3.5 * 1024 * 1024;
+
 async function uploadDocumentFile(input: DocumentFileUploadRequest): Promise<DocumentFileUploadResult> {
-  const formData = new FormData();
-  formData.append("path", input.path);
-  formData.append("file", input.file, input.file.name);
+  const { path, file } = input;
+  const uploadId = crypto.randomUUID();
+  const totalChunks = Math.max(1, Math.ceil(file.size / UPLOAD_CHUNK_BYTES));
+  const mimeType = file.type || "application/octet-stream";
 
-  const response = await fetch("/api/documents/upload", {
-    method: "POST",
-    credentials: "include",
-    body: formData,
-  });
+  for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex += 1) {
+    const start = chunkIndex * UPLOAD_CHUNK_BYTES;
+    const chunk = file.slice(start, Math.min(start + UPLOAD_CHUNK_BYTES, file.size));
+    const query = new URLSearchParams({
+      path,
+      uploadId,
+      chunkIndex: String(chunkIndex),
+      totalChunks: String(totalChunks),
+      mimeType,
+      sizeBytes: String(file.size),
+      fileName: file.name,
+    });
 
-  if (!response.ok) {
-    const payload = await response.json().catch(() => ({})) as { error?: string };
-    throw new Error(payload.error ?? "Document upload failed.");
+    const response = await fetch(`/api/documents/upload?${query.toString()}`, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/octet-stream" },
+      body: chunk,
+    });
+
+    if (!response.ok) {
+      const payload = await response.json().catch(() => ({})) as { error?: string };
+      throw new Error(payload.error ?? `Document upload failed on chunk ${chunkIndex + 1} of ${totalChunks}.`);
+    }
   }
 
-  return await response.json() as DocumentFileUploadResult;
+  const completeResponse = await fetch("/api/documents/upload/complete", {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ path, uploadId, totalChunks, fileName: file.name, mimeType, sizeBytes: file.size }),
+  });
+
+  if (!completeResponse.ok) {
+    const payload = await completeResponse.json().catch(() => ({})) as { error?: string };
+    throw new Error(payload.error ?? "Document upload failed to finalize.");
+  }
+
+  return await completeResponse.json() as DocumentFileUploadResult;
 }
 
 export const documentStorageRepository: StorageRepository = {
