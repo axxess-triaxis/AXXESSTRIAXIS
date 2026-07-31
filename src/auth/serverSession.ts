@@ -5,6 +5,13 @@ import { parseSupabaseAuthErrorResponse } from "./supabaseAuthError";
 
 export const accessTokenCookieName = "axxess-access-token";
 export const refreshTokenCookieName = "axxess-refresh-token";
+// Independent of the sliding refresh-token window below: set once, at original sign-in, and never
+// renewed on refresh. Its own maxAge IS the hard cap -- once it expires (or for any session that
+// existed before this was introduced, since it was simply never set), getServerAuthSession treats
+// the session as expired even if the refresh token itself is still technically valid. This is what
+// makes "sign in once, stay signed in forever via monthly sliding refresh" impossible.
+export const sessionAnchorCookieName = "axxess-session-anchor-token";
+export const absoluteSessionMaxAgeSeconds = 60 * 60 * 24;
 
 type SupabasePasswordResponse = {
   access_token: string;
@@ -52,10 +59,18 @@ export async function setServerAuthCookies(accessToken: string, refreshToken?: s
   if (refreshToken) cookieStore.set(refreshTokenCookieName, refreshToken, cookieOptions(60 * 60 * 24 * 30));
 }
 
+// Call only when a session is first established (password/OAuth/OTP sign-in) -- never on refresh.
+// See sessionAnchorCookieName's own comment for why this is what enforces the absolute session cap.
+export async function establishSessionAnchor() {
+  const cookieStore = await cookies();
+  cookieStore.set(sessionAnchorCookieName, String(Date.now()), cookieOptions(absoluteSessionMaxAgeSeconds));
+}
+
 export async function clearServerAuthCookies() {
   const cookieStore = await cookies();
   cookieStore.set(accessTokenCookieName, "", cookieOptions(0));
   cookieStore.set(refreshTokenCookieName, "", cookieOptions(0));
+  cookieStore.set(sessionAnchorCookieName, "", cookieOptions(0));
 }
 
 async function supabaseAuthRequest<TResponse>(path: string, init: RequestInit = {}, accessToken?: string) {
@@ -116,6 +131,7 @@ export async function signInServerSide(email: string, password: string): Promise
   });
   const user = await resolveUser(payload.access_token, payload.user);
   await setServerAuthCookies(payload.access_token, payload.refresh_token, payload.expires_in);
+  await establishSessionAnchor();
   return { accessToken: payload.access_token, refreshToken: payload.refresh_token, user };
 }
 
@@ -128,6 +144,7 @@ export async function establishServerSessionFromOAuthTokens(accessToken: string,
   const authUser = await supabaseAuthRequest<SupabasePasswordResponse["user"]>("user", {}, accessToken);
   const user = await resolveUser(accessToken, authUser);
   await setServerAuthCookies(accessToken, refreshToken);
+  await establishSessionAnchor();
   return { accessToken, refreshToken, user };
 }
 
@@ -144,6 +161,7 @@ export async function verifyPhoneOtpServerSide(phone: string, token: string): Pr
   });
   const user = await resolveUser(payload.access_token, payload.user);
   await setServerAuthCookies(payload.access_token, payload.refresh_token, payload.expires_in);
+  await establishSessionAnchor();
   return { accessToken: payload.access_token, refreshToken: payload.refresh_token, user };
 }
 
@@ -163,6 +181,18 @@ export async function getServerAuthSession(allowRefresh = true): Promise<ServerS
   const cookieStore = await cookies();
   const accessToken = cookieStore.get(accessTokenCookieName)?.value;
   const refreshToken = cookieStore.get(refreshTokenCookieName)?.value;
+
+  // Absent anchor cookie means either the 24h absolute cap has genuinely elapsed, or (for every
+  // session that existed before this cap was introduced) it was simply never set -- both cases are
+  // treated identically as "this session must not continue," which is what forces every
+  // pre-existing real session to require fresh sign-in the moment this ships.
+  if (accessToken || refreshToken) {
+    const hasAnchor = Boolean(cookieStore.get(sessionAnchorCookieName)?.value);
+    if (!hasAnchor) {
+      await clearServerAuthCookies();
+      return null;
+    }
+  }
 
   if (!accessToken && (!allowRefresh || !refreshToken)) return null;
 

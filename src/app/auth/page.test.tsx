@@ -1,6 +1,7 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import AuthPage from "./page";
+import { setDemoModeEnabled } from "../../demo/demoMode";
 
 vi.mock("next/navigation", () => ({
   usePathname: () => "/auth",
@@ -25,6 +26,45 @@ describe("/auth page", () => {
 
     expect(screen.queryByText(/^signed in$/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/is authenticated/i)).not.toBeInTheDocument();
+  });
+
+  it("never shows the Continue-to-workspace bypass for a real Supabase session and silently signs it out (security fix: /auth must only ever land on Sign In)", async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/api/auth/session")) {
+        return new Response(JSON.stringify({
+          user: { id: "user_1", organizationId: "org_1", role: "Organization Admin", email: "founder@axxess.dev" },
+        }), { status: 200 });
+      }
+      if (url.includes("/api/auth/logout")) {
+        return new Response(JSON.stringify({ ok: true }), { status: 200 });
+      }
+      return new Response(JSON.stringify({ user: null }), { status: 401 });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<AuthPage />);
+
+    expect(await screen.findByRole("button", { name: /^sign in$/i })).toBeInTheDocument();
+    expect(screen.queryByText(/^signed in$/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /continue to workspace/i })).not.toBeInTheDocument();
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining("/api/auth/logout"),
+      expect.objectContaining({ method: "POST" }),
+    ));
+  });
+
+  it("keeps the Continue-to-workspace bypass for the Investor Preview demo session (documented P0 requirement, unaffected by the real-session fix)", async () => {
+    setDemoModeEnabled(true);
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ user: null }), { status: 401 })));
+
+    render(<AuthPage />);
+
+    expect(await screen.findByRole("button", { name: /continue to workspace|continue to onboarding/i })).toBeInTheDocument();
+    expect(screen.getByText(/is authenticated/i)).toBeInTheDocument();
+
+    setDemoModeEnabled(false);
   });
 
   it("shows a separate, visible Sign up link and Google/Microsoft options alongside manual email/password (Product Issue 1)", async () => {

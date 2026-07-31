@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import type { Route } from "next";
 import { useRouter } from "next/navigation";
@@ -13,7 +13,7 @@ import { AnalyticsProviderShell, useAnalytics } from "../../services/analytics";
 
 function LoginPanel() {
   const router = useRouter();
-  const { login, session, isAuthenticated } = useAuth();
+  const { login, logout, session, isAuthenticated } = useAuth();
   const analytics = useAnalytics();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -22,6 +22,17 @@ function LoginPanel() {
   const [showResend, setShowResend] = useState(false);
   const [resendStatus, setResendStatus] = useState<string | null>(null);
   const [resending, setResending] = useState(false);
+
+  // Landing on /auth with an already-authenticated real (non-demo) Supabase session used to render
+  // a silent "Continue to workspace" bypass -- exactly the security gap reported live: visiting the
+  // sign-in URL should always require fresh credentials, not resume a stale session. Investor
+  // Preview's demo session (source: "mock-rbac") is a separate, deliberately-required entry point
+  // (docs/readiness/CLAUDE_CODE_SPRINT_1_CORRECTION_PROMPT_2026_07_24.md) and is left untouched.
+  useEffect(() => {
+    if (isAuthenticated && session.status === "authenticated" && session.source === "supabase-auth") {
+      void logout();
+    }
+  }, [isAuthenticated, session, logout]);
 
   async function openInvestorPreview() {
     setSubmitting(true);
@@ -89,7 +100,7 @@ function LoginPanel() {
     }
   }
 
-  if (isAuthenticated && session.user) {
+  if (isAuthenticated && session.user && session.source === "mock-rbac") {
     return (
       <Card className="w-full max-w-md p-6">
         <div className="mb-5">
