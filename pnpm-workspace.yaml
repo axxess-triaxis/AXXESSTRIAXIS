@@ -24,7 +24,9 @@ allowBuilds:
   tesseract.js: true
   unrs-resolver: true
 overrides:
-  postcss: 8.5.16
+  # Dependabot #77 (high): path traversal in previous-sourcemap auto-loading, fixed upstream in
+  # 8.5.18. Transitive via @expo/metro-config (mobile build tooling).
+  postcss: 8.5.18
   uuid: 11.1.1
   # Dependabot #38 (high): DoS via exponential-time expansion of consecutive
   # non-expanding {} groups, fixed upstream in 2.1.2. Transitive via minimatch (eslint chain).
@@ -32,3 +34,21 @@ overrides:
   # Dependabot #42 (medium): process crash via PAX numeric path type confusion, fixed
   # upstream in 7.5.18. Transitive via @capacitor/cli and expo (mobile build tooling).
   tar@<=7.5.17: '>=7.5.18'
+  # Dependabot #66 (high): inherited libvips CVEs (CVE-2026-33327/33328/35590/35591), fixed
+  # upstream in 0.35.0. Transitive via next.js's own image-optimization dependency -- runtime-
+  # relevant (Next Image component runs sharp server-side).
+  sharp: 0.35.0
+  # Dependabot #65/#64 (high/medium): quadratic-CPU DoS via YAML merge-key/alias chains, fixed
+  # upstream in 4.2.0. Transitive via the Vercel CLI devDependency tree only, not bundled into the
+  # deployed app -- overridden anyway to close the alert.
+  js-yaml@>=4.0.0 <4.2.0: '>=4.2.0'
+  # Dependabot #50 (high): ReDoS via combinatorial GLOBSTAR backtracking, fixed upstream in
+  # 10.2.3. Transitive via eslint's dependency chain (devDependency only).
+  minimatch@>=10.0.0 <10.2.3: '>=10.2.3'
+  # Dependabot #44/#45 (medium/low): HTTP request smuggling / insufficiently random values /
+  # DoS via malformed certificate data, fixed upstream in 5.29.0. The 6.x/7.x resolutions already
+  # in the lockfile are unaffected; only the 5.28.4 resolution needed forcing forward.
+  undici@>=4.5.0 <5.29.0: '>=5.29.0'
+  # Dependabot #59 (low): arbitrary file read via the esbuild dev server on Windows, fixed
+  # upstream in 0.28.1. Dev-server-only, not present in the production build output.
+  esbuild@>=0.27.3 <0.28.1: '>=0.28.1'
