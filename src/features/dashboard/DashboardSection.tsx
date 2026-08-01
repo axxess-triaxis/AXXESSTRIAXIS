@@ -188,6 +188,12 @@ export function DashboardSection() {
   const [projects, setProjects] = useState<DashboardProject[]>(() => (isDemoModeEnabled() ? getDashboardFallbackProjects() : []));
   const [objectives, setObjectives] = useState<DashboardStrategicObjective[]>([]);
   const [refreshToken, setRefreshToken] = useState(0);
+  // Executive Dashboard Redesign addendum (2026-08-01): the "Enterprise golden path" panel used to
+  // render unconditionally, permanently occupying dashboard space even in its already-collapsed
+  // on-demand summary form. Founder feedback on the live ED-R1 deploy: it's redundant with "Start
+  // guided setup" and should not feature on the dashboard by default -- 100% optional, revealed
+  // only by that button, not shown until then.
+  const [goldenPathVisible, setGoldenPathVisible] = useState(false);
   const guidedDemo = useGuidedDemo("dashboard");
   const liveMetrics = useLiveWorkspaceMetrics(tenantScope, refreshToken);
   // Executive Dashboard Sprint ED-2: a real, literal count of pending AI review items (from the
@@ -317,7 +323,14 @@ export function DashboardSection() {
         ]}
         actions={
           <div className="flex items-center gap-2">
-            <button onClick={guidedDemo.startDemo} className="flex items-center gap-1.5 rounded-lg bg-[#0F1117] px-3 py-2 text-xs font-semibold text-white hover:bg-[#1D2430]" title="An in-app product walkthrough of AXXESS -- not the separate investor demo at investor.triaxisventures.com">
+            <button
+              onClick={() => {
+                guidedDemo.startDemo();
+                setGoldenPathVisible(true);
+              }}
+              className="flex items-center gap-1.5 rounded-lg bg-[#0F1117] px-3 py-2 text-xs font-semibold text-white hover:bg-[#1D2430]"
+              title="An in-app product walkthrough of AXXESS -- not the separate investor demo at investor.triaxisventures.com"
+            >
               <PlayCircle size={13} /> Start guided setup
             </button>
             <button onClick={handleRefresh} className="text-xs text-[#5F6B73] flex items-center gap-1.5 hover:text-[#0F1117] transition-colors">
@@ -349,11 +362,24 @@ export function DashboardSection() {
         />
       )}
 
-      <EnterpriseWorkflowJourney
-        snapshot={enterpriseJourney}
-        displayMode={goldenPathDisplayMode.mode}
-        onDisplayModeChange={goldenPathDisplayMode.setMode}
-      />
+      {goldenPathVisible && (
+        <div className="space-y-1.5">
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={() => setGoldenPathVisible(false)}
+              className="text-[11px] font-semibold text-[#5F6B73] hover:text-[#8B1E2D]"
+            >
+              Hide guided setup path
+            </button>
+          </div>
+          <EnterpriseWorkflowJourney
+            snapshot={enterpriseJourney}
+            displayMode={goldenPathDisplayMode.mode}
+            onDisplayModeChange={goldenPathDisplayMode.setMode}
+          />
+        </div>
+      )}
       <TenantHealthCommandCenter snapshot={enterpriseJourney} metrics={liveMetrics} pendingAiReviewsCount={pendingAiReviewCount} auditLogCount={auditLogCount} />
 
       {/* Executive Dashboard Redesign Sprint ED-R1: replaces the former demo-only KPI grid, the
