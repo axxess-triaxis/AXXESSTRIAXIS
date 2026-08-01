@@ -74,12 +74,11 @@ Run together with the session-persistence security fix in the same full-suite pa
 
 ## What Remains Partial / Blocked
 
-- **Migration not yet applied to production.** The founder needs to run
-  `supabase/migrations/20260731100000_ai_provider_budget.sql` manually (established pattern this
-  session for migrations) before the OpenAI adapter's spend guard has a real budget row to check
-  against in production — until then, `checkProviderBudgetHeadroom` fails closed and the app falls
-  back to local/other providers rather than making an unmonitored call, which is the safe default,
-  not a broken one.
+- ~~Migration not yet applied to production~~ — **resolved 2026-07-31.** Founder ran
+  `supabase/migrations/20260731100000_ai_provider_budget.sql` directly in the Supabase Dashboard
+  SQL Editor (production project `axxess-triaxis`); confirmed via screenshot showing "Success. No
+  rows returned" for the `grant`/`comment` statements at the end of the file. The spend guard now
+  has real `openai` and `openrouter` budget rows to check against in production.
 - **OpenRouter's real account balance is unconfirmed.** $20 is an explicit founder-approved
   placeholder ("Same as OpenAI ($20)"), not a verified real balance — tagged here per this repo's
   founder-stated-but-unverified discipline. Update `budget_ceiling_usd` for the `openrouter` row
