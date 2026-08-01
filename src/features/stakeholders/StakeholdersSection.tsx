@@ -11,7 +11,8 @@ import { applicationServices } from "../../providers/serviceProvider";
 import { tenantScopeFromUser } from "../../repositories/supabaseEnterpriseRepositories";
 import type { Stakeholder } from "../../domain";
 import type { StakeholderNote } from "../../services/workflows/workflowActionRecords";
-import { Plus, Sparkles } from "lucide-react";
+import { readAndClearAgenticDraft, type AgenticDraft } from "../../services/agentic/agenticDraftHandoff";
+import { Plus, Sparkles, X } from "lucide-react";
 
 const engagementOptions: { value: Stakeholder["engagementLevel"]; label: string }[] = [
   { value: "unrated", label: "Unrated (default)" },
@@ -39,7 +40,40 @@ export const StakeholdersSection = () => {
   const [toast, setToast] = useState<{ tone: "success" | "error" | "info"; message: string } | null>(null);
   const [notes, setNotes] = useState<StakeholderNote[]>([]);
   const [notesLoading, setNotesLoading] = useState(!demoMode);
+  const [agenticDraft, setAgenticDraft] = useState<AgenticDraft | null>(null);
+  const [savingAgenticNote, setSavingAgenticNote] = useState(false);
   const stakeholders = demoMode ? applicationServices.institutionalRepository.getStakeholders() : [];
+
+  // A-79: "Save stakeholder mapping" from the AI Workspace actionables pop-up lands here -- a
+  // mapping isn't a new Contact, so it offers a "Save as note" card instead of pre-filling the
+  // Add Contact form, reusing the already-live stakeholder_notes surface below.
+  useEffect(() => {
+    if (demoMode) return;
+    setAgenticDraft(readAndClearAgenticDraft("stakeholder_mapping"));
+  }, [demoMode]);
+
+  async function saveAgenticDraftAsNote() {
+    if (!agenticDraft) return;
+    setSavingAgenticNote(true);
+    setToast(null);
+    try {
+      const response = await fetch("/api/stakeholders/notes", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: "Stakeholder mapping from AI Workspace", body: agenticDraft.summary }),
+      });
+      if (!response.ok) throw new Error("request failed");
+      const payload = await response.json().catch(() => ({} as { note?: StakeholderNote }));
+      if (payload.note) setNotes((current) => [payload.note as StakeholderNote, ...current]);
+      setAgenticDraft(null);
+      setToast({ tone: "success", message: "Saved as a stakeholder note." });
+    } catch {
+      setToast({ tone: "error", message: "Could not save this note. Try again." });
+    } finally {
+      setSavingAgenticNote(false);
+    }
+  }
 
   useEffect(() => {
     if (demoMode || !scope) {
@@ -188,6 +222,24 @@ export const StakeholdersSection = () => {
             ))}
           </tbody>
         </table>
+      </Card>
+    )}
+    {!demoMode && agenticDraft && (
+      <Card className="border-[#8B1E2D]/20 bg-[#FFF8F8] p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-[#8B1E2D]">Draft from AI Workspace</h3>
+            <p className="mt-1.5 line-clamp-3 text-xs leading-relaxed text-[#5F6B73]">{agenticDraft.summary}</p>
+          </div>
+          <button type="button" onClick={() => setAgenticDraft(null)} aria-label="Dismiss" className="text-[#8B1E2D] hover:opacity-70"><X size={14} /></button>
+        </div>
+        <button
+          onClick={() => void saveAgenticDraftAsNote()}
+          disabled={savingAgenticNote}
+          className="mt-3 rounded-lg bg-[#8B1E2D] px-3 py-2 text-xs font-semibold text-white hover:bg-[#7a1a27] disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {savingAgenticNote ? "Saving..." : "Save as note"}
+        </button>
       </Card>
     )}
     {!demoMode && (

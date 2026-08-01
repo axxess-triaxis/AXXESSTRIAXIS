@@ -45,6 +45,7 @@ vi.mock("../../providers/serviceProvider", () => ({
 }));
 
 import { StakeholdersSection } from "./StakeholdersSection";
+import { writeAgenticDraft } from "../../services/agentic/agenticDraftHandoff";
 
 describe("StakeholdersSection (Sprint 3 F-011 non-hanging guarantee, Sprint 5 live Stakeholders/CRM path, RAG Remediation Sprint 3)", () => {
   function stubNotesFetch(notes: Array<Record<string, unknown>> = []) {
@@ -177,6 +178,35 @@ describe("StakeholdersSection (Sprint 3 F-011 non-hanging guarantee, Sprint 5 li
 
     await waitFor(() => {
       expect(screen.getByText(/No AI-escalated stakeholder notes yet/i)).toBeInTheDocument();
+    });
+  });
+
+  // A-79: "Save stakeholder mapping" from the AI Workspace actionables pop-up lands here as a
+  // sessionStorage draft -- not a pre-filled Contact form (a mapping isn't a new contact), but a
+  // "Save as note" card that POSTs to the already-live stakeholder_notes surface.
+  it("shows a Save-as-note card for a pending stakeholder-mapping draft, and saving posts to the real notes endpoint", async () => {
+    writeAgenticDraft({
+      actionType: "stakeholder_mapping",
+      summary: "District stakeholder map: Dr. Bora leads oxygen resilience, Secretary Deka owns budget approval.",
+      sourceType: "rag_answer",
+      createdAt: new Date().toISOString(),
+    });
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url.includes("/api/stakeholders/notes") && init?.method === "POST") {
+        return new Response(JSON.stringify({ note: { id: "note-new", title: "Stakeholder mapping from AI Workspace", body: "..." } }), { status: 201 });
+      }
+      if (url.includes("/api/stakeholders/notes")) return new Response(JSON.stringify({ notes: [] }), { status: 200 });
+      return new Response(JSON.stringify({}), { status: 404 });
+    }));
+
+    render(<StakeholdersSection />);
+
+    expect(await screen.findByText("Draft from AI Workspace")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /Save as note/i }));
+
+    await waitFor(() => {
+      expect(screen.queryByText("Draft from AI Workspace")).not.toBeInTheDocument();
     });
   });
 
