@@ -154,3 +154,45 @@ describe("DashboardSection (Executive Dashboard Sprint ED-3)", () => {
     expect(await screen.findByText("Enterprise golden path")).toBeInTheDocument();
   });
 });
+
+// Executive Dashboard Redesign Sprint ED-R1: the new score-driven 3-tier layout replaces the old
+// demo-KPI-grid / AI Router-Live Ops-External Signals card row / demo-governance-alerts row. These
+// tests confirm the new tiers render for a real (non-demo) session and never show fabricated data.
+describe("DashboardSection (Executive Dashboard Redesign Sprint ED-R1)", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    window.localStorage.clear();
+  });
+
+  async function renderDashboard() {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ user: null }), { status: 401 })));
+    render(
+      <AnalyticsProviderShell provider={new MockAnalyticsProvider()}>
+        <AuthProvider>
+          <DashboardSection />
+        </AuthProvider>
+      </AnalyticsProviderShell>,
+    );
+    expect(await screen.findByText("Executive Dashboard")).toBeInTheDocument();
+  }
+
+  it("renders all three score-driven tier sections", async () => {
+    await renderDashboard();
+    expect(await screen.findByText(/Tier 1 · Executive & performance/)).toBeInTheDocument();
+    expect(screen.getByText(/Tier 2 · AI operating infrastructure/)).toBeInTheDocument();
+    expect(screen.getByText(/Tier 3 · Compliance, audit, governance/)).toBeInTheDocument();
+  });
+
+  it("shows an honest 'Not connected yet' tile for CRM leads/deals rather than fabricated data (live/demo separation)", async () => {
+    await renderDashboard();
+    expect(await screen.findByText("CRM leads / deals")).toBeInTheDocument();
+    expect(screen.getAllByText("Not connected yet").length).toBeGreaterThan(0);
+  });
+
+  it("no longer renders the removed AI Router / Live Ops / External Signals card row", async () => {
+    await renderDashboard();
+    await screen.findByText(/Tier 1 · Executive & performance/);
+    expect(screen.queryByText("AI Router")).not.toBeInTheDocument();
+    expect(screen.queryByText("Live Ops")).not.toBeInTheDocument();
+  });
+});
