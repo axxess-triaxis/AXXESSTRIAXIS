@@ -79,7 +79,15 @@ export type AnalyticsEventName =
   | "post_demo_satisfaction_responded"
   | "whats_new_panel_viewed"
   | "whats_new_panel_dismissed"
-  | "workflow_completion_celebrated";
+  | "workflow_completion_celebrated"
+  | "agentic_gate_evaluated"
+  | "agentic_prompt_shown"
+  | "agentic_first_option_selected"
+  | "agentic_second_step_selected"
+  | "agentic_route_chosen"
+  | "agentic_disabled_action_attempted"
+  | "agentic_dismissed_via_gate_override"
+  | "agentic_gate_toggle_changed";
 
 export type AnalyticsEventSource = "client" | "server" | "test";
 export type SafeAnalyticsPrimitive = string | number | boolean | null;

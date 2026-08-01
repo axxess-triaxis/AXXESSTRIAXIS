@@ -15,6 +15,7 @@ import { tenantScopeFromUser } from "../../repositories/supabaseEnterpriseReposi
 import { markPostDemoSatisfactionPromptPending } from "../../hooks/usePostDemoSatisfactionPrompt";
 import { useAnalytics } from "../../services/analytics";
 import { getProductivityPluginRegistry } from "../../services/integrations/pluginRegistry";
+import { isAgenticGateEnabled, setAgenticGateEnabled } from "../../services/agentic/agenticGateToggle";
 import { BrandIcon } from "../../components/ui/BrandIcon";
 import { brandIcons } from "../../components/ui/brandIcons";
 import { Building2, Calendar, Check, CheckCircle2, CheckSquare, Cloud, Database, FileSignature, FileSpreadsheet, FileText, Github, HardDrive, IndianRupee, Kanban, Layers, ListTodo, MessageCircle, MessageSquare, Presentation, RotateCcw, Save, Send, Settings, ShieldCheck, Sparkles, UserPlus, Video, X, XCircle } from "lucide-react";
@@ -131,6 +132,7 @@ export const SettingsSection = () => {
       {tab === "demo" && <DemoModePanel />}
 
       {tab === "profile" && <ProfilePanel />}
+      {tab === "profile" && <AgenticGateTogglePanel />}
 
       {tab === "organization" && <OrganizationPanel />}
 
@@ -466,6 +468,41 @@ function PermissionsPanel() {
           You do not have permission to manage roles. The full permission schema is visible to Organization Admins and Super Admins only.
         </div>
       )}
+    </Card>
+  );
+}
+
+// A-79: lets a HITL who finds the actionables gate's heuristic signals too noisy turn the whole
+// auto-trigger mechanism off, per the founder's own addendum ("logic gate may fail/misfire
+// repeatedly ... should have On/Off option"). The manual "Create actionable from answer" fallback
+// in AI Workspace/Review Inbox is unaffected either way. Mirrors DemoModePanel's toggle pattern.
+function AgenticGateTogglePanel() {
+  const [enabled, setEnabled] = useState(() => isAgenticGateEnabled());
+
+  const toggle = (nextEnabled: boolean) => {
+    setAgenticGateEnabled(nextEnabled);
+    setEnabled(nextEnabled);
+  };
+
+  return (
+    <Card className="p-5">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div>
+          <h3 className="text-sm font-semibold text-[#0F1117]">Agentic action prompts</h3>
+          <p className="mt-1 max-w-2xl text-xs leading-relaxed text-[#5F6B73]">
+            Automatically ask &quot;What do you want me to do with this?&quot; after AI Workspace answers and reviews that look actionable. Turning this off does not disable the manual &quot;Create actionable from answer&quot; button.
+          </p>
+        </div>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={enabled}
+          onClick={() => toggle(!enabled)}
+          className={`relative h-7 w-14 flex-shrink-0 rounded-full transition-colors ${enabled ? "bg-[#8B1E2D]" : "bg-[#D1D5DB]"}`}
+        >
+          <span className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition-transform ${enabled ? "translate-x-7" : "translate-x-1"}`} />
+        </button>
+      </div>
     </Card>
   );
 }
