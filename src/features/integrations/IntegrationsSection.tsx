@@ -5,6 +5,8 @@ import { useAuth } from "../../auth/AuthProvider";
 import { SectionHeader } from "../../components/layout/SectionHeader";
 import { InlineToast } from "../../components/forms/InlineToast";
 import { Card } from "../../components/ui/Card";
+import { BrandIcon } from "../../components/ui/BrandIcon";
+import { brandIcons } from "../../components/ui/brandIcons";
 import { EmptyState } from "../../components/feedback/EmptyState";
 import { isDemoModeEnabled } from "../../demo/demoMode";
 import { applicationServices } from "../../providers/serviceProvider";
@@ -12,6 +14,7 @@ import { previewSelectedEmailImport, type ConnectorProviderId, type EmailImportP
 import type { MicrosoftGraphMailboxMessageSummary } from "../../services/integrations/microsoftGraphMailbox";
 import type { NotionPageSummary } from "../../services/integrations/notionPages";
 import { getIntegrationHealth, getInfrastructureOnlyIntegrations, getPilotIntegrations } from "../../services/integrations/pluginRegistry";
+import { Layers } from "lucide-react";
 
 // Illustrative connector gallery for the investor-demo experience only -- real connector status
 // comes from getIntegrationHealth()/getProductivityPluginRegistry() below, which are live. Gated
@@ -90,7 +93,18 @@ export const IntegrationsSection = () => {
   const [notionPreview, setNotionPreview] = useState<{ pageId: string; title: string; bodyPreview: string } | null>(null);
   const [importingNotion, setImportingNotion] = useState(false);
   const [notionToast, setNotionToast] = useState<{ tone: "success" | "error" | "info"; message: string } | null>(null);
-  const mailboxMessages = liveMailboxMessages.length ? liveMailboxMessages : selectedMailboxMessages;
+  // SA-2b (2026-07-29): this used to fall back to the illustrative NEMH sample messages
+  // unconditionally whenever a real tenant hadn't loaded a real inbox yet -- a real tenant who
+  // just connected a real Gmail/Microsoft account saw fake seeded content indistinguishable from
+  // their own real mailbox, with no "example" labeling. Same failure class as A-28/
+  // DEMO_DATA_LEAKAGE_AUDIT.md, via an empty-state fallback rather than an unconditional render.
+  // Now gated behind isDemoModeEnabled(), matching this file's own stated intent for the rest of
+  // its illustrative content.
+  const mailboxMessages = liveMailboxMessages.length
+    ? liveMailboxMessages
+    : isDemoModeEnabled()
+      ? selectedMailboxMessages
+      : [];
 
   function selectMailboxMessage(message: SelectedMailboxMessage) {
     setEmailForm({
@@ -278,7 +292,18 @@ export const IntegrationsSection = () => {
         </div>
         <div className="grid w-full gap-2 lg:max-w-md">
           <div className="rounded-lg border border-[rgba(15,17,23,0.08)] bg-[#F8F9FA] p-2">
-            <div className="mb-2 text-[10px] font-semibold uppercase text-[#5F6B73]">{liveMailboxMessages.length ? "Live Microsoft mailbox messages" : "Selected mailbox messages"}</div>
+            <div className="mb-2 text-[10px] font-semibold uppercase text-[#5F6B73]">
+              {liveMailboxMessages.length
+                ? "Live Microsoft mailbox messages"
+                : isDemoModeEnabled()
+                  ? "Selected mailbox messages (illustrative)"
+                  : "Selected mailbox messages"}
+            </div>
+            {mailboxMessages.length === 0 && (
+              <p className="px-1 py-2 text-[11px] leading-relaxed text-[#5F6B73]">
+                Connect Gmail or Microsoft above, then load your inbox to see real messages here.
+              </p>
+            )}
             <div className="grid gap-2">
               {mailboxMessages.map((message) => (
                 <button
@@ -372,6 +397,8 @@ export const IntegrationsSection = () => {
 
     <EnterpriseConnectorCredentialsPanel />
 
+    <AgentConnectionsPanel />
+
     <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
       {[
         ["Adapters catalogued", pluginHealth.total],
@@ -415,20 +442,28 @@ export const IntegrationsSection = () => {
         </div>
       </div>
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-        {pilotIntegrations.map((plugin) => (
-          <div key={plugin.id} className="rounded-xl border border-[rgba(0,0,0,0.06)] bg-[#F8F9FA] p-3">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <div className="text-sm font-semibold text-[#0F1117]">{plugin.name}</div>
-                <div className="mt-0.5 font-mono text-[11px] uppercase text-[#5F6B73]">{plugin.category}</div>
+        {pilotIntegrations.map((plugin) => {
+          const brandIcon = brandIcons[plugin.id];
+          return (
+            <div key={plugin.id} className="rounded-xl border border-[rgba(0,0,0,0.06)] bg-[#F8F9FA] p-3">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white">
+                    {brandIcon ? <BrandIcon icon={brandIcon} size={16} /> : <Layers size={14} className="text-[#5F6B73]" />}
+                  </div>
+                  <div>
+                    <div className="text-sm font-semibold text-[#0F1117]">{plugin.name}</div>
+                    <div className="mt-0.5 font-mono text-[11px] uppercase text-[#5F6B73]">{plugin.category}</div>
+                  </div>
+                </div>
+                <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${plugin.configured ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"}`}>
+                  {plugin.configured ? "configured" : "gated"}
+                </span>
               </div>
-              <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${plugin.configured ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"}`}>
-                {plugin.configured ? "configured" : "gated"}
-              </span>
+              <p className="mt-2 text-xs leading-relaxed text-[#5F6B73]">{plugin.useCases.join(" - ")}</p>
             </div>
-            <p className="mt-2 text-xs leading-relaxed text-[#5F6B73]">{plugin.useCases.join(" - ")}</p>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </Card>
 
@@ -440,11 +475,15 @@ export const IntegrationsSection = () => {
         </p>
       </div>
       <div className="flex flex-wrap gap-2">
-        {infrastructureOnlyIntegrations.map((plugin) => (
-          <span key={plugin.id} className="rounded-full border border-[rgba(0,0,0,0.08)] bg-[#F8F9FA] px-3 py-1 text-[11px] font-medium text-[#5F6B73]">
-            {plugin.name}
-          </span>
-        ))}
+        {infrastructureOnlyIntegrations.map((plugin) => {
+          const brandIcon = brandIcons[plugin.id];
+          return (
+            <span key={plugin.id} className="inline-flex items-center gap-1.5 rounded-full border border-[rgba(0,0,0,0.08)] bg-[#F8F9FA] px-3 py-1 text-[11px] font-medium text-[#5F6B73]">
+              {brandIcon && <BrandIcon icon={brandIcon} size={12} />}
+              {plugin.name}
+            </span>
+          );
+        })}
       </div>
     </Card>
   </div>
@@ -566,12 +605,18 @@ function EnterpriseConnectorCredentialsPanel() {
         {providers.map((provider) => {
           const status = statusFor(provider.providerId);
           const isOpen = openProviderId === provider.providerId;
+          const brandIcon = brandIcons[provider.providerId];
           return (
             <div key={provider.providerId} className="rounded-xl border border-[rgba(0,0,0,0.06)] bg-[#F8F9FA] p-3">
               <div className="flex items-start justify-between gap-3">
-                <div>
-                  <div className="text-sm font-semibold text-[#0F1117]">{provider.displayName}</div>
-                  <div className="mt-0.5 font-mono text-[11px] uppercase text-[#5F6B73]">{provider.category}</div>
+                <div className="flex items-center gap-2">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white">
+                    {brandIcon ? <BrandIcon icon={brandIcon} size={16} /> : <Layers size={14} className="text-[#5F6B73]" />}
+                  </div>
+                  <div>
+                    <div className="text-sm font-semibold text-[#0F1117]">{provider.displayName}</div>
+                    <div className="mt-0.5 font-mono text-[11px] uppercase text-[#5F6B73]">{provider.category}</div>
+                  </div>
                 </div>
                 <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${status === "configured" ? "bg-emerald-50 text-emerald-700" : status === "revoked" ? "bg-gray-100 text-gray-600" : "bg-amber-50 text-amber-700"}`}>
                   {status === "configured" ? "configured" : status === "revoked" ? "revoked" : "not configured"}
@@ -628,6 +673,247 @@ function EnterpriseConnectorCredentialsPanel() {
           );
         })}
       </div>
+    </Card>
+  );
+}
+
+const agentProviderOptions: Array<{ id: "openai" | "anthropic" | "microsoft_copilot"; label: string }> = [
+  { id: "openai", label: "OpenAI" },
+  { id: "anthropic", label: "Anthropic" },
+  { id: "microsoft_copilot", label: "Microsoft Copilot" },
+];
+
+type AgentConnectionSummary = {
+  id: string;
+  provider: "openai" | "anthropic" | "microsoft_copilot";
+  label: string;
+  apiKeyPrefix: string;
+  status: "active" | "revoked";
+  createdAt: string;
+};
+
+// Agentic Infrastructure Phase 1 (2026-07-30): lets a tenant admin issue an AXXESS API key for an
+// external AI agent platform to connect to the real MCP server at /api/agents/mcp
+// (src/app/api/agents/mcp/route.ts). Not an OAuth redirect like the connectors above -- AXXESS is
+// the one issuing a credential here, so this mirrors EnterpriseConnectorCredentialsPanel's
+// generate/list/revoke shape rather than the OAuth "Connect" buttons elsewhere on this page.
+type AgentActionGrant = {
+  id: string;
+  agentConnectionId: string;
+  toolName: string;
+  grantedAt: string;
+};
+
+function AgentConnectionsPanel() {
+  const { session } = useAuth();
+  const [connections, setConnections] = useState<AgentConnectionSummary[]>([]);
+  const [provider, setProvider] = useState<"openai" | "anthropic" | "microsoft_copilot">("openai");
+  const [label, setLabel] = useState("");
+  const [issuedKey, setIssuedKey] = useState<{ provider: string; rawApiKey: string } | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [toast, setToast] = useState<{ tone: "success" | "error" | "info"; message: string } | null>(null);
+  const [expandedConnectionId, setExpandedConnectionId] = useState<string | null>(null);
+  const [grantsByConnection, setGrantsByConnection] = useState<Record<string, AgentActionGrant[]>>({});
+  const canManage = Boolean(session.user && ["Super Admin", "Organization Admin"].includes(session.user.role));
+
+  // Agentic Infrastructure Phase 2 (2026-07-30): surfaces "Always Allow" grants (created from
+  // Approvals & Governance when a critical tool call is approved with that option) so they're
+  // never invisible/unmanageable -- an admin can see exactly what a connection can now do without
+  // a fresh approval, and revoke it.
+  async function toggleGrants(connectionId: string) {
+    if (expandedConnectionId === connectionId) {
+      setExpandedConnectionId(null);
+      return;
+    }
+    setExpandedConnectionId(connectionId);
+    if (grantsByConnection[connectionId]) return;
+    try {
+      const response = await fetch(`/api/agents/connections/${connectionId}/grants`, { credentials: "include", cache: "no-store" });
+      const result = await response.json().catch(() => ({} as { grants?: AgentActionGrant[] }));
+      setGrantsByConnection((current) => ({ ...current, [connectionId]: result.grants ?? [] }));
+    } catch {
+      setGrantsByConnection((current) => ({ ...current, [connectionId]: [] }));
+    }
+  }
+
+  async function revokeToolGrant(connectionId: string, grantId: string) {
+    try {
+      const response = await fetch(`/api/agents/connections/${connectionId}/grants?grantId=${grantId}`, { method: "DELETE", credentials: "include" });
+      if (!response.ok) throw new Error("Revoking this grant failed.");
+      setGrantsByConnection((current) => ({ ...current, [connectionId]: (current[connectionId] ?? []).filter((grant) => grant.id !== grantId) }));
+    } catch (error) {
+      setToast({ tone: "error", message: error instanceof Error ? error.message : "Revoking this grant failed." });
+    }
+  }
+
+  useEffect(() => {
+    if (!canManage) return;
+    let isMounted = true;
+    fetch("/api/agents/connections", { credentials: "include", cache: "no-store" })
+      .then((response) => response.json())
+      .then((result: { connections?: AgentConnectionSummary[] }) => {
+        if (isMounted) setConnections(result.connections ?? []);
+      })
+      .catch(() => undefined);
+    return () => {
+      isMounted = false;
+    };
+  }, [canManage]);
+
+  async function generateKey() {
+    setSaving(true);
+    setToast(null);
+    try {
+      const response = await fetch("/api/agents/connections", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ provider, label: label.trim() || undefined }),
+      });
+      const result = await response.json().catch(() => ({} as { connection?: AgentConnectionSummary; rawApiKey?: string; error?: string }));
+      if (!response.ok || !result.connection || !result.rawApiKey) {
+        throw new Error(result.error ?? "Generating an agent API key failed.");
+      }
+      setConnections((current) => [result.connection as AgentConnectionSummary, ...current]);
+      setIssuedKey({ provider, rawApiKey: result.rawApiKey });
+      setLabel("");
+    } catch (error) {
+      setToast({ tone: "error", message: error instanceof Error ? error.message : "Generating an agent API key failed." });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function revoke(connection: AgentConnectionSummary) {
+    setSaving(true);
+    setToast(null);
+    try {
+      const response = await fetch(`/api/agents/connections?id=${connection.id}`, { method: "DELETE", credentials: "include" });
+      if (!response.ok) throw new Error("Revoking the agent connection failed.");
+      setConnections((current) => current.map((item) => (item.id === connection.id ? { ...item, status: "revoked" } : item)));
+      setToast({ tone: "success", message: `${connection.label} revoked.` });
+    } catch (error) {
+      setToast({ tone: "error", message: error instanceof Error ? error.message : "Revoking the agent connection failed." });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (!canManage) return null;
+
+  return (
+    <Card className="p-5">
+      <div className="mb-4">
+        <h3 className="text-sm font-semibold text-[#0F1117]">Agent Connections</h3>
+        <p className="mt-1 max-w-2xl text-xs leading-relaxed text-[#5F6B73]">
+          Issue an API key so a connected OpenAI, Anthropic, or Microsoft Copilot agent can call this workspace&apos;s real MCP server directly. Reading data and creating tasks execute immediately (elevated access, since you already vetted the agent provider when you generated its key). Real-world-visible actions -- scheduling a meeting, creating a project or stakeholder, querying an external model -- need your approval the first time, in Approvals &amp; Governance; approve with &quot;always allow&quot; to skip that step for future calls from this connection. The key is shown once below and never stored -- copy it now.
+        </p>
+      </div>
+      {toast && <div className="mb-3"><InlineToast tone={toast.tone} message={toast.message} /></div>}
+      {issuedKey && (
+        <div className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 p-3">
+          <p className="text-xs font-semibold text-emerald-800">New {agentProviderOptions.find((option) => option.id === issuedKey.provider)?.label} key -- copy it now, it will not be shown again:</p>
+          <div className="mt-2 flex items-center gap-2">
+            <code className="flex-1 overflow-x-auto rounded bg-white px-2 py-1.5 text-[11px] text-[#0F1117]">{issuedKey.rawApiKey}</code>
+            <button
+              type="button"
+              onClick={() => { void navigator.clipboard?.writeText(issuedKey.rawApiKey); setToast({ tone: "success", message: "Key copied to clipboard." }); }}
+              className="rounded-lg border border-emerald-300 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-emerald-800 hover:bg-emerald-100"
+            >
+              Copy
+            </button>
+            <button type="button" onClick={() => setIssuedKey(null)} className="rounded-lg px-2.5 py-1.5 text-[11px] font-semibold text-[#5F6B73] hover:bg-white">Dismiss</button>
+          </div>
+        </div>
+      )}
+      <div className="flex flex-wrap items-end gap-2">
+        <label className="text-xs">
+          <span className="mb-1 block font-semibold text-[#0F1117]">Provider</span>
+          <select
+            value={provider}
+            onChange={(event) => setProvider(event.target.value as typeof provider)}
+            className="rounded-lg border border-[rgba(0,0,0,0.12)] bg-white px-3 py-2 text-xs outline-none"
+          >
+            {agentProviderOptions.map((option) => <option key={option.id} value={option.id}>{option.label}</option>)}
+          </select>
+        </label>
+        <input
+          aria-label="Connection label"
+          type="text"
+          placeholder="Label (optional)"
+          value={label}
+          onChange={(event) => setLabel(event.target.value)}
+          className="rounded-lg border border-[rgba(0,0,0,0.12)] bg-white px-3 py-2 text-xs outline-none"
+        />
+        <button
+          type="button"
+          onClick={() => void generateKey()}
+          disabled={saving}
+          className="rounded-lg bg-[#8B1E2D] px-3 py-2 text-xs font-semibold text-white hover:bg-[#7a1a27] disabled:opacity-60"
+        >
+          Generate key
+        </button>
+      </div>
+      {connections.length > 0 && (
+        <div className="mt-4 grid gap-2">
+          {connections.map((connection) => {
+            const brandIcon = brandIcons[connection.provider];
+            return (
+            <div key={connection.id} className="rounded-lg border border-[rgba(0,0,0,0.06)] bg-[#F8F9FA] px-3 py-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white">
+                    {brandIcon ? <BrandIcon icon={brandIcon} size={14} /> : <Layers size={12} className="text-[#5F6B73]" />}
+                  </div>
+                  <div>
+                    <div className="text-xs font-semibold text-[#0F1117]">{connection.label} <span className="font-normal text-[#5F6B73]">({agentProviderOptions.find((option) => option.id === connection.provider)?.label})</span></div>
+                    <div className="mt-0.5 font-mono text-[11px] text-[#5F6B73]">{connection.apiKeyPrefix}&hellip;</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${connection.status === "active" ? "bg-emerald-50 text-emerald-700" : "bg-gray-100 text-gray-600"}`}>{connection.status}</span>
+                  {connection.status === "active" && (
+                    <button
+                      type="button"
+                      onClick={() => void toggleGrants(connection.id)}
+                      className="rounded-lg border border-[rgba(0,0,0,0.12)] px-2.5 py-1 text-[11px] font-semibold text-[#0F1117] hover:bg-[#F2F3F5]"
+                    >
+                      {expandedConnectionId === connection.id ? "Hide always-allowed tools" : "Always-allowed tools"}
+                    </button>
+                  )}
+                  {connection.status === "active" && (
+                    <button
+                      type="button"
+                      onClick={() => void revoke(connection)}
+                      disabled={saving}
+                      className="rounded-lg border border-[rgba(0,0,0,0.12)] px-2.5 py-1 text-[11px] font-semibold text-[#0F1117] hover:bg-[#F2F3F5] disabled:opacity-60"
+                    >
+                      Revoke
+                    </button>
+                  )}
+                </div>
+              </div>
+              {expandedConnectionId === connection.id && (
+                <div className="mt-2 rounded-lg bg-white p-2">
+                  {(grantsByConnection[connection.id] ?? []).length === 0 ? (
+                    <p className="text-[11px] text-[#5F6B73]">No tools are always-allowed for this connection yet -- approve a critical tool call with &quot;always allow&quot; in Approvals &amp; Governance to add one here.</p>
+                  ) : (
+                    <ul className="grid gap-1.5">
+                      {(grantsByConnection[connection.id] ?? []).map((grant) => (
+                        <li key={grant.id} className="flex items-center justify-between text-[11px]">
+                          <span className="font-mono text-[#0F1117]">{grant.toolName}</span>
+                          <button type="button" onClick={() => void revokeToolGrant(connection.id, grant.id)} className="font-semibold text-[#8B1E2D] hover:underline">Revoke</button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
+            </div>
+            );
+          })}
+        </div>
+      )}
     </Card>
   );
 }

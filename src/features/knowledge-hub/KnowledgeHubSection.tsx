@@ -66,6 +66,73 @@ const visibilityOptions: { value: DocumentVisibility; label: string }[] = [
   { value: "shared", label: "Shared" },
 ];
 
+type UploadExtraction = {
+  supported: boolean;
+  text: string;
+  method?: "text-layer" | "ocr" | "docx" | "plain";
+  truncated: boolean;
+  pagesProcessed?: number;
+  totalPages?: number;
+  reason?: string;
+};
+
+// Honest post-upload status: only reports success when text was actually indexed. Extraction
+// (see documentTextExtraction.ts, called via POST /api/documents/extract once the file has
+// landed in storage) never silently indexes an empty or unsupported file -- this mirrors that
+// back to the user.
+function describeExtraction(extraction: UploadExtraction | undefined): string {
+  if (!extraction) return "Uploaded. Indexing status unavailable.";
+  if (!extraction.supported) {
+    return extraction.reason ? `Not indexed: ${extraction.reason}` : "Not indexed: extraction was not supported for this file.";
+  }
+  if (extraction.method === "ocr") {
+    return extraction.truncated
+      ? `Indexed via OCR (first ${extraction.pagesProcessed} of ${extraction.totalPages} pages).`
+      : "Indexed via OCR.";
+  }
+  if (extraction.truncated) {
+    return `Indexed for search (truncated to the first ${extraction.pagesProcessed ?? "N"} of ${extraction.totalPages ?? "?"} pages).`;
+  }
+  return "Indexed for search.";
+}
+
+async function extractUploadedDocument(input: { path: string; mimeType: string }): Promise<UploadExtraction | undefined> {
+  try {
+    const response = await fetch("/api/documents/extract", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    });
+    if (!response.ok) return undefined;
+    const payload = await response.json().catch(() => ({})) as { extraction?: UploadExtraction };
+    return payload.extraction;
+  } catch {
+    return undefined;
+  }
+}
+
+async function ingestExtractedText(input: {
+  documentId: string;
+  title: string;
+  bodyText: string;
+  fileName: string;
+  mimeType: string;
+  extractionMethod?: UploadExtraction["method"];
+  extractionTruncated?: boolean;
+}) {
+  const response = await fetch("/api/documents/ingest", {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  if (!response.ok) {
+    const payload = await response.json().catch(() => ({})) as { error?: string };
+    throw new Error(payload.error ?? "Failed to index extracted text.");
+  }
+}
+
 function formatBytes(size?: number) {
   if (!size) return "Size pending";
   if (size < 1024 * 1024) return `${Math.ceil(size / 1024)} KB`;
@@ -197,9 +264,14 @@ export const KnowledgeHubSection = () => {
 
   const searchResults = useMemo(() => localDocumentSearch(documents, articles, query), [articles, documents, query]);
   const ingestionStatus = useMemo(() => {
-    const records = documents.slice(0, 250).map((document) => buildRagIngestionRecord(document, document.description));
+    // Deleted (and archived -- excluded from RAG retrieval by canRetrieveDocument()) documents stay
+    // in `documents` forever (soft delete, for audit history) -- this previously counted them as
+    // still "Uploaded"/"Indexed"/"Ready" here even though they no longer appear in the Documents
+    // tab or answer any AI question, so the header stats never dropped after a real delete/archive.
+    const liveDocuments = documents.filter((document) => document.status !== "deleted" && document.status !== "archived");
+    const records = liveDocuments.slice(0, 250).map((document) => buildRagIngestionRecord(document, document.description));
     return {
-      uploaded: documents.length,
+      uploaded: liveDocuments.length,
       classified: records.length,
       chunked: records.reduce((sum, record) => sum + record.chunkCount, 0),
       indexed: records.filter((record) => record.stage === "ready").length,
@@ -258,11 +330,13 @@ export const KnowledgeHubSection = () => {
     setSaving(true);
     setToast(null);
     const uploadedDocuments: Document[] = [];
+    const failures: string[] = [];
+    const indexingStatuses: string[] = [];
 
     for (const file of uploads) {
       const validationError = validateDocumentUpload({ fileName: file.name, mimeType: file.type, sizeBytes: file.size });
       if (validationError) {
-        setToast({ tone: "error", message: validationError });
+        failures.push(`${file.name}: ${validationError}`);
         continue;
       }
 
@@ -294,17 +368,7 @@ export const KnowledgeHubSection = () => {
       };
 
       try {
-        const intent = await applicationServices.storageRepository.createDocumentUploadIntent({
-          path: storagePath,
-          fileName: file.name,
-          mimeType: file.type,
-          sizeBytes: file.size,
-        });
-        await fetch(intent.signedUrl, {
-          method: "PUT",
-          headers: { "Content-Type": file.type || "application/octet-stream" },
-          body: file,
-        });
+        await applicationServices.storageRepository.uploadDocumentFile({ path: storagePath, file });
         const saved = await applicationServices.documentsRepository.create(scope, payload);
         await applicationServices.documentVersionsRepository.create(scope, {
           id: versionId,
@@ -321,8 +385,28 @@ export const KnowledgeHubSection = () => {
           metadata: { fileName: file.name, sizeBytes: file.size },
         }).catch(() => undefined);
         uploadedDocuments.push(saved);
-      } catch {
-        uploadedDocuments.push(payload);
+
+        const extraction = await extractUploadedDocument({ path: storagePath, mimeType: file.type || "application/octet-stream" });
+        if (extraction?.supported && extraction.text.trim()) {
+          try {
+            await ingestExtractedText({
+              documentId: saved.id,
+              title: payload.title ?? file.name,
+              bodyText: extraction.text,
+              fileName: file.name,
+              mimeType: file.type || "application/octet-stream",
+              extractionMethod: extraction.method,
+              extractionTruncated: extraction.truncated,
+            });
+          } catch {
+            indexingStatuses.push(`${file.name}: uploaded but indexing failed -- index manually via Documents & Files.`);
+            continue;
+          }
+        }
+        indexingStatuses.push(`${file.name}: ${describeExtraction(extraction)}`);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Upload failed.";
+        failures.push(`${file.name}: ${message}`);
       }
     }
 
@@ -330,9 +414,21 @@ export const KnowledgeHubSection = () => {
       setDocuments((rows) => [...uploadedDocuments, ...rows]);
       setSelectedDocument(uploadedDocuments[0]);
       setRenameValue(uploadedDocuments[0].name);
+    }
+
+    const allIndexed = uploadedDocuments.length > 0 && indexingStatuses.every((status) => status.includes(": Indexed"));
+
+    if (failures.length > 0) {
       setToast({
-        tone: "success",
-        message: uploadedDocuments.length === 1 ? "Document uploaded." : `${uploadedDocuments.length} documents uploaded.`,
+        tone: uploadedDocuments.length > 0 ? "info" : "error",
+        message: uploadedDocuments.length > 0
+          ? `${uploadedDocuments.length} uploaded, ${failures.length} failed -- ${failures.join("; ")}. ${indexingStatuses.join(" ")}`
+          : failures.join("; "),
+      });
+    } else if (uploadedDocuments.length > 0) {
+      setToast({
+        tone: allIndexed ? "success" : "info",
+        message: uploadedDocuments.length === 1 ? indexingStatuses[0] : indexingStatuses.join(" "),
       });
     }
     setSaving(false);
@@ -435,7 +531,9 @@ export const KnowledgeHubSection = () => {
         }
       />
 
-      <DemoDataNotice label="Knowledge Hub shows seeded policies, SOPs, review notes, and risk documents with metadata, permissions, version posture, and RAG indexing state." />
+      {isDemoModeEnabled() && (
+        <DemoDataNotice label="Knowledge Hub shows seeded policies, SOPs, review notes, and risk documents with metadata, permissions, version posture, and RAG indexing state." />
+      )}
 
       <input
         ref={fileInputRef}
@@ -731,8 +829,13 @@ export const KnowledgeHubSection = () => {
                     <RefreshCw size={13} /> Restore
                   </button>
                 ) : (
-                  <button onClick={() => void updateDocument(selectedDocument, { status: "archived", archivedAt: new Date().toISOString() }, "Document archived.")} disabled={!canWrite || saving} className="flex items-center justify-center gap-1.5 rounded-lg border border-[rgba(0,0,0,0.1)] px-3 py-2 text-xs text-[#5F6B73] hover:bg-[#F2F3F5] disabled:opacity-60">
-                    <Archive size={13} /> Archive
+                  <button
+                    onClick={() => void updateDocument(selectedDocument, { status: "archived", archivedAt: new Date().toISOString() }, "Document archived and removed from AI/RAG indexing.")}
+                    disabled={!canWrite || saving}
+                    title="Removes this document from AI Workspace answers without deleting it. Restore any time from the Archived tab."
+                    className="flex items-center justify-center gap-1.5 rounded-lg border border-[rgba(0,0,0,0.1)] px-3 py-2 text-xs text-[#5F6B73] hover:bg-[#F2F3F5] disabled:opacity-60"
+                  >
+                    <Archive size={13} /> Un-index (Archive)
                   </button>
                 )}
                 <button onClick={() => void updateDocument(selectedDocument, { status: "deleted", deletedAt: new Date().toISOString() }, "Document deleted.")} disabled={!canWrite || saving} className="flex items-center justify-center gap-1.5 rounded-lg border border-red-100 px-3 py-2 text-xs text-red-700 hover:bg-red-50 disabled:opacity-60">

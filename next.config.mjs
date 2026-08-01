@@ -16,6 +16,25 @@ const nextConfig = {
   reactStrictMode: true,
   typedRoutes: true,
   skipTrailingSlashRedirect: true,
+  // Real document extraction (documentTextExtraction.ts) depends on @napi-rs/canvas, a native
+  // (prebuilt binary) addon pdf-parse's internal pdfjs-dist uses for PDF page rendering/OCR.
+  // Without this, Turbopack tries to bundle it into JS instead of leaving it as a real
+  // node_modules dependency -- confirmed live 2026-07-31: POST /api/documents/extract crashed in
+  // production with "ReferenceError: DOMMatrix is not defined" ("Cannot find module
+  // '@napi-rs/canvas'"), even though it installs and runs correctly locally and in tests.
+  // serverExternalPackages tells Next.js to leave these as real require()s so Vercel's file
+  // tracing includes their actual (including native) files in the deployed function bundle.
+  serverExternalPackages: ["@napi-rs/canvas", "pdfjs-dist", "pdf-parse", "tesseract.js", "mammoth"],
+  // serverExternalPackages alone wasn't enough for @napi-rs/canvas specifically: confirmed via the
+  // actual build trace (route.js.nft.json) that pdf-parse/pdfjs-dist get traced (21/3 files) but
+  // @napi-rs/canvas gets zero -- its js-binding.js resolves the platform-specific native binary
+  // via runtime detection (readFileSync/execSync), not a static require() string, so @vercel/nft's
+  // static analysis can't find it. Force-include the Linux x64 glibc binary specifically (Vercel's
+  // serverless runtime architecture) for the one route that actually triggers canvas usage (OCR
+  // fallback rendering).
+  outputFileTracingIncludes: {
+    "/api/documents/extract": ["./node_modules/.pnpm/@napi-rs+canvas-linux-x64-gnu@*/node_modules/@napi-rs/canvas-linux-x64-gnu/**/*"],
+  },
   async rewrites() {
     return [
       {

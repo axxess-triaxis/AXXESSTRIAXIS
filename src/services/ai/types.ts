@@ -7,6 +7,8 @@ export type AiProviderName =
   | "xai"
   | "falcon"
   | "jais"
+  | "kimi"
+  | "deepseek"
   | "local";
 
 export type AiTaskCategory =
@@ -92,6 +94,11 @@ export type AiProviderCompletion = {
   citations?: RagCitation[];
   confidence: number;
   latencyMs?: number;
+  // Real, post-call figures from a provider that actually executed a request (e.g. token usage
+  // reported by an OpenAI-compatible API response). When present, these supersede the router's
+  // pre-call cost estimate rather than supplementing it -- see routeAiRequest().
+  usage?: { promptTokens: number; completionTokens: number };
+  actualCostUsd?: number;
 };
 
 export interface AiProviderAdapter {

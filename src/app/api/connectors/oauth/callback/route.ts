@@ -5,7 +5,7 @@ import { isSupabaseAdminConfigured, supabaseAdminRest } from "../../../../../rep
 import { getConnectorContract, type ConnectorProviderId } from "../../../../../services/integrations/connectorContract";
 import { buildIntegrationConnectionUpsert, exchangeOAuthCode, getOAuthProviderConfiguration, hashOAuthState, verifyOAuthState } from "../../../../../services/integrations/oauthProvider";
 
-const supportedProviderIds: ConnectorProviderId[] = ["gmail", "microsoft", "slack", "calendly", "airtable", "hubspot", "notion"];
+const supportedProviderIds: ConnectorProviderId[] = ["gmail", "microsoft", "slack", "calendly", "airtable", "hubspot", "notion", "google_calendar", "zoom", "teams", "google_drive", "linear", "github", "google_sheets", "whatsapp_business", "google_docs", "google_slides", "x_twitter"];
 
 function providerId(value: string | null): ConnectorProviderId | undefined {
   return supportedProviderIds.find((id) => id === value);

@@ -90,4 +90,27 @@ describe("tenant-scoped repository gateway API (Sprint 2 -- POST /api/repositori
     expect(evidenceBlock).toContain("const config = EVIDENCE_RESOURCE_CONFIG[resourceName];");
     expect(evidenceBlock).toContain("if (!config) return;");
   });
+
+  it("writes an audit log for role/department/status changes on PATCH /api/repositories/users (Sprint 3 WS7)", () => {
+    const patchBlock = routeSource.slice(routeSource.indexOf("export async function PATCH"));
+    expect(patchBlock).toContain('action: "user.access_updated"');
+    expect(patchBlock).toContain('resourceType: "users"');
+    expect(patchBlock).toContain("auditLogsRepository.record(scope");
+
+    const notifyIndex = patchBlock.indexOf('title: "Access updated"');
+    const auditIndex = patchBlock.indexOf('action: "user.access_updated"');
+    expect(notifyIndex).toBeGreaterThan(-1);
+    expect(auditIndex).toBeGreaterThan(notifyIndex);
+  });
+
+  it("requires Super Admin/Organization Admin to revoke an invitation (admin panel wiring pass, 2026-07-25)", () => {
+    expect(routeSource).toContain('if (resource === "users" || resource === "invitations") return hasRole(role, ["Super Admin", "Organization Admin"]);');
+  });
+
+  it("writes an audit log for a revoked invitation", () => {
+    const patchBlock = routeSource.slice(routeSource.indexOf("export async function PATCH"));
+    expect(patchBlock).toContain('resourceName === "invitations" && body.status === "revoked"');
+    expect(patchBlock).toContain('action: "invitation.revoked"');
+    expect(patchBlock).toContain('resourceType: "invitations"');
+  });
 });

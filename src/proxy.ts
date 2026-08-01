@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 const protectedRoutePrefixes = [
   "/app",
   "/dashboard",
+  "/onboarding",
   "/projects",
   "/programs",
   "/tasks",
@@ -20,9 +21,30 @@ const protectedRoutePrefixes = [
 ];
 
 const sessionCookieName = "axxess-access-token";
+// Investor Preview's client-side-only mock session (src/demo/demoMode.ts's localStorage flag) is
+// invisible to this Edge Runtime proxy -- so "Continue to workspace" and the beta-root redirect
+// both bounced a deliberately-entered demo session straight back to /auth, since only a real
+// Supabase access-token cookie ever satisfied this gate. This cookie is non-secret (never used for
+// real authorization -- tenant-scoped API calls still require a real Supabase session) and is set
+// only when a visitor explicitly logs into Investor Preview (src/demo/demoMode.ts).
+const demoSessionCookieName = "axxess-demo-session";
 const apexProductionHost = "triaxisventures.com";
 const canonicalProductionHost = "www.triaxisventures.com";
 const betaProductionHost = "beta.triaxisventures.com";
+// Product/beta and Demo/investor entry points added in the Sprint 5+ hosting split (docs/readiness/
+// HOSTING_DEPLOYMENT_ARCHITECTURE_2026_07_24.md). Without these hosts in the same root-redirect
+// rule as `beta.triaxisventures.com`, their `/` fell through to the shared marketing chooser page
+// (src/app/page.tsx) -- landing.triaxisventures.com linked out to the Demo (reported 2026-07-25),
+// and investor.triaxisventures.com showed stale pre-split content with dead relative links
+// (reported the same day) instead of going straight into its own single-purpose experience. On
+// investor.triaxisventures.com specifically, this redirect reaches the demo persona with zero
+// friction -- forced demo mode (NEXT_PUBLIC_AXXESS_DEMO_MODE=true) skips the login gate entirely
+// for that deployment, so `/dashboard` renders immediately, no auth detour.
+const dashboardRootRedirectHosts = new Set([
+  betaProductionHost,
+  "landing.triaxisventures.com",
+  "investor.triaxisventures.com",
+]);
 const marketingOnlyPathname = "/";
 
 const workspaceRoutePrefixes = ["/auth", ...protectedRoutePrefixes];
@@ -57,13 +79,13 @@ export function getCanonicalHostRedirectUrl(url: URL, host: string | null) {
 
 export function getBetaRootRedirectUrl(url: URL, host: string | null) {
   const normalizedHost = normalizeHost(host);
-  if (!normalizedHost || normalizedHost !== betaProductionHost || url.pathname !== "/") {
+  if (!normalizedHost || !dashboardRootRedirectHosts.has(normalizedHost) || url.pathname !== "/") {
     return null;
   }
 
   const redirectUrl = new URL(url.toString());
   redirectUrl.protocol = "https:";
-  redirectUrl.host = betaProductionHost;
+  redirectUrl.host = normalizedHost;
   redirectUrl.pathname = "/dashboard";
   return redirectUrl;
 }
@@ -147,7 +169,7 @@ export function proxy(request: NextRequest) {
   if (shouldRedirectToLogin(request.nextUrl.pathname, {
     authShellEnabled: isAuthShellEnabled,
     demoModeEnabled: isDemoModeEnabled,
-    hasSessionCookie: Boolean(request.cookies.get(sessionCookieName)),
+    hasSessionCookie: Boolean(request.cookies.get(sessionCookieName)) || Boolean(request.cookies.get(demoSessionCookieName)),
   })) {
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = "/auth";

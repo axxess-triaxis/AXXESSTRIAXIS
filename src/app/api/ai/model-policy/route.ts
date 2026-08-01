@@ -12,10 +12,20 @@ export async function GET() {
   const session = await getServerAuthSession(true);
   if (!session) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
 
+  let recentUsage: unknown[] = [];
+  if (isSupabaseAdminConfigured()) {
+    const query = new URLSearchParams();
+    query.set("organization_id", `eq.${session.user.organizationId}`);
+    query.set("order", "created_at.desc");
+    query.set("limit", "20");
+    recentUsage = await supabaseAdminRest<unknown[]>("ai_usage_ledger", { query }).catch(() => []);
+  }
+
   return NextResponse.json({
     organizationId: session.user.organizationId,
     router: getAiRouterStatusSnapshot(),
     policy: buildTenantModelPolicy(session.user.organizationId),
+    recentUsage,
   });
 }
 

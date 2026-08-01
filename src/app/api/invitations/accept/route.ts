@@ -54,6 +54,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invitation is invalid or expired." }, { status: 400 });
   }
 
+  if ((session.user.email ?? "").trim().toLowerCase() !== invitation.email.trim().toLowerCase()) {
+    return NextResponse.json({ error: "This invitation was sent to a different email address. Sign in as that account to accept it." }, { status: 403 });
+  }
+
   const displayName = session.user.displayName ?? invitation.email.split("@")[0];
   await supabaseAdminRest("profiles", {
     method: "POST",

@@ -21,11 +21,15 @@ function toneIcon(tone: string) {
 export function TenantHealthCommandCenter({
   snapshot,
   metrics,
+  pendingAiReviewsCount,
+  auditLogCount,
 }: {
   snapshot: EnterpriseGoldenPathSnapshot;
   metrics: LiveWorkspaceMetrics;
+  pendingAiReviewsCount?: number;
+  auditLogCount?: number;
 }) {
-  const indicators = buildTenantHealthIndicators(snapshot, metrics);
+  const indicators = buildTenantHealthIndicators(snapshot, metrics, pendingAiReviewsCount, auditLogCount);
   const blockedCount = indicators.filter((indicator) => indicator.tone === "danger").length;
   const warningCount = indicators.filter((indicator) => indicator.tone === "warning").length;
 

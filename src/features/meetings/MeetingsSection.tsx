@@ -11,6 +11,7 @@ import type { Meeting, Program, Project, User } from "../../domain";
 import { applicationServices } from "../../providers/serviceProvider";
 import { tenantScopeFromUser } from "../../repositories/supabaseEnterpriseRepositories";
 import { useAnalytics } from "../../services/analytics";
+import { readAndClearAgenticDraft } from "../../services/agentic/agenticDraftHandoff";
 
 type MeetingFormState = {
   title: string;
@@ -51,6 +52,18 @@ function lineArray(value: string) {
   return value.split(/\n|,/).map((item) => item.trim()).filter(Boolean);
 }
 
+const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+// Sprint 2 (Live Golden Path Execution): the "Participants" field is free text, but the
+// database's attendee_ids column is uuid[] (supabase/migrations/20260703083915_sprint7_crud_
+// workflows.sql). Typing anything other than real user IDs there -- exactly what the HITL's
+// walkthrough did -- fails at the database with a type-cast error, surfaced only as the generic
+// "Meeting could not be saved. Check permissions and required fields." This validates it upfront
+// with a specific, actionable message instead of letting a doomed request round-trip and fail.
+export function invalidAttendeeIds(value: string) {
+  return lineArray(value).filter((entry) => !uuidPattern.test(entry));
+}
+
 function meetingForm(meeting?: Meeting): MeetingFormState {
   return {
     title: meeting?.title ?? "",
@@ -84,6 +97,7 @@ export const MeetingsSection = () => {
   const [form, setForm] = useState<MeetingFormState>(() => meetingForm());
   const [toast, setToast] = useState<{ tone: "success" | "error" | "info"; message: string } | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [agenticDraftBanner, setAgenticDraftBanner] = useState<string | null>(null);
   const canManageMeetings = Boolean(user && ["Super Admin", "Organization Admin", "Executive", "Manager"].includes(user.role));
 
   const loadMeetings = useCallback(async () => {
@@ -112,17 +126,39 @@ export const MeetingsSection = () => {
     void loadMeetings();
   }, [loadMeetings]);
 
+  // A-79: "Set up meeting" from the AI Workspace actionables pop-up lands here as a sessionStorage
+  // draft -- pre-fills title/agenda on this section's own New Meeting form; date/time and
+  // attendees still need a real value from the user, so Save Meeting remains the actual creation.
+  useEffect(() => {
+    const draft = readAndClearAgenticDraft("meeting");
+    if (!draft) return;
+    setErrors({});
+    setEditingMeeting(undefined);
+    setSelectedMeeting(undefined);
+    setForm({
+      ...meetingForm(),
+      title: draft.summary.length > 80 ? `${draft.summary.slice(0, 77)}...` : draft.summary,
+      agenda: draft.summary,
+    });
+    setAgenticDraftBanner("Drafted from AI Workspace -- add a date/time and participants, then Save Meeting to create it.");
+  }, []);
+
   const openForm = (meeting?: Meeting) => {
     setErrors({});
     setEditingMeeting(meeting);
     setSelectedMeeting(meeting);
     setForm(meetingForm(meeting));
+    setAgenticDraftBanner(null);
   };
 
   const validate = () => {
     const nextErrors: Record<string, string> = {};
     if (!form.title.trim()) nextErrors.title = "Meeting title is required.";
     if (!form.startsAt) nextErrors.startsAt = "Date and time are required.";
+    const badAttendeeIds = invalidAttendeeIds(form.attendeeIds);
+    if (badAttendeeIds.length > 0) {
+      nextErrors.attendeeIds = `Participants must be user IDs (e.g. ${attendeeHint || "user_demo_executive"}), not names or notes -- remove: ${badAttendeeIds.join(", ")}.`;
+    }
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0 && user) {
       analytics.trackEvent("form_validation_failed", { form_name: "meeting", fields: Object.keys(nextErrors) }, {
@@ -197,6 +233,7 @@ export const MeetingsSection = () => {
       }
       setSelectedMeeting(saved);
       setEditingMeeting(undefined);
+      setAgenticDraftBanner(null);
       setToast({ tone: "success", message: editingMeeting ? "Meeting updated." : "Meeting created." });
       await loadMeetings();
     } catch {
@@ -306,6 +343,12 @@ export const MeetingsSection = () => {
                 <h3 className="text-sm font-semibold text-[#0F1117]">{editingMeeting ? "Edit Meeting" : "New Meeting"}</h3>
                 {editingMeeting && <button onClick={() => setEditingMeeting(undefined)} className="rounded-lg p-1.5 text-[#5F6B73] hover:bg-[#F2F3F5]"><X size={14} /></button>}
               </div>
+              {agenticDraftBanner && (
+                <div className="flex items-start justify-between gap-2 rounded-lg border border-[#8B1E2D]/20 bg-[#FFF8F8] p-2.5 text-[11px] leading-relaxed text-[#8B1E2D]">
+                  <span>{agenticDraftBanner}</span>
+                  <button type="button" onClick={() => setAgenticDraftBanner(null)} aria-label="Dismiss" className="text-[#8B1E2D] hover:opacity-70"><X size={12} /></button>
+                </div>
+              )}
               <TextField label="Title" value={form.title} error={errors.title} onChange={(event) => setForm({ ...form, title: event.target.value })} disabled={!canManageMeetings || saving} />
               <div className="grid grid-cols-2 gap-3">
                 <TextField label="Starts At" type="datetime-local" value={form.startsAt} error={errors.startsAt} onChange={(event) => setForm({ ...form, startsAt: event.target.value })} disabled={!canManageMeetings || saving} />
@@ -315,7 +358,7 @@ export const MeetingsSection = () => {
               <SelectField label="Linked Project" value={form.projectId} options={projectOptions} onChange={(event) => setForm({ ...form, projectId: event.target.value })} disabled={!canManageMeetings || saving} />
               <SelectField label="Linked Program" value={form.programId} options={programOptions} onChange={(event) => setForm({ ...form, programId: event.target.value })} disabled={!canManageMeetings || saving} />
               <TextField label="Linked Stakeholder ID" value={form.stakeholderId} onChange={(event) => setForm({ ...form, stakeholderId: event.target.value })} disabled={!canManageMeetings || saving} />
-              <TextAreaField label="Participants" value={form.attendeeIds} placeholder={attendeeHint || "user_demo_executive, user_district_lead"} onChange={(event) => setForm({ ...form, attendeeIds: event.target.value })} disabled={!canManageMeetings || saving} />
+              <TextAreaField label="Participants" value={form.attendeeIds} error={errors.attendeeIds} placeholder={attendeeHint || "user_demo_executive, user_district_lead"} onChange={(event) => setForm({ ...form, attendeeIds: event.target.value })} disabled={!canManageMeetings || saving} />
               <TextAreaField label="Agenda" value={form.agenda} onChange={(event) => setForm({ ...form, agenda: event.target.value })} disabled={!canManageMeetings || saving} />
               <TextAreaField label="Notes" value={form.notes} onChange={(event) => setForm({ ...form, notes: event.target.value })} disabled={!canManageMeetings || saving} />
               <TextAreaField label="Decisions" value={form.decisions} onChange={(event) => setForm({ ...form, decisions: event.target.value })} disabled={!canManageMeetings || saving} />

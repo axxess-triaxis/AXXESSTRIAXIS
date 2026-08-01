@@ -11,6 +11,7 @@ import type {
   Organization,
   Program,
   Project,
+  Stakeholder,
   Task,
   User,
 } from "../domain";
@@ -33,6 +34,7 @@ import type {
   OrganizationsRepository,
   ProgramsRepository,
   ProjectsRepository,
+  StakeholdersRepository,
   StorageRepository,
   TasksRepository,
   TenantRepository,
@@ -155,6 +157,9 @@ const emptyInvitationsRepository: InvitationsRepository = {
   async listPending() {
     return [];
   },
+  async update() {
+    throw new Error("Invitations require a connected data backend.");
+  },
 };
 
 const emptyAuditLogsRepository: AuditLogsRepository = {
@@ -197,6 +202,9 @@ const emptyStorageRepository: StorageRepository = {
   async createDocumentDownloadIntent() {
     throw new Error("Storage requires a connected data backend.");
   },
+  async uploadDocumentFile() {
+    throw new Error("Storage requires a connected data backend.");
+  },
 };
 
 export const emptyRepositories = {
@@ -217,6 +225,7 @@ export const emptyRepositories = {
   organizationsRepository: emptyOrganizationsRepository,
   programsRepository: emptyReadonlyRepository<Program>() as ProgramsRepository,
   projectsRepository: emptyMutableRepository<Project>("Projects") as ProjectsRepository,
+  stakeholdersRepository: emptyMutableRepository<Stakeholder>("Stakeholders") as StakeholdersRepository,
   storageRepository: emptyStorageRepository,
   tasksRepository: emptyMutableRepository<Task>("Tasks") as TasksRepository,
   usersRepository: emptyUsersRepository,

@@ -23,4 +23,38 @@ describe("AIWorkspaceSection (Sprint 3 -- does not hang, no raw backend error te
     expect(source).toContain("Sign in to record this review decision.");
     expect(source).toContain("Your role does not have permission to record this decision.");
   });
+
+  it("TP-2 (A-28 failure class): the sample 'North East Health Mission' RAG query only auto-fires in demo mode, not for every real tenant", () => {
+    const queryIndex = source.indexOf("North East Health Mission district risks");
+    expect(queryIndex).toBeGreaterThan(-1);
+    const precedingBlock = source.slice(Math.max(0, queryIndex - 400), queryIndex);
+    expect(precedingBlock).toContain('getRuntimeMode(Boolean(session.user)) !== "demo"');
+  });
+
+  it("2026-07-30: the AI Router panel fetches real status server-side instead of calling a server-env function from client code (always reported missing_credentials in production)", () => {
+    // Regression: getAiRouterStatusSnapshot() reads process.env.OPENAI_API_KEY etc. directly. This
+    // component has no "use client" of its own and renders inside the app's client shell, so a
+    // module-level call ran in the browser, where non-NEXT_PUBLIC_ env vars are never present --
+    // every remote provider always reported "missing_credentials" and mode always "demo",
+    // regardless of real production configuration. Confirmed live 2026-07-30.
+    expect(source).not.toContain('from "../../services/ai/router/aiRouter"');
+    expect(source).not.toMatch(/const aiRouterStatus = /);
+    expect(source).toContain('fetch("/api/ai/model-policy"');
+    expect(source).toContain("setRouterStatus(data.router)");
+  });
+
+  it("2026-07-30: suggestion chips are live -- clicking one asks the question, not a decorative placeholder", () => {
+    // Founder-reported: "hovering options over query space are simply placeholders."
+    expect(source).toContain("onClick={() => { setInput(suggestion); void askGovernedQuestion(suggestion); }}");
+    expect(source).toContain("async function askGovernedQuestion(overrideQuestion?: string)");
+  });
+
+  it("2026-07-30: pressing Enter in the question input submits, not only the send button", () => {
+    // Founder-reported: "'Send' button has to be pressed... Query should be simply executable by pressing 'Enter'."
+    const onKeyDownIndex = source.indexOf("onKeyDown={(event) => {");
+    expect(onKeyDownIndex).toBeGreaterThan(-1);
+    const handlerBlock = source.slice(onKeyDownIndex, onKeyDownIndex + 200);
+    expect(handlerBlock).toContain('event.key === "Enter"');
+    expect(handlerBlock).toContain("void askGovernedQuestion()");
+  });
 });
