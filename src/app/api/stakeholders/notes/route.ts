@@ -17,3 +17,20 @@ export async function GET() {
   const notes = await stakeholderNotesRepository.list(scope, { pageSize: 50 }).catch(() => []);
   return NextResponse.json({ notes });
 }
+
+// A-79: "Save stakeholder mapping" from the AI Workspace actionables pop-up lands here -- a
+// mapping isn't a new Contact record, so it reuses this already-live note surface (GET above)
+// rather than a new table.
+export async function POST(request: Request) {
+  const session = await getServerAuthSession(true);
+  if (!session) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+
+  const body = await request.json().catch(() => ({} as { title?: string; body?: string }));
+  const title = typeof body.title === "string" ? body.title.trim() : "";
+  const noteBody = typeof body.body === "string" ? body.body.trim() : "";
+  if (!title || !noteBody) return NextResponse.json({ error: "title and body are required." }, { status: 400 });
+
+  const scope = tenantScopeFromUser(session.user, session.accessToken);
+  const note = await stakeholderNotesRepository.create(scope, { title, body: noteBody });
+  return NextResponse.json({ note }, { status: 201 });
+}

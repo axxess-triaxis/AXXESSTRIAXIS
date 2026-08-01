@@ -1,6 +1,19 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../../auth/AuthProvider";
 import { EnterpriseWorkflowJourney } from "../../components/enterprise/EnterpriseWorkflowJourney";
+import { AgenticActionablesPrompt } from "../../components/agentic/AgenticActionablesPrompt";
+import {
+  AGENTIC_ROUTE_CAVEAT,
+  AGENTIC_ROUTE_FOR_ACTION,
+  AGENTIC_UNAVAILABLE_ACTIONS,
+  type AgenticGateResult,
+  type AgenticPromptSource,
+  type AgenticResolution,
+} from "../../components/agentic/agenticActionTypes";
+import { evaluateActionableGate } from "../../services/agentic/actionableGate";
+import { writeAgenticDraft } from "../../services/agentic/agenticDraftHandoff";
+import { isAgenticGateEnabled } from "../../services/agentic/agenticGateToggle";
+import { useWorkspaceRouting } from "../../hooks/useWorkspaceRouting";
 import { getRuntimeMode, isDemoModeEnabled } from "../../demo/demoMode";
 import {
   AuditTrailBadge,
@@ -117,6 +130,7 @@ type LiveRagAnswer = RagAnswer & {
 export const AIWorkspaceSection = () => {
   const { session } = useAuth();
   const analytics = useAnalytics();
+  const { navigateToSection } = useWorkspaceRouting();
   const tenantScope = useMemo(() => session.user ? tenantScopeFromUser(session.user) : undefined, [session.user]);
   const enterpriseJourney = useEnterpriseGoldenPath(tenantScope, session.user);
   const goldenPathDisplayMode = useGoldenPathDisplayMode();
@@ -128,6 +142,28 @@ export const AIWorkspaceSection = () => {
   const [reviewMessage, setReviewMessage] = useState<string | null>(null);
   const [ragAnswer, setRagAnswer] = useState<LiveRagAnswer>(() => initialRagAnswer());
   const [routerStatus, setRouterStatus] = useState<AiRouterStatus | null>(null);
+  const [agenticPrompt, setAgenticPrompt] = useState<{ gateContext?: AgenticGateResult; source: AgenticPromptSource } | null>(null);
+  const [agenticMessage, setAgenticMessage] = useState<string | null>(null);
+  const priorSourceIdsRef = useRef<Set<string>>(new Set());
+  const isFirstAnswerRef = useRef(true);
+  const knownStakeholderNamesRef = useRef<string[]>([]);
+  const firstName = session.user?.displayName?.trim().split(/\s+/)[0] || "there";
+
+  // Loaded once per tenant so the gate's "new stakeholder" heuristic (actionableGate.ts) has a
+  // real name list to compare against, not a guess -- fails silently to an empty list rather than
+  // blocking the AI Workspace on a stakeholder-list fetch.
+  useEffect(() => {
+    if (!tenantScope) return;
+    let isMounted = true;
+    applicationServices.stakeholdersRepository.list(tenantScope, { pageSize: 200 })
+      .then((stakeholders) => {
+        if (isMounted) knownStakeholderNamesRef.current = stakeholders.map((stakeholder) => stakeholder.name);
+      })
+      .catch(() => undefined);
+    return () => {
+      isMounted = false;
+    };
+  }, [tenantScope]);
 
   // 2026-07-30: this used to call getAiRouterStatusSnapshot() directly at module load -- a server
   // function reading process.env.OPENAI_API_KEY etc. -- but this component runs client-side, where
@@ -225,6 +261,8 @@ export const AIWorkspaceSection = () => {
         module_name: "ai-workspace",
         route: "/ai-workspace",
       });
+
+      maybeOpenAgenticPrompt(result as LiveRagAnswer);
     } catch (error) {
       const timedOut = error instanceof DOMException && error.name === "AbortError";
       setQueryError(
@@ -238,6 +276,121 @@ export const AIWorkspaceSection = () => {
       clearTimeout(timeout);
       setQuerying(false);
     }
+  }
+
+  function agenticSourceFromAnswer(answer: LiveRagAnswer): AgenticPromptSource {
+    return {
+      sourceType: "rag_answer",
+      summary: answer.answer.length > 240 ? `${answer.answer.slice(0, 237)}...` : answer.answer,
+      citations: answer.sources.map((source) => ({ sourceId: source.sourceId, title: source.title })),
+      aiOutputAuditId: answer.aiOutputAuditId,
+      humanReviewRequired: answer.humanReviewRequired,
+    };
+  }
+
+  function openAgenticPrompt(answer: LiveRagAnswer, gateContext?: ReturnType<typeof evaluateActionableGate>) {
+    setAgenticMessage(null);
+    setAgenticPrompt({ gateContext, source: agenticSourceFromAnswer(answer) });
+    analytics.trackEvent("agentic_prompt_shown", { source_type: "rag_answer", triggered_by: gateContext ? "gate" : "manual" }, {
+      organization_id: session.user?.organizationId,
+      user_id: session.user?.id,
+      user_role: session.user?.role,
+      module_name: "ai-workspace",
+      route: "/ai-workspace",
+    });
+  }
+
+  // Auto-opens the two-step actionables prompt only when the heuristic gate (actionableGate.ts)
+  // finds at least one real signal in the just-generated answer -- never for the demo seed answer,
+  // and never at all when the user has turned the gate off in Settings (the manual "Create
+  // actionable from answer" button in the header still works regardless of this toggle).
+  function maybeOpenAgenticPrompt(answer: LiveRagAnswer) {
+    if (!isAgenticGateEnabled()) return;
+
+    const gateResult = evaluateActionableGate({
+      answer,
+      knownStakeholderNames: knownStakeholderNamesRef.current,
+      priorSourceIds: priorSourceIdsRef.current,
+      isFirstAnswerThisSession: isFirstAnswerRef.current,
+    });
+
+    isFirstAnswerRef.current = false;
+    answer.sources.forEach((source) => priorSourceIdsRef.current.add(source.sourceId));
+
+    analytics.trackEvent("agentic_gate_evaluated", {
+      trigger_count: gateResult.triggerCount,
+      show_prompt: gateResult.showPrompt,
+      override_required: gateResult.overrideRequired,
+      compulsory_choice: gateResult.compulsoryChoice,
+      pushback_severity: gateResult.signals.pushbackSeverity,
+    }, {
+      organization_id: session.user?.organizationId,
+      user_id: session.user?.id,
+      user_role: session.user?.role,
+      module_name: "ai-workspace",
+      route: "/ai-workspace",
+    });
+
+    if (gateResult.showPrompt) openAgenticPrompt(answer, gateResult);
+  }
+
+  function resolveAgenticPrompt(resolution: AgenticResolution) {
+    setAgenticPrompt(null);
+
+    const context = {
+      organization_id: session.user?.organizationId,
+      user_id: session.user?.id,
+      user_role: session.user?.role,
+      module_name: "ai-workspace",
+      route: "/ai-workspace",
+    };
+
+    if (resolution.dismissedVia === "gate_required_no_action_now" || resolution.dismissedVia === "gate_required_no_action_required") {
+      analytics.trackEvent("agentic_dismissed_via_gate_override", { resolution: resolution.dismissedVia }, context);
+      return;
+    }
+
+    if (resolution.dismissedVia === "nothing_option") return;
+
+    analytics.trackEvent("agentic_first_option_selected", { action: resolution.firstAction }, context);
+    if (resolution.secondStep) analytics.trackEvent("agentic_second_step_selected", { action: resolution.firstAction, second_step: resolution.secondStep }, context);
+
+    if (resolution.dismissedVia === "unavailable_action") {
+      analytics.trackEvent("agentic_disabled_action_attempted", { action: resolution.firstAction }, context);
+      setAgenticMessage(AGENTIC_UNAVAILABLE_ACTIONS[resolution.firstAction] ?? "This isn't available yet.");
+      return;
+    }
+
+    if (resolution.firstAction === "integrate_next_query") {
+      if (resolution.secondStep === "yes") {
+        setInput((current) => current ? `${current}\n\n${ragAnswer.answer}` : ragAnswer.answer);
+        analytics.trackEvent("agentic_route_chosen", { action: resolution.firstAction, destination: "ai-workspace" }, context);
+      }
+      return;
+    }
+
+    if (resolution.firstAction === "other") {
+      setAgenticMessage(`Noted: "${resolution.otherInstruction}". This isn't automated yet, but it's logged.`);
+      return;
+    }
+
+    const destination = AGENTIC_ROUTE_FOR_ACTION[resolution.firstAction];
+    if (!destination) {
+      setAgenticMessage(AGENTIC_UNAVAILABLE_ACTIONS[resolution.firstAction] ?? "This isn't available yet.");
+      return;
+    }
+
+    writeAgenticDraft({
+      actionType: resolution.firstAction,
+      secondStep: resolution.secondStep,
+      summary: ragAnswer.answer,
+      citations: ragAnswer.sources.map((source) => ({ sourceId: source.sourceId, title: source.title })),
+      sourceType: "rag_answer",
+      createdAt: new Date().toISOString(),
+    });
+    analytics.trackEvent("agentic_route_chosen", { action: resolution.firstAction, destination }, context);
+    if (AGENTIC_ROUTE_CAVEAT[resolution.firstAction]) setAgenticMessage(AGENTIC_ROUTE_CAVEAT[resolution.firstAction] ?? null);
+    navigateToSection(destination);
   }
 
   async function reviewAnswer(decision: "approved" | "rejected") {
@@ -299,7 +452,14 @@ export const AIWorkspaceSection = () => {
         actions={
           <>
             <a href="/ai-workspace/review-inbox" className="rounded-lg border border-[rgba(15,17,23,0.1)] px-3 py-2 text-xs font-semibold text-[#5F6B73] hover:bg-[#F2F3F5]">Review inbox</a>
-            <a href="/tasks" className="rounded-lg border border-[rgba(15,17,23,0.1)] px-3 py-2 text-xs font-semibold text-[#5F6B73] hover:bg-[#F2F3F5]">Create task from answer</a>
+            <button
+              type="button"
+              disabled={!ragAnswer.answer}
+              onClick={() => openAgenticPrompt(ragAnswer)}
+              className="rounded-lg border border-[rgba(15,17,23,0.1)] px-3 py-2 text-xs font-semibold text-[#5F6B73] hover:bg-[#F2F3F5] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              Create actionable from answer
+            </button>
             <a href="/approvals" className="rounded-lg border border-[rgba(15,17,23,0.1)] px-3 py-2 text-xs font-semibold text-white bg-[#8B1E2D] hover:bg-[#7a1a27]">Request approval</a>
           </>
         }
@@ -500,6 +660,9 @@ export const AIWorkspaceSection = () => {
                   </button>
                 </p>
               )}
+              {agenticMessage && (
+                <p className="mt-2 text-[11px] font-medium text-[#5F6B73]">{agenticMessage}</p>
+              )}
             </div>
           </Card>
         </div>
@@ -624,6 +787,17 @@ export const AIWorkspaceSection = () => {
           </Card>
         </div>
       </div>
+      {agenticPrompt && (
+        <AgenticActionablesPrompt
+          open
+          firstName={firstName}
+          source={agenticPrompt.source}
+          gateContext={agenticPrompt.gateContext}
+          disabledReasons={AGENTIC_UNAVAILABLE_ACTIONS}
+          onResolved={resolveAgenticPrompt}
+          onClose={() => setAgenticPrompt(null)}
+        />
+      )}
     </PageShell>
   );
 };
