@@ -10,10 +10,13 @@ import type {
 } from "../../repositories/interfaces";
 import { isSupabaseAdminConfigured, supabaseAdminRest } from "../../repositories/supabaseAdmin";
 import { routeAiRequest } from "../ai/router/aiRouter";
+import { liveModelProviders } from "../ai/providers";
 import { extractKeywords, summarizeText } from "../nlp/localNlp";
 import { answerWithGovernedRag, canRetrieveDocument, type RagAnswer, type RagCitation } from "./governedRag";
+import { buildConfidenceExplanation } from "./confidenceExplanation";
 import { deterministicEmbeddingProvider } from "./embeddings/embeddingProvider";
 import { buildRagIngestionRecord, chunkInstitutionalText } from "./ingestion/ingestionPipeline";
+import { recordWorkflowTimelineEvent } from "../workflows/liveTenantWorkflow";
 
 export type TenantRagRepositories = {
   documentsRepository: DocumentsRepository;
@@ -33,6 +36,23 @@ export type TenantDocumentIngestInput = {
   classification?: Document["classification"];
   tags?: string[];
   projectId?: string;
+  /**
+   * RAG Remediation Sprint 1 (RAG1-03/04/05/06): when set, index an already-uploaded Knowledge Hub
+   * document instead of creating a new, disconnected document record. The document's real
+   * title/owner/visibility/classification/tags/category are preserved from the existing row --
+   * input.title/visibility/classification/tags are ignored in this mode so the indexed chunks can
+   * never drift from the document's actual governed metadata. bodyText is still required: this
+   * codebase has no PDF/DOCX text-extraction pipeline (see docs/DOCUMENTS.md), so the HITL supplies
+   * the text to index for the selected document rather than the system inventing it.
+   */
+  documentId?: string;
+  /**
+   * Set when bodyText came from automatic extraction (documentTextExtraction.ts) rather than a
+   * human pasting text -- persisted onto the created document_versions row so callers and the UI
+   * can be honest about how the indexed text was actually produced.
+   */
+  extractionMethod?: "text-layer" | "ocr" | "docx" | "plain";
+  extractionTruncated?: boolean;
 };
 
 export type TenantDocumentIngestResult = {
@@ -42,6 +62,7 @@ export type TenantDocumentIngestResult = {
   indexId: string;
   tags: string[];
   humanReviewRequired: boolean;
+  reindexedExistingDocument: boolean;
 };
 
 type RagChunkRow = {
@@ -85,22 +106,24 @@ function storagePathForDocument(scope: TenantScope, title: string) {
   return `organizations/${scope.organizationId}/documents/manual-ingest/${Date.now()}-${slug}.txt`;
 }
 
-function contextAnswer(question: string, citations: RagCitation[]) {
+// RAG Remediation Sprint 2 (A-55/WS1): this previously closed with a third sentence --
+// "The strongest evidence relates to {extractKeywords(question + context)}" -- that echoed
+// keywords from the QUESTION itself back at the reader, which reads as a grounded finding even
+// when the actual retrieved context is weak or empty-ish. Removed. The remaining two clauses were
+// already genuinely grounded (a real extractive summary of the real retrieved citation excerpts,
+// per governedRag.ts's local synthesis) and stay; the source list at the end names the *actual*
+// documents used, not derived keywords, so a reader can verify the claim against a real source.
+function contextAnswer(citations: RagCitation[]) {
   const context = citations.map((citation) => citation.excerpt).join(" ");
   if (!context.trim()) {
     return "No authorized institutional source matched this question. A human review is required before any answer is used.";
   }
+  const sourceTitles = [...new Set(citations.map((citation) => citation.title))];
   return [
     "Based on the authorized tenant sources,",
     summarizeText(context, 3).replace(/\.$/, ""),
-    `The strongest evidence relates to ${extractKeywords(`${question} ${context}`, 5).join(", ")}.`,
+    `(source${sourceTitles.length === 1 ? "" : "s"}: ${sourceTitles.join("; ")}).`,
   ].join(" ");
-}
-
-function confidenceForCitations(citations: RagCitation[]) {
-  if (citations.length === 0) return 0;
-  const average = citations.reduce((sum, citation) => sum + citation.score, 0) / citations.length;
-  return Math.min(0.96, Math.max(0.42, average + 0.28));
 }
 
 function permittedRoleAllowlist(scope: TenantScope, document: Document) {
@@ -114,46 +137,100 @@ export async function ingestTenantDocument(
   scope: TenantScope,
   input: TenantDocumentIngestInput,
 ): Promise<TenantDocumentIngestResult> {
-  const title = input.title.trim();
   const bodyText = input.bodyText.trim();
-  if (!title || !bodyText) throw new Error("Document title and text are required for ingestion.");
+  if (!bodyText) throw new Error("Document text is required for ingestion.");
 
-  const document = await repositories.documentsRepository.create(scope, {
-    organizationId: scope.organizationId,
-    name: title,
-    title,
-    description: summarizeText(bodyText, 2),
-    storagePath: storagePathForDocument(scope, title),
-    fileName: input.fileName ?? `${title}.txt`,
-    fileSize: bodyText.length,
-    mimeType: input.mimeType ?? "text/plain",
-    documentType: "text",
-    visibility: input.visibility ?? "organization",
-    classification: input.classification ?? "internal",
-    ownerId: scope.userId,
-    createdByUserId: scope.userId,
-    updatedByUserId: scope.userId,
-    tags: input.tags?.length ? input.tags : extractKeywords(bodyText, 6),
-    projectId: input.projectId,
-  });
+  let document: Document;
+  let versionNumber = 1;
+  const reindexingExisting = Boolean(input.documentId);
 
-  await repositories.documentVersionsRepository.create(scope, {
-    organizationId: scope.organizationId,
-    documentId: document.id,
-    versionNumber: 1,
-    fileName: document.fileName ?? `${title}.txt`,
-    fileSize: bodyText.length,
-    mimeType: document.mimeType,
-    storagePath: document.storagePath,
-    checksum: textHash(bodyText),
-    createdByUserId: scope.userId,
-  }).catch(() => undefined);
+  if (input.documentId) {
+    const existing = await repositories.documentsRepository.getById(scope, input.documentId);
+    if (!existing || existing.organizationId !== scope.organizationId) {
+      throw new Error("Selected document was not found for this organization.");
+    }
+    if (existing.status === "deleted") {
+      throw new Error("Cannot index a deleted document.");
+    }
+    // RAG1-05/06: reuse the real document's own metadata (title/owner/visibility/classification/
+    // tags/category) rather than trusting whatever the ingest form happens to submit -- this is
+    // what guarantees indexed chunks can never drift from the document's actual governed metadata.
+    document = await repositories.documentsRepository.update(scope, existing.id, {
+      description: summarizeText(bodyText, 2),
+    }).catch(() => existing);
 
-  await repositories.documentsRepository.recordActivity(scope, {
-    documentId: document.id,
-    action: "uploaded",
-    metadata: { source: "manual-ingest", textHash: textHash(bodyText) },
-  }).catch(() => undefined);
+    const priorVersions = await repositories.documentVersionsRepository
+      .list(scope, { pageSize: 500 })
+      .catch(() => [] as Awaited<ReturnType<TenantRagRepositories["documentVersionsRepository"]["list"]>>);
+    versionNumber = priorVersions.filter((version) => version.documentId === existing.id).length + 1;
+
+    await repositories.documentVersionsRepository.create(scope, {
+      organizationId: scope.organizationId,
+      documentId: document.id,
+      versionNumber,
+      fileName: document.fileName ?? `${document.title ?? document.name}.txt`,
+      fileSize: bodyText.length,
+      mimeType: document.mimeType,
+      storagePath: document.storagePath,
+      checksum: textHash(bodyText),
+      extractedText: input.extractionMethod ? bodyText : undefined,
+      extractionMethod: input.extractionMethod,
+      extractionTruncated: input.extractionTruncated,
+      createdByUserId: scope.userId,
+    }).catch(() => undefined);
+
+    // "edited" is the closest fit in the existing document_activity action enum (DB check
+    // constraint in 202607040001_sprint9_knowledge_hub.sql) -- adding a dedicated "indexed" value
+    // would need its own migration, out of scope for this sprint. The metadata source field below
+    // is what actually distinguishes a re-index event from a plain metadata edit.
+    await repositories.documentsRepository.recordActivity(scope, {
+      documentId: document.id,
+      action: "edited",
+      metadata: { source: "knowledge-hub-select", event: "indexed", textHash: textHash(bodyText) },
+    }).catch(() => undefined);
+  } else {
+    const title = input.title.trim();
+    if (!title) throw new Error("Document title and text are required for ingestion.");
+
+    document = await repositories.documentsRepository.create(scope, {
+      organizationId: scope.organizationId,
+      name: title,
+      title,
+      description: summarizeText(bodyText, 2),
+      storagePath: storagePathForDocument(scope, title),
+      fileName: input.fileName ?? `${title}.txt`,
+      fileSize: bodyText.length,
+      mimeType: input.mimeType ?? "text/plain",
+      documentType: "text",
+      visibility: input.visibility ?? "organization",
+      classification: input.classification ?? "internal",
+      ownerId: scope.userId,
+      createdByUserId: scope.userId,
+      updatedByUserId: scope.userId,
+      tags: input.tags?.length ? input.tags : extractKeywords(bodyText, 6),
+      projectId: input.projectId,
+    });
+
+    await repositories.documentVersionsRepository.create(scope, {
+      organizationId: scope.organizationId,
+      documentId: document.id,
+      versionNumber: 1,
+      fileName: document.fileName ?? `${title}.txt`,
+      fileSize: bodyText.length,
+      mimeType: document.mimeType,
+      storagePath: document.storagePath,
+      checksum: textHash(bodyText),
+      createdByUserId: scope.userId,
+    }).catch(() => undefined);
+
+    await repositories.documentsRepository.recordActivity(scope, {
+      documentId: document.id,
+      action: "uploaded",
+      metadata: { source: "manual-ingest", textHash: textHash(bodyText) },
+    }).catch(() => undefined);
+  }
+
+  const title = document.title ?? document.name;
 
   const ingestionRecord = buildRagIngestionRecord(document, bodyText);
   const chunks = chunkInstitutionalText(bodyText);
@@ -213,6 +290,7 @@ export async function ingestTenantDocument(
       indexId: ingestionRecord.indexId,
       tags: ingestionRecord.tags,
       persistentChunks: isSupabaseAdminConfigured(),
+      reindexedExistingDocument: reindexingExisting,
     },
   }).catch(() => undefined);
 
@@ -223,6 +301,7 @@ export async function ingestTenantDocument(
     indexId: ingestionRecord.indexId,
     tags: ingestionRecord.tags,
     humanReviewRequired: ingestionRecord.humanReviewRequired,
+    reindexedExistingDocument: reindexingExisting,
   };
 }
 
@@ -283,16 +362,30 @@ export async function answerTenantQuestion(
 ): Promise<RagAnswer & { aiOutputAuditId?: string; modelUsed?: string; providerUsed?: string; latencyMs?: number; costTier?: string }> {
   const limit = options.limit ?? 5;
   const citations = await persistentCitationsForQuestion(repositories, scope, question, limit);
-  const baseAnswer = citations.length
-    ? {
-      answer: contextAnswer(question, citations),
-      confidence: confidenceForCitations(citations),
+  let baseAnswer: RagAnswer;
+  if (citations.length) {
+    const rawConfidence = Math.min(0.96, Math.max(0.42, citations.reduce((sum, citation) => sum + citation.score, 0) / citations.length + 0.28));
+    const { confidence, explanation } = buildConfidenceExplanation({
+      citations,
+      rawConfidence,
       humanReviewRequired: citations.some((citation) => citation.score < 0.5),
+      // Known limitation (documented in the RAG Remediation Sprint 2 closeout): RagCitation does
+      // not carry document classification for this persistent-chunk path, unlike governedRag.ts's
+      // in-memory path, so restricted-source detection isn't available here yet.
+      hasRestrictedSource: false,
+    });
+    baseAnswer = {
+      answer: contextAnswer(citations),
+      confidence,
+      humanReviewRequired: explanation.humanReviewRequired,
       sources: citations,
       keywords: extractKeywords(question, 6),
       rationale: `Synthesized from ${citations.length} governed source${citations.length === 1 ? "" : "s"} (top match: "${citations[0].title}", ${Math.round(citations[0].score * 100)}% relevance).`,
-    } satisfies RagAnswer
-    : await answerWithGovernedRag(repositories, scope, { question, limit });
+      confidenceExplanation: explanation,
+    };
+  } else {
+    baseAnswer = await answerWithGovernedRag(repositories, scope, { question, limit });
+  }
 
   const routeResult = await routeAiRequest({
     prompt: `${question}\n\nAuthorized source summary:\n${baseAnswer.sources.map((source) => `${source.title}: ${source.excerpt}`).join("\n")}`,
@@ -309,10 +402,25 @@ export async function answerTenantQuestion(
     },
   });
 
+  // 2026-07-30: routeAiRequest was already being called here, but only routeResult.confidence was
+  // ever used -- routeResult.answer (the model's actual synthesized text) was silently discarded,
+  // and the final answer always stayed baseAnswer's local extractive summary. Founder-reported:
+  // "I still do not see AI routing working; default is RAGpull." Fixed: when the router genuinely
+  // reached a live model (kimi/deepseek via OpenRouter, or openai's real Chat Completions adapter
+  // added 2026-07-31) with real output -- not remotePlaceholderProvider's stub text for providers
+  // like anthropic/google/xai with no live adapter yet -- use that grounded synthesis as the answer
+  // instead of the local one.
+  const isLiveModelAnswer = baseAnswer.sources.length > 0
+    && liveModelProviders.has(routeResult.providerUsed)
+    && Boolean(routeResult.answer?.trim());
   const answer = {
     ...baseAnswer,
+    answer: isLiveModelAnswer ? routeResult.answer : baseAnswer.answer,
     confidence: Math.min(baseAnswer.confidence, routeResult.confidence),
     humanReviewRequired: baseAnswer.humanReviewRequired || routeResult.humanReviewRequired,
+    confidenceExplanation: isLiveModelAnswer
+      ? { ...baseAnswer.confidenceExplanation, answerMode: "model_synthesis" as const }
+      : baseAnswer.confidenceExplanation,
   };
 
   let aiOutputAuditId: string | undefined;
@@ -343,9 +451,45 @@ export async function answerTenantQuestion(
       },
     }).catch(() => []);
     aiOutputAuditId = auditRows[0]?.id;
+
+    // Sprint 2 (Live Golden Path Execution): every generated answer becomes an AI Review Inbox
+    // item, not just ones a caller happens to route there. Before this, ai_output_audit rows
+    // (written above) and ai_operation_reviews rows (what the Review Inbox actually reads, see
+    // src/services/ai/reviewInbox.ts) were two disconnected tables -- nothing ever inserted into
+    // ai_operation_reviews, so the inbox stayed empty no matter how many questions were asked.
+    // Everything downstream of this row existing (approve/reject, "approve and create" ->
+    // createWorkflowActionFromAiReview) was already fully built; this was the one missing write.
+    await supabaseAdminRest("ai_operation_reviews", {
+      method: "POST",
+      body: {
+        organization_id: scope.organizationId,
+        created_by_user_id: scope.userId,
+        source_audit_id: aiOutputAuditId,
+        task_category: "governed_rag_answer",
+        status: "pending",
+        confidence: Number(answer.confidence.toFixed(4)),
+        human_review_flag: answer.humanReviewRequired,
+        answer_excerpt: summarizeText(answer.answer, 1),
+        citations: answer.sources.map((source) => ({
+          title: source.title,
+          sourceId: source.sourceId,
+          excerpt: source.excerpt,
+          score: source.score,
+        })),
+        // RAG Remediation Sprint 2 (A-63): the review row previously carried only a one-sentence
+        // excerpt of the answer and never the original question at all, so anything created from
+        // an approved review (createWorkflowActionFromAiReview) could not include either -- fixed
+        // by using the existing ai_operation_reviews.metadata jsonb column (no migration needed).
+        metadata: {
+          question,
+          fullAnswer: answer.answer,
+          confidenceExplanation: answer.confidenceExplanation,
+        },
+      },
+    }).catch(() => undefined);
   }
 
-  await repositories.auditLogsRepository?.record(scope, {
+  const auditLog = await repositories.auditLogsRepository?.record(scope, {
     action: "rag.answer.generated",
     resourceType: "ai_output_audit",
     resourceId: aiOutputAuditId,
@@ -359,6 +503,30 @@ export async function answerTenantQuestion(
       modelUsed: routeResult.modelUsed,
       latencyMs: routeResult.latencyMs,
       costTier: routeResult.costTier,
+    },
+  }).catch(() => undefined);
+
+  // Sprint 2 (Live Golden Path Execution): the timeline event schema already had an
+  // "ai_answer_generated" / "ai_review" pair defined (workflowEvidence.ts) for exactly this
+  // moment, but nothing ever wrote one -- the golden path's timeline previously jumped straight
+  // from "document_indexed" to "human_decision" with the answer-generation step missing entirely.
+  await recordWorkflowTimelineEvent({
+    organizationId: scope.organizationId,
+    resourceType: "ai_review",
+    resourceId: aiOutputAuditId,
+    eventType: "ai_answer_generated",
+    title: "Cited answer generated",
+    description: answer.answer.slice(0, 200),
+    actorUserId: scope.userId,
+    actorLabel: scope.role,
+    sourceType: "ai_output_audit",
+    sourceId: aiOutputAuditId,
+    auditLogId: auditLog?.id,
+    metadata: {
+      question,
+      confidence: answer.confidence,
+      humanReviewRequired: answer.humanReviewRequired,
+      sourceCount: answer.sources.length,
     },
   }).catch(() => undefined);
 

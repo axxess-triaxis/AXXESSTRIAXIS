@@ -17,6 +17,7 @@ import {
   WorkflowStepCard,
 } from "../../components/enterprise";
 import { Card } from "../../components/ui/Card";
+import { isDemoModeEnabled } from "../../demo/demoMode";
 import type { AuditLog, Invitation, Organization, User } from "../../domain";
 import { applicationServices } from "../../providers/serviceProvider";
 import { tenantScopeFromUser } from "../../repositories/supabaseEnterpriseRepositories";
@@ -30,10 +31,16 @@ type AdminState = {
   loading: boolean;
 };
 
+// Sprint 5, Priority 4 (Department/Workspace scope decision): "Department map" previously
+// claimed "Ready" here even though the departments/workspaces tables and their RLS
+// (supabase/migrations/202607090001_sprint12_security_compliance_foundation.sql) have never had
+// any application repository or route reading or writing them -- confirmed by the Sprint 3
+// tenant-model audit. Explicit defer, not a build: relabeled to state the true status honestly
+// rather than implying a working department-to-permission mapping feature that does not exist.
 const pilotControls = [
   { title: "Tenant profile", description: "Confirm sector, production/demo separation, data residency, and pilot owner.", status: "Ready" },
   { title: "Role matrix", description: "Assign Organization Admin, Executive, Manager, Employee, and Guest boundaries before pilot launch.", status: "Review" },
-  { title: "Department map", description: "Align departments to Knowledge Hub permissions and approval escalation paths.", status: "Ready" },
+  { title: "Department map", description: "Formal department-to-permission mapping is not built yet -- user profiles carry a free-text department name only. Deferred to a future sprint.", status: "Not built" },
   { title: "Invitation queue", description: "Invite pilot users with tenant-bound roles and expiring invitation links.", status: "Pending" },
   { title: "Audit coverage", description: "Verify auth, documents, AI answers, approvals, tasks, and feedback emit audit entries.", status: "Ready" },
   { title: "Support handoff", description: "Capture pilot sponsor, support owner, escalation SLA, and weekly check-in cadence.", status: "Review" },
@@ -122,7 +129,9 @@ export function OrganizationAdminSection() {
         }
       />
 
-      <DemoDataNotice label="Live tenants start clean. Investor Preview uses seeded users, roles, departments, and audit records to demonstrate pilot readiness without mixing with production data." />
+      {isDemoModeEnabled() && (
+        <DemoDataNotice label="Live tenants start clean. Investor Preview uses seeded users, roles, departments, and audit records to demonstrate pilot readiness without mixing with production data." />
+      )}
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <MetricCard label="Pilot users" value={state.users.length} detail={`${admins.length} admin-ready`} state={state.loading ? "Provider-gated" : "Live"} icon={Users} />

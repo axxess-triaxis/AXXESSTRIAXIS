@@ -1,6 +1,7 @@
 import type { ApplicationServices } from "../../providers/serviceProvider";
 import type { TenantScope } from "../../repositories/interfaces";
 import { getIntegrationHealth } from "../integrations/pluginRegistry";
+import { approvalRequestsRepository } from "../../repositories/workflowActionRepositories";
 
 export type LiveWorkspaceMetrics = {
   activeProjects: number;
@@ -13,17 +14,23 @@ export type LiveWorkspaceMetrics = {
 };
 
 export async function getLiveWorkspaceMetrics(services: ApplicationServices, scope: TenantScope): Promise<LiveWorkspaceMetrics> {
-  const [projects, tasks, notifications, documents] = await Promise.all([
+  const [projects, tasks, notifications, documents, approvals] = await Promise.all([
     services.projectsRepository.list(scope, { pageSize: 500 }).catch(() => []),
     services.tasksRepository.list(scope, { pageSize: 1000 }).catch(() => []),
     services.notificationsRepository.list(scope, { pageSize: 250 }).catch(() => []),
     services.documentsRepository.list(scope, { pageSize: 2500 }).catch(() => []),
+    // Sprint 5 (A-17): this previously read services.institutionalRepository.getApprovals(),
+    // which is always the empty stub for every tenant (see the liveRepositories comment in
+    // serviceProvider.ts) -- so a real tenant's dashboard could never reflect an approval request
+    // created by the golden path (createWorkflowActionFromAiReview -> approvalRequestsRepository),
+    // no matter how many existed. approval_requests now has a real repository; use it.
+    approvalRequestsRepository.list(scope, { pageSize: 250 }).catch(() => []),
   ]);
 
   return {
     activeProjects: projects.filter((project) => !["completed", "archived"].includes(project.status)).length,
     openTasks: tasks.filter((task) => !["completed", "archived"].includes(task.status)).length,
-    pendingApprovals: services.institutionalRepository.getApprovals().filter((approval) => approval.status !== "Completed").length,
+    pendingApprovals: approvals.filter((approval) => approval.status === "pending" || approval.status === "changes_requested").length,
     unreadNotifications: notifications.filter((notification) => !notification.readAt).length,
     ragReadyDocuments: documents.filter((document) => document.status !== "deleted").length,
     integrationConfigured: getIntegrationHealth().configured,

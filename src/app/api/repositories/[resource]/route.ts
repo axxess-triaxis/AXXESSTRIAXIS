@@ -31,6 +31,7 @@ const allowedResources = new Set([
   "notifications",
   "audit_logs",
   "invitations",
+  "stakeholders",
 ]);
 
 type RouteContext = {
@@ -53,7 +54,7 @@ function hasRole(role: RoleName, allowed: RoleName[]) {
 }
 
 function canWriteResource(resource: ResourceName, role: RoleName) {
-  if (resource === "users") return hasRole(role, ["Super Admin", "Organization Admin"]);
+  if (resource === "users" || resource === "invitations") return hasRole(role, ["Super Admin", "Organization Admin"]);
   if (resource === "projects" || resource === "meetings") {
     return hasRole(role, ["Super Admin", "Organization Admin", "Executive", "Manager"]);
   }
@@ -66,7 +67,7 @@ function canWriteResource(resource: ResourceName, role: RoleName) {
   if (resource === "document_activity") {
     return hasRole(role, ["Super Admin", "Organization Admin", "Executive", "Manager", "Employee", "Consultant", "Guest"]);
   }
-  if (resource === "tasks") {
+  if (resource === "tasks" || resource === "stakeholders") {
     return hasRole(role, ["Super Admin", "Organization Admin", "Executive", "Manager", "Employee"]);
   }
   if (resource === "notifications") {
@@ -98,6 +99,7 @@ function validateResourceInput(resource: ResourceName, body: Record<string, unkn
     return "Document activity target and action are required.";
   }
   if (resource === "knowledge_articles" && !title) return "Knowledge article title is required.";
+  if (resource === "stakeholders" && !name) return "Contact name is required.";
   if (resource === "notifications" && (!title || typeof body.body !== "string" || !body.body.trim())) {
     return "Notification title and body are required.";
   }
@@ -156,6 +158,7 @@ const EVIDENCE_RESOURCE_CONFIG: Partial<Record<ResourceName, {
   documents: { singular: "document", actionVerb: "document.created", category: "document-management" },
   knowledge_articles: { singular: "knowledge_article", actionVerb: "knowledge_article.created", category: "knowledge-management" },
   meetings: { singular: "meeting", actionVerb: "meeting.created", category: "meeting-management" },
+  stakeholders: { singular: "stakeholder", actionVerb: "stakeholder.created", category: "stakeholder-management" },
 };
 
 async function recordResourceCreateEvidence(resourceName: ResourceName, scope: TenantScope, result: unknown) {
@@ -286,6 +289,37 @@ export async function PATCH(request: Request, context: RouteContext) {
       body: body.role ? `Your role was changed to ${String(body.role)}.` : "Your access status was updated.",
       resourceType: "users",
       resourceId: id,
+    }).catch(() => undefined);
+    // Sprint 3: role/department changes are a tenant-sensitive action and must leave audit
+    // evidence, matching every other admin mutation in this route (see recordResourceCreateEvidence).
+    if (body.role || body.department || body.status) {
+      await auditLogsRepository.record(scope, {
+        action: "user.access_updated",
+        resourceType: "users",
+        resourceId: id,
+        category: "user-management",
+        metadata: {
+          role: body.role ?? null,
+          department: body.department ?? null,
+          status: body.status ?? null,
+        },
+      }).catch(() => undefined);
+    }
+  }
+
+  // Admin panel wiring pass (2026-07-25): a revoked invitation is a tenant-sensitive action
+  // (blocks that token from ever being accepted) and must leave the same audit evidence every
+  // other admin mutation in this route already does.
+  if (resourceName === "invitations" && body.status === "revoked" && result && typeof result === "object") {
+    const target = result as Record<string, unknown>;
+    await auditLogsRepository.record(scope, {
+      action: "invitation.revoked",
+      resourceType: "invitations",
+      resourceId: id,
+      category: "user-management",
+      metadata: {
+        email: target.email ?? null,
+      },
     }).catch(() => undefined);
   }
 

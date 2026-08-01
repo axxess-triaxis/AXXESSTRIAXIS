@@ -70,13 +70,19 @@ export function canAccessRoute(user: UserContext, route: AppRoute) {
   return canAccessSection(user, route.section);
 }
 
+// "Super Admin" is a self-selectable role within a tenant's own onboarding (see
+// packages/shared/src/index.ts axxessBetaRoles), not a cross-tenant platform-operator role --
+// there is no such role in this codebase. Granting it authority over an arbitrary organizationId
+// here previously let a caller manage any tenant by simply naming its id, backstopped only by
+// Postgres RLS (which is correctly scoped per docs/readiness/ACTIONABLES_READINESS_MATRIX.md
+// Sprint 3 tenant-model audit). Both roles must always match the acting user's own organization.
 export function canManageOrganization(user: UserContext, organizationId: string) {
-  if (user.role === "Super Admin") return true;
-  return user.organizationId === organizationId && user.role === "Organization Admin";
+  if (user.organizationId !== organizationId) return false;
+  return user.role === "Super Admin" || user.role === "Organization Admin";
 }
 
 export function assertOrganizationAccess(user: UserContext, organizationId: string) {
-  if (user.role !== "Super Admin" && user.organizationId !== organizationId) {
+  if (user.organizationId !== organizationId) {
     throw new Error("Cross-organization access denied.");
   }
 }

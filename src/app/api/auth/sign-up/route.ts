@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { callSupabaseAuth, isSupabaseAuthApiConfigured } from "../../../../auth/authApi";
+import { SupabaseAuthError } from "../../../../auth/supabaseAuthError";
 import { getPostHogClient } from "../../../../lib/posthog-server";
 
 export async function POST(request: Request) {
@@ -33,7 +34,18 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({ ok: true, message: "Check your email to verify the account before onboarding." });
-  } catch {
+  } catch (error) {
+    if (error instanceof SupabaseAuthError) {
+      console.error(`[auth/sign-up] Supabase sign-up failed (status=${error.status}, code=${error.code ?? "unknown"}): ${error.message}`);
+      if (error.code === "user_already_exists") {
+        return NextResponse.json({
+          error: "An account already exists for this email. Sign in instead.",
+          code: "user_already_exists",
+        }, { status: 409 });
+      }
+    } else {
+      console.error("[auth/sign-up] Unexpected sign-up failure:", error);
+    }
     return NextResponse.json({ error: "Unable to create account. Check Supabase Auth settings and email confirmation configuration." }, { status: 400 });
   }
 }

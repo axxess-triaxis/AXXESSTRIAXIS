@@ -253,4 +253,89 @@ describe("live tenant workflow execution", () => {
     expect(stakeholderResult.timelineEvents[1]?.resourceType).toBe("stakeholder_note");
     expect(projectResult.timelineEvents[1]?.resourceType).toBe("project_update");
   });
+
+  // RAG Remediation Sprint 2 (A-63): before this sprint, AiReviewInboxItem never carried the
+  // original question or the full (non-excerpted) answer at all, so nothing created from an
+  // approved review could include either -- only a one-sentence excerpt and citation titles.
+  describe("review-to-work fidelity (RAG Remediation Sprint 2, A-63)", () => {
+    const richReview: AiReviewInboxItem = {
+      ...review,
+      question: "What is the district oxygen resilience risk for Dibrugarh?",
+      fullAnswer: "Dibrugarh's oxygen resilience risk is elevated because biomedical maintenance variance has not been resolved since the last district review, and the mitigation owner assignment remains open.",
+      confidenceExplanation: {
+        sourceMatchStrength: 0.88,
+        relevantChunkCount: 1,
+        sourceAuthorizationStatus: "fully_authorized",
+        citationCoverage: 1,
+        answerMode: "local_extractive_summary",
+        humanReviewRequired: true,
+      },
+    };
+
+    it("carries the original question and full answer into a task created from an answer", async () => {
+      const repositories = createRepositories();
+      const result = await createWorkflowActionFromAiReview(repositories, scope, {
+        review: richReview,
+        decision: "approved",
+        actionType: "task",
+      });
+
+      expect(result.createdTask?.description).toContain("What is the district oxygen resilience risk for Dibrugarh?");
+      expect(result.createdTask?.description).toContain("mitigation owner assignment remains open");
+    });
+
+    it("carries question, full answer, confidence explanation, and review id into an approval request", async () => {
+      const repositories = createRepositories();
+      const approvalRequests: ApprovalRequest[] = [];
+
+      const result = await createWorkflowActionFromAiReview({
+        ...repositories,
+        approvalRequestsRepository: {
+          list: vi.fn(async () => approvalRequests),
+          create: vi.fn(async (tenantScope, input) => {
+            const record: ApprovalRequest = {
+              id: "approval-rich-1",
+              organizationId: tenantScope.organizationId,
+              requestedByUserId: input.requestedByUserId,
+              sourceAiReviewId: input.sourceAiReviewId,
+              title: input.title,
+              description: input.description,
+              priority: input.priority ?? "high",
+              status: "pending",
+              dueAt: input.dueAt,
+              metadata: input.metadata ?? {},
+              createdAt: "2026-07-16T09:00:00.000Z",
+              updatedAt: "2026-07-16T09:00:00.000Z",
+            };
+            approvalRequests.push(record);
+            return record;
+          }),
+        },
+      }, scope, {
+        review: richReview,
+        decision: "approved",
+        actionType: "approval_request",
+      });
+
+      expect(result.createdApprovalRequest?.description).toContain("What is the district oxygen resilience risk for Dibrugarh?");
+      expect(result.createdApprovalRequest?.sourceAiReviewId).toBe(richReview.id);
+      expect(result.createdApprovalRequest?.metadata).toMatchObject({
+        reviewId: richReview.id,
+        question: richReview.question,
+        confidenceExplanation: richReview.confidenceExplanation,
+      });
+    });
+
+    it("still produces a usable description when question/fullAnswer are absent (older review rows)", async () => {
+      const repositories = createRepositories();
+      const result = await createWorkflowActionFromAiReview(repositories, scope, {
+        review, // the original fixture, with no question/fullAnswer/confidenceExplanation
+        decision: "approved",
+        actionType: "task",
+      });
+
+      expect(result.createdTask?.description).toContain(review.answerExcerpt);
+      expect(result.createdTask?.description).not.toContain("Question:");
+    });
+  });
 });

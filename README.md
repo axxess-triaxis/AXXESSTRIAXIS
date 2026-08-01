@@ -25,6 +25,38 @@ These jurisdictions increasingly require AI systems to satisfy expectations arou
 
 AXXESS is being engineered from the outset to support those requirements.
 
+**Pitch deck:** [`docs/pitch-deck/Triaxis_Ventures_Pitch_Deck_2026-07-23.pdf`](docs/pitch-deck/Triaxis_Ventures_Pitch_Deck_2026-07-23.pdf) (dated 2026-07-23).
+
+---
+
+## Provenance
+
+**The hands-on technical build** -- design, product definition, coding, engineering, testing, workflow orchestration, product iteration and remediation, and the live Tenant 0 onboarding attempts documented in `docs/TENANT_0_ONBOARDING_FINDINGS_2026_07_22.md` -- was executed solely by **Sudipta Koushik Sarmah, Founder & Managing Director of Triaxis Ventures Private Limited**, with AI assistant tools and agents (Claude Code, Codex, Claude Pro, ChatGPT Plus, Microsoft Copilot, and the other tools recorded in `docs/SPRINT_41_QA2_MILESTONE_2026_07_22.md` Section 9's spend record) as the only technical assistance -- no second human was involved in that hands-on execution.
+
+**Triaxis Ventures Private Limited is co-founded by Sudipta Koushik Sarmah and Ritashree Mahanta.** Ritashree is Sudipta's life partner and a seasoned healthcare and education professional with 6+ years of experience across 4 Indian states. Her contributions to Triaxis Ventures and AXXESS TRIaxis include:
+
+- Company and product strategy.
+- Objective product feedback and brainstorming, particularly on healthcare- and education-sector workflows.
+- Collecting beta feedback responses from respondents in the healthcare and education sectors.
+- Participating in 15+ stakeholder consultations and 10+ client scoping calls.
+- **The company's first cheque.** Ritashree is the startup's first investor, having personally contributed approximately 70% of her income over the last 6-7 months toward the operating runway that has kept both Triaxis Ventures and AXXESS TRIaxis going.
+
+---
+
+## Evidence and Verification
+
+Every material claim about status, progress, or completion in this repository's documentation is required to trace through **external signal -> product decision -> shipped artifact -> verification -> current status**. This is a standing rule, not a one-time exercise -- formalized in [`CLAUDE.md`](CLAUDE.md).
+
+Start here to trace it:
+
+- [`docs/FOUNDER_EXECUTION_EVIDENCE_GOVERNANCE.md`](docs/FOUNDER_EXECUTION_EVIDENCE_GOVERNANCE.md) -- the standing rule itself, and the index of every canonical evidence file below.
+- [`docs/FOUNDER_EXECUTION_EVIDENCE_INDEX.md`](docs/FOUNDER_EXECUTION_EVIDENCE_INDEX.md) -- the master evidence inventory: founder-stated volumes vs. independently verified counts, source-linked, last audited 2026-07-25.
+- [`docs/MARKET_TO_PRODUCT_EVIDENCE_LEDGER.md`](docs/MARKET_TO_PRODUCT_EVIDENCE_LEDGER.md) -- how external signal (pitch calls, client scoping, stakeholder validation, beta feedback, QA findings) converted into specific product decisions.
+- [`docs/RELEASE_AND_VERIFICATION_EVIDENCE_LEDGER.md`](docs/RELEASE_AND_VERIFICATION_EVIDENCE_LEDGER.md) -- git/PR counts and fresh typecheck/lint/test/build capture, with exact commands and commit hashes.
+- [`docs/UNSUPPORTED_OR_PARTIAL_CLAIMS.md`](docs/UNSUPPORTED_OR_PARTIAL_CLAIMS.md) -- every claim not yet fully evidenced, kept open until a source artifact closes it.
+- [`docs/readiness/PITCH_AND_TRACTION_LOG_2026_07_24.md`](docs/readiness/PITCH_AND_TRACTION_LOG_2026_07_24.md), [`docs/readiness/CLIENT_SCOPING_CALLS_LOG_2026_07_25.md`](docs/readiness/CLIENT_SCOPING_CALLS_LOG_2026_07_25.md), [`docs/readiness/STAKEHOLDER_IDEA_VALIDATION_CALLS_LOG_2026_07_25.md`](docs/readiness/STAKEHOLDER_IDEA_VALIDATION_CALLS_LOG_2026_07_25.md) -- the named, per-conversation source logs behind the investor/pitch, client scoping, and stakeholder idea-validation counts cited above (deduplicated against each other where a name appears in more than one).
+- [`docs/readiness/ACTIONABLES_READINESS_MATRIX.md`](docs/readiness/ACTIONABLES_READINESS_MATRIX.md) and [`docs/readiness/QA3_READINESS_KANBAN.md`](docs/readiness/QA3_READINESS_KANBAN.md) -- the live, evidence-gated progress tracker (`Yes` / `Blocked` / `No`, each with a named owner, confidence score, and evidence citation).
+
 ---
 
 # Why We Are Building AXXESS

@@ -1,9 +1,11 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createDemoDataset, demoDatasetSummary } from "./demoDataset";
 import {
+  demoSessionCookieName,
   demoUserContext,
   isDemoLogin,
   isDemoModeEnabled,
+  refreshDemoSessionCookie,
   resetDemoEnvironment,
   setDemoModeEnabled,
 } from "./demoMode";
@@ -18,6 +20,7 @@ const demoScope: TenantScope = {
 
 afterEach(() => {
   window.localStorage.clear();
+  document.cookie = `${demoSessionCookieName}=; path=/; max-age=0`;
   vi.unstubAllEnvs();
   resetDemoRepositoryStore();
 });
@@ -35,6 +38,28 @@ describe("Demo Mode", () => {
     expect(dataset.institutional.approvals).toHaveLength(demoDatasetSummary.approvals);
     expect(dataset.auditLogs).toHaveLength(demoDatasetSummary.auditLogs);
     expect(new Set(dataset.projects.map((project) => project.organizationId))).toEqual(new Set([dataset.organization.id]));
+  });
+
+  it("sets a non-secret demo-session cookie the edge proxy can see, and clears it when disabled (Investor Preview fix, 2026-07-24)", () => {
+    expect(document.cookie).not.toContain(`${demoSessionCookieName}=`);
+
+    setDemoModeEnabled(true);
+    expect(document.cookie).toContain(`${demoSessionCookieName}=true`);
+
+    setDemoModeEnabled(false);
+    expect(document.cookie).not.toContain(`${demoSessionCookieName}=true`);
+  });
+
+  it("refreshDemoSessionCookie re-issues a fresh-TTL cookie without touching the localStorage flag (Attempt 4, 2026-07-24 stale-session fix)", () => {
+    setDemoModeEnabled(true);
+    expect(window.localStorage.getItem("axxess.demoMode.enabled")).toBe("true");
+    document.cookie = `${demoSessionCookieName}=; path=/; max-age=0`;
+    expect(document.cookie).not.toContain(`${demoSessionCookieName}=true`);
+
+    refreshDemoSessionCookie();
+
+    expect(document.cookie).toContain(`${demoSessionCookieName}=true`);
+    expect(window.localStorage.getItem("axxess.demoMode.enabled")).toBe("true");
   });
 
   it("can be enabled by storage, environment, or demo login", () => {

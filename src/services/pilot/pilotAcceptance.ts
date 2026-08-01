@@ -258,7 +258,7 @@ export function buildPilotTenantAcceptanceSnapshot(input: BuildPilotTenantAccept
 
   return {
     organizationId: input.organizationId,
-    organizationName: input.organizationName ?? "North East Health Mission",
+    organizationName: input.organizationName ?? "Organization setup pending",
     generatedAt: input.generatedAt ?? new Date().toISOString(),
     status,
     stage: acceptanceStage(status, completionPercent),

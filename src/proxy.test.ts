@@ -1,3 +1,4 @@
+import { NextRequest } from "next/server";
 import { describe, expect, it } from "vitest";
 import {
   getBetaRootRedirectUrl,
@@ -6,6 +7,7 @@ import {
   isAuthShellEnabledFromEnv,
   isDemoModeEnabledFromEnv,
   isProtectedRoutePath,
+  proxy,
   shouldRedirectToLogin,
 } from "./proxy";
 
@@ -15,6 +17,27 @@ describe("route proxy helpers (renamed from middleware.ts in Sprint 5, Next.js 1
     expect(isProtectedRoutePath("/projects/active")).toBe(true);
     expect(isProtectedRoutePath("/settings")).toBe(true);
     expect(isProtectedRoutePath("/admin/beta-readiness")).toBe(true);
+  });
+
+  it("protects /onboarding (Product Issue 2, Sprint 42): the wizard must not be reachable without a session", () => {
+    expect(isProtectedRoutePath("/onboarding")).toBe(true);
+    expect(isProtectedRoutePath("/onboarding/complete")).toBe(true);
+  });
+
+  it("redirects an unauthenticated visit to /onboarding to /auth with a next param pointing back at onboarding", () => {
+    expect(shouldRedirectToLogin("/onboarding", {
+      authShellEnabled: true,
+      demoModeEnabled: false,
+      hasSessionCookie: false,
+    })).toBe(true);
+  });
+
+  it("does not redirect /onboarding once a session cookie is present", () => {
+    expect(shouldRedirectToLogin("/onboarding", {
+      authShellEnabled: true,
+      demoModeEnabled: false,
+      hasSessionCookie: true,
+    })).toBe(false);
   });
 
   it("leaves public auth and static paths unprotected", () => {
@@ -53,6 +76,49 @@ describe("route proxy helpers (renamed from middleware.ts in Sprint 5, Next.js 1
     const redirectUrl = getBetaRootRedirectUrl(
       new URL("https://beta.triaxisventures.com/auth"),
       "beta.triaxisventures.com",
+    );
+
+    expect(redirectUrl).toBeNull();
+  });
+
+  // Reported 2026-07-25: landing.triaxisventures.com's root fell through to the shared marketing
+  // chooser page (which links out to the Demo) instead of going straight into the beta workspace,
+  // since it was never added alongside beta.triaxisventures.com in this redirect rule.
+  it("redirects landing (Product/beta) root host to dashboard", () => {
+    const redirectUrl = getBetaRootRedirectUrl(
+      new URL("https://landing.triaxisventures.com/"),
+      "landing.triaxisventures.com",
+    );
+
+    expect(redirectUrl?.toString()).toBe("https://landing.triaxisventures.com/dashboard");
+  });
+
+  it("does not redirect non-root landing routes", () => {
+    const redirectUrl = getBetaRootRedirectUrl(
+      new URL("https://landing.triaxisventures.com/auth"),
+      "landing.triaxisventures.com",
+    );
+
+    expect(redirectUrl).toBeNull();
+  });
+
+  // Reported 2026-07-25: investor.triaxisventures.com's root showed the shared marketing chooser
+  // with stale pre-hosting-split content (dead relative /investor, /landing links) instead of
+  // going straight into the Investor Preview. Forced demo mode means /dashboard renders with no
+  // auth detour on this deployment, so this redirect alone is sufficient to fix it.
+  it("redirects investor (Demo) root host to dashboard", () => {
+    const redirectUrl = getBetaRootRedirectUrl(
+      new URL("https://investor.triaxisventures.com/"),
+      "investor.triaxisventures.com",
+    );
+
+    expect(redirectUrl?.toString()).toBe("https://investor.triaxisventures.com/dashboard");
+  });
+
+  it("does not redirect non-root investor routes", () => {
+    const redirectUrl = getBetaRootRedirectUrl(
+      new URL("https://investor.triaxisventures.com/dashboard"),
+      "investor.triaxisventures.com",
     );
 
     expect(redirectUrl).toBeNull();
@@ -147,5 +213,38 @@ describe("route proxy helpers (renamed from middleware.ts in Sprint 5, Next.js 1
       demoModeEnabled: false,
       hasSessionCookie: false,
     })).toBe(false);
+  });
+});
+
+// Investor Preview's client-side-only mock session (src/demo/demoMode.ts's localStorage flag) was
+// invisible to this Edge Runtime proxy, so "Continue to workspace" bounced a deliberately-entered
+// demo session straight back to /auth -- only a real Supabase access-token cookie ever satisfied
+// the edge gate. Sprint 1 correction (2026-07-24) adds a non-secret axxess-demo-session cookie the
+// proxy also accepts, closing this gap without weakening the real-session check for anyone else.
+describe("proxy() accepts a demo-session cookie as well as a real access-token cookie (Investor Preview fix, 2026-07-24)", () => {
+  it("redirects to /auth when neither cookie is present", () => {
+    const request = new NextRequest("https://beta.triaxisventures.com/dashboard");
+    const response = proxy(request);
+
+    expect(response.status).toBe(307);
+    expect(response.headers.get("location")).toContain("/auth");
+  });
+
+  it("passes through when the real access-token cookie is present", () => {
+    const request = new NextRequest("https://beta.triaxisventures.com/dashboard", {
+      headers: { cookie: "axxess-access-token=real-token-value" },
+    });
+    const response = proxy(request);
+
+    expect(response.status).not.toBe(307);
+  });
+
+  it("passes through when only the demo-session cookie is present, so Investor Preview reaches the workspace", () => {
+    const request = new NextRequest("https://beta.triaxisventures.com/dashboard", {
+      headers: { cookie: "axxess-demo-session=true" },
+    });
+    const response = proxy(request);
+
+    expect(response.status).not.toBe(307);
   });
 });

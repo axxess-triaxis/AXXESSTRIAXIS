@@ -16,14 +16,16 @@ export type NavItem = {
   // showing a hardcoded count to a live tenant would contradict their actual (empty) state.
   // Defaults to "count" when a badge is present, since that's the riskier case to get wrong.
   //
-  // Sprint 5 badge-count strategy decision (Option A, confirmed): hide the count in live mode
-  // rather than build a live counting repository (Option B). Neither Social Alerts nor Approvals
-  // has a live, tenant-scoped data source to count from yet -- getLiveWorkspaceMetrics's own
-  // socialAlerts field is hardcoded to 0 with an explicit "no live repository exists yet" comment
-  // (src/services/live-platform/livePlatform.ts), and Approvals is a Demo-Mode-gated stub with no
-  // repository at all (per Sprint 3's audit). Building a real counting source for either is a
-  // product feature addition, not a bug fix, and out of this program's "do not rewrite architecture"
-  // scope. Revisit this decision (switch to Option B) only once a live repository backs one of them.
+  // Sprint 5 (2026-07-22) badge-count strategy decision (Option A, confirmed): hide the count in
+  // live mode rather than build a live counting repository (Option B). At the time, neither Social
+  // Alerts nor Approvals had a live, tenant-scoped data source to count from -- getLiveWorkspaceMetrics's
+  // own socialAlerts field is still hardcoded to 0 with an explicit "no live repository exists yet"
+  // comment (src/services/live-platform/livePlatform.ts). Approvals is no longer in that state: a
+  // second Sprint 5 (2026-07-24, A-17) wired pendingApprovals to the real approvalRequestsRepository
+  // (approval_requests table), so this decision's own stated trigger condition -- "once a live
+  // repository backs one of them" -- is now met for Approvals specifically. Switching this item's
+  // badgeKind to "count" in live mode is a deliberate follow-up decision for a future sprint, not
+  // done here to avoid scope creep this late in a sprint; Social Alerts remains correctly gated.
   badgeKind?: "tag" | "count";
 };
 
