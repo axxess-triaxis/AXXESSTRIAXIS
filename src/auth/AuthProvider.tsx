@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { featureFlags } from "../config/featureFlags";
 import {
   cleanTenantUserContext,
@@ -97,41 +97,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  // A session revoked server-side (absolute 24h cap, or the founder's "force logout everywhere"
-  // requirement) needs a live tab to actually notice -- otherwise a tab left open would keep acting
-  // authenticated until the user happened to trigger a fetch. Re-checking on focus/visibility is
-  // the standard low-cost mechanism; it is not a literal instant push to a fully idle background
-  // tab (no websocket/polling infrastructure exists here for that), but it covers the reported
-  // case (a tab or window being returned to) honestly.
-  const sessionRef = useRef(session);
-  useEffect(() => {
-    sessionRef.current = session;
-  }, [session]);
-
-  useEffect(() => {
-    if (!featureFlags.enableAuthShell) return;
-
-    function revalidateOnReturn() {
-      if (document.visibilityState !== "visible") return;
-      const current = sessionRef.current;
-      if (current.status !== "authenticated" || current.source !== "supabase-auth") return;
-
-      fetchServerSession()
-        .then((serverSession) => {
-          if (!serverSession) {
-            setSession({ status: "unauthenticated", source: "supabase-auth", user: null });
-          }
-        })
-        .catch(() => undefined);
-    }
-
-    document.addEventListener("visibilitychange", revalidateOnReturn);
-    window.addEventListener("focus", revalidateOnReturn);
-    return () => {
-      document.removeEventListener("visibilitychange", revalidateOnReturn);
-      window.removeEventListener("focus", revalidateOnReturn);
-    };
-  }, []);
+  // 2026-08-01 incident: this focus/visibilitychange revalidation (added for the session-security
+  // fix, meant to catch an already-open tab whose session was revoked server-side) fired an extra
+  // concurrent /api/auth/session call on tab focus/navigation, racing against a page's own normal
+  // parallel data-fetch calls. Supabase refresh tokens are single-use (rotate on every use): when
+  // two concurrent requests both attempted to refresh a near-expiry access token, the losing
+  // request's now-already-rotated refresh token failed, and its catch-all error handler wiped
+  // cookies for the whole browser -- including the tokens the winning request had just legitimately
+  // refreshed. Net effect: clicking into any workspace shortly after login could log the user out
+  // entirely. Removed rather than patched around, since it was always a secondary mechanism (the
+  // 24h absolute session cap and the /auth real-vs-demo split are the actual security fix and do
+  // not depend on this) -- not worth re-introducing until it can coalesce concurrent refresh
+  // attempts instead of racing them.
 
   useEffect(() => {
     function syncDemoSession() {

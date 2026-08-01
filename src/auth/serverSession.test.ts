@@ -117,4 +117,32 @@ describe("serverSession absolute session cap", () => {
     const session = await getServerAuthSession(true);
     expect(session).toBeNull();
   });
+
+  // 2026-08-01 incident regression test: a burst of concurrent requests (a page's own parallel
+  // data-fetch calls) can race on a single-use Supabase refresh token -- one wins and rotates it,
+  // the others' refresh attempts fail with an already-invalidated token. The losing request must
+  // report itself as unauthenticated without destroying cookies a concurrent winner may have just
+  // legitimately set.
+  it("does not clear cookies when validation fails and the refresh attempt also fails (concurrent refresh-token race)", async () => {
+    const { getServerAuthSession, accessTokenCookieName, refreshTokenCookieName, sessionAnchorCookieName } = await import("./serverSession");
+
+    store.set(accessTokenCookieName, { value: "stale-access", maxAge: 3600 });
+    store.set(refreshTokenCookieName, { value: "already-rotated-refresh", maxAge: 60 * 60 * 24 * 30 });
+    store.set(sessionAnchorCookieName, { value: String(Date.now()), maxAge: 60 * 60 * 24 });
+
+    vi.stubGlobal("fetch", vi.fn(async (url: string) => {
+      if (url.endsWith("/auth/v1/user")) return jsonResponse({ error: "invalid token" }, 401);
+      if (url.includes("token?grant_type=refresh_token")) return jsonResponse({ error_code: "refresh_token_already_used" }, 400);
+      throw new Error(`Unexpected fetch: ${url}`);
+    }));
+
+    const session = await getServerAuthSession(true);
+
+    expect(session).toBeNull();
+    // Cookies survive this request's own failure -- a concurrent sibling request may have already
+    // refreshed them successfully, and this request must not wipe that out.
+    expect(store.get(accessTokenCookieName)?.value).toBe("stale-access");
+    expect(store.get(refreshTokenCookieName)?.value).toBe("already-rotated-refresh");
+    expect(store.get(sessionAnchorCookieName)?.value).toBeDefined();
+  });
 });
