@@ -34,12 +34,46 @@ export function getSocialAlertProviderStatus(env: NodeJS.ProcessEnv = process.en
   ];
 }
 
+const demoAlertAccounts = [
+  "State Health Directorate", "MSME Policy Cell", "Regional Innovation Fund", "Disaster Management Authority",
+  "District Hospital Network", "UNICEF Field Office", "Treasury & Planning Department", "Emergency Management Cell",
+  "North East Nursing Council", "Rural Clinics Association", "Ministry of Health and Family Welfare",
+  "National Health Mission", "Press Trust of India (Health Desk)", "Assam State Disaster Management Authority",
+];
+
+const demoAlertTemplates: Array<{ topic: string; title: string; urgency: SocialAlert["urgency"]; sentiment: SocialAlert["sentiment"]; actionTargets: SocialAlert["actionTargets"] }> = [
+  { topic: "healthcare funding", title: "State budget note references district oxygen resilience grants", urgency: "high", sentiment: "neutral", actionTargets: ["risk_item", "stakeholder_brief"] },
+  { topic: "public procurement", title: "New MSME procurement preference may affect biomedical vendor scoring", urgency: "medium", sentiment: "neutral", actionTargets: ["task", "crm_note"] },
+  { topic: "grant opportunity", title: "Grant window opened for hospital analytics and cold-chain monitoring", urgency: "medium", sentiment: "positive", actionTargets: ["stakeholder_brief"] },
+  { topic: "field operations", title: "Flood advisory may affect district outreach visits", urgency: "high", sentiment: "negative", actionTargets: ["task", "risk_item"] },
+  { topic: "immunization coverage", title: "District immunization coverage report flags a cold-chain gap", urgency: "high", sentiment: "negative", actionTargets: ["risk_item", "task"] },
+  { topic: "maternal health", title: "Maternal referral turnaround improves after corridor pilot", urgency: "low", sentiment: "positive", actionTargets: ["stakeholder_brief"] },
+  { topic: "vendor risk", title: "Biomedical equipment vendor flagged for delayed delivery", urgency: "medium", sentiment: "negative", actionTargets: ["task", "crm_note"] },
+  { topic: "compliance", title: "Central audit circular updates procurement documentation requirements", urgency: "medium", sentiment: "neutral", actionTargets: ["task"] },
+  { topic: "csr partnership", title: "CSR partner expresses interest in expanding rural diagnostics funding", urgency: "low", sentiment: "positive", actionTargets: ["stakeholder_brief", "crm_note"] },
+  { topic: "workforce", title: "Community health worker enablement pilot reports strong early uptake", urgency: "low", sentiment: "positive", actionTargets: ["stakeholder_brief"] },
+  { topic: "disease surveillance", title: "Fever cluster reported near a district border, monitoring escalated", urgency: "high", sentiment: "negative", actionTargets: ["risk_item", "task"] },
+  { topic: "digital health", title: "Telehealth command center pilot cited in national digital health review", urgency: "low", sentiment: "positive", actionTargets: ["stakeholder_brief"] },
+];
+
+// Deterministic, seeded generation so the investor demo always shows the same coherent stream
+// across sessions (no randomness), while still reaching enterprise scale (~160 items).
 export function getDemoSocialAlerts(): SocialAlert[] {
-  return [
-    { id: "alert-health-budget", provider: "demo", account: "State Health Directorate", topic: "healthcare funding", title: "State budget note references district oxygen resilience grants", urgency: "high", sentiment: "neutral", actionTargets: ["risk_item", "stakeholder_brief"], receivedAt: "2026-07-10T08:30:00.000Z" },
-    { id: "alert-msme-policy", provider: "demo", account: "MSME Policy Cell", topic: "public procurement", title: "New MSME procurement preference may affect biomedical vendor scoring", urgency: "medium", sentiment: "neutral", actionTargets: ["task", "crm_note"], receivedAt: "2026-07-10T07:45:00.000Z" },
-    { id: "alert-funding", provider: "demo", account: "Regional Innovation Fund", topic: "grant opportunity", title: "Grant window opened for hospital analytics and cold-chain monitoring", urgency: "medium", sentiment: "positive", actionTargets: ["stakeholder_brief"], receivedAt: "2026-07-09T16:15:00.000Z" },
-    { id: "alert-weather", provider: "demo", account: "Disaster Management Authority", topic: "field operations", title: "Flood advisory may affect Barpeta and Dhubri outreach visits", urgency: "high", sentiment: "negative", actionTargets: ["task", "risk_item"], receivedAt: "2026-07-09T12:05:00.000Z" },
-  ];
+  const base = new Date("2026-07-10T08:30:00.000Z").getTime();
+  return Array.from({ length: 160 }, (_, index) => {
+    const template = demoAlertTemplates[index % demoAlertTemplates.length];
+    const account = demoAlertAccounts[index % demoAlertAccounts.length];
+    return {
+      id: `alert-demo-${String(index + 1).padStart(3, "0")}`,
+      provider: "demo" as const,
+      account,
+      topic: template.topic,
+      title: template.title,
+      urgency: template.urgency,
+      sentiment: template.sentiment,
+      actionTargets: template.actionTargets,
+      receivedAt: new Date(base - index * 6 * 60 * 60 * 1000).toISOString(),
+    };
+  });
 }
 

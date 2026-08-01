@@ -46,9 +46,20 @@ export async function buildPilotAcceptanceRuntimeSnapshot(input: BuildPilotAccep
     seededPilotEvidence,
   });
 
+  // TP-2 (2026-07-28): this used to hardcode "North East Health Mission" unconditionally, so any
+  // real tenant's Pilot Command Center / Customer Success Live Ops admin pages showed the demo
+  // institution's name regardless of who was actually signed in -- the same failure class as A-28,
+  // just never HITL-walked on these specific admin pages before. Only the genuinely seeded/preview
+  // deployment (build-time-forced demo mode or explicit preview mode) shows the demo name now;
+  // every other case fetches the real organization's own record.
+  const organizationName = seededPilotEvidence
+    ? "North East Health Mission"
+    : (await applicationServices.organizationsRepository.getById(scope, input.user.organizationId).catch(() => undefined))?.name
+      ?? "Organization setup pending";
+
   return buildPilotTenantAcceptanceSnapshot({
     organizationId: input.user.organizationId,
-    organizationName: "North East Health Mission",
+    organizationName,
     goldenPath,
     pilotHealth,
     commandCenter,

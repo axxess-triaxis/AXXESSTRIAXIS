@@ -18,6 +18,7 @@ import { ownerInitialsForProject, projectDepartment, tenantScopeFromUser } from 
 import { useAnalytics } from "../../services/analytics";
 import { demoProjects } from "../../lib/demo/seedData";
 import { useWorkflowTimeline } from "../../hooks/useWorkflowTimeline";
+import { readAndClearAgenticDraft } from "../../services/agentic/agenticDraftHandoff";
 
 type ProjectFormState = {
   organizationId: string;
@@ -88,6 +89,7 @@ export const ProjectsSection = () => {
   const [form, setForm] = useState<ProjectFormState>(() => projectForm(undefined, user?.organizationId ?? "", user?.id ?? ""));
   const [toast, setToast] = useState<{ tone: "success" | "error" | "info"; message: string } | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [agenticDraftBanner, setAgenticDraftBanner] = useState<string | null>(null);
   const projectTimeline = useWorkflowTimeline(scope, { limit: 5, resourceType: selectedProject ? "project" : undefined, resourceId: selectedProject?.id });
 
   const canManageProjects = Boolean(user && ["Super Admin", "Organization Admin", "Executive", "Manager"].includes(user.role));
@@ -118,12 +120,34 @@ export const ProjectsSection = () => {
     void loadProjects();
   }, [loadProjects]);
 
+  // A-79: "Create project"/"Create program" from the AI Workspace actionables pop-up lands here
+  // as a sessionStorage draft -- pre-fills name/description on this section's own New Project
+  // form. AXXESS has no dedicated Program creation form, so a "program" draft opens as a Project
+  // too, disclosed in the banner rather than silently reinterpreted.
+  useEffect(() => {
+    if (!user) return;
+    const draft = readAndClearAgenticDraft("project") ?? readAndClearAgenticDraft("program");
+    if (!draft) return;
+    setErrors({});
+    setEditingProject(undefined);
+    setSelectedProject(undefined);
+    setForm({
+      ...projectForm(undefined, user.organizationId, user.id),
+      name: draft.summary.length > 80 ? `${draft.summary.slice(0, 77)}...` : draft.summary,
+      description: draft.summary,
+    });
+    setAgenticDraftBanner(draft.actionType === "program"
+      ? "Drafted from AI Workspace as a program -- AXXESS doesn't yet have a dedicated Program creation form, so this opened as a new Project you can link to a Program. Review and Save Project to create it."
+      : "Drafted from AI Workspace -- review and Save Project to create it.");
+  }, [user]);
+
   const openForm = (project?: Project) => {
     if (!user) return;
     setErrors({});
     setEditingProject(project);
     setSelectedProject(project);
     setForm(projectForm(project, user.organizationId, user.id));
+    setAgenticDraftBanner(null);
   };
 
   const closeForm = () => {
@@ -184,6 +208,7 @@ export const ProjectsSection = () => {
       });
       setSelectedProject(saved);
       setEditingProject(undefined);
+      setAgenticDraftBanner(null);
       setToast({ tone: "success", message: editingProject ? "Project updated." : "Project created." });
       await loadProjects();
     } catch {
@@ -385,6 +410,12 @@ export const ProjectsSection = () => {
                 <h3 className="text-sm font-semibold text-[#0F1117]">{editingProject ? "Edit Project" : "New Project"}</h3>
                 {editingProject && <button onClick={closeForm} className="rounded-lg p-1.5 text-[#5F6B73] hover:bg-[#F2F3F5]"><X size={14} /></button>}
               </div>
+              {agenticDraftBanner && (
+                <div className="flex items-start justify-between gap-2 rounded-lg border border-[#8B1E2D]/20 bg-[#FFF8F8] p-2.5 text-[11px] leading-relaxed text-[#8B1E2D]">
+                  <span>{agenticDraftBanner}</span>
+                  <button type="button" onClick={() => setAgenticDraftBanner(null)} aria-label="Dismiss" className="text-[#8B1E2D] hover:opacity-70"><X size={12} /></button>
+                </div>
+              )}
               <TextField label="Name" value={form.name} error={errors.name} onChange={(event) => setForm({ ...form, name: event.target.value })} disabled={!canManageProjects || saving} />
               <TextAreaField label="Description" value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} disabled={!canManageProjects || saving} />
               <SelectField label="Organization" value={form.organizationId} error={errors.organizationId} options={organizationOptions} onChange={(event) => setForm({ ...form, organizationId: event.target.value })} disabled={user?.role !== "Super Admin" || saving} />

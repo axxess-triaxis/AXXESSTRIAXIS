@@ -5,11 +5,23 @@ export type ClientAuthState = {
   user: UserContext;
 };
 
+// Carries the API's `code` field (e.g. "email_not_confirmed", "user_already_exists") through
+// to callers, so UI like the login form can branch on it -- a plain Error would lose it.
+export class AuthApiError extends Error {
+  readonly code?: string;
+
+  constructor(message: string, code?: string) {
+    super(message);
+    this.name = "AuthApiError";
+    this.code = code;
+  }
+}
+
 async function parseAuthResponse(response: Response) {
-  const payload = await response.json().catch(() => ({})) as { user?: UserContext; error?: string };
+  const payload = await response.json().catch(() => ({})) as { user?: UserContext; error?: string; code?: string };
 
   if (!response.ok || !payload.user) {
-    throw new Error(payload.error ?? "Authentication request failed.");
+    throw new AuthApiError(payload.error ?? "Authentication request failed.", payload.code);
   }
 
   return { user: payload.user };

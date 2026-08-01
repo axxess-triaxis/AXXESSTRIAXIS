@@ -71,4 +71,18 @@ describe("liveWorkspaceMetricsCache (Sprint 5, F-021 -- Dashboard duplicate requ
 
     expect(getLiveWorkspaceMetricsMock).toHaveBeenCalledTimes(2);
   });
+
+  it("invalidateLiveWorkspaceMetricsCache (Executive Dashboard Sprint ED-1 -- Refresh) drops only the targeted scope, leaving other scopes cached", async () => {
+    const { getSharedLiveWorkspaceMetrics, invalidateLiveWorkspaceMetricsCache } = await import("./liveWorkspaceMetricsCache");
+    getLiveWorkspaceMetricsMock.mockResolvedValue({ activeProjects: 1 });
+
+    await getSharedLiveWorkspaceMetrics(services, scopeA);
+    await getSharedLiveWorkspaceMetrics(services, scopeB);
+    invalidateLiveWorkspaceMetricsCache(scopeA);
+    await getSharedLiveWorkspaceMetrics(services, scopeA);
+    await getSharedLiveWorkspaceMetrics(services, scopeB);
+
+    // scopeA fetched twice (initial + post-invalidation refetch), scopeB fetched once (still cached).
+    expect(getLiveWorkspaceMetricsMock).toHaveBeenCalledTimes(3);
+  });
 });

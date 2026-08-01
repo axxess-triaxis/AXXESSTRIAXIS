@@ -57,6 +57,13 @@ export default function App() {
       beta_user: true,
       signup_source: "enterprise_beta",
     });
+    analytics.trackEvent("app_opened", { session_source: session.source }, {
+      organization_id: currentUser.organizationId,
+      user_id: currentUser.id,
+      user_role: currentUser.role,
+      module_name: activeRoute.module,
+      route: routePath,
+    });
     analytics.trackEvent("beta_session_started", { session_source: session.source }, {
       organization_id: currentUser.organizationId,
       user_id: currentUser.id,

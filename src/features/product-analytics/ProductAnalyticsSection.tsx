@@ -6,6 +6,7 @@ import { useAuth } from "../../auth/AuthProvider";
 import { LoadingState } from "../../components/feedback/LoadingState";
 import { SectionHeader } from "../../components/layout/SectionHeader";
 import { Card } from "../../components/ui/Card";
+import type { BetaFeedback, User } from "../../domain";
 import { applicationServices } from "../../providers/serviceProvider";
 import { tenantScopeFromUser } from "../../repositories/supabaseEnterpriseRepositories";
 import { useAnalytics } from "../../services/analytics";
@@ -28,6 +29,13 @@ const emptyMetrics: ProductMetrics = {
   feedback: 0,
 };
 
+const feedbackTypeTone: Record<BetaFeedback["feedbackType"], string> = {
+  Bug: "bg-red-50 text-red-700",
+  "Feature Request": "bg-blue-50 text-blue-700",
+  "Confusing Workflow": "bg-amber-50 text-amber-700",
+  "General Feedback": "bg-[#F2F3F5] text-[#5F6B73]",
+};
+
 function MetricCard({ label, value, icon: Icon }: { label: string; value: string | number; icon: typeof BarChart3 }) {
   return (
     <Card className="p-4">
@@ -46,6 +54,8 @@ export function ProductAnalyticsSection() {
   const user = session.user;
   const scope = useMemo(() => user ? tenantScopeFromUser(user) : undefined, [user]);
   const [metrics, setMetrics] = useState<ProductMetrics>(emptyMetrics);
+  const [feedbackItems, setFeedbackItems] = useState<BetaFeedback[]>([]);
+  const [feedbackUsers, setFeedbackUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
 
   const loadMetrics = useCallback(async () => {
@@ -68,6 +78,12 @@ export function ProductAnalyticsSection() {
       meetings: meetings.status === "fulfilled" ? meetings.value.length : 0,
       feedback: feedback.status === "fulfilled" ? feedback.value.length : 0,
     });
+    setFeedbackUsers(users.status === "fulfilled" ? users.value : []);
+    setFeedbackItems(
+      feedback.status === "fulfilled"
+        ? [...feedback.value].sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+        : [],
+    );
     setLoading(false);
   }, [scope]);
 
@@ -136,6 +152,39 @@ export function ProductAnalyticsSection() {
           </div>
         </Card>
       </div>
+
+      <Card className="overflow-hidden">
+        <div className="border-b border-[rgba(0,0,0,0.06)] bg-[#F8F9FA] px-4 py-3">
+          <div className="flex items-center gap-2">
+            <MessageSquareText size={15} className="text-[#8B1E2D]" />
+            <h3 className="text-sm font-semibold text-[#0F1117]">Feedback Inbox</h3>
+          </div>
+          <p className="mt-1 text-xs text-[#5F6B73]">Every submission from the Beta Feedback form, newest first. This is the review destination for A-35.</p>
+        </div>
+        {feedbackItems.length === 0 ? (
+          <div className="px-4 py-6 text-xs text-[#5F6B73]">No feedback submitted yet.</div>
+        ) : (
+          feedbackItems.map((item) => {
+            const submitter = feedbackUsers.find((row) => row.id === item.userId);
+            return (
+              <div key={item.id} className="border-b border-[rgba(0,0,0,0.04)] px-4 py-3 last:border-b-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${feedbackTypeTone[item.feedbackType]}`}>{item.feedbackType}</span>
+                  <span className="text-[11px] font-medium text-[#5F6B73]">{item.module}</span>
+                  <span className="font-mono text-[11px] text-[#5F6B73]">Rating {item.rating}/5</span>
+                  <span className="rounded-full bg-[#F2F3F5] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-[#5F6B73]">{item.status}</span>
+                  <span className="ml-auto text-[11px] text-[#5F6B73]">{new Date(item.createdAt).toLocaleString()}</span>
+                </div>
+                <p className="mt-2 text-xs leading-relaxed text-[#0F1117]">{item.message}</p>
+                <p className="mt-1 text-[11px] text-[#5F6B73]">
+                  {submitter ? `${submitter.displayName} (${submitter.email})` : `User ${item.userId}`}
+                  {item.permissionToContact ? " -- may contact" : ""}
+                </p>
+              </div>
+            );
+          })
+        )}
+      </Card>
     </div>
   );
 }

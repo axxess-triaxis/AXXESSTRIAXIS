@@ -1,11 +1,10 @@
-import { Download, FolderKanban, PlayCircle, Plus, RefreshCw, Sparkles } from "lucide-react";
+import { Download, FolderKanban, PlayCircle, Plus, RefreshCw, Search, Sparkles } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { useAuth } from "../../auth/AuthProvider";
 import { isDemoModeEnabled } from "../../demo/demoMode";
 import {
   ActivityFeed,
-  CommandSearchPlaceholder,
   DataStateBadge,
   DemoDataNotice,
   MetricCard,
@@ -25,19 +24,26 @@ import { StatusBadge } from "../../components/ui/StatusBadge";
 import { useEnterpriseGoldenPath } from "../../hooks/useEnterpriseGoldenPath";
 import { useGoldenPathDisplayMode } from "../../hooks/useGoldenPathDisplayMode";
 import { useGuidedDemo } from "../../hooks/useGuidedDemo";
+import { invalidateLiveWorkspaceMetricsCache } from "../../hooks/liveWorkspaceMetricsCache";
+import { useAuditLogCount } from "../../hooks/useAuditLogCount";
 import { useLiveRagHealth } from "../../hooks/useLiveRagHealth";
 import { useLiveWorkspaceMetrics } from "../../hooks/useLiveWorkspaceMetrics";
+import { usePendingAiReviewCount } from "../../hooks/usePendingAiReviewCount";
+import { useSocialAlertsStatus } from "../../hooks/useSocialAlertsStatus";
 import { useWorkflowTimeline } from "../../hooks/useWorkflowTimeline";
 import { demoRecentActivity } from "../../lib/demo/demoActivity";
 import { demoInstitution } from "../../lib/demo/seedData";
 import { executiveDemoMetrics } from "../../lib/demo/demoMetrics";
 import { BetaOnboardingChecklist } from "../onboarding/BetaOnboardingChecklist";
+import { SampleDataBanner } from "./SampleDataBanner";
 import {
-  dashboardAiRecommendations,
-  dashboardObjectives,
+  demoAiRecommendations,
+  demoObjectives,
   dashboardScopeForUser,
+  type DashboardStrategicObjective,
   getDashboardFallbackProjects,
   getDashboardProjects,
+  getDashboardStrategicObjectives,
   governanceAlerts,
   performanceData,
   workloadData,
@@ -45,7 +51,72 @@ import {
 
 type DashboardProject = Awaited<ReturnType<typeof getDashboardProjects>>[number];
 
-const heatmap = [
+// A minimal, genuinely working search over data already loaded on this page (projects, priority
+// actions) -- deliberately not a new search index or backend. Executive Dashboard Sprint ED-1
+// replaces the decorative CommandSearchPlaceholder with this on the Dashboard specifically, without
+// changing CommandSearchPlaceholder itself (kept as a general-purpose primitive for other callers).
+function DashboardCommandSearch({
+  projects,
+  actions,
+}: {
+  projects: Pick<DashboardProject, "id" | "name">[];
+  actions: { stepId: string; label: string; route: string }[];
+}) {
+  const [query, setQuery] = useState("");
+  const trimmed = query.trim().toLowerCase();
+  const matchingActions = trimmed ? actions.filter((action) => action.label.toLowerCase().includes(trimmed)).slice(0, 5) : [];
+  const matchingProjects = trimmed ? projects.filter((project) => project.name.toLowerCase().includes(trimmed)).slice(0, 5) : [];
+  const hasResults = matchingActions.length > 0 || matchingProjects.length > 0;
+
+  return (
+    <div className="relative">
+      <div className="flex items-center gap-2 rounded-lg border border-[rgba(15,17,23,0.1)] bg-white px-3 py-2 text-xs text-[#5F6B73]">
+        <Search size={14} className="text-[#8B1E2D]" aria-hidden="true" />
+        <input
+          type="text"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="Search projects and priority actions"
+          aria-label="Search projects and priority actions"
+          className="flex-1 border-none bg-transparent text-xs text-[#0F1117] outline-none placeholder:text-[#5F6B73]"
+        />
+        {query && (
+          <button type="button" onClick={() => setQuery("")} className="text-[10px] font-semibold text-[#5F6B73] hover:text-[#0F1117]">
+            Clear
+          </button>
+        )}
+      </div>
+      {trimmed.length > 0 && (
+        <div className="absolute z-20 mt-1 w-full rounded-lg border border-[rgba(15,17,23,0.08)] bg-white p-2 shadow-lg">
+          {!hasResults && <p className="px-2 py-1 text-xs text-[#5F6B73]">No matches for &ldquo;{query}&rdquo;.</p>}
+          {matchingActions.length > 0 && (
+            <div className="mb-1">
+              <p className="px-2 text-[10px] font-semibold uppercase tracking-wide text-[#5F6B73]">Priority actions</p>
+              {matchingActions.map((action) => (
+                <a key={action.stepId} href={action.route} className="block rounded px-2 py-1 text-xs text-[#0F1117] hover:bg-[#F2F3F5]">
+                  {action.label}
+                </a>
+              ))}
+            </div>
+          )}
+          {matchingProjects.length > 0 && (
+            <div>
+              <p className="px-2 text-[10px] font-semibold uppercase tracking-wide text-[#5F6B73]">Projects</p>
+              {matchingProjects.map((project) => (
+                <a key={project.id} href="/projects" className="block rounded px-2 py-1 text-xs text-[#0F1117] hover:bg-[#F2F3F5]">
+                  {project.name}
+                </a>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Illustrative demo-only categories -- must only ever render in demo mode. See DEMO_DATA_LEAKAGE_AUDIT.md.
+const demoHeatmap = [
   { label: "Referral", level: 3 },
   { label: "Budget", level: 2 },
   { label: "Oxygen", level: 3 },
@@ -57,16 +128,114 @@ const heatmap = [
   { label: "Staffing", level: 1 },
 ];
 
+// Executive Dashboard Sprint ED-3: real Risk Heatmap MVP for live tenants -- aggregates each
+// project's own risk level (already real, rendered elsewhere via RiskBadge) into a count-by-band
+// view, deliberately generic (not the demo set's health/NGO-specific categories like "Oxygen" or
+// "Referral"), since a live tenant's projects have no inherent relationship to those labels.
+export function aggregateProjectRisk(projects: Pick<DashboardProject, "risk">[]) {
+  let high = 0;
+  let medium = 0;
+  let low = 0;
+  for (const project of projects) {
+    if (project.risk === "urgent" || project.risk === "high") high += 1;
+    else if (project.risk === "medium") medium += 1;
+    else low += 1;
+  }
+  return [
+    { label: "High risk projects", level: 3 as const, count: high },
+    { label: "Medium risk projects", level: 2 as const, count: medium },
+    { label: "Low risk projects", level: 1 as const, count: low },
+  ];
+}
+
+type DashboardRecommendation = {
+  id: string;
+  title: string;
+  type: "Governance recommendation" | "Operational recommendation";
+  route: string;
+};
+
+// Executive Dashboard Sprint ED-3: AI Recommendations MVP for live tenants -- derived entirely
+// from real evidence already loaded on this page (pending AI reviews, at-risk projects), not an
+// autonomous-AI-generated insight. Labeled "Governance recommendation"/"Operational recommendation"
+// rather than claiming AI authorship it doesn't have, per the roadmap's Option B guidance.
+export function deriveDashboardRecommendations(pendingAiReviewCount: number, projects: DashboardProject[]): DashboardRecommendation[] {
+  const recommendations: DashboardRecommendation[] = [];
+  if (pendingAiReviewCount > 0) {
+    recommendations.push({
+      id: "pending-ai-reviews",
+      title: `${pendingAiReviewCount} AI output${pendingAiReviewCount === 1 ? "" : "s"} awaiting your review`,
+      type: "Governance recommendation",
+      route: "/ai-workspace/review-inbox",
+    });
+  }
+  const atRiskProjects = projects.filter((project) => project.risk === "high" || project.risk === "urgent");
+  for (const project of atRiskProjects.slice(0, 3)) {
+    recommendations.push({
+      id: `at-risk-${project.id}`,
+      title: `${project.name} is flagged ${project.risk} risk -- review recommended`,
+      type: "Operational recommendation",
+      route: "/projects",
+    });
+  }
+  return recommendations;
+}
+
 export function DashboardSection() {
   const { session } = useAuth();
   const tenantScope = useMemo(() => session.user ? dashboardScopeForUser(session.user) : undefined, [session.user]);
   const [projects, setProjects] = useState<DashboardProject[]>(() => (isDemoModeEnabled() ? getDashboardFallbackProjects() : []));
+  const [objectives, setObjectives] = useState<DashboardStrategicObjective[]>([]);
+  const [refreshToken, setRefreshToken] = useState(0);
   const guidedDemo = useGuidedDemo("dashboard");
-  const liveMetrics = useLiveWorkspaceMetrics(tenantScope);
-  const ragHealth = useLiveRagHealth(tenantScope);
-  const enterpriseJourney = useEnterpriseGoldenPath(tenantScope, session.user);
+  const liveMetrics = useLiveWorkspaceMetrics(tenantScope, refreshToken);
+  const ragHealth = useLiveRagHealth(tenantScope, refreshToken);
+  // Executive Dashboard Sprint ED-2: a real, literal count of pending AI review items (from the
+  // same GET /api/ai/reviews the AI Review Inbox itself uses), replacing the pendingApprovals/10
+  // heuristic previously used by both the Golden Path step and the Tenant Health Command Center tile.
+  const pendingAiReviewCount = usePendingAiReviewCount(tenantScope, refreshToken);
+  const enterpriseJourney = useEnterpriseGoldenPath(tenantScope, session.user, refreshToken, pendingAiReviewCount);
+  const socialAlertsStatus = useSocialAlertsStatus(tenantScope);
+  // Executive Dashboard Sprint ED-2: real audit_logs row count for the "Audit readiness" tile.
+  const auditLogCount = useAuditLogCount(tenantScope, refreshToken);
   const goldenPathDisplayMode = useGoldenPathDisplayMode();
-  const workflowTimeline = useWorkflowTimeline(tenantScope, { limit: 6 });
+  const workflowTimeline = useWorkflowTimeline(tenantScope, { limit: 6, refreshToken });
+
+  // Real refresh: drops this tenant's cached metrics entry so the next fetch is fresh, then bumps
+  // refreshToken so every hook above (which all key off it) re-runs. workflowTimeline.loading is
+  // reused as the visible "is refreshing" signal rather than adding a second, redundant loading state.
+  function handleRefresh() {
+    if (tenantScope) invalidateLiveWorkspaceMetricsCache(tenantScope);
+    setRefreshToken((token) => token + 1);
+  }
+
+  // Real, minimal export: a client-side JSON snapshot of what is already on this page -- no new
+  // backend/export service. Deliberately scoped this way for Executive Dashboard Sprint ED-1 (no
+  // net-new dashboard intelligence); a richer export format is a later-sprint decision.
+  function handleExportBriefing() {
+    const payload = {
+      exportedAt: new Date().toISOString(),
+      organizationId: tenantScope?.organizationId ?? null,
+      onboardingCompletionPercent: enterpriseJourney.completionPercent,
+      liveMetrics,
+      priorityActions: enterpriseJourney.actionQueue.map((action) => ({ label: action.label, route: action.route })),
+      projects: projects.map((project) => ({
+        name: project.name,
+        status: project.status,
+        progress: project.progress,
+        risk: project.risk,
+      })),
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `axxess-executive-briefing-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
 
   useEffect(() => {
     if (!tenantScope) return;
@@ -91,6 +260,26 @@ export function DashboardSection() {
     };
   }, [tenantScope]);
 
+  // Executive Dashboard Sprint ED-3: Strategic Objectives, derived from real programs -- a genuine
+  // fetch failure must leave a real tenant with an honest empty list, never demo content.
+  useEffect(() => {
+    if (!tenantScope) return;
+
+    let isMounted = true;
+    getDashboardStrategicObjectives(tenantScope)
+      .then((objectiveRows) => {
+        if (!isMounted) return;
+        setObjectives(objectiveRows);
+      })
+      .catch(() => {
+        if (isMounted) setObjectives([]);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [tenantScope, refreshToken]);
+
   const demoMode = isDemoModeEnabled();
 
   return (
@@ -106,16 +295,13 @@ export function DashboardSection() {
         ]}
         actions={
           <div className="flex items-center gap-2">
-            <button onClick={guidedDemo.startDemo} className="flex items-center gap-1.5 rounded-lg bg-[#0F1117] px-3 py-2 text-xs font-semibold text-white hover:bg-[#1D2430]">
-              <PlayCircle size={13} /> Start guided demo
+            <button onClick={guidedDemo.startDemo} className="flex items-center gap-1.5 rounded-lg bg-[#0F1117] px-3 py-2 text-xs font-semibold text-white hover:bg-[#1D2430]" title="An in-app product walkthrough of AXXESS -- not the separate investor demo at investor.triaxisventures.com">
+              <PlayCircle size={13} /> Start guided setup
             </button>
-            <a href="mailto:founders@triaxis.ventures?subject=AXXESS%20feedback" className="flex items-center gap-1.5 rounded-lg border border-[rgba(15,17,23,0.1)] px-3 py-2 text-xs font-semibold text-[#5F6B73] hover:bg-[#F2F3F5]">
-              Send feedback
-            </a>
-            <button className="text-xs text-[#5F6B73] flex items-center gap-1.5 hover:text-[#0F1117] transition-colors">
-              <RefreshCw size={12} /> Refresh
+            <button onClick={handleRefresh} className="text-xs text-[#5F6B73] flex items-center gap-1.5 hover:text-[#0F1117] transition-colors">
+              <RefreshCw size={12} className={workflowTimeline.loading ? "animate-spin" : ""} /> Refresh
             </button>
-            <button className="text-xs bg-[#8B1E2D] text-white px-3 py-2 rounded-lg flex items-center gap-1.5 hover:bg-[#7a1a27] transition-colors">
+            <button onClick={handleExportBriefing} className="text-xs bg-[#8B1E2D] text-white px-3 py-2 rounded-lg flex items-center gap-1.5 hover:bg-[#7a1a27] transition-colors">
               <Download size={12} /> Export Briefing
             </button>
           </div>
@@ -125,16 +311,28 @@ export function DashboardSection() {
       {demoMode && (
         <DemoDataNotice label="The dashboard is preloaded to look like a 6-12 month institutional operating environment while live repositories remain tenant-isolated." />
       )}
-      <CommandSearchPlaceholder />
+      <DashboardCommandSearch projects={projects} actions={enterpriseJourney.actionQueue} />
 
-      {session.user && <BetaOnboardingChecklist user={session.user} projectCount={projects.length} />}
+      {session.user && (
+        <SampleDataBanner canRemove={["Super Admin", "Organization Admin", "Executive", "Manager"].includes(session.user.role)} />
+      )}
+
+      {session.user && (
+        <BetaOnboardingChecklist
+          user={session.user}
+          projectCount={projects.length}
+          documentCount={liveMetrics.ragReadyDocuments}
+          taskCount={liveMetrics.openTasks}
+          approvalCount={liveMetrics.pendingApprovals}
+        />
+      )}
 
       <EnterpriseWorkflowJourney
         snapshot={enterpriseJourney}
         displayMode={goldenPathDisplayMode.mode}
         onDisplayModeChange={goldenPathDisplayMode.setMode}
       />
-      <TenantHealthCommandCenter snapshot={enterpriseJourney} metrics={liveMetrics} />
+      <TenantHealthCommandCenter snapshot={enterpriseJourney} metrics={liveMetrics} pendingAiReviewsCount={pendingAiReviewCount} auditLogCount={auditLogCount} />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {demoMode && executiveDemoMetrics.map((metric) => (
@@ -162,10 +360,19 @@ export function DashboardSection() {
         <Card className="p-4 transition-shadow hover:shadow-md">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-semibold uppercase tracking-wide text-[#5F6B73]">External Signals</span>
-            <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700">Review First</span>
+            <span className={socialAlertsStatus.anyLiveProviderConfigured ? "rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700" : "rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700"}>
+              {socialAlertsStatus.anyLiveProviderConfigured ? "Connected" : "Provider-gated"}
+            </span>
           </div>
-          <div className="mt-3 font-mono text-2xl font-semibold text-[#0F1117]">{liveMetrics.socialAlerts}</div>
-          <p className="mt-1 text-xs leading-relaxed text-[#5F6B73]">Social, RSS, and manual alerts queued for human-approved workflow actions.</p>
+          {/* No live social-alert-count query exists yet (see livePlatform.ts's own honest-zero
+              comment) -- showing a real connected/not-connected status instead of a fabricated
+              number that could never change. */}
+          <div className="mt-3 font-mono text-2xl font-semibold text-[#0F1117]">{socialAlertsStatus.anyLiveProviderConfigured ? liveMetrics.socialAlerts : "--"}</div>
+          <p className="mt-1 text-xs leading-relaxed text-[#5F6B73]">
+            {socialAlertsStatus.anyLiveProviderConfigured
+              ? "Social, RSS, and manual alerts queued for human-approved workflow actions."
+              : "Connect X or Facebook to enable live social/RSS alert ingestion."}
+          </p>
         </Card>
       </div>
 
@@ -191,6 +398,18 @@ export function DashboardSection() {
         >
           {demoMode ? (
             <ActivityFeed items={demoRecentActivity} />
+          ) : workflowTimeline.timeline.length > 0 ? (
+            // Executive Dashboard Sprint ED-2: reuses the same real workflow_timeline_events data
+            // already fetched for the Workflow Timeline panel below -- no new fetch, no fabricated
+            // activity. Previously this branch was always an empty state for real tenants even when
+            // real timeline events existed.
+            <ActivityFeed
+              items={workflowTimeline.timeline.map((event) => ({
+                title: event.title,
+                description: event.description,
+                time: new Date(event.createdAt).toLocaleString(),
+              }))}
+            />
           ) : (
             <EmptyState message="No recent activity yet. Activity will appear here as your team works in AXXESS." />
           )}
@@ -206,9 +425,13 @@ export function DashboardSection() {
               <span className="text-[#8B1E2D]">Open</span>
             </a>
           ))}
-          <a href="mailto:founders@triaxis.ventures?subject=AXXESS%20pilot%20request" className="flex items-center justify-between rounded-lg border border-[rgba(15,17,23,0.08)] px-3 py-2 text-xs font-semibold text-[#0F1117] hover:bg-[#F8F9FA]">
+          <a
+            href="mailto:founders@triaxis.ventures?subject=AXXESS%20pilot%20request"
+            className="flex items-center justify-between rounded-lg border border-[rgba(15,17,23,0.08)] px-3 py-2 text-xs font-semibold text-[#0F1117] hover:bg-[#F8F9FA]"
+            title="Opens your email client -- there is no in-app pilot-request inbox yet"
+          >
             Request pilot conversation
-            <span className="text-[#8B1E2D]">Open</span>
+            <span className="text-[#8B1E2D]">Email</span>
           </a>
         </div>
       </SectionCard>
@@ -221,7 +444,7 @@ export function DashboardSection() {
           </div>
           {demoMode ? (
             <div className="space-y-4">
-              {dashboardObjectives.map((objective) => (
+              {demoObjectives.map((objective) => (
                 <div key={objective.name}>
                   <div className="flex items-center justify-between mb-1.5">
                     <span className="text-xs font-medium text-[#0F1117]">{objective.name}</span>
@@ -244,8 +467,27 @@ export function DashboardSection() {
                 </div>
               ))}
             </div>
+          ) : objectives.length > 0 ? (
+            // Executive Dashboard Sprint ED-3: each card is a real program, "progress" is the real
+            // average progress of that program's own linked projects -- not a fabricated target.
+            <div className="space-y-4">
+              {objectives.map((objective) => (
+                <div key={objective.id}>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-xs font-medium text-[#0F1117]">{objective.name}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-mono text-[#5F6B73]">{objective.averageProgress}% avg -- {objective.projectCount} project{objective.projectCount === 1 ? "" : "s"}</span>
+                      <StatusBadge status={objective.status} />
+                    </div>
+                  </div>
+                  <div className="h-2 bg-[#F2F3F5] rounded-full overflow-hidden">
+                    <div className="h-full rounded-full bg-[#8B1E2D] transition-all" style={{ width: `${objective.averageProgress}%` }} />
+                  </div>
+                </div>
+              ))}
+            </div>
           ) : (
-            <EmptyState message="No strategic objectives configured yet." />
+            <EmptyState message="No strategic objectives configured yet. Create a program to see it tracked here." />
           )}
         </Card>
 
@@ -258,19 +500,37 @@ export function DashboardSection() {
           </div>
           {demoMode ? (
             <div className="space-y-3">
-              {dashboardAiRecommendations.map((recommendation, index) => (
-                <button key={index} className="flex w-full items-start gap-2.5 p-2.5 rounded-lg bg-[#F2F3F5] hover:bg-[#EAEBEE] transition-colors text-left">
+              {demoAiRecommendations.map((recommendation, index) => (
+                <a key={index} href="/ai-workspace/review-inbox" className="flex w-full items-start gap-2.5 p-2.5 rounded-lg bg-[#F2F3F5] hover:bg-[#EAEBEE] transition-colors text-left">
                   <span className={`w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0 ${recommendation.urgency === "urgent" ? "bg-red-500" : recommendation.urgency === "high" ? "bg-amber-500" : "bg-blue-500"}`} />
                   <span>
                     <span className="block text-xs text-[#0F1117] font-medium leading-snug">{recommendation.title}</span>
                     <span className="text-[10px] text-[#5F6B73] font-mono">{recommendation.type}</span>
                   </span>
-                </button>
+                </a>
               ))}
             </div>
-          ) : (
-            <EmptyState message="No AI recommendations yet. These appear as AXXESS learns from your organization's activity." />
-          )}
+          ) : (() => {
+            const recommendations = deriveDashboardRecommendations(pendingAiReviewCount, projects);
+            return recommendations.length > 0 ? (
+              // Executive Dashboard Sprint ED-3: real recommendations derived from real evidence
+              // already on this page (pending AI reviews, at-risk projects) -- not an autonomous-AI
+              // claim, and each one navigates to a real destination instead of a dead button.
+              <div className="space-y-3">
+                {recommendations.map((recommendation) => (
+                  <a key={recommendation.id} href={recommendation.route} className="flex w-full items-start gap-2.5 p-2.5 rounded-lg bg-[#F2F3F5] hover:bg-[#EAEBEE] transition-colors text-left">
+                    <span className="w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0 bg-amber-500" />
+                    <span>
+                      <span className="block text-xs text-[#0F1117] font-medium leading-snug">{recommendation.title}</span>
+                      <span className="text-[10px] text-[#5F6B73] font-mono">{recommendation.type}</span>
+                    </span>
+                  </a>
+                ))}
+              </div>
+            ) : (
+              <EmptyState message="No recommendations yet. Recommendations appear after AI reviews, approvals, or at-risk projects exist." />
+            );
+          })()}
         </Card>
       </div>
 
@@ -278,7 +538,7 @@ export function DashboardSection() {
         <Card className="lg:col-span-2 p-5">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-semibold text-[#0F1117] text-sm">Project Health Monitor</h3>
-            <button className="text-xs text-[#8B1E2D] font-medium hover:underline">View All {projects.length}</button>
+            <a href="/projects" className="text-xs text-[#8B1E2D] font-medium hover:underline">View All {projects.length}</a>
           </div>
           <div className="space-y-2.5">
             {projects.length === 0 && (
@@ -297,7 +557,10 @@ export function DashboardSection() {
               />
             )}
             {projects.slice(0, 5).map((project) => (
-              <button key={project.id} className="flex w-full items-center gap-3 p-2.5 rounded-lg hover:bg-[#F2F3F5] transition-colors text-left">
+              // No per-project detail route exists yet (Projects & Programs selects a project via
+              // in-page state, not a URL) -- navigating to /projects is the honest option rather than
+              // a fabricated deep link. See EXECUTIVE_DASHBOARD_REMEDIATION_ROADMAP_2026_07_25.md.
+              <a key={project.id} href="/projects" className="flex w-full items-center gap-3 p-2.5 rounded-lg hover:bg-[#F2F3F5] transition-colors text-left">
                 <Avatar initials={project.owner} />
                 <span className="flex-1 min-w-0">
                   <span className="flex items-center gap-2 mb-1">
@@ -312,28 +575,49 @@ export function DashboardSection() {
                   </span>
                 </span>
                 <StatusBadge status={project.status} />
-              </button>
+              </a>
             ))}
           </div>
         </Card>
 
         <Card className="p-5">
           <h3 className="font-semibold text-[#0F1117] text-sm mb-4">Risk Heatmap</h3>
-          <div className="grid grid-cols-3 gap-1.5 mb-3">
-            {heatmap.map((risk) => (
-              <div
-                key={risk.label}
-                className="rounded-lg p-2 text-center"
-                style={{
-                  backgroundColor: risk.level === 3 ? "#FEF2F2" : risk.level === 2 ? "#FFFBEB" : "#F0FDF4",
-                  border: `1px solid ${risk.level === 3 ? "#FECACA" : risk.level === 2 ? "#FDE68A" : "#BBF7D0"}`,
-                }}
-              >
-                <div className={`text-[10px] font-semibold ${risk.level === 3 ? "text-red-700" : risk.level === 2 ? "text-amber-700" : "text-emerald-700"}`}>{risk.label}</div>
-                <div className={`text-[10px] font-mono ${risk.level === 3 ? "text-red-500" : risk.level === 2 ? "text-amber-500" : "text-emerald-500"}`}>{risk.level === 3 ? "HIGH" : risk.level === 2 ? "MED" : "LOW"}</div>
-              </div>
-            ))}
-          </div>
+          {demoMode ? (
+            <div className="grid grid-cols-3 gap-1.5 mb-3">
+              {demoHeatmap.map((risk) => (
+                <div
+                  key={risk.label}
+                  className="rounded-lg p-2 text-center"
+                  style={{
+                    backgroundColor: risk.level === 3 ? "#FEF2F2" : risk.level === 2 ? "#FFFBEB" : "#F0FDF4",
+                    border: `1px solid ${risk.level === 3 ? "#FECACA" : risk.level === 2 ? "#FDE68A" : "#BBF7D0"}`,
+                  }}
+                >
+                  <div className={`text-[10px] font-semibold ${risk.level === 3 ? "text-red-700" : risk.level === 2 ? "text-amber-700" : "text-emerald-700"}`}>{risk.label}</div>
+                  <div className={`text-[10px] font-mono ${risk.level === 3 ? "text-red-500" : risk.level === 2 ? "text-amber-500" : "text-emerald-500"}`}>{risk.level === 3 ? "HIGH" : risk.level === 2 ? "MED" : "LOW"}</div>
+                </div>
+              ))}
+            </div>
+          ) : projects.length > 0 ? (
+            // Real aggregation of this tenant's own project risk levels -- no fabricated categories.
+            <div className="grid grid-cols-3 gap-1.5 mb-3">
+              {aggregateProjectRisk(projects).map((risk) => (
+                <div
+                  key={risk.label}
+                  className="rounded-lg p-2 text-center"
+                  style={{
+                    backgroundColor: risk.level === 3 ? "#FEF2F2" : risk.level === 2 ? "#FFFBEB" : "#F0FDF4",
+                    border: `1px solid ${risk.level === 3 ? "#FECACA" : risk.level === 2 ? "#FDE68A" : "#BBF7D0"}`,
+                  }}
+                >
+                  <div className={`text-[10px] font-semibold ${risk.level === 3 ? "text-red-700" : risk.level === 2 ? "text-amber-700" : "text-emerald-700"}`}>{risk.label}</div>
+                  <div className={`text-sm font-mono font-semibold ${risk.level === 3 ? "text-red-500" : risk.level === 2 ? "text-amber-500" : "text-emerald-500"}`}>{risk.count}</div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <EmptyState message="No projects yet. Risk levels will appear here once projects exist." />
+          )}
           <div className="flex items-center justify-between text-[10px] text-[#5F6B73]">
             <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-emerald-200 inline-block" />Low</span>
             <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-amber-200 inline-block" />Medium</span>

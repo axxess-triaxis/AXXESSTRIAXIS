@@ -69,7 +69,7 @@ export function buildTenantModelPolicy(
   return {
     policyId: overrides.policyId ?? "tenant-default-ai-routing-policy",
     organizationId,
-    allowedProviders: uniqueValues(overrides.allowedProviders ?? ["openai", "anthropic", "google", "falcon", "jais", "local"]),
+    allowedProviders: uniqueValues(overrides.allowedProviders ?? ["openai", "anthropic", "google", "falcon", "jais", "kimi", "deepseek", "local"]),
     blockedProviders: uniqueValues(overrides.blockedProviders ?? []),
     preferredProviders: mergePreferredProviders(overrides.preferredProviders),
     fallbackProviders: uniqueValues(overrides.fallbackProviders ?? defaultFallbackProviders),

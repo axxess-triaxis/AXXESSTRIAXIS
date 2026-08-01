@@ -16,6 +16,7 @@ import type {
   Program,
   Project,
   RoleName,
+  Stakeholder,
   Task,
   User,
 } from "../domain";
@@ -43,6 +44,7 @@ import type {
   ProgramsRepository,
   ProjectsRepository,
   RepositoryQuery,
+  StakeholdersRepository,
   TasksRepository,
   TenantCreateInput,
   TenantRepository,
@@ -68,7 +70,8 @@ export type ResourceName =
   | "notifications"
   | "audit_logs"
   | "invitations"
-  | "beta_feedback";
+  | "beta_feedback"
+  | "stakeholders";
 
 type SupabaseRestOptions = {
   method?: "GET" | "POST" | "PATCH";
@@ -128,6 +131,17 @@ type ProjectRow = {
   tags: string[] | null;
 };
 
+type StakeholderRow = {
+  id: string;
+  organization_id: string;
+  name: string;
+  affiliation: string | null;
+  role: string | null;
+  relationship_owner_id: string | null;
+  influence_score: number | string;
+  engagement_level: Stakeholder["engagementLevel"];
+};
+
 type TaskRow = {
   id: string;
   organization_id: string;
@@ -182,6 +196,9 @@ type DocumentVersionRow = {
   mime_type: string;
   storage_path: string;
   checksum: string | null;
+  extracted_text: string | null;
+  extraction_method: string | null;
+  extraction_truncated: boolean | null;
   created_by_user_id: string | null;
   created_at: string;
 };
@@ -558,11 +575,6 @@ function projectStatusForDatabase(status: unknown) {
   return undefined;
 }
 
-function organizationIdForMutation(scope: TenantScope, input: Record<string, unknown>) {
-  if (scope.role === "Super Admin" && typeof input.organizationId === "string") return input.organizationId;
-  return scope.organizationId;
-}
-
 function nullableString(value: unknown) {
   return typeof value === "string" && value.trim() ? value.trim() : null;
 }
@@ -600,7 +612,7 @@ function documentMutation(scope: TenantScope, input: Record<string, unknown>) {
 
   return compactMutation({
     id: optionalId(input.id),
-    organization_id: organizationIdForMutation(scope, input),
+    organization_id: scope.organizationId,
     project_id: nullableString(input.projectId),
     category_id: nullableString(input.categoryId),
     name,
@@ -649,7 +661,7 @@ function documentUpdateMutation(scope: TenantScope, input: Record<string, unknow
 function documentVersionMutation(scope: TenantScope, input: Record<string, unknown>) {
   return compactMutation({
     id: optionalId(input.id),
-    organization_id: organizationIdForMutation(scope, input),
+    organization_id: scope.organizationId,
     document_id: nullableString(input.documentId),
     version_number: typeof input.versionNumber === "number" ? input.versionNumber : 1,
     file_name: nullableString(input.fileName),
@@ -657,6 +669,9 @@ function documentVersionMutation(scope: TenantScope, input: Record<string, unkno
     mime_type: nullableString(input.mimeType),
     storage_path: nullableString(input.storagePath),
     checksum: nullableString(input.checksum),
+    extracted_text: nullableString(input.extractedText),
+    extraction_method: nullableString(input.extractionMethod),
+    extraction_truncated: typeof input.extractionTruncated === "boolean" ? input.extractionTruncated : undefined,
     created_by_user_id: scope.userId,
   });
 }
@@ -665,7 +680,7 @@ function categoryMutation(scope: TenantScope, input: Record<string, unknown>) {
   const name = nullableString(input.name);
   return compactMutation({
     id: optionalId(input.id),
-    organization_id: organizationIdForMutation(scope, input),
+    organization_id: scope.organizationId,
     name,
     slug: nullableString(input.slug) ?? slugFromName(name),
     description: nullableString(input.description),
@@ -685,7 +700,7 @@ function categoryUpdateMutation(_scope: TenantScope, input: Record<string, unkno
 function tagMutation(scope: TenantScope, input: Record<string, unknown>) {
   return compactMutation({
     id: optionalId(input.id),
-    organization_id: organizationIdForMutation(scope, input),
+    organization_id: scope.organizationId,
     name: nullableString(input.name),
     color: nullableString(input.color),
   });
@@ -701,7 +716,7 @@ function tagUpdateMutation(_scope: TenantScope, input: Record<string, unknown>) 
 function documentPermissionMutation(scope: TenantScope, input: Record<string, unknown>) {
   return compactMutation({
     id: optionalId(input.id),
-    organization_id: organizationIdForMutation(scope, input),
+    organization_id: scope.organizationId,
     document_id: nullableString(input.documentId),
     principal_type: input.principalType,
     principal_id: nullableString(input.principalId),
@@ -733,7 +748,7 @@ function documentActivityMutation(scope: TenantScope, input: DocumentActivityInp
 function articleMutation(scope: TenantScope, input: Record<string, unknown>) {
   return compactMutation({
     id: optionalId(input.id),
-    organization_id: organizationIdForMutation(scope, input),
+    organization_id: scope.organizationId,
     title: nullableString(input.title),
     body_markdown: nullableString(input.bodyMarkdown),
     summary: nullableString(input.summary),
@@ -762,7 +777,7 @@ function articleUpdateMutation(_scope: TenantScope, input: Record<string, unknow
 
 function projectMutation(scope: TenantScope, input: Record<string, unknown>) {
   return compactMutation({
-    organization_id: organizationIdForMutation(scope, input),
+    organization_id: scope.organizationId,
     program_id: nullableString(input.programId),
     name: nullableString(input.name),
     description: nullableString(input.description),
@@ -797,7 +812,7 @@ function projectUpdateMutation(_scope: TenantScope, input: Record<string, unknow
 
 function taskMutation(scope: TenantScope, input: Record<string, unknown>) {
   return compactMutation({
-    organization_id: organizationIdForMutation(scope, input),
+    organization_id: scope.organizationId,
     program_id: nullableString(input.programId),
     project_id: nullableString(input.projectId),
     title: nullableString(input.title),
@@ -826,9 +841,42 @@ function taskUpdateMutation(_scope: TenantScope, input: Record<string, unknown>)
   });
 }
 
+// Sprint 5, Priority 4: minimal live Stakeholders/CRM path. The stakeholders table and its RLS
+// (supabase/migrations/20260702165736_initial_enterprise_schema.sql) already existed with zero
+// application code ever reading or writing it -- this closes that gap with the same pattern every
+// other tenant-scoped resource in this file already uses, not a new architecture.
+// RAG Remediation Sprint 3 (A-58): this previously defaulted influence_score to 50 and
+// engagement_level to "medium" whenever the caller didn't supply them -- values that read as a
+// real assessment (mid-tier influence, real engagement signal) when nothing was ever actually
+// assessed. A brand-new contact now honestly reports 0 / "unrated" until a real value is supplied,
+// matching the table's own column default of 0 for influence_score rather than overriding it with
+// a fabricated mid-point.
+function stakeholderMutation(scope: TenantScope, input: Record<string, unknown>) {
+  return compactMutation({
+    organization_id: scope.organizationId,
+    name: nullableString(input.name),
+    affiliation: nullableString(input.affiliation),
+    role: nullableString(input.role),
+    relationship_owner_id: nullableString(input.relationshipOwnerId) ?? scope.userId,
+    influence_score: typeof input.influenceScore === "number" ? input.influenceScore : 0,
+    engagement_level: input.engagementLevel ?? "unrated",
+  });
+}
+
+function stakeholderUpdateMutation(_scope: TenantScope, input: Record<string, unknown>) {
+  return compactMutation({
+    name: input.name === undefined ? undefined : nullableString(input.name),
+    affiliation: input.affiliation === undefined ? undefined : nullableString(input.affiliation),
+    role: input.role === undefined ? undefined : nullableString(input.role),
+    relationship_owner_id: input.relationshipOwnerId === undefined ? undefined : nullableString(input.relationshipOwnerId),
+    influence_score: typeof input.influenceScore === "number" ? input.influenceScore : undefined,
+    engagement_level: input.engagementLevel,
+  });
+}
+
 function meetingMutation(scope: TenantScope, input: Record<string, unknown>) {
   return compactMutation({
-    organization_id: organizationIdForMutation(scope, input),
+    organization_id: scope.organizationId,
     project_id: nullableString(input.projectId),
     program_id: nullableString(input.programId),
     stakeholder_id: nullableString(input.stakeholderId),
@@ -865,7 +913,7 @@ function meetingUpdateMutation(_scope: TenantScope, input: Record<string, unknow
 
 function notificationMutation(scope: TenantScope, input: Record<string, unknown>) {
   return compactMutation({
-    organization_id: organizationIdForMutation(scope, input),
+    organization_id: scope.organizationId,
     user_id: nullableString(input.userId) ?? scope.userId,
     type: input.type ?? "system",
     title: nullableString(input.title),
@@ -902,7 +950,7 @@ function userUpdateMutation(_scope: TenantScope, input: Record<string, unknown>)
 
 function betaFeedbackMutation(scope: TenantScope, input: CreateBetaFeedbackInput) {
   return {
-    organization_id: scope.role === "Super Admin" && input.organizationId ? input.organizationId : scope.organizationId,
+    organization_id: scope.organizationId,
     user_id: input.userId ?? scope.userId,
     feedback_type: input.feedbackType,
     module: input.module,
@@ -992,6 +1040,24 @@ const projectConfig: ResourceConfig<ProjectRow, Project> = {
   toUpdate: projectUpdateMutation,
 };
 
+const stakeholderConfig: ResourceConfig<StakeholderRow, Stakeholder> = {
+  table: "stakeholders",
+  select: "id,organization_id,name,affiliation,role,relationship_owner_id,influence_score,engagement_level",
+  searchColumns: ["name", "affiliation", "role"],
+  defaultOrder: "name.asc",
+  map: (row) => ({
+    id: row.id,
+    organizationId: row.organization_id,
+    name: row.name,
+    affiliation: row.affiliation ?? "",
+    relationshipOwnerId: row.relationship_owner_id ?? undefined,
+    influenceScore: Number(row.influence_score),
+    engagementLevel: row.engagement_level,
+  }),
+  toInsert: stakeholderMutation,
+  toUpdate: stakeholderUpdateMutation,
+};
+
 const taskConfig: ResourceConfig<TaskRow, Task> = {
   table: "tasks",
   select: "id,organization_id,program_id,project_id,title,description,assignee_id,priority,status,due_date,tags",
@@ -1054,7 +1120,7 @@ const documentConfig: ResourceConfig<DocumentRow, Document> = {
 
 const documentVersionConfig: ResourceConfig<DocumentVersionRow, DocumentVersion> = {
   table: "document_versions",
-  select: "id,organization_id,document_id,version_number,file_name,file_size,mime_type,storage_path,checksum,created_by_user_id,created_at",
+  select: "id,organization_id,document_id,version_number,file_name,file_size,mime_type,storage_path,checksum,extracted_text,extraction_method,extraction_truncated,created_by_user_id,created_at",
   searchColumns: ["file_name", "mime_type"],
   defaultOrder: "created_at.desc",
   map: (row) => ({
@@ -1067,6 +1133,9 @@ const documentVersionConfig: ResourceConfig<DocumentVersionRow, DocumentVersion>
     mimeType: row.mime_type,
     storagePath: row.storage_path,
     checksum: row.checksum ?? undefined,
+    extractedText: row.extracted_text ?? undefined,
+    extractionMethod: (row.extraction_method as DocumentVersion["extractionMethod"]) ?? undefined,
+    extractionTruncated: row.extraction_truncated ?? undefined,
     createdByUserId: row.created_by_user_id ?? undefined,
     createdAt: row.created_at,
   }),
@@ -1218,6 +1287,15 @@ const notificationConfig: ResourceConfig<NotificationRow, Notification> = {
   toUpdate: notificationUpdateMutation,
 };
 
+// Admin panel wiring pass (2026-07-25): revoke is the only mutation an invitation needs today
+// (pending -> revoked), so this intentionally only accepts status rather than a general-purpose
+// patch surface for a row that's otherwise immutable once created.
+function invitationUpdateMutation(_scope: TenantScope, input: Record<string, unknown>) {
+  return compactMutation({
+    status: input.status,
+  });
+}
+
 const invitationConfig: ResourceConfig<InvitationRow, Invitation> = {
   table: "invitations",
   select: "id,organization_id,email,role,invited_by_user_id,status,expires_at,accepted_at,created_at,updated_at",
@@ -1235,6 +1313,7 @@ const invitationConfig: ResourceConfig<InvitationRow, Invitation> = {
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   }),
+  toUpdate: invitationUpdateMutation,
 };
 
 const auditLogConfig: ResourceConfig<AuditLogRow, AuditLog> = {
@@ -1313,6 +1392,7 @@ export const usersRepository: UsersRepository = {
 export const programsRepository: ProgramsRepository = createTenantRepository("programs", programConfig);
 export const projectsRepository: ProjectsRepository = createMutableTenantRepository("projects", projectConfig);
 export const tasksRepository: TasksRepository = createMutableTenantRepository("tasks", taskConfig);
+export const stakeholdersRepository: StakeholdersRepository = createMutableTenantRepository("stakeholders", stakeholderConfig);
 const baseDocumentsRepository = createMutableTenantRepository("documents", documentConfig);
 export const documentVersionsRepository: DocumentVersionsRepository = createMutableTenantRepository("document_versions", documentVersionConfig);
 export const documentCategoriesRepository: DocumentCategoriesRepository = createMutableTenantRepository("document_categories", documentCategoryConfig);
@@ -1428,7 +1508,10 @@ export const invitationsRepository: InvitationsRepository = {
       method: "POST",
       accessToken: scope.accessToken,
       body: {
-        organization_id: input.organizationId,
+        // Always the acting session's own organization, never input.organizationId -- see
+        // canManageOrganization in src/security/rbac.ts. The caller (POST /api/invitations)
+        // already enforces this too, but the repository must not depend solely on that.
+        organization_id: scope.organizationId,
         email: input.email,
         role: input.role,
         invited_by_user_id: input.invitedByUserId,
@@ -1445,6 +1528,7 @@ export const invitationsRepository: InvitationsRepository = {
     const rows = await listResource("invitations", invitationConfig, scope, query);
     return rows.filter((invitation) => invitation.status === "pending");
   },
+  update: (scope, id, input) => updateResource("invitations", invitationConfig, scope, id, input),
 };
 
 export const auditLogsRepository: AuditLogsRepository = {
@@ -1544,6 +1628,7 @@ export const resourceRepositories = {
   programs: programsRepository,
   projects: projectsRepository,
   tasks: tasksRepository,
+  stakeholders: stakeholdersRepository,
   documents: documentsRepository,
   document_versions: documentVersionsRepository,
   document_categories: documentCategoriesRepository,
@@ -1554,7 +1639,7 @@ export const resourceRepositories = {
   meetings: meetingsRepository,
   notifications: notificationsRepository,
   audit_logs: { list: auditLogsRepository.list, getById: async () => undefined },
-  invitations: { list: invitationsRepository.listPending, getById: async () => undefined },
+  invitations: { list: invitationsRepository.listPending, getById: async () => undefined, update: invitationsRepository.update },
   beta_feedback: { list: betaFeedbackRepository.list, getById: async () => undefined, create: betaFeedbackRepository.create },
 } satisfies Record<ResourceName, {
   list(scope: TenantScope, query?: RepositoryQuery): Promise<unknown[]>;

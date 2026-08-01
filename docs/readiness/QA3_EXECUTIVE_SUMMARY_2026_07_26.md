@@ -157,9 +157,9 @@ resumes.
 |---|---|---|
 | Commits (this branch) | 413 (was 407 on 2026-07-26) | `git rev-list --count HEAD` |
 | Merged pull requests | 113 (was 112) | `gh pr list --repo axxess-triaxis/AXXESSTRIAXIS` |
-| Automated tests passing | 595, across 150 test files (was 585/148) | `pnpm run test`, run 2026-07-27 |
+| Automated tests passing | 605, across 152 test files (was 595/150 earlier 2026-07-27, 585/148 on 2026-07-26) | `pnpm run test`, run 2026-07-27 |
 | Typecheck / lint / build | All clean | `pnpm run typecheck` / `lint` / `build`, run 2026-07-27 |
-| Actionables tracked | 67 (32 Yes / 19 Blocked / 16 No) -- unchanged; 2026-07-27 work not yet re-scored into this matrix | `ACTIONABLES_READINESS_MATRIX.md` |
+| Actionables tracked | 67 (36 Yes / 19 Blocked / 12 No) -- A-35/A-36/A-37/A-39 (Golden Path routing defects) fixed and moved from No to Yes (code + test, pending HITL live confirmation) 2026-07-27 | `ACTIONABLES_READINESS_MATRIX.md` |
 | Production tenants provisioned | 2 (Triaxis Ventures; NEPDSIC) | `A-06`, HITL-confirmed live |
 | Live domains, isolated | `landing.triaxisventures.com` (real auth/data), `investor.triaxisventures.com` (forced demo mode), `www.triaxisventures.com` (marketing) | `HOSTING_DEPLOYMENT_ARCHITECTURE_2026_07_24.md`, re-verified live 2026-07-26 |
 | Analytics live in production | Mixpanel + PostHog events + PostHog session replay, all confirmed present in the deployed client bundle | See "2026-07-27 Progress" above |

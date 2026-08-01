@@ -18,4 +18,20 @@ describe("beta feedback API privacy and validation", () => {
     expect(metadataBlock).toContain("feedback_type");
     expect(metadataBlock).toContain("rating");
   });
+
+  // RAG Remediation Sprint 3 (A-65): founder's own requirement -- feedback should route toward
+  // triaxisgrp@gmail.com. Full behavioral coverage (sent/not-configured/failed states) lives in
+  // feedbackEmail.test.ts; this confirms the route actually wires the send attempt and records its
+  // outcome in the audit trail rather than silently ignoring delivery.
+  it("attempts email delivery and records the delivery outcome in audit metadata", () => {
+    expect(routeSource).toContain("sendFeedbackNotificationEmail");
+    const metadataBlock = routeSource.slice(routeSource.indexOf("metadata: {"), routeSource.indexOf("}).catch"));
+    expect(metadataBlock).toContain("email_delivery_status");
+  });
+
+  it("does not let an email-send exception fail the feedback submission itself", () => {
+    expect(routeSource).toContain("try {");
+    expect(routeSource).toContain("emailDelivery = await sendFeedbackNotificationEmail");
+    expect(routeSource).toContain("} catch (error) {");
+  });
 });

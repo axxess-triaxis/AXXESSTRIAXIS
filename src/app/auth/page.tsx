@@ -1,19 +1,38 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import type { Route } from "next";
 import { useRouter } from "next/navigation";
 import { AuthProvider, useAuth } from "../../auth/AuthProvider";
+import { AuthApiError } from "../../auth/supabaseAuthClient";
 import { Card } from "../../components/ui/Card";
+import { OAuthProviderButtons } from "../../features/auth/OAuthProviderButtons";
+import { PhoneOtpSignIn } from "../../features/auth/PhoneOtpSignIn";
 import { AnalyticsProviderShell, useAnalytics } from "../../services/analytics";
 
 function LoginPanel() {
   const router = useRouter();
-  const { login, session, isAuthenticated } = useAuth();
+  const { login, logout, session, isAuthenticated } = useAuth();
   const analytics = useAnalytics();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [showResend, setShowResend] = useState(false);
+  const [resendStatus, setResendStatus] = useState<string | null>(null);
+  const [resending, setResending] = useState(false);
+
+  // Landing on /auth with an already-authenticated real (non-demo) Supabase session used to render
+  // a silent "Continue to workspace" bypass -- exactly the security gap reported live: visiting the
+  // sign-in URL should always require fresh credentials, not resume a stale session. Investor
+  // Preview's demo session (source: "mock-rbac") is a separate, deliberately-required entry point
+  // (docs/readiness/CLAUDE_CODE_SPRINT_1_CORRECTION_PROMPT_2026_07_24.md) and is left untouched.
+  useEffect(() => {
+    if (isAuthenticated && session.status === "authenticated" && session.source === "supabase-auth") {
+      void logout();
+    }
+  }, [isAuthenticated, session, logout]);
 
   async function openInvestorPreview() {
     setSubmitting(true);
@@ -39,6 +58,8 @@ function LoginPanel() {
     event.preventDefault();
     setSubmitting(true);
     setError(null);
+    setShowResend(false);
+    setResendStatus(null);
 
     try {
       const user = await login(email, password);
@@ -54,12 +75,32 @@ function LoginPanel() {
       router.push(user.needsOnboarding ? "/onboarding" : "/dashboard");
     } catch (loginError) {
       setError(loginError instanceof Error ? loginError.message : "Unable to sign in.");
+      setShowResend(loginError instanceof AuthApiError && loginError.code === "email_not_confirmed");
     } finally {
       setSubmitting(false);
     }
   }
 
-  if (isAuthenticated && session.user) {
+  async function resendConfirmation() {
+    setResending(true);
+    setResendStatus(null);
+    try {
+      const response = await fetch("/api/auth/resend-confirmation", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const body = await response.json().catch(() => ({} as { message?: string }));
+      setResendStatus(body.message ?? "If an account exists for that email, a new confirmation link has been sent.");
+    } catch {
+      setResendStatus("Unable to resend the confirmation email right now.");
+    } finally {
+      setResending(false);
+    }
+  }
+
+  if (isAuthenticated && session.user && session.source === "mock-rbac") {
     return (
       <Card className="w-full max-w-md p-6">
         <div className="mb-5">
@@ -110,7 +151,25 @@ function LoginPanel() {
           />
         </label>
 
+        <p className="text-right text-xs">
+          <Link href={"/auth/forgot-password" as Route} className="font-semibold text-[#8B1E2D] hover:underline">
+            Forgot password?
+          </Link>
+        </p>
+
         {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-xs font-medium text-red-700">{error}</p>}
+
+        {showResend && (
+          <button
+            type="button"
+            onClick={() => void resendConfirmation()}
+            disabled={resending}
+            className="w-full rounded-lg border border-[rgba(139,30,45,0.22)] bg-white px-4 py-2 text-xs font-semibold text-[#8B1E2D] hover:bg-[#8B1E2D]/5 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {resending ? "Sending..." : "Resend confirmation email"}
+          </button>
+        )}
+        {resendStatus && <p className="text-xs text-[#5F6B73]">{resendStatus}</p>}
 
         <button
           type="submit"
@@ -120,6 +179,24 @@ function LoginPanel() {
           {submitting ? "Signing in..." : "Sign in"}
         </button>
       </form>
+
+      <div className="mt-4 flex items-center gap-3 text-[10px] font-semibold uppercase tracking-wide text-[#5F6B73]">
+        <span className="h-px flex-1 bg-[rgba(0,0,0,0.08)]" />
+        or
+        <span className="h-px flex-1 bg-[rgba(0,0,0,0.08)]" />
+      </div>
+
+      <div className="mt-4 space-y-3">
+        <OAuthProviderButtons onError={setError} />
+        <PhoneOtpSignIn onError={setError} />
+      </div>
+
+      <p className="mt-4 text-center text-sm text-[#5F6B73]">
+        Don&apos;t have an account?{" "}
+        <Link href={"/auth/sign-up" as Route} className="font-semibold text-[#8B1E2D] hover:underline">
+          Sign up
+        </Link>
+      </p>
 
       <div className="mt-4 border-t border-[rgba(0,0,0,0.08)] pt-4">
         <button
