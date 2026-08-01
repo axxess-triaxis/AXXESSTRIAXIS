@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../../auth/AuthProvider";
 import {
   ApprovalCard,
@@ -19,19 +19,109 @@ import { demoApprovalQueue } from "../../lib/demo/demoApprovals";
 import { applicationServices } from "../../providers/serviceProvider";
 import { tenantScopeFromUser } from "../../repositories/supabaseEnterpriseRepositories";
 import { useWorkflowTimeline } from "../../hooks/useWorkflowTimeline";
-import { Check, CheckCircle2, ShieldCheck, X, XCircle } from "lucide-react";
+import type { ApprovalRequest } from "../../services/workflows/workflowActionRecords";
+import { Check, CheckCircle2, Download, ShieldCheck, X, XCircle } from "lucide-react";
 
 // No live approvals repository exists yet -- these Approve/Reject actions only update local
 // component state and getApprovals() resolves to real (empty) data outside demo mode. Illustrative
 // content below is gated behind isDemoModeEnabled(). See DEMO_DATA_LEAKAGE_AUDIT.md.
 const approvals = applicationServices.institutionalRepository.getApprovals();
 
+const decisionRoles = ["Super Admin", "Organization Admin", "Executive", "Manager"];
+
 export const ApprovalsSection = () => {
   const { session } = useAuth();
-  const scope = session.user ? tenantScopeFromUser(session.user) : undefined;
+  // Memoized: tenantScopeFromUser() returns a fresh object every call, and without this the
+  // effect below (keyed on [demoMode, scope]) refires on every re-render -- including the one a
+  // real decide action causes -- re-fetching and clobbering the just-applied optimistic update.
+  const scope = useMemo(() => (session.user ? tenantScopeFromUser(session.user) : undefined), [session.user]);
   const [actioned, setActioned] = useState<Record<string, "approved" | "rejected" | "clarification">>({});
   const approvalTimeline = useWorkflowTimeline(scope, { limit: 5, resourceType: "approval" });
   const demoMode = isDemoModeEnabled();
+  const [liveApprovals, setLiveApprovals] = useState<ApprovalRequest[]>([]);
+  const [loadingApprovals, setLoadingApprovals] = useState(!demoMode);
+  const [decidingId, setDecidingId] = useState<string | null>(null);
+  const [decisionError, setDecisionError] = useState<string | null>(null);
+  const [exportMessage, setExportMessage] = useState<string | null>(null);
+  const canDecide = Boolean(session.user && decisionRoles.includes(session.user.role));
+
+  // Agentic Infrastructure Phase 2 (2026-07-30): the live approvals table previously had no
+  // action buttons at all -- only the demo-mode illustrative cards below had Approve/Reject, and
+  // those correctly only ever touched local demo state. This is what makes a real decision
+  // possible, and (for agent-originated approvals) what lets an admin grant "Always Allow" so
+  // future identical agent calls skip the approval round trip.
+  async function decideApproval(id: string, status: "approved" | "rejected", alwaysAllow?: boolean) {
+    setDecidingId(id);
+    setDecisionError(null);
+    try {
+      const response = await fetch(`/api/approvals/${id}`, {
+        method: "PATCH",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status, alwaysAllow }),
+      });
+      if (!response.ok) throw new Error("Deciding this approval failed.");
+      const result = await response.json() as { approval: ApprovalRequest };
+      setLiveApprovals((current) => current.map((approval) => (approval.id === id ? result.approval : approval)));
+    } catch (error) {
+      setDecisionError(error instanceof Error ? error.message : "Deciding this approval failed.");
+    } finally {
+      setDecidingId(null);
+    }
+  }
+
+  // RAG Remediation Sprint 3 (A-60 precondition): real approval_requests rows already exist
+  // (created via "Create approval request" from an approved AI Review Inbox item), but this page
+  // never fetched them for a live tenant -- it showed only the honest not-wired-yet empty state
+  // unconditionally. This makes the real queue visible, which is also what Export Report exports.
+  useEffect(() => {
+    if (demoMode || !scope) {
+      setLoadingApprovals(false);
+      return;
+    }
+    let isMounted = true;
+    setLoadingApprovals(true);
+    fetch("/api/approvals", { credentials: "include" })
+      .then((response) => response.ok ? response.json() : { approvals: [] })
+      .then((data: { approvals?: ApprovalRequest[] }) => { if (isMounted) setLiveApprovals(data.approvals ?? []); })
+      .catch(() => { if (isMounted) setLiveApprovals([]); })
+      .finally(() => { if (isMounted) setLoadingApprovals(false); });
+    return () => { isMounted = false; };
+  }, [demoMode, scope]);
+
+  function exportApprovalsReport() {
+    const payload = {
+      exportedAt: new Date().toISOString(),
+      organizationId: scope?.organizationId ?? null,
+      approvalCount: liveApprovals.length,
+      approvals: liveApprovals.map((approval) => ({
+        id: approval.id,
+        title: approval.title,
+        status: approval.status,
+        priority: approval.priority,
+        dueAt: approval.dueAt,
+        decidedAt: approval.decidedAt,
+        sourceAiReviewId: approval.sourceAiReviewId,
+        createdAt: approval.createdAt,
+      })),
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `axxess-approvals-report-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    setExportMessage(`Exported ${liveApprovals.length} approval record${liveApprovals.length === 1 ? "" : "s"}.`);
+    void fetch("/api/approvals/export", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ approvalCount: liveApprovals.length }),
+    }).catch(() => undefined);
+  }
 
   return (
     <PageShell>
@@ -46,10 +136,88 @@ export const ApprovalsSection = () => {
           <DataStateBadge key="demo" state={demoMode ? "Demo" : "Live"} />,
           <HumanReviewBadge key="review" required />,
         ]}
+        actions={!demoMode ? (
+          <button
+            onClick={exportApprovalsReport}
+            disabled={loadingApprovals || liveApprovals.length === 0}
+            className="text-xs bg-[#8B1E2D] text-white px-3 py-2 rounded-lg flex items-center gap-1.5 hover:bg-[#7a1a27] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <Download size={12} /> Export Report
+          </button>
+        ) : undefined}
       />
-      {!demoMode && (
+      {!demoMode && exportMessage && (
+        <p className="rounded-lg bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-700">{exportMessage}</p>
+      )}
+      {!demoMode && decisionError && (
+        <p className="rounded-lg bg-red-50 px-3 py-2 text-xs font-medium text-red-700">{decisionError}</p>
+      )}
+      {!demoMode && !loadingApprovals && liveApprovals.length === 0 && (
         <Card className="p-8">
-          <EmptyState message="A live approvals workflow isn't wired to a connected data backend yet. This page will populate as that capability is built." />
+          <EmptyState message="No approval requests yet. Approving an AI Review Inbox item with 'Create approval request' will add one here." />
+        </Card>
+      )}
+      {!demoMode && liveApprovals.length > 0 && (
+        <Card className="overflow-hidden">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-[rgba(0,0,0,0.06)] bg-[#F8F9FA]">
+                {["Title", "Status", "Priority", "Due", "Created", "Actions"].map((h) => (
+                  <th key={h} className="text-left text-[11px] font-semibold text-[#5F6B73] uppercase tracking-wider px-4 py-3">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {liveApprovals.map((approval) => {
+                const isAgentOriginated = Boolean((approval.metadata as { agentConnectionId?: string })?.agentConnectionId);
+                return (
+                <tr key={approval.id} className="border-b border-[rgba(0,0,0,0.04)]">
+                  <td className="px-4 py-3 text-xs font-semibold text-[#0F1117]">{approval.title}</td>
+                  <td className="px-4 py-3 text-xs capitalize text-[#5F6B73]">{approval.status.replace(/_/g, " ")}</td>
+                  <td className="px-4 py-3 text-xs capitalize text-[#5F6B73]">{approval.priority}</td>
+                  <td className="px-4 py-3 text-[11px] font-mono text-[#5F6B73]">{approval.dueAt ? new Date(approval.dueAt).toLocaleDateString() : "--"}</td>
+                  <td className="px-4 py-3 text-[11px] font-mono text-[#5F6B73]">{new Date(approval.createdAt).toLocaleDateString()}</td>
+                  <td className="px-4 py-3">
+                    {approval.status !== "pending" ? (
+                      <span className="text-[11px] text-[#5F6B73]">{approval.decidedAt ? new Date(approval.decidedAt).toLocaleDateString() : "--"}</span>
+                    ) : canDecide ? (
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <button
+                          type="button"
+                          disabled={decidingId === approval.id}
+                          onClick={() => void decideApproval(approval.id, "approved")}
+                          className="rounded-lg bg-emerald-600 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
+                        >
+                          Approve
+                        </button>
+                        {isAgentOriginated && (
+                          <button
+                            type="button"
+                            disabled={decidingId === approval.id}
+                            onClick={() => void decideApproval(approval.id, "approved", true)}
+                            className="rounded-lg border border-emerald-200 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 hover:bg-emerald-50 disabled:opacity-60"
+                          >
+                            Approve + always allow
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          disabled={decidingId === approval.id}
+                          onClick={() => void decideApproval(approval.id, "rejected")}
+                          className="rounded-lg border border-red-200 px-2.5 py-1 text-[11px] font-semibold text-red-700 hover:bg-red-50 disabled:opacity-60"
+                        >
+                          Reject
+                        </button>
+                      </div>
+                    ) : (
+                      <span className="text-[11px] text-[#5F6B73]">Requires Manager or above</span>
+                    )}
+                  </td>
+                </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </Card>
       )}
       {demoMode && <DemoDataNotice label="Approval decisions update local demo state, show AI recommendation context, and preserve audit-ready decision language." />}

@@ -91,12 +91,17 @@ export async function sendInvitationEmail(input: InvitationEmailInput): Promise<
     cache: "no-store",
   });
 
-  const payload = await response.json().catch(() => ({})) as { id?: string; message?: string; error?: string };
+  const payload = await response.json().catch(() => ({})) as { id?: string; message?: string; error?: string; name?: string };
   if (!response.ok) {
+    const error = payload.message ?? payload.error ?? `Resend request failed with ${response.status}`;
+    // A-08 debugging (2026-07-27): status/message alone weren't reaching anywhere the founder or
+    // this agent could see -- only the generic UI toast. Logging the real Resend response so it
+    // shows up in `vercel logs` is what actually lets this failure be diagnosed instead of guessed.
+    console.error("[invitationEmail] Resend send failed", { status: response.status, name: payload.name, error });
     return {
       status: "failed",
       provider: "resend",
-      error: payload.message ?? payload.error ?? `Resend request failed with ${response.status}`,
+      error,
       invitationUrl: rendered.invitationUrl,
     };
   }

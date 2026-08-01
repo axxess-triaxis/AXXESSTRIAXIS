@@ -3,6 +3,7 @@ import { getServerAuthSession } from "../../../auth/serverSession";
 import type { BetaFeedbackType } from "../../../domain";
 import { auditLogsRepository, betaFeedbackRepository, tenantScopeFromUser } from "../../../repositories/supabaseEnterpriseRepositories";
 import type { RepositoryQuery } from "../../../repositories/interfaces";
+import { sendFeedbackNotificationEmail } from "../../../services/email/feedbackEmail";
 
 const feedbackTypes: BetaFeedbackType[] = ["Bug", "Feature Request", "Confusing Workflow", "General Feedback"];
 const adminRoles = ["Super Admin", "Organization Admin"];
@@ -65,6 +66,22 @@ export async function POST(request: Request) {
     metadata: typeof body.metadata === "object" && body.metadata !== null && !Array.isArray(body.metadata) ? body.metadata as Record<string, unknown> : {},
   });
 
+  // RAG Remediation Sprint 3 (A-65): feedback was already reliably persisted before this delivery
+  // attempt runs -- a failed or unconfigured email send must never lose the feedback itself, so
+  // this happens after the create() above and is wrapped so an exception here can't 500 the request.
+  const routeMeta = typeof body.metadata === "object" && body.metadata !== null ? (body.metadata as Record<string, unknown>).route : undefined;
+  let emailDelivery: { status: string; provider: string };
+  try {
+    emailDelivery = await sendFeedbackNotificationEmail({
+      feedback,
+      organizationId: scope.organizationId,
+      userId: scope.userId,
+      route: typeof routeMeta === "string" ? routeMeta : undefined,
+    });
+  } catch (error) {
+    emailDelivery = { status: "failed", provider: "resend", ...(error instanceof Error ? { error: error.message } : {}) };
+  }
+
   await auditLogsRepository.record(scope, {
     action: "beta_feedback.submitted",
     resourceType: "beta_feedback",
@@ -75,8 +92,10 @@ export async function POST(request: Request) {
       module: feedback.module,
       rating: feedback.rating,
       permission_to_contact: feedback.permissionToContact,
+      email_delivery_status: emailDelivery.status,
+      email_delivery_provider: emailDelivery.provider,
     },
   }).catch(() => undefined);
 
-  return NextResponse.json(feedback, { status: 201 });
+  return NextResponse.json({ ...feedback, emailDeliveryStatus: emailDelivery.status }, { status: 201 });
 }

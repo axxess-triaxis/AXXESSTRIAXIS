@@ -16,6 +16,7 @@ import type {
   TenantScope,
 } from "../../repositories/interfaces";
 import { isSupabaseAdminConfigured, supabaseAdminRest } from "../../repositories/supabaseAdmin";
+import { isDemoModeEnabled } from "../../demo/demoMode";
 import type { AiReviewInboxItem, AiReviewInboxStatus } from "../ai/reviewInbox";
 import {
   buildWorkflowProgressRecords,
@@ -206,7 +207,14 @@ export async function listWorkflowTimeline(
   organizationId: string,
   options: { limit?: number; resourceType?: WorkflowTimelineResourceType; resourceId?: string } = {},
 ): Promise<WorkflowTimelineEvent[]> {
-  if (!isSupabaseAdminConfigured()) return fallbackWorkflowTimelineEvents(organizationId).slice(0, options.limit ?? 20);
+  // Sprint 4 fix: a fabricated fallback timeline must never stand in for a genuinely empty real
+  // tenant -- it previously did so unconditionally whenever Supabase wasn't configured, or even
+  // when it was configured and the query correctly returned zero rows. Both cases now only show
+  // the fallback in Demo Mode (server-side isDemoModeEnabled() is env-forced only, never a random
+  // per-request signal -- see src/demo/demoMode.ts), matching the pattern already shipped for the
+  // AI Review Inbox (src/services/ai/reviewInbox.ts). Everywhere else, an empty tenant sees an
+  // honest empty timeline, not events that never happened.
+  if (!isSupabaseAdminConfigured()) return isDemoModeEnabled() ? fallbackWorkflowTimelineEvents(organizationId).slice(0, options.limit ?? 20) : [];
 
   const query = new URLSearchParams({
     organization_id: `eq.${organizationId}`,
@@ -218,7 +226,8 @@ export async function listWorkflowTimeline(
   if (options.resourceId && isUuid(options.resourceId)) query.set("resource_id", `eq.${options.resourceId}`);
 
   const rows = await supabaseAdminRest<WorkflowTimelineRow[]>("workflow_timeline_events", { query }).catch(() => []);
-  return rows.length ? rows.map(mapTimelineRow) : fallbackWorkflowTimelineEvents(organizationId).slice(0, options.limit ?? 20);
+  if (rows.length) return rows.map(mapTimelineRow);
+  return isDemoModeEnabled() ? fallbackWorkflowTimelineEvents(organizationId).slice(0, options.limit ?? 20) : [];
 }
 
 export async function recordWorkflowTimelineEvent(
@@ -262,8 +271,14 @@ async function createApprovedAction(
   input: AiReviewWorkflowActionInput & { actionType: ReviewWorkflowActionType },
 ) {
   const title = input.actionTitle?.trim() || defaultActionTitle(input.review, input.actionType);
+  // RAG Remediation Sprint 2 (A-63): previously this description omitted the original question
+  // entirely (AiReviewInboxItem never carried it) and only the answer's one-sentence excerpt, not
+  // the full approved answer -- a reviewer opening the created task/approval/note could not tell
+  // what was actually asked. Both are now sourced from ai_operation_reviews.metadata (populated in
+  // tenantRagWorkflow.ts's answerTenantQuestion) when present.
   const description = [
-    input.review.answerExcerpt,
+    input.review.question ? `Question: ${input.review.question}` : undefined,
+    input.review.fullAnswer ?? input.review.answerExcerpt,
     input.notes ? `Reviewer notes: ${input.notes}` : undefined,
     input.review.citations.length ? `Sources: ${input.review.citations.map((citation) => citation.title ?? citation.sourceId).filter(Boolean).join(", ")}` : undefined,
   ].filter(Boolean).join("\n\n");
@@ -271,7 +286,9 @@ async function createApprovedAction(
     source: "ai_review",
     reviewId: input.review.id,
     sourceAuditId: input.review.sourceAuditId,
+    question: input.review.question,
     confidence: input.review.confidence,
+    confidenceExplanation: input.review.confidenceExplanation,
     citations: input.review.citations,
     decisionNotes: input.notes,
   };
@@ -330,7 +347,7 @@ async function createApprovedAction(
       attendeeIds: [scope.userId],
       agenda: description,
       decisions: [],
-      actionItems: [input.review.answerExcerpt],
+      actionItems: [input.review.fullAnswer ?? input.review.answerExcerpt],
       status: "scheduled",
     });
     return { resourceType: "meeting" as const, meeting };

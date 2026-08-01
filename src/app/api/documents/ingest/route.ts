@@ -25,6 +25,9 @@ export async function POST(request: Request) {
     classification?: "public" | "internal" | "confidential" | "restricted";
     tags?: string[];
     projectId?: string;
+    documentId?: string;
+    extractionMethod?: "text-layer" | "ocr" | "docx" | "plain";
+    extractionTruncated?: boolean;
   };
 
   try {
@@ -45,6 +48,9 @@ export async function POST(request: Request) {
       classification: body.classification,
       tags: body.tags,
       projectId: body.projectId,
+      documentId: body.documentId,
+      extractionMethod: body.extractionMethod,
+      extractionTruncated: body.extractionTruncated,
     });
     const timelineEvent = await recordWorkflowTimelineEvent({
       organizationId: scope.organizationId,

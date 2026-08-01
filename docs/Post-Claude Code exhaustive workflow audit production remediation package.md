@@ -241,4 +241,9 @@ docs/SPRINT_41_QA2_MILESTONE_2026_07_22.md for the full Sprint 1-41
 numbering/history, program spend, the facts/partial/untouched
 breakdown, the deployment attempt narrative, and 20 ranked next
 actionables.
+Live Tenant 0 onboarding (Triaxis Ventures Private Limited onboarding
+itself as the first real tenant, performed by the user directly) is
+underway. Findings from that walkthrough, starting with Product Issue 1
+(no sign-up entry point, no OAuth options, diagnosed and remediated) are
+logged as they occur in docs/TENANT_0_ONBOARDING_FINDINGS_2026_07_22.md.
 ```

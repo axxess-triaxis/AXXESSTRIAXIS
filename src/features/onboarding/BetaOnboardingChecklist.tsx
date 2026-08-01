@@ -15,9 +15,12 @@ import {
 type BetaOnboardingChecklistProps = {
   user: UserContext;
   projectCount: number;
+  documentCount?: number;
+  taskCount?: number;
+  approvalCount?: number;
 };
 
-const steps: { id: OnboardingStepId; label: string; route: string; detail: string }[] = [
+const steps: { id: OnboardingStepId; label: string; route: string; detail: string; action?: "open-feedback" }[] = [
   { id: "organization", label: "Confirm organization", route: "/admin/organization", detail: "Tenant profile, sector, owner, and live/demo separation" },
   { id: "invite_team_member", label: "Invite pilot team", route: "/admin/invitations", detail: "Sponsor, department lead, manager, and first employee" },
   { id: "role_assignment", label: "Assign roles", route: "/admin/roles", detail: "Organization Admin, Executive, Manager, Employee, Guest" },
@@ -27,22 +30,35 @@ const steps: { id: OnboardingStepId; label: string; route: string; detail: strin
   { id: "first_task", label: "Create first task", route: "/tasks", detail: "Task created from workflow or AI answer" },
   { id: "first_approval", label: "Request first approval", route: "/approvals", detail: "Human decision with policy note and audit trail" },
   { id: "view_audit_trail", label: "View audit trail", route: "/admin/audit-logs", detail: "Evidence chain for pilot sponsor and compliance review" },
-  { id: "send_feedback", label: "Send feedback / request support", route: "/dashboard", detail: "Capture pilot friction, interest, and next meeting" },
+  // A-39 fix (2026-07-27): this used to route to /dashboard, which has no feedback surface at all.
+  // The real feedback form is the always-mounted BetaFeedbackButton/BetaFeedbackModal (id
+  // "beta-feedback-trigger" in AppShell) -- open it directly instead of navigating away.
+  { id: "send_feedback", label: "Send feedback / request support", route: "/dashboard", detail: "Capture pilot friction, interest, and next meeting", action: "open-feedback" },
 ];
 
-export function BetaOnboardingChecklist({ user, projectCount }: BetaOnboardingChecklistProps) {
+export function BetaOnboardingChecklist({ user, projectCount, documentCount = 0, taskCount = 0, approvalCount = 0 }: BetaOnboardingChecklistProps) {
   const analytics = useAnalytics();
   const repository = useMemo(() => new LocalOnboardingProgressRepository(), []);
   const [progress, setProgress] = useState<OnboardingProgress>(() => defaultOnboardingProgress);
 
+  // Most steps below are still click-to-check (genuinely no reliable existing signal for "invited
+  // a team member," "assigned a role," "asked an AI question," "viewed the audit trail," or "sent
+  // feedback" without new tracking infrastructure). But upload_document/first_task/first_approval
+  // DO have real counts already computed elsewhere on this same dashboard (liveMetrics) -- this
+  // previously required a redundant manual click even after the real action already happened,
+  // which is exactly why a user doing real work would see some steps never tick. Auto-detect from
+  // real data wherever it already exists, same pattern as organization/first_project below.
   useEffect(() => {
     const loaded = repository.load(user.id);
     setProgress({
       ...loaded,
       organization: Boolean(user.organizationId) || loaded.organization,
       first_project: projectCount > 0 || loaded.first_project,
+      upload_document: documentCount > 0 || loaded.upload_document,
+      first_task: taskCount > 0 || loaded.first_task,
+      first_approval: approvalCount > 0 || loaded.first_approval,
     });
-  }, [projectCount, repository, user.id, user.organizationId]);
+  }, [approvalCount, documentCount, projectCount, repository, taskCount, user.id, user.organizationId]);
 
   useEffect(() => {
     repository.save(user.id, progress);
@@ -93,8 +109,8 @@ export function BetaOnboardingChecklist({ user, projectCount }: BetaOnboardingCh
     <Card className="p-4">
       <div className="mb-3 flex items-center justify-between">
         <div>
-          <h3 className="text-sm font-semibold text-[#0F1117]">Pilot Onboarding</h3>
-          <p className="mt-0.5 text-xs text-[#5F6B73]">{completed} of {steps.length} complete - first 10 minutes of a real tenant</p>
+          <h3 className="text-sm font-semibold text-[#0F1117]">Pilot Onboarding (personal checklist)</h3>
+          <p className="mt-0.5 text-xs text-[#5F6B73]">{completed} of {steps.length} complete -- your own first-10-minutes checklist, saved to this browser only. For tenant-wide workflow proof, see the Enterprise Golden Path below.</p>
         </div>
         <span className="rounded-full bg-[#F2F3F5] px-2.5 py-1 font-mono text-[10px] text-[#5F6B73]">{progressPercent}%</span>
       </div>
@@ -114,9 +130,19 @@ export function BetaOnboardingChecklist({ user, projectCount }: BetaOnboardingCh
                   <span className="mt-1 block leading-relaxed">{step.detail}</span>
                 </span>
               </button>
-              <a href={step.route} className="mt-3 inline-flex items-center gap-1 text-[11px] font-semibold text-[#8B1E2D]">
-                Open <ArrowRight size={11} />
-              </a>
+              {step.action === "open-feedback" ? (
+                <button
+                  type="button"
+                  onClick={() => document.getElementById("beta-feedback-trigger")?.click()}
+                  className="mt-3 inline-flex items-center gap-1 text-[11px] font-semibold text-[#8B1E2D]"
+                >
+                  Open <ArrowRight size={11} />
+                </button>
+              ) : (
+                <a href={step.route} className="mt-3 inline-flex items-center gap-1 text-[11px] font-semibold text-[#8B1E2D]">
+                  Open <ArrowRight size={11} />
+                </a>
+              )}
             </div>
           );
         })}

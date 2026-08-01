@@ -20,6 +20,7 @@ import {
   organizationsRepository,
   programsRepository,
   projectsRepository,
+  stakeholdersRepository,
   tasksRepository,
   usersRepository,
 } from "../repositories/supabaseEnterpriseRepositories";
@@ -44,6 +45,7 @@ import type {
   OrganizationsRepository,
   ProgramsRepository,
   ProjectsRepository,
+  StakeholdersRepository,
   StorageRepository,
   TasksRepository,
   TenantRepository,
@@ -107,6 +109,7 @@ export type ApplicationServices = {
   usersRepository: UsersRepository;
   programsRepository: ProgramsRepository;
   projectsRepository: ProjectsRepository;
+  stakeholdersRepository: StakeholdersRepository;
   tasksRepository: TasksRepository;
   meetingsRepository: MeetingsRepository;
   notificationsRepository: NotificationsRepository;
@@ -140,6 +143,7 @@ const liveRepositories: RepositoryServices = {
   usersRepository,
   programsRepository,
   projectsRepository,
+  stakeholdersRepository,
   tasksRepository,
   meetingsRepository,
   notificationsRepository,
@@ -230,6 +234,7 @@ const resilientRepositories: RepositoryServices = {
   },
   programsRepository: resilientTenantRepository(liveRepositories.programsRepository, emptyRepositories.programsRepository),
   projectsRepository: resilientMutableRepository(liveRepositories.projectsRepository, emptyRepositories.projectsRepository),
+  stakeholdersRepository: resilientMutableRepository(liveRepositories.stakeholdersRepository, emptyRepositories.stakeholdersRepository),
   tasksRepository: resilientMutableRepository(liveRepositories.tasksRepository, emptyRepositories.tasksRepository),
   meetingsRepository: resilientMutableRepository(liveRepositories.meetingsRepository, emptyRepositories.meetingsRepository),
   notificationsRepository: resilientMutableRepository(liveRepositories.notificationsRepository, emptyRepositories.notificationsRepository),
@@ -285,6 +290,10 @@ const resilientRepositories: RepositoryServices = {
       () => liveRepositories.invitationsRepository.listPending(scope, query),
       () => emptyRepositories.invitationsRepository.listPending(scope, query),
     ),
+    update: (scope, id, input) => withResilientFallback(
+      () => liveRepositories.invitationsRepository.update(scope, id, input),
+      () => emptyRepositories.invitationsRepository.update(scope, id, input),
+    ),
   },
   auditLogsRepository: {
     list: (scope, query) => withResilientFallback(
@@ -326,6 +335,10 @@ const resilientRepositories: RepositoryServices = {
     createDocumentDownloadIntent: (input) => withResilientFallback(
       () => liveRepositories.storageRepository.createDocumentDownloadIntent(input),
       () => emptyRepositories.storageRepository.createDocumentDownloadIntent(input),
+    ),
+    uploadDocumentFile: (input) => withResilientFallback(
+      () => liveRepositories.storageRepository.uploadDocumentFile(input),
+      () => emptyRepositories.storageRepository.uploadDocumentFile(input),
     ),
   },
 };

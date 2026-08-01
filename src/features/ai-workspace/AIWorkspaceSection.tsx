@@ -1,7 +1,20 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../../auth/AuthProvider";
 import { EnterpriseWorkflowJourney } from "../../components/enterprise/EnterpriseWorkflowJourney";
-import { isDemoModeEnabled } from "../../demo/demoMode";
+import { AgenticActionablesPrompt } from "../../components/agentic/AgenticActionablesPrompt";
+import {
+  AGENTIC_ROUTE_CAVEAT,
+  AGENTIC_ROUTE_FOR_ACTION,
+  AGENTIC_UNAVAILABLE_ACTIONS,
+  type AgenticGateResult,
+  type AgenticPromptSource,
+  type AgenticResolution,
+} from "../../components/agentic/agenticActionTypes";
+import { evaluateActionableGate } from "../../services/agentic/actionableGate";
+import { writeAgenticDraft } from "../../services/agentic/agenticDraftHandoff";
+import { isAgenticGateEnabled } from "../../services/agentic/agenticGateToggle";
+import { useWorkspaceRouting } from "../../hooks/useWorkspaceRouting";
+import { getRuntimeMode, isDemoModeEnabled } from "../../demo/demoMode";
 import {
   AuditTrailBadge,
   ConfidenceBadge,
@@ -20,16 +33,13 @@ import { useGoldenPathDisplayMode } from "../../hooks/useGoldenPathDisplayMode";
 import { applicationServices } from "../../providers/serviceProvider";
 import { tenantScopeFromUser } from "../../repositories/supabaseEnterpriseRepositories";
 import { useAnalytics } from "../../services/analytics";
-import { getAiRouterStatusSnapshot } from "../../services/ai/router/aiRouter";
 import { languageCoverage } from "../../services/nlp/modelRegistry";
 import { answerWithGovernedRag, type RagAnswer } from "../../services/rag/governedRag";
+import { summarizeConfidenceExplanation } from "../../services/rag/confidenceExplanation";
 import {
-  AlertTriangle,
-  ArrowUpRight,
   CalendarDays,
   Check,
   CheckCircle2,
-  CheckSquare,
   FileText,
   FolderKanban,
   Paperclip,
@@ -41,7 +51,8 @@ import {
   Users,
 } from "lucide-react";
 
-const aiRouterStatus = getAiRouterStatusSnapshot();
+type AiRouterProviderStatus = { name: string; displayName: string; configured: boolean; status: string };
+type AiRouterStatus = { mode: string; defaultProvider: string; configuredCount: number; providers: AiRouterProviderStatus[] };
 
 // Illustrative content for the investor-demo experience only -- gated behind isDemoModeEnabled()
 // everywhere it's used. A real tenant must never see this presented as a live AI answer.
@@ -52,6 +63,14 @@ const fallbackRagAnswer: RagAnswer = {
   humanReviewRequired: false,
   keywords: ["oxygen", "maternal", "stockout", "district", "variance"],
   rationale: "Synthesized from 3 governed sources (top match: \"Dibrugarh Risk Register - Oxygen Resilience\", 91% relevance).",
+  confidenceExplanation: {
+    sourceMatchStrength: 0.91,
+    relevantChunkCount: 3,
+    sourceAuthorizationStatus: "fully_authorized",
+    citationCoverage: 1,
+    answerMode: "local_extractive_summary",
+    humanReviewRequired: false,
+  },
   sources: [
     {
       sourceType: "document",
@@ -86,6 +105,14 @@ const emptyRagAnswer: RagAnswer = {
   keywords: [],
   rationale: "",
   sources: [],
+  confidenceExplanation: {
+    sourceMatchStrength: 0,
+    relevantChunkCount: 0,
+    sourceAuthorizationStatus: "fully_authorized",
+    citationCoverage: 0,
+    answerMode: "no_authorized_source",
+    humanReviewRequired: false,
+  },
 };
 
 function initialRagAnswer(): RagAnswer {
@@ -103,6 +130,7 @@ type LiveRagAnswer = RagAnswer & {
 export const AIWorkspaceSection = () => {
   const { session } = useAuth();
   const analytics = useAnalytics();
+  const { navigateToSection } = useWorkspaceRouting();
   const tenantScope = useMemo(() => session.user ? tenantScopeFromUser(session.user) : undefined, [session.user]);
   const enterpriseJourney = useEnterpriseGoldenPath(tenantScope, session.user);
   const goldenPathDisplayMode = useGoldenPathDisplayMode();
@@ -113,9 +141,59 @@ export const AIWorkspaceSection = () => {
   const [reviewing, setReviewing] = useState(false);
   const [reviewMessage, setReviewMessage] = useState<string | null>(null);
   const [ragAnswer, setRagAnswer] = useState<LiveRagAnswer>(() => initialRagAnswer());
+  const [routerStatus, setRouterStatus] = useState<AiRouterStatus | null>(null);
+  const [agenticPrompt, setAgenticPrompt] = useState<{ gateContext?: AgenticGateResult; source: AgenticPromptSource } | null>(null);
+  const [agenticMessage, setAgenticMessage] = useState<string | null>(null);
+  const priorSourceIdsRef = useRef<Set<string>>(new Set());
+  const isFirstAnswerRef = useRef(true);
+  const knownStakeholderNamesRef = useRef<string[]>([]);
+  const firstName = session.user?.displayName?.trim().split(/\s+/)[0] || "there";
 
+  // Loaded once per tenant so the gate's "new stakeholder" heuristic (actionableGate.ts) has a
+  // real name list to compare against, not a guess -- fails silently to an empty list rather than
+  // blocking the AI Workspace on a stakeholder-list fetch.
   useEffect(() => {
     if (!tenantScope) return;
+    let isMounted = true;
+    applicationServices.stakeholdersRepository.list(tenantScope, { pageSize: 200 })
+      .then((stakeholders) => {
+        if (isMounted) knownStakeholderNamesRef.current = stakeholders.map((stakeholder) => stakeholder.name);
+      })
+      .catch(() => undefined);
+    return () => {
+      isMounted = false;
+    };
+  }, [tenantScope]);
+
+  // 2026-07-30: this used to call getAiRouterStatusSnapshot() directly at module load -- a server
+  // function reading process.env.OPENAI_API_KEY etc. -- but this component runs client-side, where
+  // non-NEXT_PUBLIC_ env vars are never available (stripped at build time). It always reported
+  // every remote provider "missing_credentials" and mode "demo" regardless of real production
+  // configuration. GET /api/ai/model-policy already computes this server-side and already exists
+  // (used elsewhere for AI policy preview) -- fetching it here is the fix, not new infrastructure.
+  useEffect(() => {
+    if (!session.user) return;
+    let isMounted = true;
+    fetch("/api/ai/model-policy", { credentials: "include", cache: "no-store" })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data: { router?: AiRouterStatus } | null) => {
+        if (isMounted && data?.router) setRouterStatus(data.router);
+      })
+      .catch(() => undefined);
+    return () => {
+      isMounted = false;
+    };
+  }, [session.user]);
+
+  useEffect(() => {
+    // TP-2 (2026-07-28): this used to fire unconditionally for every tenant, running a
+    // demo-institution-specific sample question against that tenant's own real RAG pipeline on
+    // every AI Workspace load -- pointless (and potentially confusing if it ever matched a real
+    // document) for a live tenant with no connection to "North East Health Mission." Restricted to
+    // demo mode, where this sample question is a deliberate, meaningful showcase against the
+    // seeded dataset; a real tenant now starts from a genuinely empty state and asks its own
+    // question.
+    if (!tenantScope || getRuntimeMode(Boolean(session.user)) !== "demo") return;
 
     let isMounted = true;
     void answerWithGovernedRag(applicationServices, tenantScope, {
@@ -132,12 +210,12 @@ export const AIWorkspaceSection = () => {
     return () => {
       isMounted = false;
     };
-  }, [tenantScope]);
+  }, [tenantScope, session.user]);
 
   const QUERY_TIMEOUT_MS = 20_000;
 
-  async function askGovernedQuestion() {
-    const question = input.trim();
+  async function askGovernedQuestion(overrideQuestion?: string) {
+    const question = (overrideQuestion ?? input).trim();
     if (!question) return;
 
     setQuerying(true);
@@ -172,6 +250,19 @@ export const AIWorkspaceSection = () => {
         module_name: "ai-workspace",
         route: "/ai-workspace",
       });
+      analytics.trackEvent("rag_answer_generated", {
+        source_count: (result as LiveRagAnswer).sources?.length ?? 0,
+        confidence: (result as LiveRagAnswer).confidence ?? null,
+        human_review_required: (result as LiveRagAnswer).humanReviewRequired ?? null,
+      }, {
+        organization_id: session.user?.organizationId,
+        user_id: session.user?.id,
+        user_role: session.user?.role,
+        module_name: "ai-workspace",
+        route: "/ai-workspace",
+      });
+
+      maybeOpenAgenticPrompt(result as LiveRagAnswer);
     } catch (error) {
       const timedOut = error instanceof DOMException && error.name === "AbortError";
       setQueryError(
@@ -185,6 +276,121 @@ export const AIWorkspaceSection = () => {
       clearTimeout(timeout);
       setQuerying(false);
     }
+  }
+
+  function agenticSourceFromAnswer(answer: LiveRagAnswer): AgenticPromptSource {
+    return {
+      sourceType: "rag_answer",
+      summary: answer.answer.length > 240 ? `${answer.answer.slice(0, 237)}...` : answer.answer,
+      citations: answer.sources.map((source) => ({ sourceId: source.sourceId, title: source.title })),
+      aiOutputAuditId: answer.aiOutputAuditId,
+      humanReviewRequired: answer.humanReviewRequired,
+    };
+  }
+
+  function openAgenticPrompt(answer: LiveRagAnswer, gateContext?: ReturnType<typeof evaluateActionableGate>) {
+    setAgenticMessage(null);
+    setAgenticPrompt({ gateContext, source: agenticSourceFromAnswer(answer) });
+    analytics.trackEvent("agentic_prompt_shown", { source_type: "rag_answer", triggered_by: gateContext ? "gate" : "manual" }, {
+      organization_id: session.user?.organizationId,
+      user_id: session.user?.id,
+      user_role: session.user?.role,
+      module_name: "ai-workspace",
+      route: "/ai-workspace",
+    });
+  }
+
+  // Auto-opens the two-step actionables prompt only when the heuristic gate (actionableGate.ts)
+  // finds at least one real signal in the just-generated answer -- never for the demo seed answer,
+  // and never at all when the user has turned the gate off in Settings (the manual "Create
+  // actionable from answer" button in the header still works regardless of this toggle).
+  function maybeOpenAgenticPrompt(answer: LiveRagAnswer) {
+    if (!isAgenticGateEnabled()) return;
+
+    const gateResult = evaluateActionableGate({
+      answer,
+      knownStakeholderNames: knownStakeholderNamesRef.current,
+      priorSourceIds: priorSourceIdsRef.current,
+      isFirstAnswerThisSession: isFirstAnswerRef.current,
+    });
+
+    isFirstAnswerRef.current = false;
+    answer.sources.forEach((source) => priorSourceIdsRef.current.add(source.sourceId));
+
+    analytics.trackEvent("agentic_gate_evaluated", {
+      trigger_count: gateResult.triggerCount,
+      show_prompt: gateResult.showPrompt,
+      override_required: gateResult.overrideRequired,
+      compulsory_choice: gateResult.compulsoryChoice,
+      pushback_severity: gateResult.signals.pushbackSeverity,
+    }, {
+      organization_id: session.user?.organizationId,
+      user_id: session.user?.id,
+      user_role: session.user?.role,
+      module_name: "ai-workspace",
+      route: "/ai-workspace",
+    });
+
+    if (gateResult.showPrompt) openAgenticPrompt(answer, gateResult);
+  }
+
+  function resolveAgenticPrompt(resolution: AgenticResolution) {
+    setAgenticPrompt(null);
+
+    const context = {
+      organization_id: session.user?.organizationId,
+      user_id: session.user?.id,
+      user_role: session.user?.role,
+      module_name: "ai-workspace",
+      route: "/ai-workspace",
+    };
+
+    if (resolution.dismissedVia === "gate_required_no_action_now" || resolution.dismissedVia === "gate_required_no_action_required") {
+      analytics.trackEvent("agentic_dismissed_via_gate_override", { resolution: resolution.dismissedVia }, context);
+      return;
+    }
+
+    if (resolution.dismissedVia === "nothing_option") return;
+
+    analytics.trackEvent("agentic_first_option_selected", { action: resolution.firstAction }, context);
+    if (resolution.secondStep) analytics.trackEvent("agentic_second_step_selected", { action: resolution.firstAction, second_step: resolution.secondStep }, context);
+
+    if (resolution.dismissedVia === "unavailable_action") {
+      analytics.trackEvent("agentic_disabled_action_attempted", { action: resolution.firstAction }, context);
+      setAgenticMessage(AGENTIC_UNAVAILABLE_ACTIONS[resolution.firstAction] ?? "This isn't available yet.");
+      return;
+    }
+
+    if (resolution.firstAction === "integrate_next_query") {
+      if (resolution.secondStep === "yes") {
+        setInput((current) => current ? `${current}\n\n${ragAnswer.answer}` : ragAnswer.answer);
+        analytics.trackEvent("agentic_route_chosen", { action: resolution.firstAction, destination: "ai-workspace" }, context);
+      }
+      return;
+    }
+
+    if (resolution.firstAction === "other") {
+      setAgenticMessage(`Noted: "${resolution.otherInstruction}". This isn't automated yet, but it's logged.`);
+      return;
+    }
+
+    const destination = AGENTIC_ROUTE_FOR_ACTION[resolution.firstAction];
+    if (!destination) {
+      setAgenticMessage(AGENTIC_UNAVAILABLE_ACTIONS[resolution.firstAction] ?? "This isn't available yet.");
+      return;
+    }
+
+    writeAgenticDraft({
+      actionType: resolution.firstAction,
+      secondStep: resolution.secondStep,
+      summary: ragAnswer.answer,
+      citations: ragAnswer.sources.map((source) => ({ sourceId: source.sourceId, title: source.title })),
+      sourceType: "rag_answer",
+      createdAt: new Date().toISOString(),
+    });
+    analytics.trackEvent("agentic_route_chosen", { action: resolution.firstAction, destination }, context);
+    if (AGENTIC_ROUTE_CAVEAT[resolution.firstAction]) setAgenticMessage(AGENTIC_ROUTE_CAVEAT[resolution.firstAction] ?? null);
+    navigateToSection(destination);
   }
 
   async function reviewAnswer(decision: "approved" | "rejected") {
@@ -246,9 +452,15 @@ export const AIWorkspaceSection = () => {
         actions={
           <>
             <a href="/ai-workspace/review-inbox" className="rounded-lg border border-[rgba(15,17,23,0.1)] px-3 py-2 text-xs font-semibold text-[#5F6B73] hover:bg-[#F2F3F5]">Review inbox</a>
-            <a href="/tasks" className="rounded-lg border border-[rgba(15,17,23,0.1)] px-3 py-2 text-xs font-semibold text-[#5F6B73] hover:bg-[#F2F3F5]">Create task from answer</a>
-            <a href="/approvals" className="rounded-lg border border-[rgba(15,17,23,0.1)] px-3 py-2 text-xs font-semibold text-[#5F6B73] hover:bg-[#F2F3F5]">Request approval</a>
-            <a href="mailto:founders@triaxis.ventures?subject=AXXESS%20AI%20Workspace%20feedback" className="rounded-lg bg-[#8B1E2D] px-3 py-2 text-xs font-semibold text-white hover:bg-[#7a1a27]">Send feedback</a>
+            <button
+              type="button"
+              disabled={!ragAnswer.answer}
+              onClick={() => openAgenticPrompt(ragAnswer)}
+              className="rounded-lg border border-[rgba(15,17,23,0.1)] px-3 py-2 text-xs font-semibold text-[#5F6B73] hover:bg-[#F2F3F5] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              Create actionable from answer
+            </button>
+            <a href="/approvals" className="rounded-lg border border-[rgba(15,17,23,0.1)] px-3 py-2 text-xs font-semibold text-white bg-[#8B1E2D] hover:bg-[#7a1a27]">Request approval</a>
           </>
         }
       />
@@ -371,6 +583,11 @@ export const AIWorkspaceSection = () => {
                         {ragAnswer.aiOutputAuditId && <AuditTrailBadge eventId={ragAnswer.aiOutputAuditId} />}
                         {ragAnswer.providerUsed && <span className="rounded-full bg-[#F2F3F5] px-2 py-0.5 text-[10px] font-semibold text-[#5F6B73]">{ragAnswer.providerUsed} - {ragAnswer.costTier ?? "cost logged"}</span>}
                       </div>
+                      {ragAnswer.confidenceExplanation && (
+                        <p className="mt-1 text-[10px] leading-relaxed text-[#5F6B73]">
+                          Why this score: {summarizeConfidenceExplanation(ragAnswer.confidenceExplanation)}
+                        </p>
+                      )}
                       <div className="mt-3 flex flex-wrap items-center gap-2">
                         <button onClick={() => void reviewAnswer("approved")} disabled={reviewing || !ragAnswer.aiOutputAuditId} className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60">
                           {reviewing ? "Recording..." : "Approve action"}
@@ -400,7 +617,13 @@ export const AIWorkspaceSection = () => {
                   "Identify missing documents",
                   "Generate board note",
                 ].map((suggestion) => (
-                  <button key={suggestion} className="text-[11px] text-[#5F6B73] border border-[rgba(0,0,0,0.1)] px-2.5 py-1 rounded-full hover:border-[#8B1E2D] hover:text-[#8B1E2D] transition-colors">
+                  <button
+                    key={suggestion}
+                    type="button"
+                    disabled={querying}
+                    onClick={() => { setInput(suggestion); void askGovernedQuestion(suggestion); }}
+                    className="text-[11px] text-[#5F6B73] border border-[rgba(0,0,0,0.1)] px-2.5 py-1 rounded-full hover:border-[#8B1E2D] hover:text-[#8B1E2D] transition-colors disabled:cursor-not-allowed disabled:opacity-60"
+                  >
                     {suggestion}
                   </button>
                 ))}
@@ -410,6 +633,12 @@ export const AIWorkspaceSection = () => {
                 <input
                   value={input}
                   onChange={(event) => setInput(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                      void askGovernedQuestion();
+                    }
+                  }}
                   placeholder="Ask AXXESS about portfolios, approvals, risks, or cited institutional documents"
                   className="flex-1 bg-transparent text-sm text-[#0F1117] placeholder:text-[#5F6B73] outline-none"
                 />
@@ -431,6 +660,9 @@ export const AIWorkspaceSection = () => {
                   </button>
                 </p>
               )}
+              {agenticMessage && (
+                <p className="mt-2 text-[11px] font-medium text-[#5F6B73]">{agenticMessage}</p>
+              )}
             </div>
           </Card>
         </div>
@@ -438,27 +670,33 @@ export const AIWorkspaceSection = () => {
         <div className="space-y-4">
           <Card className="p-4">
             <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-[#0F1117]">AI Router</h3>
-            <div className="grid grid-cols-2 gap-2">
-              {[
-                ["Mode", aiRouterStatus.mode],
-                ["Default", aiRouterStatus.defaultProvider],
-                ["Remote", aiRouterStatus.configuredCount],
-                ["Providers", aiRouterStatus.providers.length],
-              ].map(([label, value]) => (
-                <div key={label} className="rounded-lg bg-[#F8F9FA] p-2">
-                  <div className="font-mono text-[10px] uppercase text-[#5F6B73]">{label}</div>
-                  <div className="mt-1 text-sm font-semibold text-[#0F1117]">{value}</div>
+            {routerStatus ? (
+              <>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    ["Mode", routerStatus.mode],
+                    ["Default", routerStatus.defaultProvider],
+                    ["Remote", routerStatus.configuredCount],
+                    ["Providers", routerStatus.providers.length],
+                  ].map(([label, value]) => (
+                    <div key={label} className="rounded-lg bg-[#F8F9FA] p-2">
+                      <div className="font-mono text-[10px] uppercase text-[#5F6B73]">{label}</div>
+                      <div className="mt-1 text-sm font-semibold text-[#0F1117]">{value}</div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-            <div className="mt-3 space-y-1.5">
-              {aiRouterStatus.providers.slice(0, 4).map((provider) => (
-                <div key={provider.name} className="flex items-center justify-between text-[11px]">
-                  <span className="font-medium text-[#0F1117]">{provider.displayName}</span>
-                  <span className={provider.configured ? "text-emerald-700" : "text-[#5F6B73]"}>{provider.status}</span>
+                <div className="mt-3 space-y-1.5">
+                  {routerStatus.providers.slice(0, 4).map((provider) => (
+                    <div key={provider.name} className="flex items-center justify-between text-[11px]">
+                      <span className="font-medium text-[#0F1117]">{provider.displayName}</span>
+                      <span className={provider.configured ? "text-emerald-700" : "text-[#5F6B73]"}>{provider.status}</span>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+              </>
+            ) : (
+              <p className="text-[11px] text-[#5F6B73]">Loading real router status&hellip;</p>
+            )}
           </Card>
 
           <Card className="p-4">
@@ -526,27 +764,6 @@ export const AIWorkspaceSection = () => {
           </Card>
 
           <Card className="p-4">
-            <h3 className="text-xs font-semibold text-[#0F1117] uppercase tracking-wider mb-3">Session Actions</h3>
-            <div className="space-y-1.5">
-              {[
-                { label: "Generate District Action List", icon: CheckSquare, status: "ready" },
-                { label: "Schedule Secretariat Review", icon: CalendarDays, status: "ready" },
-                { label: "Create Approval Packet", icon: ShieldCheck, status: "pending-review" },
-                { label: "Update Risk Register", icon: AlertTriangle, status: "ready" },
-              ].map((action, i) => (
-                <button key={i} className="w-full flex items-center justify-between px-3 py-2 rounded-lg hover:bg-[#F2F3F5] transition-colors group">
-                  <div className="flex items-center gap-2">
-                    <action.icon size={13} className="text-[#5F6B73] group-hover:text-[#8B1E2D] transition-colors" />
-                    <span className="text-xs text-[#0F1117]">{action.label}</span>
-                  </div>
-                  {action.status === "pending-review" && <span className="text-[10px] text-amber-600 font-medium">Review req.</span>}
-                  {action.status === "ready" && <ArrowUpRight size={11} className="text-[#5F6B73] opacity-0 group-hover:opacity-100 transition-opacity" />}
-                </button>
-              ))}
-            </div>
-          </Card>
-
-          <Card className="p-4">
             <h3 className="text-xs font-semibold text-[#0F1117] uppercase tracking-wider mb-2">AI Audit Trail</h3>
             <div className="space-y-2">
               {(demoMode
@@ -570,6 +787,17 @@ export const AIWorkspaceSection = () => {
           </Card>
         </div>
       </div>
+      {agenticPrompt && (
+        <AgenticActionablesPrompt
+          open
+          firstName={firstName}
+          source={agenticPrompt.source}
+          gateContext={agenticPrompt.gateContext}
+          disabledReasons={AGENTIC_UNAVAILABLE_ACTIONS}
+          onResolved={resolveAgenticPrompt}
+          onClose={() => setAgenticPrompt(null)}
+        />
+      )}
     </PageShell>
   );
 };
