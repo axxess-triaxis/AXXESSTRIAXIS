@@ -7,7 +7,6 @@ import {
   ActivityFeed,
   DataStateBadge,
   DemoDataNotice,
-  MetricCard,
   ModuleHeader,
   PageShell,
   SectionCard,
@@ -26,16 +25,19 @@ import { useGoldenPathDisplayMode } from "../../hooks/useGoldenPathDisplayMode";
 import { useGuidedDemo } from "../../hooks/useGuidedDemo";
 import { invalidateLiveWorkspaceMetricsCache } from "../../hooks/liveWorkspaceMetricsCache";
 import { useAuditLogCount } from "../../hooks/useAuditLogCount";
-import { useLiveRagHealth } from "../../hooks/useLiveRagHealth";
 import { useLiveWorkspaceMetrics } from "../../hooks/useLiveWorkspaceMetrics";
+import { useOverdueMeetingCount } from "../../hooks/useOverdueMeetingCount";
+import { useOverdueTaskCount } from "../../hooks/useOverdueTaskCount";
 import { usePendingAiReviewCount } from "../../hooks/usePendingAiReviewCount";
 import { useSocialAlertsStatus } from "../../hooks/useSocialAlertsStatus";
 import { useWorkflowTimeline } from "../../hooks/useWorkflowTimeline";
 import { demoRecentActivity } from "../../lib/demo/demoActivity";
 import { demoInstitution } from "../../lib/demo/seedData";
-import { executiveDemoMetrics } from "../../lib/demo/demoMetrics";
+import { buildDashboardSnapshot } from "../../services/dashboard/buildDashboardSnapshot";
 import { BetaOnboardingChecklist } from "../onboarding/BetaOnboardingChecklist";
+import { DashboardTier } from "./DashboardTier";
 import { SampleDataBanner } from "./SampleDataBanner";
+import { UrgentAttentionBarStack } from "./UrgentAttentionBarStack";
 import {
   demoAiRecommendations,
   demoObjectives,
@@ -44,7 +46,6 @@ import {
   getDashboardFallbackProjects,
   getDashboardProjects,
   getDashboardStrategicObjectives,
-  governanceAlerts,
   performanceData,
   workloadData,
 } from "./data";
@@ -189,7 +190,6 @@ export function DashboardSection() {
   const [refreshToken, setRefreshToken] = useState(0);
   const guidedDemo = useGuidedDemo("dashboard");
   const liveMetrics = useLiveWorkspaceMetrics(tenantScope, refreshToken);
-  const ragHealth = useLiveRagHealth(tenantScope, refreshToken);
   // Executive Dashboard Sprint ED-2: a real, literal count of pending AI review items (from the
   // same GET /api/ai/reviews the AI Review Inbox itself uses), replacing the pendingApprovals/10
   // heuristic previously used by both the Golden Path step and the Tenant Health Command Center tile.
@@ -200,6 +200,28 @@ export function DashboardSection() {
   const auditLogCount = useAuditLogCount(tenantScope, refreshToken);
   const goldenPathDisplayMode = useGoldenPathDisplayMode();
   const workflowTimeline = useWorkflowTimeline(tenantScope, { limit: 6, refreshToken });
+  // Executive Dashboard Redesign Sprint ED-R1: real overdue-task/missed-meeting counts feeding
+  // the new Tier 1 scored tiles -- see useOverdueTaskCount.ts / useOverdueMeetingCount.ts.
+  const overdueTaskCount = useOverdueTaskCount(tenantScope, refreshToken);
+  const overdueMeetingCount = useOverdueMeetingCount(tenantScope, refreshToken);
+
+  // Executive Dashboard Redesign Sprint ED-R1: the Priority x Criticality scored tile set, built
+  // purely from data already fetched above -- no duplicate fetches. See
+  // docs/readiness/EXECUTIVE_DASHBOARD_REDESIGN_PLAN_2026_08_01.md for the full scoring rationale.
+  const dashboardSnapshot = useMemo(
+    () => buildDashboardSnapshot({
+      liveMetrics,
+      overdueTaskCount,
+      overdueMeetingCount,
+      pendingAiReviewCount,
+      auditLogCount,
+      socialAlertsAnyLiveProviderConfigured: socialAlertsStatus.anyLiveProviderConfigured,
+      workflowTimelineEventCount: workflowTimeline.timeline.length,
+      projects,
+      demoMode: isDemoModeEnabled(),
+    }),
+    [liveMetrics, overdueTaskCount, overdueMeetingCount, pendingAiReviewCount, auditLogCount, socialAlertsStatus.anyLiveProviderConfigured, workflowTimeline.timeline.length, projects],
+  );
 
   // Real refresh: drops this tenant's cached metrics entry so the next fetch is fresh, then bumps
   // refreshToken so every hook above (which all key off it) re-runs. workflowTimeline.loading is
@@ -334,62 +356,18 @@ export function DashboardSection() {
       />
       <TenantHealthCommandCenter snapshot={enterpriseJourney} metrics={liveMetrics} pendingAiReviewsCount={pendingAiReviewCount} auditLogCount={auditLogCount} />
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {demoMode && executiveDemoMetrics.map((metric) => (
-          <MetricCard key={metric.label} {...metric} state="Demo" />
-        ))}
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <Card className="p-4 transition-shadow hover:shadow-md">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold uppercase tracking-wide text-[#5F6B73]">AI Router</span>
-            <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">Fallback Ready</span>
-          </div>
-          <div className="mt-3 font-mono text-2xl font-semibold text-[#0F1117]">{ragHealth.readyDocuments}</div>
-          <p className="mt-1 text-xs leading-relaxed text-[#5F6B73]">RAG-ready documents with local deterministic retrieval when provider keys are not configured.</p>
-        </Card>
-        <Card className="p-4 transition-shadow hover:shadow-md">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold uppercase tracking-wide text-[#5F6B73]">Live Ops</span>
-            <span className="rounded-full bg-[#8B1E2D]/8 px-2 py-0.5 text-[10px] font-semibold text-[#8B1E2D]">Tenant Scoped</span>
-          </div>
-          <div className="mt-3 font-mono text-2xl font-semibold text-[#0F1117]">{liveMetrics.openTasks}</div>
-          <p className="mt-1 text-xs leading-relaxed text-[#5F6B73]">Open tasks across active mission projects, refreshed through repository hooks.</p>
-        </Card>
-        <Card className="p-4 transition-shadow hover:shadow-md">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-semibold uppercase tracking-wide text-[#5F6B73]">External Signals</span>
-            <span className={socialAlertsStatus.anyLiveProviderConfigured ? "rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700" : "rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700"}>
-              {socialAlertsStatus.anyLiveProviderConfigured ? "Connected" : "Provider-gated"}
-            </span>
-          </div>
-          {/* No live social-alert-count query exists yet (see livePlatform.ts's own honest-zero
-              comment) -- showing a real connected/not-connected status instead of a fabricated
-              number that could never change. */}
-          <div className="mt-3 font-mono text-2xl font-semibold text-[#0F1117]">{socialAlertsStatus.anyLiveProviderConfigured ? liveMetrics.socialAlerts : "--"}</div>
-          <p className="mt-1 text-xs leading-relaxed text-[#5F6B73]">
-            {socialAlertsStatus.anyLiveProviderConfigured
-              ? "Social, RSS, and manual alerts queued for human-approved workflow actions."
-              : "Connect X or Facebook to enable live social/RSS alert ingestion."}
-          </p>
-        </Card>
-      </div>
-
-      {demoMode && (
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-          {governanceAlerts.map((alert) => (
-            <Card key={alert.label} className="p-4 transition-shadow hover:shadow-md">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-semibold uppercase tracking-wide text-[#5F6B73]">{alert.label}</span>
-                <span className="rounded-full bg-[#8B1E2D]/8 px-2 py-0.5 text-[10px] font-semibold text-[#8B1E2D]">Demo</span>
-              </div>
-              <div className="mt-3 font-mono text-2xl font-semibold text-[#0F1117]">{alert.value}</div>
-              <p className="mt-1 text-xs leading-relaxed text-[#5F6B73]">{alert.detail}</p>
-            </Card>
-          ))}
-        </div>
-      )}
+      {/* Executive Dashboard Redesign Sprint ED-R1: replaces the former demo-only KPI grid, the
+          AI Router/Live Ops/External Signals card row, and the demo-only governance-alerts row
+          with the new score-driven 3-tier layout. Each real signal those cards showed
+          (RAG-ready documents, open tasks, social-alert provider status) now lives inside the
+          Tier 1/2 scored tiles below with an honest live/partial/not-connected state, and the
+          Urgent Attention bars surface only the highest-scoring items (score >= 16) across all
+          three tiers at the very top of the screen -- see
+          docs/readiness/EXECUTIVE_DASHBOARD_REDESIGN_PLAN_2026_08_01.md. */}
+      <UrgentAttentionBarStack tiles={dashboardSnapshot} />
+      <DashboardTier tier={1} tiles={dashboardSnapshot} />
+      <DashboardTier tier={2} tiles={dashboardSnapshot} />
+      <DashboardTier tier={3} tiles={dashboardSnapshot} />
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_420px]">
         <SectionCard
