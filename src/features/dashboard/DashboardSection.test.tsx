@@ -151,7 +151,53 @@ describe("DashboardSection (Executive Dashboard Sprint ED-3)", () => {
     const pilotHeading = await screen.findByText("Pilot Onboarding (personal checklist)");
     expect(pilotHeading).toBeInTheDocument();
     expect(screen.getByText(/saved to this browser only/)).toBeInTheDocument();
+  });
+});
+
+// Executive Dashboard Redesign addendum (2026-08-01): founder feedback on the live ED-R1 deploy --
+// "Enterprise golden path" used to render unconditionally (even in its already-collapsed on-demand
+// form) and was flagged as redundant, screen-space-consuming clutter. It must not feature on the
+// dashboard by default and must be 100% optional, revealed only via "Start guided setup".
+describe("DashboardSection (Executive Dashboard Redesign addendum -- Golden Path collapse)", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    window.localStorage.clear();
+  });
+
+  async function renderDashboard() {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ user: null }), { status: 401 })));
+    render(
+      <AnalyticsProviderShell provider={new MockAnalyticsProvider()}>
+        <AuthProvider>
+          <DashboardSection />
+        </AuthProvider>
+      </AnalyticsProviderShell>,
+    );
+    expect(await screen.findByText("Executive Dashboard")).toBeInTheDocument();
+  }
+
+  it("does not show the Enterprise golden path panel by default", async () => {
+    await renderDashboard();
+    expect(screen.queryByText("Enterprise golden path")).not.toBeInTheDocument();
+  });
+
+  it("reveals the Enterprise golden path panel only after clicking 'Start guided setup'", async () => {
+    await renderDashboard();
+    expect(screen.queryByText("Enterprise golden path")).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByText("Start guided setup"));
+
     expect(await screen.findByText("Enterprise golden path")).toBeInTheDocument();
+  });
+
+  it("hides the Enterprise golden path panel again after clicking 'Hide guided setup path'", async () => {
+    await renderDashboard();
+    fireEvent.click(screen.getByText("Start guided setup"));
+    await screen.findByText("Enterprise golden path");
+
+    fireEvent.click(screen.getByText("Hide guided setup path"));
+
+    expect(screen.queryByText("Enterprise golden path")).not.toBeInTheDocument();
   });
 });
 
