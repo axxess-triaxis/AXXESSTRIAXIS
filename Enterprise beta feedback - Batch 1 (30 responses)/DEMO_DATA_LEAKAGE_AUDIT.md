@@ -16,6 +16,14 @@ their demo-related behavior behind it.
 **Everywhere else, that gate was not applied.** The audit found dummy data reaching real beta
 customers through three distinct mechanisms, ranked by severity below.
 
+**Correction (2026-07-28, A-28):** the claim above that `SettingsSection.tsx` "correctly gates its
+demo-related behavior" was wrong for one panel within that same file. A live HITL walkthrough on
+2026-07-25 found `OrganizationPanel` (also in `SettingsSection.tsx`) rendered the seeded demo
+dataset unconditionally, regardless of runtime mode -- a real tenant's own Settings page showed the
+investor demo's institution name and counts. This round's audit evidently reviewed other parts of
+the same file but missed this specific panel. Root-caused and fixed 2026-07-28 -- see "Round 6"
+below and `docs/readiness/TENANT_PARTITIONING_TP1_CLOSEOUT_2026_07_28.md`.
+
 ## Finding 1 (Critical) — fake data silently substituted on any live-data error
 
 `src/providers/serviceProvider.ts`'s `resilientRepositories` (the repository set used whenever
@@ -351,3 +359,39 @@ consumers in `TopBar.tsx`/`AuthProvider.tsx`/`legacyInstitutionalViewRepository.
 likely source of further instances, and a full audit specifically for this
 module-level-constant-computed-from-isDemoModeEnabled() pattern (as opposed to hardcoded demo data
 generally) has still never been run as its own dedicated pass.
+
+## Round 6 — found via live HITL walkthrough of a real tenant's Settings page (2026-07-25, fixed 2026-07-28)
+
+`OrganizationPanel` (`src/features/settings/SettingsSection.tsx`) -- a *different* component in the
+same file this audit's Executive Summary had already reviewed and marked safe. Unlike the
+module-level-caching bugs in Rounds 4-5, this was a plain, render-time unconditional reference:
+
+```ts
+const metrics = [
+  { label: "Organization", value: demoDatasetSummary.organizationName },
+  { label: "Projects", value: demoDatasetSummary.projects.toLocaleString() },
+  { label: "Documents", value: demoDatasetSummary.documents.toLocaleString() },
+];
+```
+
+No `isDemoModeEnabled()` check anywhere in the function -- not a caching/staleness bug like Rounds
+4-5, just never gated in the first place. The adjacent "Tenant Boundary" card in the same panel was
+already correctly wired to `session.user?.organizationId`, which is likely why this file was
+marked safe in the original pass -- half the panel was genuinely correct, the other half never was.
+
+Found via HITL live walkthrough on the real, live Tenant 0 (Triaxis Ventures) -- not a static grep,
+consistent with this document's own repeated finding that a live browser walkthrough catches
+instances static search does not.
+
+**Fixed:** live tenant mode now queries the real organization record and real project/document
+counts, scoped to the session's own organization id; demo/Investor Preview mode is unchanged (still
+shows the seeded institution, by design); a missing organization record shows an honest "Not set up
+yet" state, never a demo fallback. 4 new tests. See
+`docs/readiness/TENANT_PARTITIONING_TP1_CLOSEOUT_2026_07_28.md`.
+
+**Not yet independently re-audited:** whether any other panel in `SettingsSection.tsx` or elsewhere
+in the app has this exact plain-unconditional-reference pattern (as opposed to the
+module-level-caching pattern Rounds 4-5 already looked for). A dedicated grep-based sweep for
+`demoDatasetSummary` and similarly-named demo-data imports, cross-referenced against every
+consuming component's own `isDemoModeEnabled()` gating, is recommended as a follow-up (TP-2 in the
+tenant-partitioning hardening program).

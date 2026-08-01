@@ -86,15 +86,19 @@ export function Sidebar({ active, sidebarOpen, onSelectSection, onToggleSidebar 
       </nav>
 
       <div className="border-t border-[rgba(255,255,255,0.06)] px-3 py-3">
-        <div className="flex items-center gap-2.5">
+        <button
+          onClick={() => onSelectSection("settings" as NavSection)}
+          title={!sidebarOpen ? "Profile and settings" : undefined}
+          className="flex w-full items-center gap-2.5 rounded-lg px-1 py-1 text-left transition-colors hover:bg-[rgba(255,255,255,0.06)]"
+        >
           <Avatar initials={user?.avatarInitials ?? "AU"} size="sm" color="bg-[#8B1E2D]" />
           {sidebarOpen && (
-            <div className="flex-1 min-w-0">
-              <div className="text-xs font-semibold text-white truncate">{user?.displayName ?? "AXXESS User"}</div>
-              <div className="text-[10px] text-[rgba(255,255,255,0.4)] truncate">{user?.role ?? "Guest"}</div>
+            <div className="min-w-0 flex-1">
+              <div className="truncate text-xs font-semibold text-white">{user?.displayName ?? "AXXESS User"}</div>
+              <div className="truncate text-[10px] text-[rgba(255,255,255,0.4)]">{user?.role ?? "Guest"}</div>
             </div>
           )}
-        </div>
+        </button>
       </div>
     </aside>
   );

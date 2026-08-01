@@ -31,6 +31,7 @@ export function BetaFeedbackButton({ user, moduleName, route }: BetaFeedbackButt
     <>
       <button
         type="button"
+        id="beta-feedback-trigger"
         onClick={openFeedback}
         className="fixed bottom-5 right-5 z-50 inline-flex items-center gap-2 rounded-lg border border-[rgba(0,0,0,0.08)] bg-white px-3 py-2 text-xs font-semibold text-[#0F1117] shadow-lg transition-colors hover:bg-[#F8F9FA]"
       >

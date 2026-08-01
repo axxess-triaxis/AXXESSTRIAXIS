@@ -21,6 +21,7 @@ import { tenantScopeFromUser } from "../../repositories/supabaseEnterpriseReposi
 import { useAnalytics } from "../../services/analytics";
 import { demoAuditTimeline } from "../../lib/demo/demoActivity";
 import { useWorkflowTimeline } from "../../hooks/useWorkflowTimeline";
+import { readAndClearAgenticDraft } from "../../services/agentic/agenticDraftHandoff";
 
 type TaskFormState = {
   title: string;
@@ -87,6 +88,7 @@ export const TasksSection = () => {
   const [showCompletionFeedbackPrompt, setShowCompletionFeedbackPrompt] = useState(false);
   const [completionFeedbackPromptShown, setCompletionFeedbackPromptShown] = useState(false);
   const [feedbackModalOpen, setFeedbackModalOpen] = useState(false);
+  const [agenticDraftBanner, setAgenticDraftBanner] = useState<string | null>(null);
   const completionCelebration = useWorkflowCompletionCelebration();
   const taskTimeline = useWorkflowTimeline(scope, { limit: 5, resourceType: selectedTask ? "task" : undefined, resourceId: selectedTask?.id });
 
@@ -118,11 +120,34 @@ export const TasksSection = () => {
     void loadTasks();
   }, [loadTasks]);
 
+  // A-79: a "Create task"/"Reminder" selection from the AI Workspace actionables pop-up lands
+  // here as a sessionStorage draft (agenticDraftHandoff.ts) -- pre-fills this section's own,
+  // already-validated New Task form rather than creating a row directly, so Save Task is still
+  // the real, explicit confirmation. AXXESS has no dedicated Reminder type, so "reminder" drafts
+  // open as a tagged Task, disclosed in the banner rather than silently reinterpreted.
+  useEffect(() => {
+    const draft = readAndClearAgenticDraft("task") ?? readAndClearAgenticDraft("reminder");
+    if (!draft) return;
+    setErrors({});
+    setEditingTask(undefined);
+    setSelectedTask(undefined);
+    setForm({
+      ...taskForm(),
+      title: draft.summary.length > 80 ? `${draft.summary.slice(0, 77)}...` : draft.summary,
+      description: draft.summary,
+      tags: draft.actionType === "reminder" ? "reminder" : "",
+    });
+    setAgenticDraftBanner(draft.actionType === "reminder"
+      ? "Drafted from AI Workspace as a reminder -- AXXESS doesn't yet have a dedicated Reminder type, so this opened as a tagged Task. Review and Save Task to create it."
+      : "Drafted from AI Workspace -- review and Save Task to create it.");
+  }, []);
+
   const openForm = (task?: Task) => {
     setErrors({});
     setEditingTask(task);
     setSelectedTask(task);
     setForm(taskForm(task));
+    setAgenticDraftBanner(null);
   };
 
   const validate = () => {
@@ -186,6 +211,7 @@ export const TasksSection = () => {
       }
       setSelectedTask(saved);
       setEditingTask(undefined);
+      setAgenticDraftBanner(null);
       setToast({ tone: "success", message: editingTask ? "Task updated." : "Task created." });
       await loadTasks();
     } catch {
@@ -378,6 +404,12 @@ export const TasksSection = () => {
                 <h3 className="text-sm font-semibold text-[#0F1117]">{editingTask ? "Edit Task" : "New Task"}</h3>
                 {editingTask && <button onClick={() => setEditingTask(undefined)} className="rounded-lg p-1.5 text-[#5F6B73] hover:bg-[#F2F3F5]"><X size={14} /></button>}
               </div>
+              {agenticDraftBanner && (
+                <div className="flex items-start justify-between gap-2 rounded-lg border border-[#8B1E2D]/20 bg-[#FFF8F8] p-2.5 text-[11px] leading-relaxed text-[#8B1E2D]">
+                  <span>{agenticDraftBanner}</span>
+                  <button type="button" onClick={() => setAgenticDraftBanner(null)} aria-label="Dismiss" className="text-[#8B1E2D] hover:opacity-70"><X size={12} /></button>
+                </div>
+              )}
               <TextField label="Title" value={form.title} error={errors.title} onChange={(event) => setForm({ ...form, title: event.target.value })} disabled={!canManageTasks || saving} />
               <TextAreaField label="Description" value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} disabled={!canManageTasks || saving} />
               <SelectField label="Assignee" value={form.assigneeId} error={errors.assigneeId} options={assigneeOptions} onChange={(event) => setForm({ ...form, assigneeId: event.target.value })} disabled={!canManageTasks || saving} />

@@ -8,20 +8,36 @@ import { SectionHeader } from "../../components/layout/SectionHeader";
 import { Avatar } from "../../components/ui/Avatar";
 import { Card } from "../../components/ui/Card";
 import { demoDatasetSummary } from "../../demo/demoDataset";
-import { isDemoModeEnabled, isDemoModeForcedByEnv, resetDemoEnvironment, setDemoModeEnabled } from "../../demo/demoMode";
+import { getRuntimeMode, isDemoModeEnabled, isDemoModeForcedByEnv, resetDemoEnvironment, setDemoModeEnabled } from "../../demo/demoMode";
 import type { Invitation, RoleName, User } from "../../domain";
 import { applicationServices } from "../../providers/serviceProvider";
 import { tenantScopeFromUser } from "../../repositories/supabaseEnterpriseRepositories";
 import { markPostDemoSatisfactionPromptPending } from "../../hooks/usePostDemoSatisfactionPrompt";
-import { getAiRouterStatusSnapshot } from "../../services/ai/router/aiRouter";
 import { useAnalytics } from "../../services/analytics";
-import { getPilotIntegrations } from "../../services/integrations/pluginRegistry";
-import { languageCoverage } from "../../services/nlp/modelRegistry";
-import { Building2, Calendar, Check, CheckCircle2, Database, FileText, MessageSquare, RotateCcw, Save, Send, Settings, ShieldCheck, Sparkles, UserPlus, X, XCircle } from "lucide-react";
+import { getProductivityPluginRegistry } from "../../services/integrations/pluginRegistry";
+import { isAgenticGateEnabled, setAgenticGateEnabled } from "../../services/agentic/agenticGateToggle";
+import { BrandIcon } from "../../components/ui/BrandIcon";
+import { brandIcons } from "../../components/ui/brandIcons";
+import { Building2, Calendar, Check, CheckCircle2, CheckSquare, Cloud, Database, FileSignature, FileSpreadsheet, FileText, Github, HardDrive, IndianRupee, Kanban, Layers, ListTodo, MessageCircle, MessageSquare, Presentation, RotateCcw, Save, Send, Settings, ShieldCheck, Sparkles, UserPlus, Video, X, XCircle } from "lucide-react";
+
+// SA-3 (2026-07-29): "AI Configuration" removed entirely -- founder's own words, "I don't think
+// this tab is user relevant anymore with OpenRouter coming in" (routing is now a single unified
+// gateway, not something a per-tenant settings screen needs to expose). "Demo" is gated out of the
+// live beta's own tab list, per the same founder ask A-32 already tracked ("we do not need 'demo'
+// screen with placeholder data in live beta") -- but kept reachable on deployments where demo mode
+// is the deployment's own forced configuration (e.g. investor.triaxisventures.com), since that's
+// where "Reset Preview Data" is operationally needed before demo/sales sessions.
+export const validTabs = ["profile", "organization", "security", "integrations", "users", "permissions", ...(isDemoModeForcedByEnv() ? ["demo"] : [])];
+
+export function initialTabFromLocation(): string {
+  if (typeof window === "undefined") return "security";
+  const requested = new URLSearchParams(window.location.search).get("tab")?.toLowerCase();
+  return requested && validTabs.includes(requested) ? requested : "security";
+}
 
 export const SettingsSection = () => {
-  const [tab, setTab] = useState("security");
-  const tabs = ["Profile", "Organization", "Security", "Integrations", "Users", "Permissions", "AI Configuration", "Demo"];
+  const [tab, setTab] = useState(initialTabFromLocation);
+  const tabs = ["Profile", "Organization", "Security", "Integrations", "Users", "Permissions", ...(isDemoModeForcedByEnv() ? ["Demo"] : [])];
 
   return (
     <div>
@@ -44,12 +60,12 @@ export const SettingsSection = () => {
             <h3 className="text-sm font-semibold text-[#0F1117] mb-4">Security Status</h3>
             <div className="space-y-3">
               {[
-                { label: "Multi-Factor Authentication", status: true, detail: "TOTP + Hardware Key" },
-                { label: "Single Sign-On (SAML 2.0)", status: true, detail: "Azure AD configured" },
-                { label: "Audit Logging", status: true, detail: "All actions · 7-year retention" },
-                { label: "End-to-End Encryption", status: true, detail: "AES-256 at rest + TLS 1.3 in transit" },
-                { label: "IP Allowlisting", status: false, detail: "Not configured" },
-                { label: "Session Timeout", status: true, detail: "8 hours inactivity" },
+                { label: "Multi-Factor Authentication", status: true, detail: "TOTP + Hardware Key", configureDisabledReason: "Pending production security configuration" },
+                { label: "Single Sign-On (SAML 2.0)", status: true, detail: "Azure AD configured", configureDisabledReason: "Managed by tenant policy" },
+                { label: "Audit Logging", status: true, detail: "All actions · 7-year retention", configureDisabledReason: "Managed by tenant policy" },
+                { label: "End-to-End Encryption", status: true, detail: "AES-256 at rest + TLS 1.3 in transit", configureDisabledReason: "Managed by tenant policy" },
+                { label: "IP Allowlisting", status: false, detail: "Not configured", configureDisabledReason: "Requires organization admin setup" },
+                { label: "Session Timeout", status: true, detail: "8 hours inactivity", configureDisabledReason: "Pending production security configuration" },
               ].map((item, i) => (
                 <div key={i} className="flex items-center gap-3 py-2 border-b border-[rgba(0,0,0,0.04)] last:border-0">
                   {item.status ? <CheckCircle2 size={15} className="text-emerald-500 flex-shrink-0" /> : <XCircle size={15} className="text-red-400 flex-shrink-0" />}
@@ -57,7 +73,20 @@ export const SettingsSection = () => {
                     <div className="text-xs font-semibold text-[#0F1117]">{item.label}</div>
                     <div className="text-[11px] text-[#5F6B73]">{item.detail}</div>
                   </div>
-                  <button className="text-[11px] text-[#8B1E2D] hover:underline">Configure</button>
+                  {/* SA-1 (2026-07-28): every "Configure" button here was a plain <button> with
+                      no onClick at all -- a real dead end, not a placeholder-styled one. None of
+                      these 6 items has a real configuration screen yet. Disabled with an honest,
+                      specific reason instead of leaving an active-looking control that does
+                      nothing when clicked. */}
+                  <button
+                    type="button"
+                    disabled
+                    aria-disabled="true"
+                    title={item.configureDisabledReason}
+                    className="cursor-not-allowed text-[11px] text-[#9AA1A6]"
+                  >
+                    {item.configureDisabledReason}
+                  </button>
                 </div>
               ))}
             </div>
@@ -103,116 +132,81 @@ export const SettingsSection = () => {
       {tab === "demo" && <DemoModePanel />}
 
       {tab === "profile" && <ProfilePanel />}
+      {tab === "profile" && <AgenticGateTogglePanel />}
 
       {tab === "organization" && <OrganizationPanel />}
 
       {tab === "permissions" && <PermissionsPanel />}
 
-      {tab === "ai configuration" && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <Card className="p-5">
-            <h3 className="text-sm font-semibold text-[#0F1117] mb-4">AI Engine Configuration</h3>
-            <div className="space-y-4">
-              {[
-                { label: "Human-in-the-Loop for all write actions", enabled: true },
-                { label: "Multilingual response support", enabled: true },
-                { label: "Document auto-summarization on upload", enabled: true },
-                { label: "Proactive risk alerting", enabled: true },
-                { label: "Predictive milestone forecasting (Beta)", enabled: false },
-              ].map((setting, i) => (
-                <div key={i} className="flex items-center justify-between">
-                  <span className="text-sm text-[#0F1117]">{setting.label}</span>
-                  <button className={`relative w-10 h-5.5 rounded-full transition-colors ${setting.enabled ? "bg-[#8B1E2D]" : "bg-[#D1D5DB]"}`}>
-                    <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${setting.enabled ? "translate-x-5" : "translate-x-0.5"}`} />
-                  </button>
-                </div>
-              ))}
-            </div>
-          </Card>
-          <Card className="p-5">
-            <h3 className="text-sm font-semibold text-[#0F1117] mb-4">AI Usage Statistics</h3>
-            <div className="grid grid-cols-2 gap-3">
-              {[
-                { label: "Queries This Month", value: "2,847" },
-                { label: "Documents Analyzed", value: "1,231" },
-                { label: "Summaries Generated", value: "643" },
-                { label: "Actions Approved", value: "187" },
-              ].map((s, i) => (
-                <div key={i} className="bg-[#F8F9FA] rounded-lg p-3 text-center">
-                  <div className="text-lg font-bold text-[#8B1E2D] font-mono">{s.value}</div>
-                  <div className="text-[11px] text-[#5F6B73] mt-0.5">{s.label}</div>
-                </div>
-              ))}
-            </div>
-          </Card>
-          <AiRoutingProvidersPanel />
-          <LanguageCoveragePanel />
-        </div>
-      )}
-
     </div>
   );
 };
 
-function AiRoutingProvidersPanel() {
-  const status = getAiRouterStatusSnapshot();
-
-  return (
-    <Card className="p-5">
-      <div className="mb-4 flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-[#0F1117]">AI Routing & Providers</h3>
-        <span className="rounded-full bg-[#8B1E2D]/8 px-2 py-0.5 text-[10px] font-semibold text-[#8B1E2D]">{status.mode}</span>
-      </div>
-      <div className="space-y-2">
-        {status.providers.map((provider) => (
-          <div key={provider.name} className="flex items-center justify-between rounded-lg bg-[#F8F9FA] p-3 text-xs">
-            <div>
-              <div className="font-semibold text-[#0F1117]">{provider.displayName}</div>
-              <div className="mt-0.5 font-mono text-[10px] uppercase text-[#5F6B73]">{provider.mode} - {provider.costTier} cost - {provider.latencyTier} latency</div>
-            </div>
-            <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${provider.configured ? "bg-emerald-50 text-emerald-700" : "bg-[#F2F3F5] text-[#5F6B73]"}`}>
-              {provider.status}
-            </span>
-          </div>
-        ))}
-      </div>
-      <p className="mt-3 text-[11px] leading-relaxed text-[#5F6B73]">Server-side keys are never shown here. Missing providers stay adapter-ready and fall back to local deterministic mode.</p>
-    </Card>
-  );
-}
-
+// Fallback for the providers simple-icons has no accurate mark for (brand-owner takedown
+// history -- see brandIcons.ts) or that aren't in the icon library at all. Real brandIcons.ts
+// entries take priority over this map wherever both exist.
 const quickConnectIcons: Record<string, typeof MessageSquare> = {
   slack: MessageSquare,
   calendly: Calendar,
   airtable: Database,
   hubspot: Building2,
   notion: FileText,
+  google_calendar: Calendar,
+  zoom: Video,
+  teams: Video,
+  outlook: FileText,
+  google_drive: HardDrive,
+  linear: Layers,
+  github: Github,
+  google_sheets: FileSpreadsheet,
+  google_docs: FileText,
+  google_slides: Presentation,
+  whatsapp_business: MessageCircle,
+  jira: Kanban,
+  trello: ListTodo,
+  asana: CheckSquare,
+  salesforce: Cloud,
+  docusign: FileSignature,
+  razorpay: IndianRupee,
 };
+
+// pluginRegistry.ts's catalogue ids are display-only and don't all match connectorContract.ts's
+// real OAuth provider ids -- "outlook" is the one live mismatch (the OAuth contract calls it
+// "microsoft", since one Entra app registration backs both Outlook mail and Teams). Sending the
+// catalogue id straight through as ?provider= 404/400'd on connect. Everything else already
+// matches 1:1, so this only needs to remap the one known exception, not build a full alias table.
+const CONNECTOR_OAUTH_PROVIDER_ID: Record<string, string> = { outlook: "microsoft" };
 
 function IntegrationsQuickConnectPanel() {
   const { session } = useAuth();
-  // Per PRE_DEMO_ACTIONABLES.md A13/A14/A15: Settings surfaces only the connectors this release
-  // actually ships a working connect flow for, not the full integrations catalogue (that full
-  // catalogue lives at /integrations, split into pilot vs. infrastructure-only). Email connectors
-  // (Gmail, Microsoft) get their own dedicated card in IntegrationsSection.tsx instead of this
-  // generic quick-connect grid, so they're excluded here.
-  const quickConnectPlugins = getPilotIntegrations().filter((plugin) => plugin.id !== "gmail" && plugin.id !== "outlook");
+  // 2026-07-30: previously showed only pilot-enabled connectors, excluding Gmail/Outlook entirely
+  // (they had no card anywhere on this tab) -- founder flagged the tab as "looking patchy" with
+  // integrations missing. Now shows the full catalogue so nothing is silently absent; each tile's
+  // badge honestly reflects its real state (configured / gated on credentials / not yet built) so
+  // a "coming soon" tile is never presented as connectable.
+  const quickConnectPlugins = getProductivityPluginRegistry();
   const canConnect = Boolean(session.user && ["Super Admin", "Organization Admin"].includes(session.user.role));
 
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
       {quickConnectPlugins.map((plugin) => {
-        const Icon = quickConnectIcons[plugin.id] ?? MessageSquare;
+        const brandIcon = brandIcons[plugin.id];
+        const FallbackIcon = quickConnectIcons[plugin.id] ?? MessageSquare;
+        const badge = plugin.configured
+          ? { tone: "bg-emerald-50 text-emerald-700", label: "configured" }
+          : plugin.pilotEnabled
+            ? { tone: "bg-amber-50 text-amber-700", label: "provider-gated for production credentials" }
+            : { tone: "bg-gray-100 text-gray-600", label: "catalogued -- not yet available" };
         return (
           <Card key={plugin.id} className="p-5">
             <div className="mb-3 flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#8B1E2D]/8 text-[#8B1E2D]">
-                <Icon size={18} />
+                {brandIcon ? <BrandIcon icon={brandIcon} size={20} /> : <FallbackIcon size={18} />}
               </div>
               <div>
                 <h3 className="text-sm font-semibold text-[#0F1117]">{plugin.name}</h3>
-                <span className={`mt-0.5 inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold ${plugin.configured ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"}`}>
-                  {plugin.configured ? "configured" : "provider-gated for production credentials"}
+                <span className={`mt-0.5 inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold ${badge.tone}`}>
+                  {badge.label}
                 </span>
               </div>
             </div>
@@ -222,9 +216,16 @@ function IntegrationsQuickConnectPanel() {
                 Calendly&apos;s API requires a Standard plan or higher on the account you connect -- it isn&apos;t available on Calendly&apos;s free tier. This is a cost on your own Calendly subscription, not an AXXESS charge.
               </p>
             )}
-            {canConnect ? (
+            {plugin.id === "whatsapp_business" && (
+              <p className="mb-3 rounded-lg bg-amber-50 px-2.5 py-2 text-[11px] leading-relaxed text-amber-800">
+                Requires a Meta Business Manager account with a verified, provisioned WhatsApp Business Account (WABA) and Meta App Review approval -- connecting here alone does not complete WhatsApp Business setup.
+              </p>
+            )}
+            {!plugin.pilotEnabled ? (
+              <p className="text-[11px] text-[#5F6B73]">No connect flow ships yet for {plugin.name} -- tracked for a future release, not available to connect today.</p>
+            ) : canConnect ? (
               <a
-                href={`/api/connectors/oauth/start?provider=${plugin.id}`}
+                href={`/api/connectors/oauth/start?provider=${CONNECTOR_OAUTH_PROVIDER_ID[plugin.id] ?? plugin.id}`}
                 className="inline-flex items-center gap-2 rounded-lg border border-[rgba(139,30,45,0.22)] bg-white px-3 py-2 text-xs font-semibold text-[#8B1E2D] hover:bg-[#8B1E2D]/5"
               >
                 Connect {plugin.name}
@@ -236,25 +237,6 @@ function IntegrationsQuickConnectPanel() {
         );
       })}
     </div>
-  );
-}
-
-function LanguageCoveragePanel() {
-  return (
-    <Card className="p-5">
-      <h3 className="mb-4 text-sm font-semibold text-[#0F1117]">Language & NLP Coverage</h3>
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-        {languageCoverage.map((coverage) => (
-          <div key={coverage.language} className="rounded-lg bg-[#F8F9FA] p-3">
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-xs font-semibold text-[#0F1117]">{coverage.language}</span>
-              <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-medium text-[#5F6B73]">{coverage.status}</span>
-            </div>
-            <p className="mt-1 text-[11px] leading-relaxed text-[#5F6B73]">{coverage.note}</p>
-          </div>
-        ))}
-      </div>
-    </Card>
   );
 }
 
@@ -271,6 +253,7 @@ const departmentOptions = [
 
 function ProfilePanel() {
   const { session, updateProfile } = useAuth();
+  const analytics = useAnalytics();
   const user = session.user;
   const [toast, setToast] = useState<{ tone: "success" | "error" | "info"; message: string } | null>(null);
   const [form, setForm] = useState({
@@ -306,6 +289,13 @@ function ProfilePanel() {
     try {
       await updateProfile(form);
       setToast({ tone: "success", message: "Profile updated." });
+      analytics.trackEvent("profile_updated", { department: form.department }, {
+        organization_id: user.organizationId,
+        user_id: user.id,
+        user_role: user.role,
+        module_name: "settings",
+        route: "/settings",
+      });
     } catch {
       setToast({ tone: "error", message: "Profile could not be updated." });
     }
@@ -354,13 +344,59 @@ function ProfilePanel() {
 
 function OrganizationPanel() {
   const { session } = useAuth();
-  const mode = isDemoModeEnabled() ? "Investor Preview" : "Production";
-  const metrics = [
-    { label: "Organization", value: demoDatasetSummary.organizationName },
-    { label: "Mode", value: mode },
-    { label: "Projects", value: demoDatasetSummary.projects.toLocaleString() },
-    { label: "Documents", value: demoDatasetSummary.documents.toLocaleString() },
-  ];
+  const user = session.user;
+  const runtimeMode = getRuntimeMode(Boolean(user));
+  const demoActive = runtimeMode === "demo";
+  const mode = demoActive ? "Investor Preview" : "Production";
+  const scope = useMemo(() => user ? tenantScopeFromUser(user) : undefined, [user]);
+  const [liveOrg, setLiveOrg] = useState<{ name: string; projects: number; documents: number } | null>(null);
+  const [loading, setLoading] = useState(!demoActive);
+
+  // TP-01 fix: this panel used to render demoDatasetSummary unconditionally, so a real tenant's
+  // own Settings page showed the seeded investor-demo institution ("North East Health Mission")
+  // instead of its own organization -- a real cross-tenant-looking data leak, root-caused
+  // 2026-07-28. Demo/Investor Preview mode still shows the seeded dataset (correct, unchanged);
+  // live tenants now query their own organization record and real project/document counts.
+  useEffect(() => {
+    if (demoActive || !scope || !user?.organizationId) {
+      setLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setLoading(true);
+    Promise.all([
+      applicationServices.organizationsRepository.getById(scope, user.organizationId),
+      applicationServices.projectsRepository.list(scope, { pageSize: 100 }),
+      applicationServices.documentsRepository.list(scope, { pageSize: 100 }),
+    ])
+      .then(([organization, projects, documents]) => {
+        if (cancelled) return;
+        setLiveOrg({ name: organization?.name ?? "", projects: projects.length, documents: documents.length });
+      })
+      .catch(() => {
+        if (!cancelled) setLiveOrg(null);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [demoActive, scope, user?.organizationId]);
+
+  const metrics = demoActive
+    ? [
+        { label: "Organization", value: demoDatasetSummary.organizationName },
+        { label: "Mode", value: mode },
+        { label: "Projects", value: demoDatasetSummary.projects.toLocaleString() },
+        { label: "Documents", value: demoDatasetSummary.documents.toLocaleString() },
+      ]
+    : [
+        { label: "Organization", value: loading ? "Loading..." : liveOrg?.name || "Not set up yet" },
+        { label: "Mode", value: mode },
+        { label: "Projects", value: loading ? "..." : (liveOrg?.projects ?? 0).toLocaleString() },
+        { label: "Documents", value: loading ? "..." : (liveOrg?.documents ?? 0).toLocaleString() },
+      ];
 
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -389,30 +425,84 @@ function OrganizationPanel() {
   );
 }
 
+// SA-2 (2026-07-28) / A-30: this matrix used to render every role's full capability description to
+// any viewer regardless of their own role. Founder's own words: "We do not want permission schema
+// for other user categories visible to any user" / "Need not be visible except one's own role."
+// Super Admin and Organization Admin (the roles that actually manage permissions) still see the
+// full reference matrix, clearly labeled as such; every other role sees only their own row.
+const permissionMatrix: { role: RoleName; access: string }[] = [
+  { role: "Super Admin", access: "All organizations, governance, users, audit" },
+  { role: "Organization Admin", access: "Tenant administration, users, documents, approvals" },
+  { role: "Executive", access: "Executive dashboards, analytics, approvals, knowledge" },
+  { role: "Manager", access: "Programs, tasks, meetings, knowledge, project governance" },
+  { role: "Employee", access: "Assigned work, documents, meetings, knowledge" },
+  { role: "Guest", access: "Read-only approved knowledge and documents" },
+];
+
 function PermissionsPanel() {
-  const matrix = [
-    { role: "Super Admin", access: "All organizations, governance, users, audit" },
-    { role: "Organization Admin", access: "Tenant administration, users, documents, approvals" },
-    { role: "Executive", access: "Executive dashboards, analytics, approvals, knowledge" },
-    { role: "Manager", access: "Programs, tasks, meetings, knowledge, project governance" },
-    { role: "Employee", access: "Assigned work, documents, meetings, knowledge" },
-    { role: "Guest", access: "Read-only approved knowledge and documents" },
-  ];
+  const { session } = useAuth();
+  const user = session.user;
+  const canManagePermissions = Boolean(user && ["Super Admin", "Organization Admin"].includes(user.role));
+  const ownRow = permissionMatrix.find((item) => item.role === user?.role);
+  const visibleMatrix = canManagePermissions ? permissionMatrix : ownRow ? [ownRow] : [];
 
   return (
     <Card className="overflow-hidden">
       <div className="border-b border-[rgba(0,0,0,0.06)] bg-[#F8F9FA] px-4 py-3">
-        <div className="flex items-center gap-2">
-          <ShieldCheck size={15} className="text-[#8B1E2D]" />
-          <h3 className="text-sm font-semibold text-[#0F1117]">Permission Matrix</h3>
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <ShieldCheck size={15} className="text-[#8B1E2D]" />
+            <h3 className="text-sm font-semibold text-[#0F1117]">{canManagePermissions ? "Permission Matrix (Reference)" : "Your Permissions"}</h3>
+          </div>
+          {user && <span className="text-[11px] text-[#5F6B73]">Signed in as <span className="font-semibold text-[#0F1117]">{user.role}</span></span>}
         </div>
       </div>
-      {matrix.map((item) => (
+      {visibleMatrix.map((item) => (
         <div key={item.role} className="grid grid-cols-1 gap-2 border-b border-[rgba(0,0,0,0.04)] px-4 py-3 text-xs md:grid-cols-[180px_1fr]">
           <span className="font-semibold text-[#0F1117]">{item.role}</span>
           <span className="text-[#5F6B73]">{item.access}</span>
         </div>
       ))}
+      {!canManagePermissions && (
+        <div className="px-4 py-3 text-[11px] leading-relaxed text-[#5F6B73]">
+          You do not have permission to manage roles. The full permission schema is visible to Organization Admins and Super Admins only.
+        </div>
+      )}
+    </Card>
+  );
+}
+
+// A-79: lets a HITL who finds the actionables gate's heuristic signals too noisy turn the whole
+// auto-trigger mechanism off, per the founder's own addendum ("logic gate may fail/misfire
+// repeatedly ... should have On/Off option"). The manual "Create actionable from answer" fallback
+// in AI Workspace/Review Inbox is unaffected either way. Mirrors DemoModePanel's toggle pattern.
+function AgenticGateTogglePanel() {
+  const [enabled, setEnabled] = useState(() => isAgenticGateEnabled());
+
+  const toggle = (nextEnabled: boolean) => {
+    setAgenticGateEnabled(nextEnabled);
+    setEnabled(nextEnabled);
+  };
+
+  return (
+    <Card className="p-5">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div>
+          <h3 className="text-sm font-semibold text-[#0F1117]">Agentic action prompts</h3>
+          <p className="mt-1 max-w-2xl text-xs leading-relaxed text-[#5F6B73]">
+            Automatically ask &quot;What do you want me to do with this?&quot; after AI Workspace answers and reviews that look actionable. Turning this off does not disable the manual &quot;Create actionable from answer&quot; button.
+          </p>
+        </div>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={enabled}
+          onClick={() => toggle(!enabled)}
+          className={`relative h-7 w-14 flex-shrink-0 rounded-full transition-colors ${enabled ? "bg-[#8B1E2D]" : "bg-[#D1D5DB]"}`}
+        >
+          <span className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition-transform ${enabled ? "translate-x-7" : "translate-x-1"}`} />
+        </button>
+      </div>
     </Card>
   );
 }
@@ -602,15 +692,23 @@ function UserAdministration() {
     setSaving(true);
     setToast(null);
     try {
-      await applicationServices.invitationsRepository.create(scope, {
-        organizationId: scope.organizationId,
-        email: inviteEmail.trim().toLowerCase(),
-        role: inviteRole,
-        invitedByUserId: scope.userId,
-        tokenHash: "client-issued-invitation",
-        expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7).toISOString(),
+      // A-08/A-65 fix (2026-07-27): this used to write directly to the invitations repository's
+      // create method, which persists the invitation but never sends the actual invite email --
+      // that only happens in POST /api/invitations's sendInvitationEmail() call. Going through the
+      // route is what actually delivers the email, and lets us tell the admin the truth about
+      // whether it sent.
+      const response = await fetch("/api/invitations", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: inviteEmail.trim().toLowerCase(), role: inviteRole }),
       });
-      analytics.trackEvent("user_invited", { invited_role: inviteRole }, {
+      const payload = await response.json().catch(() => ({})) as { error?: string; emailDelivery?: string };
+      if (!response.ok) {
+        throw new Error(payload.error ?? "Invitation could not be created.");
+      }
+
+      analytics.trackEvent("user_invited", { invited_role: inviteRole, email_delivery: payload.emailDelivery }, {
         organization_id: scope.organizationId,
         user_id: scope.userId,
         user_role: scope.role,
@@ -618,28 +716,45 @@ function UserAdministration() {
         route: "/settings",
       });
       setInviteEmail("");
-      setToast({ tone: "success", message: "Invitation created." });
+      setToast({
+        tone: payload.emailDelivery === "sent" ? "success" : "info",
+        message: payload.emailDelivery === "sent"
+          ? "Invitation created and emailed."
+          : payload.emailDelivery === "not-configured"
+            ? "Invitation created, but email delivery is not configured yet -- share the invite link manually."
+            : "Invitation created, but the email could not be sent.",
+      });
       await loadUsers();
+    } catch (error) {
+      setToast({ tone: "error", message: error instanceof Error ? error.message : "Invitation could not be created." });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Admin panel wiring pass (2026-07-25): the "Invitation Administration" panel at /admin/invitations
+  // was a dead placeholder -- redirected to /settings instead of duplicating this real invite UI, and
+  // this is the one real gap it had: no way to revoke a pending invitation once sent.
+  const revokeInvitation = async (invitation: Invitation) => {
+    if (!scope || !canManageUsers) return;
+    setSaving(true);
+    setToast(null);
+    try {
+      await applicationServices.invitationsRepository.update(scope, invitation.id, { status: "revoked" });
+      setInvitations((current) => current.filter((row) => row.id !== invitation.id));
+      setToast({ tone: "success", message: "Invitation revoked." });
     } catch {
-      const response = await fetch("/api/invitations", {
-        method: "POST",
+      const response = await fetch(`/api/repositories/invitations?id=${invitation.id}`, {
+        method: "PATCH",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: inviteEmail.trim().toLowerCase(), role: inviteRole }),
+        body: JSON.stringify({ status: "revoked" }),
       }).catch(() => undefined);
       if (response?.ok) {
-        analytics.trackEvent("user_invited", { invited_role: inviteRole, invite_path: "api" }, {
-          organization_id: scope.organizationId,
-          user_id: scope.userId,
-          user_role: scope.role,
-          module_name: "settings",
-          route: "/settings",
-        });
-        setInviteEmail("");
-        setToast({ tone: "success", message: "Invitation created." });
-        await loadUsers();
+        setInvitations((current) => current.filter((row) => row.id !== invitation.id));
+        setToast({ tone: "success", message: "Invitation revoked." });
       } else {
-        setToast({ tone: "error", message: "Invitation could not be created." });
+        setToast({ tone: "error", message: "Invitation could not be revoked." });
       }
     } finally {
       setSaving(false);
@@ -738,7 +853,16 @@ function UserAdministration() {
                 <div className="text-xs font-semibold text-[#0F1117]">{invitation.email}</div>
                 <div className="text-[11px] text-[#5F6B73]">{invitation.role} · expires {invitation.expiresAt.slice(0, 10)}</div>
               </div>
-              <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700">{invitation.status}</span>
+              <div className="flex items-center gap-2">
+                <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700">{invitation.status}</span>
+                <button
+                  onClick={() => void revokeInvitation(invitation)}
+                  disabled={!canManageUsers || saving}
+                  className="rounded-lg border border-[rgba(0,0,0,0.1)] px-2 py-1 text-[11px] font-semibold text-[#5F6B73] hover:bg-[#F2F3F5] disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  Revoke
+                </button>
+              </div>
             </div>
           ))}
           {invitations.length === 0 && <div className="px-4 py-6 text-center text-xs text-[#5F6B73]">No pending invitations</div>}

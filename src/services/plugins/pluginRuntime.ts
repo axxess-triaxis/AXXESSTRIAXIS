@@ -64,6 +64,10 @@ export type PluginRuntimeActionRequest = {
   action: PluginActionKind;
   scopeRequest?: string[];
   payloadSummary?: string;
+  // Agentic Infrastructure Phase 1 (2026-07-30): distinguishes a human session from an inbound
+  // MCP agent connection (src/security/agentScope.ts). Defaults to "human" so every existing call
+  // site keeps today's behavior unchanged.
+  callerType?: "human" | "agent";
 };
 
 const adminRoles: RoleName[] = ["Super Admin", "Organization Admin"];
@@ -191,6 +195,15 @@ export function evaluatePluginAction(
   }
 
   if (contract.policy.approvalRequiredForWrites && ["create_record", "send_message", "export"].includes(request.action)) {
+    // Founder-directed elevated access (2026-07-30): a tenant-connected AI agent (OpenAI,
+    // Anthropic, Microsoft Copilot -- see src/security/agentScope.ts) already went through the
+    // tenant's own vetting when they issued it an API key, so agent-issued writes skip the
+    // human-approval hold this branch otherwise imposes. This is the one explicit bypass in the
+    // whole compliance architecture -- everything else (RLS, tenant scoping, the role permission
+    // check above, audit logging) still applies identically to agent and human callers.
+    if (request.callerType === "agent") {
+      return { allowed: true, reason: `${contract.plugin.name} action is allowed for the connected agent with no approval hold (elevated agent access).`, approvalRequired: false };
+    }
     return { allowed: true, reason: `${contract.plugin.name} action is allowed but requires human approval before execution.`, approvalRequired: true };
   }
 

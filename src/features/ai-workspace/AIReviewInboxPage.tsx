@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../../auth/AuthProvider";
 import { Card } from "../../components/ui/Card";
 import { MicroSurveyPrompt } from "../../components/feedback/MicroSurveyPrompt";
@@ -10,10 +10,25 @@ import { isDemoModeEnabled } from "../../demo/demoMode";
 import { WorkflowCompletionCelebration } from "../../components/feedback/WorkflowCompletionCelebration";
 import { useMicroSurveyPrompt } from "../../hooks/useMicroSurveyPrompt";
 import { useWorkflowCompletionCelebration } from "../../hooks/useWorkflowCompletionCelebration";
+import { useWorkspaceRouting } from "../../hooks/useWorkspaceRouting";
 import { useAnalytics } from "../../services/analytics";
 import type { AiReviewInboxItem } from "../../services/ai/reviewInbox";
 import { workflowActionLabels, type ReviewWorkflowActionType, type WorkflowTimelineEvent } from "../../services/workflows/workflowEvidence";
 import { useWorkflowTimeline } from "../../hooks/useWorkflowTimeline";
+import { AgenticActionablesPrompt } from "../../components/agentic/AgenticActionablesPrompt";
+import {
+  AGENTIC_ROUTE_CAVEAT,
+  AGENTIC_ROUTE_FOR_ACTION,
+  AGENTIC_UNAVAILABLE_ACTIONS,
+  type AgenticGateResult,
+  type AgenticPromptSource,
+  type AgenticResolution,
+} from "../../components/agentic/agenticActionTypes";
+import { evaluateActionableGate } from "../../services/agentic/actionableGate";
+import { writeAgenticDraft } from "../../services/agentic/agenticDraftHandoff";
+import { isAgenticGateEnabled } from "../../services/agentic/agenticGateToggle";
+import { applicationServices } from "../../providers/serviceProvider";
+import { tenantScopeFromUser } from "../../repositories/supabaseEnterpriseRepositories";
 
 type ReviewResponse = {
   reviews?: AiReviewInboxItem[];
@@ -43,15 +58,36 @@ const actionTypes = Object.entries(workflowActionLabels) as Array<[ReviewWorkflo
 export function AIReviewInboxPage() {
   const { session } = useAuth();
   const analytics = useAnalytics();
+  const { navigateToSection } = useWorkspaceRouting();
   const [reviews, setReviews] = useState<AiReviewInboxItem[]>([]);
   const [message, setMessage] = useState<string | null>(null);
   const [actionType, setActionType] = useState<ReviewWorkflowActionType>("task");
   const [actionTitles, setActionTitles] = useState<Record<string, string>>({});
   const [localEvents, setLocalEvents] = useState<WorkflowTimelineEvent[]>([]);
   const [bulkApproving, setBulkApproving] = useState(false);
+  const [agenticPrompt, setAgenticPrompt] = useState<{ gateContext?: AgenticGateResult; source: AgenticPromptSource } | null>(null);
+  const [agenticMessage, setAgenticMessage] = useState<string | null>(null);
   const workflowTimeline = useWorkflowTimeline(undefined, { limit: 6 });
   const microSurvey = useMicroSurveyPrompt();
   const completionCelebration = useWorkflowCompletionCelebration();
+  const tenantScope = useMemo(() => session.user ? tenantScopeFromUser(session.user) : undefined, [session.user]);
+  const priorSourceIdsRef = useRef<Set<string>>(new Set());
+  const isFirstAnswerRef = useRef(true);
+  const knownStakeholderNamesRef = useRef<string[]>([]);
+  const firstName = session.user?.displayName?.trim().split(/\s+/)[0] || "there";
+
+  useEffect(() => {
+    if (!tenantScope) return;
+    let isMounted = true;
+    applicationServices.stakeholdersRepository.list(tenantScope, { pageSize: 200 })
+      .then((stakeholders) => {
+        if (isMounted) knownStakeholderNamesRef.current = stakeholders.map((stakeholder) => stakeholder.name);
+      })
+      .catch(() => undefined);
+    return () => {
+      isMounted = false;
+    };
+  }, [tenantScope]);
 
   async function loadReviews() {
     try {
@@ -92,6 +128,122 @@ export function AIReviewInboxPage() {
       console.error("AI review inbox could not be loaded.", error);
       setMessage("AI review inbox could not be loaded. Please try again.");
     }
+  }
+
+  function agenticContext() {
+    return {
+      organization_id: session.user?.organizationId,
+      user_id: session.user?.id,
+      user_role: session.user?.role,
+      module_name: "ai-review-inbox",
+      route: "/ai-workspace/review-inbox",
+    };
+  }
+
+  function agenticSourceFromReview(review: AiReviewInboxItem): AgenticPromptSource {
+    return {
+      sourceType: "ai_review",
+      summary: review.answerExcerpt,
+      citations: review.citations.map((citation, index) => ({ sourceId: citation.sourceId ?? String(index), title: citation.title ?? "Institutional source" })),
+      humanReviewRequired: review.humanReviewFlag,
+    };
+  }
+
+  function openAgenticPrompt(review: AiReviewInboxItem, gateContext?: AgenticGateResult) {
+    setAgenticMessage(null);
+    setAgenticPrompt({ gateContext, source: agenticSourceFromReview(review) });
+    analytics.trackEvent("agentic_prompt_shown", { source_type: "ai_review", triggered_by: gateContext ? "gate" : "manual" }, agenticContext());
+  }
+
+  // Auto-opens only after a genuine approval, never for edited/rejected/escalated decisions and
+  // never when the founder's gate toggle (agenticGateToggle.ts) is off.
+  function maybeOpenAgenticPrompt(review: AiReviewInboxItem) {
+    if (!isAgenticGateEnabled()) return;
+
+    const gateResult = evaluateActionableGate({
+      answer: {
+        answer: review.answerExcerpt,
+        rationale: "",
+        confidence: review.confidence,
+        humanReviewRequired: review.humanReviewFlag,
+        sources: review.citations.map((citation, index) => ({
+          sourceType: "document" as const,
+          sourceId: citation.sourceId ?? String(index),
+          title: citation.title ?? "Institutional source",
+          score: citation.score ?? 0,
+          excerpt: citation.excerpt ?? "",
+        })),
+      },
+      knownStakeholderNames: knownStakeholderNamesRef.current,
+      priorSourceIds: priorSourceIdsRef.current,
+      isFirstAnswerThisSession: isFirstAnswerRef.current,
+    });
+
+    isFirstAnswerRef.current = false;
+    review.citations.forEach((citation, index) => priorSourceIdsRef.current.add(citation.sourceId ?? String(index)));
+
+    analytics.trackEvent("agentic_gate_evaluated", {
+      trigger_count: gateResult.triggerCount,
+      show_prompt: gateResult.showPrompt,
+      override_required: gateResult.overrideRequired,
+      compulsory_choice: gateResult.compulsoryChoice,
+      pushback_severity: gateResult.signals.pushbackSeverity,
+    }, agenticContext());
+
+    if (gateResult.showPrompt) openAgenticPrompt(review, gateResult);
+  }
+
+  function resolveAgenticPrompt(resolution: AgenticResolution) {
+    const source = agenticPrompt?.source;
+    setAgenticPrompt(null);
+    const context = agenticContext();
+
+    if (resolution.dismissedVia === "gate_required_no_action_now" || resolution.dismissedVia === "gate_required_no_action_required") {
+      analytics.trackEvent("agentic_dismissed_via_gate_override", { resolution: resolution.dismissedVia }, context);
+      return;
+    }
+
+    if (resolution.dismissedVia === "nothing_option") return;
+
+    analytics.trackEvent("agentic_first_option_selected", { action: resolution.firstAction }, context);
+    if (resolution.secondStep) analytics.trackEvent("agentic_second_step_selected", { action: resolution.firstAction, second_step: resolution.secondStep }, context);
+
+    if (resolution.dismissedVia === "unavailable_action") {
+      analytics.trackEvent("agentic_disabled_action_attempted", { action: resolution.firstAction }, context);
+      setAgenticMessage(AGENTIC_UNAVAILABLE_ACTIONS[resolution.firstAction] ?? "This isn't available yet.");
+      return;
+    }
+
+    if (resolution.firstAction === "integrate_next_query") {
+      if (resolution.secondStep === "yes") {
+        analytics.trackEvent("agentic_route_chosen", { action: resolution.firstAction, destination: "ai-workspace" }, context);
+        navigateToSection("ai-workspace");
+      }
+      return;
+    }
+
+    if (resolution.firstAction === "other") {
+      setAgenticMessage(`Noted: "${resolution.otherInstruction}". This isn't automated yet, but it's logged.`);
+      return;
+    }
+
+    const destination = AGENTIC_ROUTE_FOR_ACTION[resolution.firstAction];
+    if (!destination || !source) {
+      setAgenticMessage(AGENTIC_UNAVAILABLE_ACTIONS[resolution.firstAction] ?? "This isn't available yet.");
+      return;
+    }
+
+    writeAgenticDraft({
+      actionType: resolution.firstAction,
+      secondStep: resolution.secondStep,
+      summary: source.summary,
+      citations: source.citations,
+      sourceType: "ai_review",
+      createdAt: new Date().toISOString(),
+    });
+    analytics.trackEvent("agentic_route_chosen", { action: resolution.firstAction, destination }, context);
+    if (AGENTIC_ROUTE_CAVEAT[resolution.firstAction]) setAgenticMessage(AGENTIC_ROUTE_CAVEAT[resolution.firstAction] ?? null);
+    navigateToSection(destination);
   }
 
   async function decide(reviewId: string, decision: "approved" | "edited" | "rejected" | "escalated", createAction = false, decisionReasonOverride?: string): Promise<boolean> {
@@ -144,6 +296,8 @@ export function AIReviewInboxPage() {
         route: "/ai-workspace/review-inbox",
       });
       completionCelebration.celebrate(createAction && createdTitle ? `Review approved and ${createdTitle} created!` : "Review approved!");
+      const approvedReview = reviews.find((review) => review.id === reviewId);
+      if (approvedReview) maybeOpenAgenticPrompt(approvedReview);
     }
     return true;
   }
@@ -289,6 +443,22 @@ export function AIReviewInboxPage() {
       )}
       {completionCelebration.visible && (
         <WorkflowCompletionCelebration message={completionCelebration.message} onDismiss={completionCelebration.dismiss} />
+      )}
+      {agenticMessage && !agenticPrompt && (
+        <div className="fixed bottom-4 right-4 z-[70] max-w-sm rounded-lg border border-[rgba(0,0,0,0.08)] bg-white p-3 text-xs font-medium text-[#5F6B73] shadow-lg">
+          {agenticMessage}
+        </div>
+      )}
+      {agenticPrompt && (
+        <AgenticActionablesPrompt
+          open
+          firstName={firstName}
+          source={agenticPrompt.source}
+          gateContext={agenticPrompt.gateContext}
+          disabledReasons={AGENTIC_UNAVAILABLE_ACTIONS}
+          onResolved={resolveAgenticPrompt}
+          onClose={() => setAgenticPrompt(null)}
+        />
       )}
     </main>
   );
