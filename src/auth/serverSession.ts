@@ -207,7 +207,17 @@ export async function getServerAuthSession(allowRefresh = true): Promise<ServerS
       try {
         return await refreshServerSession(refreshToken);
       } catch {
-        await clearServerAuthCookies();
+        // 2026-08-01 incident: this used to call clearServerAuthCookies() here, which is wrong
+        // under concurrency -- Supabase refresh tokens are single-use, so when a burst of parallel
+        // requests (a page's own concurrent data-fetch calls) all try to refresh a near-expiry
+        // access token at once, exactly one wins and rotates the token; every losing request's
+        // refresh attempt then fails with an already-invalidated token and landed here, wiping
+        // cookies for the whole browser -- including the ones the winning request had just
+        // legitimately refreshed. Falling through to a plain null instead: this request reports
+        // "not authenticated" for itself without destroying a sibling request's valid session. A
+        // genuinely dead refresh token (revoked, truly expired) simply keeps failing this same way
+        // on every subsequent request until its own cookie maxAge lapses, which is a safe failure
+        // mode -- not a silent, incorrect logout of a session that was actually fine.
       }
     }
   }
