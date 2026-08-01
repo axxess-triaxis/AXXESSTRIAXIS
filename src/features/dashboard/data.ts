@@ -76,6 +76,11 @@ export async function getDashboardProjects(scope: TenantScope) {
       applicationServices.usersRepository.listByOrganization(scope),
     ]);
 
+    // Executive Dashboard Sprint ED-2: this function previously fabricated budget/spent strings
+    // per array index ("$12.4M"/"$8.2M" for index 0, etc.) regardless of the real tenant's actual
+    // data -- no real project-budget field exists anywhere in this codebase's data model. Removed
+    // rather than replaced with a placeholder, since no consumer of getDashboardProjects() renders
+    // these fields (the fallback/demo path, getDashboardFallbackProjects(), never had them either).
     return projectRecords.map((project, index) => ({
       id: index + 1,
       name: project.name,
@@ -85,8 +90,6 @@ export async function getDashboardProjects(scope: TenantScope) {
       owner: ownerInitialsForProject(project, userRecords),
       dueDate: project.dueDate?.slice(0, 10) ?? "2026-12-31",
       status: statusLabel(project.status),
-      budget: index === 0 ? "$12.4M" : index === 1 ? "$34.6M" : "$19.1M",
-      spent: index === 0 ? "$8.2M" : index === 1 ? "$14.8M" : "$10.5M",
     }));
   } catch {
     return isDemoModeEnabled() ? getDashboardFallbackProjects() : [];
@@ -116,19 +119,58 @@ export async function getDashboardKpis(scope: TenantScope): Promise<DashboardKpi
   }
 }
 
-export const dashboardObjectives = [
+// Illustrative demo-only content -- must only ever render in demo mode. See DEMO_DATA_LEAKAGE_AUDIT.md.
+export const demoObjectives = [
   { name: "Primary Care Access Coverage", progress: 86, target: 92 },
   { name: "Maternal Referral Turnaround", progress: 79, target: 88 },
   { name: "District Stockout Reduction", progress: 92, target: 95 },
   { name: "Audit-Ready Knowledge Capture", progress: 88, target: 90 },
 ];
 
-export const dashboardAiRecommendations = [
+export const demoAiRecommendations = [
   { title: "Escalate oxygen concentrator maintenance variance in Dibrugarh and Cachar", urgency: "urgent", type: "Risk Mitigation" },
   { title: "5 approval packets exceed district SLA threshold; route to Mission Secretariat", urgency: "high", type: "Governance" },
   { title: "Maternal referral handoff gap detected across two hill-district corridors", urgency: "high", type: "Schedule Risk" },
   { title: "Procurement variance in cold-chain upgrade requires Finance & Grants review", urgency: "medium", type: "Financial" },
 ];
+
+export type DashboardStrategicObjective = {
+  id: number;
+  name: string;
+  status: string;
+  projectCount: number;
+  averageProgress: number;
+};
+
+// Executive Dashboard Sprint ED-3: Strategic Objectives MVP for live tenants -- derived entirely
+// from real programs and their linked projects (Option B, the roadmap's "Derived MVP" -- no new
+// persistence, since no dedicated objectives schema exists and a full OKR model is explicitly out
+// of this sprint's scope). Each real program becomes one objective card; a program's "progress" is
+// the average progress of its own linked projects, not a fabricated target ratio.
+export async function getDashboardStrategicObjectives(scope: TenantScope): Promise<DashboardStrategicObjective[]> {
+  try {
+    const [programs, projects] = await Promise.all([
+      applicationServices.programsRepository.list(scope),
+      applicationServices.projectsRepository.list(scope),
+    ]);
+
+    return programs.map((program, index) => {
+      const linkedProjects = projects.filter((project) => project.programId === program.id);
+      const averageProgress = linkedProjects.length > 0
+        ? Math.round(linkedProjects.reduce((sum, project) => sum + project.progress, 0) / linkedProjects.length)
+        : 0;
+      return {
+        id: index + 1,
+        name: program.name,
+        status: program.status,
+        projectCount: linkedProjects.length,
+        averageProgress,
+      };
+    });
+  } catch {
+    return [];
+  }
+}
 
 export const governanceAlerts = [
   { label: "Governance Alerts", value: "14", detail: "5 require Mission Secretariat review" },

@@ -1,10 +1,36 @@
-import { render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
+
+const state = {
+  user: { id: "user-1", organizationId: "org-1", role: "Employee" as const },
+  createdTasks: [] as Array<Record<string, unknown>>,
+};
+
+vi.mock("../../auth/AuthProvider", () => ({
+  useAuth: () => ({ session: { user: state.user, status: "authenticated" } }),
+}));
+
+vi.mock("../../repositories/supabaseEnterpriseRepositories", () => ({
+  tenantScopeFromUser: (user: { id: string; organizationId: string; role: string }) => ({ userId: user.id, organizationId: user.organizationId, role: user.role }),
+}));
+
+vi.mock("../../providers/serviceProvider", () => ({
+  applicationServices: {
+    tasksRepository: {
+      create: async (_scope: unknown, input: Record<string, unknown>) => {
+        state.createdTasks.push(input);
+        return { id: `task-${state.createdTasks.length}`, ...input };
+      },
+    },
+  },
+}));
+
 import { AlertsSection } from "./AlertsSection";
 
 describe("AlertsSection (Sprint 5 -- formal Social Alerts audit, closing the Sprint 3/4 informal-only gap)", () => {
   afterEach(() => {
     window.localStorage.clear();
+    state.createdTasks = [];
   });
 
   it("renders its content immediately, with no unresolved loading gate blocking the page (confirms it cannot reproduce the original hang: no fetch, no async gate)", () => {
@@ -22,11 +48,46 @@ describe("AlertsSection (Sprint 5 -- formal Social Alerts audit, closing the Spr
     expect(screen.queryByText(/active$/)).not.toBeInTheDocument();
   });
 
-  it("shows the seeded demo alerts and a count badge derived from the actual list length once Demo Mode is enabled", () => {
+  it("shows the seeded, enterprise-scale demo alert queue with a count badge matching the actual list length once Demo Mode is enabled", () => {
     window.localStorage.setItem("axxess.demoMode.enabled", "true");
     render(<AlertsSection />);
 
-    expect(screen.getByText("State budget note references district oxygen resilience grants")).toBeInTheDocument();
-    expect(screen.getByText("4 active")).toBeInTheDocument();
+    expect(screen.getAllByText("State budget note references district oxygen resilience grants").length).toBeGreaterThan(0);
+    expect(screen.getByText("160 active")).toBeInTheDocument();
+  });
+
+  // Investor Demo interactivity pass (2026-07-24): the queue previously rendered dead buttons
+  // (no onClick handler at all). These prove dismiss and convert-to-task are real interactions.
+  it("paginates the queue instead of rendering all 160 alerts at once, with a working 'Show more' action", () => {
+    window.localStorage.setItem("axxess.demoMode.enabled", "true");
+    render(<AlertsSection />);
+
+    expect(screen.getAllByText(/^Convert to task$/)).toHaveLength(20);
+    fireEvent.click(screen.getByRole("button", { name: /show more/i }));
+    expect(screen.getAllByText(/^(Convert to task|Task created)$/)).toHaveLength(40);
+  });
+
+  it("dismissing an alert removes it from the queue and updates the active count", () => {
+    window.localStorage.setItem("axxess.demoMode.enabled", "true");
+    render(<AlertsSection />);
+
+    expect(screen.getByText("160 active")).toBeInTheDocument();
+    // The 12-template seed repeats titles across 160 items, so several alerts legitimately share
+    // a title (realistic for a real alert stream too) -- dismiss the first match by label.
+    fireEvent.click(screen.getAllByLabelText(/dismiss state budget note/i)[0]);
+
+    expect(screen.getByText("159 active")).toBeInTheDocument();
+  });
+
+  it("converting an alert to a task calls the real tasks repository and marks it converted", async () => {
+    window.localStorage.setItem("axxess.demoMode.enabled", "true");
+    render(<AlertsSection />);
+
+    const convertButtons = screen.getAllByText(/^Convert to task$/);
+    fireEvent.click(convertButtons[0]);
+
+    await waitFor(() => expect(state.createdTasks).toHaveLength(1));
+    expect(state.createdTasks[0].title).toContain("State budget note");
+    expect(await screen.findByText("Task created")).toBeInTheDocument();
   });
 });

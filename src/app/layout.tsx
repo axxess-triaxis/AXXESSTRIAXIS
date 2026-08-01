@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { PostHogSessionReplayInit } from "../services/analytics/PostHogSessionReplayInit";
 import "../styles/index.css";
 
 // Added Vexo Analytics script for web React app
@@ -43,6 +44,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {children}
         <Analytics />
         <SpeedInsights />
+        <PostHogSessionReplayInit />
       </body>
     </html>
   );

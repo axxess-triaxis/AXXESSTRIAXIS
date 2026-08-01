@@ -55,6 +55,24 @@ const providerCapabilities: Record<AiProviderName, Omit<AiProviderConfig, "confi
     costTier: "low",
     latencyTier: "medium",
   },
+  kimi: {
+    name: "kimi",
+    displayName: "Kimi K2 (Moonshot AI, via OpenRouter)",
+    mode: "remote",
+    capabilities: ["general_chat", "rag_answer", "document_analysis", "meeting_minutes", "crm_followup"],
+    languages: ["english", "hindi", "chinese"],
+    costTier: "low",
+    latencyTier: "medium",
+  },
+  deepseek: {
+    name: "deepseek",
+    displayName: "DeepSeek V3 (via OpenRouter)",
+    mode: "remote",
+    capabilities: ["general_chat", "rag_answer", "document_analysis", "code_or_structured_generation", "meeting_minutes"],
+    languages: ["english", "hindi", "chinese"],
+    costTier: "low",
+    latencyTier: "medium",
+  },
   local: {
     name: "local",
     displayName: "Local Deterministic Fallback",
@@ -74,6 +92,8 @@ export function getAiProviderConfigurations(env: NodeJS.ProcessEnv = process.env
     xai: Boolean(env.XAI_API_KEY),
     falcon: Boolean(env.FALCON_API_BASE_URL && env.FALCON_API_KEY),
     jais: Boolean(env.JAIS_API_BASE_URL && env.JAIS_API_KEY),
+    kimi: Boolean(env.OPENROUTER_API_KEY),
+    deepseek: Boolean(env.OPENROUTER_API_KEY),
     local: env.LOCAL_AI_PROVIDER_ENABLED === "true" || env.AXXESS_AI_ROUTING_MODE === "demo" || !env.AXXESS_AI_ROUTING_MODE,
   };
 

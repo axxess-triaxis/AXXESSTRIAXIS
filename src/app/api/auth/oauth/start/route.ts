@@ -7,6 +7,15 @@ function isProvider(value: string): value is Provider {
   return value === "google" || value === "microsoft" || value === "apple";
 }
 
+// Supabase Auth's own OAuth provider identifier for Microsoft/Entra is "azure" (matches the
+// "Azure enabled" toggle in the Supabase Dashboard), not "microsoft" -- confirmed live: passing
+// "microsoft" straight through to /auth/v1/authorize returned
+// {"error_code":"validation_failed","msg":"Unsupported provider: Provider microsoft could not be
+// found"}. "microsoft" stays the app-facing name (env var, button label, this route's own
+// ?provider= param) since that's the real-world product name users recognize; only the outbound
+// Supabase URL needs the translated identifier.
+const SUPABASE_PROVIDER_ID: Record<Provider, string> = { google: "google", microsoft: "azure", apple: "apple" };
+
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const provider = (url.searchParams.get("provider") ?? "").trim().toLowerCase();
@@ -26,6 +35,6 @@ export async function GET(request: Request) {
   }
 
   const redirectTo = `${appUrl}/auth/login`;
-  const authorizeUrl = `${supabaseUrl}/auth/v1/authorize?provider=${encodeURIComponent(provider)}&redirect_to=${encodeURIComponent(redirectTo)}`;
+  const authorizeUrl = `${supabaseUrl}/auth/v1/authorize?provider=${encodeURIComponent(SUPABASE_PROVIDER_ID[provider])}&redirect_to=${encodeURIComponent(redirectTo)}`;
   return NextResponse.json({ ok: true, provider, authorizeUrl });
 }

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AnalyticsProviderShell } from "../../services/analytics";
 import { MockAnalyticsProvider } from "../../services/analytics/MockAnalyticsProvider";
@@ -39,7 +39,7 @@ describe("BetaOnboardingChecklist", () => {
       </AnalyticsProviderShell>,
     );
 
-    expect(screen.getByText("Pilot Onboarding")).toBeInTheDocument();
+    expect(screen.getByText("Pilot Onboarding (personal checklist)")).toBeInTheDocument();
     expect(screen.getByText("Create first project")).toBeInTheDocument();
     expect(screen.getByText("Ask first AI/RAG question")).toBeInTheDocument();
     expect(screen.getByText("View audit trail")).toBeInTheDocument();
@@ -83,24 +83,80 @@ describe("BetaOnboardingChecklist", () => {
     // testUser has an organizationId, so the "organization" step auto-completes immediately --
     // that is the only step done for a brand-new tenant with zero projects.
     const { unmount } = renderChecklist(0);
-    expect(screen.getByText("1 of 10 complete - first 10 minutes of a real tenant")).toBeInTheDocument();
+    expect(screen.getByText(/1 of 10 complete -- your own first-10-minutes checklist/)).toBeInTheDocument();
     unmount();
 
     // Re-mounting with the same (honest, unchanged) projectCount must reproduce the exact same
     // progress -- reading from localStorage again must not silently advance any step.
     renderChecklist(0);
-    expect(screen.getByText("1 of 10 complete - first 10 minutes of a real tenant")).toBeInTheDocument();
+    expect(screen.getByText(/1 of 10 complete -- your own first-10-minutes checklist/)).toBeInTheDocument();
   });
 
   it("only advances the 'first_project' step once a real project genuinely exists, and that advance persists across reloads", () => {
     const { unmount } = renderChecklist(0);
-    expect(screen.getByText("1 of 10 complete - first 10 minutes of a real tenant")).toBeInTheDocument();
+    expect(screen.getByText(/1 of 10 complete -- your own first-10-minutes checklist/)).toBeInTheDocument();
     unmount();
 
     // A durable state change (the tenant now genuinely has 1 project) is the only thing allowed
     // to move progress -- this simulates returning to the dashboard after Sprint 2's real project
     // creation path succeeded. organization + first_project are now both done.
     renderChecklist(1);
-    expect(screen.getByText("2 of 10 complete - first 10 minutes of a real tenant")).toBeInTheDocument();
+    expect(screen.getByText(/2 of 10 complete -- your own first-10-minutes checklist/)).toBeInTheDocument();
+  });
+
+  it("A-39 fix: 'Send feedback / request support' opens the real feedback trigger instead of navigating to /dashboard", () => {
+    const trigger = document.createElement("button");
+    trigger.id = "beta-feedback-trigger";
+    document.body.appendChild(trigger);
+    const clickSpy = vi.fn();
+    trigger.addEventListener("click", clickSpy);
+
+    renderChecklist(0);
+    const card = screen.getByText("Send feedback / request support").closest("div.rounded-lg") as HTMLElement;
+    const openControl = within(card).getByText("Open").closest("button, a") as HTMLElement;
+
+    expect(openControl.tagName).toBe("BUTTON");
+    fireEvent.click(openControl);
+    expect(clickSpy).toHaveBeenCalledTimes(1);
+
+    document.body.removeChild(trigger);
+  });
+
+  it("still uses a real navigable link (not the feedback trigger) for other steps", () => {
+    renderChecklist(0);
+    const card = screen.getByText("Create first task").closest("div.rounded-lg") as HTMLElement;
+    const openControl = within(card).getByText("Open").closest("button, a") as HTMLElement;
+
+    expect(openControl.tagName).toBe("A");
+    expect(openControl).toHaveAttribute("href", "/tasks");
+  });
+
+  it("auto-completes upload_document, first_task, and first_approval from real counts, without requiring a manual click", () => {
+    render(
+      <AnalyticsProviderShell provider={new MockAnalyticsProvider()}>
+        <BetaOnboardingChecklist
+          user={testUser}
+          projectCount={0}
+          documentCount={2}
+          taskCount={5}
+          approvalCount={1}
+        />
+      </AnalyticsProviderShell>,
+    );
+
+    // organization (has orgId) + upload_document + first_task + first_approval = 4, no manual click.
+    expect(screen.getByText(/4 of 10 complete -- your own first-10-minutes checklist/)).toBeInTheDocument();
+    for (const label of ["Upload first document", "Create first task", "Request first approval"]) {
+      const card = screen.getByText(label).closest("div.rounded-lg") as HTMLElement;
+      expect(card.className).toContain("border-emerald-200");
+    }
+  });
+
+  it("does not auto-complete upload_document/first_task/first_approval when the real counts are zero", () => {
+    renderChecklist(0);
+    for (const label of ["Upload first document", "Create first task", "Request first approval"]) {
+      const card = screen.getByText(label).closest("div.rounded-lg") as HTMLElement;
+      expect(card.className).not.toContain("border-emerald-200");
+    }
   });
 });

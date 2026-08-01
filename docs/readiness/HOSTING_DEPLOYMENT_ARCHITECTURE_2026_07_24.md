@@ -1,0 +1,148 @@
+# Hosting and Deployment Architecture (2026-07-24)
+
+This document is the authoritative record of how AXXESS TRIaxis is hosted, why it is structured this way, and exactly what is and isn't automated. Every claim below was checked directly against Vercel CLI output, deployment build logs, and live `curl` checks against the production URLs -- nothing here is inferred from intent alone. This document supersedes its own earlier draft from earlier the same day, which recorded an interim state (only two projects, no domains assigned, several open decisions) before the founder's final direction resolved those decisions.
+
+## Final Architecture
+
+Three fully isolated Vercel projects, **one shared GitHub repository**, three separate public entry points:
+
+| Role | Vercel project | Project ID | Public URL | Data mode |
+|---|---|---|---|---|
+| **Website** | `axxesstriaxis` | `prj_zTMRnOsfmUUxnzJkEUDUxNvoEOFt` | `https://www.triaxisventures.com` (+ `triaxisventures.com` apex, `beta.triaxisventures.com`, `axxesstriaxis.vercel.app`) | N/A -- marketing page only, no product data |
+| **Product** (Live Onboardable Beta) | `triaxis-www-frontend-import` | `prj_TKNsiB2hMIHUy8bqEmJVpAq4EiTT` | `https://landing.triaxisventures.com` | Real Supabase-backed auth and data. `NEXT_PUBLIC_AXXESS_DEMO_MODE` unset (production-safe default: real auth required, no demo persona ever shown) |
+| **Demo** (Investor Demo) | `triaxis-product-investor-demo` | `prj_DmQEa8CtZss0eTnZgGL4aZA6Y8gP` | `https://investor.triaxisventures.com` | Forced demo mode. `NEXT_PUBLIC_AXXESS_DEMO_MODE=true` set at the project level -- every request to this deployment renders the illustrative North East Health Mission demo tenant, unconditionally, with no toggle, no login, no localStorage/cookie state involved |
+
+**All three projects deploy from the same repository: `github.com/axxess-triaxis/AXXESSTRIAXIS`.** They are not three codebases -- they are the identical Next.js monorepo, deployed three times with different environment configuration. This was confirmed directly by reading each project's build log (`vercel inspect <url> --logs`): all three clone the same repo, run the same `pnpm install --frozen-lockfile` then `pnpm run build` (`next build`), and produce the same route tree. The only difference between deployments is which environment variables are set on each Vercel project (chiefly `NEXT_PUBLIC_AXXESS_DEMO_MODE`) and, going forward, which git branch each project's Production Branch setting tracks (see "Auto-Sync" below for the current, honest state of that).
+
+## Rationale (Founder's Own Reasoning, Recorded Verbatim in Substance)
+
+The original architecture routed every visitor -- "Sign In" and "Open Beta Workspace" alike -- through one shared `/auth` page inside one deployment. That single-deployment, runtime-toggled design (`isDemoModeEnabled()`, a `localStorage` flag) is exactly what caused the recurring stale-session bug this program kept re-discovering (see `docs/readiness/P0_PUBLIC_ENTRY_INVESTOR_BETA_SPLIT_2026_07_24.md`): once a browser had ever entered demo mode, it could never reliably reach a real sign-in form again in that browser, because "demo" and "real" were two states of the *same* running application, distinguished only by a client-side flag that could desync.
+
+The founder's explicit reasoning for the new structure:
+- **Clear separation for a real acquisition funnel.** Investors and prospective beta customers arrive at the same Website and need two unambiguous, non-conflicting paths -- one that costs nothing to explore (Demo) and one that starts a real relationship (Beta signup). Mixing them, even briefly, damages trust in both directions.
+- **The Demo has fundamentally different reliability requirements than the Product.** Quoting the founder directly: *"Demo needs high stability, not high activity or dynamism; it should hold under heavy traffic where real activity stays relatively low."* Marketing spend (ads, LLM-surfaced discovery, investor outreach) can send bursts of traffic to the Demo specifically, and a Demo outage is nearly as reputation-damaging as a real product outage, even though nothing real is at stake behind it. Isolating the Demo into its own deployment means a traffic spike or a bug in the Demo experience cannot compete for resources with, or cascade into, the real Product or the Website.
+- **"We can't risk damaging the 46 sprints, 2 QAs and progress done."** Any change to the live, currently-serving Website's own routing configuration was explicitly ruled out as too risky -- see the cloning-vs-rewrite tradeoff below.
+
+## Tradeoff: Cloning Over Rewrite
+
+Two mechanisms were considered for making one domain serve three experiences:
+
+**Rewrite/path-splitting (rejected).** Configure `axxesstriaxis`'s own `vercel.json` (or Next.js middleware) to proxy specific paths (`/landing/*`, `/investor/*`) to the other two projects' deployment URLs, all under one domain and one project's routing table. This was the founder's original literal spec (`www.triaxisventures.com/landing`, `www.triaxisventures.com/investor`). **Rejected** because it requires modifying the live, currently-serving Website project's own routing configuration -- the one place a misconfiguration could cause a real, immediate outage on `www.triaxisventures.com` itself, risking everything already shipped across 46 sprints and 2 QA passes. The founder's own words: *"Split/rewrite is very risky both architecture and product wise."*
+
+**Cloning via separate projects and subdomains (chosen).** Two more Vercel projects, each independently deployed, each assigned its own subdomain (`investor.triaxisventures.com`, `landing.triaxisventures.com`) via `vercel domains add` -- a pure additive operation that touches nothing about how `axxesstriaxis` itself is configured or served. This is mechanically identical to how `beta.triaxisventures.com` has safely coexisted as a second entry point for years already. If either new domain assignment had failed for any reason, `www.triaxisventures.com` would have been completely unaffected -- confirmed in practice, since the whole rollout involved zero changes to the Website's own deployment.
+
+**The cost of this choice:** the public URLs became `investor.triaxisventures.com` / `landing.triaxisventures.com` (subdomains) rather than `www.triaxisventures.com/investor` / `/landing` (paths) as originally specified. The founder assessed and accepted this explicitly: *"This is a highly acceptable tradeoff as it has very low downside if these sub-domains are accessible through the 'Experience AXXESS' and 'Welcome Aboard' tabs that lead to them straight from `https://www.triaxisventures.com`."* Since real visitors never type these URLs by hand -- they click a tab on the Website -- the difference between a path and a subdomain is invisible to the actual user journey.
+
+## Strict Partitioning Between Demo and Beta (100%)
+
+Partitioning is enforced at two independent layers, not one:
+
+1. **Separate Vercel projects, separate runtimes.** The Demo and Product deployments are not two modes of one running application -- they are two entirely separate build/deploy/serve pipelines with their own environment variables, their own edge network instances, and no shared memory, session store, or request routing of any kind. There is no code path by which a request to `investor.triaxisventures.com` can touch `landing.triaxisventures.com`'s data, or vice versa.
+2. **Deployment-time, not runtime, mode pinning.** The Demo project has `NEXT_PUBLIC_AXXESS_DEMO_MODE=true` baked in at build time (`isDemoModeForcedByEnv()` in `src/demo/demoMode.ts` reads this and unconditionally forces demo mode, bypassing `localStorage`/cookies entirely). Every request this deployment ever serves renders `demoRepositories` (in-memory, seeded, fictional North East Health Mission data) -- it is structurally incapable of reaching the real Supabase backend, since the demo/live repository selection in `src/providers/serviceProvider.ts` is decided by this same env-forced flag before any request is handled. The Product project has this variable unset, so it defaults the other way: real Supabase-backed `resilientRepositories`, real auth required, the demo persona never renders. This is a stronger guarantee than the original architecture's `localStorage`-toggle approach, which was exactly the mechanism that broke down (see the P0 correction doc).
+
+**Correction, then re-confirmation (2026-07-25):** an earlier version of this document stated "Verified live: `curl https://investor.triaxisventures.com/dashboard`..." for both subdomains. That claim did not survive a same-day fresh check (both subdomains returned `DNS_PROBE_FINISHED_NXDOMAIN` -- the DNS records had never been created) and was retracted. The DNS records were then added and a TLS certificate issue diagnosed and fixed the same day -- see "DNS Delegation Status" above. **The original claim is now genuinely true again, re-verified with a fresh command, not restored on faith:** `curl https://investor.triaxisventures.com/dashboard` returns the demo persona (Ananya Rao / North East Health Mission), and `curl https://landing.triaxisventures.com/dashboard` returns a real `307` redirect to sign-in, never the demo persona -- both confirmed 2026-07-25, post-fix.
+
+**Second correction (2026-07-28, A-28):** the two layers above describe *infra-level* partitioning (separate Vercel projects, separate deployments, separate env-forced mode) and both remain accurate and unaffected by what follows. But a HITL walkthrough on 2026-07-25 found a *same-deployment, application-code-level* exception this section did not account for: `OrganizationPanel` (`src/features/settings/SettingsSection.tsx`), running inside the live Product deployment itself, imported and unconditionally rendered the seeded demo dataset module regardless of runtime mode -- so a real, authenticated Triaxis Ventures user's own Settings page showed "North East Health Mission." No request ever crossed from the Demo deployment to the Product one; the Product deployment's own code chose to render demo content. Fixed in Sprint TP-1 (2026-07-28) -- see `docs/readiness/TENANT_PARTITIONING_TP1_CLOSEOUT_2026_07_28.md` and `ACTIONABLES_READINESS_MATRIX.md` A-28. **This section's "100%" heading describes the infra layer only and should not be read as "no application code can ever render demo content inside the live product" -- that guarantee does not exist and this incident is proof.**
+
+## Landing Root Fix (Resolved 2026-07-25)
+
+Reported the same day the DNS fix above went live: visiting `https://landing.triaxisventures.com/` showed the shared marketing chooser page (`src/app/page.tsx`), which links out to the Demo -- wrong for a domain meant to be beta-only. `/landing` was also reported; confirmed via live `curl` to be a genuine `404` (never a real route, not the actual bug).
+
+**Root cause:** `src/proxy.ts` already had a root-to-`/dashboard` redirect rule for `beta.triaxisventures.com` (`getBetaRootRedirectUrl`, an older beta entry point attached to the Website project), but `landing.triaxisventures.com` was never added to that same rule when this session's hosting split created it -- so its root fell through to the default marketing page.
+
+**Fix:** generalized the single-host check into a small `Set` of beta-root-redirect hosts (`beta.triaxisventures.com`, `landing.triaxisventures.com`) rather than duplicating the function. Commit `3e3f2bb`. Tests: 2 new cases in `src/proxy.test.ts`, full suite 26/26 passing; typecheck and lint both clean.
+
+**Deployed:** `vercel deploy --prod` against `triaxis-www-frontend-import` directly (auto-sync is not yet enabled -- see below -- so this required the same manual per-project deploy this program has used throughout). Live verification, same day: `https://landing.triaxisventures.com/` now returns `307 -> /dashboard -> /auth?next=%2Fdashboard`, landing on a genuine sign-in form (`Email`/`Password`/`Sign in`), no chooser, no path to the Demo. `www.triaxisventures.com` and `investor.triaxisventures.com` re-checked and confirmed unaffected.
+
+## Investor Root Fix (Resolved 2026-07-25)
+
+Reported immediately after the Landing Root Fix above: `https://investor.triaxisventures.com/` was serving **stale, pre-hosting-split content** -- old relative links (`/investor`, `/landing`) and old button labels ("Beta Sign Up" / "For Investors"), confirmed via live `curl`. Root cause: the Demo project's production deployment (`triaxis-product-investor-demo`) had never been redeployed since before this session's page.tsx rewrite and hosting split -- it was still serving whatever was live before any of this session's work began.
+
+**Fix:** renamed `betaRootRedirectHosts` to `dashboardRootRedirectHosts` and added `investor.triaxisventures.com` alongside `beta.`/`landing.` in the same root-to-`/dashboard` redirect rule (`src/proxy.ts`, commit `74dde4d`). Because the Demo project has `NEXT_PUBLIC_AXXESS_DEMO_MODE=true` forced at build time, this redirect reaches the Investor Preview with zero friction -- the login gate is skipped entirely for this deployment, so `/dashboard` renders the demo persona immediately. Tests: 2 new cases in `src/proxy.test.ts`, full suite 28/28 passing; typecheck and lint clean.
+
+**Deployed:** `vercel deploy --prod` against `triaxis-product-investor-demo` directly (same manual-per-project mechanism as the Landing fix, since auto-sync is not yet enabled -- see below). This deploy also incidentally fixed the stale content itself, since it picked up every commit since the Demo project was last built, not just this specific fix.
+
+**Live verification, same day:** `https://investor.triaxisventures.com/` now returns `307 -> /dashboard`, landing directly on the demo persona (`Ananya Rao` / `North East Health Mission`), no stale links, no chooser page. `www.triaxisventures.com` and `landing.triaxisventures.com` re-checked and confirmed unaffected.
+
+## DNS Delegation Status (Resolved 2026-07-25)
+
+**Update:** the founder added the two Wix A records below on 2026-07-25 (via Wix Dashboard -> Domains -> `triaxisventures.com` -> Domain Actions -> Manage DNS Records -> A (Host) -> + Add Record, matching the existing pattern already used for `beta`/`www`). DNS resolved within minutes. The remaining blocker turned out to be TLS certificate issuance, not DNS: `vercel certs ls` showed certificates existed only for `beta.triaxisventures.com`, `triaxisventures.com`, and `www.triaxisventures.com` -- Vercel had not auto-issued certificates for the two new subdomains. Resolved by running `vercel certs issue landing.triaxisventures.com` and `vercel certs issue investor.triaxisventures.com` directly (both returned "Success! Certificate entry ... created").
+
+**Final live verification (2026-07-25, post-fix):**
+- `curl -o /dev/null -w '%{http_code}' https://landing.triaxisventures.com/` -> `200`
+- `curl -o /dev/null -w '%{http_code}' https://investor.triaxisventures.com/` -> `200`
+- `curl https://investor.triaxisventures.com/dashboard` -> contains `Ananya Rao` / `North East Health Mission` (demo persona, confirming Demo isolation)
+- `curl -o /dev/null -w '%{http_code} -> %{redirect_url}' https://landing.triaxisventures.com/dashboard` -> `307 -> https://landing.triaxisventures.com/auth?next=%2Fdashboard` (real auth gate, never the demo persona)
+- `curl -o /dev/null -w '%{http_code}' https://www.triaxisventures.com/` -> `200`, unaffected throughout
+
+This retracts the "Still Blocked" framing below (kept for the historical record of what the blocker was and how it was diagnosed) -- both subdomains are live, isolated, and the Website was never affected.
+
+**Re-confirmation (2026-07-26):** HITL reported `https://landing.triaxisventures.com/` appeared to land on the same demo page as `https://investor.triaxisventures.com/`. Investigated live, same session: `curl` against both domains showed correct behavior (`landing` -> real "Sign in" form, `investor` -> demo persona), `vercel project inspect triaxis-www-frontend-import` confirmed `NEXT_PUBLIC_AXXESS_DEMO_MODE` is not set on the Product project, `vercel inspect https://landing.triaxisventures.com` confirmed the live alias points to the `dpl_GtwQWmY3WD1QAKZ9DFq6yLCwvKhG` deployment (built 2026-07-25, the same one that shipped the root-redirect fix above), and both response headers showed `Cache-Control: public, max-age=0, must-revalidate` (no server/CDN caching that would explain stale content). No code or config was changed. HITL then re-checked and confirmed `landing.triaxisventures.com` correctly shows the real sign-in form (Email/Password, Forgot password, Google/Microsoft OAuth, Sign up link) and `investor.triaxisventures.com` correctly lands on the investor preview -- consistent with a stale client-side artifact (browser cache/bfcache or a leftover demo-session cookie/localStorage flag on that specific browser) rather than a server regression. No further action taken; server-side configuration was never the fault.
+
+### Historical record (blocker as of earlier 2026-07-25, before the fix above)
+
+Both `investor.triaxisventures.com` and `landing.triaxisventures.com` were registered on the Vercel side on 2026-07-13 and have never resolved publicly, confirmed today by three independent checks:
+
+1. **Browser report from the founder (2026-07-25):** both URLs return `DNS_PROBE_FINISHED_NXDOMAIN`.
+2. **`nslookup landing.triaxisventures.com` / `nslookup investor.triaxisventures.com`:** both return `Non-existent domain`. `nslookup triaxisventures.com` (the root domain) resolves fine, to `76.76.21.21` -- so the root domain and `www` are unaffected; only the two new subdomains are missing DNS records entirely.
+3. **`vercel domains inspect landing.triaxisventures.com` / `investor.triaxisventures.com`:** both report the domain as registered under the correct Vercel project but **not configured**:
+
+```
+Nameservers
+  Intended Nameservers    Current Nameservers
+  ns1.vercel-dns.com      ns0.wixdns.net   [X]
+  ns2.vercel-dns.com      ns1.wixdns.net   [X]
+
+WARNING! This Domain is not configured properly. To configure it you should either:
+  a) Set the following record on your DNS provider to continue: `A landing.triaxisventures.com 76.76.21.21` [recommended]
+  b) Change your Domain's nameservers to the intended set detailed above.
+```
+
+(Same output, with `investor` substituted for `landing`, for the second subdomain.)
+
+**Root cause:** `triaxisventures.com`'s nameservers are Wix's (`ns0.wixdns.net`, `ns1.wixdns.net`), confirmed via `nslookup -type=NS triaxisventures.com`, unchanged since the 2026-07-24 architecture decision. Vercel cannot serve a hostname it doesn't control DNS for. Adding the two Vercel projects and subdomains (done 2026-07-13/2026-07-24) was necessary but not sufficient -- a DNS record still has to be created at the actual DNS host, which is Wix, not Vercel.
+
+**Exact remediation required (Wix account access -- cannot be performed from this environment):** in Wix's domain/DNS management for `triaxisventures.com`, add two `A` records:
+
+| Host | Type | Value |
+|---|---|---|
+| `landing` | A | `76.76.21.21` |
+| `investor` | A | `76.76.21.21` |
+
+**Practical consequence in the meantime:** the live Website's "Welcome Aboard" and "Experience AXXESS" buttons (`www.triaxisventures.com`) are currently dead links for any real visitor -- they point at hostnames that don't resolve. This is a genuine, currently-live product defect, not a documentation gap; it has existed since the buttons were added and will persist until the Wix A records above are created.
+
+## Demo Data Repopulation (For Upcoming Investor Conversations)
+
+The Demo's dataset (`src/demo/demoDataset.ts`, plus `getDemoSocialAlerts()` in `src/services/alerts/socialAlerts.ts` and `fallbackAiReviewInbox()` in `src/services/ai/reviewInbox.ts`) is **deterministic, not persisted** -- every request regenerates the same seeded dataset from source code, in memory, on the fly. There is no database behind the Demo to "reset" in the traditional sense; a visitor's clicks during a session (approving a demo AI review, converting an alert to a task, editing a demo record) mutate only that session's in-memory `demoRepositories` store, which is discarded the moment the serverless function instance recycles or the visitor's session ends. The next visitor, and the same visitor on their next page load, always sees the same pristine seed.
+
+**"Repopulation" in practice means one of two things:**
+1. **Refreshing what the seed represents** (new project names, updated dates, larger dataset, new narrative beats) -- this is a code change to `demoDataset.ts`/`socialAlerts.ts`/`reviewInbox.ts`, followed by a redeploy of the Demo project (`vercel deploy --prod` targeting `triaxis-product-investor-demo`, or, once auto-sync is fully configured, a push to the tracked branch). This is the mechanism used to keep the Demo current before a specific investor meeting -- e.g., updating dates so the "6-12 months of activity" narrative always reads as recent, or refreshing named projects to match whatever the pitch is emphasizing that week.
+2. **Resetting a specific demo session's in-session mutations** -- not currently needed in practice, since mutations never persist past that request/session lifetime, but if a demo visitor's browser session is kept open a long time and its in-memory state feels "used," a hard page reload against a fresh function instance already produces a pristine dataset with no explicit reset action required.
+
+## Auto-Sync Across Website, Product, Demo, and Mobile -- Explicit, Honest Current State
+
+**Correction (2026-07-25):** the claim below that Product (`triaxis-www-frontend-import`) tracks `canonical/sprint-1-35-unified-gitlab` as its Production Branch was re-checked directly against the Vercel REST API (`GET /v9/projects/{id}`, reading `link.productionBranch`) and found to be **wrong** -- all three projects, including Product, currently show `productionBranch: "main"`. This may have been true briefly and reset, or was a misread of the build log at the time; either way, today's direct API read is the authoritative source, not the earlier build-log inference.
+
+**What is confirmed working today (2026-07-25, via direct Vercel API calls):**
+- All three projects' GitHub integration **does** auto-build on every push to `canonical/sprint-1-35-unified-gitlab` -- confirmed by observing a fresh deployment appear on all three projects within 1 second of each other, at the exact commit just pushed (`6180f66`), immediately after this session's most recent `git push`. This is real, working, zero-touch build automation.
+- **But every one of those auto-triggered builds is a Preview deployment, not Production**, because none of the three projects has `canonical/sprint-1-35-unified-gitlab` set as its Production Branch (all three still say `main`). Confirmed by querying `GET /v6/deployments?target=production` for each project: all three return their **actual live, custom-domain-serving deployment** as commit `5ee3514` from 2026-07-24 -- one and sometimes several commits behind the repository's current head -- not the freshly auto-built preview.
+
+**Practical consequence, stated precisely:** a push to the canonical branch already auto-builds all three projects (this part works, for all three, not just Product as previously documented) -- but none of those builds becomes live at `www.`/`landing.`/`investor.triaxisventures.com` without an explicit follow-up action: either (a) a manual `vercel deploy --prod` / `vercel promote` against each project after any future change (the mechanism used throughout this program to date), or (b) changing all three projects' Production Branch setting from `main` to `canonical/sprint-1-35-unified-gitlab`, which would make a single push update all three live sites automatically -- matching the founder's stated preference ("Better if we can install auto-sync between both product modes").
+
+**Attempted 2026-07-25, conclusively ruled out via API:** the CLI's `vercel project update` does not expose a Production Branch flag (confirmed via `--help`). A direct `PATCH /v9/projects/{id}` with `{"link":{"productionBranch":"..."}}` was attempted using the already-authenticated CLI's own stored token and returned `400 Bad Request: "should NOT have additional property 'link'"`. Reading Vercel's own cached OpenAPI schema for this exact endpoint confirms why: `productionBranch` appears **only** inside response schemas (what `GET` returns), never as an allowed field in the `PATCH` request body's property list. This is not a CLI gap or a permission-classifier block -- Vercel's public API genuinely does not expose changing a project's Production Branch. It is dashboard-only: **Vercel Dashboard -> [project] -> Settings -> Git -> Production Branch**, required for all three projects (`axxesstriaxis`, `triaxis-www-frontend-import`, `triaxis-product-investor-demo`), each changed to `canonical/sprint-1-35-unified-gitlab`. Not yet applied as of this writing -- external/HITL-only, same category as the DNS fix above.
+
+**Mobile builds are a separate pipeline, not part of Vercel's auto-sync at all.** `apps/mobile-capacitor` (the Capacitor shell wrapping the same web kernel) and `apps/mobile` (the native Expo/React Native app, per `MONOREPO_ARCHITECTURE_AND_BUSINESS_MODEL.md` S2.2-2.3) are built via EAS (`eas build`) and Capacitor's own native tooling, triggered manually or via `.github/workflows/mobile-*.yml` GitHub Actions -- entirely independent of Vercel's deploy pipeline. A change merged to the canonical branch does not automatically produce a new mobile build; that remains a separate, explicit step (`pnpm run mobile:eas:build:android`/`:ios`, or the GitHub Actions mobile workflows), regardless of how the three Vercel web projects are configured. There is currently no mechanism, and none was requested, to auto-trigger a mobile build from a web deployment.
+
+## Root-Level Files That Govern Hosting
+
+| File | Purpose | Which deployment(s) it affects |
+|---|---|---|
+| `vercel.json` | `{"framework": "nextjs", "buildCommand": "pnpm run build", ...}` -- the canonical Vercel build configuration for the Next.js app at repo root, plus one cron job. | All three projects, since all three build from this same repo root with this same config. |
+| `src/proxy.ts` | Next.js Edge Runtime middleware. Handles apex/www/beta host redirects and the protected-route login gate. | All three projects identically -- it is part of the shared codebase. It does not (and, per the cloning approach above, does not need to) know about `investor.`/`landing.` at all; those are handled entirely by which Vercel project a request lands on, before this middleware ever runs. |
+| `vite.config.ts`, `index.html`, `src/main.tsx` | A separate, parallel client-only build entry (`src/main.tsx` -> `src/app/App.tsx`) that produces the `dist/` bundle `apps/mobile-capacitor` packages into the iOS/Android app shell. Not used by any of the three Vercel projects -- all three run `next build`, none run `vite build`. | Mobile (Capacitor) only. |
+| `.vercel/project.json` (this working directory) | Links this local checkout to whichever Vercel project is currently active for CLI deploys. Defaults to, and must be restored to, `axxesstriaxis` after any temporary use for deploying to the other two projects (the mechanism used throughout this session via the `--project` flag or a temporary swap-and-restore). | Whichever project it's pointed at when `vercel deploy` runs. |
+| `.github/workflows/*` | GitHub Actions CI (typecheck/lint/test/build gates, security scanning, mobile validation) -- separate from Vercel's own deployment triggers. | Pre-merge checks only; does not deploy to Vercel or trigger mobile builds on its own beyond the dedicated `mobile-*.yml` workflows. |
+
+## Known, Self-Resolving Reliability Note
+
+`axxesstriaxis`'s GitHub-triggered auto-deploy from `main` is currently failing at `pnpm install --frozen-lockfile`: a Dependabot Next.js bump (16.2.10 -> 16.2.11) trips pnpm's supply-chain "minimum release age" policy (rejects packages published within the last 7 days). This does not affect current production serving -- the manually-deployed CLI build remains live and correct on all three projects -- and requires no code change; it self-resolves once those packages age past the cutoff, expected around 2026-07-28. Left alone per founder direction (2026-07-24).

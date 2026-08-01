@@ -84,6 +84,7 @@ export function useGuidedDemo(activeSection?: NavSection, navigateToSection?: (s
 
   const currentStep = useMemo(() => guidedDemoSteps.find((step) => step.id === state.currentStepId) ?? firstGuidedDemoStep(), [state.currentStepId]);
   const currentIndex = guidedDemoStepIndex(currentStep.id);
+  const nextStep = useMemo(() => nextGuidedDemoStep(currentStep.id), [currentStep.id]);
 
   const startDemo = useCallback(() => {
     const nextState = {
@@ -118,6 +119,14 @@ export function useGuidedDemo(activeSection?: NavSection, navigateToSection?: (s
   return {
     active: state.active,
     currentStep,
+    // RAG Remediation Sprint 2 (A-64/A-59): the "Next" button was labeled with currentStep.cta
+    // (e.g. "Ask AI Workspace") but its onClick called goNext(), which navigates to the section of
+    // the step AFTER the current one -- so clicking "Ask AI Workspace" actually landed on Tasks &
+    // Workflow (the next step's section), and clicking "Review approval queue" landed on Analytics.
+    // Root cause confirmed: every guidedDemoSteps[].cta names ITS OWN step.section correctly: the
+    // bug was never in the section data, only in which step's cta the button displayed. Exposing
+    // nextStep lets the banner show the label that actually matches where the button goes.
+    nextStep,
     currentIndex,
     steps: guidedDemoSteps,
     progressPercent: Math.round(((currentIndex + 1) / guidedDemoSteps.length) * 100),

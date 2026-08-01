@@ -45,3 +45,11 @@ export function getSharedLiveWorkspaceMetrics(services: ApplicationServices, sco
 export function clearLiveWorkspaceMetricsCache() {
   cache.clear();
 }
+
+// Drops one tenant scope's cached entry so the next getSharedLiveWorkspaceMetrics call for that
+// scope issues a fresh repository request instead of reusing a value inside the TTL window. Used by
+// an explicit user-initiated "Refresh" action -- narrower than clearLiveWorkspaceMetricsCache(),
+// which is reserved for logout/session-change.
+export function invalidateLiveWorkspaceMetricsCache(scope: TenantScope) {
+  cache.delete(cacheKey(scope));
+}

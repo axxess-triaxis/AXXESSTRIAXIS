@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AuthProvider, useAuth } from "./AuthProvider";
+import { demoSessionCookieName, setDemoModeEnabled } from "../demo/demoMode";
 
 const clearLiveWorkspaceMetricsCacheMock = vi.fn();
 vi.mock("../hooks/liveWorkspaceMetricsCache", () => ({
@@ -104,5 +105,53 @@ describe("AuthProvider", () => {
 
     await waitFor(() => expect(screen.getByTestId("status").textContent).toBe("unauthenticated"));
     expect(screen.getByTestId("authed").textContent).toBe("no");
+  });
+
+  it("refreshes the edge-visible demo-session cookie on mount when the (non-expiring) demo-mode flag is already set, so a lapsed cookie never desyncs from a still-active localStorage flag (Attempt 4, 2026-07-24)", async () => {
+    setDemoModeEnabled(true);
+    document.cookie = `${demoSessionCookieName}=; path=/; max-age=0`;
+    expect(document.cookie).not.toContain(`${demoSessionCookieName}=true`);
+
+    render(
+      <AuthProvider>
+        <Harness />
+      </AuthProvider>,
+    );
+
+    await waitFor(() => expect(screen.getByTestId("authed").textContent).toBe("yes"));
+    expect(document.cookie).toContain(`${demoSessionCookieName}=true`);
+
+    setDemoModeEnabled(false);
+  });
+
+  it("re-validates a real session on tab focus/visibility return and drops to unauthenticated if the server session is gone (session-security fix)", async () => {
+    let sessionStillValid = true;
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/api/auth/session")) {
+        if (!sessionStillValid) return new Response(JSON.stringify({ user: null }), { status: 401 });
+        return new Response(JSON.stringify({
+          user: { id: "user_1", organizationId: "org_1", role: "Organization Admin", email: "admin@example.com" },
+        }), { status: 200 });
+      }
+      return new Response(JSON.stringify({ error: "Not found" }), { status: 404 });
+    }));
+
+    render(
+      <AuthProvider>
+        <Harness />
+      </AuthProvider>,
+    );
+
+    await waitFor(() => expect(screen.getByTestId("authed").textContent).toBe("yes"));
+
+    // Simulate the absolute session cap (or a force-logout elsewhere) invalidating the session
+    // server-side while this tab stayed open, then the user returning to the tab.
+    sessionStillValid = false;
+    Object.defineProperty(document, "visibilityState", { value: "visible", configurable: true });
+    document.dispatchEvent(new Event("visibilitychange"));
+
+    await waitFor(() => expect(screen.getByTestId("authed").textContent).toBe("no"));
+    expect(screen.getByTestId("status").textContent).toBe("unauthenticated");
   });
 });
