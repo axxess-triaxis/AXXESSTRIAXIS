@@ -3,13 +3,25 @@ import {
   aiTokenUsageSpendPolicy,
   approvalSlaRiskPolicy,
   auditLogGapPolicy,
+  calendarTodayPolicy,
+  crmFollowUpsDuePolicy,
+  crmStalledLeadsPolicy,
+  criticalSocialAlertsPolicy,
   documentIndexingHealthPolicy,
+  financialAccountsActionablesPolicy,
+  financialAccountsBelowThresholdPolicy,
+  financialBudgetOvershootPolicy,
+  financialBudgetThresholdsPolicy,
   integrationHealthPolicy,
+  mailNeedingReplyPolicy,
+  openLeadsPolicy,
   overdueMeetingsPolicy,
   overdueTasksPolicy,
   pendingAiReviewsPolicy,
   projectHealthPolicy,
   socialAlertsProviderGatedPolicy,
+  socialProviderHealthPolicy,
+  upcomingMeetingsPolicy,
   workflowTimelineActivityPolicy,
 } from "./tilePolicies";
 import { computeScore } from "./tileScoring";
@@ -113,5 +125,140 @@ describe("socialAlertsProviderGatedPolicy", () => {
   it("flags yellow when no provider is connected", () => {
     expect(socialAlertsProviderGatedPolicy(false).criticality).toBe("yellow");
     expect(socialAlertsProviderGatedPolicy(true).criticality).toBe("green");
+  });
+});
+
+// --- Executive Dashboard Redesign Sprint ED-R2 ---
+
+describe("mailNeedingReplyPolicy", () => {
+  it("returns green for zero mail needing reply", () => {
+    expect(mailNeedingReplyPolicy(0, null).criticality).toBe("green");
+  });
+
+  it("stays yellow for a small, fresh backlog", () => {
+    expect(mailNeedingReplyPolicy(1, 0).criticality).toBe("yellow");
+  });
+
+  it("escalates to amber at count>=3 even if fresh", () => {
+    expect(mailNeedingReplyPolicy(3, 0).criticality).toBe("amber");
+  });
+
+  it("escalates to amber once the oldest message is older than 2 days, even with a small count", () => {
+    expect(mailNeedingReplyPolicy(1, 3).criticality).toBe("amber");
+  });
+
+  it("escalates to red once count exceeds 5", () => {
+    expect(mailNeedingReplyPolicy(6, 0).criticality).toBe("red");
+  });
+
+  it("escalates to red once the oldest message is older than 5 days, regardless of count (stale mail requiring escalation)", () => {
+    expect(mailNeedingReplyPolicy(1, 6).criticality).toBe("red");
+  });
+});
+
+describe("openLeadsPolicy", () => {
+  it("is informational (green) regardless of count -- volume alone isn't a risk signal", () => {
+    expect(openLeadsPolicy(0).criticality).toBe("green");
+    expect(openLeadsPolicy(50).criticality).toBe("green");
+  });
+});
+
+describe("crmFollowUpsDuePolicy", () => {
+  it("escalates as overdue follow-ups accumulate (follow-up overdue = high priority)", () => {
+    expect(crmFollowUpsDuePolicy(0).criticality).toBe("green");
+    expect(crmFollowUpsDuePolicy(1).criticality).toBe("yellow");
+    expect(crmFollowUpsDuePolicy(2).criticality).toBe("orange");
+    expect(crmFollowUpsDuePolicy(4).criticality).toBe("red");
+  });
+});
+
+describe("crmStalledLeadsPolicy", () => {
+  it("flags amber then red as stalled opportunities accumulate", () => {
+    expect(crmStalledLeadsPolicy(0).criticality).toBe("green");
+    expect(crmStalledLeadsPolicy(1).criticality).toBe("amber");
+    expect(crmStalledLeadsPolicy(3).criticality).toBe("red");
+  });
+});
+
+describe("criticalSocialAlertsPolicy", () => {
+  it("flags red once more than 2 unreviewed critical alerts exist", () => {
+    expect(criticalSocialAlertsPolicy(0).criticality).toBe("green");
+    expect(criticalSocialAlertsPolicy(1).criticality).toBe("amber");
+    expect(criticalSocialAlertsPolicy(3).criticality).toBe("red");
+  });
+});
+
+describe("socialProviderHealthPolicy", () => {
+  it("flags yellow only when neither X nor Facebook is configured", () => {
+    expect(socialProviderHealthPolicy(false, false).criticality).toBe("yellow");
+    expect(socialProviderHealthPolicy(true, false).criticality).toBe("green");
+    expect(socialProviderHealthPolicy(false, true).criticality).toBe("green");
+  });
+});
+
+// --- Executive Dashboard Redesign Sprint ED-R3 ---
+
+describe("calendarTodayPolicy", () => {
+  it("is green with no meetings today", () => {
+    expect(calendarTodayPolicy(0, false).criticality).toBe("green");
+  });
+
+  it("is elevated (yellow), not red, when a meeting starts within the hour", () => {
+    const result = calendarTodayPolicy(2, true);
+    expect(result.criticality).toBe("yellow");
+    expect(result.criticality).not.toBe("red");
+  });
+
+  it("stays green for a normal day with meetings but none imminent", () => {
+    expect(calendarTodayPolicy(3, false).criticality).toBe("green");
+  });
+});
+
+describe("upcomingMeetingsPolicy", () => {
+  it("is always informational (green), regardless of count", () => {
+    expect(upcomingMeetingsPolicy(0).criticality).toBe("green");
+    expect(upcomingMeetingsPolicy(10).criticality).toBe("green");
+  });
+});
+
+describe("financialBudgetThresholdsPolicy", () => {
+  it("is informational (green) regardless of count -- this tile just reports tracked-item volume", () => {
+    expect(financialBudgetThresholdsPolicy(0).criticality).toBe("green");
+    expect(financialBudgetThresholdsPolicy(5).criticality).toBe("green");
+  });
+
+  it("mentions manual tracking explicitly, never implying a bank connection", () => {
+    expect(financialBudgetThresholdsPolicy(3).rationale.toLowerCase()).toContain("manually tracked");
+  });
+});
+
+describe("financialBudgetOvershootPolicy", () => {
+  it("escalates to amber then red as overshoot count grows (budget overshoot = amber/red based on gap)", () => {
+    expect(financialBudgetOvershootPolicy(0).criticality).toBe("green");
+    expect(financialBudgetOvershootPolicy(1).criticality).toBe("amber");
+    expect(financialBudgetOvershootPolicy(2).criticality).toBe("red");
+  });
+});
+
+describe("financialAccountsBelowThresholdPolicy", () => {
+  it("escalates to amber then red as below-threshold accounts grow", () => {
+    expect(financialAccountsBelowThresholdPolicy(0).criticality).toBe("green");
+    expect(financialAccountsBelowThresholdPolicy(1).criticality).toBe("amber");
+    expect(financialAccountsBelowThresholdPolicy(2).criticality).toBe("red");
+  });
+
+  it("mentions manual tracking explicitly, never 'bank connected'", () => {
+    const rationale = financialAccountsBelowThresholdPolicy(1).rationale.toLowerCase();
+    expect(rationale).toContain("manually tracked");
+    expect(rationale).not.toContain("bank connected");
+  });
+});
+
+describe("financialAccountsActionablesPolicy", () => {
+  it("escalates priority by overdue age/count (due unresolved item = priority escalation by age)", () => {
+    expect(financialAccountsActionablesPolicy(0, 0).criticality).toBe("green");
+    expect(financialAccountsActionablesPolicy(2, 0).criticality).toBe("yellow");
+    expect(financialAccountsActionablesPolicy(2, 1).criticality).toBe("amber");
+    expect(financialAccountsActionablesPolicy(2, 2).criticality).toBe("red");
   });
 });

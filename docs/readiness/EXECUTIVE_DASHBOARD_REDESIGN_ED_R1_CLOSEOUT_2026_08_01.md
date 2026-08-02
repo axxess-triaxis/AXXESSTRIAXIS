@@ -3,6 +3,8 @@
 **Date**: 2026-08-01
 **Scope**: Priority x Criticality scoring engine, floating 3-tier layout, three stacked Urgent Attention bars, real-data wiring for what exists today, honest not-connected placeholders for what doesn't. Per the sprint prompt: **this closes the engine and Phase 1 layout only — the founder's full dashboard redesign is not being marked complete by this document.**
 
+**2026-08-01 update**: Sprint ED-R2 (see `EXECUTIVE_DASHBOARD_REDESIGN_ED_R2_CLOSEOUT_2026_08_01.md`) replaced 3 of the not-connected placeholders this closeout originally shipped (`mail-inbox`, `crm-leads-deals`, `social-alert-feed`) with real or honestly provider-gated tiles. The `crm-leads-deals` placeholder id no longer exists — it was split into three real tiles (`crm-open-leads`, `crm-follow-ups-due`, `crm-stalled-leads`). Everything else in this document (scoring engine, tier structure, urgent-bar mechanism) is unchanged and still accurate.
+
 ## Objective
 
 Correct the Executive Dashboard's structural inversion (~80% governance/admin-oriented, ~20% performance-oriented per direct founder screenshot review) by replacing the flat, hardcoded, unscored 661-line JSX stack in `DashboardSection.tsx` with a score-driven, 3-tier layout, per `docs/readiness/EXECUTIVE_DASHBOARD_REDESIGN_PLAN_2026_08_01.md`.

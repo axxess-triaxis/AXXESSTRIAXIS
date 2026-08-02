@@ -302,6 +302,56 @@ export interface AuditLog {
   createdAt: ISODateTime;
 }
 
+// Executive Dashboard Redesign Sprint ED-R2: minimal first-version CRM pipeline entity. A single
+// stage/status pair represents leads and opportunities together rather than separate lead/deal
+// entities -- see supabase/migrations/20260801120000_crm_leads.sql.
+export type CrmLeadStage = "new" | "qualifying" | "proposal" | "negotiation" | "won" | "lost";
+export type CrmLeadStatus = "open" | "stalled" | "won" | "lost";
+
+export interface CrmLead {
+  id: EntityId;
+  organizationId: EntityId;
+  stakeholderId?: EntityId;
+  title: string;
+  organizationName?: string;
+  contactName?: string;
+  stage: CrmLeadStage;
+  estimatedValue?: number;
+  currency?: string;
+  priority: PriorityLevel;
+  ownerUserId?: EntityId;
+  nextFollowUpAt?: ISODateTime;
+  status: CrmLeadStatus;
+  source?: string;
+  createdAt: ISODateTime;
+  updatedAt: ISODateTime;
+}
+
+// Executive Dashboard Redesign Sprint ED-R3: a MANUAL financial watchlist item -- not a bank feed.
+// No banking/payment provider integration exists in this codebase; this entity represents a
+// tenant's own manually-entered threshold, never live account data. See
+// supabase/migrations/20260801140000_financial_watch_items.sql.
+export type FinancialWatchCategory = "budget" | "bank_balance" | "accounts_actionable" | "other";
+export type FinancialWatchThresholdType = "below" | "above";
+export type FinancialWatchStatus = "open" | "resolved";
+
+export interface FinancialWatchItem {
+  id: EntityId;
+  organizationId: EntityId;
+  title: string;
+  category: FinancialWatchCategory;
+  thresholdType: FinancialWatchThresholdType;
+  thresholdAmount: number;
+  currentAmount?: number;
+  currency: string;
+  status: FinancialWatchStatus;
+  ownerUserId?: EntityId;
+  dueAt?: ISODateTime;
+  notes?: string;
+  createdAt: ISODateTime;
+  updatedAt: ISODateTime;
+}
+
 export type BetaFeedbackType = "Bug" | "Feature Request" | "Confusing Workflow" | "General Feedback";
 export type BetaFeedbackStatus = "new" | "triaged" | "in-review" | "resolved" | "closed";
 

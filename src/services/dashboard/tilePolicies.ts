@@ -94,3 +94,91 @@ export function socialAlertsProviderGatedPolicy(anyLiveProviderConfigured: boole
   if (anyLiveProviderConfigured) return { priority: 1, criticality: "green", rationale: "A social/RSS alert provider is connected." };
   return { priority: 2, criticality: "yellow", rationale: "Connect X or Facebook to enable live social alert ingestion." };
 }
+
+// --- Executive Dashboard Redesign Sprint ED-R2 ---
+
+// Per the ED-R2 sprint spec: count 0 = low; 1-2 = yellow/orange by age; 3-5 or older than 2 days =
+// amber; >5 or older than 5 days = red.
+export function mailNeedingReplyPolicy(needingReplyCount: number, oldestNeedingReplyDays: number | null): PolicyResult {
+  const age = oldestNeedingReplyDays ?? 0;
+  if (needingReplyCount === 0) return { priority: 1, criticality: "green", rationale: "No mail awaiting a reply decision." };
+  if (needingReplyCount > 5 || age > 5) {
+    return { priority: 5, criticality: "red", rationale: `${needingReplyCount} message(s) awaiting reply, oldest ${age} day(s) old.` };
+  }
+  if (needingReplyCount >= 3 || age > 2) {
+    return { priority: 4, criticality: "amber", rationale: `${needingReplyCount} message(s) awaiting reply, oldest ${age} day(s) old.` };
+  }
+  if (age > 1) return { priority: 3, criticality: "orange", rationale: `${needingReplyCount} message(s) awaiting reply, oldest ${age} day(s) old.` };
+  return { priority: 2, criticality: "yellow", rationale: `${needingReplyCount} message(s) awaiting reply.` };
+}
+
+// Open pipeline volume is informational, not itself a risk signal -- deliberately low/flat
+// severity regardless of count, distinct from the overdue/stalled policies below.
+export function openLeadsPolicy(openLeadsCount: number): PolicyResult {
+  if (openLeadsCount === 0) return { priority: 1, criticality: "green", rationale: "No open leads yet." };
+  return { priority: 1, criticality: "green", rationale: `${openLeadsCount} open lead(s) in the pipeline.` };
+}
+
+export function crmFollowUpsDuePolicy(dueCount: number): PolicyResult {
+  if (dueCount === 0) return { priority: 1, criticality: "green", rationale: "No follow-ups are overdue." };
+  if (dueCount === 1) return { priority: 3, criticality: "yellow", rationale: "1 follow-up is overdue." };
+  if (dueCount <= 3) return { priority: 4, criticality: "orange", rationale: `${dueCount} follow-ups are overdue.` };
+  return { priority: 5, criticality: "red", rationale: `${dueCount} follow-ups are overdue -- pipeline momentum at risk.` };
+}
+
+export function crmStalledLeadsPolicy(stalledCount: number): PolicyResult {
+  if (stalledCount === 0) return { priority: 1, criticality: "green", rationale: "No stalled opportunities." };
+  if (stalledCount <= 2) return { priority: 3, criticality: "amber", rationale: `${stalledCount} opportunity(ies) stalled.` };
+  return { priority: 4, criticality: "red", rationale: `${stalledCount} opportunities stalled -- pipeline health at risk.` };
+}
+
+export function criticalSocialAlertsPolicy(criticalCount: number): PolicyResult {
+  if (criticalCount === 0) return { priority: 1, criticality: "green", rationale: "No unreviewed critical social alerts." };
+  if (criticalCount <= 2) return { priority: 4, criticality: "amber", rationale: `${criticalCount} unreviewed critical alert(s).` };
+  return { priority: 5, criticality: "red", rationale: `${criticalCount} unreviewed critical alerts.` };
+}
+
+export function socialProviderHealthPolicy(xConfigured: boolean, facebookConfigured: boolean): PolicyResult {
+  if (xConfigured || facebookConfigured) return { priority: 1, criticality: "green", rationale: "At least one social monitoring provider is configured." };
+  return { priority: 2, criticality: "yellow", rationale: "No social monitoring provider credentials are configured." };
+}
+
+// --- Executive Dashboard Redesign Sprint ED-R3 ---
+
+// A meeting within the next hour is "elevated but not necessarily red" per the sprint spec -- a
+// timing prompt, not a risk signal.
+export function calendarTodayPolicy(todayCount: number, hasMeetingWithinHour: boolean): PolicyResult {
+  if (todayCount === 0) return { priority: 1, criticality: "green", rationale: "No meetings scheduled today." };
+  if (hasMeetingWithinHour) return { priority: 3, criticality: "yellow", rationale: `${todayCount} meeting(s) today, one starting within the hour.` };
+  return { priority: 1, criticality: "green", rationale: `${todayCount} meeting(s) scheduled today.` };
+}
+
+export function upcomingMeetingsPolicy(upcomingCount: number): PolicyResult {
+  return { priority: 1, criticality: "green", rationale: `${upcomingCount} meeting(s) scheduled in the next 7 days.` };
+}
+
+// Manually tracked, not bank-connected -- every rationale below says so explicitly, since this is
+// a self-reported watchlist, not live account data.
+export function financialBudgetThresholdsPolicy(count: number): PolicyResult {
+  if (count === 0) return { priority: 1, criticality: "green", rationale: "No budget items are being manually tracked." };
+  return { priority: 1, criticality: "green", rationale: `${count} budget item(s) manually tracked.` };
+}
+
+export function financialBudgetOvershootPolicy(overshootCount: number): PolicyResult {
+  if (overshootCount === 0) return { priority: 1, criticality: "green", rationale: "No manually tracked budget items are currently over threshold." };
+  if (overshootCount === 1) return { priority: 3, criticality: "amber", rationale: "1 manually tracked budget item is over threshold." };
+  return { priority: 4, criticality: "red", rationale: `${overshootCount} manually tracked budget items are over threshold.` };
+}
+
+export function financialAccountsBelowThresholdPolicy(belowCount: number): PolicyResult {
+  if (belowCount === 0) return { priority: 1, criticality: "green", rationale: "No manually tracked account balances are below threshold." };
+  if (belowCount === 1) return { priority: 4, criticality: "amber", rationale: "1 manually tracked account balance is below threshold." };
+  return { priority: 5, criticality: "red", rationale: `${belowCount} manually tracked account balances are below threshold.` };
+}
+
+export function financialAccountsActionablesPolicy(actionableCount: number, overdueCount: number): PolicyResult {
+  if (actionableCount === 0) return { priority: 1, criticality: "green", rationale: "No manually tracked accounts actionables." };
+  if (overdueCount === 0) return { priority: 2, criticality: "yellow", rationale: `${actionableCount} manually tracked accounts actionable(s).` };
+  if (overdueCount === 1) return { priority: 3, criticality: "amber", rationale: `${actionableCount} accounts actionable(s), 1 overdue.` };
+  return { priority: 4, criticality: "red", rationale: `${actionableCount} accounts actionable(s), ${overdueCount} overdue.` };
+}
