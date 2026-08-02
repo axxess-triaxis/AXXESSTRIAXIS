@@ -18,7 +18,7 @@ import { getProductivityPluginRegistry } from "../../services/integrations/plugi
 import { isAgenticGateEnabled, setAgenticGateEnabled } from "../../services/agentic/agenticGateToggle";
 import { BrandIcon } from "../../components/ui/BrandIcon";
 import { brandIcons } from "../../components/ui/brandIcons";
-import { Building2, Calendar, Check, CheckCircle2, CheckSquare, Cloud, Database, FileSignature, FileSpreadsheet, FileText, Github, HardDrive, IndianRupee, Kanban, Layers, ListTodo, MessageCircle, MessageSquare, Presentation, RotateCcw, Save, Send, Settings, ShieldCheck, Sparkles, UserPlus, Video, X, XCircle } from "lucide-react";
+import { Building2, Calendar, Check, CheckCircle2, CheckSquare, Cloud, Database, FileSignature, FileSpreadsheet, FileText, Github, HardDrive, IndianRupee, Kanban, Layers, ListTodo, MessageCircle, MessageSquare, Presentation, RotateCcw, Save, Send, Settings, ShieldCheck, Smartphone, Sparkles, UserPlus, Video, X, XCircle } from "lucide-react";
 
 // SA-3 (2026-07-29): "AI Configuration" removed entirely -- founder's own words, "I don't think
 // this tab is user relevant anymore with OpenRouter coming in" (routing is now a single unified
@@ -314,6 +314,135 @@ const departmentOptions = [
   "Administration",
 ];
 
+// A-84 (2026-08-02): lets an already-authenticated user attach a phone number to their EXISTING
+// account (Supabase's updateUser + verifyOtp type:"phone_change" flow, via
+// /api/auth/phone/link/{start,verify} -- see serverSession.ts's linkPhoneStartServerSide/
+// linkPhoneVerifyServerSide). This is the real fix for the tenant-identity-linking bug: once
+// linked here, a future phone-only sign-in for this number resolves to this same account instead
+// of creating a duplicate, tenant-less organization. Session-derived, no admin gate -- same "manage
+// my own account" pattern as the rest of ProfilePanel.
+function LinkedPhoneSection({ currentPhone }: { currentPhone?: string }) {
+  const [step, setStep] = useState<"idle" | "code">("idle");
+  const [phone, setPhone] = useState("");
+  const [code, setCode] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [toast, setToast] = useState<{ tone: "success" | "error" | "info"; message: string } | null>(null);
+
+  async function sendCode() {
+    const trimmed = phone.trim();
+    if (!trimmed) {
+      setToast({ tone: "error", message: "Enter a phone number in international format, e.g. +911234567890." });
+      return;
+    }
+    setBusy(true);
+    setToast(null);
+    try {
+      const response = await fetch("/api/auth/phone/link/start", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: trimmed }),
+      });
+      const body = await response.json().catch(() => ({} as { error?: string }));
+      if (!response.ok) {
+        setToast({ tone: "error", message: body.error ?? "Unable to send a verification code." });
+        return;
+      }
+      setStep("code");
+      setToast({ tone: "info", message: `Code sent to ${trimmed}.` });
+    } catch {
+      setToast({ tone: "error", message: "Unable to reach the server. Try again." });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function verifyCode() {
+    const trimmedCode = code.trim();
+    if (!trimmedCode) {
+      setToast({ tone: "error", message: "Enter the code you received." });
+      return;
+    }
+    setBusy(true);
+    setToast(null);
+    try {
+      const response = await fetch("/api/auth/phone/link/verify", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: phone.trim(), token: trimmedCode }),
+      });
+      const body = await response.json().catch(() => ({} as { error?: string }));
+      if (!response.ok) {
+        setToast({ tone: "error", message: body.error ?? "That code is invalid or has expired." });
+        return;
+      }
+      setToast({ tone: "success", message: "Phone number linked -- you can now sign in with it directly." });
+      setStep("idle");
+      setPhone("");
+      setCode("");
+    } catch {
+      setToast({ tone: "error", message: "Unable to reach the server. Try again." });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Card className="p-5">
+      <div className="mb-3 flex items-center gap-2">
+        <Smartphone size={15} className="text-[#8B1E2D]" />
+        <h3 className="text-sm font-semibold text-[#0F1117]">Linked sign-in methods</h3>
+      </div>
+      {currentPhone ? (
+        <p className="mb-3 text-xs text-[#5F6B73]">Phone sign-in is linked to <span className="font-semibold text-[#0F1117]">{currentPhone}</span>.</p>
+      ) : (
+        <p className="mb-3 text-xs leading-relaxed text-[#5F6B73]">
+          Link a phone number to sign in with it directly next time, instead of it being treated as a new account.
+        </p>
+      )}
+      {step === "code" ? (
+        <div className="flex gap-2">
+          <input
+            value={code}
+            onChange={(event) => setCode(event.target.value)}
+            inputMode="numeric"
+            placeholder="Enter code"
+            className="w-full rounded-lg border border-[rgba(0,0,0,0.12)] bg-white px-3 py-2 text-xs outline-none focus:border-[#8B1E2D]"
+          />
+          <button
+            type="button"
+            onClick={() => void verifyCode()}
+            disabled={busy}
+            className="flex-none rounded-lg bg-[#8B1E2D] px-3 py-2 text-xs font-semibold text-white hover:bg-[#7a1a27] disabled:opacity-60"
+          >
+            {busy ? "Verifying..." : "Verify"}
+          </button>
+        </div>
+      ) : (
+        <div className="flex gap-2">
+          <input
+            value={phone}
+            onChange={(event) => setPhone(event.target.value)}
+            type="tel"
+            placeholder="+91 XXXXX XXXXX"
+            className="w-full rounded-lg border border-[rgba(0,0,0,0.12)] bg-white px-3 py-2 text-xs outline-none focus:border-[#8B1E2D]"
+          />
+          <button
+            type="button"
+            onClick={() => void sendCode()}
+            disabled={busy}
+            className="flex-none rounded-lg border border-[rgba(0,0,0,0.12)] bg-white px-3 py-2 text-xs font-semibold text-[#0F1117] hover:bg-[#F8F9FA] disabled:opacity-60"
+          >
+            {busy ? "Sending..." : currentPhone ? "Link a different number" : "Send code"}
+          </button>
+        </div>
+      )}
+      {toast && <div className="mt-2"><InlineToast tone={toast.tone} message={toast.message} /></div>}
+    </Card>
+  );
+}
+
 function ProfilePanel() {
   const { session, updateProfile } = useAuth();
   const analytics = useAnalytics();
@@ -385,6 +514,7 @@ function ProfilePanel() {
             <Save size={13} /> Save Profile
           </button>
         </Card>
+        {session.source !== "mock-rbac" && <LinkedPhoneSection currentPhone={user.phone} />}
       </div>
 
       <Card className="p-5">

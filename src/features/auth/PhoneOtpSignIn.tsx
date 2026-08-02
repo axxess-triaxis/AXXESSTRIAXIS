@@ -4,7 +4,7 @@ import { Smartphone } from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-type Step = "phone" | "code";
+type Step = "phone" | "code" | "confirm-new";
 
 // Always shown, same "visible, honest about readiness" pattern as OAuthProviderButtons --
 // /api/auth/phone/start returns a clear "Phone sign-in is not enabled for this deployment."
@@ -68,12 +68,52 @@ export function PhoneOtpSignIn({ onError }: { onError: (message: string) => void
         onError(body.error ?? "That code is invalid or has expired.");
         return;
       }
-      router.push(body.user.needsOnboarding ? "/onboarding" : "/dashboard");
+      // A-84 (2026-08-02): a phone number not yet linked to an existing account always reports
+      // needsOnboarding:true, even for an existing tenant member signing in by phone for the
+      // first time -- Supabase resolves an unlinked phone-OTP verify to a distinct auth.users
+      // identity from their existing email/OAuth one (see docs/readiness/
+      // ACTIONABLES_READINESS_MATRIX.md A-84 for the full root cause). Auto-routing straight to
+      // onboarding risked silently creating a second, duplicate, tenant-less organization for
+      // someone who already has an account. This makes it an explicit choice instead of a silent
+      // redirect -- the real fix (linking a phone to an existing account from Settings) is
+      // separate, tracked work.
+      if (body.user.needsOnboarding) {
+        setStep("confirm-new");
+        return;
+      }
+      router.push("/dashboard");
     } catch {
       onError("Unable to verify that code right now.");
     } finally {
       setBusy(false);
     }
+  }
+
+  if (step === "confirm-new") {
+    return (
+      <div className="space-y-3 rounded-lg border border-[rgba(139,30,45,0.22)] bg-[#FBEFEF] p-3">
+        <p className="text-sm font-semibold text-[#0F1117]">We don&apos;t recognize this phone number yet</p>
+        <p className="text-xs leading-relaxed text-[#5F6B73]">
+          If you already have an AXXESS account, sign in with your email, Google, or Microsoft account above instead, then link this phone number from Settings so it works next time. Continuing here will start creating a brand-new organization.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => { setStep("phone"); setPhone(""); setCode(""); setInfo("Use email, Google, or Microsoft above to sign in to your existing account."); }}
+            className="rounded-lg border border-[rgba(0,0,0,0.12)] bg-white px-3 py-2 text-xs font-semibold text-[#0F1117] hover:bg-[#F8F9FA]"
+          >
+            Sign in a different way
+          </button>
+          <button
+            type="button"
+            onClick={() => router.push("/onboarding")}
+            className="rounded-lg bg-[#8B1E2D] px-3 py-2 text-xs font-semibold text-white hover:bg-[#7a1a27]"
+          >
+            I&apos;m new here, continue
+          </button>
+        </div>
+      </div>
+    );
   }
 
   if (step === "code") {
