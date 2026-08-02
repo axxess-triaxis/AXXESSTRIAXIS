@@ -26,6 +26,8 @@ function baseInput(overrides: Partial<DashboardSnapshotInput> = {}): DashboardSn
     calendarSignals: undefined,
     externalMeetingsSignals: undefined,
     financialWatchItems: undefined,
+    threadsSignals: undefined,
+    metaBusinessSignals: undefined,
     ...overrides,
   };
 }
@@ -272,5 +274,81 @@ describe("buildDashboardSnapshot -- financial watchlist signal (ED-R3)", () => {
     const tiles = buildDashboardSnapshot(baseInput({ financialWatchItems: undefined }));
     const byId = Object.fromEntries(tiles.map((tile) => [tile.id, tile]));
     expect(byId["accounts-below-threshold"].dataState).toBe("not-connected");
+  });
+});
+
+describe("Threads tiles (Tier 1, founder's explicit ask)", () => {
+  it("shows not-connected before the signal has loaded", () => {
+    const tiles = buildDashboardSnapshot(baseInput({ threadsSignals: undefined }));
+    const activity = tiles.find((tile) => tile.id === "threads-activity");
+    expect(activity?.tier).toBe(1);
+    expect(activity?.dataState).toBe("not-connected");
+  });
+
+  it("shows not-connected when Threads OAuth isn't connected for this tenant, distinct from 'loading'", () => {
+    const tiles = buildDashboardSnapshot(baseInput({
+      threadsSignals: { oauthConnected: false, recentPostCount: 0, openReplyCount: 0 },
+    }));
+    const activity = tiles.find((tile) => tile.id === "threads-activity");
+    expect(activity?.dataState).toBe("not-connected");
+    expect(activity?.detail).toContain("Connect Threads");
+  });
+
+  it("shows a genuine live empty state (not not-connected) for a connected tenant that has never synced", () => {
+    const tiles = buildDashboardSnapshot(baseInput({
+      threadsSignals: { oauthConnected: true, recentPostCount: 0, openReplyCount: 0 },
+    }));
+    const activity = tiles.find((tile) => tile.id === "threads-activity");
+    expect(activity?.dataState).toBe("empty");
+    expect(activity?.criticality).toBe("yellow");
+  });
+
+  it("scores real post/reply-backlog counts into the correct tier and criticality", () => {
+    const tiles = buildDashboardSnapshot(baseInput({
+      threadsSignals: { oauthConnected: true, recentPostCount: 4, openReplyCount: 5 },
+    }));
+    const activity = tiles.find((tile) => tile.id === "threads-activity");
+    const backlog = tiles.find((tile) => tile.id === "threads-reply-backlog");
+    expect(activity?.tier).toBe(1);
+    expect(activity?.value).toBe("4");
+    expect(activity?.criticality).toBe("green");
+    expect(activity?.dataState).toBe("live");
+    expect(backlog?.tier).toBe(1);
+    expect(backlog?.value).toBe("5");
+    expect(backlog?.criticality).toBe("amber");
+    expect(backlog?.dataState).toBe("live");
+  });
+});
+
+describe("Meta Business Suite tiles (Tier 2, operational)", () => {
+  it("shows not-connected before the signal has loaded", () => {
+    const tiles = buildDashboardSnapshot(baseInput({ metaBusinessSignals: undefined }));
+    const content = tiles.find((tile) => tile.id === "meta-business-content-activity");
+    expect(content?.tier).toBe(2);
+    expect(content?.dataState).toBe("not-connected");
+  });
+
+  it("shows not-connected when meta_business OAuth isn't connected for this tenant", () => {
+    const tiles = buildDashboardSnapshot(baseInput({
+      metaBusinessSignals: { oauthConnected: false, recentPostCount: 0, activeCampaignCount: 0, overBudgetCampaignCount: 0 },
+    }));
+    const campaigns = tiles.find((tile) => tile.id === "meta-business-campaign-health");
+    expect(campaigns?.dataState).toBe("not-connected");
+    expect(campaigns?.detail).toContain("Connect Meta Business Suite");
+  });
+
+  it("scores real content/campaign counts into Tier 2 with the correct criticality", () => {
+    const tiles = buildDashboardSnapshot(baseInput({
+      metaBusinessSignals: { oauthConnected: true, recentPostCount: 3, activeCampaignCount: 2, overBudgetCampaignCount: 1 },
+    }));
+    const content = tiles.find((tile) => tile.id === "meta-business-content-activity");
+    const campaigns = tiles.find((tile) => tile.id === "meta-business-campaign-health");
+    expect(content?.tier).toBe(2);
+    expect(content?.value).toBe("3");
+    expect(content?.dataState).toBe("live");
+    expect(campaigns?.tier).toBe(2);
+    expect(campaigns?.value).toBe("2");
+    expect(campaigns?.criticality).toBe("amber");
+    expect(campaigns?.dataState).toBe("live");
   });
 });

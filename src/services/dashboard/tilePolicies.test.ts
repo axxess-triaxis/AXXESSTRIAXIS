@@ -14,6 +14,8 @@ import {
   financialBudgetThresholdsPolicy,
   integrationHealthPolicy,
   mailNeedingReplyPolicy,
+  metaBusinessCampaignHealthPolicy,
+  metaBusinessContentActivityPolicy,
   openLeadsPolicy,
   overdueMeetingsPolicy,
   overdueTasksPolicy,
@@ -21,6 +23,8 @@ import {
   projectHealthPolicy,
   socialAlertsProviderGatedPolicy,
   socialProviderHealthPolicy,
+  threadsActivityPolicy,
+  threadsEngagementBacklogPolicy,
   upcomingMeetingsPolicy,
   workflowTimelineActivityPolicy,
 } from "./tilePolicies";
@@ -260,5 +264,36 @@ describe("financialAccountsActionablesPolicy", () => {
     expect(financialAccountsActionablesPolicy(2, 0).criticality).toBe("yellow");
     expect(financialAccountsActionablesPolicy(2, 1).criticality).toBe("amber");
     expect(financialAccountsActionablesPolicy(2, 2).criticality).toBe("red");
+  });
+});
+
+describe("threadsActivityPolicy", () => {
+  it("is green with any recent posting activity, yellow on silence", () => {
+    expect(threadsActivityPolicy(0).criticality).toBe("yellow");
+    expect(threadsActivityPolicy(3).criticality).toBe("green");
+  });
+});
+
+describe("threadsEngagementBacklogPolicy", () => {
+  it("escalates from green to yellow to amber as the open-reply backlog grows", () => {
+    expect(threadsEngagementBacklogPolicy(0).criticality).toBe("green");
+    expect(threadsEngagementBacklogPolicy(2).criticality).toBe("yellow");
+    expect(threadsEngagementBacklogPolicy(4).criticality).toBe("amber");
+  });
+});
+
+describe("metaBusinessContentActivityPolicy", () => {
+  it("is green with recent content activity, yellow on silence -- operational Tier 2 signal, never above yellow", () => {
+    expect(metaBusinessContentActivityPolicy(0).criticality).toBe("yellow");
+    expect(metaBusinessContentActivityPolicy(2).criticality).toBe("green");
+  });
+});
+
+describe("metaBusinessCampaignHealthPolicy", () => {
+  it("stays green with no campaigns or all campaigns within budget, escalates only on real over-budget campaigns", () => {
+    expect(metaBusinessCampaignHealthPolicy(0, 0).criticality).toBe("green");
+    expect(metaBusinessCampaignHealthPolicy(3, 0).criticality).toBe("green");
+    expect(metaBusinessCampaignHealthPolicy(3, 1).criticality).toBe("amber");
+    expect(metaBusinessCampaignHealthPolicy(3, 2).criticality).toBe("red");
   });
 });

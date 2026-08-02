@@ -31,11 +31,13 @@ import { useExternalMeetingsSignals } from "../../hooks/useExternalMeetingsSigna
 import { useFinancialWatchItems } from "../../hooks/useFinancialWatchItems";
 import { useLiveWorkspaceMetrics } from "../../hooks/useLiveWorkspaceMetrics";
 import { useMailDashboardSignals } from "../../hooks/useMailDashboardSignals";
+import { useMetaBusinessDashboardSignals } from "../../hooks/useMetaBusinessDashboardSignals";
 import { useOverdueMeetingCount } from "../../hooks/useOverdueMeetingCount";
 import { useOverdueTaskCount } from "../../hooks/useOverdueTaskCount";
 import { usePendingAiReviewCount } from "../../hooks/usePendingAiReviewCount";
 import { useSocialAlertsStatus } from "../../hooks/useSocialAlertsStatus";
 import { useSocialDashboardSignals } from "../../hooks/useSocialDashboardSignals";
+import { useThreadsDashboardSignals } from "../../hooks/useThreadsDashboardSignals";
 import { useWorkflowTimeline } from "../../hooks/useWorkflowTimeline";
 import { demoRecentActivity } from "../../lib/demo/demoActivity";
 import { demoInstitution } from "../../lib/demo/seedData";
@@ -224,6 +226,9 @@ export function DashboardSection() {
   const calendarSignals = useCalendarSignals(tenantScope, refreshToken);
   const externalMeetingsSignals = useExternalMeetingsSignals(tenantScope, refreshToken);
   const financialWatchItems = useFinancialWatchItems(tenantScope, refreshToken);
+  // Executive Dashboard Redesign Sprint ED-R4: Threads/Meta Business Suite signals.
+  const threadsSignals = useThreadsDashboardSignals(tenantScope, refreshToken);
+  const metaBusinessSignals = useMetaBusinessDashboardSignals(tenantScope, refreshToken);
 
   // Executive Dashboard Redesign Sprint ED-R1: the Priority x Criticality scored tile set, built
   // purely from data already fetched above -- no duplicate fetches. See
@@ -245,8 +250,10 @@ export function DashboardSection() {
       calendarSignals,
       externalMeetingsSignals,
       financialWatchItems,
+      threadsSignals,
+      metaBusinessSignals,
     }),
-    [liveMetrics, overdueTaskCount, overdueMeetingCount, pendingAiReviewCount, auditLogCount, socialAlertsStatus.anyLiveProviderConfigured, workflowTimeline.timeline.length, projects, mailSignals, crmLeads, socialSignals, calendarSignals, externalMeetingsSignals, financialWatchItems],
+    [liveMetrics, overdueTaskCount, overdueMeetingCount, pendingAiReviewCount, auditLogCount, socialAlertsStatus.anyLiveProviderConfigured, workflowTimeline.timeline.length, projects, mailSignals, crmLeads, socialSignals, calendarSignals, externalMeetingsSignals, financialWatchItems, threadsSignals, metaBusinessSignals],
   );
 
   // Real refresh: drops this tenant's cached metrics entry so the next fetch is fresh, then bumps
