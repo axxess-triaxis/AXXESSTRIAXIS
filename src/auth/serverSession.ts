@@ -20,6 +20,9 @@ type SupabasePasswordResponse = {
   user: {
     id: string;
     email?: string;
+    // Populated once a phone number has been linked to this identity (see
+    // linkPhoneStartServerSide/linkPhoneVerifyServerSide) -- absent otherwise.
+    phone?: string;
     user_metadata?: Record<string, unknown>;
     app_metadata?: Record<string, unknown>;
   };
@@ -121,7 +124,12 @@ async function resolveUser(accessToken: string, authUser: SupabasePasswordRespon
     accessToken,
   );
 
-  return rows?.[0] ? userContextFromSupabaseRow(rows[0]) : userContextFromAuthUser(authUser);
+  // A-84 (2026-08-02): a linked phone number lives only on the Supabase Auth user object (no
+  // public.users.phone column -- Supabase's own auth.users.phone is the single source of truth,
+  // see linkPhoneStartServerSide/linkPhoneVerifyServerSide's header comment), so it must be
+  // merged in here regardless of which branch resolved the rest of the UserContext.
+  const user = rows?.[0] ? userContextFromSupabaseRow(rows[0]) : userContextFromAuthUser(authUser);
+  return authUser.phone ? { ...user, phone: authUser.phone } : user;
 }
 
 export async function signInServerSide(email: string, password: string): Promise<ServerSession> {
@@ -163,6 +171,36 @@ export async function verifyPhoneOtpServerSide(phone: string, token: string): Pr
   await setServerAuthCookies(payload.access_token, payload.refresh_token, payload.expires_in);
   await establishSessionAnchor();
   return { accessToken: payload.access_token, refreshToken: payload.refresh_token, user };
+}
+
+// A-84 (2026-08-02): the missing "authenticated link" half of phone auth. The existing
+// verifyPhoneOtpServerSide above is Supabase's unauthenticated *sign-in* OTP flow
+// (POST /auth/v1/verify {type:"sms"}), which always resolves/creates a phone-keyed auth.users
+// identity distinct from any existing email/OAuth one for the same human -- that's the root cause
+// of A-84 (see ACTIONABLES_READINESS_MATRIX.md). Supabase's documented, correct mechanism for
+// attaching a phone number to an ALREADY-authenticated user's EXISTING identity is
+// updateUser({phone}) followed by verifyOtp({type:"phone_change"}) -- both calls carry the
+// caller's own access token (same pattern as establishServerSessionFromOAuthTokens's
+// authenticated GET /auth/v1/user call), and Supabase writes the phone directly onto that same
+// auth.users row rather than creating a new one. Once linked this way, resolveUser()'s existing
+// id-based lookup already works correctly for a later phone sign-in with zero further changes.
+export async function linkPhoneStartServerSide(accessToken: string, phone: string): Promise<void> {
+  await supabaseAuthRequest("user", {
+    method: "PUT",
+    body: JSON.stringify({ phone }),
+  }, accessToken);
+}
+
+// Supabase enforces phone uniqueness on this call and throws a real, specific error (surfaced to
+// the caller, never swallowed) if the phone number already belongs to a different Supabase user --
+// e.g. a stray identity from an earlier unauthenticated phone sign-in attempt with the same
+// number, which must be cleaned up (Supabase Dashboard) before it can be linked here.
+export async function linkPhoneVerifyServerSide(accessToken: string, phone: string, token: string): Promise<UserContext> {
+  const payload = await supabaseAuthRequest<SupabasePasswordResponse>("verify", {
+    method: "POST",
+    body: JSON.stringify({ type: "phone_change", phone, token }),
+  }, accessToken);
+  return resolveUser(accessToken, payload.user);
 }
 
 async function refreshServerSession(refreshToken: string) {

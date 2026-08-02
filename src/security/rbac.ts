@@ -12,6 +12,10 @@ export type UserContext = {
   department?: string;
   title?: string;
   timezone?: string;
+  // A-84 (2026-08-02): the phone number linked to this Supabase Auth identity, if any (via
+  // linkPhoneStartServerSide/linkPhoneVerifyServerSide) -- read directly from Supabase's own user
+  // object, not a separate public.users column. Absent if no phone has been linked.
+  phone?: string;
   // True for a real, Supabase-authenticated identity that has not yet completed organization
   // provisioning (no corresponding public.users row exists yet). Callers must route this user to
   // /onboarding rather than any page that queries live repositories by organizationId -- it is not
