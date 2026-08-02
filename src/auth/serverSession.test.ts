@@ -145,4 +145,54 @@ describe("serverSession absolute session cap", () => {
     expect(store.get(refreshTokenCookieName)?.value).toBe("already-rotated-refresh");
     expect(store.get(sessionAnchorCookieName)?.value).toBeDefined();
   });
+
+  // A-84 (2026-08-02): authenticated phone-linking -- attaches a phone number to an ALREADY
+  // signed-in user's EXISTING identity (updateUser + verifyOtp type:"phone_change"), distinct
+  // from verifyPhoneOtpServerSide's unauthenticated *sign-in* OTP flow, which is the root cause
+  // of the tenant-identity-linking bug this fixes.
+  describe("linkPhoneStartServerSide / linkPhoneVerifyServerSide", () => {
+    it("calls PUT /auth/v1/user with the phone number, authenticated with the caller's own access token", async () => {
+      const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
+        if (url.endsWith("/auth/v1/user") && init?.method === "PUT") {
+          expect((init.headers as Record<string, string>).Authorization).toBe("Bearer access-1");
+          expect(JSON.parse(String(init.body))).toEqual({ phone: "+911234567890" });
+          return jsonResponse({});
+        }
+        throw new Error(`Unexpected fetch: ${url}`);
+      });
+      vi.stubGlobal("fetch", fetchMock);
+
+      const { linkPhoneStartServerSide } = await import("./serverSession");
+      await linkPhoneStartServerSide("access-1", "+911234567890");
+      expect(fetchMock).toHaveBeenCalledOnce();
+    });
+
+    it("verifies with type:'phone_change' (not 'sms') and resolves the SAME existing user, since Supabase attaches the phone to the caller's existing auth.users row rather than creating a new one", async () => {
+      const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
+        if (url.endsWith("/auth/v1/verify")) {
+          expect(JSON.parse(String(init?.body))).toEqual({ type: "phone_change", phone: "+911234567890", token: "123456" });
+          return jsonResponse({ access_token: "access-1", refresh_token: "refresh-1", user: { ...authUser, phone: "+911234567890" } });
+        }
+        if (url.includes("/rest/v1/users")) {
+          return jsonResponse([{ id: "user-1", organization_id: "org-1", email: "founder@axxess.dev", display_name: "Founder", avatar_initials: "FO", role: "Organization Admin" }]);
+        }
+        throw new Error(`Unexpected fetch: ${url}`);
+      });
+      vi.stubGlobal("fetch", fetchMock);
+
+      const { linkPhoneVerifyServerSide } = await import("./serverSession");
+      const user = await linkPhoneVerifyServerSide("access-1", "+911234567890", "123456");
+
+      expect(user.id).toBe("user-1");
+      expect(user.organizationId).toBe("org-1");
+      expect(user.needsOnboarding).toBeUndefined();
+    });
+
+    it("surfaces Supabase's real 'phone already belongs to another user' error rather than swallowing it", async () => {
+      vi.stubGlobal("fetch", vi.fn(async () => jsonResponse({ error_code: "phone_exists", msg: "A user with this phone number already exists" }, 422)));
+
+      const { linkPhoneVerifyServerSide } = await import("./serverSession");
+      await expect(linkPhoneVerifyServerSide("access-1", "+911234567890", "123456")).rejects.toThrow("A user with this phone number already exists");
+    });
+  });
 });

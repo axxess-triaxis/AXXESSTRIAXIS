@@ -4,6 +4,8 @@ import { isRoleName, type UserContext } from "../security/rbac";
 type SupabaseAuthUser = {
   id: string;
   email?: string;
+  // A-84 (2026-08-02): populated once a phone number has been linked to this identity.
+  phone?: string;
   user_metadata?: Record<string, unknown>;
   app_metadata?: Record<string, unknown>;
 };
@@ -68,6 +70,7 @@ export function userContextFromAuthUser(authUser: SupabaseAuthUser): UserContext
     needsOnboarding: !organizationId,
     role: normalizeRole(readMetadataString(metadata, "role")),
     email,
+    phone: authUser.phone || undefined,
     displayName,
     avatarInitials: readMetadataString(metadata, "avatar_initials") ?? generatedInitials,
   };
