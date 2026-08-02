@@ -104,6 +104,26 @@ export async function listWhatsAppBusinessEventsSince(scope: TenantScope, since:
   return rows.map(fromRow);
 }
 
+type IntegrationConnectionLookupRow = { id: string; organization_id: string };
+
+// Meta's webhook subscription is configured once at the App level, not per tenant -- every
+// connected WABA delivers to the same URL, carrying only Meta's own phone_number_id, never our
+// organization_id. This resolves the tenant by the phone number the tenant registered themselves
+// (see the phone-number settings route), stored in integration_connections.metadata (no schema
+// change needed -- metadata is already schemaless per-provider). Returns undefined, never a guess,
+// if no tenant has registered this phone_number_id yet.
+export async function findWhatsAppConnectionByPhoneNumberId(wabaPhoneNumberId: string): Promise<{ id: EntityId; organizationId: EntityId } | undefined> {
+  if (!isSupabaseAdminConfigured()) return undefined;
+  const query = new URLSearchParams({
+    provider_id: "eq.whatsapp_business",
+    "metadata->>wabaPhoneNumberId": `eq.${wabaPhoneNumberId}`,
+    select: "id,organization_id",
+    limit: "1",
+  });
+  const rows = await supabaseAdminRest<IntegrationConnectionLookupRow[]>("integration_connections", { query }).catch(() => []);
+  return rows?.[0] ? { id: rows[0].id, organizationId: rows[0].organization_id } : undefined;
+}
+
 export async function acknowledgeWhatsAppBusinessEvent(scope: TenantScope, eventId: EntityId): Promise<WhatsAppBusinessEvent | undefined> {
   if (!isSupabaseAdminConfigured()) return undefined;
   const query = new URLSearchParams({
