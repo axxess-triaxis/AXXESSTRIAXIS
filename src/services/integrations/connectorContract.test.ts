@@ -117,6 +117,39 @@ describe("connector contract", () => {
     expect(xUrl).toContain("code_challenge_method=S256");
   });
 
+  it("exposes Threads and Meta Business Suite contracts, distinct credential pairs (2026-08-02)", () => {
+    // Threads uses its own THREADS_APP_ID, distinct from the shared Meta App backing
+    // whatsapp_business/meta_business -- confirmed via the founder's own Threads app-ID screenshot.
+    expect(getConnectorContract("threads")?.authorizationUrl).toBe("https://threads.net/oauth/authorize");
+    expect(getConnectorContract("threads")?.tokenUrl).toBe("https://graph.threads.net/oauth/access_token");
+    expect(getConnectorContract("threads")?.requiredScopes).toContain("threads_content_publish");
+
+    // meta_business reuses the same Graph API app as whatsapp_business (same authorize/token URLs).
+    expect(getConnectorContract("meta_business")?.authorizationUrl).toBe(getConnectorContract("whatsapp_business")?.authorizationUrl);
+    expect(getConnectorContract("meta_business")?.tokenUrl).toBe(getConnectorContract("whatsapp_business")?.tokenUrl);
+    expect(getConnectorContract("meta_business")?.requiredScopes).toEqual(
+      expect.arrayContaining(["business_management", "pages_manage_posts", "instagram_content_publish", "ads_management"]),
+    );
+  });
+
+  it("builds Threads and Meta Business Suite OAuth URLs using their own client id env vars", () => {
+    const env = {
+      NODE_ENV: "test",
+      THREADS_APP_ID: "threads-client",
+      META_APP_ID: "meta-client",
+      NEXT_PUBLIC_APP_URL: "https://app.axxess.local",
+    } as unknown as NodeJS.ProcessEnv;
+
+    const threadsUrl = buildConnectorOAuthUrl("threads", "state-threads", env);
+    expect(threadsUrl).toContain("client_id=threads-client");
+    expect(threadsUrl).toContain("provider%3Dthreads");
+    expect(threadsUrl).not.toContain("access_type");
+
+    const metaBusinessUrl = buildConnectorOAuthUrl("meta_business", "state-meta", env);
+    expect(metaBusinessUrl).toContain("client_id=meta-client");
+    expect(metaBusinessUrl).toContain("provider%3Dmeta_business");
+  });
+
   it("previews selected emails before creating workspace records", () => {
     const preview = previewSelectedEmailImport({
       providerId: "gmail",

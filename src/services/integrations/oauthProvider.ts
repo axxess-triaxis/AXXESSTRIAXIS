@@ -81,6 +81,8 @@ const oauthClientEnvVars: Record<ConnectorProviderId, { clientId: string; client
   google_slides: { clientId: "GOOGLE_CLIENT_ID", clientSecret: "GOOGLE_CLIENT_SECRET" },
   whatsapp_business: { clientId: "META_APP_ID", clientSecret: "META_APP_SECRET" },
   x_twitter: { clientId: "X_CLIENT_ID", clientSecret: "X_CLIENT_SECRET" },
+  threads: { clientId: "THREADS_APP_ID", clientSecret: "THREADS_APP_SECRET" },
+  meta_business: { clientId: "META_APP_ID", clientSecret: "META_APP_SECRET" },
 };
 
 export function generatePkceVerifier() {
