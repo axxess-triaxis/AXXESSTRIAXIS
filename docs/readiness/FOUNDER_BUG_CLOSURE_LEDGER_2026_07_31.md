@@ -6,11 +6,11 @@
 
 ## Headline answer to "does anything actually close"
 
-**65 distinct founder-reported defects** across 10 days. After the founder's 2026-08-01 review pass:
+**66 distinct founder-reported defects** across 10 days (65 from the original 2026-08-01 review pass, plus #66 below, a same-day regression from item #64's own fix). After the founder's 2026-08-01 review pass:
 
 | Status | Count | Meaning |
 |---|---:|---|
-| **Resolved (repo-verified and/or founder-confirmed live)** | **~50** | Real fix, real evidence, and in most cases the founder's own direct confirmation |
+| **Resolved (repo-verified and/or founder-confirmed live)** | **~51** | Real fix, real evidence, and in most cases the founder's own direct confirmation |
 | **Partial** | **3** | A-41 (90%), Golden Path checklist ticking (50%), OpenAI/RAG answer synthesis (80%, live walkthrough sign-off pending) |
 | **Open — no fix exists / still broken on live** | **7** | Meeting scheduling save, ZIP/MP4 upload, A-29 (Security tab), A-30 (permission schema **still visible on live**), A-35 (feedback still not routing to mail), A-67 (invalid service-role JWT) |
 | **Blocked — SMTP/email delivery (single root cause, multiple symptoms)** | **~5** | See callout below — this is the single largest concentration of remaining defects |
@@ -123,6 +123,10 @@ Founder: "almost entirely irrelevant/placeholder" at the time. 13 items (A-42 th
 63. **Document upload fails with a generic error on a real PDF** — root cause: Vercel's ~4.5MB serverless body limit silently exceeded. Rebuilt as chunked upload. **Founder: 100% resolved — large document upload confirmed working.**
 64. **Stale-session auto-continue, final root-cause and fix** — founder: "0/100 incident acceptability." Same defect family as #19/#32. Fixed with a non-renewing 24h absolute session cap + focus/visibility re-validation. Full suite green (826/826), deployed to production 2026-07-31. **Founder: Resolved / CLOSED.**
 65. **A-79: AI outputs ended at passive text, dead "Create task from answer" link** — two-step actionables follow-through with a 5-signal gate. Built, tested (853/853), deployed to production 2026-07-31. **Founder: Resolved.**
+
+### 2026-08-01 — regression introduced by item #64's own fix
+
+66. **Post-login, clicking any workspace immediately logs the user out to the Sign In page** — founder report: "New issue... Given the severity (this is actively breaking the app for logged-in users right now)... Immediately as user comfort and trust is most important and this is a major hiccup." A direct regression from item #64's fix, not a new unrelated defect: item #64 added a focus/visibility-change revalidation effect in `AuthProvider.tsx` to catch already-open tabs whose session was revoked server-side. That effect fired an extra `/api/auth/session` call on tab focus/navigation, racing against a page's own normal parallel data-fetch calls. Supabase refresh tokens are single-use (rotate on every use): when concurrent requests both attempted to refresh a near-expiry access token, the losing request's now-already-rotated refresh token failed, and `getServerAuthSession`'s catch-all error handler called `clearServerAuthCookies()` — destructively wiping cookies for the whole browser, including the tokens the winning request had just legitimately refreshed. **Root-caused via real production evidence** (`vercel logs`: a 200 on `/api/auth/session` followed ~2 seconds later by 13 simultaneous 401s from one page's own parallel data-fetch burst). Fixed by (1) removing the focus/visibility revalidation effect entirely — it was always a secondary mechanism; item #64's actual security fix (the 24h absolute session anchor + the `/auth` real-vs-demo split) does not depend on it — and (2) making `getServerAuthSession`'s refresh-failure path fall through to a plain `null` for that one request instead of clearing cookies, so a losing request never destroys a sibling request's valid session. Commit `d1da9b3` ("fix(auth): stop concurrent refresh-token race from logging users out"). Verified: full suite green, production build clean, deployed to production 2026-08-01 (`readyState: READY`), live site re-checked reachable post-deploy with a clean sign-in page and no console errors. **Founder: Resolved / CLOSED** — per explicit founder instruction to note this issue closed in the relevant debugging docs.
 
 ## What genuinely remains open
 
