@@ -351,7 +351,12 @@ const oauthClientIdEnvVar: Record<ConnectorProviderId, string> = {
   google_sheets: "GOOGLE_CLIENT_ID",
   google_docs: "GOOGLE_CLIENT_ID",
   google_slides: "GOOGLE_CLIENT_ID",
-  whatsapp_business: "WHATSAPP_BUSINESS_CLIENT_ID",
+  // Shared Meta App credentials (client ID) -- one Meta App backs WhatsApp Business today and the
+  // full Meta Business Suite (Pages/Instagram/Ads/community engagement) planned next, same pattern
+  // as GOOGLE_CLIENT_ID being shared across every Google-based connector above. Deliberately not
+  // WHATSAPP_BUSINESS_CLIENT_ID -- founder-directed naming, matching what socialAlerts.ts already
+  // expects for the same Meta App.
+  whatsapp_business: "META_APP_ID",
   x_twitter: "X_CLIENT_ID",
 };
 

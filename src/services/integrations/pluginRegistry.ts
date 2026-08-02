@@ -26,7 +26,7 @@ const envMap: Record<string, string> = {
   teams: "MICROSOFT_CLIENT_ID",
   slack: "SLACK_CLIENT_ID",
   calendly: "CALENDLY_CLIENT_ID",
-  whatsapp_business: "WHATSAPP_BUSINESS_CLIENT_ID",
+  whatsapp_business: "META_APP_ID",
   notion: "NOTION_CLIENT_ID",
   jira: "JIRA_CLIENT_ID",
   trello: "TRELLO_API_KEY",

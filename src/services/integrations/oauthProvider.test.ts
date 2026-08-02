@@ -167,7 +167,7 @@ describe("OAuth provider flow", () => {
     const emptyEnv = { NEXT_PUBLIC_APP_URL: "https://app.axxess.test" } as unknown as NodeJS.ProcessEnv;
     expect(getOAuthProviderConfiguration("linear", emptyEnv).missing).toContain("LINEAR_CLIENT_ID");
     expect(getOAuthProviderConfiguration("github", emptyEnv).missing).toContain("GITHUB_CLIENT_ID");
-    expect(getOAuthProviderConfiguration("whatsapp_business", emptyEnv).missing).toContain("WHATSAPP_BUSINESS_CLIENT_ID");
+    expect(getOAuthProviderConfiguration("whatsapp_business", emptyEnv).missing).toContain("META_APP_ID");
     expect(getOAuthProviderConfiguration("x_twitter", emptyEnv).missing).toContain("X_CLIENT_ID");
   });
 
