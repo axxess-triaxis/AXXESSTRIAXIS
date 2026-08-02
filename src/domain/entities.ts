@@ -352,6 +352,110 @@ export interface FinancialWatchItem {
   updatedAt: ISODateTime;
 }
 
+// MC-2 (2026-08-02): Meta Business Suite + Threads + WhatsApp Live Ops. See
+// supabase/migrations/20260802120000_meta_threads_whatsapp_events.sql for the backing tables.
+export type WhatsAppEventType = "message_inbound" | "message_status" | "call" | "system";
+export type WhatsAppMessageStatus = "sent" | "delivered" | "read" | "failed" | "received";
+export type WhatsAppEventDirection = "inbound" | "outbound";
+
+export interface WhatsAppBusinessEvent {
+  id: EntityId;
+  organizationId: EntityId;
+  connectionId?: EntityId;
+  eventType: WhatsAppEventType;
+  wabaPhoneNumberId?: string;
+  waMessageId?: string;
+  direction?: WhatsAppEventDirection;
+  fromNumber?: string;
+  toNumber?: string;
+  messageType?: string;
+  messageStatus?: WhatsAppMessageStatus;
+  callStatus?: string;
+  payload: Record<string, unknown>;
+  receivedAt: ISODateTime;
+  acknowledgedAt?: ISODateTime;
+  acknowledgedBy?: EntityId;
+  createdAt: ISODateTime;
+}
+
+export type SocialPlatformProviderId = "threads" | "meta_business" | "x_twitter" | "linkedin";
+export type SocialPlatformSurface = "facebook_page" | "instagram" | "threads" | "x" | "linkedin";
+export type PublishedContentType = "text" | "image" | "video" | "carousel" | "reel" | "link";
+export type PublishedContentStatus = "draft" | "scheduled" | "published" | "failed";
+
+export interface PublishedContentItem {
+  id: EntityId;
+  organizationId: EntityId;
+  providerId: SocialPlatformProviderId;
+  connectionId?: EntityId;
+  platformSurface: SocialPlatformSurface;
+  externalPostId?: string;
+  contentType: PublishedContentType;
+  caption?: string;
+  mediaUrls: string[];
+  status: PublishedContentStatus;
+  scheduledAt?: ISODateTime;
+  publishedAt?: ISODateTime;
+  permalink?: string;
+  likeCount: number;
+  commentCount: number;
+  shareCount: number;
+  impressionCount: number;
+  metadata: Record<string, unknown>;
+  createdBy?: EntityId;
+  createdAt: ISODateTime;
+  updatedAt: ISODateTime;
+}
+
+export type CampaignStatus = "draft" | "active" | "paused" | "completed" | "archived";
+
+export interface CampaignPromotion {
+  id: EntityId;
+  organizationId: EntityId;
+  providerId: SocialPlatformProviderId;
+  connectionId?: EntityId;
+  externalCampaignId?: string;
+  name: string;
+  objective?: string;
+  status: CampaignStatus;
+  budgetAmount?: number;
+  budgetCurrency: string;
+  spendAmount: number;
+  startAt?: ISODateTime;
+  endAt?: ISODateTime;
+  reachCount: number;
+  clickCount: number;
+  conversionCount: number;
+  metadata: Record<string, unknown>;
+  createdBy?: EntityId;
+  createdAt: ISODateTime;
+  updatedAt: ISODateTime;
+}
+
+export type CommunityEngagementType = "comment" | "dm" | "mention" | "reply";
+export type CommunityEngagementStatus = "open" | "replied" | "dismissed";
+
+export interface CommunityEngagementItem {
+  id: EntityId;
+  organizationId: EntityId;
+  providerId: SocialPlatformProviderId;
+  connectionId?: EntityId;
+  platformSurface: SocialPlatformSurface;
+  engagementType: CommunityEngagementType;
+  externalEngagementId?: string;
+  relatedContentId?: EntityId;
+  authorHandle?: string;
+  authorDisplayName?: string;
+  bodyText?: string;
+  sentiment: "positive" | "neutral" | "negative";
+  status: CommunityEngagementStatus;
+  receivedAt: ISODateTime;
+  repliedAt?: ISODateTime;
+  repliedBy?: EntityId;
+  metadata: Record<string, unknown>;
+  createdAt: ISODateTime;
+}
+
 export type BetaFeedbackType = "Bug" | "Feature Request" | "Confusing Workflow" | "General Feedback";
 export type BetaFeedbackStatus = "new" | "triaged" | "in-review" | "resolved" | "closed";
 
