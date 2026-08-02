@@ -1,6 +1,6 @@
 import { extractKeywords, summarizeText } from "../nlp/localNlp";
 
-export type ConnectorProviderId = "gmail" | "microsoft" | "slack" | "calendly" | "airtable" | "hubspot" | "notion" | "google_calendar" | "zoom" | "teams" | "google_drive" | "linear" | "github" | "google_sheets" | "whatsapp_business" | "google_docs" | "google_slides" | "x_twitter";
+export type ConnectorProviderId = "gmail" | "microsoft" | "slack" | "calendly" | "airtable" | "hubspot" | "notion" | "google_calendar" | "zoom" | "teams" | "google_drive" | "linear" | "github" | "google_sheets" | "whatsapp_business" | "google_docs" | "google_slides" | "x_twitter" | "threads" | "meta_business";
 export type ConnectorStatus = "provider_gated" | "configured" | "connected" | "paused" | "error" | "revoked";
 
 export type ConnectorContract = {
@@ -314,6 +314,47 @@ const connectorContracts: Record<ConnectorProviderId, ConnectorContract> = {
     requiresPkce: true,
     auditEvents: ["connector.x_twitter.oauth.started", "connector.x_twitter.oauth.connected", "connector.x_twitter.post.published"],
   },
+  // Threads uses its own, distinct Meta Developer app credentials (THREADS_APP_ID/SECRET) --
+  // separate from the Meta App backing whatsapp_business/meta_business below, confirmed via the
+  // founder's own Threads app-ID panel screenshot. Authorize domain (threads.net) and token domain
+  // (graph.threads.net) differ, same pattern already proven working by whatsapp_business's
+  // www.facebook.com/graph.facebook.com split -- no engine change needed. NOTE: exact scope strings
+  // not independently verified against live Threads API docs -- same honesty flag as Zoom's scopes
+  // above; confirm before this goes live for a real tenant.
+  threads: {
+    providerId: "threads",
+    displayName: "Threads",
+    category: "social",
+    authType: "oauth2",
+    authorizationUrl: "https://threads.net/oauth/authorize",
+    tokenUrl: "https://graph.threads.net/oauth/access_token",
+    requiredScopes: ["threads_basic", "threads_content_publish", "threads_manage_replies", "threads_read_replies", "threads_manage_insights"],
+    webhookSupported: false,
+    tenantOwned: true,
+    auditEvents: ["connector.threads.oauth.started", "connector.threads.oauth.connected", "connector.threads.content.synced"],
+  },
+  // Meta Business Suite: business assets, Pages/Instagram content publishing, Ads Manager
+  // campaigns/promotions, and community engagement -- founder-confirmed standing requirement,
+  // distinct from whatsapp_business's narrower messaging-only scope. Reuses the SAME Meta App
+  // (META_APP_ID/SECRET) as whatsapp_business, per this file's existing oauthClientIdEnvVar
+  // comment anticipating exactly this connector. Most of these scopes (pages_manage_posts,
+  // ads_management, instagram_content_publish) require Meta App Review approval before any tenant
+  // beyond Meta-approved Test Users can use them, and a verified Meta Business Manager -- same
+  // "contract alone does not make this usable in production" caveat as whatsapp_business above.
+  // webhookSupported is true because Meta does support Page/Instagram webhooks technically, but no
+  // receiver is built for this provider yet -- do not infer live webhook delivery from this flag.
+  meta_business: {
+    providerId: "meta_business",
+    displayName: "Meta Business Suite",
+    category: "social",
+    authType: "oauth2",
+    authorizationUrl: "https://www.facebook.com/v19.0/dialog/oauth",
+    tokenUrl: "https://graph.facebook.com/v19.0/oauth/access_token",
+    requiredScopes: ["business_management", "pages_show_list", "pages_read_engagement", "pages_manage_posts", "pages_manage_engagement", "instagram_basic", "instagram_content_publish", "instagram_manage_comments", "ads_management", "ads_read"],
+    webhookSupported: true,
+    tenantOwned: true,
+    auditEvents: ["connector.meta_business.oauth.started", "connector.meta_business.oauth.connected", "connector.meta_business.content.synced", "connector.meta_business.campaign.synced"],
+  },
 };
 
 function sentenceCandidates(text: string, match: RegExp) {
@@ -358,6 +399,10 @@ const oauthClientIdEnvVar: Record<ConnectorProviderId, string> = {
   // expects for the same Meta App.
   whatsapp_business: "META_APP_ID",
   x_twitter: "X_CLIENT_ID",
+  // Threads has its own, distinct Meta Developer app -- not the same META_APP_ID as
+  // whatsapp_business/meta_business. See the threads contract comment above.
+  threads: "THREADS_APP_ID",
+  meta_business: "META_APP_ID",
 };
 
 export function buildConnectorOAuthUrl(
