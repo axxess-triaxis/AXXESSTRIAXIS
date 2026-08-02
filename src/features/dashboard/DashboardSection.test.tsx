@@ -229,9 +229,9 @@ describe("DashboardSection (Executive Dashboard Redesign Sprint ED-R1)", () => {
     expect(screen.getByText(/Tier 3 · Compliance, audit, governance/)).toBeInTheDocument();
   });
 
-  it("shows an honest 'Not connected yet' tile for CRM leads/deals rather than fabricated data (live/demo separation)", async () => {
+  it("shows an honest 'Not connected yet' tile for CRM open leads rather than fabricated data (live/demo separation)", async () => {
     await renderDashboard();
-    expect(await screen.findByText("CRM leads / deals")).toBeInTheDocument();
+    expect(await screen.findByText("Open leads")).toBeInTheDocument();
     expect(screen.getAllByText("Not connected yet").length).toBeGreaterThan(0);
   });
 
