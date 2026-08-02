@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { PostHogSessionReplayInit } from "../services/analytics/PostHogSessionReplayInit";
@@ -37,11 +38,10 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <head>
-        <script src="https://www.vexo.co/analytics.js" defer></script>
-      </head>
       <body>
         {children}
+        <Script src="https://www.vexo.co/analytics.js" strategy="afterInteractive" />
+        <Script src="https://getlaunchlist.com/js/widget.js" strategy="afterInteractive" />
         <Analytics />
         <SpeedInsights />
         <PostHogSessionReplayInit />
