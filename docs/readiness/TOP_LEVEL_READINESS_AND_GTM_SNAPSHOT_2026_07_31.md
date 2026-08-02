@@ -117,48 +117,51 @@ Why it is not yet 90%+:
 | TestFlight | Blocked | ASC credentials and Apple approval path. |
 | Store listing packs | Planned | Needs screenshots, reviewer account, privacy labels, support URLs. |
 
-## Integration Readiness Kanban
+## Integration Readiness Kanban -- 2026-08-02 comprehensive re-audit
 
-| Layer | Status | Notes |
+**Founder's own draft assessment (2026-08-02): "Overall Integrations Readiness Rating: 62-68%"**, with a category breakdown (Core live integrations 80-88%, OAuth/token-vault framework 85-92%, Google ecosystem 70-82%, Microsoft ecosystem 45-58%, AI provider integrations 70-80%, Analytics 55-65%, Meta/WhatsApp/social 35-48%, Productivity SaaS connectors 40-55%, Enterprise data connectors 25-40%, Payment gateways 18-28%, 30+ connector ambition 28-38%).
+
+**This re-audit concurs with the founder's overall band and methodology** (the "integrated means different things per provider" framing is exactly right, and matches this repo's own evidence-chain discipline). Re-checked against live `vercel env ls production` output and direct code/migration reads (not memory) this session, with one material correction:
+
+**Correction: Twilio is not "live and fully tested."** The prior version of this Kanban listed it alongside Google Workspace/Zoom/OpenRouter/Google OAuth as such. Direct evidence against that: (1) `vercel env ls production` shows **no Twilio-related env var of any kind** in production; (2) a full `src` search finds **zero references to Twilio anywhere in the codebase**; (3) `docs/readiness/PHONE_OTP_SPRINT4_CLOSEOUT_2026_07_28.md` (2026-07-28) confirms this directly in its own words: *"Twilio is not configured anywhere -- this ships fully gated off (`NEXT_PUBLIC_AUTH_PHONE_ENABLED` unset in production)... Not verified: no live retest -- impossible before Twilio exists as a configured Supabase SMS provider."* Phone-OTP sign-in is real, tested code sitting behind a feature flag with zero live proof -- "code-ready, gated off, never tested," not "live and fully tested." Moved to its correct tier below. Given this correction, the founder's Google-ecosystem-adjacent "Core live integrations 80-88%" band should read as **Google Workspace + Zoom + OpenRouter + Google OAuth only** (Twilio removed) -- the band itself likely doesn't move much since Google/Zoom/OpenRouter/Google-OAuth evidence is genuinely strong, but the roster changes.
+
+| Layer | Status | Providers |
 |---|---|---|
-| Live and fully tested | Done for first core providers | Google Workspace, Zoom, Twilio, OpenRouter, Google OAuth. |
-| Wired but testing not fully cleared | In progress | OpenAI, Mixpanel, PostHog, SMTP, Entra, Azure, Meta Business, Microsoft Outlook, Microsoft Teams, WhatsApp Business. |
-| Integrated, but not wired/live | Early / catalogue-to-product stage | Stripe, Notion, Iceberg, Airtable, Clerk, Paddle, Calendly, SV Vectors, HubSpot. |
-| Connector OAuth framework | Built | Common OAuth/token-vault pattern exists. |
-| Microsoft ecosystem | In progress | Entra, Azure, Outlook, Teams are wired but need final live testing and credential/permission proof. |
-| Meta / WhatsApp | In progress | WhatsApp Business messaging is wired (OAuth + send/receive) but needs live testing and provider approval/scope checks. **Correction, 2026-08-02:** "Meta Business" as a distinct row overstated actual code -- direct inspection of `src/services/alerts/socialAlerts.ts` and `src/services/integrations/connectorContract.ts` found no business-asset, campaign/promotion, content-publishing, or community-engagement code for Facebook/Instagram; only a read-only `META_APP_ID`/`META_APP_SECRET`/`META_PAGE_ACCESS_TOKEN` credential-presence check feeding a social-monitoring status tile. Full Meta Business Suite integration (business assets, campaigns, promotions, content, community engagement) is founder-confirmed as the actual, standing requirement -- not yet built. See `ACTIONABLES_READINESS_MATRIX.md` A-83 once scoped |
-| Analytics | In progress | Mixpanel/PostHog wired; needs event receipt, replay/privacy masking, and dashboard confirmation. |
-| Payments | Early | Stripe and Paddle are integrated but not live payment flows yet; Razorpay remains roadmap. |
-| 30+ advanced connectors | Early roadmap | Requires per-provider app registration, scopes, webhooks, sync logs, audit logging, and QA. |
+| **Live and fully tested** | Real end-to-end proof exists | Zoom (authorize-request stage confirmed with correct client_id/redirect_uri/state/scopes, founder-reported "works fine," A-70), OpenRouter (production AI routing gateway, replaced the old AI Config tab per founder decision, A-31), Google OAuth sign-in (A-26/A-73, resolved, full sign-in completes end to end) |
+| **Live-tested for an allowlisted account, broader-tenant ceiling still blocking** | Reaches real provider UI and completes for the founder's own account, but Google's OAuth Client is in Testing status (100-user cap) so non-allowlisted tenants are still blocked | Gmail, Google Sheets (both confirmed via `status=connected` redirect screenshots, 2026-08-02, A-70/A-77) -- Calendar/Drive/Docs/Slides share the identical OAuth app/code path and are founder-stated (not independently re-screenshotted) to behave the same |
+| **Wired, real API calls confirmed live, but with an open question** | OpenAI -- `OPENAI_API_KEY` set, real spend-guard + budget ledger built (`aiSpendGuard.ts`, `ai_provider_budget` table), and a live 429 was actually observed in production (proof of real connectivity) -- but *why* it's rate-limiting (real account quota vs. this app's own budget guard) was never diagnosed (A-81) |
+| **Wired but testing not fully cleared** | Credentials present, code real, no independent live-test evidence this session | HubSpot (`HUBSPOT_CLIENT_ID` confirmed set), Mixpanel/PostHog (all 3 env vars confirmed set -- needs event receipt/dashboard confirmation), SMTP (Supabase's own mailer works; Resend relay mid-migration, MX/SPF still `Pending` as of 2026-08-02, A-74) |
+| **Reaches real provider UI, blocked by an external config gap with an exact fix identified** | Microsoft Outlook/Teams (reaches real `login.microsoftonline.com`, fails `unauthorized_client` for personal accounts -- fix is Entra "Supported account types," not yet applied, A-82); WhatsApp Business (reaches real Facebook OAuth screen, fails "domain not in app's domains" -- fix is Meta App Domains config, not yet applied, A-77); Threads, Meta Business Suite (connector code shipped 2026-08-02, A-83, not yet click-tested) |
+| **Code-ready, gated off, never live-tested** | Twilio / phone-OTP sign-in (see correction above) |
+| **Integrated only -- catalogued, no OAuth contract, no credentials, no live path** | Jira, Trello, Asana, Salesforce, Zoho CRM, DocuSign, Razorpay (all `pilotEnabled: false` in `pluginRegistry.ts`); Slack, Calendly, Notion, Linear, GitHub, Airtable, X (Twitter) -- all have real OAuth contracts in `connectorContract.ts` but **zero credentials set in Vercel production**, confirmed via `vercel env ls` |
+| **Enterprise data/billing connectors -- storage-only, no live check performed** | Auth0, ClickHouse, Microsoft SQL Server, Snowflake, Amazon S3, Paddle, Stripe (`EnterpriseConnectorCredentialsPanel` -- saving a credential only confirms it was stored encrypted, explicitly does **not** verify the external service accepted it, per that panel's own on-screen copy) |
+| Connector OAuth/token-vault framework | Built and real | AES-256-GCM token vault, generic OAuth start/callback routes, audit logging -- confirmed provider-agnostic across 20 pilot-enabled providers this session (MC-1 added 2 more with zero engine changes) |
+| 30+ advanced connector ambition | Early roadmap | Requires per-provider app registration, scopes, webhooks, sync logs, QA -- unchanged from prior assessment |
 
-### Integration Maturity Register
+### Integration Maturity Register (provider-by-provider, cited)
 
-| Provider / System | Current Tier | Readiness Meaning |
+| Provider | Tier | Exact evidence |
 |---|---|---|
-| Google Workspace | Live and fully tested | Production-beta integration evidence. |
-| Zoom | Live and fully tested | Production-beta integration evidence. |
-| Twilio | Live and fully tested | Production-beta integration evidence. |
-| OpenRouter | Live and fully tested | Production-beta AI-provider evidence. |
-| Google OAuth | Live and fully tested | Sign-in/auth provider proof. |
-| OpenAI | Wired, testing not fully cleared | API is live with $20 credits and cost mapping, but final end-to-end app proof still pending. |
-| Mixpanel | Wired, testing not fully cleared | Needs event receipt/dashboard confirmation. |
-| PostHog | Wired, testing not fully cleared | Needs replay/privacy masking decision and event/session proof. |
-| SMTP | Wired, testing not fully cleared | Supabase Auth email works; tenant invite/provider delivery still needs proof. |
-| Entra | Wired, testing not fully cleared | Needs Microsoft identity live proof. |
-| Azure | Wired, testing not fully cleared | Needs provider-specific live proof. |
-| Meta Business | Correction, 2026-08-02: not built (see note in Kanban above) | This row previously overstated readiness -- only WhatsApp Business messaging and a read-only Meta credential-presence check exist. Full Business Suite (assets, campaigns, promotions, content, engagement) is scoped but not yet implemented; see A-83 |
-| Microsoft Outlook | Wired, testing not fully cleared | Needs mailbox OAuth and selected-message import proof. |
-| Microsoft Teams | Wired, testing not fully cleared | Needs live OAuth and workspace action proof. |
-| WhatsApp Business | Wired, testing not fully cleared | Needs provider approval and live message/workflow proof. |
-| Stripe | Integrated only | Not yet wired into live billing/payment flow. |
-| Notion | Integrated only | Not yet live/wired enough for production-beta proof. |
-| Iceberg | Integrated only | Needs product wiring and test definition. |
-| Airtable | Integrated only | Needs OAuth/wiring/live proof. |
-| Clerk | Integrated only | Needs auth architecture decision before being considered live. |
-| Paddle | Integrated only | Not yet wired into live billing/payment flow. |
-| Calendly | Integrated only | Needs OAuth/wiring/live proof. |
-| SV Vectors | Integrated only | Needs product wiring and verification definition. |
-| HubSpot | Integrated only | Needs OAuth/wiring/live proof. |
+| Zoom | Live and fully tested (authorize stage) | A-70: real authorize URL reached, founder-confirmed "works fine"; full round-trip (consent + return) not independently confirmed |
+| OpenRouter | Live and fully tested | Production AI routing gateway, `OPENROUTER_API_KEY` set 6d ago, replaced AI Config tab (A-31) |
+| Google OAuth (sign-in) | Live and fully tested | A-26/A-73 resolved, full sign-in completes end to end |
+| Gmail | Live for allowlisted account | `status=connected` screenshot 2026-08-02 (A-70); Google Test-users cap blocks other tenants (A-75) |
+| Google Sheets | Live for allowlisted account | `status=connected` screenshot 2026-08-02 (A-77); same cap |
+| Google Calendar / Drive / Docs / Slides | Founder-stated live, not independently re-verified | Same OAuth app/code as Gmail/Sheets; A-70 update: "founder-stated, not independently re-screenshotted this round" |
+| OpenAI | Wired, live calls confirmed, root cause of 429 undiagnosed | `OPENAI_API_KEY` set 3d ago; real spend guard + ledger; live 429 observed (A-81); root cause not investigated |
+| HubSpot | Wired, credentials present, not live-tested | `HUBSPOT_CLIENT_ID` confirmed set 4d ago via `vercel env ls`; no live-connect evidence this session |
+| Mixpanel | Wired, not live-tested | `NEXT_PUBLIC_MIXPANEL_TOKEN` set 6d ago; needs event receipt/dashboard confirmation |
+| PostHog | Wired, not live-tested | `NEXT_PUBLIC_POSTHOG_HOST`/`KEY`/`TOKEN` all set 6d ago; needs replay/privacy masking + event proof |
+| SMTP (Resend) | Wired, mid-migration | Founder switched Supabase SMTP to Resend 2026-08-02; MX/SPF `Pending` as of last check (A-74) |
+| Microsoft Outlook / Teams | Reaches real login, blocked | `unauthorized_client` for personal accounts; fix = Entra Supported account types (A-82), not applied |
+| WhatsApp Business | Reaches real Meta OAuth screen, blocked | "domain not in app's domains" (A-77); fix = Meta App Domains config, not applied; also needs Meta App Review |
+| Threads | Connector code shipped, not click-tested | `THREADS_APP_ID`/`SECRET` set 8h ago; MC-1 (2026-08-02) added the contract; no live OAuth attempt yet |
+| Meta Business Suite | Connector + ingestion code shipped, not click-tested | `META_APP_ID`/`SECRET` set (shared with WhatsApp); MC-1/MC-4 (2026-08-02); needs Meta App Review before any tenant beyond Test Users |
+| Twilio | Code-ready, gated off, never tested | See correction above -- `NEXT_PUBLIC_AUTH_PHONE_ENABLED` unset, zero Twilio env vars, zero code references |
+| Slack, Calendly, Notion, Linear, GitHub, Airtable, X (Twitter) | Integrated only | Real OAuth contracts in `connectorContract.ts`, zero credentials in `vercel env ls production` |
+| Jira, Trello, Asana, Salesforce, Zoho CRM, DocuSign, Razorpay | Catalogued only | `pilotEnabled: false` in `pluginRegistry.ts`, no OAuth contract, no credentials |
+| Stripe, Paddle | Storage-only, unconfigured | `EnterpriseConnectorCredentialsPanel` shows both `not configured`; explicit on-screen disclaimer that saving a credential never verifies live connectivity |
+| Auth0, ClickHouse, MS SQL Server, Snowflake, Amazon S3 | Storage-only, unconfigured | Same panel, same disclaimer, all shown `not configured` per 2026-08-02 screenshot |
 
 ## Funding Readiness View
 
