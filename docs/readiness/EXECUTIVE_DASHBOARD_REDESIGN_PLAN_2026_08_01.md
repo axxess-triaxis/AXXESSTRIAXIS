@@ -1,7 +1,7 @@
 # Executive Dashboard Redesign — Detailed Implementation Plan
 
-**Status**: Planning complete, pending founder go/no-go on implementation.
-**Date**: 2026-08-01
+**Status**: Sprint ED-R1 (scoring engine + Phase 1 layout) implemented, committed (`181f1e1`, `3b2bc4a`), pushed, deployed to production (`landing.triaxisventures.com`), and HITL-verified by the founder on the live dashboard, 2026-08-01. One post-verification addition is captured in section 12 below and is not yet implemented. Phase 2 data sources (mail, CRM, social, calendar/Zoom, financial thresholds) remain unscheduled.
+**Date**: 2026-08-01 (addendum added same day, post-deploy)
 **Owner**: Sudipta Koushik Sarmah (founder decision authority) / Claude Code (execution)
 **Evidence discipline**: per `CLAUDE.md`, every claim below is either (a) verified directly against this repository's current code, cited by exact file/line, (b) attributed to a specific market-research finding from this session's research agents, or (c) marked `Founder-stated` where it reflects founder judgment/decision rather than something independently checkable. Nothing here is fabricated or extrapolated beyond what's cited.
 
@@ -346,3 +346,30 @@ Each Phase 2 item adds policy entries to the existing `tilePolicies` registry an
 - **Standard gate**: `pnpm run typecheck`, `pnpm --dir apps/mobile run typecheck`, `pnpm run lint` (zero warnings), `pnpm run test`, `pnpm run build`, `pnpm run supabase:verify` (only if new migrations are introduced — none are required through Phase 1).
 - **Manual/live** (self-verifiable in dev server): urgent-bar collapse/expand per tier, re-flow ordering on simulated data changes, header-offset correctness, not-connected placeholder rendering for unbuilt sources, demo-mode regression check.
 - **HITL-only** (cannot self-certify, per this repo's standing discipline): whether the 3-tier structure and the `score >= 16` threshold feel right in live use once real usage data accumulates; final founder sign-off before Phase 2 sources are greenlit.
+
+---
+
+## 12. Addendum (2026-08-01, post-deploy) — collapse "Enterprise golden path" into "Start Guided Setup"
+
+**HITL verification result**: founder confirmed Sprint ED-R1 live on the deployed dashboard (screenshot reviewed) and flagged one follow-up UX correction, not a defect in the shipped scoring/tier work itself.
+
+**Founder's exact instruction**:
+
+> "HITL verified - Deployed. Make one addition to Executive Dashboard Redesign plan. In the attached screenshot you see 'Golden Path' covers screen space unnecessarily. It is redundant, spoils UX. It should be collapsed into 'Start Guided Setup' fully and should not feature on Executive Dashboard. Also should be 100% optional."
+
+**What the screenshot shows**: the "Pilot Onboarding (personal checklist)" 10-tile grid (already labeled "saved to this browser only," i.e. already optional/local), directly followed by a separate, always-visible "Enterprise golden path" panel — a progress bar plus "89% ready / 63% complete" badges and a "View recommended setup path (8 steps, 63% complete)" link. The founder's objection is specifically to this second panel: it permanently occupies dashboard real estate and duplicates what the checklist above it and the "Start guided setup" button already communicate.
+
+**Technical finding (verified by reading the code, not assumed)**: there are currently three distinct, independently-wired onboarding/guidance mechanisms in this codebase, not two:
+
+1. `BetaOnboardingChecklist` (`src/features/onboarding/BetaOnboardingChecklist.tsx`) — the 10-tile grid. Already optional and already labeled as such.
+2. `EnterpriseWorkflowJourney` (`src/components/enterprise/EnterpriseWorkflowJourney.tsx`), fed by `useEnterpriseGoldenPath` — the "Enterprise golden path" panel the founder is objecting to. Rendered unconditionally in `DashboardSection.tsx` today (`<EnterpriseWorkflowJourney snapshot={enterpriseJourney} .../>`), directly above the new `<UrgentAttentionBarStack>`/tier sections added in Sprint ED-R1.
+3. `useGuidedDemo` (`src/hooks/useGuidedDemo.ts`), triggered by the header's "Start guided setup" button (`guidedDemo.startDemo`) — a completely separate, localStorage-driven, cross-page step-by-step walkthrough overlay. It shares no state or data with #2 today; wiring "Start guided setup" to reveal the Golden Path panel's content requires new plumbing, not just a rename.
+
+**Resolution to implement** (captured here, not yet built):
+
+- Remove `<EnterpriseWorkflowJourney>` from `DashboardSection.tsx`'s always-rendered body — it must not occupy permanent dashboard space, matching the founder's "should not feature on Executive Dashboard."
+- Its content (readiness score, completion percent, the 8-step recommended path) becomes reachable only by user action, not shown by default -- satisfying "100% optional." The most direct implementation: clicking "Start guided setup" opens the Golden Path content (e.g. in a modal/drawer, or as the first step of the existing `useGuidedDemo` walkthrough), rather than the header button and the dashboard panel being two unrelated things a user has to notice separately.
+- Exact mechanism (modal vs. drawer vs. folding it into `useGuidedDemo`'s existing step sequence) is an implementation decision, not yet made -- whichever is chosen must keep the underlying `useEnterpriseGoldenPath` data and readiness/completion scoring intact (it's real, tenant-scoped data, not something to delete), only change where/whether it's visible by default.
+- Out of scope for this addendum: `BetaOnboardingChecklist` (already optional, not flagged by the founder) and the new Sprint ED-R1 tier layout (already HITL-verified as correct).
+
+**Status**: plan-only as of this addendum. Not yet implemented, not yet scheduled against Phase 2.
