@@ -182,3 +182,33 @@ export function financialAccountsActionablesPolicy(actionableCount: number, over
   if (overdueCount === 1) return { priority: 3, criticality: "amber", rationale: `${actionableCount} accounts actionable(s), 1 overdue.` };
   return { priority: 4, criticality: "red", rationale: `${actionableCount} accounts actionable(s), ${overdueCount} overdue.` };
 }
+
+// --- Executive Dashboard Redesign Sprint ED-R4 ---
+// Thresholds are conservative and deliberately not aggressive -- this is new, uncalibrated signal
+// data (published_content_items/community_engagement_items only get populated once a tenant runs
+// "Sync now" or the daily cron, MC-4), not a mature, tuned metric yet.
+
+// Posting cadence is informational, not itself a risk signal -- mirrors
+// workflowTimelineActivityPolicy's green/yellow-on-silence shape.
+export function threadsActivityPolicy(recentPostCount: number): PolicyResult {
+  if (recentPostCount > 0) return { priority: 1, criticality: "green", rationale: `${recentPostCount} Threads post(s) in the last 7 days.` };
+  return { priority: 2, criticality: "yellow", rationale: "No Threads activity in the last 7 days." };
+}
+
+export function threadsEngagementBacklogPolicy(openReplyCount: number): PolicyResult {
+  if (openReplyCount === 0) return { priority: 1, criticality: "green", rationale: "No open Threads replies awaiting a response." };
+  if (openReplyCount <= 3) return { priority: 3, criticality: "yellow", rationale: `${openReplyCount} Threads repl(y/ies) awaiting a response.` };
+  return { priority: 4, criticality: "amber", rationale: `${openReplyCount} Threads replies awaiting a response.` };
+}
+
+export function metaBusinessContentActivityPolicy(recentPostCount: number): PolicyResult {
+  if (recentPostCount > 0) return { priority: 1, criticality: "green", rationale: `${recentPostCount} Meta Business Suite post(s) in the last 7 days.` };
+  return { priority: 1, criticality: "yellow", rationale: "No Meta Business Suite content activity in the last 7 days." };
+}
+
+export function metaBusinessCampaignHealthPolicy(activeCampaignCount: number, overBudgetCampaignCount: number): PolicyResult {
+  if (activeCampaignCount === 0) return { priority: 1, criticality: "green", rationale: "No active Meta Ads campaigns." };
+  if (overBudgetCampaignCount === 0) return { priority: 1, criticality: "green", rationale: `${activeCampaignCount} active campaign(s), all within budget.` };
+  if (overBudgetCampaignCount === 1) return { priority: 3, criticality: "amber", rationale: `${activeCampaignCount} active campaign(s), 1 over budget.` };
+  return { priority: 4, criticality: "red", rationale: `${activeCampaignCount} active campaign(s), ${overBudgetCampaignCount} over budget.` };
+}

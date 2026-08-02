@@ -7,7 +7,9 @@ import type { LiveWorkspaceMetrics } from "../live-platform/livePlatform";
 import type { CalendarDashboardSignals } from "./calendarDashboardSignals";
 import type { ExternalMeetingsDashboardSignals } from "./externalMeetingsDashboardSignals";
 import type { MailDashboardSignals } from "./mailDashboardSignals";
+import type { MetaBusinessDashboardSignals } from "./metaBusinessDashboardSignals";
 import type { SocialDashboardSignals } from "./socialDashboardSignals";
+import type { ThreadsDashboardSignals } from "./threadsDashboardSignals";
 import { computeCrmDashboardSignals } from "./crmDashboardSignals";
 import { computeFinancialDashboardSignals } from "./financialDashboardSignals";
 import {
@@ -31,6 +33,8 @@ import {
   financialBudgetThresholdsPolicy,
   integrationHealthPolicy,
   mailNeedingReplyPolicy,
+  metaBusinessCampaignHealthPolicy,
+  metaBusinessContentActivityPolicy,
   openLeadsPolicy,
   overdueMeetingsPolicy,
   overdueTasksPolicy,
@@ -38,6 +42,8 @@ import {
   projectHealthPolicy,
   socialAlertsProviderGatedPolicy,
   socialProviderHealthPolicy,
+  threadsActivityPolicy,
+  threadsEngagementBacklogPolicy,
   upcomingMeetingsPolicy,
   workflowTimelineActivityPolicy,
 } from "./tilePolicies";
@@ -60,6 +66,9 @@ export type DashboardSnapshotInput = {
   calendarSignals: CalendarDashboardSignals | undefined;
   externalMeetingsSignals: ExternalMeetingsDashboardSignals | undefined;
   financialWatchItems: FinancialWatchItem[] | undefined;
+  // Executive Dashboard Redesign Sprint ED-R4
+  threadsSignals: ThreadsDashboardSignals | undefined;
+  metaBusinessSignals: MetaBusinessDashboardSignals | undefined;
 };
 
 function tile(
@@ -358,6 +367,49 @@ export function buildDashboardSnapshot(input: DashboardSnapshotInput): ScoredTil
     tiles.push(notConnectedTile("crm-stalled-leads", 1, "Stalled opportunities", "Loading CRM signal...", "/crm"));
   }
 
+  // Executive Dashboard Redesign Sprint ED-R4: real, built on published_content_items /
+  // community_engagement_items (MC-2), populated by "Sync now" or the daily cron (MC-4). Founder's
+  // explicit ask: a "Threads" live tile at Tier 1. "Not connected" only when the tenant hasn't
+  // OAuth-connected Threads; a connected-but-never-synced tenant honestly reads zero posts/replies,
+  // same "real query, genuine zero" distinction as the mail/CRM/social signals above.
+  if (input.threadsSignals) {
+    if (input.threadsSignals.oauthConnected) {
+      const activityResult = threadsActivityPolicy(input.threadsSignals.recentPostCount);
+      tiles.push(tile({
+        id: "threads-activity",
+        tier: 1,
+        title: "Threads activity",
+        value: String(input.threadsSignals.recentPostCount),
+        detail: activityResult.rationale,
+        priority: activityResult.priority,
+        criticality: activityResult.criticality,
+        dataState: input.threadsSignals.recentPostCount > 0 ? "live" : "empty",
+        route: "/integrations",
+        rationale: activityResult.rationale,
+      }));
+
+      const backlogResult = threadsEngagementBacklogPolicy(input.threadsSignals.openReplyCount);
+      tiles.push(tile({
+        id: "threads-reply-backlog",
+        tier: 1,
+        title: "Threads replies awaiting response",
+        value: String(input.threadsSignals.openReplyCount),
+        detail: backlogResult.rationale,
+        priority: backlogResult.priority,
+        criticality: backlogResult.criticality,
+        dataState: input.threadsSignals.openReplyCount > 0 ? "live" : "empty",
+        route: "/integrations",
+        rationale: backlogResult.rationale,
+      }));
+    } else {
+      tiles.push(notConnectedTile("threads-activity", 1, "Threads activity", "Connect Threads in Integrations to surface recent post activity.", "/integrations"));
+      tiles.push(notConnectedTile("threads-reply-backlog", 1, "Threads replies awaiting response", "Connect Threads in Integrations to surface open replies. Community-engagement ingestion (comments/DMs) is not built yet for any provider -- this will stay at zero even once connected, until that ingestion ships.", "/integrations"));
+    }
+  } else {
+    tiles.push(notConnectedTile("threads-activity", 1, "Threads activity", "Loading Threads signal...", "/integrations"));
+    tiles.push(notConnectedTile("threads-reply-backlog", 1, "Threads replies awaiting response", "Loading Threads signal...", "/integrations"));
+  }
+
   // --- Tier 2: AI operating infrastructure + business intelligence ---
 
   const documentHealthResult = documentIndexingHealthPolicy(input.liveMetrics.ragReadyDocuments);
@@ -403,6 +455,48 @@ export function buildDashboardSnapshot(input: DashboardSnapshotInput): ScoredTil
   }));
 
   tiles.push(notConnectedTile("ai-token-usage-spend", 2, "AI token usage / spend", "The spend-tracking backend exists (aiSpendGuard.ts), but no client-facing summary endpoint surfaces it to this dashboard yet."));
+
+  // Executive Dashboard Redesign Sprint ED-R4: real, built on published_content_items /
+  // campaigns_promotions (MC-2), populated by "Sync now" or the daily cron (MC-4). Tier 2 (not
+  // Tier 1) since this is an operational content/campaign signal, not an attention-worthy item by
+  // default -- matches how Integration health/Document indexing health sit at Tier 2.
+  if (input.metaBusinessSignals) {
+    if (input.metaBusinessSignals.oauthConnected) {
+      const contentResult = metaBusinessContentActivityPolicy(input.metaBusinessSignals.recentPostCount);
+      tiles.push(tile({
+        id: "meta-business-content-activity",
+        tier: 2,
+        title: "Meta Business Suite content activity",
+        value: String(input.metaBusinessSignals.recentPostCount),
+        detail: contentResult.rationale,
+        priority: contentResult.priority,
+        criticality: contentResult.criticality,
+        dataState: input.metaBusinessSignals.recentPostCount > 0 ? "live" : "empty",
+        route: "/integrations",
+        rationale: contentResult.rationale,
+      }));
+
+      const campaignResult = metaBusinessCampaignHealthPolicy(input.metaBusinessSignals.activeCampaignCount, input.metaBusinessSignals.overBudgetCampaignCount);
+      tiles.push(tile({
+        id: "meta-business-campaign-health",
+        tier: 2,
+        title: "Meta Ads campaign health",
+        value: String(input.metaBusinessSignals.activeCampaignCount),
+        detail: campaignResult.rationale,
+        priority: campaignResult.priority,
+        criticality: campaignResult.criticality,
+        dataState: input.metaBusinessSignals.activeCampaignCount > 0 ? "live" : "empty",
+        route: "/integrations",
+        rationale: campaignResult.rationale,
+      }));
+    } else {
+      tiles.push(notConnectedTile("meta-business-content-activity", 2, "Meta Business Suite content activity", "Connect Meta Business Suite in Integrations to surface recent content activity.", "/integrations"));
+      tiles.push(notConnectedTile("meta-business-campaign-health", 2, "Meta Ads campaign health", "Connect Meta Business Suite in Integrations to surface active campaigns.", "/integrations"));
+    }
+  } else {
+    tiles.push(notConnectedTile("meta-business-content-activity", 2, "Meta Business Suite content activity", "Loading Meta Business Suite signal...", "/integrations"));
+    tiles.push(notConnectedTile("meta-business-campaign-health", 2, "Meta Ads campaign health", "Loading Meta Business Suite signal...", "/integrations"));
+  }
 
   // --- Tier 3: compliance, audit, governance, policy ---
 
