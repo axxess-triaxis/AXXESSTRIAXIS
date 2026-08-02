@@ -2,7 +2,14 @@
 // same hooks DashboardSection.tsx already calls) into a single ScoredTile[]. This function does
 // not fetch anything itself -- it is a pure mapping from live data + policy functions to tiles,
 // so it is fully unit-testable without mocking network calls.
+import type { CrmLead, FinancialWatchItem } from "../../domain";
 import type { LiveWorkspaceMetrics } from "../live-platform/livePlatform";
+import type { CalendarDashboardSignals } from "./calendarDashboardSignals";
+import type { ExternalMeetingsDashboardSignals } from "./externalMeetingsDashboardSignals";
+import type { MailDashboardSignals } from "./mailDashboardSignals";
+import type { SocialDashboardSignals } from "./socialDashboardSignals";
+import { computeCrmDashboardSignals } from "./crmDashboardSignals";
+import { computeFinancialDashboardSignals } from "./financialDashboardSignals";
 import {
   computeScore,
   type CriticalityBand,
@@ -13,13 +20,25 @@ import {
 import {
   approvalSlaRiskPolicy,
   auditLogGapPolicy,
+  calendarTodayPolicy,
+  crmFollowUpsDuePolicy,
+  crmStalledLeadsPolicy,
+  criticalSocialAlertsPolicy,
   documentIndexingHealthPolicy,
+  financialAccountsActionablesPolicy,
+  financialAccountsBelowThresholdPolicy,
+  financialBudgetOvershootPolicy,
+  financialBudgetThresholdsPolicy,
   integrationHealthPolicy,
+  mailNeedingReplyPolicy,
+  openLeadsPolicy,
   overdueMeetingsPolicy,
   overdueTasksPolicy,
   pendingAiReviewsPolicy,
   projectHealthPolicy,
   socialAlertsProviderGatedPolicy,
+  socialProviderHealthPolicy,
+  upcomingMeetingsPolicy,
   workflowTimelineActivityPolicy,
 } from "./tilePolicies";
 
@@ -33,6 +52,14 @@ export type DashboardSnapshotInput = {
   workflowTimelineEventCount: number;
   projects: Array<{ risk: string }>;
   demoMode: boolean;
+  // Executive Dashboard Redesign Sprint ED-R2
+  mailSignals: MailDashboardSignals | undefined;
+  crmLeads: CrmLead[] | undefined;
+  socialSignals: SocialDashboardSignals | undefined;
+  // Executive Dashboard Redesign Sprint ED-R3
+  calendarSignals: CalendarDashboardSignals | undefined;
+  externalMeetingsSignals: ExternalMeetingsDashboardSignals | undefined;
+  financialWatchItems: FinancialWatchItem[] | undefined;
 };
 
 function tile(
@@ -149,11 +176,187 @@ export function buildDashboardSnapshot(input: DashboardSnapshotInput): ScoredTil
     rationale: socialGatedResult.rationale,
   }));
 
-  tiles.push(notConnectedTile("mail-inbox", 1, "Mail inbox needing reply", "Gmail/Microsoft Graph OAuth plumbing exists for AI Workspace use, but no \"mails needing reply\" count is wired to this dashboard yet.", "/integrations"));
-  tiles.push(notConnectedTile("calendar-view", 1, "Calendar view", "No calendar UI or repository exists in this codebase yet."));
-  tiles.push(notConnectedTile("zoom-gmeet-upcoming", 1, "Zoom / Google Meet upcoming meetings", "No Zoom or Google Meet integration exists in this codebase yet."));
-  tiles.push(notConnectedTile("social-alert-feed", 1, "X / LinkedIn / Meta / WhatsApp Business alerts", "Provider-connection status is real (see External signals), but no live alert-count repository exists yet.", "/integrations"));
-  tiles.push(notConnectedTile("crm-leads-deals", 1, "CRM leads / deals", "No Lead/Deal domain entity or repository exists in this codebase yet."));
+  // Executive Dashboard Redesign Sprint ED-R2: real, built on gmail_selected_message_imports /
+  // microsoft_selected_message_imports -- see mailDashboardSignals.ts for why no new migration
+  // was needed. "Not connected" only when neither Gmail nor Microsoft is OAuth-connected for this
+  // tenant; otherwise a genuinely live count (which may honestly be zero).
+  if (input.mailSignals) {
+    const mailConnected = input.mailSignals.gmailConnected || input.mailSignals.microsoftConnected;
+    if (mailConnected) {
+      const mailResult = mailNeedingReplyPolicy(input.mailSignals.needingReplyCount, input.mailSignals.oldestNeedingReplyDays);
+      tiles.push(tile({
+        id: "mail-inbox",
+        tier: 1,
+        title: "Mails needing reply",
+        value: String(input.mailSignals.needingReplyCount),
+        detail: mailResult.rationale,
+        priority: mailResult.priority,
+        criticality: mailResult.criticality,
+        dataState: input.mailSignals.needingReplyCount > 0 ? "live" : "empty",
+        route: "/ai-workspace",
+        rationale: mailResult.rationale,
+      }));
+    } else {
+      tiles.push(notConnectedTile("mail-inbox", 1, "Mails needing reply", "Connect Gmail or Microsoft Outlook to surface messages previewed but not yet imported.", "/integrations"));
+    }
+  } else {
+    tiles.push(notConnectedTile("mail-inbox", 1, "Mails needing reply", "Loading mail signal...", "/integrations"));
+  }
+
+  // Executive Dashboard Redesign Sprint ED-R3: real, built on the existing Meeting domain entity
+  // (internal AXXESS Meetings & Decisions) -- no external Google/Microsoft Calendar event-fetch
+  // service exists in this codebase, so internal meetings are the first real calendar source, per
+  // the sprint's preferred order. "Missed meetings" above already covers overdue meetings; these
+  // two tiles are additive, not duplicative.
+  if (input.calendarSignals) {
+    const todayResult = calendarTodayPolicy(input.calendarSignals.todayCount, input.calendarSignals.hasMeetingWithinHour);
+    tiles.push(tile({
+      id: "calendar-today",
+      tier: 1,
+      title: "Calendar today",
+      value: String(input.calendarSignals.todayCount),
+      detail: todayResult.rationale,
+      priority: todayResult.priority,
+      criticality: todayResult.criticality,
+      dataState: input.calendarSignals.todayCount > 0 ? "live" : "empty",
+      route: "/meetings",
+      rationale: todayResult.rationale,
+    }));
+
+    const upcomingResult = upcomingMeetingsPolicy(input.calendarSignals.upcomingCount);
+    tiles.push(tile({
+      id: "upcoming-meetings",
+      tier: 1,
+      title: "Upcoming meetings",
+      value: String(input.calendarSignals.upcomingCount),
+      detail: upcomingResult.rationale,
+      priority: upcomingResult.priority,
+      criticality: upcomingResult.criticality,
+      dataState: input.calendarSignals.upcomingCount > 0 ? "live" : "empty",
+      route: "/meetings",
+      rationale: upcomingResult.rationale,
+    }));
+  } else {
+    tiles.push(notConnectedTile("calendar-today", 1, "Calendar today", "Loading calendar signal...", "/meetings"));
+    tiles.push(notConnectedTile("upcoming-meetings", 1, "Upcoming meetings", "Loading calendar signal...", "/meetings"));
+  }
+
+  // Executive Dashboard Redesign Sprint ED-R3: Zoom and Google Meet are registered OAuth
+  // connectors (connectorContract.ts), but no service code in this codebase calls either API to
+  // fetch events -- see externalMeetingsDashboardSignals.ts. Precise language distinguishes "OAuth
+  // not connected" from "OAuth connected, but no event-fetching service exists yet," rather than
+  // a single vague "not connected" message.
+  if (input.externalMeetingsSignals) {
+    const zoomDetail = input.externalMeetingsSignals.zoomOAuthConnected
+      ? "Zoom OAuth is connected for this tenant, but no service exists yet to fetch upcoming Zoom meetings."
+      : "Zoom is not connected. Connect it in Integrations to enable this in a future sprint.";
+    tiles.push(notConnectedTile("zoom-upcoming-meetings", 1, "Upcoming Zoom meetings", zoomDetail, "/integrations"));
+
+    const gmeetDetail = input.externalMeetingsSignals.googleCalendarOAuthConnected
+      ? "Google Calendar OAuth is connected for this tenant, but no service exists yet to fetch upcoming Google Meet events."
+      : "Google Calendar is not connected. Connect it in Integrations to enable this in a future sprint.";
+    tiles.push(notConnectedTile("gmeet-upcoming-meetings", 1, "Upcoming Google Meet meetings", gmeetDetail, "/integrations"));
+  } else {
+    tiles.push(notConnectedTile("zoom-upcoming-meetings", 1, "Upcoming Zoom meetings", "Loading provider status...", "/integrations"));
+    tiles.push(notConnectedTile("gmeet-upcoming-meetings", 1, "Upcoming Google Meet meetings", "Loading provider status...", "/integrations"));
+  }
+
+  // Executive Dashboard Redesign Sprint ED-R2: real, built on social_alert_events -- see
+  // socialDashboardSignals.ts. The table and RLS are real; nothing in this codebase writes to it
+  // yet, so a genuinely live query honestly reads zero for every tenant today (dataState "empty",
+  // not "not-connected" -- the mechanism is real, the ingestion pipeline isn't built).
+  if (input.socialSignals?.queryRan) {
+    const criticalResult = criticalSocialAlertsPolicy(input.socialSignals.criticalAlertCount);
+    tiles.push(tile({
+      id: "critical-social-alerts",
+      tier: 1,
+      title: "Critical social alerts",
+      value: String(input.socialSignals.criticalAlertCount),
+      detail: criticalResult.rationale,
+      priority: criticalResult.priority,
+      criticality: criticalResult.criticality,
+      dataState: input.socialSignals.criticalAlertCount > 0 ? "live" : "empty",
+      route: "/alerts",
+      rationale: criticalResult.rationale,
+    }));
+  } else {
+    tiles.push(notConnectedTile("critical-social-alerts", 1, "Critical social alerts", "Loading social alert signal..."));
+  }
+
+  // "Official-account alerts" (named in the ED-R2 sprint prompt) is deliberately NOT a real query:
+  // social_alert_events has no column or metadata convention identifying an "official account"
+  // alert. Building a heuristic guess here would risk fabricating a classification that doesn't
+  // exist -- honestly not-connected instead. See socialDashboardSignals.ts's header comment.
+  tiles.push(notConnectedTile("official-account-alerts", 1, "Official-account alerts", "social_alert_events has no official-account classification field yet; no heuristic was substituted to avoid fabricating one."));
+
+  if (input.socialSignals) {
+    const providerHealthResult = socialProviderHealthPolicy(input.socialSignals.xConfigured, input.socialSignals.facebookConfigured);
+    tiles.push(tile({
+      id: "social-provider-health",
+      tier: 1,
+      title: "Social provider health",
+      value: (input.socialSignals.xConfigured || input.socialSignals.facebookConfigured) ? "Configured" : "Provider-gated",
+      detail: providerHealthResult.rationale,
+      priority: providerHealthResult.priority,
+      criticality: providerHealthResult.criticality,
+      dataState: (input.socialSignals.xConfigured || input.socialSignals.facebookConfigured) ? "live" : "partial",
+      route: "/integrations",
+      rationale: providerHealthResult.rationale,
+    }));
+  } else {
+    tiles.push(notConnectedTile("social-provider-health", 1, "Social provider health", "Loading provider status..."));
+  }
+
+  // Executive Dashboard Redesign Sprint ED-R2: real, built on the new crm_leads table -- see
+  // crmRepository.ts / crmDashboardSignals.ts.
+  if (input.crmLeads) {
+    const crmSignals = computeCrmDashboardSignals(input.crmLeads);
+    const openLeadsResult = openLeadsPolicy(crmSignals.openLeadsCount);
+    tiles.push(tile({
+      id: "crm-open-leads",
+      tier: 1,
+      title: "Open leads",
+      value: String(crmSignals.openLeadsCount),
+      detail: openLeadsResult.rationale,
+      priority: openLeadsResult.priority,
+      criticality: openLeadsResult.criticality,
+      dataState: input.crmLeads.length > 0 ? "live" : "empty",
+      route: "/crm",
+      rationale: openLeadsResult.rationale,
+    }));
+
+    const followUpsDueResult = crmFollowUpsDuePolicy(crmSignals.followUpsDueCount);
+    tiles.push(tile({
+      id: "crm-follow-ups-due",
+      tier: 1,
+      title: "CRM follow-ups due",
+      value: String(crmSignals.followUpsDueCount),
+      detail: followUpsDueResult.rationale,
+      priority: followUpsDueResult.priority,
+      criticality: followUpsDueResult.criticality,
+      dataState: input.crmLeads.length > 0 ? "live" : "empty",
+      route: "/crm",
+      rationale: followUpsDueResult.rationale,
+    }));
+
+    const stalledResult = crmStalledLeadsPolicy(crmSignals.stalledCount);
+    tiles.push(tile({
+      id: "crm-stalled-leads",
+      tier: 1,
+      title: "Stalled opportunities",
+      value: String(crmSignals.stalledCount),
+      detail: stalledResult.rationale,
+      priority: stalledResult.priority,
+      criticality: stalledResult.criticality,
+      dataState: input.crmLeads.length > 0 ? "live" : "empty",
+      route: "/crm",
+      rationale: stalledResult.rationale,
+    }));
+  } else {
+    tiles.push(notConnectedTile("crm-open-leads", 1, "Open leads", "Loading CRM signal...", "/crm"));
+    tiles.push(notConnectedTile("crm-follow-ups-due", 1, "CRM follow-ups due", "Loading CRM signal...", "/crm"));
+    tiles.push(notConnectedTile("crm-stalled-leads", 1, "Stalled opportunities", "Loading CRM signal...", "/crm"));
+  }
 
   // --- Tier 2: AI operating infrastructure + business intelligence ---
 
@@ -218,9 +421,75 @@ export function buildDashboardSnapshot(input: DashboardSnapshotInput): ScoredTil
     rationale: auditGapResult.rationale,
   }));
 
-  tiles.push(notConnectedTile("budget-deficit-overshoot", 3, "Budget deficit / overshoot", "No budget domain entity or repository exists in this codebase yet."));
-  tiles.push(notConnectedTile("bank-account-thresholds", 3, "Bank account balance thresholds", "No bank-account domain entity or repository exists in this codebase yet."));
-  tiles.push(notConnectedTile("accounts-actionables", 3, "Accounts actionables", "No accounts/finance domain entity or repository exists in this codebase yet."));
+  // Executive Dashboard Redesign Sprint ED-R3: real, built on the new financial_watch_items
+  // table -- a MANUAL watchlist, not a bank feed. No banking/payment provider integration exists
+  // in this codebase; every value/detail below says "manual tracking" explicitly, never implying
+  // a live bank connection, per the sprint's critical constraint.
+  if (input.financialWatchItems) {
+    const financialSignals = computeFinancialDashboardSignals(input.financialWatchItems);
+    const hasData = input.financialWatchItems.length > 0;
+
+    const budgetThresholdsResult = financialBudgetThresholdsPolicy(financialSignals.budgetThresholdsCount);
+    tiles.push(tile({
+      id: "budget-thresholds",
+      tier: 3,
+      title: "Budget thresholds",
+      value: `${financialSignals.budgetThresholdsCount} (manual tracking)`,
+      detail: budgetThresholdsResult.rationale,
+      priority: budgetThresholdsResult.priority,
+      criticality: budgetThresholdsResult.criticality,
+      dataState: hasData ? "live" : "empty",
+      route: "/analytics",
+      rationale: budgetThresholdsResult.rationale,
+    }));
+
+    const budgetOvershootResult = financialBudgetOvershootPolicy(financialSignals.budgetOvershootCount);
+    tiles.push(tile({
+      id: "budget-overshoot",
+      tier: 3,
+      title: "Budget overshoot",
+      value: `${financialSignals.budgetOvershootCount} (manual tracking)`,
+      detail: budgetOvershootResult.rationale,
+      priority: budgetOvershootResult.priority,
+      criticality: budgetOvershootResult.criticality,
+      dataState: hasData ? "live" : "empty",
+      route: "/analytics",
+      rationale: budgetOvershootResult.rationale,
+    }));
+
+    const belowThresholdResult = financialAccountsBelowThresholdPolicy(financialSignals.accountsBelowThresholdCount);
+    tiles.push(tile({
+      id: "accounts-below-threshold",
+      tier: 3,
+      title: "Accounts below threshold",
+      value: `${financialSignals.accountsBelowThresholdCount} (manual tracking)`,
+      detail: belowThresholdResult.rationale,
+      priority: belowThresholdResult.priority,
+      criticality: belowThresholdResult.criticality,
+      dataState: hasData ? "live" : "empty",
+      route: "/analytics",
+      rationale: belowThresholdResult.rationale,
+    }));
+
+    const actionablesResult = financialAccountsActionablesPolicy(financialSignals.accountsActionablesCount, financialSignals.accountsActionablesOverdueCount);
+    tiles.push(tile({
+      id: "accounts-actionables",
+      tier: 3,
+      title: "Accounts actionables",
+      value: `${financialSignals.accountsActionablesCount} (manual tracking)`,
+      detail: actionablesResult.rationale,
+      priority: actionablesResult.priority,
+      criticality: actionablesResult.criticality,
+      dataState: hasData ? "live" : "empty",
+      route: "/analytics",
+      rationale: actionablesResult.rationale,
+    }));
+  } else {
+    tiles.push(notConnectedTile("budget-thresholds", 3, "Budget thresholds", "Loading financial watchlist...", "/analytics"));
+    tiles.push(notConnectedTile("budget-overshoot", 3, "Budget overshoot", "Loading financial watchlist...", "/analytics"));
+    tiles.push(notConnectedTile("accounts-below-threshold", 3, "Accounts below threshold", "Loading financial watchlist...", "/analytics"));
+    tiles.push(notConnectedTile("accounts-actionables", 3, "Accounts actionables", "Loading financial watchlist...", "/analytics"));
+  }
 
   return tiles;
 }

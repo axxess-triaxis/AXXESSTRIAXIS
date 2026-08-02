@@ -25,11 +25,17 @@ import { useGoldenPathDisplayMode } from "../../hooks/useGoldenPathDisplayMode";
 import { useGuidedDemo } from "../../hooks/useGuidedDemo";
 import { invalidateLiveWorkspaceMetricsCache } from "../../hooks/liveWorkspaceMetricsCache";
 import { useAuditLogCount } from "../../hooks/useAuditLogCount";
+import { useCalendarSignals } from "../../hooks/useCalendarSignals";
+import { useCrmLeads } from "../../hooks/useCrmLeads";
+import { useExternalMeetingsSignals } from "../../hooks/useExternalMeetingsSignals";
+import { useFinancialWatchItems } from "../../hooks/useFinancialWatchItems";
 import { useLiveWorkspaceMetrics } from "../../hooks/useLiveWorkspaceMetrics";
+import { useMailDashboardSignals } from "../../hooks/useMailDashboardSignals";
 import { useOverdueMeetingCount } from "../../hooks/useOverdueMeetingCount";
 import { useOverdueTaskCount } from "../../hooks/useOverdueTaskCount";
 import { usePendingAiReviewCount } from "../../hooks/usePendingAiReviewCount";
 import { useSocialAlertsStatus } from "../../hooks/useSocialAlertsStatus";
+import { useSocialDashboardSignals } from "../../hooks/useSocialDashboardSignals";
 import { useWorkflowTimeline } from "../../hooks/useWorkflowTimeline";
 import { demoRecentActivity } from "../../lib/demo/demoActivity";
 import { demoInstitution } from "../../lib/demo/seedData";
@@ -210,6 +216,14 @@ export function DashboardSection() {
   // the new Tier 1 scored tiles -- see useOverdueTaskCount.ts / useOverdueMeetingCount.ts.
   const overdueTaskCount = useOverdueTaskCount(tenantScope, refreshToken);
   const overdueMeetingCount = useOverdueMeetingCount(tenantScope, refreshToken);
+  // Executive Dashboard Redesign Sprint ED-R2: mail/CRM/social dashboard signals.
+  const mailSignals = useMailDashboardSignals(tenantScope, refreshToken);
+  const crmLeads = useCrmLeads(tenantScope, refreshToken);
+  const socialSignals = useSocialDashboardSignals(tenantScope, refreshToken);
+  // Executive Dashboard Redesign Sprint ED-R3: calendar/external-meetings/financial signals.
+  const calendarSignals = useCalendarSignals(tenantScope, refreshToken);
+  const externalMeetingsSignals = useExternalMeetingsSignals(tenantScope, refreshToken);
+  const financialWatchItems = useFinancialWatchItems(tenantScope, refreshToken);
 
   // Executive Dashboard Redesign Sprint ED-R1: the Priority x Criticality scored tile set, built
   // purely from data already fetched above -- no duplicate fetches. See
@@ -225,8 +239,14 @@ export function DashboardSection() {
       workflowTimelineEventCount: workflowTimeline.timeline.length,
       projects,
       demoMode: isDemoModeEnabled(),
+      mailSignals,
+      crmLeads,
+      socialSignals,
+      calendarSignals,
+      externalMeetingsSignals,
+      financialWatchItems,
     }),
-    [liveMetrics, overdueTaskCount, overdueMeetingCount, pendingAiReviewCount, auditLogCount, socialAlertsStatus.anyLiveProviderConfigured, workflowTimeline.timeline.length, projects],
+    [liveMetrics, overdueTaskCount, overdueMeetingCount, pendingAiReviewCount, auditLogCount, socialAlertsStatus.anyLiveProviderConfigured, workflowTimeline.timeline.length, projects, mailSignals, crmLeads, socialSignals, calendarSignals, externalMeetingsSignals, financialWatchItems],
   );
 
   // Real refresh: drops this tenant's cached metrics entry so the next fetch is fresh, then bumps
