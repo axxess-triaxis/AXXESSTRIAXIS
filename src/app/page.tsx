@@ -25,6 +25,18 @@ export default function HomePage() {
             Experience AXXESS
           </a>
         </div>
+        <section
+          aria-labelledby="launchlist-heading"
+          className="max-w-xl rounded-xl border border-[#d6dee8] bg-white p-5 shadow-sm"
+        >
+          <p id="launchlist-heading" className="text-sm font-semibold text-[#1d2a38]">
+            Join the AXXESS pilot waitlist
+          </p>
+          <p className="mt-2 text-sm leading-6 text-[#526173]">
+            Register interest for pilot access, product updates, and enterprise beta availability.
+          </p>
+          <div className="launchlist-widget mt-4" data-key-id="ICROoX" />
+        </section>
       </section>
     </main>
   );

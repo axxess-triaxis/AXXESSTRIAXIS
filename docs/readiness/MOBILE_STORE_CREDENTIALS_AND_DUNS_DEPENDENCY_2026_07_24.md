@@ -79,6 +79,18 @@ time via `mobile-capacitor.yml`, which requires no company credentials at all. S
 `MOBILE_RELEASE_READINESS_KANBAN_2026_07_27.md` for that build's status and the full current picture
 of what is and is not blocked by this dependency.
 
+**Update, 2026-08-02 (founder-reported):** still pending, no change in status. 20 days elapsed since
+the 2026-07-13 8:40 AM IST submission (reference **DR071320262903910840**); up to ~10 days remain
+within the stated 30-day free-issuance window (still expected by approximately 2026-08-12). Founder
+explicitly reaffirmed the governance position unprompted, in the context of a separate discussion
+about Google Cloud OAuth Client verification for the web connector suite (a related but distinct
+Google-side gate, see `ACTIONABLES_READINESS_MATRIX.md` A-75) -- founder's own words: "We are not
+releasing in my name but name of Triaxis Ventures Private Limited (incorporated entity) -- DUNS Id
+still pending status." This is an operational bottleneck at Dun & Bradstreet's end, not something
+this program can manually expedite -- no engineering or product action changes as a result of this
+update; logged purely to keep the elapsed/remaining-time tracking and the founder's standing
+governance decision current.
+
 ## Governance Position
 
 AXXESS TRIaxis should not be released under an individual founder account if the intended product owner and operating company is Triaxis Ventures Private Limited.

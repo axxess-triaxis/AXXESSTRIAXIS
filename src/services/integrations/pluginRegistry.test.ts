@@ -28,13 +28,13 @@ describe("productivity plugin registry", () => {
     // batch). Everything else remains infrastructure-only or credential-storage-only until its own
     // product-facing surface ships.
     const pilotIntegrations = getPilotIntegrations({} as unknown as NodeJS.ProcessEnv);
-    expect(pilotIntegrations.map((plugin) => plugin.id).sort()).toEqual(["airtable", "calendly", "github", "gmail", "google_calendar", "google_docs", "google_drive", "google_sheets", "google_slides", "hubspot", "linear", "notion", "outlook", "slack", "teams", "whatsapp_business", "x_twitter", "zoom"]);
+    expect(pilotIntegrations.map((plugin) => plugin.id).sort()).toEqual(["airtable", "calendly", "github", "gmail", "google_calendar", "google_docs", "google_drive", "google_sheets", "google_slides", "hubspot", "linear", "meta_business", "notion", "outlook", "slack", "teams", "threads", "whatsapp_business", "x_twitter", "zoom"]);
   });
 
   it("keeps every non-pilot connector out of the pilot list, not silently dropped", () => {
     const health = getIntegrationHealth({} as unknown as NodeJS.ProcessEnv);
     const infrastructureOnly = getInfrastructureOnlyIntegrations({} as unknown as NodeJS.ProcessEnv);
-    expect(health.pilotEnabled).toBe(18);
-    expect(infrastructureOnly.length).toBe(health.total - 18);
+    expect(health.pilotEnabled).toBe(20);
+    expect(infrastructureOnly.length).toBe(health.total - 20);
   });
 });
