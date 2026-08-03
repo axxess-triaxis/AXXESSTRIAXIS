@@ -8,7 +8,7 @@ Related: `docs/readiness/EMAIL_DELIVERY_AND_OAUTH_ROADMAP_2026_07_27.md`,
 
 ## Summary
 
-The founder asked for three goals: (1) "Send Feedback" delivers to `triaxisgrp@gmail.com`, (2)
+The founder asked for three goals: (1) "Send Feedback" delivers to `[FEEDBACK_ROUTING_EMAIL_MASKED]`, (2)
 "Invite Team" actually emails the entered address, (3) Google/Microsoft OAuth on Sign In. Before
 building anything, the existing codebase was audited against all three. Both the feedback-email and
 invitation-email backends already existed, correct and Resend-integrated -- but in both cases the
@@ -21,7 +21,7 @@ roadmap doc's Sprint 2.
 ## External Signal
 
 Founder, 2026-07-27, restating the requirement in concrete, testable terms after the earlier
-A-08/A-65 work: feedback must reach `triaxisgrp@gmail.com`, and "Invite Team" with "Send Invite"
+A-08/A-65 work: feedback must reach `[FEEDBACK_ROUTING_EMAIL_MASKED]`, and "Invite Team" with "Send Invite"
 must actually send mail. This connects directly to a real, dated prior finding already in the
 matrix: **A-08, 2026-07-25** -- HITL sent 3 real invitations through `/settings` (the exact UI
 this fix touches) and none of the 3 recipients received an email, despite a success message.
@@ -60,7 +60,7 @@ this fix touches) and none of the 3 recipients received an email, despite a succ
 
 - The email-sending backends themselves (`src/services/email/feedbackEmail.ts`,
   `src/services/email/invitationEmail.ts`) -- both were already correct, already Resend-integrated,
-  already defaulting the feedback recipient to `triaxisgrp@gmail.com` exactly as requested.
+  already defaulting the feedback recipient to `[FEEDBACK_ROUTING_EMAIL_MASKED]` exactly as requested.
 - The two API routes (`POST /api/beta-feedback`, `POST /api/invitations`) -- both already called the
   right send functions, already audit-logged the delivery outcome, already failed honestly.
 - `RESEND_API_KEY` is still absent from production (confirmed via `vercel env ls production`

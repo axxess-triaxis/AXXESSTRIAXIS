@@ -30,7 +30,7 @@ This is the script the HITL runs, by hand, in a real browser against the live pr
 ## Preconditions
 
 - A real, working internet connection and a standard evergreen desktop browser (Chrome, Edge, or Firefox), plus a mobile browser for the mobile-web checks in Section 20.
-- Access to two real, distinct email inboxes the HITL controls: one for the Tenant 0 founder account (if not already created), one for a second test-tenant account (Section 16), and a third disposable address for the invite-flow test (Section 17) — a "+" alias on an existing inbox (e.g. `sudipta1213+tenantb@gmail.com`) is acceptable for all three if a second real inbox isn't available.
+- Access to two real, distinct email inboxes the HITL controls: one for the Tenant 0 founder account (if not already created), one for a second test-tenant account (Section 16), and a third disposable address for the invite-flow test (Section 17) — a "+" alias on an existing inbox (e.g. `[FOUNDER_EMAIL_MASKED]+tenantb@gmail.com`) is acceptable for all three if a second real inbox isn't available.
 - No ad blockers or aggressive privacy extensions active on the test browser profile — several past findings in this program (stale cookies, cached demo-mode flags) trace back to inconsistent browser state, not the product. Use a fresh/incognito profile for this walkthrough.
 - Confirm the production deployment is current before starting (Section 0 below) — running this script against a stale deployment invalidates every result in it.
 

@@ -6,7 +6,7 @@ Planning provenance: Codex-drafted, founder-issued execution prompt, building on
 
 ## Sprint Objective
 
-Convert the RAG/AI Workspace pipeline from "technically improved" into "pilot-reviewable": close the AI Review Inbox-to-CRM visibility gap (A-57), stop fabricating CRM relationship intelligence (A-58), make Approvals Export Report real (A-60), route feedback toward `triaxisgrp@gmail.com` (A-65), reconfirm A-55/A-56/A-61/A-62/A-63 after Sprints 1-2, and package a final pilot-ready evidence summary.
+Convert the RAG/AI Workspace pipeline from "technically improved" into "pilot-reviewable": close the AI Review Inbox-to-CRM visibility gap (A-57), stop fabricating CRM relationship intelligence (A-58), make Approvals Export Report real (A-60), route feedback toward `[FEEDBACK_ROUTING_EMAIL_MASKED]` (A-65), reconfirm A-55/A-56/A-61/A-62/A-63 after Sprints 1-2, and package a final pilot-ready evidence summary.
 
 ## What Changed
 
@@ -19,7 +19,7 @@ Convert the RAG/AI Workspace pipeline from "technically improved" into "pilot-re
 | `src/features/approvals/ApprovalsSection.tsx` | Live tenant view now fetches and displays real `approval_requests` rows (previously an unconditional "not wired yet" empty state, even though real rows already existed from AI Review Inbox escalations). Real "Export Report" button downloads a JSON file (mirrors the existing Export Briefing pattern) and posts to the export-audit route. |
 | `src/app/api/approvals/route.ts` (new) | `GET`, session-authed, organization-scoped -- exposes `approvalRequestsRepository.list()` to the client. |
 | `src/app/api/approvals/export/route.ts` (new) | `POST`, session-authed -- writes a real `approvals.export_report` audit event; the export file itself is generated client-side. |
-| `src/services/email/feedbackEmail.ts` (new) | `renderFeedbackNotificationEmail()`/`sendFeedbackNotificationEmail()` -- mirrors `invitationEmail.ts`'s exact pattern (same Resend provider, same honest not-configured state) to notify `triaxisgrp@gmail.com` (overridable via `AXXESS_FEEDBACK_NOTIFICATION_EMAIL_TO`). |
+| `src/services/email/feedbackEmail.ts` (new) | `renderFeedbackNotificationEmail()`/`sendFeedbackNotificationEmail()` -- mirrors `invitationEmail.ts`'s exact pattern (same Resend provider, same honest not-configured state) to notify `[FEEDBACK_ROUTING_EMAIL_MASKED]` (overridable via `AXXESS_FEEDBACK_NOTIFICATION_EMAIL_TO`). |
 | `src/app/api/beta-feedback/route.ts` | Wires the email send attempt after the feedback row is saved (try/catch, so a failed/unconfigured send can never lose the feedback itself); records delivery status in audit metadata. |
 | `src/features/stakeholders/StakeholdersSection.test.tsx` | +6 tests: honest blank-field defaults, real user-supplied values, AI-escalated notes rendering and empty state. Existing mock fixture updated to reflect the new honest defaults. |
 | `src/app/api/stakeholders/notes/route.test.ts` (new) | 2 tests: 401 for unauthenticated, cross-org exclusion. |
@@ -118,7 +118,7 @@ All passed. Exact counts in `docs/RELEASE_AND_VERIFICATION_EVIDENCE_LEDGER.md`.
 | AI Review Inbox to CRM handoff real or honestly scoped | Done |
 | CRM contact creation no longer fabricates live-tenant intelligence | Done |
 | Approvals Export Report real or honestly disabled | Done (real) |
-| Feedback persisted and routed/configured toward `triaxisgrp@gmail.com` | Done (persisted + configured; delivery unconfirmed) |
+| Feedback persisted and routed/configured toward `[FEEDBACK_ROUTING_EMAIL_MASKED]` | Done (persisted + configured; delivery unconfirmed) |
 | RAG remediation evidence package exists | Done -- `RAG_REMEDIATION_FINAL_EVIDENCE_PACKAGE_2026_07_26.md` |
 | A-55 through A-65 updated with evidence-based status | Done |
 | Tests and build run and documented | Done |
