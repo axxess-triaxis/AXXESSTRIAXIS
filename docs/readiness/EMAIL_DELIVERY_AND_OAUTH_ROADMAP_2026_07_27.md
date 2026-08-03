@@ -4,7 +4,7 @@ Date: 2026-07-27
 Branch: `canonical/sprint-1-35-unified-gitlab`
 Governance source: `CLAUDE.md`'s evidence-chain discipline
 Goals, as given by the founder:
-1. "Send Feedback" button, when provided feedback, sends it to `triaxisgrp@gmail.com`.
+1. "Send Feedback" button, when provided feedback, sends it to `[FEEDBACK_ROUTING_EMAIL_MASKED]`.
 2. "Invite Team", when provided an email and "Send Invite" is clicked, actually sends a mail
    invite to the entered email.
 3. OAuth enabled on the "Sign In" form for Gmail and Microsoft.
@@ -19,7 +19,7 @@ substantially further along than a fresh build would assume** -- this is not sta
 
 | Goal | Backend | Frontend wiring | Blocker |
 |---|---|---|---|
-| 1. Feedback email | `src/services/email/feedbackEmail.ts` -- real Resend integration, hardcoded default recipient `triaxisgrp@gmail.com` (exact requested address), already called from `POST /api/beta-feedback` | **Bug found**: `BetaFeedbackModal.tsx`'s `submitFeedback()` calls `applicationServices.betaFeedbackRepository.create()` directly -- a raw Supabase write with no email step -- and never calls the `/api/beta-feedback` route that actually sends the email | (a) code bug above, (b) `RESEND_API_KEY` absent from production |
+| 1. Feedback email | `src/services/email/feedbackEmail.ts` -- real Resend integration, hardcoded default recipient `[FEEDBACK_ROUTING_EMAIL_MASKED]` (exact requested address), already called from `POST /api/beta-feedback` | **Bug found**: `BetaFeedbackModal.tsx`'s `submitFeedback()` calls `applicationServices.betaFeedbackRepository.create()` directly -- a raw Supabase write with no email step -- and never calls the `/api/beta-feedback` route that actually sends the email | (a) code bug above, (b) `RESEND_API_KEY` absent from production |
 | 2. Invite email | `src/services/email/invitationEmail.ts` -- real Resend integration, already called from `POST /api/invitations` | **Same bug class**: `SettingsSection.tsx`'s `inviteUser()` calls `applicationServices.invitationsRepository.create()` directly as its primary path, only falling back to `fetch("/api/invitations")` if that direct write throws -- which it normally won't | (a) code bug above, (b) `RESEND_API_KEY` absent, (c) `NEXT_PUBLIC_APP_URL` absent (invite links would resolve to `http://localhost:3000`) |
 | 3. OAuth (Google + Microsoft) | `/api/auth/oauth/start` (builds a real Supabase Auth `authorize` URL) + `/api/auth/oauth/callback` (exchanges tokens, establishes a real server session, audit-logs `auth.login`) -- both real, both tested | `OAuthProviderButtons.tsx` is already rendered on the real Sign In form (`EnterpriseAuthFlowPage.tsx:236`), already calls `/api/auth/oauth/start` and redirects to the returned URL | Gated off by `NEXT_PUBLIC_AUTH_GOOGLE_ENABLED` / `NEXT_PUBLIC_AUTH_MICROSOFT_ENABLED` (both absent -> both disabled); Supabase Auth itself has no Google/Azure provider configured (no OAuth app exists yet in Google Cloud Console or Microsoft Entra); `NEXT_PUBLIC_APP_URL` also feeds the OAuth redirect target |
 
@@ -82,7 +82,7 @@ system, no changing production security/account settings without explicit per-ac
 
 ### Sprint 3 (live HITL verification, after Sprint 2 unblocks)
 
-1. Submit a real "Send Feedback" and confirm an email arrives at `triaxisgrp@gmail.com`.
+1. Submit a real "Send Feedback" and confirm an email arrives at `[FEEDBACK_ROUTING_EMAIL_MASKED]`.
 2. Send a real "Invite Team" invite to a real test address and confirm the email arrives with a
    working accept link (not pointing at `localhost`).
 3. Click "Continue with Google" and "Continue with Microsoft" on the real Sign In form and confirm

@@ -24,7 +24,7 @@ Numbering: findings here are called "Product Issue N," per the user's own naming
 
 ### What Happened
 
-While attempting to onboard Triaxis Ventures as Pilot Tenant 0, the user's onboarding journey stopped at the very first step. The user reported (and shared a screenshot of) landing on the sign-in page and having no visible path to actually create a new account. Separately, a follow-up screenshot showed a real sign-in failure: `sudipta1213@gmail.com` returned "Unable to sign in with the supplied email and password" after an attempted sign-up.
+While attempting to onboard Triaxis Ventures as Pilot Tenant 0, the user's onboarding journey stopped at the very first step. The user reported (and shared a screenshot of) landing on the sign-in page and having no visible path to actually create a new account. Separately, a follow-up screenshot showed a real sign-in failure: `[FOUNDER_EMAIL_MASKED]` returned "Unable to sign in with the supplied email and password" after an attempted sign-up.
 
 ### Diagnosis (verified directly against the live site and the source code, not assumed)
 

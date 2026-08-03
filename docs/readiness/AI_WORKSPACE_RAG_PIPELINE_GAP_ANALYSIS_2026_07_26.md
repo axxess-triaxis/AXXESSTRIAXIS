@@ -122,7 +122,7 @@ If the first outcome occurs, `A-61` becomes the highest-priority fix.
 | A-62 | Stale placeholder document remains in live RAG index | High |
 | A-63 | Unclear if `Create Task/Approval from Answer` carries the answer content | Medium |
 | A-64 | `Ask AI Workspace` routes to Tasks & Workflow, not AI Workspace | Medium |
-| A-65 | `Send Feedback` should notify `triaxisgrp@gmail.com` | Medium |
+| A-65 | `Send Feedback` should notify `[FEEDBACK_ROUTING_EMAIL_MASKED]` | Medium |
 
 ## Reconfirmed Earlier Actionables
 
