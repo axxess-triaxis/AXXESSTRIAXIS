@@ -1,0 +1,70 @@
+name: Deploy Production (landing + investor demo)
+
+# A-88 (2026-08-03): landing.triaxisventures.com and investor.triaxisventures.com are two
+# separate Vercel projects (triaxis-www-frontend-import / triaxis-product-investor-demo) built
+# from this same repo, deployed independently. Before this workflow, deploys were manual `vercel
+# --prod` CLI runs, and the investor-demo project silently fell 2 days behind. This deploys both
+# on every merge to main, so the founder's own "GitHub is the one source of truth, synced every
+# EOD" rule (see docs/readiness) is enforced by the merge itself, not a manual follow-up step.
+#
+# Gated on push to main (i.e. PR merge), not on every push to a feature/integration branch --
+# founder's explicit choice: a PR is required first, both as a review gate and because "PR
+# creation... [is] not ornamental," it's the audit trail this compliance-focused program expects.
+#
+# Required repo secrets (Settings > Secrets and variables > Actions):
+#   VERCEL_TOKEN                     - a Vercel account/team token with deploy access to both projects
+#   VERCEL_ORG_ID                    - team_dODwKUnt7TOneVcLbI5E8aIq
+#   VERCEL_PROJECT_ID_LANDING        - prj_TKNsiB2hMIHUy8bqEmJVpAq4EiTT (triaxis-www-frontend-import)
+#   VERCEL_PROJECT_ID_INVESTOR_DEMO  - prj_DmQEa8CtZss0eTnZgGL4aZA6Y8gP (triaxis-product-investor-demo)
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy-landing:
+    name: Deploy landing.triaxisventures.com
+    runs-on: ubuntu-latest
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_LANDING }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Pull Vercel environment
+        run: npx vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Build
+        run: npx vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Deploy
+        run: npx vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
+
+  deploy-investor-demo:
+    name: Deploy investor.triaxisventures.com
+    runs-on: ubuntu-latest
+    needs: deploy-landing
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_INVESTOR_DEMO }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Pull Vercel environment
+        run: npx vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Build
+        run: npx vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Deploy
+        run: npx vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
