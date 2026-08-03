@@ -63,6 +63,8 @@ jobs:
         run: |
           echo "--- .vercel/.env.production.local: NEXT_PUBLIC_* key=value-length ---"
           grep '^NEXT_PUBLIC_' .vercel/.env.production.local | sed -E 's/^([^=]+)=(.*)$/\1=\2/' | awk -F= '{print $1"="length($2)}'
+          echo "--- NEXT_PUBLIC_APP_URL raw value (not a secret) ---"
+          grep '^NEXT_PUBLIC_APP_URL=' .vercel/.env.production.local | cat -A
 
       - name: Build
         run: npx vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
