@@ -55,6 +55,15 @@ jobs:
       - name: Pull Vercel environment
         run: npx vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
 
+      # TEMPORARY (A-89 debug, 2026-08-03): prints NEXT_PUBLIC_* key names and value lengths only
+      # (never the values themselves) from what `vercel pull` actually wrote, so we can see exactly
+      # which one is empty in this CI path without guessing again. Remove once the real cause across
+      # the 3 build failures on this workflow's first 3 runs (PR #163/#164/#165) is confirmed.
+      - name: Debug env (temporary)
+        run: |
+          echo "--- .vercel/.env.production.local: NEXT_PUBLIC_* key=value-length ---"
+          grep '^NEXT_PUBLIC_' .vercel/.env.production.local | sed -E 's/^([^=]+)=(.*)$/\1=\2/' | awk -F= '{print $1"="length($2)}'
+
       - name: Build
         run: npx vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
 
