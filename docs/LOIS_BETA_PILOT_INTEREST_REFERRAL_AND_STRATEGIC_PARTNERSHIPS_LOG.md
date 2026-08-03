@@ -74,7 +74,7 @@ name per founder, 2026-07-29)
 **Location:** Jorhat, Assam
 **Status:** **Onboarding complete (2026-07-29, founder-confirmed).** Pilot 1, the first pilot
 tenant to attempt real provisioning. LOI received (email dated Wed, Jul 29, 2026, 9:37 AM, from
-imprintsprod@gmail.com to sudipta1213@gmail.com; subject "Expression of interest : AXXESS by
+[PILOT_CONTACT_EMAIL_MASKED_IMPRINTS] to [FOUNDER_EMAIL_MASKED]; subject "Expression of interest : AXXESS by
 TRIAXIS")
 **Beta access requested:** Yes -- explicitly requests to "register on your platform for beta
 access" ahead of commercial launch
@@ -101,7 +101,7 @@ be retrieved via CLI even by this session, which otherwise has production access
 Vercel security control, not something to work around. Status recorded as founder-confirmed rather
 than independently database-verified. **2026-07-29, later same day -- partial independent
 confirmation:** a screenshot of Supabase Dashboard -> Authentication -> Users shows a real
-`auth.users` row -- display name "Imprints", email imprintsprod@gmail.com, UID
+`auth.users` row -- display name "Imprints", email [PILOT_CONTACT_EMAIL_MASKED_IMPRINTS], UID
 `9adcaff6-74bb-48c7-8ade-43862ecac30a` -- see `docs/readiness/PRODUCTION_TENANT_ROSTER_2026_07_29.md`.
 This confirms the Auth user exists but not independently the matching `organizations` row, since
 that table isn't visible in this screenshot; kept as founder-confirmed rather than fully
@@ -122,7 +122,7 @@ here since no pilot has started)
 **Location:** Not stated in source document
 **Status:** **Onboarding complete (2026-07-29, live)** -- Pilot 2, the first pilot tenant to
 successfully reach a live, provisioned workspace. LOI received (email dated Wed, Jul 29, 2026,
-9:40 AM, from ekora.hive@gmail.com to sudipta1213@gmail.com; subject "Interest in Beta
+9:40 AM, from [PILOT_CONTACT_EMAIL_MASKED_EHIVE] to [FOUNDER_EMAIL_MASKED]; subject "Interest in Beta
 Registration & Future Implementation of AXXESS")
 **Beta access requested:** Yes -- explicitly requests beta access "ahead of your commercial
 rollout" to "evaluate your workflows and services in advance"
@@ -164,10 +164,10 @@ as three separate customer entries per the founder's instruction, since each is 
 business the founder intends to onboard independently, while noting they share one signatory,
 one contact point, and one location.
 
-**Contact (shared across all 3):** Pollob Mahanta, Proprietor. Cell: 94350 38833 / 99574 71233.
-Email: pollobmahanta@gmail.com
-**Location (shared across all 3):** Office Address: Rangoli Pother, P.O. -- Rangoli Pother,
-Naharkatia, District -- Dibrugarh (Assam), Pin-786610
+**Contact (shared across all 3):** Pollob Mahanta, Proprietor. Cell: [THIRD_PARTY_PHONE_MASKED].
+Email: [PILOT_CONTACT_EMAIL_MASKED]
+**Location (shared across all 3):** Office Address: [THIRD_PARTY_ADDRESS_MASKED -- Naharkatia,
+District Dibrugarh, Assam]
 **Status:** LOI received (letter dated 28/07/2026, addressed "Dear Triaxis Ventures team"; letterhead
 is "M/s Mahanta & Son's Filling Station," an authorized Nayara Energy franchisee)
 **Beta access requested:** Yes -- explicitly states "We are also looking to register on your
