@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import type { FinancialWatchItem } from "../domain";
+import { demoFinancialWatchItems } from "../demo/demoDashboardSignals";
+import { isDemoModeEnabled } from "../demo/demoMode";
 import type { TenantScope } from "../repositories/interfaces";
 
 type FinancialWatchItemsResponse = { items?: FinancialWatchItem[] };
@@ -8,6 +10,11 @@ export function useFinancialWatchItems(scope?: TenantScope, refreshToken = 0) {
   const [items, setItems] = useState<FinancialWatchItem[] | undefined>(undefined);
 
   useEffect(() => {
+    // A-91: investor.triaxisventures.com only -- see useMailDashboardSignals.ts's comment.
+    if (isDemoModeEnabled()) {
+      setItems(demoFinancialWatchItems);
+      return;
+    }
     if (!scope?.organizationId) return;
     const controller = new AbortController();
     fetch("/api/financial-watch", { credentials: "include", cache: "no-store", signal: controller.signal })
