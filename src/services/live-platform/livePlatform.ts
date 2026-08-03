@@ -49,7 +49,11 @@ export function getFallbackLiveWorkspaceMetrics(): LiveWorkspaceMetrics {
     pendingApprovals: 23,
     unreadNotifications: 18,
     ragReadyDocuments: 2200,
-    integrationConfigured: 0,
+    // A-91 (2026-08-03): was 0, which rendered "Integration Health: Gated" even in demo mode --
+    // founder's explicit instruction to replace "not connected"-looking labels with realistic
+    // demo data on investor.triaxisventures.com. 6 reflects a plausible connected set for a
+    // pilot org (Google Workspace, Microsoft, WhatsApp Business, Threads, Meta Business, Zoom).
+    integrationConfigured: 6,
     socialAlerts: 4,
   };
 }
