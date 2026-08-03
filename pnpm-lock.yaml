@@ -361,8 +361,8 @@ importers:
         specifier: 8.0.2
         version: 8.0.2(@capacitor/core@7.6.7)
       '@capacitor/ios':
-        specifier: 7.6.7
-        version: 7.6.7(@capacitor/core@7.6.7)
+        specifier: 8.4.2
+        version: 8.4.2(@capacitor/core@7.6.7)
       '@capacitor/keyboard':
         specifier: 8.0.5
         version: 8.0.5(@capacitor/core@7.6.7)
@@ -897,10 +897,10 @@ packages:
     peerDependencies:
       '@capacitor/core': '>=8.0.0'
 
-  '@capacitor/ios@7.6.7':
-    resolution: {integrity: sha512-ZXw1tO1orV6yDpkJyXxoerLC6S+UW8HFa280TX57Pgo4tPwuqWDF22vInjaolKmL/+k70R+zuRjul+hhiBWvlw==}
+  '@capacitor/ios@8.4.2':
+    resolution: {integrity: sha512-ClVzIjK++yRjsRPOpdEzhsZfbHfoEc0f4M6vD0v7sWh0qcoF6NkxNAeHpWTn4OPJpJfpGGoYsq+IfEHrYyBiWA==}
     peerDependencies:
-      '@capacitor/core': ^7.6.0
+      '@capacitor/core': ^8.4.0
 
   '@capacitor/keyboard@8.0.5':
     resolution: {integrity: sha512-oFXygC4eKYA5l2MdpTR06L2M/4x6e2SLD5yS1T9+UBDKTkzyvhWKEhbYLUaTIBPpLKqlfGudJw1X73S1H9eUzQ==}
@@ -4891,6 +4891,11 @@ packages:
     engines: {node: '>=6.0.0'}
     hasBin: true
 
+  baseline-browser-mapping@2.11.4:
+    resolution: {integrity: sha512-s4+sLr9mZ/CyqeRritFeYV/Zx73OAtmaHn6kkBS1XRoJn1hrg3xIDUcpicAEX68tkcIN0iBCgti31C8zxtkhsQ==}
+    engines: {node: '>=6.0.0'}
+    hasBin: true
+
   basic-ftp@5.3.1:
     resolution: {integrity: sha512-bopVNp6ugyA150DDuZfPFdt1KZ5a94ZDiwX4hMgZDzF+GttD80lEy8kj98kbyhLXnPvhtIo93mdnLIjpCAeeOw==}
     engines: {node: '>=10.0.0'}
@@ -5378,8 +5383,8 @@ packages:
   ee-first@1.1.1:
     resolution: {integrity: sha512-WMwm9LhRUo+WUaRN+vRuETqG89IgZphVSNkdFgeb6sS/E4OrDIN7t48CAewSHXc6C8lefD8KKfr5vY61brQlow==}
 
-  electron-to-chromium@1.5.394:
-    resolution: {integrity: sha512-Wmt2Gm0o8JWBuGgmc4XZ0u9s1RaCRqhxP47phplmfg04+qypTUurpeJGP45A7Fhv7jdrrVH44PLlR9qXo37cVQ==}
+  electron-to-chromium@1.5.396:
+    resolution: {integrity: sha512-yHiw2Y3C3H9U6TMbOfoWK/BPreiOPXRfTWPBwQBoZG6/8TB6eOPnsy5oaRYuatR7Fw2SJ4kKforgufeo7fq0EQ==}
 
   elementtree@0.1.7:
     resolution: {integrity: sha512-wkgGT6kugeQk/P6VZ/f4T+4HB41BVgNBq5CDIZVbQ02nvTVqAiVTbskxxu3eA/X96lMlfYOwnLQpN2v5E1zDEg==}
@@ -9542,7 +9547,7 @@ snapshots:
     dependencies:
       '@capacitor/core': 7.6.7
 
-  '@capacitor/ios@7.6.7(@capacitor/core@7.6.7)':
+  '@capacitor/ios@8.4.2(@capacitor/core@7.6.7)':
     dependencies:
       '@capacitor/core': 7.6.7
 
@@ -13408,6 +13413,8 @@ snapshots:
 
   baseline-browser-mapping@2.10.44: {}
 
+  baseline-browser-mapping@2.11.4: {}
+
   basic-ftp@5.3.1: {}
 
   better-opn@3.0.2:
@@ -13455,9 +13462,9 @@ snapshots:
 
   browserslist@4.28.6:
     dependencies:
-      baseline-browser-mapping: 2.10.44
+      baseline-browser-mapping: 2.11.4
       caniuse-lite: 1.0.30001806
-      electron-to-chromium: 1.5.394
+      electron-to-chromium: 1.5.396
       node-releases: 2.0.51
       update-browserslist-db: 1.2.3(browserslist@4.28.6)
 
@@ -13889,7 +13896,7 @@ snapshots:
 
   ee-first@1.1.1: {}
 
-  electron-to-chromium@1.5.394: {}
+  electron-to-chromium@1.5.396: {}
 
   elementtree@0.1.7:
     dependencies:
