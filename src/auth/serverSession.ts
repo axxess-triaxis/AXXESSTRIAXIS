@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import type { UserContext } from "../security/rbac";
 import { userContextFromAuthUser, userContextFromSupabaseRow, type SupabaseUserRow } from "./supabaseUser";
-import { parseSupabaseAuthErrorResponse } from "./supabaseAuthError";
+import { parseSupabaseAuthErrorResponse, SupabaseAuthError } from "./supabaseAuthError";
 
 export const accessTokenCookieName = "axxess-access-token";
 export const refreshTokenCookieName = "axxess-refresh-token";
@@ -56,9 +56,35 @@ function cookieOptions(maxAgeSeconds: number) {
   };
 }
 
-export async function setServerAuthCookies(accessToken: string, refreshToken?: string, maxAgeSeconds = 60 * 60) {
+// A-86 (2026-08-03): scheduling heuristic only -- no signature verification, since this never makes
+// an authorization decision (Supabase re-validates the token on every real use). Returns null on any
+// parse failure so callers fail safe (unknown remaining lifetime means "don't force a refresh").
+export function decodeAccessTokenExpiry(accessToken: string): number | null {
+  const [, payload] = accessToken.split(".");
+  if (!payload) return null;
+  try {
+    const decoded = JSON.parse(Buffer.from(payload, "base64url").toString("utf8")) as { exp?: number };
+    return typeof decoded.exp === "number" ? decoded.exp : null;
+  } catch {
+    return null;
+  }
+}
+
+// A-86: previously trusted Supabase's reported expires_in blindly for the cookie's maxAge, which can
+// silently diverge from the token's own real exp claim. Deriving maxAge from the JWT itself guarantees
+// the browser-side cookie lifetime and Supabase's real token validity never disagree.
+function accessTokenMaxAgeSeconds(accessToken: string, expiresInFallback: number) {
+  const exp = decodeAccessTokenExpiry(accessToken);
+  if (exp !== null) {
+    const remaining = exp - Math.floor(Date.now() / 1000);
+    if (remaining > 0) return Math.max(remaining, 60);
+  }
+  return expiresInFallback;
+}
+
+export async function setServerAuthCookies(accessToken: string, refreshToken?: string, expiresInFallback = 60 * 60) {
   const cookieStore = await cookies();
-  cookieStore.set(accessTokenCookieName, accessToken, cookieOptions(maxAgeSeconds));
+  cookieStore.set(accessTokenCookieName, accessToken, cookieOptions(accessTokenMaxAgeSeconds(accessToken, expiresInFallback)));
   if (refreshToken) cookieStore.set(refreshTokenCookieName, refreshToken, cookieOptions(60 * 60 * 24 * 30));
 }
 
@@ -213,7 +239,10 @@ async function refreshServerSession(refreshToken: string) {
   return { accessToken: payload.access_token, refreshToken: payload.refresh_token, user };
 }
 
-export async function getServerAuthSession(allowRefresh = true): Promise<ServerSession | null> {
+export async function getServerAuthSession(
+  allowRefresh = true,
+  options?: { refreshIfExpiringWithinSeconds?: number },
+): Promise<ServerSession | null> {
   if (!isSupabaseServerConfigured()) return null;
 
   const cookieStore = await cookies();
@@ -234,6 +263,27 @@ export async function getServerAuthSession(allowRefresh = true): Promise<ServerS
 
   if (!accessToken && (!allowRefresh || !refreshToken)) return null;
 
+  // A-86 (2026-08-03): only invoked by the one call site that gates dashboard mount
+  // (GET /api/auth/session, awaited by AuthProvider before any protected content renders) --
+  // proactively renewing the access token here, before the dashboard's own burst of ~20 parallel
+  // data-fetch calls fires, means none of those 20 concurrent serverless invocations will find an
+  // expiring token and attempt their own refresh, which is what was racing on Supabase's single-use
+  // refresh token and permanently killing sessions (see A-86 in the readiness matrix). Every other
+  // call site (all ~84 of them) passes no options and is byte-for-byte unaffected. Best-effort: on
+  // failure, falls through to validating the still-technically-unexpired original access token below
+  // rather than failing a request that would otherwise have succeeded.
+  if (options?.refreshIfExpiringWithinSeconds && accessToken && refreshToken) {
+    const exp = decodeAccessTokenExpiry(accessToken);
+    const remaining = exp !== null ? exp - Math.floor(Date.now() / 1000) : null;
+    if (remaining !== null && remaining < options.refreshIfExpiringWithinSeconds) {
+      try {
+        return await refreshServerSession(refreshToken);
+      } catch {
+        // Fall through -- the original access token may still be valid for a little longer.
+      }
+    }
+  }
+
   try {
     if (!accessToken) return refreshServerSession(refreshToken ?? "");
     const payload = await supabaseAuthRequest<SupabasePasswordResponse["user"] | { user: SupabasePasswordResponse["user"] }>("user", {}, accessToken);
@@ -244,7 +294,7 @@ export async function getServerAuthSession(allowRefresh = true): Promise<ServerS
     if (allowRefresh && refreshToken) {
       try {
         return await refreshServerSession(refreshToken);
-      } catch {
+      } catch (refreshError) {
         // 2026-08-01 incident: this used to call clearServerAuthCookies() here, which is wrong
         // under concurrency -- Supabase refresh tokens are single-use, so when a burst of parallel
         // requests (a page's own concurrent data-fetch calls) all try to refresh a near-expiry
@@ -256,6 +306,13 @@ export async function getServerAuthSession(allowRefresh = true): Promise<ServerS
         // genuinely dead refresh token (revoked, truly expired) simply keeps failing this same way
         // on every subsequent request until its own cookie maxAge lapses, which is a safe failure
         // mode -- not a silent, incorrect logout of a session that was actually fine.
+        // A-86: log the real Supabase error code (e.g. refresh_token_already_used) instead of
+        // discarding it silently -- this is what makes a future race confirmable from live logs
+        // instead of inferred indirectly. Costs nothing, changes no behavior.
+        console.warn(
+          "[serverSession] concurrent refresh attempt failed",
+          refreshError instanceof SupabaseAuthError ? refreshError.code ?? refreshError.message : refreshError,
+        );
       }
     }
   }
