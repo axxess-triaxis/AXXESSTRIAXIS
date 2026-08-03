@@ -124,18 +124,23 @@ describe("AuthProvider", () => {
     setDemoModeEnabled(false);
   });
 
-  it("re-validates a real session on tab focus/visibility return and drops to unauthenticated if the server session is gone (session-security fix)", async () => {
-    let sessionStillValid = true;
-    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
+  // 2026-08-01 incident: the focus/visibilitychange revalidation this test covered was removed --
+  // it fired an extra concurrent /api/auth/session call on tab focus/navigation that could race
+  // against a page's own parallel data-fetch calls on Supabase's single-use refresh token,
+  // logging real users out of the app entirely. See serverSession.ts and AuthProvider.tsx for the
+  // full incident note. This test asserts the mechanism is gone: focus/visibilitychange no longer
+  // triggers any session re-check.
+  it("does not re-check the session on tab focus/visibility return (removed 2026-08-01, see incident note)", async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input);
       if (url.includes("/api/auth/session")) {
-        if (!sessionStillValid) return new Response(JSON.stringify({ user: null }), { status: 401 });
         return new Response(JSON.stringify({
           user: { id: "user_1", organizationId: "org_1", role: "Organization Admin", email: "admin@example.com" },
         }), { status: 200 });
       }
       return new Response(JSON.stringify({ error: "Not found" }), { status: 404 });
-    }));
+    });
+    vi.stubGlobal("fetch", fetchMock);
 
     render(
       <AuthProvider>
@@ -144,14 +149,14 @@ describe("AuthProvider", () => {
     );
 
     await waitFor(() => expect(screen.getByTestId("authed").textContent).toBe("yes"));
+    const callsAfterMount = fetchMock.mock.calls.length;
 
-    // Simulate the absolute session cap (or a force-logout elsewhere) invalidating the session
-    // server-side while this tab stayed open, then the user returning to the tab.
-    sessionStillValid = false;
     Object.defineProperty(document, "visibilityState", { value: "visible", configurable: true });
     document.dispatchEvent(new Event("visibilitychange"));
+    window.dispatchEvent(new Event("focus"));
+    await new Promise((resolve) => setTimeout(resolve, 10));
 
-    await waitFor(() => expect(screen.getByTestId("authed").textContent).toBe("no"));
-    expect(screen.getByTestId("status").textContent).toBe("unauthenticated");
+    expect(fetchMock.mock.calls.length).toBe(callsAfterMount);
+    expect(screen.getByTestId("authed").textContent).toBe("yes");
   });
 });

@@ -18,7 +18,7 @@ import { getProductivityPluginRegistry } from "../../services/integrations/plugi
 import { isAgenticGateEnabled, setAgenticGateEnabled } from "../../services/agentic/agenticGateToggle";
 import { BrandIcon } from "../../components/ui/BrandIcon";
 import { brandIcons } from "../../components/ui/brandIcons";
-import { Building2, Calendar, Check, CheckCircle2, CheckSquare, Cloud, Database, FileSignature, FileSpreadsheet, FileText, Github, HardDrive, IndianRupee, Kanban, Layers, ListTodo, MessageCircle, MessageSquare, Presentation, RotateCcw, Save, Send, Settings, ShieldCheck, Sparkles, UserPlus, Video, X, XCircle } from "lucide-react";
+import { Building2, Calendar, Check, CheckCircle2, CheckSquare, Cloud, Database, FileSignature, FileSpreadsheet, FileText, Github, HardDrive, IndianRupee, Kanban, Layers, ListTodo, MessageCircle, MessageSquare, Presentation, RotateCcw, Save, Send, Settings, ShieldCheck, Smartphone, Sparkles, UserPlus, Video, X, XCircle } from "lucide-react";
 
 // SA-3 (2026-07-29): "AI Configuration" removed entirely -- founder's own words, "I don't think
 // this tab is user relevant anymore with OpenRouter coming in" (routing is now a single unified
@@ -177,6 +177,66 @@ const quickConnectIcons: Record<string, typeof MessageSquare> = {
 // matches 1:1, so this only needs to remap the one known exception, not build a full alias table.
 const CONNECTOR_OAUTH_PROVIDER_ID: Record<string, string> = { outlook: "microsoft" };
 
+// MC-3 (2026-08-02): the tenant-side half of WhatsApp webhook attribution -- Meta's webhook
+// subscription is app-level, not per-tenant, so the webhook receiver resolves which organization an
+// inbound event belongs to by matching this registered phone_number_id. See
+// src/repositories/whatsappEventsRepository.ts's findWhatsAppConnectionByPhoneNumberId.
+function WhatsAppPhoneNumberField() {
+  const [value, setValue] = useState("");
+  const [status, setStatus] = useState<{ tone: "success" | "error"; message: string } | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  async function handleSave() {
+    if (!value.trim()) return;
+    setSaving(true);
+    setStatus(null);
+    try {
+      const response = await fetch("/api/whatsapp/settings/phone-number", {
+        method: "PATCH",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ wabaPhoneNumberId: value.trim() }),
+      });
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({})) as { error?: string };
+        setStatus({ tone: "error", message: payload.error ?? "Unable to save phone number." });
+        return;
+      }
+      setStatus({ tone: "success", message: "Phone number registered -- live WhatsApp events for this number will now attribute to your organization." });
+    } catch {
+      setStatus({ tone: "error", message: "Unable to reach the server. Try again." });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="mb-3 rounded-lg border border-[rgba(0,0,0,0.08)] p-2.5">
+      <label htmlFor="whatsapp-phone-number-id" className="text-[11px] font-semibold text-[#0F1117]">WhatsApp phone number ID (Meta phone_number_id)</label>
+      <p className="mt-0.5 text-[10px] leading-relaxed text-[#5F6B73]">Required for live message/status pop-ups -- find this in Meta Business Suite under your WABA&apos;s phone number settings.</p>
+      <div className="mt-2 flex gap-2">
+        <input
+          id="whatsapp-phone-number-id"
+          type="text"
+          value={value}
+          onChange={(event) => setValue(event.target.value)}
+          placeholder="e.g. 109876543210987"
+          className="flex-1 rounded-lg border border-[rgba(0,0,0,0.12)] px-2.5 py-1.5 text-xs"
+        />
+        <button
+          type="button"
+          onClick={handleSave}
+          disabled={saving || !value.trim()}
+          className="rounded-lg bg-[#8B1E2D] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#7a1a27] disabled:opacity-60"
+        >
+          {saving ? "Saving..." : "Save"}
+        </button>
+      </div>
+      {status && <div className="mt-2"><InlineToast tone={status.tone} message={status.message} /></div>}
+    </div>
+  );
+}
+
 function IntegrationsQuickConnectPanel() {
   const { session } = useAuth();
   // 2026-07-30: previously showed only pilot-enabled connectors, excluding Gmail/Outlook entirely
@@ -217,9 +277,12 @@ function IntegrationsQuickConnectPanel() {
               </p>
             )}
             {plugin.id === "whatsapp_business" && (
-              <p className="mb-3 rounded-lg bg-amber-50 px-2.5 py-2 text-[11px] leading-relaxed text-amber-800">
-                Requires a Meta Business Manager account with a verified, provisioned WhatsApp Business Account (WABA) and Meta App Review approval -- connecting here alone does not complete WhatsApp Business setup.
-              </p>
+              <>
+                <p className="mb-3 rounded-lg bg-amber-50 px-2.5 py-2 text-[11px] leading-relaxed text-amber-800">
+                  Requires a Meta Business Manager account with a verified, provisioned WhatsApp Business Account (WABA) and Meta App Review approval -- connecting here alone does not complete WhatsApp Business setup.
+                </p>
+                {canConnect && <WhatsAppPhoneNumberField />}
+              </>
             )}
             {!plugin.pilotEnabled ? (
               <p className="text-[11px] text-[#5F6B73]">No connect flow ships yet for {plugin.name} -- tracked for a future release, not available to connect today.</p>
@@ -250,6 +313,135 @@ const departmentOptions = [
   "Knowledge & Analytics",
   "Administration",
 ];
+
+// A-84 (2026-08-02): lets an already-authenticated user attach a phone number to their EXISTING
+// account (Supabase's updateUser + verifyOtp type:"phone_change" flow, via
+// /api/auth/phone/link/{start,verify} -- see serverSession.ts's linkPhoneStartServerSide/
+// linkPhoneVerifyServerSide). This is the real fix for the tenant-identity-linking bug: once
+// linked here, a future phone-only sign-in for this number resolves to this same account instead
+// of creating a duplicate, tenant-less organization. Session-derived, no admin gate -- same "manage
+// my own account" pattern as the rest of ProfilePanel.
+function LinkedPhoneSection({ currentPhone }: { currentPhone?: string }) {
+  const [step, setStep] = useState<"idle" | "code">("idle");
+  const [phone, setPhone] = useState("");
+  const [code, setCode] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [toast, setToast] = useState<{ tone: "success" | "error" | "info"; message: string } | null>(null);
+
+  async function sendCode() {
+    const trimmed = phone.trim();
+    if (!trimmed) {
+      setToast({ tone: "error", message: "Enter a phone number in international format, e.g. +911234567890." });
+      return;
+    }
+    setBusy(true);
+    setToast(null);
+    try {
+      const response = await fetch("/api/auth/phone/link/start", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: trimmed }),
+      });
+      const body = await response.json().catch(() => ({} as { error?: string }));
+      if (!response.ok) {
+        setToast({ tone: "error", message: body.error ?? "Unable to send a verification code." });
+        return;
+      }
+      setStep("code");
+      setToast({ tone: "info", message: `Code sent to ${trimmed}.` });
+    } catch {
+      setToast({ tone: "error", message: "Unable to reach the server. Try again." });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function verifyCode() {
+    const trimmedCode = code.trim();
+    if (!trimmedCode) {
+      setToast({ tone: "error", message: "Enter the code you received." });
+      return;
+    }
+    setBusy(true);
+    setToast(null);
+    try {
+      const response = await fetch("/api/auth/phone/link/verify", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: phone.trim(), token: trimmedCode }),
+      });
+      const body = await response.json().catch(() => ({} as { error?: string }));
+      if (!response.ok) {
+        setToast({ tone: "error", message: body.error ?? "That code is invalid or has expired." });
+        return;
+      }
+      setToast({ tone: "success", message: "Phone number linked -- you can now sign in with it directly." });
+      setStep("idle");
+      setPhone("");
+      setCode("");
+    } catch {
+      setToast({ tone: "error", message: "Unable to reach the server. Try again." });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Card className="p-5">
+      <div className="mb-3 flex items-center gap-2">
+        <Smartphone size={15} className="text-[#8B1E2D]" />
+        <h3 className="text-sm font-semibold text-[#0F1117]">Linked sign-in methods</h3>
+      </div>
+      {currentPhone ? (
+        <p className="mb-3 text-xs text-[#5F6B73]">Phone sign-in is linked to <span className="font-semibold text-[#0F1117]">{currentPhone}</span>.</p>
+      ) : (
+        <p className="mb-3 text-xs leading-relaxed text-[#5F6B73]">
+          Link a phone number to sign in with it directly next time, instead of it being treated as a new account.
+        </p>
+      )}
+      {step === "code" ? (
+        <div className="flex gap-2">
+          <input
+            value={code}
+            onChange={(event) => setCode(event.target.value)}
+            inputMode="numeric"
+            placeholder="Enter code"
+            className="w-full rounded-lg border border-[rgba(0,0,0,0.12)] bg-white px-3 py-2 text-xs outline-none focus:border-[#8B1E2D]"
+          />
+          <button
+            type="button"
+            onClick={() => void verifyCode()}
+            disabled={busy}
+            className="flex-none rounded-lg bg-[#8B1E2D] px-3 py-2 text-xs font-semibold text-white hover:bg-[#7a1a27] disabled:opacity-60"
+          >
+            {busy ? "Verifying..." : "Verify"}
+          </button>
+        </div>
+      ) : (
+        <div className="flex gap-2">
+          <input
+            value={phone}
+            onChange={(event) => setPhone(event.target.value)}
+            type="tel"
+            placeholder="+91 XXXXX XXXXX"
+            className="w-full rounded-lg border border-[rgba(0,0,0,0.12)] bg-white px-3 py-2 text-xs outline-none focus:border-[#8B1E2D]"
+          />
+          <button
+            type="button"
+            onClick={() => void sendCode()}
+            disabled={busy}
+            className="flex-none rounded-lg border border-[rgba(0,0,0,0.12)] bg-white px-3 py-2 text-xs font-semibold text-[#0F1117] hover:bg-[#F8F9FA] disabled:opacity-60"
+          >
+            {busy ? "Sending..." : currentPhone ? "Link a different number" : "Send code"}
+          </button>
+        </div>
+      )}
+      {toast && <div className="mt-2"><InlineToast tone={toast.tone} message={toast.message} /></div>}
+    </Card>
+  );
+}
 
 function ProfilePanel() {
   const { session, updateProfile } = useAuth();
@@ -322,6 +514,7 @@ function ProfilePanel() {
             <Save size={13} /> Save Profile
           </button>
         </Card>
+        {session.source !== "mock-rbac" && <LinkedPhoneSection currentPhone={user.phone} />}
       </div>
 
       <Card className="p-5">

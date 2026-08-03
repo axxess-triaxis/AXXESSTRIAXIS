@@ -8,7 +8,9 @@ import { PostDemoSatisfactionPrompt } from "../components/feedback/PostDemoSatis
 import { WhatsNewPanel } from "../components/feedback/WhatsNewPanel";
 import { Card } from "../components/ui/Card";
 import { GuidedDemoBanner } from "../components/demo/GuidedDemoBanner";
+import { WhatsAppLiveNotificationBanner } from "../components/messaging/WhatsAppLiveNotificationBanner";
 import { usePostDemoSatisfactionPrompt } from "../hooks/usePostDemoSatisfactionPrompt";
+import { useWhatsAppLiveEvents } from "../hooks/useWhatsAppLiveEvents";
 import { useWhatsNewPanel } from "../hooks/useWhatsNewPanel";
 import { AppShell } from "./layout/AppShell";
 import { navGroups } from "./navigation";
@@ -28,6 +30,7 @@ export default function App() {
   const analytics = useAnalytics();
   const postDemoSatisfaction = usePostDemoSatisfactionPrompt();
   const whatsNew = useWhatsNewPanel();
+  const whatsAppLiveEvents = useWhatsAppLiveEvents(session.status === "authenticated" && Boolean(session.user));
   const currentUser = session.user;
   const routePath = `/${activeRoute.path}`;
   const screenshotMode = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("screenshot") === "true";
@@ -158,6 +161,7 @@ export default function App() {
       user={currentUser}
     >
       {!screenshotMode && <GuidedDemoBanner activeSection={active} onNavigate={handleSelectSection} />}
+      {!screenshotMode && <WhatsAppLiveNotificationBanner events={whatsAppLiveEvents.events} onDismiss={whatsAppLiveEvents.dismiss} />}
       <RouteBoundary route={activeRoute} hasAccess={hasRouteAccess}>
         <ActiveSection />
       </RouteBoundary>

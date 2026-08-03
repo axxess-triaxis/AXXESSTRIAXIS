@@ -71,6 +71,55 @@ const selectedMailboxMessages = [
   },
 ] satisfies SelectedMailboxMessage[];
 
+// MC-4 (2026-08-02): manual "Sync now" for the two pull-based social connectors (no webhook
+// subscription for Page/Instagram content exists yet -- see metaBusinessIngestion.ts/
+// threadsIngestion.ts's own deferred-scope comments). Calls the real sync route and reports the
+// real counts returned, never a fabricated "synced" message.
+const SYNC_ROUTES: Record<string, string> = {
+  meta_business: "/api/connectors/meta-business/sync",
+  threads: "/api/connectors/threads/sync",
+};
+
+function SyncNowButton({ providerId }: { providerId: string }) {
+  const [syncing, setSyncing] = useState(false);
+  const [status, setStatus] = useState<{ tone: "success" | "error"; message: string } | null>(null);
+
+  async function handleSync() {
+    setSyncing(true);
+    setStatus(null);
+    try {
+      const response = await fetch(SYNC_ROUTES[providerId], { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: "{}" });
+      const payload = await response.json().catch(() => ({})) as { error?: string; synced?: number; postsSynced?: number; campaignsSynced?: number };
+      if (!response.ok) {
+        setStatus({ tone: "error", message: payload.error ?? "Sync failed." });
+        return;
+      }
+      const summary = providerId === "threads"
+        ? `Synced ${payload.synced ?? 0} post(s).`
+        : `Synced ${payload.postsSynced ?? 0} post(s) and ${payload.campaignsSynced ?? 0} campaign(s).`;
+      setStatus({ tone: "success", message: summary });
+    } catch {
+      setStatus({ tone: "error", message: "Unable to reach the server. Try again." });
+    } finally {
+      setSyncing(false);
+    }
+  }
+
+  return (
+    <div className="mt-2">
+      <button
+        type="button"
+        onClick={handleSync}
+        disabled={syncing}
+        className="rounded-lg border border-[rgba(139,30,45,0.22)] bg-white px-2.5 py-1 text-[11px] font-semibold text-[#8B1E2D] hover:bg-[#8B1E2D]/5 disabled:opacity-60"
+      >
+        {syncing ? "Syncing..." : "Sync now"}
+      </button>
+      {status && <div className="mt-1.5"><InlineToast tone={status.tone} message={status.message} /></div>}
+    </div>
+  );
+}
+
 export const IntegrationsSection = () => {
   const integrations = applicationServices.institutionalRepository.getIntegrations();
   const connectedCount = integrations.filter((integration) => integration.status === "connected").length;
@@ -461,6 +510,7 @@ export const IntegrationsSection = () => {
                 </span>
               </div>
               <p className="mt-2 text-xs leading-relaxed text-[#5F6B73]">{plugin.useCases.join(" - ")}</p>
+              {(plugin.id === "meta_business" || plugin.id === "threads") && <SyncNowButton providerId={plugin.id} />}
             </div>
           );
         })}
