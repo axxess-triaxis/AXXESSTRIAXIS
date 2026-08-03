@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import type { Route } from "next";
 import { useRouter } from "next/navigation";
@@ -28,7 +28,20 @@ function LoginPanel() {
   // sign-in URL should always require fresh credentials, not resume a stale session. Investor
   // Preview's demo session (source: "mock-rbac") is a separate, deliberately-required entry point
   // (docs/readiness/CLAUDE_CODE_SPRINT_1_CORRECTION_PROMPT_2026_07_24.md) and is left untouched.
+  //
+  // A-87 (2026-08-03): this used to re-run on every session change (deps: [isAuthenticated, session,
+  // logout]), which also fires the instant THIS page's own handleSubmit successfully signs someone
+  // in -- login() updates the session synchronously, this effect sees "authenticated session on
+  // /auth" before router.push has swapped the page away, and immediately logs out the session the
+  // user just created. Confirmed live via Vercel logs: POST /api/auth/login 200, then POST
+  // /api/auth/logout 200 in the same instant. Fix: only ever evaluate this once, against the session
+  // as it resolved when the page first loaded -- that's the actual "did I land here with an existing
+  // stale session" case this was meant for. A session that becomes authenticated later, during this
+  // page's own lifetime (a fresh sign-in performed here), must never re-trigger it.
+  const hasCheckedInitialSessionRef = useRef(false);
   useEffect(() => {
+    if (session.status === "loading" || hasCheckedInitialSessionRef.current) return;
+    hasCheckedInitialSessionRef.current = true;
     if (isAuthenticated && session.status === "authenticated" && session.source === "supabase-auth") {
       void logout();
     }
