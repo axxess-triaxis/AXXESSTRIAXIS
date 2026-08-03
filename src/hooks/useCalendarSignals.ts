@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import type { Meeting } from "../domain";
+import { demoCalendarSignals } from "../demo/demoDashboardSignals";
+import { isDemoModeEnabled } from "../demo/demoMode";
 import type { TenantScope } from "../repositories/interfaces";
 import { computeCalendarDashboardSignals, type CalendarDashboardSignals } from "../services/dashboard/calendarDashboardSignals";
 
@@ -12,6 +14,11 @@ export function useCalendarSignals(scope?: TenantScope, refreshToken = 0) {
   const [signals, setSignals] = useState<CalendarDashboardSignals | undefined>(undefined);
 
   useEffect(() => {
+    // A-91: investor.triaxisventures.com only -- see useMailDashboardSignals.ts's comment.
+    if (isDemoModeEnabled()) {
+      setSignals(demoCalendarSignals);
+      return;
+    }
     if (!scope?.organizationId) return;
     const controller = new AbortController();
     fetch("/api/repositories/meetings?pageSize=500", { credentials: "include", cache: "no-store", signal: controller.signal })
