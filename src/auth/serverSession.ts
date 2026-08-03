@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import type { UserContext } from "../security/rbac";
 import { userContextFromAuthUser, userContextFromSupabaseRow, type SupabaseUserRow } from "./supabaseUser";
-import { parseSupabaseAuthErrorResponse } from "./supabaseAuthError";
+import { parseSupabaseAuthErrorResponse, SupabaseAuthError } from "./supabaseAuthError";
 
 export const accessTokenCookieName = "axxess-access-token";
 export const refreshTokenCookieName = "axxess-refresh-token";
@@ -20,6 +20,9 @@ type SupabasePasswordResponse = {
   user: {
     id: string;
     email?: string;
+    // Populated once a phone number has been linked to this identity (see
+    // linkPhoneStartServerSide/linkPhoneVerifyServerSide) -- absent otherwise.
+    phone?: string;
     user_metadata?: Record<string, unknown>;
     app_metadata?: Record<string, unknown>;
   };
@@ -53,9 +56,35 @@ function cookieOptions(maxAgeSeconds: number) {
   };
 }
 
-export async function setServerAuthCookies(accessToken: string, refreshToken?: string, maxAgeSeconds = 60 * 60) {
+// A-86 (2026-08-03): scheduling heuristic only -- no signature verification, since this never makes
+// an authorization decision (Supabase re-validates the token on every real use). Returns null on any
+// parse failure so callers fail safe (unknown remaining lifetime means "don't force a refresh").
+export function decodeAccessTokenExpiry(accessToken: string): number | null {
+  const [, payload] = accessToken.split(".");
+  if (!payload) return null;
+  try {
+    const decoded = JSON.parse(Buffer.from(payload, "base64url").toString("utf8")) as { exp?: number };
+    return typeof decoded.exp === "number" ? decoded.exp : null;
+  } catch {
+    return null;
+  }
+}
+
+// A-86: previously trusted Supabase's reported expires_in blindly for the cookie's maxAge, which can
+// silently diverge from the token's own real exp claim. Deriving maxAge from the JWT itself guarantees
+// the browser-side cookie lifetime and Supabase's real token validity never disagree.
+function accessTokenMaxAgeSeconds(accessToken: string, expiresInFallback: number) {
+  const exp = decodeAccessTokenExpiry(accessToken);
+  if (exp !== null) {
+    const remaining = exp - Math.floor(Date.now() / 1000);
+    if (remaining > 0) return Math.max(remaining, 60);
+  }
+  return expiresInFallback;
+}
+
+export async function setServerAuthCookies(accessToken: string, refreshToken?: string, expiresInFallback = 60 * 60) {
   const cookieStore = await cookies();
-  cookieStore.set(accessTokenCookieName, accessToken, cookieOptions(maxAgeSeconds));
+  cookieStore.set(accessTokenCookieName, accessToken, cookieOptions(accessTokenMaxAgeSeconds(accessToken, expiresInFallback)));
   if (refreshToken) cookieStore.set(refreshTokenCookieName, refreshToken, cookieOptions(60 * 60 * 24 * 30));
 }
 
@@ -121,7 +150,12 @@ async function resolveUser(accessToken: string, authUser: SupabasePasswordRespon
     accessToken,
   );
 
-  return rows?.[0] ? userContextFromSupabaseRow(rows[0]) : userContextFromAuthUser(authUser);
+  // A-84 (2026-08-02): a linked phone number lives only on the Supabase Auth user object (no
+  // public.users.phone column -- Supabase's own auth.users.phone is the single source of truth,
+  // see linkPhoneStartServerSide/linkPhoneVerifyServerSide's header comment), so it must be
+  // merged in here regardless of which branch resolved the rest of the UserContext.
+  const user = rows?.[0] ? userContextFromSupabaseRow(rows[0]) : userContextFromAuthUser(authUser);
+  return authUser.phone ? { ...user, phone: authUser.phone } : user;
 }
 
 export async function signInServerSide(email: string, password: string): Promise<ServerSession> {
@@ -165,6 +199,36 @@ export async function verifyPhoneOtpServerSide(phone: string, token: string): Pr
   return { accessToken: payload.access_token, refreshToken: payload.refresh_token, user };
 }
 
+// A-84 (2026-08-02): the missing "authenticated link" half of phone auth. The existing
+// verifyPhoneOtpServerSide above is Supabase's unauthenticated *sign-in* OTP flow
+// (POST /auth/v1/verify {type:"sms"}), which always resolves/creates a phone-keyed auth.users
+// identity distinct from any existing email/OAuth one for the same human -- that's the root cause
+// of A-84 (see ACTIONABLES_READINESS_MATRIX.md). Supabase's documented, correct mechanism for
+// attaching a phone number to an ALREADY-authenticated user's EXISTING identity is
+// updateUser({phone}) followed by verifyOtp({type:"phone_change"}) -- both calls carry the
+// caller's own access token (same pattern as establishServerSessionFromOAuthTokens's
+// authenticated GET /auth/v1/user call), and Supabase writes the phone directly onto that same
+// auth.users row rather than creating a new one. Once linked this way, resolveUser()'s existing
+// id-based lookup already works correctly for a later phone sign-in with zero further changes.
+export async function linkPhoneStartServerSide(accessToken: string, phone: string): Promise<void> {
+  await supabaseAuthRequest("user", {
+    method: "PUT",
+    body: JSON.stringify({ phone }),
+  }, accessToken);
+}
+
+// Supabase enforces phone uniqueness on this call and throws a real, specific error (surfaced to
+// the caller, never swallowed) if the phone number already belongs to a different Supabase user --
+// e.g. a stray identity from an earlier unauthenticated phone sign-in attempt with the same
+// number, which must be cleaned up (Supabase Dashboard) before it can be linked here.
+export async function linkPhoneVerifyServerSide(accessToken: string, phone: string, token: string): Promise<UserContext> {
+  const payload = await supabaseAuthRequest<SupabasePasswordResponse>("verify", {
+    method: "POST",
+    body: JSON.stringify({ type: "phone_change", phone, token }),
+  }, accessToken);
+  return resolveUser(accessToken, payload.user);
+}
+
 async function refreshServerSession(refreshToken: string) {
   const payload = await supabaseAuthRequest<SupabasePasswordResponse>("token?grant_type=refresh_token", {
     method: "POST",
@@ -175,7 +239,10 @@ async function refreshServerSession(refreshToken: string) {
   return { accessToken: payload.access_token, refreshToken: payload.refresh_token, user };
 }
 
-export async function getServerAuthSession(allowRefresh = true): Promise<ServerSession | null> {
+export async function getServerAuthSession(
+  allowRefresh = true,
+  options?: { refreshIfExpiringWithinSeconds?: number },
+): Promise<ServerSession | null> {
   if (!isSupabaseServerConfigured()) return null;
 
   const cookieStore = await cookies();
@@ -196,6 +263,27 @@ export async function getServerAuthSession(allowRefresh = true): Promise<ServerS
 
   if (!accessToken && (!allowRefresh || !refreshToken)) return null;
 
+  // A-86 (2026-08-03): only invoked by the one call site that gates dashboard mount
+  // (GET /api/auth/session, awaited by AuthProvider before any protected content renders) --
+  // proactively renewing the access token here, before the dashboard's own burst of ~20 parallel
+  // data-fetch calls fires, means none of those 20 concurrent serverless invocations will find an
+  // expiring token and attempt their own refresh, which is what was racing on Supabase's single-use
+  // refresh token and permanently killing sessions (see A-86 in the readiness matrix). Every other
+  // call site (all ~84 of them) passes no options and is byte-for-byte unaffected. Best-effort: on
+  // failure, falls through to validating the still-technically-unexpired original access token below
+  // rather than failing a request that would otherwise have succeeded.
+  if (options?.refreshIfExpiringWithinSeconds && accessToken && refreshToken) {
+    const exp = decodeAccessTokenExpiry(accessToken);
+    const remaining = exp !== null ? exp - Math.floor(Date.now() / 1000) : null;
+    if (remaining !== null && remaining < options.refreshIfExpiringWithinSeconds) {
+      try {
+        return await refreshServerSession(refreshToken);
+      } catch {
+        // Fall through -- the original access token may still be valid for a little longer.
+      }
+    }
+  }
+
   try {
     if (!accessToken) return refreshServerSession(refreshToken ?? "");
     const payload = await supabaseAuthRequest<SupabasePasswordResponse["user"] | { user: SupabasePasswordResponse["user"] }>("user", {}, accessToken);
@@ -206,8 +294,25 @@ export async function getServerAuthSession(allowRefresh = true): Promise<ServerS
     if (allowRefresh && refreshToken) {
       try {
         return await refreshServerSession(refreshToken);
-      } catch {
-        await clearServerAuthCookies();
+      } catch (refreshError) {
+        // 2026-08-01 incident: this used to call clearServerAuthCookies() here, which is wrong
+        // under concurrency -- Supabase refresh tokens are single-use, so when a burst of parallel
+        // requests (a page's own concurrent data-fetch calls) all try to refresh a near-expiry
+        // access token at once, exactly one wins and rotates the token; every losing request's
+        // refresh attempt then fails with an already-invalidated token and landed here, wiping
+        // cookies for the whole browser -- including the ones the winning request had just
+        // legitimately refreshed. Falling through to a plain null instead: this request reports
+        // "not authenticated" for itself without destroying a sibling request's valid session. A
+        // genuinely dead refresh token (revoked, truly expired) simply keeps failing this same way
+        // on every subsequent request until its own cookie maxAge lapses, which is a safe failure
+        // mode -- not a silent, incorrect logout of a session that was actually fine.
+        // A-86: log the real Supabase error code (e.g. refresh_token_already_used) instead of
+        // discarding it silently -- this is what makes a future race confirmable from live logs
+        // instead of inferred indirectly. Costs nothing, changes no behavior.
+        console.warn(
+          "[serverSession] concurrent refresh attempt failed",
+          refreshError instanceof SupabaseAuthError ? refreshError.code ?? refreshError.message : refreshError,
+        );
       }
     }
   }

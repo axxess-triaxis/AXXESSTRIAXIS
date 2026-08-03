@@ -26,7 +26,7 @@ const envMap: Record<string, string> = {
   teams: "MICROSOFT_CLIENT_ID",
   slack: "SLACK_CLIENT_ID",
   calendly: "CALENDLY_CLIENT_ID",
-  whatsapp_business: "WHATSAPP_BUSINESS_CLIENT_ID",
+  whatsapp_business: "META_APP_ID",
   notion: "NOTION_CLIENT_ID",
   jira: "JIRA_CLIENT_ID",
   trello: "TRELLO_API_KEY",
@@ -43,6 +43,10 @@ const envMap: Record<string, string> = {
   x_twitter: "X_CLIENT_ID",
   docusign: "DOCUSIGN_INTEGRATION_KEY",
   razorpay: "RAZORPAY_KEY_ID",
+  // Threads has its own distinct Meta Developer app -- not the same META_APP_ID as
+  // whatsapp_business/meta_business, see connectorContract.ts's threads contract comment.
+  threads: "THREADS_APP_ID",
+  meta_business: "META_APP_ID",
 };
 
 const basePlugins: Omit<ProductivityPlugin, "configured">[] = [
@@ -78,6 +82,12 @@ const basePlugins: Omit<ProductivityPlugin, "configured">[] = [
   { id: "google_docs", name: "Google Docs", category: "document", useCases: ["policy document import", "briefing notes"], requiredScopes: ["documents"], pilotEnabled: true, webhookSupport: false, requiredRoles: ["Manager"], auditEvents: ["docs.document.imported"] },
   { id: "google_slides", name: "Google Slides", category: "document", useCases: ["stakeholder deck import", "board presentation sync"], requiredScopes: ["presentations"], pilotEnabled: true, webhookSupport: false, requiredRoles: ["Manager"], auditEvents: ["slides.deck.imported"] },
   { id: "x_twitter", name: "X (Twitter)", category: "social", useCases: ["public advisory posting", "stakeholder outreach"], requiredScopes: ["tweet.read", "tweet.write", "users.read"], pilotEnabled: true, webhookSupport: false, requiredRoles: ["Organization Admin"], auditEvents: ["x_twitter.post.published"] },
+  // Founder-confirmed standing requirement (2026-08-02): full Meta Business Suite reach (business
+  // assets, campaigns/promotions, content, community engagement), not just WhatsApp messaging --
+  // see connectorContract.ts's meta_business/threads contracts for the real OAuth backing these,
+  // including the same Meta App Review caveat already applied to whatsapp_business above.
+  { id: "threads", name: "Threads", category: "social", useCases: ["public posting", "reply engagement"], requiredScopes: ["threads_basic", "threads_content_publish", "threads_manage_replies"], pilotEnabled: true, webhookSupport: false, requiredRoles: ["Organization Admin"], auditEvents: ["threads.content.synced"] },
+  { id: "meta_business", name: "Meta Business Suite", category: "social", useCases: ["Pages/Instagram content", "campaign management", "community engagement"], requiredScopes: ["business_management", "pages_manage_posts", "instagram_content_publish", "ads_management"], pilotEnabled: true, webhookSupport: true, requiredRoles: ["Organization Admin"], auditEvents: ["meta_business.content.synced", "meta_business.campaign.synced"] },
   { id: "docusign", name: "DocuSign", category: "document", useCases: ["approval packets", "contract signatures"], requiredScopes: ["signature"], pilotEnabled: false, webhookSupport: true, requiredRoles: ["Organization Admin"], auditEvents: ["docusign.envelope.sent"] },
   { id: "razorpay", name: "Razorpay", category: "finance", useCases: ["payment reconciliation", "grant disbursement hooks"], requiredScopes: ["payments:read"], pilotEnabled: false, webhookSupport: true, requiredRoles: ["Organization Admin"], auditEvents: ["razorpay.payment.reconciled"] },
 ];

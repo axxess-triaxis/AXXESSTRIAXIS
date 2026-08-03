@@ -1,5 +1,5 @@
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { SettingsSection } from "./SettingsSection";
 import { getProductivityPluginRegistry } from "../../services/integrations/pluginRegistry";
 
@@ -64,5 +64,47 @@ describe("Settings Integrations tab -- full catalogue, real logos (2026-07-30)",
 
     const notionCard = screen.getByText("Notion").closest("div.mb-3");
     expect(notionCard?.querySelector("svg[aria-label='Notion logo']")).toBeTruthy();
+  });
+});
+
+// MC-3 (2026-08-02): the tenant-side phone-number registration field that makes the WhatsApp
+// webhook attributable to this organization (see whatsappEventsRepository.ts's
+// findWhatsAppConnectionByPhoneNumberId).
+describe("WhatsApp phone number field (MC-3)", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("appears only on the WhatsApp Business card, for an admin who can connect", () => {
+    setIntegrationsTab();
+    render(<SettingsSection />);
+
+    expect(screen.getByLabelText(/WhatsApp phone number ID/)).toBeInTheDocument();
+  });
+
+  it("saves the entered phone number via PATCH and shows a success message", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ wabaPhoneNumberId: "109876543210987" }) });
+    vi.stubGlobal("fetch", fetchMock);
+    setIntegrationsTab();
+    render(<SettingsSection />);
+
+    fireEvent.change(screen.getByLabelText(/WhatsApp phone number ID/), { target: { value: "109876543210987" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+    await waitFor(() => expect(screen.getByText(/Phone number registered/)).toBeInTheDocument());
+    expect(fetchMock).toHaveBeenCalledWith("/api/whatsapp/settings/phone-number", expect.objectContaining({
+      method: "PATCH",
+      body: JSON.stringify({ wabaPhoneNumberId: "109876543210987" }),
+    }));
+  });
+
+  it("shows the real server error message when the tenant hasn't connected WhatsApp Business yet", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: false, json: async () => ({ error: "Connect WhatsApp Business before registering a phone number." }) });
+    vi.stubGlobal("fetch", fetchMock);
+    setIntegrationsTab();
+    render(<SettingsSection />);
+
+    fireEvent.change(screen.getByLabelText(/WhatsApp phone number ID/), { target: { value: "109876543210987" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+    await waitFor(() => expect(screen.getByText("Connect WhatsApp Business before registering a phone number.")).toBeInTheDocument());
   });
 });

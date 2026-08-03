@@ -151,6 +151,94 @@ describe("DashboardSection (Executive Dashboard Sprint ED-3)", () => {
     const pilotHeading = await screen.findByText("Pilot Onboarding (personal checklist)");
     expect(pilotHeading).toBeInTheDocument();
     expect(screen.getByText(/saved to this browser only/)).toBeInTheDocument();
+  });
+});
+
+// Executive Dashboard Redesign addendum (2026-08-01): founder feedback on the live ED-R1 deploy --
+// "Enterprise golden path" used to render unconditionally (even in its already-collapsed on-demand
+// form) and was flagged as redundant, screen-space-consuming clutter. It must not feature on the
+// dashboard by default and must be 100% optional, revealed only via "Start guided setup".
+describe("DashboardSection (Executive Dashboard Redesign addendum -- Golden Path collapse)", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    window.localStorage.clear();
+  });
+
+  async function renderDashboard() {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ user: null }), { status: 401 })));
+    render(
+      <AnalyticsProviderShell provider={new MockAnalyticsProvider()}>
+        <AuthProvider>
+          <DashboardSection />
+        </AuthProvider>
+      </AnalyticsProviderShell>,
+    );
+    expect(await screen.findByText("Executive Dashboard")).toBeInTheDocument();
+  }
+
+  it("does not show the Enterprise golden path panel by default", async () => {
+    await renderDashboard();
+    expect(screen.queryByText("Enterprise golden path")).not.toBeInTheDocument();
+  });
+
+  it("reveals the Enterprise golden path panel only after clicking 'Start guided setup'", async () => {
+    await renderDashboard();
+    expect(screen.queryByText("Enterprise golden path")).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByText("Start guided setup"));
+
     expect(await screen.findByText("Enterprise golden path")).toBeInTheDocument();
+  });
+
+  it("hides the Enterprise golden path panel again after clicking 'Hide guided setup path'", async () => {
+    await renderDashboard();
+    fireEvent.click(screen.getByText("Start guided setup"));
+    await screen.findByText("Enterprise golden path");
+
+    fireEvent.click(screen.getByText("Hide guided setup path"));
+
+    expect(screen.queryByText("Enterprise golden path")).not.toBeInTheDocument();
+  });
+});
+
+// Executive Dashboard Redesign Sprint ED-R1: the new score-driven 3-tier layout replaces the old
+// demo-KPI-grid / AI Router-Live Ops-External Signals card row / demo-governance-alerts row. These
+// tests confirm the new tiers render for a real (non-demo) session and never show fabricated data.
+describe("DashboardSection (Executive Dashboard Redesign Sprint ED-R1)", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    window.localStorage.clear();
+  });
+
+  async function renderDashboard() {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ user: null }), { status: 401 })));
+    render(
+      <AnalyticsProviderShell provider={new MockAnalyticsProvider()}>
+        <AuthProvider>
+          <DashboardSection />
+        </AuthProvider>
+      </AnalyticsProviderShell>,
+    );
+    expect(await screen.findByText("Executive Dashboard")).toBeInTheDocument();
+  }
+
+  it("renders all three score-driven tier sections", async () => {
+    await renderDashboard();
+    expect(await screen.findByText(/Tier 1 · Executive & performance/)).toBeInTheDocument();
+    expect(screen.getByText(/Tier 2 · AI operating infrastructure/)).toBeInTheDocument();
+    expect(screen.getByText(/Tier 3 · Compliance, audit, governance/)).toBeInTheDocument();
+  });
+
+  it("shows an honest 'Not connected yet' tile for CRM open leads rather than fabricated data (live/demo separation)", async () => {
+    await renderDashboard();
+    expect(await screen.findByText("Open leads")).toBeInTheDocument();
+    expect(screen.getAllByText("Not connected yet").length).toBeGreaterThan(0);
+  });
+
+  it("no longer renders the removed AI Router / Live Ops / External Signals card row", async () => {
+    await renderDashboard();
+    await screen.findByText(/Tier 1 · Executive & performance/);
+    expect(screen.queryByText("AI Router")).not.toBeInTheDocument();
+    expect(screen.queryByText("Live Ops")).not.toBeInTheDocument();
   });
 });
