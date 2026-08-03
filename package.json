@@ -165,7 +165,7 @@
     "@vitejs/plugin-react-swc": "^4.3.1",
     "@vitest/coverage-v8": "4.1.10",
     "eslint": "^9.39.4",
-    "eslint-config-next": "^16.2.10",
+    "eslint-config-next": "^16.2.12",
     "jsdom": "^29.1.1",
     "jszip": "^3.10.1",
     "supabase": "2.109.1",
