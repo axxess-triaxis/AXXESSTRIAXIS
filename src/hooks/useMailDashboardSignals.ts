@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { demoMailSignals } from "../demo/demoDashboardSignals";
+import { isDemoModeEnabled } from "../demo/demoMode";
 import type { TenantScope } from "../repositories/interfaces";
 import type { MailDashboardSignals } from "../services/dashboard/mailDashboardSignals";
 
@@ -9,6 +11,12 @@ export function useMailDashboardSignals(scope?: TenantScope, refreshToken = 0) {
   const [signals, setSignals] = useState<MailDashboardSignals | undefined>(undefined);
 
   useEffect(() => {
+    // A-91 (2026-08-03): investor.triaxisventures.com only -- landing.triaxisventures.com's real,
+    // honest empty/not-connected states are untouched, since isDemoModeEnabled() is false there.
+    if (isDemoModeEnabled()) {
+      setSignals(demoMailSignals);
+      return;
+    }
     if (!scope?.organizationId) return;
     const controller = new AbortController();
     fetch("/api/dashboard/mail-signals", { credentials: "include", cache: "no-store", signal: controller.signal })
