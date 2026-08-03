@@ -55,6 +55,42 @@ describe("/auth page", () => {
     ));
   });
 
+  // A-87 (2026-08-03): confirmed live via Vercel logs -- POST /api/auth/login 200 immediately
+  // followed by POST /api/auth/logout 200 -- a fresh, successful sign-in on this exact page was
+  // self-destructing because the auto-logout effect above reactively fired the instant login()
+  // updated the session, before router.push had swapped the page away.
+  it("does not sign a user back out immediately after they successfully sign in on this same page (A-87 regression)", async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url.includes("/api/auth/session")) {
+        return new Response(JSON.stringify({ user: null }), { status: 401 });
+      }
+      if (url === "/api/auth/login" && init?.method === "POST") {
+        return new Response(JSON.stringify({
+          user: { id: "user_1", organizationId: "org_1", role: "Organization Admin", email: "founder@axxess.dev" },
+        }), { status: 200 });
+      }
+      if (url.includes("/api/auth/logout")) {
+        return new Response(JSON.stringify({ ok: true }), { status: 200 });
+      }
+      throw new Error(`Unexpected fetch: ${url}`);
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    render(<AuthPage />);
+    await screen.findByRole("button", { name: /^sign in$/i });
+
+    fireEvent.change(screen.getByLabelText(/email/i), { target: { value: "founder@axxess.dev" } });
+    fireEvent.change(screen.getByLabelText(/password/i), { target: { value: "hunter2" } });
+    fireEvent.click(screen.getByRole("button", { name: /^sign in$/i }));
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledWith("/api/auth/login", expect.objectContaining({ method: "POST" })));
+    // Give the effect a chance to fire if it were going to -- it must not.
+    await new Promise((resolve) => setTimeout(resolve, 20));
+
+    expect(fetchMock.mock.calls.some(([reqInput]) => String(reqInput).includes("/api/auth/logout"))).toBe(false);
+  });
+
   it("keeps the Continue-to-workspace bypass for the Investor Preview demo session (documented P0 requirement, unaffected by the real-session fix)", async () => {
     setDemoModeEnabled(true);
     vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ user: null }), { status: 401 })));
