@@ -11,7 +11,10 @@ test.describe("Sprint 27 live tenant workflow execution", () => {
 
     await page.goto("/dashboard");
     await expect(page.getByText("Tenant Health Command Center")).toBeVisible();
-    await expect(page.getByText("Workflow timeline")).toBeVisible();
+    // getByText("Workflow timeline") is a substring match against both the panel's own <h2>
+    // and an unrelated "Workflow timeline activity" nav label elsewhere on the dashboard --
+    // scope to the heading role to match the panel itself, not the nearby label.
+    await expect(page.getByRole("heading", { name: "Workflow timeline" })).toBeVisible();
     await expect(page.getByText("Priority actions")).toBeVisible();
 
     await page.goto("/integrations");
