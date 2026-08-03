@@ -6,7 +6,10 @@ import { PostHogSessionReplayInit } from "../services/analytics/PostHogSessionRe
 import "../styles/index.css";
 
 // Added Vexo Analytics script for web React app
-const productionSiteUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://www.triaxisventures.com";
+// A-89 (2026-08-03): CI's `vercel pull` build path (unlike Vercel's own build servers, which the
+// prior manual `vercel --prod` CLI deploys used) can resolve this to an empty string rather than
+// leaving it unset -- `??` only falls back on null/undefined, so `new URL("")` crashed the build.
+const productionSiteUrl = process.env.NEXT_PUBLIC_APP_URL || "https://www.triaxisventures.com";
 
 export const metadata: Metadata = {
   metadataBase: new URL(productionSiteUrl),
