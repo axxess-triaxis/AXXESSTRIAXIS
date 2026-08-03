@@ -23,6 +23,15 @@ function jsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
 }
 
+// A-86: a real Supabase access token is a JWT; decodeAccessTokenExpiry only ever reads its payload
+// segment, so a minimal 3-part base64url string with an `exp` claim is enough to exercise it without
+// a real signature.
+function fakeJwt(expiresInSeconds: number) {
+  const exp = Math.floor(Date.now() / 1000) + expiresInSeconds;
+  const payload = Buffer.from(JSON.stringify({ exp })).toString("base64url");
+  return `header.${payload}.signature`;
+}
+
 describe("serverSession absolute session cap", () => {
   beforeEach(() => {
     store = new Map();
@@ -144,6 +153,134 @@ describe("serverSession absolute session cap", () => {
     expect(store.get(accessTokenCookieName)?.value).toBe("stale-access");
     expect(store.get(refreshTokenCookieName)?.value).toBe("already-rotated-refresh");
     expect(store.get(sessionAnchorCookieName)?.value).toBeDefined();
+  });
+
+  // A-86 (2026-08-03): the concurrent-refresh-race regression test above proves losing requests no
+  // longer wipe cookies, but it cannot prevent Supabase/GoTrue's own single-use-refresh-token reuse
+  // detection from revoking the whole token family when 20 parallel requests redeem the same
+  // refresh token at once. The real fix is to stop that redemption from ever happening: proactively
+  // renew the access token at the one call site that already gates dashboard mount, before the
+  // parallel burst fires.
+  describe("proactive refresh (A-86)", () => {
+    it("decodeAccessTokenExpiry reads a JWT's exp claim without verifying its signature", async () => {
+      const { decodeAccessTokenExpiry } = await import("./serverSession");
+      const token = fakeJwt(3600);
+      const exp = decodeAccessTokenExpiry(token);
+      expect(exp).toBeCloseTo(Math.floor(Date.now() / 1000) + 3600, -1);
+    });
+
+    it("decodeAccessTokenExpiry returns null for a malformed token instead of throwing", async () => {
+      const { decodeAccessTokenExpiry } = await import("./serverSession");
+      expect(decodeAccessTokenExpiry("not-a-jwt")).toBeNull();
+      expect(decodeAccessTokenExpiry("")).toBeNull();
+      expect(decodeAccessTokenExpiry("header.not-base64url!!.sig")).toBeNull();
+    });
+
+    it("proactively refreshes when the access token is within the margin, without ever validating the stale token", async () => {
+      const { getServerAuthSession, accessTokenCookieName, refreshTokenCookieName, sessionAnchorCookieName } = await import("./serverSession");
+
+      store.set(accessTokenCookieName, { value: fakeJwt(120), maxAge: 3600 }); // 2 min left, under a 5 min margin
+      store.set(refreshTokenCookieName, { value: "refresh-1", maxAge: 60 * 60 * 24 * 30 });
+      store.set(sessionAnchorCookieName, { value: String(Date.now()), maxAge: 60 * 60 * 24 });
+
+      const fetchMock = vi.fn(async (url: string) => {
+        if (url.endsWith("/auth/v1/user")) throw new Error("must not validate the stale token when a proactive refresh is due");
+        if (url.includes("token?grant_type=refresh_token")) {
+          return jsonResponse({ access_token: fakeJwt(3600), refresh_token: "refresh-2", user: authUser });
+        }
+        if (url.includes("/rest/v1/users")) return jsonResponse([]);
+        throw new Error(`Unexpected fetch: ${url}`);
+      });
+      vi.stubGlobal("fetch", fetchMock);
+
+      const session = await getServerAuthSession(true, { refreshIfExpiringWithinSeconds: 300 });
+
+      expect(session?.refreshToken).toBe("refresh-2");
+      expect(fetchMock.mock.calls.some(([url]) => String(url).includes("grant_type=refresh_token"))).toBe(true);
+    });
+
+    it("falls through to validating the original access token when the proactive refresh itself fails (best-effort, non-fatal)", async () => {
+      const { getServerAuthSession, accessTokenCookieName, refreshTokenCookieName, sessionAnchorCookieName } = await import("./serverSession");
+
+      const staleAccess = fakeJwt(120);
+      store.set(accessTokenCookieName, { value: staleAccess, maxAge: 3600 });
+      store.set(refreshTokenCookieName, { value: "refresh-1", maxAge: 60 * 60 * 24 * 30 });
+      store.set(sessionAnchorCookieName, { value: String(Date.now()), maxAge: 60 * 60 * 24 });
+
+      vi.stubGlobal("fetch", vi.fn(async (url: string) => {
+        if (url.includes("token?grant_type=refresh_token")) return jsonResponse({ error_code: "network_error" }, 500);
+        if (url.endsWith("/auth/v1/user")) return jsonResponse(authUser);
+        if (url.includes("/rest/v1/users")) return jsonResponse([]);
+        throw new Error(`Unexpected fetch: ${url}`);
+      }));
+
+      const session = await getServerAuthSession(true, { refreshIfExpiringWithinSeconds: 300 });
+
+      expect(session?.accessToken).toBe(staleAccess);
+      expect(session?.user.email).toBe("founder@axxess.dev");
+    });
+
+    it("does not attempt a proactive refresh when no options are passed -- every other of the ~84 call sites is unaffected", async () => {
+      const { getServerAuthSession, accessTokenCookieName, refreshTokenCookieName, sessionAnchorCookieName } = await import("./serverSession");
+
+      store.set(accessTokenCookieName, { value: fakeJwt(120), maxAge: 3600 }); // would trigger a proactive refresh if options were passed
+      store.set(refreshTokenCookieName, { value: "refresh-1", maxAge: 60 * 60 * 24 * 30 });
+      store.set(sessionAnchorCookieName, { value: String(Date.now()), maxAge: 60 * 60 * 24 });
+
+      const fetchMock = vi.fn(async (url: string) => {
+        if (url.includes("token?grant_type=refresh_token")) throw new Error("must not proactively refresh without options");
+        if (url.endsWith("/auth/v1/user")) return jsonResponse(authUser);
+        if (url.includes("/rest/v1/users")) return jsonResponse([]);
+        throw new Error(`Unexpected fetch: ${url}`);
+      });
+      vi.stubGlobal("fetch", fetchMock);
+
+      const session = await getServerAuthSession(true);
+
+      expect(session?.user.email).toBe("founder@axxess.dev");
+    });
+
+    it("logs the real Supabase error code when a losing concurrent refresh attempt fails, instead of discarding it silently", async () => {
+      const { getServerAuthSession, accessTokenCookieName, refreshTokenCookieName, sessionAnchorCookieName } = await import("./serverSession");
+
+      store.set(accessTokenCookieName, { value: "stale-access", maxAge: 3600 });
+      store.set(refreshTokenCookieName, { value: "already-rotated-refresh", maxAge: 60 * 60 * 24 * 30 });
+      store.set(sessionAnchorCookieName, { value: String(Date.now()), maxAge: 60 * 60 * 24 });
+
+      vi.stubGlobal("fetch", vi.fn(async (url: string) => {
+        if (url.endsWith("/auth/v1/user")) return jsonResponse({ error: "invalid token" }, 401);
+        if (url.includes("token?grant_type=refresh_token")) return jsonResponse({ error_code: "refresh_token_already_used" }, 400);
+        throw new Error(`Unexpected fetch: ${url}`);
+      }));
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+
+      const session = await getServerAuthSession(true);
+
+      expect(session).toBeNull();
+      expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("concurrent refresh"), "refresh_token_already_used");
+      // Still leaves cookies untouched -- this is additive observability, not a behavior change.
+      expect(store.get(accessTokenCookieName)?.value).toBe("stale-access");
+      warnSpy.mockRestore();
+    });
+
+    it("derives the access-token cookie's maxAge from the JWT's own exp claim rather than trusting expires_in blindly", async () => {
+      vi.stubGlobal("fetch", vi.fn(async (url: string) => {
+        if (url.includes("token?grant_type=password")) {
+          // expires_in claims 3600s, but the JWT's real exp says only 120s remain -- the cookie
+          // must reflect the real, shorter lifetime, not the stale reported value.
+          return jsonResponse({ access_token: fakeJwt(120), refresh_token: "refresh-1", expires_in: 3600, user: authUser });
+        }
+        if (url.includes("/rest/v1/users")) return jsonResponse([]);
+        throw new Error(`Unexpected fetch: ${url}`);
+      }));
+
+      const { signInServerSide, accessTokenCookieName } = await import("./serverSession");
+      await signInServerSide("founder@axxess.dev", "hunter2");
+
+      const maxAge = store.get(accessTokenCookieName)?.maxAge ?? 0;
+      expect(maxAge).toBeLessThan(200);
+      expect(maxAge).toBeGreaterThan(60);
+    });
   });
 
   // A-84 (2026-08-02): authenticated phone-linking -- attaches a phone number to an ALREADY
