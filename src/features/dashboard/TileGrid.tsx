@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { staggerDelay } from "../../lib/ui/staggerDelay";
 import type { ScoredTile as ScoredTileType } from "../../services/dashboard/tileScoring";
 import { ScoredTile } from "./ScoredTile";
 
@@ -15,8 +16,10 @@ export function TileGrid({ tiles }: { tiles: ScoredTileType[] }) {
 
   return (
     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-      {sorted.map((tile) => (
-        <ScoredTile key={tile.id} tile={tile} />
+      {sorted.map((tile, index) => (
+        <div key={tile.id} className="axxess-stagger-item" style={staggerDelay(index)}>
+          <ScoredTile tile={tile} />
+        </div>
       ))}
     </div>
   );
