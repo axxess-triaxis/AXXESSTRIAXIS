@@ -204,8 +204,8 @@ export function buildTenantHealthIndicators(
     {
       id: "integration-health",
       label: "Integration health",
-      value: metrics.integrationConfigured > 0 ? "Connected" : "Gated",
-      detail: metrics.integrationConfigured > 0 ? "At least one connector is configured." : "Connect Gmail or Microsoft for selected-message import.",
+      value: metrics.integrationConfigured > 0 ? "Connected" : "Not connected",
+      detail: metrics.integrationConfigured > 0 ? "At least one connector is active." : "Connect Gmail or Microsoft for selected-message import.",
       tone: integrationTone,
       route: "/integrations",
     },
