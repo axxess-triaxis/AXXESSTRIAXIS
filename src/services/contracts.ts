@@ -92,6 +92,7 @@ export type IntegrationView = {
   status: "connected" | "disconnected" | "pending" | string;
   lastSync: string;
   icon: string;
+  brandId: string;
 };
 
 export type AiMessageView = {

@@ -5,7 +5,11 @@ describe("brandIcons", () => {
   it("every entry present is a real simple-icons shape, not a placeholder", () => {
     for (const [id, icon] of Object.entries(brandIcons)) {
       if (!icon) continue;
-      expect(icon.path.startsWith("M")).toBe(true);
+      // "M" (absolute) or "m" (relative) are both valid SVG moveto commands -- Vercel's real
+      // simple-icons path (`m12 1.608 12 20.784H0Z`) uses lowercase, which is fine to render (the
+      // first moveto in a path is equivalent either way, since there's no prior point to be
+      // relative to). Rejecting it here isn't a real safety check, just an untested assumption.
+      expect(icon.path.startsWith("M") || icon.path.startsWith("m")).toBe(true);
       expect(icon.hex).toMatch(/^[0-9A-Fa-f]{6}$/);
       expect(icon.title.length).toBeGreaterThan(0);
       expect(id).toBeTruthy();
