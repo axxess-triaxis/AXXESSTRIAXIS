@@ -74,7 +74,7 @@ name per founder, 2026-07-29)
 **Location:** Jorhat, Assam
 **Status:** **Onboarding complete (2026-07-29, founder-confirmed).** Pilot 1, the first pilot
 tenant to attempt real provisioning. LOI received (email dated Wed, Jul 29, 2026, 9:37 AM, from
-imprintsprod@gmail.com to sudipta1213@gmail.com; subject "Expression of interest : AXXESS by
+[PILOT_CONTACT_EMAIL_MASKED_IMPRINTS] to [FOUNDER_EMAIL_MASKED]; subject "Expression of interest : AXXESS by
 TRIAXIS")
 **Beta access requested:** Yes -- explicitly requests to "register on your platform for beta
 access" ahead of commercial launch
@@ -101,7 +101,7 @@ be retrieved via CLI even by this session, which otherwise has production access
 Vercel security control, not something to work around. Status recorded as founder-confirmed rather
 than independently database-verified. **2026-07-29, later same day -- partial independent
 confirmation:** a screenshot of Supabase Dashboard -> Authentication -> Users shows a real
-`auth.users` row -- display name "Imprints", email imprintsprod@gmail.com, UID
+`auth.users` row -- display name "Imprints", email [PILOT_CONTACT_EMAIL_MASKED_IMPRINTS], UID
 `9adcaff6-74bb-48c7-8ade-43862ecac30a` -- see `docs/readiness/PRODUCTION_TENANT_ROSTER_2026_07_29.md`.
 This confirms the Auth user exists but not independently the matching `organizations` row, since
 that table isn't visible in this screenshot; kept as founder-confirmed rather than fully
@@ -114,6 +114,13 @@ expected ~7-14 days after pilot start (standard definition, see note above; not 
 here since no pilot has started)
 **Next meeting:** Not stated in source document
 
+**Pilot feedback, 2026-08-03 (WhatsApp, verbatim, first substantive qualitative feedback received from any pilot customer in this program):** Prajnyan Ballav Goswami, following a 30-minute call and hands-on use of the web product for Imprints Production (Diksha Rajkhowa -- Pilot 2/Ekora Hive's contact, see entry #3 -- separately using it for Ekora Hive over the same period). Recorded in full per this log's evidence discipline -- praise and criticism both, not selectively quoted.
+- **Positioning read-back:** understood the product as intended to function as "the brain of a company or government department," with the mobile-first, lower-segment entry point as a deliberate on-ramp toward that larger ambition, which the founder described as multi-year ("targeting that few years from now"). Advised holding the "5% cost of Palantir" framing for post-launch marketing rather than using it now.
+- **Core criticism -- complexity/segment mismatch:** "Your current web version is not currently suitable for small customers, though big clients might like it being so comprehensive." Assessed current UX as better suited to "corporate" or "government" buyers than MSME/NGO/startup owners, who "do not need so many features and integrations" and "most especially in India might currently find it cumbersome, difficult to use and very hard to get used too... almost looks like something a Fortune 500 CEO might be very happy to use personally... Not something an MSME owner needs in India." Explicit, numeric recommendation: **"you need to simplify this 70-80% before launch"** if targeting Indian small customers, NGOs, contractors and startups.
+- **Pricing context (founder-stated, in this call):** referenced the founder's own stated pricing of **Rs. 5,000/year**, for a "extremely low cost build" -- recorded here as the specific price point discussed with this pilot customer; not necessarily the same figure as the willingness-to-pay ranges reported to other audiences elsewhere in this program's documentation (see entry #10 in `docs/readiness/PITCH_AND_TRACTION_LOG_2026_07_24.md` for the ₹12L+/₹60L+ enterprise figures reported to Plug and Play UAE -- these describe different buyer segments/tiers, not a contradiction, but not reconciled into one pricing table anywhere in this repo either).
+- **Positive/stability feedback:** "Looks quite sophisticated and feels quite stable for your current stage. I had expected a far less evolved product honestly. Your pace and vision here are correct" -- immediately followed by "execution gap is major," which in context reads as the gap between current complexity and what the small-customer segment needs, not a statement that the build itself is poor; quoted as-is rather than resolved, since the message doesn't disambiguate further.
+- **Concrete product recommendations:** keep the mobile-app-first sequencing ("correct") but keep it "light; easy to use and simple," explicitly calling out **Xiaomi and Vivo phone compatibility** as a bar for the Indian market; longer-term, consider a simplified "web lite" tier for low-spec systems and less technical users, since "right now most of India will find it intimidating to be frank."
+
 ---
 
 ## 3. Ekora Hive -- Pilot 2
@@ -122,7 +129,7 @@ here since no pilot has started)
 **Location:** Not stated in source document
 **Status:** **Onboarding complete (2026-07-29, live)** -- Pilot 2, the first pilot tenant to
 successfully reach a live, provisioned workspace. LOI received (email dated Wed, Jul 29, 2026,
-9:40 AM, from ekora.hive@gmail.com to sudipta1213@gmail.com; subject "Interest in Beta
+9:40 AM, from [PILOT_CONTACT_EMAIL_MASKED_EHIVE] to [FOUNDER_EMAIL_MASKED]; subject "Interest in Beta
 Registration & Future Implementation of AXXESS")
 **Beta access requested:** Yes -- explicitly requests beta access "ahead of your commercial
 rollout" to "evaluate your workflows and services in advance"
@@ -164,12 +171,19 @@ as three separate customer entries per the founder's instruction, since each is 
 business the founder intends to onboard independently, while noting they share one signatory,
 one contact point, and one location.
 
-**Contact (shared across all 3):** Pollob Mahanta, Proprietor. Cell: 94350 38833 / 99574 71233.
-Email: pollobmahanta@gmail.com
-**Location (shared across all 3):** Office Address: Rangoli Pother, P.O. -- Rangoli Pother,
-Naharkatia, District -- Dibrugarh (Assam), Pin-786610
+**Contact (shared across all 3):** Pollob Mahanta, Proprietor. Cell: [THIRD_PARTY_PHONE_MASKED].
+Email: [PILOT_CONTACT_EMAIL_MASKED]
+**Location (shared across all 3):** Office Address: [THIRD_PARTY_ADDRESS_MASKED -- Naharkatia,
+District Dibrugarh, Assam]
 **Status:** LOI received (letter dated 28/07/2026, addressed "Dear Triaxis Ventures team"; letterhead
-is "M/s Mahanta & Son's Filling Station," an authorized Nayara Energy franchisee)
+is "M/s Mahanta & Son's Filling Station," an authorized Nayara Energy franchisee). **Update, 2026-08-04
+(founder-stated):** rather than waiting on the LOI's own stated post-launch timeline, the founder
+convinced Pollob Mahanta to bring **one of the three firms** onboard as an active pilot now. Which
+of the three firms was not specified in this update -- flagged as an open detail, not assumed to be
+the filling station by default just because it is listed first. **Oral commitment to an advance
+payment was also made, not yet collected or documented** -- same "founder-stated, source artifact
+needed" treatment already applied to Imprints Production's (Pilot 1, entry #2) advance-payment
+commitment above; no signed agreement, invoice, or payment record exists for this yet.
 **Beta access requested:** Yes -- explicitly states "We are also looking to register on your
 platform and take a beta look at its services and workflow"
 **Commercial intent:** Yes, post-launch, subject to pricing/terms -- the letter states "We feel
