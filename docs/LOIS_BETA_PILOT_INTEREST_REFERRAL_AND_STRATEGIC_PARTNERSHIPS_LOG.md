@@ -176,7 +176,14 @@ Email: [PILOT_CONTACT_EMAIL_MASKED]
 **Location (shared across all 3):** Office Address: [THIRD_PARTY_ADDRESS_MASKED -- Naharkatia,
 District Dibrugarh, Assam]
 **Status:** LOI received (letter dated 28/07/2026, addressed "Dear Triaxis Ventures team"; letterhead
-is "M/s Mahanta & Son's Filling Station," an authorized Nayara Energy franchisee)
+is "M/s Mahanta & Son's Filling Station," an authorized Nayara Energy franchisee). **Update, 2026-08-04
+(founder-stated):** rather than waiting on the LOI's own stated post-launch timeline, the founder
+convinced Pollob Mahanta to bring **one of the three firms** onboard as an active pilot now. Which
+of the three firms was not specified in this update -- flagged as an open detail, not assumed to be
+the filling station by default just because it is listed first. **Oral commitment to an advance
+payment was also made, not yet collected or documented** -- same "founder-stated, source artifact
+needed" treatment already applied to Imprints Production's (Pilot 1, entry #2) advance-payment
+commitment above; no signed agreement, invoice, or payment record exists for this yet.
 **Beta access requested:** Yes -- explicitly states "We are also looking to register on your
 platform and take a beta look at its services and workflow"
 **Commercial intent:** Yes, post-launch, subject to pricing/terms -- the letter states "We feel

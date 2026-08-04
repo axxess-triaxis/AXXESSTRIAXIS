@@ -6,6 +6,8 @@ Company: Triaxis Ventures Private Limited
 Recorded by: Claude Code, from the founder's own account
 Purpose: a running, factual record of who AXXESS has been pitched to, what response each conversation produced, and what (if anything) was offered or declined. This is a founder-reported log, not independently verified evidence -- entries here are recorded as stated, in the same spirit as this program's existing "Honest Limitations" discipline (see `MONOREPO_ARCHITECTURE_AND_BUSINESS_MODEL.md` S7). Where a number or quote is given, it is recorded as given; nothing here should be read as claiming independent verification of pricing intent, promoter scores, or outcomes beyond what the founder reported.
 
+**Total documented calls across this program's logs, verified 2026-08-04:** the founder referenced "63 documented calls pre-existing in GitHub" -- this figure was checked, not just repeated: it is the exact sum of this file's 22 original entries (as of commit `bdac7e1`, before this session's additions) + `docs/readiness/CLIENT_SCOPING_CALLS_LOG_2026_07_25.md`'s 16 market-discovery conversations + `docs/readiness/STAKEHOLDER_IDEA_VALIDATION_CALLS_LOG_2026_07_25.md`'s 25 stakeholder idea-validation conversations (22+16+25 = 63). This file now has 30 numbered entries (8 added or updated on 2026-08-04, both new relationships and follow-ups on existing ones -- see entries #16-18, #26-30), making the current cross-log total 71, not 63; the "63" figure describes the state before today's additions, not the current state.
+
 ## How To Read This Log
 
 - **Status** marks whether the conversation is complete, ongoing, or awaiting a next step.
@@ -135,22 +137,47 @@ Source: 11-message email thread "Forbes India presents DGEMS 2026| Stage 2: Prel
 
 ## Mentorship
 
-### 16. Sidharth Bezbora -- 4x founder, Antler Alumni, ex-Head of AI Products, Standard Chartered Singapore
+### 16. Siddartha Bezbora -- 3x founder (2x funds raised), ex-Snapdeal, ex-NASSCOM, ex-HCL, ex-Oxigen, Antler Singapore Residency alumnus, ex-Standard Chartered (Director of Innovation -- AI, Fintech & Digital Banking; Director, Digital Product Capabilities -- Conversational AI), ex-CPO Skibre
 
-**Status:** Ongoing.
-**Outcome:** Mentorship-oriented Q&A running over 1+ month.
+**Status:** Ongoing, escalated. **Update, 2026-08-04: after roughly a month of informal, pro bono advisory engagement, he offered upfront to join Triaxis's Advisory Board on an equity basis.** Not yet accepted/formalized -- no agreement, cap table entry, or advisory-board structure exists yet; recorded as a real, unprompted offer, not a completed appointment.
+**Outcome:** Mentorship-oriented Q&A running over 1+ month, escalating to an equity-based Advisory Board offer. Additional founder-supplied credentials, not independently verified in this pass: multiple product-related awards and lists; named among the "100 Most Influential Leaders in Digital Banking & Financial Services" by ET Now and the World BFSI Congress; mentor to multiple startups; operating experience across India, UAE, Singapore, Hong Kong, USA, and Germany. (Name corrected from "Sidharth" to "Siddartha" per the founder's own spelling, 2026-08-04.)
+
+### 26. Apratim Bhattacharya -- Staff ML Researcher, Qualcomm (Toronto, previously San Diego); Ph.D., Max Planck Society (summa cum laude, Max Planck Institute for Informatics, Germany); M.S. Computer Science (1.0/1.0), Universitat des Saarlandes; B.Tech CS, NIT Karnataka (Top 5 in India, 9.28 CGPA); Ph.D. intern, Bosch Center for Artificial Intelligence; postdoc, University of Tuebingen
+
+**Status:** Agreed, evaluation not yet delivered. **New, 2026-08-04.** Numbered out of the main entry sequence (added after #22) to avoid renumbering every cross-referenced entry in this log -- grouped here under Mentorship by content, not position.
+**Outcome:** Following a call, agreed to conduct a pro bono full technical evaluation of the AXXESS beta and its GitHub repository, and to endorse it if he finds it feasible. **No evaluation result exists yet** -- this entry records the agreement to evaluate, not a completed review or an endorsement; do not infer either from this entry alone.
+
+### 27. Ananya Singhal -- NLU Odisha (BBA LLB), MBA Management Development Institute Gurgaon, ex-HDFC Bank Treasury Advisory Group, currently Head of Growth & Strategy, Rodha Edu Ventures
+
+**Status:** Ongoing, personal/professional support relationship. **New, 2026-08-04.** Numbered out of the main entry sequence (added after #26), same reasoning as above. Note: ex-HDFC Bank Treasury Advisory Group overlaps with the founder's own prior employment history at the same team (see entry #24's bio note) -- recorded as background context, not independently characterized further.
+**Outcome:** Repeated pitch-refinement sessions and extensive pro bono feedback on the pitch itself (distinct from the product-technical feedback in other Mentorship entries). **Founder-stated, source artifact needed:** "has pitched into runway repeatedly on interest-free basis" -- read here as informal, interest-free personal financial support toward the founder's/company's runway, not a loan agreement, investment, or any instrument with terms disclosed in this pass. No amount, frequency, or documentation is stated. **This is categorically distinct from the "no angel investment, check, term sheet" disclaimer in this log's Summary section** (that disclaimer covers the Angel Investor Conversations and Ecosystem/Connector sections specifically) -- flagging rather than silently folding this into either the "no funding received" claim or a formal-funding narrative, since it is neither.
+
+### 28. Shashankajyoti Brahma -- Senior Manager, HDFC Bank Treasury Advisory Group, MBA IIM Lucknow, B.Tech Assam Engineering College
+
+**Status:** Idea/support discussed, not executed. **New, 2026-08-04.** Numbered out of the main entry sequence (added after #27), same reasoning as above. A third contact from the founder's former HDFC Bank Treasury Advisory Group team now appearing in this log's informal-support entries (alongside #24's own bio note and #27 Singhal) -- recorded as background, not further characterized.
+**Outcome:** Extensive discussion and offered support toward crowdfunding AXXESS's end-product completion and market launch, framed as an investment initiative. **Founder-stated, no execution evidenced in this pass:** this is a discussed approach/idea, not a completed or launched crowdfunding round, and no amount, platform, or terms are stated -- do not infer that crowdfunding has occurred or that funds have been raised from this entry. One concrete, independently-verifiable output of this relationship: **the LaunchList waiting-list widget was his idea** -- this matches a real, already-shipped feature in the codebase (`<Script src="https://getlaunchlist.com/js/widget.js" />` in `src/app/layout.tsx`), so this specific attribution is corroborated by shipped code, even though the broader crowdfunding discussion is not.
+
+### 29. Prajnyan Ballav Goswami -- Proprietor, Imprints Production (Pilot 1 -- see entry #2 in `docs/LOIS_BETA_PILOT_INTEREST_REFERRAL_AND_STRATEGIC_PARTNERSHIPS_LOG.md`)
+
+**Status:** Call completed, written follow-up feedback received (WhatsApp, screenshots reviewed). **New, 2026-08-04.** Numbered out of the main entry sequence (added after #28), same reasoning as above.
+**Outcome:** 30-minute call in which the founder walked him through AXXESS's vision, mission, USP, and moat. He followed up with strong, actionable written feedback over WhatsApp -- **full verbatim content already logged in this repo, not duplicated here**: see `docs/LOIS_BETA_PILOT_INTEREST_REFERRAL_AND_STRATEGIC_PARTNERSHIPS_LOG.md` entry #2, "Pilot feedback, 2026-08-03" subsection. Headline recommendations from that feedback: simplify the mobile app by 70-80% for the Indian MSME/NGO segment, and introduce a "web lite" tier in future for less tech-savvy customers on low-spec systems.
+
+### 30. Pollob Mahanta -- Proprietor, Mahanta & Sons Filling Station / Trimurti Blocks & Pavers / P. D. Wine Shop (see entries #4-6 in `docs/LOIS_BETA_PILOT_INTEREST_REFERRAL_AND_STRATEGIC_PARTNERSHIPS_LOG.md`)
+
+**Status:** LOI-stage relationship converted to an active pilot. **New, 2026-08-04.** Numbered out of the main entry sequence (added after #29), same reasoning as above.
+**Outcome:** Rather than waiting on the LOI's own post-launch timeline, the founder convinced him to bring one of his three firms onboard as an active pilot now (which of the three was not specified). He also orally committed to an advance payment -- **not yet collected or documented**, same evidence-discipline treatment as Imprints Production's (entry #29 above) advance-payment commitment. Full detail in the cross-referenced LOI log entry, not duplicated here.
 
 ## Angel Investor Conversations
 
-### 17. Angshuman Kashyap -- ex-IIT Guwahati, ex-IIM Calcutta, ex-Flipkart, ex-Gulf Marketing Group
+### 17. Anshuman Kashyap -- IIT Guwahati, IIM Calcutta, ex-Flipkart (RSU holder), ex-Gulf Marketing Group, Founder of Elevate Wealth X, Dubai resident
 
-**Status:** Pitched.
-**Outcome:** Pitched to him as a potential angel investor.
+**Status:** Pitched, relationship active. **Update, 2026-08-04: provided GCC market-entry feedback, distinct from the original angel pitch.** (Name spelling corrected from "Angshuman" to "Anshuman" per the founder's own spelling, 2026-08-04.)
+**Outcome:** Pitched to him as a potential angel investor. Separately, as a Dubai resident and GCC-based founder, gave feedback on the GCC market, regulatory landscape, market-entry approach, free-zone incorporation, and potential partnerships -- founder-summarized in this session; the specific content of that feedback is not itself recorded in this log (no transcript/message thread reviewed for this entry, unlike the Bezbora/Bhattacharya entries above).
 
-### 18. Paritosh Verma -- ex-SBI, ex-IIM Calcutta, Founder of Yaary (raised $3M seed from 4 VCs)
+### 18. Paritosh Verma -- ex-SBI Probationary Officer, MBA IIM Calcutta, product roles at Cleartax and Coinbase, Founder/CPO of Yaary, Dubai Golden Visa (startup category) holder
 
-**Status:** Pitched.
-**Outcome:** Pitched to him as a potential angel investor.
+**Status:** Pitched, feedback received. **Update, 2026-08-04: he listened to the full pitch and gave extensive feedback; separately, agreed to forward the pitch deck to other angels in his network.**
+**Outcome:** Pitched to him as a potential angel investor. He is himself an active angel investor, but not in enterprise SaaS specifically -- recorded as founder-stated context on why he is a referral/feedback source here rather than a direct prospective check-writer. Agreed to forward the deck to other angels; no confirmation yet that any introduction has actually been made. **Funding-figure discrepancy, not reconciled:** this entry previously recorded Yaary's seed round as "$3M from 4 VCs" (source of that original figure not re-verified in this pass); the founder's 2026-08-04 description states "$4 million seed." Both figures are recorded here rather than one silently overwriting the other, since neither has been independently verified against a funding announcement in this pass.
 
 ### 19. David Orban -- Head of Innovation, AI Liwan Group, Abu Dhabi
 
