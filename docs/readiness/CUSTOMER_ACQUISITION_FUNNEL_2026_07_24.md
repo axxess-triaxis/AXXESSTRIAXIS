@@ -83,3 +83,9 @@ acquisition channel, not a one-off conversation.
 
 Signup counts, conversion data, and CRM hand-off status from this LaunchList page are
 Founder-stated, source artifact needed -- not independently verified from this repository.
+
+### Day 0 metrics (2026-08-04, founder-stated)
+
+- **27 views, 7 sign-ups** on the LaunchList page on launch day ("Day 0").
+- Founder separately reported the same 7 sign-ups as occurring **within 5 hours of launch**, with a **~25% conversion rate** (7/27 = 25.9%, consistent with the Day 0 view/signup counts above).
+- Founder-stated, source artifact needed -- LaunchList is an external tool outside this repository; these figures are not independently verified from repo-internal evidence. Recorded as stated, per this document's and this program's standing evidence-chain discipline.
