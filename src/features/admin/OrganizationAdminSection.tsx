@@ -18,6 +18,7 @@ import {
 } from "../../components/enterprise";
 import { Card } from "../../components/ui/Card";
 import { isDemoModeEnabled } from "../../demo/demoMode";
+import { demoAuditActionLabels } from "../../lib/demo/demoAuditActionLabels";
 import type { AuditLog, Invitation, Organization, User } from "../../domain";
 import { applicationServices } from "../../providers/serviceProvider";
 import { tenantScopeFromUser } from "../../repositories/supabaseEnterpriseRepositories";
@@ -45,6 +46,23 @@ const pilotControls = [
   { title: "Audit coverage", description: "Verify auth, documents, AI answers, approvals, tasks, and feedback emit audit entries.", status: "Ready" },
   { title: "Support handoff", description: "Capture pilot sponsor, support owner, escalation SLA, and weekly check-in cadence.", status: "Review" },
 ];
+
+// A-96 (2026-08-04), governing principle set by the founder: the investor demo should read as an
+// excellent finished product an end user would actually use, not an internal engineering/pilot-
+// readiness tracker. This page's real content (pilotControls above, raw audit action codes,
+// "prepare a pilot tenant" framing) is genuinely useful for this program's own operational
+// tracking, but is dev/PM-facing, not end-user-facing -- kept fully intact for real tenants below,
+// swapped for demo-appropriate copy only when isDemoModeEnabled().
+const demoGovernanceControls = [
+  { title: "Tenant profile", description: "Sector, data residency, and workspace ownership configured.", status: "Active" },
+  { title: "Role matrix", description: "Organization Admin, Executive, Manager, Employee, and Guest access boundaries enforced.", status: "Active" },
+  { title: "Department structure", description: "5 departments mapped to permission and escalation groups.", status: "Active" },
+  { title: "Team invitations", description: "Tenant-bound invitations with expiring links for new team members.", status: "Active" },
+  { title: "Audit coverage", description: "Every auth, document, AI answer, approval, and task action is captured in the audit trail.", status: "Active" },
+  { title: "Support & escalation", description: "Named support owner, escalation SLA, and weekly check-in cadence in place.", status: "Active" },
+];
+
+const demoDepartmentNames = ["Executive Leadership", "Program Operations", "Finance & Grants", "Field Delivery", "Knowledge & Analytics"];
 
 export function OrganizationAdminSection() {
   const { session } = useAuth();
@@ -109,13 +127,15 @@ export function OrganizationAdminSection() {
   const admins = state.users.filter((row) => row.role === "Super Admin" || row.role === "Organization Admin");
   const departments = new Set(state.users.map((row) => row.department).filter(Boolean));
   const organizationName = state.organization?.name ?? "Current tenant";
+  const demoMode = isDemoModeEnabled();
+  const departmentCount = demoMode && departments.size === 0 ? demoDepartmentNames.length : departments.size;
 
   return (
     <PageShell>
       <ModuleHeader
-        eyebrow="Pilot readiness"
+        eyebrow={demoMode ? "Team & governance" : "Pilot readiness"}
         title="Organization Admin"
-        description="Prepare a real pilot tenant with users, roles, departments, invitations, and audit coverage before institutional rollout."
+        description={demoMode ? "Manage your team, roles, departments, and governance coverage across the organization." : "Prepare a real pilot tenant with users, roles, departments, invitations, and audit coverage before institutional rollout."}
         badges={[
           <TenantScopeBadge key="tenant" label={organizationName} />,
           <DataStateBadge key="live" state={state.loading ? "Provider-gated" : "Live"} />,
@@ -130,20 +150,20 @@ export function OrganizationAdminSection() {
       />
 
       {isDemoModeEnabled() && (
-        <DemoDataNotice label="Live tenants start clean. Investor Preview uses seeded users, roles, departments, and audit records to demonstrate pilot readiness without mixing with production data." />
+        <DemoDataNotice label="You're viewing sample workspace data in Investor Preview -- live tenants start clean and build up their own team, roles, and audit history." />
       )}
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <MetricCard label="Pilot users" value={state.users.length} detail={`${admins.length} admin-ready`} state={state.loading ? "Provider-gated" : "Live"} icon={Users} />
-        <MetricCard label="Departments" value={departments.size || "Set"} detail="permission and escalation units" state={state.loading ? "Provider-gated" : "Live"} icon={Building2} />
+        <MetricCard label="Team members" value={state.users.length} detail={`${admins.length} admin-ready`} state={state.loading ? "Provider-gated" : "Live"} icon={Users} />
+        <MetricCard label="Departments" value={departmentCount} detail="permission and escalation units" state={state.loading ? "Provider-gated" : "Live"} icon={Building2} />
         <MetricCard label="Pending invites" value={state.invitations.length} detail="tenant-bound invitations" state={state.loading ? "Provider-gated" : "Live"} icon={UserPlus} />
         <MetricCard label="Audit events" value={state.auditLogs.length} detail="latest tenant events loaded" state={state.loading ? "Provider-gated" : "Live"} icon={ShieldCheck} />
       </div>
 
       <div className="grid gap-4 xl:grid-cols-[1.3fr_0.7fr]">
-        <SectionCard title="Pilot launch controls" description="The controls a real customer should complete before moving from preview to operational pilot.">
+        <SectionCard title={demoMode ? "Governance coverage" : "Pilot launch controls"} description={demoMode ? "Team, access, and compliance controls active across this organization." : "The controls a real customer should complete before moving from preview to operational pilot."}>
           <div className="grid gap-3 md:grid-cols-2">
-            {pilotControls.map((control, index) => (
+            {(demoMode ? demoGovernanceControls : pilotControls).map((control, index) => (
               <WorkflowStepCard key={control.title} index={index + 1} title={control.title} description={control.description} status={control.status} />
             ))}
           </div>
@@ -153,7 +173,7 @@ export function OrganizationAdminSection() {
           {state.auditLogs.length ? (
             <ActivityFeed
               items={state.auditLogs.slice(0, 6).map((log) => ({
-                title: log.action,
+                title: demoMode ? (demoAuditActionLabels[log.action] ?? log.action) : log.action,
                 description: `${log.category ?? "system"} - ${log.resourceType}${log.requestId ? ` - ${log.requestId}` : ""}`,
                 time: log.createdAt.slice(0, 10),
                 tone: log.category === "security" ? "warning" : "success",
@@ -165,7 +185,7 @@ export function OrganizationAdminSection() {
         </SectionCard>
       </div>
 
-      <SectionCard title="Pilot team access" description="Role and department review for the first tenant users.">
+      <SectionCard title="Team access" description={demoMode ? "Role and department overview for your organization." : "Role and department review for the first tenant users."}>
         <div className="hidden overflow-hidden rounded-lg border border-[rgba(15,17,23,0.08)] md:block">
           <div className="grid grid-cols-[1.2fr_0.8fr_0.8fr_0.7fr] gap-3 bg-[#F8F9FA] px-3 py-2 text-[11px] font-semibold uppercase tracking-wide text-[#5F6B73]">
             <span>User</span>
@@ -183,7 +203,7 @@ export function OrganizationAdminSection() {
           ))}
           {!state.users.length && (
             <div className="px-3 py-6">
-              <EmptyState title="No users loaded" message="Invite the pilot sponsor, department owner, and first workflow users to activate the tenant." />
+              <EmptyState title="No users loaded" message={demoMode ? "Invite your first team members to get started." : "Invite the pilot sponsor, department owner, and first workflow users to activate the tenant."} />
             </div>
           )}
         </div>
@@ -203,17 +223,24 @@ export function OrganizationAdminSection() {
               </div>
             </div>
           ))}
-          {!state.users.length && <EmptyState title="No users loaded" message="Invite the pilot sponsor, department owner, and first workflow users to activate the tenant." />}
+          {!state.users.length && <EmptyState title="No users loaded" message={demoMode ? "Invite your first team members to get started." : "Invite the pilot sponsor, department owner, and first workflow users to activate the tenant."} />}
         </div>
       </SectionCard>
 
-      <SectionCard title="Pilot conversion next actions" description="Use this tenant checklist during sales demos, onboarding calls, and internal launch review.">
+      <SectionCard title={demoMode ? "Get the most out of your workspace" : "Pilot conversion next actions"} description={demoMode ? "Recommended next steps to put your organization's workflow to work." : "Use this tenant checklist during sales demos, onboarding calls, and internal launch review."}>
         <div className="grid gap-3 md:grid-cols-3">
-          {[
-            { title: "Create pilot project", detail: "Start with one district, department, or client workflow.", icon: ClipboardCheck },
-            { title: "Upload evidence pack", detail: "Add policy, SOP, budget, and meeting documents.", icon: FileText },
-            { title: "Run first approval", detail: "Prove human-in-the-loop governance and auditability.", icon: ShieldCheck },
-          ].map((item) => (
+          {(demoMode
+            ? [
+                { title: "Create a project", detail: "Start with one team, department, or client workflow.", icon: ClipboardCheck },
+                { title: "Add your documents", detail: "Upload policy, SOP, budget, and meeting documents.", icon: FileText },
+                { title: "Run your first approval", detail: "See human-in-the-loop governance and auditability in action.", icon: ShieldCheck },
+              ]
+            : [
+                { title: "Create pilot project", detail: "Start with one district, department, or client workflow.", icon: ClipboardCheck },
+                { title: "Upload evidence pack", detail: "Add policy, SOP, budget, and meeting documents.", icon: FileText },
+                { title: "Run first approval", detail: "Prove human-in-the-loop governance and auditability.", icon: ShieldCheck },
+              ]
+          ).map((item) => (
             <div key={item.title} className="rounded-lg border border-[rgba(15,17,23,0.08)] bg-white p-4">
               <item.icon className="text-[#8B1E2D]" size={18} />
               <h3 className="mt-3 text-sm font-semibold text-[#0F1117]">{item.title}</h3>

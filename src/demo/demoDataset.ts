@@ -503,17 +503,47 @@ export function createDemoDataset(): DemoDataset {
     };
   });
 
+  // A-96 (2026-08-04): widened from 6 to 20 action templates (each carrying its own coherent
+  // resourceType/category pairing, not independently cycled) so 680 seeded rows don't visibly
+  // repeat the same 6 codes -- founder feedback: raw, repetitive audit entries "look random
+  // placeholder no attractiveness." See demoAuditActionLabels.ts for the matching friendly-label
+  // map used by AuditLogsSection.tsx/OrganizationAdminSection.tsx to avoid showing raw dot-notation
+  // codes to investors.
+  const auditLogTemplates: Array<{ action: string; resourceType: string; category: string }> = [
+    { action: "project.updated", resourceType: "projects", category: "project-management" },
+    { action: "project.status_changed", resourceType: "projects", category: "project-management" },
+    { action: "task.completed", resourceType: "tasks", category: "task-management" },
+    { action: "task.assigned", resourceType: "tasks", category: "task-management" },
+    { action: "task.overdue_flagged", resourceType: "tasks", category: "task-management" },
+    { action: "document.viewed", resourceType: "documents", category: "knowledge-hub" },
+    { action: "document.uploaded", resourceType: "documents", category: "knowledge-hub" },
+    { action: "document.shared", resourceType: "documents", category: "knowledge-hub" },
+    { action: "rag.answer.generated", resourceType: "ai_answer", category: "ai" },
+    { action: "rag.source.cited", resourceType: "ai_answer", category: "ai" },
+    { action: "approval.changed", resourceType: "approvals", category: "governance" },
+    { action: "approval.requested", resourceType: "approvals", category: "governance" },
+    { action: "approval.escalated", resourceType: "approvals", category: "governance" },
+    { action: "permission.changed", resourceType: "users", category: "access-control" },
+    { action: "auth.mfa_enrolled", resourceType: "auth", category: "security" },
+    { action: "auth.session_refreshed", resourceType: "auth", category: "security" },
+    { action: "meeting.completed", resourceType: "meetings", category: "governance" },
+    { action: "meeting.notes_published", resourceType: "meetings", category: "governance" },
+    { action: "stakeholder.contacted", resourceType: "stakeholders", category: "project-management" },
+    { action: "invitation.accepted", resourceType: "users", category: "access-control" },
+  ];
+
   const auditLogs: AuditLog[] = Array.from({ length: 680 }, (_, index) => {
     const project = projects[index % projects.length];
+    const template = auditLogTemplates[index % auditLogTemplates.length];
     return {
       id: id("audit_nehealth", index),
       organizationId: organization.id,
       actorUserId: users[(index % (users.length - 1)) + 1].id,
       actorRole: users[(index % (users.length - 1)) + 1].role,
-      action: pick(["project.updated", "task.completed", "document.viewed", "approval.changed", "permission.changed", "meeting.completed"], index),
-      resourceType: pick(["projects", "tasks", "documents", "approvals", "meetings"], index),
+      action: template.action,
+      resourceType: template.resourceType,
       resourceId: project.id,
-      category: pick(["project-management", "task-management", "knowledge-hub", "access-control", "governance"], index),
+      category: template.category,
       metadata: { demoTenant: organization.slug, project: project.name },
       createdAt: dayOffset(-190 + (index % 190)),
     };
@@ -633,6 +663,7 @@ export function createDemoDataset(): DemoDataset {
     status: "connected",
     lastSync: index < 4 ? `${2 + index * 3} min ago` : `${1 + (index % 3)} hr ago`,
     icon: plugin.icon,
+    brandId: plugin.brandId,
   }));
 
   const aiMessages: AiMessageView[] = [
