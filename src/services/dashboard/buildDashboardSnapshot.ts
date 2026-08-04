@@ -184,7 +184,7 @@ export function buildDashboardSnapshot(input: DashboardSnapshotInput): ScoredTil
     id: "social-alerts-status",
     tier: 1,
     title: "External signals",
-    value: input.socialAlertsAnyLiveProviderConfigured ? "Connected" : "Provider-gated",
+    value: input.socialAlertsAnyLiveProviderConfigured ? "Connected" : "Not connected",
     detail: socialGatedResult.rationale,
     priority: socialGatedResult.priority,
     criticality: socialGatedResult.criticality,
@@ -340,9 +340,9 @@ export function buildDashboardSnapshot(input: DashboardSnapshotInput): ScoredTil
       tier: 1,
       title: "Social provider health",
       // A-96 (2026-08-04): investor demo shows a count/provider-list value like every other tile
-      // instead of the generic "Configured" status word; real-tenant behavior is unchanged.
-      value: input.demoMode && providerCountConfigured > 0 ? `${providerCountConfigured} live` : (providerCountConfigured > 0 ? "Configured" : "Provider-gated"),
-      detail: input.demoMode && providerCountConfigured > 0 ? `${configuredProviderNames.join(" and ")} monitoring configured and live.` : providerHealthResult.rationale,
+      // instead of an engineering status word; real-tenant behavior is unchanged.
+      value: input.demoMode && providerCountConfigured > 0 ? `${providerCountConfigured} connected` : (providerCountConfigured > 0 ? "Connected" : "Not connected"),
+      detail: input.demoMode && providerCountConfigured > 0 ? `${configuredProviderNames.join(" and ")} monitoring active.` : providerHealthResult.rationale,
       priority: providerHealthResult.priority,
       criticality: providerHealthResult.criticality,
       dataState: providerCountConfigured > 0 ? "live" : "partial",
@@ -485,7 +485,7 @@ export function buildDashboardSnapshot(input: DashboardSnapshotInput): ScoredTil
     // A-96 (2026-08-04): demo shows the real count like every other tile instead of a status word.
     value: input.demoMode && input.liveMetrics.integrationConfigured > 0
       ? `${input.liveMetrics.integrationConfigured} connected`
-      : (input.liveMetrics.integrationConfigured > 0 ? "Connected" : "Gated"),
+      : (input.liveMetrics.integrationConfigured > 0 ? "Connected" : "Not connected"),
     detail: integrationHealthResult.rationale,
     priority: integrationHealthResult.priority,
     criticality: integrationHealthResult.criticality,
