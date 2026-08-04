@@ -7,6 +7,7 @@ import { InlineToast } from "../../components/forms/InlineToast";
 import { Card } from "../../components/ui/Card";
 import { BrandIcon } from "../../components/ui/BrandIcon";
 import { brandIcons } from "../../components/ui/brandIcons";
+import { likenessIcons } from "../../components/ui/LikenessIcon";
 import { EmptyState } from "../../components/feedback/EmptyState";
 import { isDemoModeEnabled } from "../../demo/demoMode";
 import { applicationServices } from "../../providers/serviceProvider";
@@ -466,11 +467,18 @@ export const IntegrationsSection = () => {
       {!isDemoModeEnabled() && integrations.length === 0 && (
         <EmptyState message="No demo connector gallery in this view. See connector status and OAuth setup below." />
       )}
-      {integrations.map((int) => (
+      {integrations.map((int) => {
+        // A-96 (2026-08-04): real simple-icons mark where one safely exists; an original,
+        // brand-evocative-but-not-copied "likeness" icon (see LikenessIcon.tsx's registry) for
+        // providers with no safe simple-icons mark; the plain two-letter fallback otherwise.
+        const brandIcon = brandIcons[int.brandId];
+        const LikenessIcon = likenessIcons[int.brandId];
+        const likenessIcon = LikenessIcon ? <LikenessIcon size={22} /> : undefined;
+        return (
         <Card key={int.name} className="p-4 transition-shadow hover:shadow-md">
           <div className="mb-3 flex items-start justify-between">
-            <div className={`flex h-10 w-10 items-center justify-center rounded-xl text-xs font-bold text-white ${int.status === "connected" ? "bg-[#2C4A7C]" : int.status === "pending" ? "bg-[#C9A227]" : "bg-[#5F6B73]"}`}>
-              {int.icon}
+            <div className={`flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl text-xs font-bold text-white ${brandIcon || likenessIcon ? "bg-white ring-1 ring-[rgba(15,17,23,0.08)]" : int.status === "connected" ? "bg-[#2C4A7C]" : int.status === "pending" ? "bg-[#C9A227]" : "bg-[#5F6B73]"}`}>
+              {brandIcon ? <BrandIcon icon={brandIcon} size={22} /> : likenessIcon ?? int.icon}
             </div>
             <span className={`mt-1 h-2 w-2 rounded-full ${int.status === "connected" ? "bg-emerald-500" : int.status === "pending" ? "bg-amber-500" : "bg-gray-300"}`} />
           </div>
@@ -480,7 +488,8 @@ export const IntegrationsSection = () => {
             {int.status === "connected" ? `Synced ${int.lastSync}` : int.status === "pending" ? "Setup required" : "Disconnected"}
           </div>
         </Card>
-      ))}
+        );
+      })}
     </div>
 
     <Card className="p-5">
