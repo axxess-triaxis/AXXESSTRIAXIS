@@ -37,7 +37,7 @@ function AccessDeniedSection() {
 }
 
 export function RouteBoundary({ route, hasAccess, children }: RouteBoundaryProps) {
-  const fallback = <LoadingState label={`Loading ${route.label}`} />;
+  const fallback = <LoadingState label={route.label} />;
 
   return (
     <ErrorBoundary fallback={<RouteErrorFallback label={route.label} />}>

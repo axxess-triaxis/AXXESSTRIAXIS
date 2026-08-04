@@ -228,7 +228,7 @@ export const ProjectsSection = () => {
     { label: "Complete", key: "complete", color: "#1A6B4A" },
   ] as const;
 
-  if (loading) return <LoadingState label="Loading project workflows" />;
+  if (loading) return <LoadingState label="Project workflows" />;
 
   const demoMode = isDemoModeEnabled();
 

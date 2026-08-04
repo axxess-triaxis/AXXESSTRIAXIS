@@ -1,27 +1,24 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { BarChart3, Clock3, Download, ShieldCheck, TrendingUp } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, Cell, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { DataStateBadge, DemoDataNotice, MetricCard, ModuleHeader, PageShell, TenantScopeBadge } from "../../components/enterprise";
 import { EmptyState } from "../../components/feedback/EmptyState";
 import { Card } from "../../components/ui/Card";
-import { useAuth } from "../../auth/AuthProvider";
 import { isDemoModeEnabled } from "../../demo/demoMode";
 import { analyticsDemoInsights } from "../../lib/demo/demoMetrics";
 import { staggerDelay } from "../../lib/ui/staggerDelay";
 import { applicationServices } from "../../providers/serviceProvider";
-import { tenantScopeFromUser } from "../../repositories/supabaseEnterpriseRepositories";
 import { aggregateProjectRisk } from "../dashboard/DashboardSection";
-import { DashboardTier } from "../dashboard/DashboardTier";
-import { UrgentAttentionBarStack } from "../dashboard/UrgentAttentionBarStack";
-import { useDashboardSnapshot } from "../dashboard/useDashboardSnapshot";
 
-// Illustrative content for the investor-demo experience only, below the (real, live-wired) Tier
-// 1/2/3 scored tile stack. There is no live OKR/budget-trend computation engine yet, so this
-// deeper section stays gated behind isDemoModeEnabled() -- real tenants see the same real scored
-// tiles Executive Dashboard shows (via the shared useDashboardSnapshot hook, A-96 2026-08-04 --
-// "Executive Dashboard logic and Analytics Dashboard logic are almost fully similar," per founder
-// direction), plus an honest note that deeper trend analytics aren't computed live yet, instead of
-// fabricated metrics. See DEMO_DATA_LEAKAGE_AUDIT.md.
+// A-96 (2026-08-04, corrected same day): Executive Dashboard owns the live Tier 1/2/3 scored
+// operational tile stack (mail, social alerts, HITL review, audit trail, etc.) -- that content
+// must not be duplicated here. Analytics & Reports has its own distinct role: OKRs, delivery
+// trends, budget utilization, risk distribution, and approval cycle time -- historical/aggregate
+// reporting, not live urgent-action tiles. Founder direction was that the two pages share the same
+// UX *logic* (sequencing, priority, criticality as a visual language), not identical live content.
+// There is no live OKR/budget-trend computation engine yet, so this section stays gated behind
+// isDemoModeEnabled(); real tenants see an honest not-yet-connected state instead of fabricated
+// metrics. See DEMO_DATA_LEAKAGE_AUDIT.md.
 const okrData = applicationServices.institutionalRepository.getOkrData();
 const performanceData = applicationServices.institutionalRepository.getPerformanceData();
 const projects = applicationServices.institutionalRepository.getProjects();
@@ -39,10 +36,6 @@ const riskChartColors: Record<string, string> = { "High risk projects": "#B4232F
 
 export const AnalyticsSection = () => {
   const demoMode = isDemoModeEnabled();
-  const { session } = useAuth();
-  const tenantScope = useMemo(() => (session.user ? tenantScopeFromUser(session.user) : undefined), [session.user]);
-  const [refreshToken] = useState(0);
-  const { snapshot } = useDashboardSnapshot(tenantScope, refreshToken, demoMode ? projects : []);
   const riskDistribution = useMemo(() => aggregateProjectRisk(projects), []);
 
   return (
@@ -50,7 +43,7 @@ export const AnalyticsSection = () => {
       <ModuleHeader
         title="Analytics & Reports"
         eyebrow="Enterprise command center"
-        description="The same live Tier 1/2/3 operating signals as the Executive Dashboard, plus OKRs, delivery trends, budget utilization, risk distribution, and approval cycle time."
+        description="OKRs, delivery trends, budget utilization, risk distribution, and approval cycle time -- historical and aggregate reporting, distinct from the Executive Dashboard's live operational tiles."
         badges={[
           <TenantScopeBadge key="tenant" />,
           <DataStateBadge key="demo" state={demoMode ? "Demo" : "Live"} />,
@@ -64,17 +57,12 @@ export const AnalyticsSection = () => {
       />
 
       {demoMode && (
-        <DemoDataNotice label="The scored tile stack below mirrors the Executive Dashboard's live logic. Deeper OKR, budget, and trend analytics further down are seeded to show investor-ready operational insight while live tenant metrics remain isolated behind repository and provider configuration." />
+        <DemoDataNotice label="OKR, budget, risk, and approval-cycle trend analytics below are seeded to show investor-ready reporting insight while live tenant metrics remain isolated behind repository and provider configuration." />
       )}
-
-      <UrgentAttentionBarStack tiles={snapshot} />
-      <DashboardTier tier={1} tiles={snapshot} />
-      <DashboardTier tier={2} tiles={snapshot} />
-      <DashboardTier tier={3} tiles={snapshot} />
 
       {!demoMode && (
         <Card className="p-8">
-          <EmptyState message="Deeper OKR, budget-trend, and approval-cycle analytics require computation that isn't wired to live tenant data yet. The scored signal tiles above are live for your organization; this section will populate as that deeper capability is built." />
+          <EmptyState message="Deeper OKR, budget-trend, and approval-cycle analytics require computation that isn't wired to live tenant data yet. For live operational signals (mail, approvals, HITL review, audit trail), see the Executive Dashboard." />
         </Card>
       )}
       {demoMode && (

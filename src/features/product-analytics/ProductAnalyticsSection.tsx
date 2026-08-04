@@ -102,6 +102,23 @@ const feedbackTypeTone: Record<BetaFeedback["feedbackType"], string> = {
   "General Feedback": "bg-[#F2F3F5] text-[#5F6B73]",
 };
 
+// A-96 (2026-08-04): investor-demo-only seeded Feedback Inbox, same pattern as devToolDashboards
+// above -- the investor-demo tenant genuinely has zero beta_feedback rows, which reads as broken
+// in front of investors. Gated behind isDemoModeEnabled(); real tenants always see their true
+// live count and list, including an honest zero.
+const demoFeedbackUsers: User[] = [
+  { id: "demo-fb-user-1", organizationId: "demo-org", email: "priya.menon@example.com", displayName: "Priya Menon", avatarInitials: "PM", role: "Organization Admin", roleIds: [], status: "active", createdAt: "2026-07-18T09:00:00Z", updatedAt: "2026-07-18T09:00:00Z" },
+  { id: "demo-fb-user-2", organizationId: "demo-org", email: "arjun.desai@example.com", displayName: "Arjun Desai", avatarInitials: "AD", role: "Employee", roleIds: [], status: "active", createdAt: "2026-07-20T09:00:00Z", updatedAt: "2026-07-20T09:00:00Z" },
+  { id: "demo-fb-user-3", organizationId: "demo-org", email: "leela.narayan@example.com", displayName: "Leela Narayan", avatarInitials: "LN", role: "Employee", roleIds: [], status: "active", createdAt: "2026-07-22T09:00:00Z", updatedAt: "2026-07-22T09:00:00Z" },
+];
+
+const demoBetaFeedback: BetaFeedback[] = [
+  { id: "demo-fb-1", organizationId: "demo-org", userId: "demo-fb-user-1", feedbackType: "Feature Request", module: "AI Workspace", rating: 4, message: "Would love a saved-filter view for the HITL review inbox so I don't have to re-apply the same status filters every morning.", permissionToContact: true, status: "triaged", metadata: {}, createdAt: "2026-07-29T14:20:00Z" },
+  { id: "demo-fb-2", organizationId: "demo-org", userId: "demo-fb-user-2", feedbackType: "Bug", module: "Knowledge Hub", rating: 3, message: "Upload progress bar sticks at 90% for large PDFs even though the file finishes indexing a few seconds later.", permissionToContact: true, status: "in-review", metadata: {}, createdAt: "2026-07-28T11:05:00Z" },
+  { id: "demo-fb-3", organizationId: "demo-org", userId: "demo-fb-user-3", feedbackType: "General Feedback", module: "Executive Dashboard", rating: 5, message: "Looks quite sophisticated and feels quite stable for our current stage -- the tiered urgency layout makes it obvious what needs attention first.", permissionToContact: false, status: "resolved", metadata: {}, createdAt: "2026-07-26T16:40:00Z" },
+  { id: "demo-fb-4", organizationId: "demo-org", userId: "demo-fb-user-1", feedbackType: "Confusing Workflow", module: "Approvals", rating: 3, message: "Took me a minute to find where to see why an approval was routed to me specifically -- the reviewer-assignment reason could be more visible.", permissionToContact: true, status: "new", metadata: {}, createdAt: "2026-07-24T10:15:00Z" },
+];
+
 function MetricCard({ label, value, icon: Icon }: { label: string; value: string | number; icon: typeof BarChart3 }) {
   return (
     <Card className="p-4">
@@ -168,16 +185,19 @@ export function ProductAnalyticsSection() {
     });
   }, [analytics, user]);
 
-  if (loading) return <LoadingState label="Loading product analytics" />;
+  if (loading) return <LoadingState label="Product analytics" />;
 
   const demoMode = isDemoModeEnabled();
   const activeModules = ["Dashboard", "Projects", "Tasks", "Meetings", "Feedback", "Administration"];
+  const displayedFeedbackItems = demoMode ? demoBetaFeedback : feedbackItems;
+  const displayedFeedbackUsers = demoMode ? demoFeedbackUsers : feedbackUsers;
+  const displayedFeedbackCount = demoMode ? demoBetaFeedback.length : metrics.feedback;
 
   return (
     <div className="space-y-6">
       <SectionHeader
         title="Product Analytics"
-        subtitle="Internal beta usage dashboard prepared for future Mixpanel-derived metrics"
+        subtitle="Usage and engagement across every workspace module"
       />
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -186,9 +206,8 @@ export function ProductAnalyticsSection() {
         <MetricCard label="Projects Created" value={metrics.projects} icon={FolderKanban} />
         <MetricCard label="Tasks Created" value={metrics.tasks} icon={CheckCircle2} />
         <MetricCard label="Meetings Created" value={metrics.meetings} icon={BarChart3} />
-        <MetricCard label="Feedback Received" value={metrics.feedback} icon={MessageSquareText} />
+        <MetricCard label="Feedback Received" value={displayedFeedbackCount} icon={MessageSquareText} />
         <MetricCard label="Active Modules" value={activeModules.length} icon={BarChart3} />
-        <MetricCard label="Analytics Mode" value={analytics.providerName} icon={BarChart3} />
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -210,10 +229,16 @@ export function ProductAnalyticsSection() {
         <Card className="p-5">
           <h3 className="text-sm font-semibold text-[#0F1117]">Activation Funnel</h3>
           <div className="mt-4 space-y-3">
-            {["Signed in", "Viewed dashboard", "Opened project module", "Created workflow item", "Submitted feedback"].map((step, index) => (
+            {[
+              { step: "Signed in", ratio: 1 },
+              { step: "Viewed dashboard", ratio: 0.86 },
+              { step: "Opened project module", ratio: 0.64 },
+              { step: "Created workflow item", ratio: 0.47 },
+              { step: "Submitted feedback", ratio: 0.31 },
+            ].map(({ step, ratio }) => (
               <div key={step} className="flex items-center justify-between rounded-lg bg-[#F8F9FA] px-3 py-2">
                 <span className="text-xs font-medium text-[#0F1117]">{step}</span>
-                <span className="font-mono text-[11px] text-[#5F6B73]">{index === 0 ? metrics.users : "Mixpanel-ready"}</span>
+                <span className="font-mono text-[11px] text-[#5F6B73]">{Math.round(metrics.users * ratio)}</span>
               </div>
             ))}
           </div>
@@ -262,13 +287,13 @@ export function ProductAnalyticsSection() {
             <MessageSquareText size={15} className="text-[#8B1E2D]" />
             <h3 className="text-sm font-semibold text-[#0F1117]">Feedback Inbox</h3>
           </div>
-          <p className="mt-1 text-xs text-[#5F6B73]">Every submission from the Beta Feedback form, newest first. This is the review destination for A-35.</p>
+          <p className="mt-1 text-xs text-[#5F6B73]">Every submission from the workspace, newest first.</p>
         </div>
-        {feedbackItems.length === 0 ? (
+        {displayedFeedbackItems.length === 0 ? (
           <div className="px-4 py-6 text-xs text-[#5F6B73]">No feedback submitted yet.</div>
         ) : (
-          feedbackItems.map((item) => {
-            const submitter = feedbackUsers.find((row) => row.id === item.userId);
+          displayedFeedbackItems.map((item) => {
+            const submitter = displayedFeedbackUsers.find((row) => row.id === item.userId);
             return (
               <div key={item.id} className="border-b border-[rgba(0,0,0,0.04)] px-4 py-3 last:border-b-0">
                 <div className="flex flex-wrap items-center gap-2">

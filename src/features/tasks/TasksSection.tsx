@@ -272,7 +272,7 @@ export const TasksSection = () => {
   const projectOptions = [{ value: "", label: "No project" }, ...projects.map((project) => ({ value: project.id, label: project.name }))];
   const programOptions = [{ value: "", label: "No program" }, ...programs.map((program) => ({ value: program.id, label: program.name }))];
 
-  if (loading) return <LoadingState label="Loading task workflows" />;
+  if (loading) return <LoadingState label="Task workflows" />;
 
   const demoMode = isDemoModeEnabled();
 
