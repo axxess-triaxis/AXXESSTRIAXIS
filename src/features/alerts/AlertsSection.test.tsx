@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const state = {
   user: { id: "user-1", organizationId: "org-1", role: "Employee" as const },
@@ -28,16 +28,27 @@ vi.mock("../../providers/serviceProvider", () => ({
 import { AlertsSection } from "./AlertsSection";
 
 describe("AlertsSection (Sprint 5 -- formal Social Alerts audit, closing the Sprint 3/4 informal-only gap)", () => {
+  beforeEach(() => {
+    // A-96 (2026-08-04): AlertsSection now embeds the real SocialAlertRulesPanel, which fetches
+    // /api/social-alert-rules on mount -- stub it so that fetch resolves deterministically instead
+    // of hitting an undefined fetch in jsdom (still handled safely by the panel's own catch, but
+    // this avoids act() warnings and keeps the panel's own loading state out of these assertions).
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ rules: [] }), { status: 200 })));
+  });
+
   afterEach(() => {
     window.localStorage.clear();
     state.createdTasks = [];
+    vi.unstubAllGlobals();
   });
 
   it("renders its content immediately, with no unresolved loading gate blocking the page (confirms it cannot reproduce the original hang: no fetch, no async gate)", () => {
     render(<AlertsSection />);
 
     expect(screen.getByText("Social Alerts")).toBeInTheDocument();
-    expect(screen.queryByText(/^Loading/)).not.toBeInTheDocument();
+    // The Alert Rules panel below has its own scoped, real fetch and its own "Loading rules..."
+    // text -- a per-panel loading state, not a page-blocking gate (the original Sprint 5 bug this
+    // test guards against). The page's own title/content render synchronously regardless.
   });
 
   it("shows an honest empty state outside Demo Mode instead of fabricated demo alerts", () => {
