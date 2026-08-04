@@ -62,3 +62,24 @@ Mixpanel and PostHog track usage and sessions **on the Demo product specifically
 - Analytics environment-variable split: confirm `NEXT_PUBLIC_MIXPANEL_TOKEN`/`NEXT_PUBLIC_POSTHOG_KEY` are set only on the Demo project (`triaxis-product-investor-demo`) and absent from the Product project (`triaxis-www-frontend-import`), once both are live.
 
 This document will be updated as each stage moves from design to implementation.
+
+## Update (2026-08-04): Founders Club waitlist launched
+
+Founder-stated: a public waitlist page has been launched and is being actively promoted --
+https://getlaunchlist.com/pages/axxess-triaxis-founders-club-edition ("AXXESS TRIaxis -- Founders
+Club Edition"). This is an externally-hosted LaunchList page, not a page in this repository -- no
+application code change accompanies this entry. Recorded here as the current, real interim
+signup/waitlist-capture mechanism (separate from the not-yet-built self-serve "Beta Sign Up" flow
+in Stage 2/5 above, and separate from Stage 6's not-yet-built enterprise/investor contact form).
+
+Founder-stated promotion channels for this waitlist link: Facebook, Instagram, LinkedIn, WhatsApp,
+WhatsApp Business -- all organic/manual promotion, not the paid ad channels (Google/Meta/LinkedIn
+Ads) described as "not yet built" in Stage 1 above.
+
+Founder-stated: this is a **non-founder-led, public-facing** funnel -- distinct in kind from the
+founder's own personal pitch/investor/pilot outreach calls tracked in
+`docs/readiness/PITCH_AND_TRACTION_LOG_2026_07_24.md`. It is a separate, standing public
+acquisition channel, not a one-off conversation.
+
+Signup counts, conversion data, and CRM hand-off status from this LaunchList page are
+Founder-stated, source artifact needed -- not independently verified from this repository.
