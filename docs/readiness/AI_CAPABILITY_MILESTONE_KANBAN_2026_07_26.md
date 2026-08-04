@@ -41,7 +41,7 @@ connected.
 - [x] AI Review Inbox escalation-to-CRM handoff visible, not silently dropped (A-57)
 - [x] CRM "Create Contact" no longer fabricates AI-adjacent Influence/Engagement defaults (A-58)
 - [x] Approvals queue displays real AI-Review-Inbox-originated escalations, with a real export (A-60)
-- [x] Feedback capture wired toward `triaxisgrp@gmail.com` (A-65, code-shipped)
+- [x] Feedback capture wired toward `[FEEDBACK_ROUTING_EMAIL_MASKED]` (A-65, code-shipped)
 - [ ] Feedback email delivery confirmed live in production (A-65)
 - [ ] No real external LLM provider is connected anywhere in this codebase -- `remotePlaceholderProvider`
       in `src/services/ai/providers/index.ts` remains an explicit stub; every AI answer in the product
@@ -62,7 +62,7 @@ connected.
 | A-57 -- AI Review Inbox to CRM handoff visible | `GET /api/stakeholders/notes` (new) + live "AI-escalated notes" section in `StakeholdersSection.tsx` | Sprint 3 closeout, commit `c85165a` |
 | A-58 -- CRM fabricated defaults removed | `stakeholderMutation()` defaults changed to `0`/`"unrated"`; form gained real optional Influence/Engagement inputs | Sprint 3 closeout, commit `c85165a` |
 | A-60 -- Approvals Export Report real | `GET /api/approvals` (real live queue, previously absent entirely) + real JSON export + `POST /api/approvals/export` audit event | Sprint 3 closeout, commit `c85165a` |
-| A-65 -- Feedback email routing wired | `src/services/email/feedbackEmail.ts` (new), sends toward `triaxisgrp@gmail.com` via the same Resend provider `invitationEmail.ts` uses | Sprint 3 closeout, commit `c85165a` |
+| A-65 -- Feedback email routing wired | `src/services/email/feedbackEmail.ts` (new), sends toward `[FEEDBACK_ROUTING_EMAIL_MASKED]` via the same Resend provider `invitationEmail.ts` uses | Sprint 3 closeout, commit `c85165a` |
 | RAG answer engine grounding + explainability | See `RAG_CAPABILITY_MILESTONE_KANBAN_2026_07_26.md` (now 2 of its items live-HITL-confirmed, not just code-tested, as of 2026-07-26) | Sprints 1-2 |
 | Knowledge Hub document uploads genuinely persist (A-66, newly discovered and fixed 2026-07-26) | Uploads previously showed a fake success and silently failed to persist -- new same-origin upload proxy fixes this; HITL live-confirmed | `KNOWLEDGE_HUB_UPLOAD_PERSISTENCE_INCIDENT_CLOSEOUT_2026_07_26.md`, commit `e4b27b7` |
 

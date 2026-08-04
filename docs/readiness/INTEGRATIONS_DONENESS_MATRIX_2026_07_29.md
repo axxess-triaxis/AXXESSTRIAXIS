@@ -14,7 +14,7 @@ of a completed, successful live test.
 
 | Method | Doneness | Evidence |
 |---|---|---|
-| Email/password | 100% | Long-established, real accounts exist and sign in daily this session (`sudipta1213@gmail.com` and others) |
+| Email/password | 100% | Long-established, real accounts exist and sign in daily this session (`[FOUNDER_EMAIL_MASKED]` and others) |
 | **Phone/SMS OTP (Twilio)** | **100%** | Founder: **"Twilio - OTP works."** Supabase settings confirm `phone: true`, `sms_provider: "twilio"`. |
 | **Google sign-in** | **100%** | Three sequential defects (redirect_uri_mismatch, Vercel Deployment Protection wall, Supabase credential-mapping error) all found and fixed same day. Founder confirmed a full Google sign-in now completes end to end. See A-26/A-73 |
 | Microsoft sign-in | 0% | Confirmed disabled: `azure: false` in Supabase settings, no `MICROSOFT_CLIENT_ID`/`SECRET` set anywhere |
