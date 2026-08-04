@@ -48,7 +48,9 @@ export function Sidebar({ active, sidebarOpen, onSelectSection, onToggleSidebar 
         </button>
       </div>
 
-      <nav className="flex-1 overflow-y-auto py-3 [&::-webkit-scrollbar]:hidden">
+      <nav
+        className="flex-1 overflow-y-auto py-3 [scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.18)_transparent] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[rgba(255,255,255,0.18)] hover:[&::-webkit-scrollbar-thumb]:bg-[rgba(255,255,255,0.32)]"
+      >
         {visibleNavGroups.map((group) => (
           <div key={group.label} className="mb-1">
             {sidebarOpen && (
