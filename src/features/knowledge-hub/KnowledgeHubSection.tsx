@@ -499,7 +499,7 @@ export const KnowledgeHubSection = () => {
     setToast({ tone: "success", message: "Knowledge article saved." });
   };
 
-  if (loading) return <LoadingState label="Loading Knowledge Hub" />;
+  if (loading) return <LoadingState label="Knowledge Hub" />;
 
   return (
     <div className="h-full min-h-0">

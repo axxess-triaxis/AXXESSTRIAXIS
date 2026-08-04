@@ -5,10 +5,11 @@ import { AnalyticsProviderShell } from "../../services/analytics";
 import { MockAnalyticsProvider } from "../../services/analytics/MockAnalyticsProvider";
 import { AnalyticsSection } from "./AnalyticsSection";
 
-// Sprint 3 (F-012) -- does not hang. A-96 (2026-08-04) extended this page to share the Executive
-// Dashboard's live Tier 1/2/3 scored-tile stack (useDashboardSnapshot), so it now needs the same
-// real AuthProvider/AnalyticsProviderShell wrapper and stubbed-401 fetch as DashboardSection.test.tsx
-// -- a full authenticated render needs the entire repository/provider stack.
+// Sprint 3 (F-012) -- does not hang. A-96 (2026-08-04) briefly duplicated the Executive Dashboard's
+// live Tier 1/2/3 scored-tile stack onto this page; corrected the same day -- Analytics owns its own
+// distinct OKR/trend/risk/budget reporting, and no longer imports Dashboard's live tiles at all.
+// Still uses the real AuthProvider/AnalyticsProviderShell wrapper and a stubbed-401 fetch since the
+// page reads the authenticated session for its header badges.
 describe("AnalyticsSection (Sprint 3 -- does not hang, F-012)", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
@@ -40,11 +41,11 @@ describe("AnalyticsSection (Sprint 3 -- does not hang, F-012)", () => {
     expect(screen.getByText(/Deeper OKR, budget-trend, and approval-cycle analytics require computation/i)).toBeInTheDocument();
   });
 
-  it("still renders the live Tier 1/2/3 scored tile stack for a real tenant, same as the Executive Dashboard", async () => {
+  it("never duplicates the Executive Dashboard's live Tier 1/2/3 tile stack", async () => {
     await renderAnalytics();
 
-    expect(screen.getByText("Tier 1 · Executive & performance")).toBeInTheDocument();
-    expect(screen.getByText("Tier 2 · AI operating infrastructure & business intelligence")).toBeInTheDocument();
-    expect(screen.getByText("Tier 3 · Compliance, audit, governance & policy")).toBeInTheDocument();
+    expect(screen.queryByText("Tier 1 · Executive & performance")).not.toBeInTheDocument();
+    expect(screen.queryByText("Tier 2 · AI operating infrastructure & business intelligence")).not.toBeInTheDocument();
+    expect(screen.queryByText("Tier 3 · Compliance, audit, governance & policy")).not.toBeInTheDocument();
   });
 });

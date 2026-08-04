@@ -1,4 +1,5 @@
 import { CriticalityBadge } from "../../components/ui/CriticalityBadge";
+import { isDemoModeEnabled } from "../../demo/demoMode";
 import type { DashboardTileDataState, ScoredTile as ScoredTileType } from "../../services/dashboard/tileScoring";
 
 // Executive Dashboard Redesign Sprint ED-R1: generalizes TenantHealthCommandCenter.tsx's tile
@@ -22,13 +23,19 @@ const dataStateLabels: Record<DashboardTileDataState, string> = {
 };
 
 export function ScoredTile({ tile }: { tile: ScoredTileType }) {
+  // 2026-08-04: the per-tile "Live"/"Demo"/"Partial" pill is engineering/QA vocabulary -- see
+  // DataStateBadge in components/enterprise/index.tsx for the same call. Suppressed in the
+  // investor preview; real tenants keep it since it's functionally useful there.
+  const showDataState = !isDemoModeEnabled();
   const content = (
     <div className="flex h-full flex-col gap-2 rounded-lg border border-[rgba(15,17,23,0.08)] bg-white p-3 transition-colors hover:border-[#8B1E2D]/30 hover:bg-[#F8F9FA]">
       <div className="flex items-start justify-between gap-2">
         <span className="text-[11px] font-semibold uppercase tracking-wide text-[#5F6B73]">{tile.title}</span>
-        <span className={"rounded-full px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide " + dataStateStyles[tile.dataState]}>
-          {dataStateLabels[tile.dataState]}
-        </span>
+        {showDataState && (
+          <span className={"rounded-full px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide " + dataStateStyles[tile.dataState]}>
+            {dataStateLabels[tile.dataState]}
+          </span>
+        )}
       </div>
       <div className="font-mono text-lg font-semibold text-[#0F1117]">{tile.value}</div>
       <p className="flex-1 text-xs leading-relaxed text-[#5F6B73]">{tile.detail}</p>

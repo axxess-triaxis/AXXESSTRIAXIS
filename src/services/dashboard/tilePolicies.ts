@@ -92,7 +92,7 @@ export function integrationHealthPolicy(integrationConfigured: number): PolicyRe
 
 export function socialAlertsProviderGatedPolicy(anyLiveProviderConfigured: boolean): PolicyResult {
   if (anyLiveProviderConfigured) return { priority: 1, criticality: "green", rationale: "A social/RSS alert provider is connected." };
-  return { priority: 2, criticality: "yellow", rationale: "Connect X or Facebook to enable live social alert ingestion." };
+  return { priority: 2, criticality: "yellow", rationale: "Connect X or Facebook to start receiving social alerts." };
 }
 
 // --- Executive Dashboard Redesign Sprint ED-R2 ---
@@ -139,8 +139,8 @@ export function criticalSocialAlertsPolicy(criticalCount: number): PolicyResult 
 }
 
 export function socialProviderHealthPolicy(xConfigured: boolean, facebookConfigured: boolean): PolicyResult {
-  if (xConfigured || facebookConfigured) return { priority: 1, criticality: "green", rationale: "At least one social monitoring provider is configured." };
-  return { priority: 2, criticality: "yellow", rationale: "No social monitoring provider credentials are configured." };
+  if (xConfigured || facebookConfigured) return { priority: 1, criticality: "green", rationale: "At least one social monitoring provider is connected." };
+  return { priority: 2, criticality: "yellow", rationale: "No social monitoring provider is connected yet." };
 }
 
 // --- Executive Dashboard Redesign Sprint ED-R3 ---
@@ -160,25 +160,25 @@ export function upcomingMeetingsPolicy(upcomingCount: number): PolicyResult {
 // Manually tracked, not bank-connected -- every rationale below says so explicitly, since this is
 // a self-reported watchlist, not live account data.
 export function financialBudgetThresholdsPolicy(count: number): PolicyResult {
-  if (count === 0) return { priority: 1, criticality: "green", rationale: "No budget items are being manually tracked." };
-  return { priority: 1, criticality: "green", rationale: `${count} budget item(s) manually tracked.` };
+  if (count === 0) return { priority: 1, criticality: "green", rationale: "No budget items are being tracked." };
+  return { priority: 1, criticality: "green", rationale: `${count} budget item(s) tracked.` };
 }
 
 export function financialBudgetOvershootPolicy(overshootCount: number): PolicyResult {
-  if (overshootCount === 0) return { priority: 1, criticality: "green", rationale: "No manually tracked budget items are currently over threshold." };
-  if (overshootCount === 1) return { priority: 3, criticality: "amber", rationale: "1 manually tracked budget item is over threshold." };
-  return { priority: 4, criticality: "red", rationale: `${overshootCount} manually tracked budget items are over threshold.` };
+  if (overshootCount === 0) return { priority: 1, criticality: "green", rationale: "No budget items are currently over threshold." };
+  if (overshootCount === 1) return { priority: 3, criticality: "amber", rationale: "1 budget item is over threshold." };
+  return { priority: 4, criticality: "red", rationale: `${overshootCount} budget items are over threshold.` };
 }
 
 export function financialAccountsBelowThresholdPolicy(belowCount: number): PolicyResult {
-  if (belowCount === 0) return { priority: 1, criticality: "green", rationale: "No manually tracked account balances are below threshold." };
-  if (belowCount === 1) return { priority: 4, criticality: "amber", rationale: "1 manually tracked account balance is below threshold." };
-  return { priority: 5, criticality: "red", rationale: `${belowCount} manually tracked account balances are below threshold.` };
+  if (belowCount === 0) return { priority: 1, criticality: "green", rationale: "No account balances are below threshold." };
+  if (belowCount === 1) return { priority: 4, criticality: "amber", rationale: "1 account balance is below threshold." };
+  return { priority: 5, criticality: "red", rationale: `${belowCount} account balances are below threshold.` };
 }
 
 export function financialAccountsActionablesPolicy(actionableCount: number, overdueCount: number): PolicyResult {
-  if (actionableCount === 0) return { priority: 1, criticality: "green", rationale: "No manually tracked accounts actionables." };
-  if (overdueCount === 0) return { priority: 2, criticality: "yellow", rationale: `${actionableCount} manually tracked accounts actionable(s).` };
+  if (actionableCount === 0) return { priority: 1, criticality: "green", rationale: "No account actionables right now." };
+  if (overdueCount === 0) return { priority: 2, criticality: "yellow", rationale: `${actionableCount} account actionable(s).` };
   if (overdueCount === 1) return { priority: 3, criticality: "amber", rationale: `${actionableCount} accounts actionable(s), 1 overdue.` };
   return { priority: 4, criticality: "red", rationale: `${actionableCount} accounts actionable(s), ${overdueCount} overdue.` };
 }
