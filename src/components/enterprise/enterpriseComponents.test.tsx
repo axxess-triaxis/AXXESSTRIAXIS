@@ -31,7 +31,7 @@ describe("enterprise components", () => {
     expect(screen.getByText("Demo")).toBeInTheDocument();
   });
 
-  it("renders metric, confidence, approval, document, and demo notice primitives", () => {
+  it("renders metric, confidence, approval, and document primitives; demo notice stays silent", () => {
     render(
       <div>
         <MetricCard label="Pending approvals" value="42" detail="7 executive reviews" />
@@ -46,7 +46,9 @@ describe("enterprise components", () => {
     expect(screen.getByText("Confidence 87%")).toBeInTheDocument();
     expect(screen.getByText("Biomedical variance")).toBeInTheDocument();
     expect(screen.getByText("Dibrugarh Oxygen Risk Register")).toBeInTheDocument();
-    expect(screen.getByText(/Investor Preview/)).toBeInTheDocument();
+    // 2026-08-04: a funding-grade preview should never announce itself as a preview -- DemoDataNotice
+    // is now a permanent no-op (see components/enterprise/index.tsx).
+    expect(screen.queryByText(/Investor Preview/)).not.toBeInTheDocument();
   });
 
   it("renders the enterprise golden path journey with next actions", () => {

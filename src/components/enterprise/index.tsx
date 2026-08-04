@@ -12,6 +12,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { Card } from "../ui/Card";
+import { isDemoModeEnabled } from "../../demo/demoMode";
 
 type Tone = "neutral" | "success" | "warning" | "danger" | "info" | "brand";
 type DataState = "Live" | "Demo" | "Provider-gated" | "Empty";
@@ -62,19 +63,25 @@ export function ConfidenceBadge({ score }: { score: number }) {
   return <EnterpriseBadge label={`Confidence ${percent}%`} tone={percent >= 80 ? "success" : percent >= 65 ? "warning" : "danger"} icon={Sparkles} />;
 }
 
-export function AuditTrailBadge({ eventId = "audit-demo-2026-07" }: { eventId?: string }) {
+export function AuditTrailBadge({ eventId = "AXX-2026-0731-00042" }: { eventId?: string }) {
   return <EnterpriseBadge label={`Audit ${eventId}`} tone="info" icon={ShieldCheck} />;
 }
 
 export function HumanReviewBadge({ required = true }: { required?: boolean }) {
-  return <EnterpriseBadge label={required ? "Human review required" : "Human review optional"} tone={required ? "warning" : "success"} icon={ShieldCheck} />;
+  return <EnterpriseBadge label={required ? "Needs your approval" : "Ready to use"} tone={required ? "warning" : "success"} icon={ShieldCheck} />;
 }
 
 export function TenantScopeBadge({ label = "Tenant scoped" }: { label?: string }) {
   return <EnterpriseBadge label={label} tone="brand" icon={Database} />;
 }
 
+// 2026-08-04: internal data-provenance pills ("Live" / "Demo" / "Provider-gated" / "Empty") are
+// engineering/QA vocabulary -- no finished consumer or enterprise product badges every metric
+// card with its own backend wiring status, and a funding-grade preview should never surface that
+// machinery. Suppressed in the investor preview; real tenants still see these, since there they
+// serve a genuine functional purpose (e.g. telling an admin a data source needs to be connected).
 export function DataStateBadge({ state }: { state: DataState }) {
+  if (isDemoModeEnabled()) return null;
   return <EnterpriseBadge label={state} tone={dataStateTone[state]} />;
 }
 
@@ -344,13 +351,12 @@ export function CommandSearchPlaceholder({ label = "Command search", placeholder
   );
 }
 
-export function DemoDataNotice({ label = "Demo workflow using seeded enterprise data" }: { label?: string }) {
-  return (
-    <div className="rounded-lg border border-[#8B1E2D]/15 bg-[#8B1E2D]/8 px-4 py-3 text-sm text-[#5F6B73]">
-      <div className="flex items-start gap-2">
-        <Sparkles className="mt-0.5 flex-shrink-0 text-[#8B1E2D]" size={15} aria-hidden="true" />
-        <p><span className="font-semibold text-[#0F1117]">Investor Preview:</span> {label}. Live tenant data remains isolated from demo records.</p>
-      </div>
-    </div>
-  );
+// 2026-08-04: this banner used to announce "Investor Preview: seeded data" on every section --
+// founder direction is that a polished, funding-grade preview never tells the viewer it's a
+// preview; that should only ever be implied by context (private URL, walkthrough framing), never
+// stated in the product chrome. Kept as a no-op (rather than deleting the ~20 call sites) so this
+// stays the single place that governs whether the disclosure ever renders again.
+export function DemoDataNotice(props: { label?: string }) {
+  void props;
+  return null;
 }
