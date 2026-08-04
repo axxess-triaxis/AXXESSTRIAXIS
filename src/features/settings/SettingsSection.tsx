@@ -15,6 +15,7 @@ import { tenantScopeFromUser } from "../../repositories/supabaseEnterpriseReposi
 import { markPostDemoSatisfactionPromptPending } from "../../hooks/usePostDemoSatisfactionPrompt";
 import { useAnalytics } from "../../services/analytics";
 import { getProductivityPluginRegistry } from "../../services/integrations/pluginRegistry";
+import { useFacebookLoginStatus, type FacebookLoginStatus } from "../../hooks/useFacebookLoginStatus";
 import { isAgenticGateEnabled, setAgenticGateEnabled } from "../../services/agentic/agenticGateToggle";
 import { BrandIcon } from "../../components/ui/BrandIcon";
 import { brandIcons } from "../../components/ui/brandIcons";
@@ -237,6 +238,13 @@ function WhatsAppPhoneNumberField() {
   );
 }
 
+const facebookLoginStatusCopy: Record<FacebookLoginStatus, string> = {
+  connected: "This browser has an authorized Facebook session -- Connect will likely skip straight to Meta's account picker.",
+  not_authorized: "This browser is signed into Facebook but hasn't authorized this app yet -- Connect will prompt for permissions.",
+  unknown: "Not currently signed into Facebook in this browser -- Connect will prompt for Facebook login.",
+  unavailable: "",
+};
+
 function IntegrationsQuickConnectPanel() {
   const { session } = useAuth();
   // 2026-07-30: previously showed only pilot-enabled connectors, excluding Gmail/Outlook entirely
@@ -246,6 +254,10 @@ function IntegrationsQuickConnectPanel() {
   // a "coming soon" tile is never presented as connectable.
   const quickConnectPlugins = getProductivityPluginRegistry();
   const canConnect = Boolean(session.user && ["Super Admin", "Organization Admin"].includes(session.user.role));
+  // A-95 (2026-08-04): client-side-only status check (see useFacebookLoginStatus.ts) surfaced next
+  // to the two Meta-App-backed tiles (WhatsApp Business, Meta Business) -- informational only, does
+  // not change the actual connect flow, which stays the existing server-side OAuth exchange below.
+  const facebookLoginStatus = useFacebookLoginStatus();
 
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -271,6 +283,11 @@ function IntegrationsQuickConnectPanel() {
               </div>
             </div>
             <p className="mb-3 text-xs leading-relaxed text-[#5F6B73]">{plugin.useCases.join(" - ")}</p>
+            {(plugin.id === "whatsapp_business" || plugin.id === "meta_business") && facebookLoginStatusCopy[facebookLoginStatus] && (
+              <p className="mb-3 rounded-lg bg-[rgba(15,17,23,0.04)] px-2.5 py-2 text-[11px] leading-relaxed text-[#5F6B73]">
+                {facebookLoginStatusCopy[facebookLoginStatus]}
+              </p>
+            )}
             {plugin.id === "calendly" && (
               <p className="mb-3 rounded-lg bg-amber-50 px-2.5 py-2 text-[11px] leading-relaxed text-amber-800">
                 Calendly&apos;s API requires a Standard plan or higher on the account you connect -- it isn&apos;t available on Calendly&apos;s free tier. This is a cost on your own Calendly subscription, not an AXXESS charge.
