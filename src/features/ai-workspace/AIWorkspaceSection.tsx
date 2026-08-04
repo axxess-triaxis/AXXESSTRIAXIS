@@ -115,6 +115,34 @@ const emptyRagAnswer: RagAnswer = {
   },
 };
 
+// A-96 (2026-08-04): investor-demo-only fallbacks for the AI Router and Language Coverage panels.
+// AI Router: the real fetch (GET /api/ai/model-policy) requires a live server session and reads
+// real provider env vars -- on the investor demo this either never resolves or reports the demo
+// pseudo-org's real (mostly-unconfigured) provider state, both of which read as broken on camera.
+// Language Coverage: per the founder's explicit instruction (2026-08-04), the investor demo is
+// meant to represent the product's target/finished state, not today's exact build status -- the
+// real per-model technical status stays accurate and unchanged in modelRegistry.ts and this
+// program's own readiness docs; only this demo-only display is more finished-looking.
+const demoAiRouterStatus: AiRouterStatus = {
+  mode: "production",
+  defaultProvider: "OpenAI GPT-4o",
+  configuredCount: 4,
+  providers: [
+    { name: "openai", displayName: "OpenAI", configured: true, status: "Active" },
+    { name: "openrouter", displayName: "OpenRouter", configured: true, status: "Active" },
+    { name: "anthropic", displayName: "Anthropic", configured: true, status: "Active" },
+    { name: "azure-openai", displayName: "Azure OpenAI", configured: true, status: "Active" },
+  ],
+};
+
+const demoLanguageCoverage = [
+  { language: "English", status: "Live", note: "Local NLP and all adapter contracts." },
+  { language: "Hindi", status: "Live", note: "Script detection plus Indic adapter targets." },
+  { language: "Assamese", status: "Live", note: "Script detection and IndicTrans2 target coverage." },
+  { language: "Bengali", status: "Live", note: "Script detection and multilingual embedding targets." },
+  { language: "Bodo", status: "In rollout", note: "Adapter onboarding underway." },
+];
+
 function initialRagAnswer(): RagAnswer {
   return isDemoModeEnabled() ? fallbackRagAnswer : emptyRagAnswer;
 }
@@ -670,29 +698,36 @@ export const AIWorkspaceSection = () => {
         <div className="space-y-4">
           <Card className="p-4">
             <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-[#0F1117]">AI Router</h3>
-            {routerStatus ? (
+            {(demoMode ? demoAiRouterStatus : routerStatus) ? (
               <>
-                <div className="grid grid-cols-2 gap-2">
-                  {[
-                    ["Mode", routerStatus.mode],
-                    ["Default", routerStatus.defaultProvider],
-                    ["Remote", routerStatus.configuredCount],
-                    ["Providers", routerStatus.providers.length],
-                  ].map(([label, value]) => (
-                    <div key={label} className="rounded-lg bg-[#F8F9FA] p-2">
-                      <div className="font-mono text-[10px] uppercase text-[#5F6B73]">{label}</div>
-                      <div className="mt-1 text-sm font-semibold text-[#0F1117]">{value}</div>
-                    </div>
-                  ))}
-                </div>
-                <div className="mt-3 space-y-1.5">
-                  {routerStatus.providers.slice(0, 4).map((provider) => (
-                    <div key={provider.name} className="flex items-center justify-between text-[11px]">
-                      <span className="font-medium text-[#0F1117]">{provider.displayName}</span>
-                      <span className={provider.configured ? "text-emerald-700" : "text-[#5F6B73]"}>{provider.status}</span>
-                    </div>
-                  ))}
-                </div>
+                {(() => {
+                  const displayedRouterStatus = (demoMode ? demoAiRouterStatus : routerStatus) as AiRouterStatus;
+                  return (
+                    <>
+                      <div className="grid grid-cols-2 gap-2">
+                        {[
+                          ["Mode", displayedRouterStatus.mode],
+                          ["Default", displayedRouterStatus.defaultProvider],
+                          ["Remote", displayedRouterStatus.configuredCount],
+                          ["Providers", displayedRouterStatus.providers.length],
+                        ].map(([label, value]) => (
+                          <div key={label} className="rounded-lg bg-[#F8F9FA] p-2">
+                            <div className="font-mono text-[10px] uppercase text-[#5F6B73]">{label}</div>
+                            <div className="mt-1 text-sm font-semibold text-[#0F1117]">{value}</div>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="mt-3 space-y-1.5">
+                        {displayedRouterStatus.providers.slice(0, 4).map((provider) => (
+                          <div key={provider.name} className="flex items-center justify-between text-[11px]">
+                            <span className="font-medium text-[#0F1117]">{provider.displayName}</span>
+                            <span className={provider.configured ? "text-emerald-700" : "text-[#5F6B73]"}>{provider.status}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  );
+                })()}
               </>
             ) : (
               <p className="text-[11px] text-[#5F6B73]">Loading real router status&hellip;</p>
@@ -702,7 +737,7 @@ export const AIWorkspaceSection = () => {
           <Card className="p-4">
             <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-[#0F1117]">Language Coverage</h3>
             <div className="space-y-1.5">
-              {languageCoverage.slice(0, 5).map((coverage) => (
+              {(demoMode ? demoLanguageCoverage : languageCoverage).slice(0, 5).map((coverage) => (
                 <div key={coverage.language} className="flex items-center justify-between gap-2 text-[11px]">
                   <span className="font-medium text-[#0F1117]">{coverage.language}</span>
                   <span className="rounded-full bg-[#F2F3F5] px-2 py-0.5 text-[#5F6B73]">{coverage.status}</span>
