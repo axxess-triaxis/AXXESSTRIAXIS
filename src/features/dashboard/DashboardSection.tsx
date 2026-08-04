@@ -24,28 +24,13 @@ import { useEnterpriseGoldenPath } from "../../hooks/useEnterpriseGoldenPath";
 import { useGoldenPathDisplayMode } from "../../hooks/useGoldenPathDisplayMode";
 import { useGuidedDemo } from "../../hooks/useGuidedDemo";
 import { invalidateLiveWorkspaceMetricsCache } from "../../hooks/liveWorkspaceMetricsCache";
-import { useAuditLogCount } from "../../hooks/useAuditLogCount";
-import { useCalendarSignals } from "../../hooks/useCalendarSignals";
-import { useCrmLeads } from "../../hooks/useCrmLeads";
-import { useExternalMeetingsSignals } from "../../hooks/useExternalMeetingsSignals";
-import { useFinancialWatchItems } from "../../hooks/useFinancialWatchItems";
-import { useLiveWorkspaceMetrics } from "../../hooks/useLiveWorkspaceMetrics";
-import { useMailDashboardSignals } from "../../hooks/useMailDashboardSignals";
-import { useMetaBusinessDashboardSignals } from "../../hooks/useMetaBusinessDashboardSignals";
-import { useOverdueMeetingCount } from "../../hooks/useOverdueMeetingCount";
-import { useOverdueTaskCount } from "../../hooks/useOverdueTaskCount";
-import { usePendingAiReviewCount } from "../../hooks/usePendingAiReviewCount";
-import { useSocialAlertsStatus } from "../../hooks/useSocialAlertsStatus";
-import { useSocialDashboardSignals } from "../../hooks/useSocialDashboardSignals";
-import { useThreadsDashboardSignals } from "../../hooks/useThreadsDashboardSignals";
-import { useWorkflowTimeline } from "../../hooks/useWorkflowTimeline";
 import { demoRecentActivity } from "../../lib/demo/demoActivity";
 import { demoInstitution } from "../../lib/demo/seedData";
-import { buildDashboardSnapshot } from "../../services/dashboard/buildDashboardSnapshot";
 import { BetaOnboardingChecklist } from "../onboarding/BetaOnboardingChecklist";
 import { DashboardTier } from "./DashboardTier";
 import { SampleDataBanner } from "./SampleDataBanner";
 import { UrgentAttentionBarStack } from "./UrgentAttentionBarStack";
+import { useDashboardSnapshot } from "./useDashboardSnapshot";
 import {
   demoAiRecommendations,
   demoObjectives,
@@ -203,58 +188,16 @@ export function DashboardSection() {
   // only by that button, not shown until then.
   const [goldenPathVisible, setGoldenPathVisible] = useState(false);
   const guidedDemo = useGuidedDemo("dashboard");
-  const liveMetrics = useLiveWorkspaceMetrics(tenantScope, refreshToken);
+  // Executive Dashboard Redesign Sprint ED-R1 (extracted to useDashboardSnapshot.ts, A-96
+  // 2026-08-04, so Analytics can share this exact scored-tile stack): the Priority x Criticality
+  // scored tile set, built purely from live hooks -- see
+  // docs/readiness/EXECUTIVE_DASHBOARD_REDESIGN_PLAN_2026_08_01.md for the full scoring rationale.
+  const { snapshot: dashboardSnapshot, liveMetrics, pendingAiReviewCount, auditLogCount, workflowTimeline } = useDashboardSnapshot(tenantScope, refreshToken, projects);
   // Executive Dashboard Sprint ED-2: a real, literal count of pending AI review items (from the
   // same GET /api/ai/reviews the AI Review Inbox itself uses), replacing the pendingApprovals/10
   // heuristic previously used by both the Golden Path step and the Tenant Health Command Center tile.
-  const pendingAiReviewCount = usePendingAiReviewCount(tenantScope, refreshToken);
   const enterpriseJourney = useEnterpriseGoldenPath(tenantScope, session.user, refreshToken, pendingAiReviewCount);
-  const socialAlertsStatus = useSocialAlertsStatus(tenantScope);
-  // Executive Dashboard Sprint ED-2: real audit_logs row count for the "Audit readiness" tile.
-  const auditLogCount = useAuditLogCount(tenantScope, refreshToken);
   const goldenPathDisplayMode = useGoldenPathDisplayMode();
-  const workflowTimeline = useWorkflowTimeline(tenantScope, { limit: 6, refreshToken });
-  // Executive Dashboard Redesign Sprint ED-R1: real overdue-task/missed-meeting counts feeding
-  // the new Tier 1 scored tiles -- see useOverdueTaskCount.ts / useOverdueMeetingCount.ts.
-  const overdueTaskCount = useOverdueTaskCount(tenantScope, refreshToken);
-  const overdueMeetingCount = useOverdueMeetingCount(tenantScope, refreshToken);
-  // Executive Dashboard Redesign Sprint ED-R2: mail/CRM/social dashboard signals.
-  const mailSignals = useMailDashboardSignals(tenantScope, refreshToken);
-  const crmLeads = useCrmLeads(tenantScope, refreshToken);
-  const socialSignals = useSocialDashboardSignals(tenantScope, refreshToken);
-  // Executive Dashboard Redesign Sprint ED-R3: calendar/external-meetings/financial signals.
-  const calendarSignals = useCalendarSignals(tenantScope, refreshToken);
-  const externalMeetingsSignals = useExternalMeetingsSignals(tenantScope, refreshToken);
-  const financialWatchItems = useFinancialWatchItems(tenantScope, refreshToken);
-  // Executive Dashboard Redesign Sprint ED-R4: Threads/Meta Business Suite signals.
-  const threadsSignals = useThreadsDashboardSignals(tenantScope, refreshToken);
-  const metaBusinessSignals = useMetaBusinessDashboardSignals(tenantScope, refreshToken);
-
-  // Executive Dashboard Redesign Sprint ED-R1: the Priority x Criticality scored tile set, built
-  // purely from data already fetched above -- no duplicate fetches. See
-  // docs/readiness/EXECUTIVE_DASHBOARD_REDESIGN_PLAN_2026_08_01.md for the full scoring rationale.
-  const dashboardSnapshot = useMemo(
-    () => buildDashboardSnapshot({
-      liveMetrics,
-      overdueTaskCount,
-      overdueMeetingCount,
-      pendingAiReviewCount,
-      auditLogCount,
-      socialAlertsAnyLiveProviderConfigured: socialAlertsStatus.anyLiveProviderConfigured,
-      workflowTimelineEventCount: workflowTimeline.timeline.length,
-      projects,
-      demoMode: isDemoModeEnabled(),
-      mailSignals,
-      crmLeads,
-      socialSignals,
-      calendarSignals,
-      externalMeetingsSignals,
-      financialWatchItems,
-      threadsSignals,
-      metaBusinessSignals,
-    }),
-    [liveMetrics, overdueTaskCount, overdueMeetingCount, pendingAiReviewCount, auditLogCount, socialAlertsStatus.anyLiveProviderConfigured, workflowTimeline.timeline.length, projects, mailSignals, crmLeads, socialSignals, calendarSignals, externalMeetingsSignals, financialWatchItems, threadsSignals, metaBusinessSignals],
-  );
 
   // Real refresh: drops this tenant's cached metrics entry so the next fetch is fresh, then bumps
   // refreshToken so every hook above (which all key off it) re-runs. workflowTimeline.loading is
