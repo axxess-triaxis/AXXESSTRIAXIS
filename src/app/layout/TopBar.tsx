@@ -54,7 +54,11 @@ export function TopBar({ activeLabel, notifOpen, user, onToggleNotifications, on
 
   const loadNotifications = useCallback(async () => {
     try {
-      const rows = await applicationServices.notificationsRepository.list(scope, { pageSize: 25 });
+      // A-96 (2026-08-04): list() is organization-scoped, not user-scoped -- the per-user filter
+      // below happens client-side. A small pageSize (previously 25) truncated the organization's
+      // notification rows BEFORE that filter ran, so a user whose notifications weren't in the
+      // first 25 rows saw an empty dropdown even though real notifications existed for them.
+      const rows = await applicationServices.notificationsRepository.list(scope, { pageSize: 100 });
       setNotifications(rows.filter((notification) => notification.userId === user.id));
     } catch {
       setNotifications([]);
