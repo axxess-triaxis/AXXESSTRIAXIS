@@ -1,15 +1,81 @@
 "use client";
 
-import { BarChart3, CheckCircle2, FolderKanban, MessageSquareText, Users } from "lucide-react";
+import { BarChart3, CheckCircle2, FolderKanban, GitPullRequest, MessageSquareText, Users } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { siAsana, siGithub, siJira, siLinear, siVercel } from "simple-icons";
 import { useAuth } from "../../auth/AuthProvider";
 import { LoadingState } from "../../components/feedback/LoadingState";
 import { SectionHeader } from "../../components/layout/SectionHeader";
 import { Card } from "../../components/ui/Card";
+import { BrandIcon } from "../../components/ui/BrandIcon";
+import { isDemoModeEnabled } from "../../demo/demoMode";
+import { DemoDataNotice } from "../../components/enterprise";
 import type { BetaFeedback, User } from "../../domain";
 import { applicationServices } from "../../providers/serviceProvider";
 import { tenantScopeFromUser } from "../../repositories/supabaseEnterpriseRepositories";
 import { useAnalytics } from "../../services/analytics";
+
+// A-96 (2026-08-04): investor-demo-only real-looking placeholder entries for engineering-tool
+// dashboards -- NOT a live GitHub/Linear/Vercel/Asana/Jira API integration (none exists in this
+// codebase). Gated behind isDemoModeEnabled(), same pattern as every other demo-only fixture in
+// this file's sibling sections. Real tenants never see this block.
+const devToolDashboards = [
+  {
+    id: "github",
+    name: "GitHub",
+    icon: siGithub,
+    stats: [
+      { label: "Commits (7d)", value: "142" },
+      { label: "Open PRs", value: "8" },
+      { label: "Merged PRs (7d)", value: "23" },
+      { label: "Contributors", value: "6" },
+    ],
+  },
+  {
+    id: "linear",
+    name: "Linear",
+    icon: siLinear,
+    stats: [
+      { label: "Issues in progress", value: "14" },
+      { label: "Cycle time", value: "3.2d" },
+      { label: "Velocity", value: "38 pts/wk" },
+      { label: "Backlog", value: "61" },
+    ],
+  },
+  {
+    id: "vercel",
+    name: "Vercel",
+    icon: siVercel,
+    stats: [
+      { label: "Deployments (7d)", value: "19" },
+      { label: "Build success rate", value: "96%" },
+      { label: "P95 build time", value: "48s" },
+      { label: "Preview URLs (7d)", value: "27" },
+    ],
+  },
+  {
+    id: "asana",
+    name: "Asana",
+    icon: siAsana,
+    stats: [
+      { label: "Tasks completed (7d)", value: "61" },
+      { label: "On-time rate", value: "88%" },
+      { label: "Overdue tasks", value: "4" },
+      { label: "Active projects", value: "9" },
+    ],
+  },
+  {
+    id: "jira",
+    name: "Jira",
+    icon: siJira,
+    stats: [
+      { label: "Sprint progress", value: "68%" },
+      { label: "Story points remaining", value: "24" },
+      { label: "Open bugs", value: "5" },
+      { label: "Sprint days left", value: "4" },
+    ],
+  },
+];
 
 type ProductMetrics = {
   users: number;
@@ -104,6 +170,7 @@ export function ProductAnalyticsSection() {
 
   if (loading) return <LoadingState label="Loading product analytics" />;
 
+  const demoMode = isDemoModeEnabled();
   const activeModules = ["Dashboard", "Projects", "Tasks", "Meetings", "Feedback", "Administration"];
 
   return (
@@ -151,6 +218,42 @@ export function ProductAnalyticsSection() {
             ))}
           </div>
         </Card>
+      </div>
+
+      <div>
+        <div className="mb-3 flex items-center gap-2">
+          <GitPullRequest size={15} className="text-[#8B1E2D]" />
+          <h2 className="text-xs font-semibold uppercase tracking-wide text-[#5F6B73]">Engineering &amp; Delivery Tooling</h2>
+        </div>
+        {demoMode ? (
+          <>
+            <DemoDataNotice label="These engineering-tool dashboards are seeded to show what live GitHub, Linear, Vercel, Asana, and Jira integrations would surface -- not a live API connection." />
+            <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {devToolDashboards.map((tool) => (
+                <Card key={tool.id} className="p-4">
+                  <div className="mb-3 flex items-center gap-2">
+                    <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-white ring-1 ring-[rgba(15,17,23,0.08)]">
+                      <BrandIcon icon={tool.icon} size={16} />
+                    </span>
+                    <h3 className="text-sm font-semibold text-[#0F1117]">{tool.name}</h3>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2.5">
+                    {tool.stats.map((stat) => (
+                      <div key={stat.label}>
+                        <div className="font-mono text-sm font-semibold text-[#0F1117]">{stat.value}</div>
+                        <div className="mt-0.5 text-[10px] leading-tight text-[#5F6B73]">{stat.label}</div>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              ))}
+            </div>
+          </>
+        ) : (
+          <Card className="p-5">
+            <p className="text-xs leading-relaxed text-[#5F6B73]">GitHub, Linear, Vercel, Asana, and Jira dashboards require live API integrations that aren&apos;t wired to this workspace yet. This section will populate as those connectors are built.</p>
+          </Card>
+        )}
       </div>
 
       <Card className="overflow-hidden">
