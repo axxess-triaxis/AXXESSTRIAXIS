@@ -16,6 +16,7 @@ import {
   TenantScopeBadge,
   WorkflowStepCard,
 } from "../../components/enterprise";
+import { staggerDelay } from "../../lib/ui/staggerDelay";
 import {
   computePilotHealth,
   createDemoPilotReadinessEvents,
@@ -29,6 +30,51 @@ type PilotConversionState = {
   loading: boolean;
   source: "Live" | "Demo" | "Provider-gated";
 };
+
+const HEATMAP_WEEKS = 12;
+const heatmapDayLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+// A-96 (2026-08-04): a real GitHub-style activity heatmap computed from whatever `events` actually
+// contains -- state.events is already either live pilot_readiness_events rows or the seeded demo
+// fallback (see loadPilotEvents above), so this needs no separate demoMode branch: it is honest for
+// both, and a real tenant's own event density renders correctly the moment real events exist.
+function buildPilotEventHeatmap(events: PilotReadinessEvent[]) {
+  const countsByDate = new Map<string, number>();
+  for (const event of events) {
+    const day = event.createdAt.slice(0, 10);
+    countsByDate.set(day, (countsByDate.get(day) ?? 0) + 1);
+  }
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const totalDays = HEATMAP_WEEKS * 7;
+  const start = new Date(today);
+  start.setDate(start.getDate() - (totalDays - 1) - today.getDay());
+
+  const weeks: Array<Array<{ date: string; count: number }>> = [];
+  const cursor = new Date(start);
+  for (let week = 0; week < HEATMAP_WEEKS; week += 1) {
+    const days: Array<{ date: string; count: number }> = [];
+    for (let day = 0; day < 7; day += 1) {
+      const iso = cursor.toISOString().slice(0, 10);
+      days.push({ date: iso, count: countsByDate.get(iso) ?? 0 });
+      cursor.setDate(cursor.getDate() + 1);
+    }
+    weeks.push(days);
+  }
+
+  const maxCount = Math.max(1, ...Array.from(countsByDate.values()));
+  return { weeks, maxCount, totalEvents: events.length };
+}
+
+function heatmapCellClass(count: number, maxCount: number) {
+  if (count === 0) return "bg-[#F2F3F5]";
+  const intensity = count / maxCount;
+  if (intensity > 0.75) return "bg-[#8B1E2D]";
+  if (intensity > 0.5) return "bg-[#8B1E2D]/70";
+  if (intensity > 0.25) return "bg-[#8B1E2D]/45";
+  return "bg-[#8B1E2D]/25";
+}
 
 export function PilotConversionSection() {
   const { session } = useAuth();
@@ -69,6 +115,7 @@ export function PilotConversionSection() {
 
   const health = useMemo(() => computePilotHealth(state.events), [state.events]);
   const latestEvents = [...state.events].sort((left, right) => right.createdAt.localeCompare(left.createdAt)).slice(0, 8);
+  const heatmap = useMemo(() => buildPilotEventHeatmap(state.events), [state.events]);
 
   if (!user) return null;
 
@@ -138,6 +185,39 @@ export function PilotConversionSection() {
         ) : (
           <EmptyState title="No pilot events yet" message="Complete onboarding steps to build the tenant conversion timeline." />
         )}
+      </SectionCard>
+
+      <SectionCard title="Pilot activity heatmap" description={`Readiness event density over the last ${HEATMAP_WEEKS} weeks -- darker cells mean more setup and conversion activity that day.`}>
+        <div className="flex items-start gap-3 overflow-x-auto pb-1">
+          <div className="flex flex-col justify-between gap-[3px] pt-4 text-[9px] text-[#5F6B73]">
+            {heatmapDayLabels.map((label, index) => (
+              <span key={label} className={index % 2 === 0 ? "" : "opacity-0"} style={{ height: 11 }}>{label}</span>
+            ))}
+          </div>
+          <div className="flex gap-[3px]">
+            {heatmap.weeks.map((week, weekIndex) => (
+              <div key={week[0].date} className="axxess-stagger-item flex flex-col gap-[3px]" style={staggerDelay(weekIndex, 25)}>
+                {week.map((cell) => (
+                  <div
+                    key={cell.date}
+                    title={`${cell.date}: ${cell.count} event${cell.count === 1 ? "" : "s"}`}
+                    className={`h-[11px] w-[11px] rounded-[2px] ${heatmapCellClass(cell.count, heatmap.maxCount)}`}
+                  />
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="mt-3 flex items-center gap-2 text-[10px] text-[#5F6B73]">
+          <span>Less</span>
+          <span className="h-[11px] w-[11px] rounded-[2px] bg-[#F2F3F5]" />
+          <span className="h-[11px] w-[11px] rounded-[2px] bg-[#8B1E2D]/25" />
+          <span className="h-[11px] w-[11px] rounded-[2px] bg-[#8B1E2D]/45" />
+          <span className="h-[11px] w-[11px] rounded-[2px] bg-[#8B1E2D]/70" />
+          <span className="h-[11px] w-[11px] rounded-[2px] bg-[#8B1E2D]" />
+          <span>More</span>
+          <span className="ml-auto font-mono">{heatmap.totalEvents} total events</span>
+        </div>
       </SectionCard>
 
       <SectionCard title="Sprint 18 conversion controls" description="Operational controls now available for pilot review.">
