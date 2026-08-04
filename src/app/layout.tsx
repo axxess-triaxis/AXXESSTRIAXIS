@@ -38,6 +38,13 @@ export const metadata: Metadata = {
   },
 };
 
+// Facebook JS SDK: appId must be exposed to the browser, so it needs its own NEXT_PUBLIC_ var --
+// the server-side META_APP_ID (used for the OAuth token exchange in oauthProvider.ts) is never
+// sent to the client bundle. An App ID is not a secret (Meta's own docs embed it directly in
+// client-side HTML), so a separate public var is the correct, not just convenient, choice here.
+// Renders nothing if unset, rather than loading a broken SDK against an empty appId.
+const facebookAppId = process.env.NEXT_PUBLIC_META_APP_ID;
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
@@ -45,6 +52,31 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {children}
         <Script src="https://www.vexo.co/analytics.js" strategy="afterInteractive" />
         <Script src="https://getlaunchlist.com/js/widget.js" strategy="afterInteractive" />
+        {facebookAppId ? (
+          <>
+            <div id="fb-root" />
+            <Script id="facebook-jssdk" strategy="afterInteractive">
+              {`
+                window.fbAsyncInit = function() {
+                  FB.init({
+                    appId      : '${facebookAppId}',
+                    cookie     : true,
+                    xfbml      : true,
+                    version    : 'v19.0'
+                  });
+                  FB.AppEvents.logPageView();
+                };
+                (function(d, s, id){
+                   var js, fjs = d.getElementsByTagName(s)[0];
+                   if (d.getElementById(id)) {return;}
+                   js = d.createElement(s); js.id = id;
+                   js.src = "https://connect.facebook.net/en_US/sdk.js";
+                   fjs.parentNode.insertBefore(js, fjs);
+                 }(document, 'script', 'facebook-jssdk'));
+              `}
+            </Script>
+          </>
+        ) : null}
         <Analytics />
         <SpeedInsights />
         <PostHogSessionReplayInit />
