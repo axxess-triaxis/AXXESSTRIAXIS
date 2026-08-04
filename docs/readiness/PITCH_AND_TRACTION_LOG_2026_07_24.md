@@ -69,8 +69,11 @@ Source: Google Calendar invite ("Startup Evaluation Meeting," organizer Nandini 
 
 ### 8. SINE -- Society for Innovation and Entrepreneurship, IIT Bombay
 
-**Status:** Deferred by the incubator. **Update, 2026-07-26 (founder-reported): now actively reapplying** -- consistent with the original "revisit post-MVP" deferral, this is the founder acting on that deferral, not a new outcome from SINE itself.
-**Outcome:** Told to revisit post-MVP for incubation -- an explicit, honest deferral rather than a rejection or an offer, recorded here without reframing.
+**Status:** Deferred by the incubator. **Update, 2026-07-26 (founder-reported): now actively reapplying.** **Correction, 2026-08-04 (email-thread-verified): the actual rejection email's wording and reasoning differ from the "revisit post-MVP" summary previously recorded here -- corrected per this log's evidence discipline.**
+Source: rejection email from SINE IIT Bombay, 2026-06-08, Application No. SINE/INCU/2026/05/00187.
+- Stated reason, quoted: **"At a very early stage."** SINE recommended applying to prototyping/validation grants first, naming six specific programs: NIDHI-PRAYAS, NIDHI-EIR, MeitY Startup Hub (TIDE 2.0), BIRAC-BIG, Startup India Seed Fund, and MSInS.
+- Decision, quoted: **"Based on this we are not able to proceed further with your application at this point."** This is a rejection at the current stage with an implicit door left open ("at this point"), not a specific "come back after MVP" instruction as the prior summary implied -- the email never mentions MVP. The founder's 2026-07-26 "now actively reapplying" update is still consistent with this actual wording (a rejected applicant choosing to reapply later), just not with the more specific "revisit post-MVP" phrasing this entry previously used.
+**Outcome:** Rejected at the early/pre-prototype stage, with SINE naming specific non-dilutive grant programs as a recommended next step before reapplying -- not independently confirmed whether any of those six grants have been pursued.
 
 ## Accelerator / Pre-Accelerator Programs
 
