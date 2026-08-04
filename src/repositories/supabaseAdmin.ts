@@ -1,5 +1,5 @@
 type AdminRestOptions = {
-  method?: "GET" | "POST" | "PATCH";
+  method?: "GET" | "POST" | "PATCH" | "DELETE";
   query?: URLSearchParams;
   body?: Record<string, unknown> | Record<string, unknown>[];
   prefer?: string;

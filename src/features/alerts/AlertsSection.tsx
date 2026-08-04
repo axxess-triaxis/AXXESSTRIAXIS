@@ -12,6 +12,7 @@ import { isDemoModeEnabled } from "../../demo/demoMode";
 import { applicationServices } from "../../providers/serviceProvider";
 import { tenantScopeFromUser } from "../../repositories/supabaseEnterpriseRepositories";
 import { getDemoSocialAlerts, getSocialAlertProviderStatus, type SocialAlert, type SocialAlertProvider } from "../../services/alerts/socialAlerts";
+import { SocialAlertRulesPanel } from "./SocialAlertRulesPanel";
 
 const ALERTS_PAGE_SIZE = 20;
 
@@ -267,6 +268,8 @@ export const AlertsSection = () => {
           )}
         </Card>
       </div>
+
+      <SocialAlertRulesPanel />
 
       {demoMode && (
         <div>
