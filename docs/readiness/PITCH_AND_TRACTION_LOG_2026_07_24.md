@@ -167,6 +167,15 @@ Source: 11-message email thread "Forbes India presents DGEMS 2026| Stage 2: Prel
 **Status:** LOI-stage relationship converted to an active pilot. **New, 2026-08-04.** Numbered out of the main entry sequence (added after #29), same reasoning as above.
 **Outcome:** Rather than waiting on the LOI's own post-launch timeline, the founder convinced him to bring one of his three firms onboard as an active pilot now (which of the three was not specified). He also orally committed to an advance payment -- **not yet collected or documented**, same evidence-discipline treatment as Imprints Production's (entry #29 above) advance-payment commitment. Full detail in the cross-referenced LOI log entry, not duplicated here.
 
+### 31. Povilas Urbonas -- Ignition Fund Accelerator (run by Startup Wise Guys, separate program from entry #9's Founders Club)
+
+**Status:** Advanced to next evaluation stage, not yet a call or an offer. **New, 2026-08-04.** Numbered out of the main entry sequence (added after #30), same reasoning as above. A distinct Startup Wise Guys-affiliated program from entry #9 (Davide Coppola, Founders Club) -- applied to separately, tracked separately.
+Source: application-status message via Dealum (app.dealum.com), from Povilas Urbonas at startupwiseguys.com, dated the day before this screenshot (2026-08-03 or earlier).
+- Application to the Ignition Fund Accelerator Program's Q4 2026 cohort **moved forward for further evaluation** after initial review -- not a final decision.
+- Program terms as stated: 3-month, founder-focused, free of charge; **selected** startups (not yet Triaxis's status) would be eligible for an initial investment of approximately EUR150,000, with potential follow-on investment of up to approximately EUR250,000 based on progress and future funding rounds. **This is a program-terms description, not a funding offer made to Triaxis** -- no selection, term sheet, or investment has occurred.
+- Next steps as stated: may receive additional questions or a call invitation "in the coming weeks" -- **no evidence in this screenshot that either has happened yet.**
+**Outcome:** Under active evaluation. Recorded here as an open, in-progress item -- explicitly not a pass, an offer, or a completed conversation.
+
 ## Angel Investor Conversations
 
 ### 17. Anshuman Kashyap -- IIT Guwahati, IIM Calcutta, ex-Flipkart (RSU holder), ex-Gulf Marketing Group, Founder of Elevate Wealth X, Dubai resident
