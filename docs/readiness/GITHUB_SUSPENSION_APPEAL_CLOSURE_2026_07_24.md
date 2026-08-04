@@ -44,7 +44,7 @@ The user forwarded/replied from the verified account email address associated wi
 
 Sender:
 
-**Sudipta Koushik Sarmah <sudipta1213@gmail.com>**
+**Sudipta Koushik Sarmah <[FOUNDER_EMAIL_MASKED]>**
 
 Date:
 

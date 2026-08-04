@@ -1,10 +1,21 @@
 const contentSecurityPolicy = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
+  // https://connect.facebook.net: the Facebook JS SDK script itself (layout.tsx's
+  // "facebook-jssdk" Script, gated on NEXT_PUBLIC_META_APP_ID). Without this the SDK's own
+  // <script src> is silently dropped by the browser -- confirmed live in this pass: the inline
+  // fbAsyncInit assignment ran fine under the existing 'unsafe-inline', but the SDK file itself
+  // never loaded (no connect.facebook.net request, window.FB stayed undefined) until this
+  // domain was allowlisted.
+  "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://connect.facebook.net",
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob:",
   "font-src 'self' data:",
-  "connect-src 'self' https://*.supabase.co https://api.mixpanel.com https://*.mixpanel.com https://us.i.posthog.com https://us-assets.i.posthog.com https://app.posthog.com https://*.posthog.com",
+  // https://graph.facebook.com / https://www.facebook.com: FB.init()/FB.api() calls the SDK
+  // itself makes once loaded (login status, XFBML rendering) -- same reasoning as script-src above.
+  "connect-src 'self' https://*.supabase.co https://api.mixpanel.com https://*.mixpanel.com https://us.i.posthog.com https://us-assets.i.posthog.com https://app.posthog.com https://*.posthog.com https://graph.facebook.com https://www.facebook.com",
+  // Facebook Login/social plugins render inside Meta-hosted iframes -- with no frame-src directive
+  // this falls back to default-src 'self' and silently blocks them, same failure mode as above.
+  "frame-src https://www.facebook.com https://staticxx.facebook.com",
   "frame-ancestors 'none'",
   "base-uri 'self'",
   "form-action 'self'",

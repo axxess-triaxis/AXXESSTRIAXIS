@@ -68,7 +68,7 @@ Prove whether answer quality is fixed once real content is indexed, then address
 | RAG2-05 | Fix `Ask AI Workspace` misroute | Routes to AI Workspace |
 | RAG2-06 | Fix `Review Approval Queue` misroute | Routes to correct approval/review queue |
 | RAG2-07 | Check escalate-to-CRM visible flow | CRM path either works or is honestly deferred |
-| RAG2-08 | Fix feedback notification requirement | `Send Feedback` notification path to `triaxisgrp@gmail.com` configured or blocker documented |
+| RAG2-08 | Fix feedback notification requirement | `Send Feedback` notification path to `[FEEDBACK_ROUTING_EMAIL_MASKED]` configured or blocker documented |
 
 ### Exit Criteria
 
@@ -103,7 +103,7 @@ This remediation program is successful only if:
 
 Goal:
 
-Convert the pipeline from "technically improved" into "pilot-reviewable" -- close the AI Review Inbox-to-CRM visibility gap, stop fabricating relationship intelligence on new contacts, make Approvals Export Report real, route beta feedback toward `triaxisgrp@gmail.com`, and reconfirm A-55/A-56/A-61/A-62/A-63 after Sprints 1-2.
+Convert the pipeline from "technically improved" into "pilot-reviewable" -- close the AI Review Inbox-to-CRM visibility gap, stop fabricating relationship intelligence on new contacts, make Approvals Export Report real, route beta feedback toward `[FEEDBACK_ROUTING_EMAIL_MASKED]`, and reconfirm A-55/A-56/A-61/A-62/A-63 after Sprints 1-2.
 
 ### Actionables
 
@@ -112,7 +112,7 @@ Convert the pipeline from "technically improved" into "pilot-reviewable" -- clos
 | RAG3-01 | Fix A-57 AI Review Inbox to CRM handoff | Approved "Create Stakeholder Note" review is visible in Stakeholders & CRM |
 | RAG3-02 | Fix A-58 fake CRM auto-population | Live contact creation no longer fabricates Influence/Engagement |
 | RAG3-03 | Fix A-60 Approvals Export Report | Real tenant-scoped export with audit event, or honestly disabled |
-| RAG3-04 | Fix A-65 feedback routing | Feedback routed/configured toward `triaxisgrp@gmail.com`, never silently dropped |
+| RAG3-04 | Fix A-65 feedback routing | Feedback routed/configured toward `[FEEDBACK_ROUTING_EMAIL_MASKED]`, never silently dropped |
 | RAG3-05 | Package final RAG remediation evidence | A-55 through A-65 status table with evidence chain and HITL validation script |
 
 ### Exit Criteria
@@ -122,7 +122,7 @@ RAG-3 closes only if:
 - AI Review Inbox to CRM handoff is real or honestly scoped.
 - CRM contact creation no longer creates fake live-tenant intelligence.
 - Approvals Export Report is real or honestly disabled.
-- Feedback is persisted and routed/configured toward `triaxisgrp@gmail.com`.
+- Feedback is persisted and routed/configured toward `[FEEDBACK_ROUTING_EMAIL_MASKED]`.
 - A final RAG remediation evidence package exists.
 - Tests and build pass.
 
