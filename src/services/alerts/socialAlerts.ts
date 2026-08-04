@@ -1,4 +1,4 @@
-export type SocialAlertProvider = "x" | "facebook" | "rss" | "manual" | "demo";
+export type SocialAlertProvider = "x" | "facebook" | "instagram" | "linkedin" | "threads" | "rss" | "manual" | "demo";
 
 export type SocialAlert = {
   id: string;
@@ -28,6 +28,12 @@ export function getSocialAlertProviderStatus(env: NodeJS.ProcessEnv = process.en
   return [
     { provider: "x" as const, configured: Boolean(env.X_BEARER_TOKEN && env.X_API_KEY && env.X_API_SECRET), mode: "provider-gated" },
     { provider: "facebook" as const, configured: Boolean(env.META_APP_ID && env.META_APP_SECRET && env.META_PAGE_ACCESS_TOKEN), mode: "provider-gated" },
+    // Instagram and Threads ride the same Meta Business credentials as Facebook (Meta's Graph API
+    // is shared across these three surfaces) -- LinkedIn has no wired credential path anywhere in
+    // this codebase yet, so it stays honestly unconfigured until a real connector is built.
+    { provider: "instagram" as const, configured: Boolean(env.META_APP_ID && env.META_APP_SECRET && env.META_PAGE_ACCESS_TOKEN), mode: "provider-gated" },
+    { provider: "linkedin" as const, configured: Boolean(env.LINKEDIN_CLIENT_ID && env.LINKEDIN_CLIENT_SECRET && env.LINKEDIN_ACCESS_TOKEN), mode: "provider-gated" },
+    { provider: "threads" as const, configured: Boolean(env.META_APP_ID && env.META_APP_SECRET && env.THREADS_ACCESS_TOKEN), mode: "provider-gated" },
     { provider: "rss" as const, configured: true, mode: "fallback" },
     { provider: "manual" as const, configured: true, mode: "fallback" },
     { provider: "demo" as const, configured: true, mode: "demo" },
@@ -56,16 +62,28 @@ const demoAlertTemplates: Array<{ topic: string; title: string; urgency: SocialA
   { topic: "digital health", title: "Telehealth command center pilot cited in national digital health review", urgency: "low", sentiment: "positive", actionTargets: ["stakeholder_brief"] },
 ];
 
+// A-96 (2026-08-04): each seeded alert is tagged with a real originating platform (Facebook, X,
+// Instagram, LinkedIn, Threads) or "rss" -- reused here as the Miscellaneous bucket for circulars,
+// Substack, and Medium posts, matching the founder's "not separate dashboards, one Miscellaneous
+// style" direction -- instead of the flat "demo" provider every seeded alert previously carried.
+const demoSocialProviderCycle: SocialAlertProvider[] = ["facebook", "x", "instagram", "linkedin", "threads", "rss"];
+
+const demoMiscSources = [
+  "PIB Press Release", "Ministry Circular Desk", "Health Policy Substack", "Public Health on Medium",
+  "State Gazette Notification", "Sector Newsletter Digest",
+];
+
 // Deterministic, seeded generation so the investor demo always shows the same coherent stream
 // across sessions (no randomness), while still reaching enterprise scale (~160 items).
 export function getDemoSocialAlerts(): SocialAlert[] {
   const base = new Date("2026-07-10T08:30:00.000Z").getTime();
   return Array.from({ length: 160 }, (_, index) => {
     const template = demoAlertTemplates[index % demoAlertTemplates.length];
-    const account = demoAlertAccounts[index % demoAlertAccounts.length];
+    const provider = demoSocialProviderCycle[index % demoSocialProviderCycle.length];
+    const account = provider === "rss" ? demoMiscSources[index % demoMiscSources.length] : demoAlertAccounts[index % demoAlertAccounts.length];
     return {
       id: `alert-demo-${String(index + 1).padStart(3, "0")}`,
-      provider: "demo" as const,
+      provider,
       account,
       topic: template.topic,
       title: template.title,
