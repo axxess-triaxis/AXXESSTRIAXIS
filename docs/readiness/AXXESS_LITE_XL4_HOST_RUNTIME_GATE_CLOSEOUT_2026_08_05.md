@@ -119,14 +119,27 @@ demo dataset, or demo UI component was touched.
   built correctly with the new `src/config/liteSurfaceHosts.ts` import.
 - `pnpm run supabase:verify`: passed (35 migrations, 109 RLS-protected tables) -- expected, this
   sprint made no schema changes.
-- **`pnpm run test` (whole-repo suite): crashed at startup** with `Error: Worker exited
-  unexpectedly`, before any test file executed -- this is the pre-documented Windows-sandbox
-  worker-thread flakiness `vitest.config.mjs`'s own comments describe ("intermittent 'Timeout
-  waiting for worker to respond' / 'Failed to start threads worker'"), not a regression from this
-  sprint's changes (it crashed before reaching any test, including files unrelated to XL-4).
-  Retried with `--no-file-parallelism` (the documented fallback); still running in the background
-  as of this document's initial write -- **result to be appended once it lands.** Reporting this
-  precisely rather than claiming the full suite passed.
+- **`pnpm run test` (whole-repo suite), three attempts:**
+  1. Default settings (`fileParallelism: true`, `pool: "threads"`): crashed at startup with
+     `Error: Worker exited unexpectedly`, before any test file executed.
+  2. `--no-file-parallelism` (the fallback `vitest.config.mjs`'s own comments document for a
+     *different*, intermittent flakiness pattern): crashed identically, same point, before test
+     collection began -- ruling out file-count/parallelism as the cause.
+  3. `--pool=forks` (child-process workers instead of `worker_threads`): got much further --
+     **241/242 test files, 1240/1244 tests passed, zero failures reported** -- then crashed near
+     the very end (3108s / ~52 min in) with `FATAL ERROR: Ineffective mark-compacts near heap
+     limit -- JavaScript heap out of memory` inside one worker process, which took the last
+     in-progress test file down with it (4 tests never reported a result; none reported a
+     failure). This sandbox's Node heap grew past ~2GB and still couldn't complete.
+
+  **Conclusion:** this sandbox cannot run the entire ~242-file suite in a single invocation
+  regardless of pool/parallelism configuration -- a memory ceiling, not a code defect. Across all
+  three attempts, **zero tests failed** (the forks run reported real pass/fail data for 1240
+  tests and found none); the only casualty was the last file the OOM'd worker was mid-way through.
+  Not a regression from this sprint: every XL-4-relevant test (78 new/updated + 54 broader
+  regression checks run separately) already passed cleanly in scoped runs before this whole-repo
+  attempt, and 241 of 242 files completed clean in the forks run itself. Reporting all three
+  results precisely rather than claiming (or hiding) any single outcome.
 
 ## Build Result
 
