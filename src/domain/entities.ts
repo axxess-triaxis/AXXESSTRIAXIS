@@ -352,6 +352,25 @@ export interface FinancialWatchItem {
   updatedAt: ISODateTime;
 }
 
+// A-96 (2026-08-04): real, tenant-settable keyword -> topic/urgency mapping rules, backed by
+// social_alert_rules (supabase/migrations/202607100001_sprint14_rag_integrations_alerts.sql,
+// widened by 20260804120000_social_alert_rules_providers.sql). Not demo-only -- this is a real
+// capability for real tenants, matching the SocialAlertProvider union in
+// src/services/alerts/socialAlerts.ts.
+export type SocialAlertRuleProvider = "x" | "facebook" | "instagram" | "linkedin" | "threads" | "rss" | "manual" | "demo";
+export type SocialAlertRuleUrgency = "low" | "medium" | "high";
+
+export interface SocialAlertRule {
+  id: EntityId;
+  organizationId: EntityId;
+  provider: SocialAlertRuleProvider;
+  keyword: string;
+  topic: string;
+  urgency: SocialAlertRuleUrgency;
+  createdBy?: EntityId;
+  createdAt: ISODateTime;
+}
+
 // MC-2 (2026-08-02): Meta Business Suite + Threads + WhatsApp Live Ops. See
 // supabase/migrations/20260802120000_meta_threads_whatsapp_events.sql for the backing tables.
 export type WhatsAppEventType = "message_inbound" | "message_status" | "call" | "system";

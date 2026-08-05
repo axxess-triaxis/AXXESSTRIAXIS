@@ -16,10 +16,16 @@ import {
   TenantScopeBadge,
 } from "../../components/enterprise";
 import { Card } from "../../components/ui/Card";
+import { isDemoModeEnabled } from "../../demo/demoMode";
+import { demoAuditActionLabels } from "../../lib/demo/demoAuditActionLabels";
 import type { AuditLog } from "../../domain";
 import { applicationServices } from "../../providers/serviceProvider";
 import { tenantScopeFromUser } from "../../repositories/supabaseEnterpriseRepositories";
 import { useAnalytics } from "../../services/analytics";
+
+function displayAction(action: string, demoMode: boolean) {
+  return demoMode ? (demoAuditActionLabels[action] ?? action) : action;
+}
 
 type AuditFilter = "all" | "auth" | "ai" | "document" | "approval" | "security" | "workflow";
 type AuditExportState = {
@@ -96,6 +102,7 @@ export function AuditLogsSection() {
     );
   }
 
+  const demoMode = isDemoModeEnabled();
   const filteredLogs = logs.filter((log) => filter === "all" || log.category === filter || log.resourceType === filter);
   const securityEvents = logs.filter((log) => log.category === "security" || log.resourceType === "auth").length;
   const aiEvents = logs.filter((log) => log.category === "ai" || log.resourceType === "ai_answer").length;
@@ -199,7 +206,7 @@ export function AuditLogsSection() {
                 {filteredLogs.slice(0, 30).map((log) => (
                   <div key={log.id} className="grid grid-cols-[0.8fr_1.1fr_0.9fr_0.8fr] gap-3 border-t border-[rgba(15,17,23,0.06)] px-3 py-2 text-xs">
                     <span className="font-mono text-[#5F6B73]">{log.createdAt.slice(0, 16).replace("T", " ")}</span>
-                    <span className="font-semibold text-[#0F1117]">{log.action}</span>
+                    <span className="font-semibold text-[#0F1117]">{displayAction(log.action, demoMode)}</span>
                     <span className="text-[#5F6B73]">{log.resourceType}</span>
                     <span className="truncate text-[#5F6B73]">{log.requestId ?? log.id}</span>
                   </div>
@@ -209,7 +216,7 @@ export function AuditLogsSection() {
                 {filteredLogs.slice(0, 30).map((log) => (
                   <div key={log.id} className="rounded-lg border border-[rgba(15,17,23,0.08)] bg-white p-3">
                     <div className="flex items-start justify-between gap-3">
-                      <p className="min-w-0 text-sm font-semibold text-[#0F1117]">{log.action}</p>
+                      <p className="min-w-0 text-sm font-semibold text-[#0F1117]">{displayAction(log.action, demoMode)}</p>
                       <StatusBadge status={log.category ?? "system"} />
                     </div>
                     <div className="mt-3 grid grid-cols-2 gap-2 text-[11px]">
@@ -230,7 +237,7 @@ export function AuditLogsSection() {
           {filteredLogs.length ? (
             <ActivityFeed
               items={filteredLogs.slice(0, 8).map((log) => ({
-                title: log.action,
+                title: displayAction(log.action, demoMode),
                 description: `${log.category ?? "system"} - ${log.actorRole ?? "system"} - ${log.resourceType}`,
                 time: log.createdAt.slice(5, 16).replace("T", " "),
                 tone: log.category === "security" ? "warning" : log.category === "ai" ? "info" : "success",

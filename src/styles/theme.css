@@ -175,3 +175,55 @@
     line-height: 1.5;
   }
 }
+
+/* A-96 (2026-08-04): shared entrance-animation primitives for data-heavy screens (Executive
+   Dashboard tiers, Analytics tiles/charts, Pilot Conversion heatmap) -- a staggered fade-and-lift
+   ("branch in") on mount rather than a static instant render. .axxess-stagger-item's animation-delay
+   is set inline per item (index * step) by the component that renders the list; this file only
+   owns the keyframes/duration/easing so every screen animates consistently. */
+@keyframes axxess-fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* A-96 (2026-08-04): continuous horizontal scrolling ticker (e.g. Social Alerts headlines) --
+   .axxess-ticker-track wraps two duplicate copies of its content so the loop is seamless; scrolling
+   exactly -50% brings the second copy into the position the first started in. */
+@keyframes axxess-ticker-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@layer utilities {
+  .axxess-stagger-item {
+    animation: axxess-fade-in-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .axxess-ticker-track {
+    animation: axxess-ticker-scroll 36s linear infinite;
+  }
+
+  .axxess-ticker-track:hover {
+    animation-play-state: paused;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .axxess-stagger-item {
+    animation: none;
+  }
+
+  .axxess-ticker-track {
+    animation: none;
+  }
+}

@@ -1,4 +1,5 @@
 import type { UserContext } from "../security/rbac";
+import { isLiteHost } from "../config/liteSurfaceHosts";
 
 export const demoModeStorageKey = "axxess.demoMode.enabled";
 export const demoModeChangedEvent = "axxess:demo-mode-changed";
@@ -43,8 +44,23 @@ export const cleanTenantUserContext: UserContext = {
   timezone: "Asia/Kolkata",
 };
 
+// XL-4 (2026-08-05): NEXT_PUBLIC_ env vars are project-scoped and baked into the client bundle at
+// build time, not request-host-scoped -- so unlike src/proxy.ts's Edge Runtime checks, this
+// function alone can't tell which Vercel project's deployment it's running in. It CAN check
+// window.location.hostname once hydrated, though, and does: even if
+// NEXT_PUBLIC_AXXESS_DEMO_MODE=true were copied onto the Lite Vercel project's env by mistake (the
+// "no X0 env vars copied blindly" risk this sprint exists to close), a Lite host actively refuses
+// to honor it. Uses the same shared host list as src/proxy.ts (src/config/liteSurfaceHosts.ts) --
+// intentionally the hardcoded-default check only (no AXXESS_LITE_HOSTS override), since that env
+// var isn't NEXT_PUBLIC_-prefixed and therefore isn't available in this client bundle.
 export function isDemoModeForcedByEnv() {
-  return process.env.NEXT_PUBLIC_AXXESS_DEMO_MODE === "true";
+  if (process.env.NEXT_PUBLIC_AXXESS_DEMO_MODE !== "true") {
+    return false;
+  }
+  if (typeof window !== "undefined" && isLiteHost(window.location.hostname, undefined)) {
+    return false;
+  }
+  return true;
 }
 
 export function isDemoModeEnabled() {
