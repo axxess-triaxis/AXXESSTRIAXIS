@@ -297,6 +297,8 @@ importers:
         specifier: ^4.1.10
         version: 4.1.10(@edge-runtime/vm@3.2.0)(@types/node@26.1.1)(@vitest/coverage-v8@4.1.10)(jsdom@29.1.1(@noble/hashes@1.8.0))(vite@6.4.3(@types/node@26.1.1)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.49.0)(tsx@4.21.0)(yaml@2.9.0))
 
+  apps/lite-web: {}
+
   apps/mobile:
     dependencies:
       '@axxess/shared':
@@ -378,6 +380,55 @@ importers:
       '@capacitor/splash-screen':
         specifier: 8.0.2
         version: 8.0.2(@capacitor/core@7.6.7)
+      '@capacitor/status-bar':
+        specifier: 7.0.6
+        version: 7.0.6(@capacitor/core@7.6.7)
+    devDependencies:
+      '@capacitor/cli':
+        specifier: 7.6.7
+        version: 7.6.7
+
+  apps/mobile-lite-capacitor:
+    dependencies:
+      '@capacitor/android':
+        specifier: 7.6.7
+        version: 7.6.7(@capacitor/core@7.6.7)
+      '@capacitor/app':
+        specifier: 7.1.2
+        version: 7.1.2(@capacitor/core@7.6.7)
+      '@capacitor/browser':
+        specifier: 7.0.5
+        version: 7.0.5(@capacitor/core@7.6.7)
+      '@capacitor/core':
+        specifier: 7.6.7
+        version: 7.6.7
+      '@capacitor/device':
+        specifier: 7.0.5
+        version: 7.0.5(@capacitor/core@7.6.7)
+      '@capacitor/filesystem':
+        specifier: 8.1.2
+        version: 8.1.2(@capacitor/core@7.6.7)
+      '@capacitor/haptics':
+        specifier: 8.0.2
+        version: 8.0.2(@capacitor/core@7.6.7)
+      '@capacitor/ios':
+        specifier: 7.6.7
+        version: 7.6.7(@capacitor/core@7.6.7)
+      '@capacitor/keyboard':
+        specifier: 8.0.5
+        version: 8.0.5(@capacitor/core@7.6.7)
+      '@capacitor/network':
+        specifier: 7.0.4
+        version: 7.0.4(@capacitor/core@7.6.7)
+      '@capacitor/preferences':
+        specifier: 8.0.1
+        version: 8.0.1(@capacitor/core@7.6.7)
+      '@capacitor/share':
+        specifier: 7.0.4
+        version: 7.0.4(@capacitor/core@7.6.7)
+      '@capacitor/splash-screen':
+        specifier: 7.0.5
+        version: 7.0.5(@capacitor/core@7.6.7)
       '@capacitor/status-bar':
         specifier: 7.0.6
         version: 7.0.6(@capacitor/core@7.6.7)

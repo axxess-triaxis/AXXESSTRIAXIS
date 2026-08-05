@@ -247,7 +247,7 @@ export const MeetingsSection = () => {
   const programOptions = [{ value: "", label: "No program" }, ...programs.map((program) => ({ value: program.id, label: program.name }))];
   const attendeeHint = users.slice(0, 3).map((row) => row.id).join(", ");
 
-  if (loading) return <LoadingState label="Loading meeting workflows" />;
+  if (loading) return <LoadingState label="Meeting workflows" />;
 
   return (
     <div className="h-full min-h-0">

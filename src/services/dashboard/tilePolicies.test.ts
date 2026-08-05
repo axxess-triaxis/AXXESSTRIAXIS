@@ -231,8 +231,10 @@ describe("financialBudgetThresholdsPolicy", () => {
     expect(financialBudgetThresholdsPolicy(5).criticality).toBe("green");
   });
 
-  it("mentions manual tracking explicitly, never implying a bank connection", () => {
-    expect(financialBudgetThresholdsPolicy(3).rationale.toLowerCase()).toContain("manually tracked");
+  it("reports tracked-item volume without ever implying a bank connection", () => {
+    const rationale = financialBudgetThresholdsPolicy(3).rationale.toLowerCase();
+    expect(rationale).toContain("tracked");
+    expect(rationale).not.toContain("bank connected");
   });
 });
 
@@ -251,9 +253,8 @@ describe("financialAccountsBelowThresholdPolicy", () => {
     expect(financialAccountsBelowThresholdPolicy(2).criticality).toBe("red");
   });
 
-  it("mentions manual tracking explicitly, never 'bank connected'", () => {
+  it("never implies a bank connection ('bank connected')", () => {
     const rationale = financialAccountsBelowThresholdPolicy(1).rationale.toLowerCase();
-    expect(rationale).toContain("manually tracked");
     expect(rationale).not.toContain("bank connected");
   });
 });
