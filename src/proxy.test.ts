@@ -1,8 +1,9 @@
 import { NextRequest } from "next/server";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   getBetaRootRedirectUrl,
   getCanonicalHostRedirectUrl,
+  getLiteHostRedirectUrl,
   getMarketingWorkspaceRedirectUrl,
   isAuthShellEnabledFromEnv,
   isDemoModeEnabledFromEnv,
@@ -61,6 +62,53 @@ describe("route proxy helpers (renamed from middleware.ts in Sprint 5, Next.js 1
     );
 
     expect(redirectUrl).toBeNull();
+  });
+
+  it("XLA-21: redirects a non-/lite path on the Lite domain to /lite, closing the X0-route-reachable-on-Lite-domain gap", () => {
+    const redirectUrl = getLiteHostRedirectUrl(
+      new URL("https://triaxis-product-lite-web.vercel.app/dashboard"),
+      "triaxis-product-lite-web.vercel.app",
+    );
+
+    expect(redirectUrl?.toString()).toBe("https://triaxis-product-lite-web.vercel.app/lite");
+  });
+
+  it("XLA-21: redirects /admin/beta-readiness on the Lite domain too, not just /dashboard", () => {
+    const redirectUrl = getLiteHostRedirectUrl(
+      new URL("https://triaxis-product-lite-web.vercel.app/admin/beta-readiness"),
+      "triaxis-product-lite-web.vercel.app",
+    );
+
+    expect(redirectUrl?.toString()).toBe("https://triaxis-product-lite-web.vercel.app/lite");
+  });
+
+  it("XLA-21: does not redirect /lite itself or any sub-path on the Lite domain", () => {
+    expect(getLiteHostRedirectUrl(new URL("https://triaxis-product-lite-web.vercel.app/lite"), "triaxis-product-lite-web.vercel.app")).toBeNull();
+    expect(getLiteHostRedirectUrl(new URL("https://triaxis-product-lite-web.vercel.app/lite/work"), "triaxis-product-lite-web.vercel.app")).toBeNull();
+  });
+
+  it("XLA-21: does not redirect /api or /auth on the Lite domain -- Lite reuses the shared auth/session endpoints", () => {
+    expect(getLiteHostRedirectUrl(new URL("https://triaxis-product-lite-web.vercel.app/api/auth/session"), "triaxis-product-lite-web.vercel.app")).toBeNull();
+    expect(getLiteHostRedirectUrl(new URL("https://triaxis-product-lite-web.vercel.app/auth"), "triaxis-product-lite-web.vercel.app")).toBeNull();
+  });
+
+  it("XLA-21: does not touch any other host -- X0's own domains are unaffected", () => {
+    expect(getLiteHostRedirectUrl(new URL("https://landing.triaxisventures.com/dashboard"), "landing.triaxisventures.com")).toBeNull();
+    expect(getLiteHostRedirectUrl(new URL("https://investor.triaxisventures.com/dashboard"), "investor.triaxisventures.com")).toBeNull();
+  });
+
+  describe("getLiteHostRedirectUrl with AXXESS_LITE_HOSTS overridden (e.g. once lite.triaxisventures.com is assigned)", () => {
+    afterEach(() => {
+      vi.unstubAllEnvs();
+    });
+
+    it("honors a custom domain set via AXXESS_LITE_HOSTS instead of the *.vercel.app default", () => {
+      vi.stubEnv("AXXESS_LITE_HOSTS", "lite.triaxisventures.com");
+
+      expect(getLiteHostRedirectUrl(new URL("https://lite.triaxisventures.com/dashboard"), "lite.triaxisventures.com")?.toString()).toBe("https://lite.triaxisventures.com/lite");
+      // The old default no longer matches once AXXESS_LITE_HOSTS is explicitly set.
+      expect(getLiteHostRedirectUrl(new URL("https://triaxis-product-lite-web.vercel.app/dashboard"), "triaxis-product-lite-web.vercel.app")).toBeNull();
+    });
   });
 
   it("redirects beta root host to dashboard", () => {
