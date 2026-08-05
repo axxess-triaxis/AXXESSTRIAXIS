@@ -54,7 +54,13 @@ const launchListReferralParam = "ref";
 // AXXESS_LITE_DOCTRINE_AND_SURFACE_CONSTITUTION_2026_08_05.md Section 8 ADR addendum). Configurable
 // via env so both the default *.vercel.app domain and the eventual custom domain
 // (lite.triaxisventures.com, once assigned) are covered without a code change.
-const defaultLiteHosts = ["triaxis-product-lite-web.vercel.app"];
+// 2026-08-05: hardcoded default MUST include the real custom domain, not just the *.vercel.app
+// one -- confirmed live that lite.triaxisventures.com was NOT in this list, meaning
+// getLiteHostRedirectUrl() silently no-opped there and the full X0/marketing app served
+// unprotected on the production Lite domain, exactly the leak XLA-21 exists to prevent. Relying
+// on someone remembering to set AXXESS_LITE_HOSTS correctly on the Vercel project is fragile --
+// the real domain now ships as a default, with AXXESS_LITE_HOSTS still available to extend/override.
+const defaultLiteHosts = ["lite.triaxisventures.com", "triaxis-product-lite-web.vercel.app"];
 const liteAllowedPathPrefixes = ["/lite", "/api", "/auth"];
 
 function getLiteHosts(): string[] {
