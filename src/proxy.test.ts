@@ -97,6 +97,12 @@ describe("route proxy helpers (renamed from middleware.ts in Sprint 5, Next.js 1
     expect(getLiteHostRedirectUrl(new URL("https://investor.triaxisventures.com/dashboard"), "investor.triaxisventures.com")).toBeNull();
   });
 
+  it("XLA-21 regression (2026-08-05): protects lite.triaxisventures.com BY DEFAULT, no AXXESS_LITE_HOSTS env var required -- confirmed live that the real custom domain was missing from the original default list, so the marketing/X0 root served unprotected there", () => {
+    expect(getLiteHostRedirectUrl(new URL("https://lite.triaxisventures.com/"), "lite.triaxisventures.com")?.toString()).toBe("https://lite.triaxisventures.com/lite");
+    expect(getLiteHostRedirectUrl(new URL("https://lite.triaxisventures.com/dashboard"), "lite.triaxisventures.com")?.toString()).toBe("https://lite.triaxisventures.com/lite");
+    expect(getLiteHostRedirectUrl(new URL("https://lite.triaxisventures.com/lite"), "lite.triaxisventures.com")).toBeNull();
+  });
+
   describe("getLiteHostRedirectUrl with AXXESS_LITE_HOSTS overridden (e.g. once lite.triaxisventures.com is assigned)", () => {
     afterEach(() => {
       vi.unstubAllEnvs();
