@@ -34,7 +34,7 @@ Current Vercel projects already known:
 
 - X0 Web / Live beta: `triaxis-www-frontend-import`
 - Investor Demo: `triaxis-product-investor-demo`
-- X Lite Web: not created yet
+- X Lite Web: `triaxis-product-lite-web` (founder-reported deployed project URL: `https://vercel.com/axxess-tri-axis-powered-by-triaxis-ventures/triaxis-product-lite-web`; current build-isolation guidance tracked in `docs/readiness/AXXESS_LITE_MONOREPO_BOUNDARY_AND_BUILD_ISOLATION_2026_08_05.md`)
 
 ## 3. Non-Negotiables
 
@@ -328,4 +328,3 @@ It is complete only when:
 5. X Lite Mobile can be packaged separately from the full X0 UI.
 6. Pilot User 1's 70-80% simplification critique has a direct product response.
 7. The founder can run a walkthrough and confirm whether the simplified experience fits Indian MSMEs, NGOs, startups, contractors, and local businesses better than the X0 web console.
-
