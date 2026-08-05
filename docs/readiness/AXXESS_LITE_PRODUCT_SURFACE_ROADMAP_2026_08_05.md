@@ -47,6 +47,8 @@ Current Vercel projects already known:
 7. Keep demo data isolated from both X0 live tenants and X Lite live tenants.
 8. Any founder-stated market or pricing claim must be tagged as founder-stated unless source artifacts exist.
 
+**Superseded, 2026-08-05 (XL-1):** the founder gave a more detailed, explicitly-stated required/excluded feature table after XL-1 shipped its first shell, framed as a hard boundary ("Lite is not 'smaller X0 by accident'; it is a deliberately scoped self-serve product"). That table is the current source of truth for Sections 4-5 below where they disagree in detail -- see `docs/readiness/AXXESS_LITE_DOCTRINE_AND_SURFACE_CONSTITUTION_2026_08_05.md` Section 6.3. Sections 4-5 here remain as the original XL-0-era scoping for historical record.
+
 ## 4. What X Lite Includes First
 
 X Lite should start from the daily workflows a small organization can understand without training.
@@ -246,65 +248,65 @@ Exit criteria:
 
 | # | Check | Status | Notes |
 |---|---|---|---|
-| 1 | X0 Web formally named as GCC enterprise full console | [ ] | |
-| 2 | X0 Mobile formally scoped as enterprise companion app | [ ] | |
-| 3 | Investor Demo kept separate from X0 and X Lite | [ ] | |
-| 4 | X Lite Web formally scoped as India self-serve surface | [ ] | |
-| 5 | X Lite Mobile formally scoped as the India app-store product | [ ] | |
-| 6 | Pilot User 1 feedback cited as source signal | [ ] | |
-| 7 | X Lite first-run user journey written | [ ] | |
-| 8 | X Lite excluded/hidden module list written | [ ] | |
+| 1 | X0 Web formally named as GCC enterprise full console | [x] | XL-0 doctrine Section 2.1 |
+| 2 | X0 Mobile formally scoped as enterprise companion app | [x] | XL-0 doctrine Section 2.2 |
+| 3 | Investor Demo kept separate from X0 and X Lite | [x] | XL-0 doctrine Section 2.3; XL-1 did not touch Investor Demo behavior or code |
+| 4 | X Lite Web formally scoped as India self-serve surface | [x] | XL-0 doctrine Section 2.4 |
+| 5 | X Lite Mobile formally scoped as the India app-store product | [x] | XL-0 doctrine Section 2.5 |
+| 6 | Pilot User 1 feedback cited as source signal | [x] | XL-0 doctrine Section 1, quoted verbatim from LOIS log entry 2 |
+| 7 | X Lite first-run user journey written | [ ] | Inclusion/exclusion lists exist (doctrine Section 6); a narrative first-run journey has not been separately written -- flagged, not silently claimed done |
+| 8 | X Lite excluded/hidden module list written | [x] | XL-0 doctrine Section 6.2 |
 
 ### B. Architecture
 
 | # | Check | Status | Notes |
 |---|---|---|---|
-| 9 | X Lite route/app-shell strategy chosen | [ ] | |
-| 10 | X Lite navigation registry separate from X0 sidebar | [ ] | |
-| 11 | Shared repository/service boundaries defined | [ ] | |
-| 12 | X Lite does not import full X0 dashboard by default | [ ] | |
-| 13 | X Lite does not import investor-demo dataset | [ ] | |
-| 14 | X Lite tenant scope uses same auth/tenant rules | [ ] | |
-| 15 | X Lite write actions preserve audit logging | [ ] | |
-| 16 | X Lite deployment target defined | [ ] | |
-| 17 | X Lite Capacitor target defined | [ ] | |
+| 9 | X Lite route/app-shell strategy chosen | [x] | XL-1 decision: Option A (`src/app/lite/*`) deployed to an independent third Vercel project, not merged into X0's -- see `AXXESS_LITE_VERCEL_PROJECT_SETUP_2026_08_05.md`'s "Required Technical Decision" section |
+| 10 | X Lite navigation registry separate from X0 sidebar | [x] | `src/features/lite/liteNavigation.ts`, independently authored, not filtered from `src/app/routing/routes.ts` or `src/app/navigation.ts` |
+| 11 | Shared repository/service boundaries defined | [x] | XL-0 doctrine Section 4; not yet exercised by real writes (XL-2's job) |
+| 12 | X Lite does not import full X0 dashboard by default | [x] | Proven by `src/features/lite/liteIsolation.test.ts` (static import scan) and `LiteShell.test.tsx` (render assertion) |
+| 13 | X Lite does not import investor-demo dataset | [x] | Same tests check for `demoOrganization`/`demoUserContext` |
+| 14 | X Lite tenant scope uses same auth/tenant rules | [x] | `src/app/lite/layout.tsx` reuses `AuthProvider` unmodified; no separate auth path introduced |
+| 15 | X Lite write actions preserve audit logging | [ ] | No write actions exist yet in XL-1 (shell/nav only) -- not applicable until XL-2 wires real repositories |
+| 16 | X Lite deployment target defined | [x] | Proposed (`triaxis-product-lite-web`) in `AXXESS_LITE_VERCEL_PROJECT_SETUP_2026_08_05.md` -- **not yet created**; founder approval pending, see that doc's CLI-commands section |
+| 17 | X Lite Capacitor target defined | [x] | `apps/mobile-lite-capacitor/capacitor.config.ts` scaffold created -- **no native project generated yet**, see `AXXESS_LITE_CAPACITOR_TARGET_SETUP_2026_08_05.md` |
 
 ### C. UX and Product Surface
 
 | # | Check | Status | Notes |
 |---|---|---|---|
-| 18 | X Lite home screen is simple and mobile-friendly | [ ] | |
-| 19 | X Lite avoids enterprise/admin-heavy language | [ ] | |
-| 20 | Tasks/follow-ups are first-class | [ ] | |
-| 21 | Files/documents are understandable without Knowledge Hub complexity | [ ] | |
-| 22 | Ask AXXESS is simple and honest about what it can answer | [ ] | |
-| 23 | Contacts/people flow is lightweight | [ ] | |
-| 24 | Payments/billing has a plain user-facing path | [ ] | |
-| 25 | Feedback/support is visible | [ ] | |
+| 18 | X Lite home screen is simple and mobile-friendly | [x] | `src/features/lite/sections/LiteHomeSection.tsx` -- fixed shortcut grid, no tiles/tiers/criticality |
+| 19 | X Lite avoids enterprise/admin-heavy language | [x] | Home/Work/Files/People/Ask AXXESS/Payments/Help, matching this doc's Section 4 vocabulary |
+| 20 | Tasks/follow-ups are first-class | [ ] | "Work" nav item and route exist as an honest placeholder; real task wiring is XL-2 |
+| 21 | Files/documents are understandable without Knowledge Hub complexity | [ ] | "Files" placeholder exists; real wiring is XL-2 |
+| 22 | Ask AXXESS is simple and honest about what it can answer | [ ] | "Ask AXXESS" placeholder exists and is explicit that it is not yet wired; real RAG wiring is XL-2 |
+| 23 | Contacts/people flow is lightweight | [ ] | "People" placeholder exists; real wiring is XL-2 |
+| 24 | Payments/billing has a plain user-facing path | [ ] | "Payments" placeholder exists; real billing state machine is XL-3 (XLA-16) |
+| 25 | Feedback/support is visible | [ ] | "Help" placeholder exists; real feedback-pipeline wiring is XL-2 |
 
 ### D. Mobile and Packaging
 
 | # | Check | Status | Notes |
 |---|---|---|---|
-| 26 | X0 Mobile companion scope documented | [ ] | |
-| 27 | X Lite Mobile self-serve scope documented | [ ] | |
-| 28 | Capacitor does not wrap the full X0 UI for India self-serve | [ ] | |
-| 29 | X Lite mobile route/start URL defined | [ ] | |
-| 30 | Low/mid-range Android compatibility checklist exists | [ ] | |
-| 31 | Xiaomi/Vivo compatibility explicitly included | [ ] | |
-| 32 | iOS/Android app-store positioning separated by product surface | [ ] | |
+| 26 | X0 Mobile companion scope documented | [x] | XL-0 doctrine Section 2.2/7 |
+| 27 | X Lite Mobile self-serve scope documented | [x] | `AXXESS_LITE_CAPACITOR_TARGET_SETUP_2026_08_05.md` |
+| 28 | Capacitor does not wrap the full X0 UI for India self-serve | [x] | New config's `server.url` defaults to `${NEXT_PUBLIC_APP_URL}/lite`, not the X0 root |
+| 29 | X Lite mobile route/start URL defined | [x] | Same as above |
+| 30 | Low/mid-range Android compatibility checklist exists | [x] | `AXXESS_LITE_CAPACITOR_TARGET_SETUP_2026_08_05.md`'s checklist section -- not yet executed |
+| 31 | Xiaomi/Vivo compatibility explicitly included | [x] | Named explicitly in the same checklist |
+| 32 | iOS/Android app-store positioning separated by product surface | [ ] | Not addressed this sprint -- store listing copy/positioning is a later-sprint concern |
 
 ### E. Verification
 
 | # | Check | Status | Notes |
 |---|---|---|---|
-| 33 | X0 regression test passes | [ ] | |
-| 34 | Demo isolation test passes | [ ] | |
-| 35 | X Lite shell test passes | [ ] | |
-| 36 | X Lite daily-use loop test passes | [ ] | |
-| 37 | X Lite does not expose X0 admin/dashboard/demo controls | [ ] | |
-| 38 | X Lite Mobile build target validates | [ ] | |
-| 39 | Founder walkthrough completed | [ ] | |
+| 33 | X0 regression test passes | [x] | `pnpm exec vitest run src/app/ src/features/dashboard/ src/features/lite/` -- 65 files, 295 tests, all pass |
+| 34 | Demo isolation test passes | [x] | Covered by the same isolation tests (checks for `demoOrganization`/`demoUserContext`) |
+| 35 | X Lite shell test passes | [x] | `src/features/lite/LiteShell.test.tsx` -- 15/15 tests pass |
+| 36 | X Lite daily-use loop test passes | [ ] | No daily-use loop exists yet -- XL-2 |
+| 37 | X Lite does not expose X0 admin/dashboard/demo controls | [x] | `liteIsolation.test.ts` |
+| 38 | X Lite Mobile build target validates | [ ] | No native project exists yet to validate a build against -- see Capacitor doc |
+| 39 | Founder walkthrough completed | [ ] | Not performed this sprint |
 | 40 | Closeout doc created and signed off | [ ] | |
 
 ## 10. Claude Code Sprint Prompt Seed
