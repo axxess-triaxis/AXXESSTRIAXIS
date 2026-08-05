@@ -46,6 +46,7 @@ const dashboardRootRedirectHosts = new Set([
   "investor.triaxisventures.com",
 ]);
 const marketingOnlyPathname = "/";
+const launchListReferralParam = "ref";
 
 const workspaceRoutePrefixes = ["/auth", ...protectedRoutePrefixes];
 
@@ -80,6 +81,10 @@ export function getCanonicalHostRedirectUrl(url: URL, host: string | null) {
 export function getBetaRootRedirectUrl(url: URL, host: string | null) {
   const normalizedHost = normalizeHost(host);
   if (!normalizedHost || !dashboardRootRedirectHosts.has(normalizedHost) || url.pathname !== "/") {
+    return null;
+  }
+
+  if (normalizedHost === "landing.triaxisventures.com" && url.searchParams.has(launchListReferralParam)) {
     return null;
   }
 

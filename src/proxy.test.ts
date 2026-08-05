@@ -93,6 +93,15 @@ describe("route proxy helpers (renamed from middleware.ts in Sprint 5, Next.js 1
     expect(redirectUrl?.toString()).toBe("https://landing.triaxisventures.com/dashboard");
   });
 
+  it("does not redirect LaunchList referral visits on landing root away from the waitlist page (A-85)", () => {
+    const redirectUrl = getBetaRootRedirectUrl(
+      new URL("https://landing.triaxisventures.com/?ref=WCZaE8"),
+      "landing.triaxisventures.com",
+    );
+
+    expect(redirectUrl).toBeNull();
+  });
+
   it("does not redirect non-root landing routes", () => {
     const redirectUrl = getBetaRootRedirectUrl(
       new URL("https://landing.triaxisventures.com/auth"),
