@@ -85,6 +85,13 @@ describe("route proxy helpers (renamed from middleware.ts in Sprint 5, Next.js 1
     expect(redirectUrl?.toString()).toBe("https://triaxis-product-lite-web.vercel.app/lite");
   });
 
+  it("XL-4 (2026-08-06): redirects /alerts and /integrations on the Lite domain, per XL-4's explicit route boundary spec", () => {
+    expect(getLiteHostRedirectUrl(new URL("https://triaxis-product-lite-web.vercel.app/alerts"), "triaxis-product-lite-web.vercel.app")?.toString())
+      .toBe("https://triaxis-product-lite-web.vercel.app/lite");
+    expect(getLiteHostRedirectUrl(new URL("https://triaxis-product-lite-web.vercel.app/integrations"), "triaxis-product-lite-web.vercel.app")?.toString())
+      .toBe("https://triaxis-product-lite-web.vercel.app/lite");
+  });
+
   it("XLA-21: does not redirect /lite itself or any sub-path on the Lite domain", () => {
     expect(getLiteHostRedirectUrl(new URL("https://triaxis-product-lite-web.vercel.app/lite"), "triaxis-product-lite-web.vercel.app")).toBeNull();
     expect(getLiteHostRedirectUrl(new URL("https://triaxis-product-lite-web.vercel.app/lite/work"), "triaxis-product-lite-web.vercel.app")).toBeNull();
@@ -369,6 +376,11 @@ describe("isLiteAllowedApiPath (XL-4): the Lite API allowlist", () => {
     expect(isLiteAllowedApiPath("/api/plugins/runtime")).toBe(false);
     expect(isLiteAllowedApiPath("/api/audit-logs")).toBe(false);
     expect(isLiteAllowedApiPath("/api/rag/evaluation")).toBe(false);
+  });
+
+  it("XL-4 (2026-08-06): blocks both cron jobs explicitly named in the XL-4 route boundary spec", () => {
+    expect(isLiteAllowedApiPath("/api/cron/pilot-command-center-snapshot")).toBe(false);
+    expect(isLiteAllowedApiPath("/api/cron/social-connector-sync")).toBe(false);
   });
 
   it("denies by default: an unrecognized API path is blocked, not allowed", () => {
