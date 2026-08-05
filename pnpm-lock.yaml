@@ -386,6 +386,55 @@ importers:
         specifier: 7.6.7
         version: 7.6.7
 
+  apps/mobile-lite-capacitor:
+    dependencies:
+      '@capacitor/android':
+        specifier: 7.6.7
+        version: 7.6.7(@capacitor/core@7.6.7)
+      '@capacitor/app':
+        specifier: 7.1.2
+        version: 7.1.2(@capacitor/core@7.6.7)
+      '@capacitor/browser':
+        specifier: 7.0.5
+        version: 7.0.5(@capacitor/core@7.6.7)
+      '@capacitor/core':
+        specifier: 7.6.7
+        version: 7.6.7
+      '@capacitor/device':
+        specifier: 7.0.5
+        version: 7.0.5(@capacitor/core@7.6.7)
+      '@capacitor/filesystem':
+        specifier: 8.1.2
+        version: 8.1.2(@capacitor/core@7.6.7)
+      '@capacitor/haptics':
+        specifier: 8.0.2
+        version: 8.0.2(@capacitor/core@7.6.7)
+      '@capacitor/ios':
+        specifier: 7.6.7
+        version: 7.6.7(@capacitor/core@7.6.7)
+      '@capacitor/keyboard':
+        specifier: 8.0.5
+        version: 8.0.5(@capacitor/core@7.6.7)
+      '@capacitor/network':
+        specifier: 7.0.4
+        version: 7.0.4(@capacitor/core@7.6.7)
+      '@capacitor/preferences':
+        specifier: 8.0.1
+        version: 8.0.1(@capacitor/core@7.6.7)
+      '@capacitor/share':
+        specifier: 7.0.4
+        version: 7.0.4(@capacitor/core@7.6.7)
+      '@capacitor/splash-screen':
+        specifier: 7.0.5
+        version: 7.0.5(@capacitor/core@7.6.7)
+      '@capacitor/status-bar':
+        specifier: 7.0.6
+        version: 7.0.6(@capacitor/core@7.6.7)
+    devDependencies:
+      '@capacitor/cli':
+        specifier: 7.6.7
+        version: 7.6.7
+
   packages/shared: {}
 
 packages:
