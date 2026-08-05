@@ -1,0 +1,35 @@
+{
+  "name": "@axxess/mobile-lite-capacitor",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "cap:add:android": "cap add android",
+    "cap:add:ios": "cap add ios",
+    "sync": "cap sync",
+    "sync:android": "cap sync android",
+    "sync:ios": "cap sync ios",
+    "android": "cap open android",
+    "ios": "cap open ios",
+    "doctor": "cap doctor"
+  },
+  "dependencies": {
+    "@capacitor/android": "7.6.7",
+    "@capacitor/app": "7.1.2",
+    "@capacitor/browser": "7.0.5",
+    "@capacitor/core": "7.6.7",
+    "@capacitor/device": "7.0.5",
+    "@capacitor/filesystem": "8.1.2",
+    "@capacitor/haptics": "8.0.2",
+    "@capacitor/ios": "7.6.7",
+    "@capacitor/keyboard": "8.0.5",
+    "@capacitor/network": "7.0.4",
+    "@capacitor/preferences": "8.0.1",
+    "@capacitor/share": "7.0.4",
+    "@capacitor/splash-screen": "7.0.5",
+    "@capacitor/status-bar": "7.0.6"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "7.6.7"
+  }
+}

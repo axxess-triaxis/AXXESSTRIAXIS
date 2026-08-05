@@ -1,0 +1,15 @@
+{
+  "name": "@axxess/lite-web",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "AXXESS Lite Web workspace boundary package. Transitional wrapper around the root Next.js /lite route until the shared core is extracted into packages.",
+  "scripts": {
+    "guard": "node ../../scripts/lite-boundary-guard.mjs",
+    "test": "pnpm --dir ../.. run lite:test",
+    "typecheck": "pnpm --dir ../.. run typecheck",
+    "build": "node ../../scripts/lite-boundary-guard.mjs && pnpm --dir ../.. run build",
+    "mobile:validate": "node ../../scripts/validate-lite-mobile-target.mjs",
+    "ci": "node ../../scripts/lite-boundary-guard.mjs && pnpm --dir ../.. run lite:test && node ../../scripts/validate-lite-mobile-target.mjs"
+  }
+}

@@ -87,7 +87,8 @@ describe("StakeholdersSection (Sprint 3 F-011 non-hanging guarantee, Sprint 5 li
     window.localStorage.setItem("axxess.demoMode.enabled", "true");
     render(<StakeholdersSection />);
 
-    expect(screen.getByText(/Investor Preview:/i)).toBeInTheDocument();
+    expect(screen.getAllByText("Dr. Purnima Bora").length).toBeGreaterThan(0);
+    expect(screen.queryByText(/No stakeholders yet/i)).not.toBeInTheDocument();
     const addButton = screen.getByRole("button", { name: /Add Contact/i });
     expect(addButton).toBeDisabled();
   });

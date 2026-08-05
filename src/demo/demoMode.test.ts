@@ -5,6 +5,7 @@ import {
   demoUserContext,
   isDemoLogin,
   isDemoModeEnabled,
+  isDemoModeForcedByEnv,
   refreshDemoSessionCookie,
   resetDemoEnvironment,
   setDemoModeEnabled,
@@ -18,11 +19,25 @@ const demoScope: TenantScope = {
   role: demoUserContext.role,
 };
 
+const originalLocation = window.location;
+
+// jsdom's history.pushState enforces same-origin, so it can't be used to simulate a request from a
+// different hostname (e.g. lite.triaxisventures.com) the way a real cross-deployment Vercel
+// project would see it -- stubbing window.location directly instead.
+function stubWindowHostname(hostname: string) {
+  Object.defineProperty(window, "location", {
+    writable: true,
+    configurable: true,
+    value: { ...originalLocation, hostname },
+  });
+}
+
 afterEach(() => {
   window.localStorage.clear();
   document.cookie = `${demoSessionCookieName}=; path=/; max-age=0`;
   vi.unstubAllEnvs();
   resetDemoRepositoryStore();
+  Object.defineProperty(window, "location", { writable: true, configurable: true, value: originalLocation });
 });
 
 describe("Demo Mode", () => {
@@ -99,5 +114,43 @@ describe("Demo Mode", () => {
 
     expect(results.length).toBeGreaterThan(0);
     expect(results.some((result) => result.type === "document" || result.type === "article")).toBe(true);
+  });
+});
+
+// XL-4 (2026-08-05): Investor Demo is an X0-only concept. NEXT_PUBLIC_ env vars are project-scoped
+// and baked into the client bundle at build time -- so unlike src/proxy.ts's Edge Runtime host
+// checks, this couldn't previously tell which Vercel project's deployment it was running in. If
+// NEXT_PUBLIC_AXXESS_DEMO_MODE=true were ever copied onto the Lite Vercel project's env by
+// mistake, it would have silently forced demo data on for the entire deployment, including inside
+// /lite/* pages themselves. This closes that gap using window.location.hostname, which jsdom
+// (this test environment) and real browsers both provide once hydrated.
+describe("isDemoModeForcedByEnv refuses to honor NEXT_PUBLIC_AXXESS_DEMO_MODE on a Lite host (XL-4)", () => {
+  it("is forced true on a normal (non-Lite) host when the env var is true, unchanged from before this sprint", () => {
+    vi.stubEnv("NEXT_PUBLIC_AXXESS_DEMO_MODE", "true");
+    stubWindowHostname("investor.triaxisventures.com");
+
+    expect(isDemoModeForcedByEnv()).toBe(true);
+  });
+
+  it("is false on the real custom Lite domain even when the env var is true", () => {
+    vi.stubEnv("NEXT_PUBLIC_AXXESS_DEMO_MODE", "true");
+    stubWindowHostname("lite.triaxisventures.com");
+
+    expect(isDemoModeForcedByEnv()).toBe(false);
+  });
+
+  it("is false on the *.vercel.app Lite domain even when the env var is true", () => {
+    vi.stubEnv("NEXT_PUBLIC_AXXESS_DEMO_MODE", "true");
+    stubWindowHostname("triaxis-product-lite-web.vercel.app");
+
+    expect(isDemoModeForcedByEnv()).toBe(false);
+  });
+
+  it("is false everywhere when the env var itself is not \"true\", independent of host", () => {
+    stubWindowHostname("investor.triaxisventures.com");
+    expect(isDemoModeForcedByEnv()).toBe(false);
+
+    vi.stubEnv("NEXT_PUBLIC_AXXESS_DEMO_MODE", "false");
+    expect(isDemoModeForcedByEnv()).toBe(false);
   });
 });
