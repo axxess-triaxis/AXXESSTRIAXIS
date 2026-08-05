@@ -4,6 +4,8 @@ Date: 2026-08-05
 
 Status: Founder-scoped product and architecture roadmap, not yet implemented.
 
+**Companion document (added 2026-08-05, Sprint XL-0):** `docs/readiness/AXXESS_LITE_DOCTRINE_AND_SURFACE_CONSTITUTION_2026_08_05.md` extends this roadmap into an execution-grade doctrine -- it adds a read-only codebase audit (exact files/modules on each side of the X0/X Lite boundary), an Architecture Decision Record with alternatives considered, a founder-decisions-needed list, and a 20-item actionables table (`XLA-01` through `XLA-20`) spanning XL-1 through XL-3. This roadmap remains the source of record for the product decision itself; the doctrine document does not restate it, only builds on it.
+
 Source signal: Pilot User 1 Feedback 1 from Prajnyan Ballav Goswami, Proprietor, Imprints Production, logged in `docs/LOIS_BETA_PILOT_INTEREST_REFERRAL_AND_STRATEGIC_PARTNERSHIPS_LOG.md` entry 2. The feedback said the current web version looks sophisticated and stable, but is too complex for Indian MSMEs, NGOs, contractors, startups, and local businesses. It explicitly recommended simplifying the small-customer product by 70-80% before launch, while keeping the larger enterprise ambition intact.
 
 ## 1. Product Decision

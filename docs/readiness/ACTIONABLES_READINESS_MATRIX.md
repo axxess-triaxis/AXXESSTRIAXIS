@@ -21,6 +21,8 @@ integrations, kept in sync every EOD going forward, always 100% populated with d
 live/empty tenant experience), zero false-incident tolerance, zero data leakage between it and the
 live beta's real tenant data, and interactive-but-read-only. See A-88.
 
+**Scope note (2026-08-05): AXXESS Lite is tracked separately.** Sprint XL-0 (`docs/readiness/AXXESS_LITE_DOCTRINE_AND_SURFACE_CONSTITUTION_2026_08_05.md`, companion to `docs/readiness/AXXESS_LITE_PRODUCT_SURFACE_ROADMAP_2026_08_05.md`) defines a new, separate India self-serve product surface (X Lite Web/Mobile) and its own twenty-item actionables table (`XLA-01` through `XLA-20`), using its own status vocabulary (`Planned` / `Blocked` / `Ready` / `Done`) rather than this matrix's `Yes`/`Blocked`/`No`/`Deferred`. This is intentional, not an oversight -- XL-0's actionables are pre-implementation planning items for a product surface that does not exist yet, not yet-evidenced claims about the live X0/beta product this matrix tracks. Do not renumber or merge the `XLA-*` items into this matrix's `A-*` sequence; cross-reference instead.
+
 **OAuth status clarification (2026-07-29):** Google sign-in is now live at the
 production OAuth-start layer: `GET https://landing.triaxisventures.com/api/auth/oauth/start?provider=google`
 returns a real Supabase authorize URL. A-26 remains a mixed Google/Microsoft row because Microsoft
