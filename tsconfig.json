@@ -26,6 +26,9 @@
       ],
       "@axxess/shared": [
         "./packages/shared/src/index.ts"
+      ],
+      "@axxess/features-lite": [
+        "./packages/features-lite/src/index.ts"
       ]
     },
     "plugins": [
