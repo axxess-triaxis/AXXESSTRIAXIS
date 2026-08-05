@@ -2,7 +2,7 @@
 
 Date: 2026-08-05
 Sprint: XL-1 -- AXXESS Lite Web Project and Separate Capacitor Target Setup
-Status: Setup plan only. No Vercel project has been created by this sprint. No production deploy has happened or is requested.
+Status: Superseded by founder update and XL-3 boundary work. The founder has since reported that the Vercel project exists at `https://vercel.com/axxess-tri-axis-powered-by-triaxis-ventures/triaxis-product-lite-web`. This document's original "not created" language is kept below only as historical XL-1 context; current build-isolation guidance is now in `docs/readiness/AXXESS_LITE_MONOREPO_BOUNDARY_AND_BUILD_ISOLATION_2026_08_05.md`.
 
 ## Required Technical Decision (read this before the setup below)
 
@@ -20,7 +20,7 @@ Two implementation shapes were considered for X Lite Web, per this sprint's own 
 
 ## Proposed Vercel Project
 
-- **Name:** `triaxis-product-lite-web` (founder approval required before creation -- not created by this sprint).
+- **Name:** `triaxis-product-lite-web` (founder later reported this project has been created/deployed; not independently verified by this document).
 - **Framework:** Next.js (same as the two existing projects).
 - **Root directory:** `.` (repo root -- same codebase as X0/Investor Demo; Option A means there is no separate app subdirectory to point at).
 - **Build command:** `pnpm run build` (same as `triaxis-www-frontend-import`/`triaxis-product-investor-demo`; no Lite-specific build exists this sprint -- see the "known gap" note above and this sprint's decision not to fabricate a fake-distinct `lite:build` script, per this program's standing rule against checklist-theater/stat-padding).
