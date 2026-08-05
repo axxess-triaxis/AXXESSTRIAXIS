@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { normalizeHost, resolveIsLiteSurface } from "./config/liteSurfaceHosts";
 
 const protectedRoutePrefixes = [
   "/app",
@@ -60,27 +61,73 @@ const launchListReferralParam = "ref";
 // unprotected on the production Lite domain, exactly the leak XLA-21 exists to prevent. Relying
 // on someone remembering to set AXXESS_LITE_HOSTS correctly on the Vercel project is fragile --
 // the real domain now ships as a default, with AXXESS_LITE_HOSTS still available to extend/override.
-const defaultLiteHosts = ["lite.triaxisventures.com", "triaxis-product-lite-web.vercel.app"];
+// Host list itself now lives in src/config/liteSurfaceHosts.ts (XL-4, 2026-08-05) -- shared with
+// src/demo/demoMode.ts's client-side demo-mode-forced-off check, so there is exactly one place
+// this list can drift out of date, not two.
 const liteAllowedPathPrefixes = ["/lite", "/api", "/auth"];
 
-function getLiteHosts(): string[] {
-  const fromEnv = process.env.AXXESS_LITE_HOSTS;
-  if (!fromEnv) {
-    return defaultLiteHosts;
+// XL-4 (2026-08-05): XLA-21 restricted PAGE routes to /lite, but let the entire /api prefix
+// through wholesale (see liteAllowedPathPrefixes above) -- meaning any admin/agentic/social-alert/
+// complex-connector API was fully reachable on the Lite production domain, protected only by
+// whatever role check exists inside each individual route handler (a different, deeper trust
+// boundary than what XLA-21 was meant to guarantee at the edge). This allowlist closes that gap:
+// only the API surface AXXESS Lite's shipped and planned feature set actually needs (auth,
+// profile, onboarding, tasks/meetings/projects/stakeholders/documents, RAG-lite, feedback, basic
+// audit export -- see docs/readiness/AXXESS_LITE_XL4_HOST_RUNTIME_GATE_CLOSEOUT_2026_08_05.md for
+// the full allow/block table) is reachable on the Lite host; everything else 404s at the edge
+// before it reaches the route handler. Deny-by-default: a new API route added to the app is
+// blocked on the Lite host unless explicitly added here.
+const liteAllowedApiExactPaths = new Set([
+  "/api/profile",
+  "/api/beta-feedback",
+  "/api/audit-exports",
+  "/api/stakeholders/notes",
+  "/api/rag/query",
+  "/api/rag/review",
+]);
+
+const liteAllowedApiPrefixes = ["/api/auth/", "/api/onboarding/", "/api/documents/"];
+
+// /api/repositories/[resource] is one dynamic route file serving many resource types (see
+// src/app/api/repositories/[resource]/route.ts's ResourceName union) -- includes X0-only resources
+// like `users`, `invitations`, `knowledge_articles`, `document_permissions`. Only the resource
+// types matching Lite's founder-approved required feature set (Work/Meetings/Projects/People/
+// Files) are allowed; `document_versions` included alongside `documents` since uploading an actual
+// file version is part of the same "Files" capability, not a separate one.
+const liteAllowedRepositoryResources = new Set([
+  "tasks",
+  "meetings",
+  "projects",
+  "stakeholders",
+  "documents",
+  "document_versions",
+]);
+
+export function isLiteAllowedApiPath(pathname: string): boolean {
+  if (liteAllowedApiExactPaths.has(pathname)) {
+    return true;
   }
-  const parsed = fromEnv.split(",").map((host) => host.trim().toLowerCase()).filter(Boolean);
-  return parsed.length > 0 ? parsed : defaultLiteHosts;
+  if (liteAllowedApiPrefixes.some((prefix) => pathname.startsWith(prefix))) {
+    return true;
+  }
+  const repositoryResource = /^\/api\/repositories\/([^/]+)$/.exec(pathname)?.[1];
+  if (repositoryResource) {
+    return liteAllowedRepositoryResources.has(repositoryResource);
+  }
+  return false;
+}
+
+export function shouldBlockLiteApiRequest(url: URL, host: string | null) {
+  if (!url.pathname.startsWith("/api")) {
+    return false;
+  }
+  if (!resolveIsLiteSurface(host, process.env.AXXESS_LITE_HOSTS, process.env.AXXESS_SURFACE)) {
+    return false;
+  }
+  return !isLiteAllowedApiPath(url.pathname);
 }
 
 const workspaceRoutePrefixes = ["/auth", ...protectedRoutePrefixes];
-
-function normalizeHost(host: string | null) {
-  if (!host) {
-    return null;
-  }
-
-  return host.toLowerCase().split(":")[0] ?? null;
-}
 
 export function isProtectedRoutePath(pathname: string) {
   return protectedRoutePrefixes.some((prefix) => pathname.startsWith(prefix));
@@ -142,7 +189,7 @@ export function getMarketingWorkspaceRedirectUrl(url: URL, host: string | null) 
 
 export function getLiteHostRedirectUrl(url: URL, host: string | null) {
   const normalizedHost = normalizeHost(host);
-  if (!normalizedHost || !getLiteHosts().includes(normalizedHost)) {
+  if (!normalizedHost || !resolveIsLiteSurface(host, process.env.AXXESS_LITE_HOSTS, process.env.AXXESS_SURFACE)) {
     return null;
   }
 
@@ -172,6 +219,28 @@ export function isDemoModeEnabledFromEnv(env: string | undefined) {
   return env === "true";
 }
 
+// XL-4 (2026-08-05): a Lite request never honors NEXT_PUBLIC_AXXESS_DEMO_MODE=true, regardless of
+// what the env var says -- Investor Demo is an X0-only concept (docs/readiness/AXXESS_LITE_
+// DOCTRINE_AND_SURFACE_CONSTITUTION_2026_08_05.md Section 3's excluded-features table). This
+// closes the "no X0 env vars copied blindly" risk this sprint exists to address: even if
+// NEXT_PUBLIC_AXXESS_DEMO_MODE were copied onto the Lite Vercel project's env by mistake, this
+// stops it from silently forcing demo data server-side. Currently inert for every *reachable*
+// Lite HTTP path -- XLA-21 already redirects protected pages away before this is evaluated, and
+// no allowlisted Lite API path is itself a "protected route" per isProtectedRoutePath -- kept as
+// explicit defense-in-depth for any future protected Lite route, and directly unit-tested as a
+// pure function rather than only through today's (currently unaffected) HTTP responses.
+export function resolveDemoModeEnabled(
+  host: string | null,
+  hostsEnvValue: string | undefined,
+  surfaceEnvValue: string | undefined,
+  demoEnvValue: string | undefined,
+) {
+  if (resolveIsLiteSurface(host, hostsEnvValue, surfaceEnvValue)) {
+    return false;
+  }
+  return isDemoModeEnabledFromEnv(demoEnvValue);
+}
+
 export function shouldRedirectToLogin(
   pathname: string,
   options: { authShellEnabled: boolean; demoModeEnabled: boolean; hasSessionCookie: boolean },
@@ -190,6 +259,10 @@ export function shouldRedirectToLogin(
 // runtime behavior change (still an Edge Runtime request interceptor, same `config.matcher`).
 export function proxy(request: NextRequest) {
   const requestHost = request.headers.get("x-forwarded-host") ?? request.headers.get("host");
+
+  if (shouldBlockLiteApiRequest(request.nextUrl, requestHost)) {
+    return new NextResponse(null, { status: 404 });
+  }
 
   const liteHostRedirectUrl = getLiteHostRedirectUrl(request.nextUrl, requestHost);
   if (liteHostRedirectUrl) {
@@ -216,7 +289,12 @@ export function proxy(request: NextRequest) {
   }
 
   const isAuthShellEnabled = isAuthShellEnabledFromEnv(process.env.NEXT_PUBLIC_AXXESS_AUTH_SHELL);
-  const isDemoModeEnabled = isDemoModeEnabledFromEnv(process.env.NEXT_PUBLIC_AXXESS_DEMO_MODE);
+  const isDemoModeEnabled = resolveDemoModeEnabled(
+    requestHost,
+    process.env.AXXESS_LITE_HOSTS,
+    process.env.AXXESS_SURFACE,
+    process.env.NEXT_PUBLIC_AXXESS_DEMO_MODE,
+  );
   const isProtectedRoute = isProtectedRoutePath(request.nextUrl.pathname);
 
   if (shouldRedirectToLogin(request.nextUrl.pathname, {
