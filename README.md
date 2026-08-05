@@ -27,6 +27,13 @@ AXXESS is being engineered from the outset to support those requirements.
 
 **Pitch deck:** [`docs/pitch-deck/Triaxis_Ventures_Pitch_Deck_2026-07-23.pdf`](docs/pitch-deck/Triaxis_Ventures_Pitch_Deck_2026-07-23.pdf) (dated 2026-07-23).
 
+**Live links:**
+
+- [AXXESS Investor Demo](https://investor.triaxisventures.com)
+- [AXXESS Live Beta](https://landing.triaxisventures.com)
+- [AXXESS Lite](https://lite.triaxisventures.com)
+- [AXXESS TRIaxis Waitlist](https://launch.li/p/axxess-triaxis-founders-club-edition)
+
 ---
 
 ## Provenance
@@ -258,8 +265,13 @@ Representative customer profiles include:
 These organizations increasingly require AI systems capable of operating within formal organizational structures rather than individual productivity environments.
 
 AXXESS is also priced and distributed as a self-serve product for Indian MSMEs, startups and NGOs —
-the entry tier of the same five-tier commercial structure described in the next section, not a
-separate, lighter product.
+the entry tier of the same five-tier commercial structure described in the next section, on the
+same backend, tenant model and Supabase-backed auth as every other tier. **AXXESS Lite** (see
+"AXXESS Lite" below) is the UI this tier actually ships through: a genuinely separate, lighter
+navigation surface with its own route tree and an 8-item nav limited to the founder's specified
+required feature set — not a separate product, company or backend, but not the full X0
+enterprise navigation either. Full rationale in
+`docs/readiness/AXXESS_LITE_DOCTRINE_AND_SURFACE_CONSTITUTION_2026_08_05.md`.
 
 ---
 
@@ -298,13 +310,37 @@ documentation is built out. No EU-specific compliance documentation exists in th
 
 ---
 
+# AXXESS Lite
+
+Shipped 2026-08-05. AXXESS Lite is a second, deliberately narrower web experience on the same
+codebase, backend and Supabase tenant model as the full platform (referred to elsewhere in this
+README as X0) — built for the self-serve MSME/startup/NGO tier rather than as a demo or a fork.
+Full doctrine, decision record and checklist:
+`docs/readiness/AXXESS_LITE_DOCTRINE_AND_SURFACE_CONSTITUTION_2026_08_05.md`.
+
+- **Route tree:** `src/app/lite/*`, an 8-item navigation contract (Home, Work, Meetings, Projects,
+  People, Files, Ask, Settings — `src/features/lite/liteNavigation.ts`) limited to the founder's
+  specified required feature set, deliberately excluding enterprise-only surfaces (Social Alerts,
+  Agent Connections, Integrations plugin marketplace).
+- **Deployment:** its own Vercel project (`triaxis-product-lite-web`), live at
+  [lite.triaxisventures.com](https://lite.triaxisventures.com), built from this same repository —
+  not a separate app or a duplicated codebase.
+- **Isolation enforcement:** a host-based Edge middleware rule in `src/proxy.ts`
+  (`getLiteHostRedirectUrl`) restricts the Lite domain to `/lite`, `/api` and `/auth` paths only,
+  so the full enterprise route tree is never reachable there — covered by `src/proxy.test.ts`.
+- **Mobile:** a separate Capacitor target (`apps/mobile-lite-capacitor`) is scaffolded
+  config-only, with no native Android/iOS projects, signing credentials or store listings yet —
+  blocked pending DUNS number issuance and credential access, tracked as XLA-23/24/25.
+
+---
+
 # Current Product Status
 
 **Platform maturity**
 
 **Enterprise Beta Candidate**
 
-Current implementation includes thirty-two structured engineering sprints covering governance, orchestration, operational controls, enterprise administration, connector infrastructure, audit evidence, observability, Human-in-the-Loop workflows, live tenant workflow execution, pilot release gates, customer-success acceptance operations, live-ops recovery, store-ready mobile release certification and full-stack mobile store launch readiness.
+Current implementation includes thirty-two structured engineering sprints covering governance, orchestration, operational controls, enterprise administration, connector infrastructure, audit evidence, observability, Human-in-the-Loop workflows, live tenant workflow execution, pilot release gates, customer-success acceptance operations, live-ops recovery, store-ready mobile release certification and full-stack mobile store launch readiness, plus a further body of post-Sprint-32 work tracked by named actionable IDs rather than sprint numbers — Executive Dashboard redesign (ED-R1 through ED-R4), Meta/Threads/WhatsApp Business connectors (MC-1 through MC-4), critical auth fixes (A-84, A-86, A-87), the agentic actionables follow-through system (A-79), and the AXXESS Lite web surface (XL-0 through XL-2, see "AXXESS Lite" above).
 
 The platform currently supports:
 
@@ -349,13 +385,9 @@ Additional capabilities continue to be introduced through structured sprint-base
 
 ---
 
-**Website**
-
-https://www.triaxisventures.com
-
-**Enterprise Preview**
-
-https://axxesstriaxis.vercel.app
+See "Live links" at the top of this document for the current marketing site, live beta, investor
+demo and Lite surfaces — the `axxesstriaxis.vercel.app` preview URL previously listed here predates
+the custom-domain hosting split and is superseded by those links.
 
 ---
 
@@ -1202,16 +1234,11 @@ Current capabilities include:
 
 This implementation establishes the connector architecture used for future enterprise integrations.
 
-Future connector roadmap includes:
+Outlook, Google Drive, Slack, Teams and Notion listed here in earlier drafts are no longer future
+work — see "Connector Ecosystem" below for the current, code-verified connector list (20
+pilot-enabled connectors as of this update). Still genuinely future:
 
-- Outlook
-- Google Drive
-- Microsoft 365
-- Slack
-- Teams
-- Notion
 - Salesforce
-- HubSpot
 - Jira
 - SharePoint
 - SAP
@@ -1811,8 +1838,9 @@ Examples include:
 # Repository Structure
 
 This is the actual, verified layout — not an aspirational target. AXXESS is a pnpm workspace
-(`pnpm-workspace.yaml`) with the primary Next.js web application at the repository root, and two
-distinct mobile surfaces under `apps/`. See `MONOREPO_ARCHITECTURE_AND_BUSINESS_MODEL.md` for the
+(`pnpm-workspace.yaml`) with the primary Next.js web application at the repository root — serving
+both the full enterprise experience (X0) and, via `src/app/lite/*`, the AXXESS Lite surface — and
+mobile surfaces under `apps/`. See `MONOREPO_ARCHITECTURE_AND_BUSINESS_MODEL.md` for the
 full architecture rationale and how these surfaces share a kernel.
 
 ```
@@ -1820,8 +1848,10 @@ full architecture rationale and how these surfaces share a kernel.
 ├── src/                      # Primary Next.js web app (App Router) — the shared kernel
 │   ├── app/                  # Routes: dashboard, ai-workspace, projects, tasks, meetings,
 │   │                         # documents, knowledge, approvals, crm, stakeholders, analytics,
-│   │                         # admin, integrations, auth, onboarding, api/*
+│   │                         # admin, integrations, auth, onboarding, api/*, lite/* (AXXESS Lite,
+│   │                         # see "AXXESS Lite" above — same kernel, restricted route tree)
 │   ├── features/             # Feature-module UI components, shared by web and the Capacitor shell
+│   │   └── lite/              # AXXESS Lite nav contract, shell, and isolation tests
 │   ├── services/             # AI routing, RAG, integrations, analytics, workflows
 │   ├── repositories/         # Live (Supabase), demo, and empty repository implementations
 │   ├── auth/                 # Session resolution, provisioning, Supabase auth client
@@ -1901,6 +1931,11 @@ Two distinct mobile surfaces exist (verified against the repository, not aspirat
 - VS Code mobile build tasks
 - Mobile Store Launch Console
 - Store listing, reviewer, screenshot, health and rollout readiness gate
+
+A third mobile surface, `apps/mobile-lite-capacitor`, is scaffolded config-only for AXXESS Lite —
+no native Android/iOS projects, signing or store listings yet. Blocked pending DUNS number
+issuance and credential access (see "AXXESS Lite" above); not a fourth production mobile path
+today.
 
 ---
 
@@ -2366,6 +2401,21 @@ As of Sprint 32 plus the canonical GitLab workspace migration:
 - GitLab `main`, `canonical/sprint-1-35-unified-gitlab` and `fix/live-tenant-onboarding-and-rag-walkthrough` verified at migration commit `615faf218fbfe538dcdcd1eb1a079ee05ad65b4b`, before this documentation-governance follow-up
 - Documentation governance standard added for technical review, investor review, enterprise buying, due diligence and sovereign/public-sector audit audiences
 
+**Since Sprint 32**, engineering has continued under named actionable IDs rather than further
+numbered sprints, and this section did not previously reflect that work. Landed since:
+
+- Executive Dashboard redesign (ED-R1 through ED-R4): scored/tiered dashboard, mail/CRM/social
+  signal tiles, calendar/Zoom/financial tiles, Threads/Meta Business Suite tiles
+- Meta connector program (MC-1 through MC-4): Threads and Meta Business Suite added as full OAuth
+  connectors, WhatsApp Business live webhook ingestion, Meta Business Suite/Threads pull ingestion
+- Three critical auth fixes, all HITL live-confirmed 2026-08-03: A-84 (phone-linked sign-in), A-86
+  (concurrent refresh-token race that permanently killed sessions on dashboard mount — `da01319`),
+  A-87 (a fresh sign-in on `/auth` immediately signing itself back out — `741c208`)
+- A-79: agentic actionables follow-through system (heuristic gate, draft handoff, review-inbox and
+  workspace wiring)
+- A-96: Org Admin end-user demo rework
+- AXXESS Lite (XL-0 through XL-2): see "AXXESS Lite" above
+
 The engineering focus now shifts from mobile store launch readiness and repository consolidation to live store reviewer automation, automated screenshot capture artifacts, crash provider wiring, production support telemetry, staged rollout runbooks, production tenant expansion and continuously auditable documentation.
 
 ---
@@ -2613,24 +2663,37 @@ Future roadmap includes:
 
 # Connector Ecosystem
 
-Current production connectors include:
+**Verified against `src/services/integrations/pluginRegistry.ts` at commit time of this update** —
+this section previously undercounted the shipped connector catalogue by more than a dozen entries
+and listed several already-live connectors (Outlook, Google Drive, Slack, Teams, Notion) as future
+roadmap in an earlier section of this document; both are corrected here.
 
-- Gmail
-- Slack (quick-connect, Sprint 3)
-- Calendly (quick-connect, Sprint 3)
-- Airtable, HubSpot, Notion (OAuth quick-connect, 2026-07-21)
+**20 connectors are pilot-enabled** (`pilotEnabled: true`), each with a real OAuth authorization
+flow (`connectorContract.ts`), a plugin registry entry, and audit-event wiring:
 
-Current OAuth infrastructure supports:
-
-- Gmail, Microsoft, Slack, Calendly, Airtable, HubSpot, Notion
+| Category | Pilot-enabled connectors |
+|---|---|
+| Email | Gmail, Microsoft Outlook |
+| Calendar | Google Calendar, Zoom, Calendly |
+| Messaging | Microsoft Teams, Slack, WhatsApp Business |
+| Storage / database | Google Drive, Airtable, Google Sheets |
+| Document | Notion, Google Docs, Google Slides |
+| Project management | Linear, GitHub |
+| CRM | HubSpot |
+| Social | X (Twitter), Threads, Meta Business Suite |
 
 Notion additionally has a genuine sync workflow beyond connecting: list pages from the connected
 workspace, preview extracted text, then import a page as a real tenant document usable by the
-Knowledge Hub and AI Workspace's governed RAG.
+Knowledge Hub and AI Workspace's governed RAG. WhatsApp Business, Threads and Meta Business Suite
+(added as MC-1 through MC-4) also support live webhook/pull ingestion into dashboard tiles, not
+just a connect flow.
 
-Auth0, ClickHouse, MSSQL, Snowflake, S3, Paddle, and Stripe have an encrypted credential-storage
-connect flow (Settings → Integrations → Enterprise Data & Billing Connections) rather than OAuth —
-saving confirms the credential was stored correctly (AES-256-GCM, server-only), not that the
+**7 connectors exist in the registry but are not yet pilot-enabled** (`pilotEnabled: false`): Jira,
+Trello, Asana, Salesforce, Zoho CRM, DocuSign, Razorpay.
+
+**7 connectors use encrypted credential storage instead of OAuth**: Auth0, ClickHouse, MSSQL,
+Snowflake, S3, Paddle and Stripe (Settings → Integrations → Enterprise Data & Billing Connections)
+— saving confirms the credential was stored correctly (AES-256-GCM, server-only), not that the
 external service has verified it; live connectivity checks against these are not implemented yet.
 
 ### Postgres-level data connectors (Wrappers)
@@ -2645,42 +2708,24 @@ connections, five (plus the two billing wrappers) as encrypted credential storag
 verification (see above). Full stack-of-use breakdown (database layer → application connector
 layer → product UI → customer journey → ops) in `MONOREPO_ARCHITECTURE_AND_BUSINESS_MODEL.md` §4.
 
-Future connector roadmap includes:
+Genuinely future (not in the registry at all yet):
 
-### Productivity
+### CRM / Enterprise
 
-- Google Workspace
-- Microsoft 365
-- Outlook
-- Calendar
-
-### Collaboration
-
-- Microsoft Teams
-- Discord
-
-### Knowledge
-
-- Notion
-- Confluence
 - SharePoint
-
-### CRM
-
-- Salesforce
-- HubSpot
-- Zoho CRM
-
-### Enterprise
-
 - SAP
 - Oracle
 - ServiceNow
 - Workday
 
+### Collaboration
+
+- Discord
+- Confluence
+
 ### Storage
 
-- Google Drive
+- Google Workspace (as a suite, beyond Drive/Docs/Sheets/Slides which are already pilot-enabled)
 - OneDrive
 - Dropbox
 - Box
@@ -2939,9 +2984,11 @@ Current limitations include:
 
 ## Connectors
 
-- Gmail, Microsoft, Slack, Calendly, Airtable, HubSpot, and Notion have real OAuth connect flows;
-  Auth0, ClickHouse, MSSQL, Snowflake, S3, Paddle, and Stripe have encrypted credential storage
-  with no live external verification yet
+- 20 connectors have real OAuth connect flows (see "Connector Ecosystem" above for the full,
+  code-verified list); Auth0, ClickHouse, MSSQL, Snowflake, S3, Paddle, and Stripe have encrypted
+  credential storage with no live external verification yet
+- 7 registered connectors (Jira, Trello, Asana, Salesforce, Zoho CRM, DocuSign, Razorpay) are not
+  yet pilot-enabled
 - Connector ecosystem remains intentionally limited during beta
 
 ---
@@ -3247,9 +3294,7 @@ The platform continues to evolve through structured sprint-based development, di
 
 https://www.triaxisventures.com
 
-**Enterprise Preview**
-
-https://axxesstriaxis.vercel.app
+See "Live links" at the top of this document for the live beta, investor demo and Lite surfaces.
 
 For partnership, enterprise deployment, design partner opportunities or technical discussions, please reach out through our website.
 
