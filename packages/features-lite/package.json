@@ -1,0 +1,9 @@
+{
+  "name": "@axxess/features-lite",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Pure AXXESS Lite manifests and types (navigation contract, feature allowlist) -- no framework, auth, or root-app coupling. XL-5 Phase 1 extraction: see docs/readiness/AXXESS_LITE_SHARED_CORE_EXTRACTION_PLAN_2026_08_06.md.",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts"
+}
