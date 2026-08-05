@@ -1,0 +1,86 @@
+name: Lite Capacitor Mobile Boundary
+
+# XL-3 follow-up (2026-08-05): the mobile-target guard (scripts/validate-lite-mobile-target.mjs,
+# wired into `pnpm run lite:ci` alongside the import-boundary guard and the Lite test suite) already
+# existed but was never run in CI -- meaning a merge that broke the X0/Lite mobile separation (same
+# app id, server.url pointed at the wrong surface, identical configs) would only be caught if someone
+# happened to run the script by hand. This workflow makes that check a required, automatic PR gate,
+# parallel to (not replacing) mobile-capacitor.yml's own X0 Mobile validation.
+#
+# Deliberately does NOT build a native Android/iOS artifact for AXXESS Lite Mobile -- no native
+# `android/`/`ios/` project exists yet under apps/mobile-lite-capacitor (see
+# docs/readiness/AXXESS_LITE_CAPACITOR_TARGET_SETUP_2026_08_05.md). Once those are generated with a
+# real toolchain, add android-preview/ios-preview jobs here mirroring mobile-capacitor.yml's own.
+
+on:
+  pull_request:
+    paths:
+      - 'src/app/lite/**'
+      - 'src/features/lite/**'
+      - 'apps/lite-web/**'
+      - 'apps/mobile-lite-capacitor/**'
+      - 'apps/mobile-capacitor/capacitor.config.*'
+      - 'scripts/lite-boundary-guard.mjs'
+      - 'scripts/validate-lite-mobile-target.mjs'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/app/lite/**'
+      - 'src/features/lite/**'
+      - 'apps/lite-web/**'
+      - 'apps/mobile-lite-capacitor/**'
+      - 'apps/mobile-capacitor/capacitor.config.*'
+      - 'scripts/lite-boundary-guard.mjs'
+      - 'scripts/validate-lite-mobile-target.mjs'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lite-capacitor-mobile-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Lite/X0 mobile boundary guard
+    runs-on: ubuntu-latest
+    env:
+      NEXT_TELEMETRY_DISABLED: '1'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 11.7.0
+          run_install: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm run typecheck
+
+      # lite:ci = lite:guard (Lite source never imports forbidden X0/Demo surfaces)
+      #         + lite:test (Lite's own isolation/shell/navigation tests)
+      #         + lite:mobile:validate (Lite Capacitor config is distinct from X0's -- different
+      #           app-id variable, different server.url target, configs not byte-identical)
+      - name: Lite boundary + mobile target guard
+        run: pnpm run lite:ci
