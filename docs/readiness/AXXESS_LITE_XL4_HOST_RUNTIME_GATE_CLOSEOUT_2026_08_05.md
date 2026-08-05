@@ -205,8 +205,7 @@ sprint.
 
 ## Commit Hash
 
-Recorded after commit in this same session -- see the branch's git log for the exact hash
-(`fix(proxy): XL-4 -- Lite host runtime gate...` or equivalent commit message).
+`29a37e7` -- `feat(lite): XL-4 -- Lite host runtime gate and API surface entitlement`
 
 ## Push/Deploy Status
 
