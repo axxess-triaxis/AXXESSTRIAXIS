@@ -183,3 +183,20 @@ XL-4 should:
 ## Status Judgment
 
 Same-repo Lite is tenable if these gates stay mandatory. Route-only Lite is transitional. The monorepo remains the correct cost-efficient model, but only with enforced workspace, build, runtime, mobile, and data boundaries.
+
+## XL-4 Update (2026-08-06)
+
+Residual risk #3 above ("host-based route blocking still needs explicit middleware or project
+routing") is now closed. `src/proxy.ts` enforces a runtime host/API gate: any non-`/lite`,
+non-`/auth` page path on a Lite host redirects to `/lite` (XLA-21), and a deny-by-default API
+allowlist (`src/config/liteSurfaceHosts.ts` + `src/proxy.ts`) 404s any `/api/*` path not
+explicitly needed by Lite's shipped/planned feature set. `AXXESS_SURFACE=lite` (predicted by this
+doc, row 146 above) now has real runtime meaning via `resolveIsLiteSurface()` -- an additive,
+optional declaration on top of host detection, not yet configured on any Vercel project. Full
+detail: `docs/readiness/AXXESS_LITE_XL4_HOST_RUNTIME_GATE_CLOSEOUT_2026_08_05.md`.
+
+Still open from this doc's original residual-risk list: #1 (`apps/lite-web` not fully extracted),
+#2 (root `vercel.json` project-settings override), #4 (tenant/plan gating), #5 (analytics/payment
+env separation), #6 (native mobile projects). XL-4 was scoped to runtime route/API gating only,
+per its own prompt's explicit non-negotiables (no repo split, no backend duplication, no schema
+fork) -- these remain correctly out of scope for a future sprint, not silently dropped.

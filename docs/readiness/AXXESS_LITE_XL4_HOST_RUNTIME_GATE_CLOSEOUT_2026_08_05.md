@@ -5,7 +5,14 @@ Sprint: XL-4
 
 Planning provenance: Codex-drafted sprint recommendation, presented to and executed for the
 founder in the same conversation ("Recommended Next Sprint -- XL-4"), confirmed to start
-immediately via an explicit founder choice between "start now" and "log only."
+immediately via an explicit founder choice between "start now" and "log only." A fuller,
+independently-drafted Codex execution prompt for the same sprint arrived afterward (same
+conversation, 2026-08-06) -- diffed against what had already shipped rather than re-executed from
+scratch; the 2026-08-06 addendum near the end of this document covers what that diff found and
+closed. **Filename note:** the fuller prompt names
+`docs/readiness/XL4_LITE_HOST_RUNTIME_GATE_CLOSEOUT_2026_08_06.md`; this document (created first,
+already committed and merged via #184 before that prompt arrived) is treated as the canonical
+closeout instead of creating a near-duplicate file under a second name.
 
 ## What Changed
 
@@ -213,14 +220,90 @@ sprint.
 - Confirm whether to set `AXXESS_SURFACE=lite` on `triaxis-product-lite-web` now (adds a second,
   independent layer on top of host detection) or leave it unset (host detection alone, current
   live state, already verified working).
-- Confirm the residual `pnpm run lite:ci` gap above before merge, if a clean CI run is wanted as
-  additional evidence.
+
+## 2026-08-06 Addendum: diffed against the fuller Codex XL-4 prompt
+
+A more detailed Codex execution prompt for this same sprint arrived after the above had already
+shipped, been merged (#184), deployed, and live-verified. Diffed line-by-line against what it
+specified rather than re-executed from scratch; closed the following genuine gaps found:
+
+- **Test coverage gaps**: added explicit `/alerts` and `/integrations` page-redirect tests (the
+  prompt names these specifically; the generic redirect logic already covered them, but there was
+  no dedicated test proving it), and explicit `/api/cron/pilot-command-center-snapshot` /
+  `/api/cron/social-connector-sync` block tests (same situation -- covered by deny-by-default, not
+  previously asserted directly).
+- **`liteSurface.ts` consolidation**: the prompt's required reading list includes
+  `src/features/lite/liteSurface.ts` (XL-3 scaffolding) as a candidate location for surface
+  detection. Found it already defined its own `AxxessSurface` type and a `getLiteSurface()` that
+  unconditionally returned `"lite"` regardless of any real signal -- a second, non-functional
+  implementation alongside the real one in `src/config/liteSurfaceHosts.ts`. Consolidated:
+  `liteSurface.ts` now re-exports the type and delegates `getLiteSurface()` to real
+  env/host-based resolution. Test rewritten to match (real behavior, not a trivial stub
+  assertion). No other production file imported this module (verified via grep) -- zero-risk
+  change, no other call sites to update.
+- **`scripts/lite-boundary-guard.mjs` extended** per the prompt's explicit item 7: now also
+  verifies `src/proxy.ts` and `src/config/liteSurfaceHosts.ts` exist, export the required
+  functions, and contain *populated* allowlist `Set`/array literals (a real string entry present,
+  not just the identifier name appearing in a comment) -- deliberately not brittle against
+  comments-only, per the prompt's own explicit warning.
+- **Docs updated** per the prompt's item 8: added an "XL-4 Update" section to
+  `AXXESS_LITE_MONOREPO_BOUNDARY_AND_BUILD_ISOLATION_2026_08_05.md` closing its residual risk #3;
+  corrected a now-stale claim in `AXXESS_LITE_VERCEL_PROJECT_SETUP_2026_08_05.md` ("nothing today
+  would stop a request to `<lite-domain>/dashboard` from resolving") that XLA-21/XL-4 have since
+  made false. `AXXESS_LITE_CAPACITOR_TARGET_SETUP_2026_08_05.md` checked, found not relevant to
+  runtime route/API gating -- left untouched.
+- **Demo dataset labels cannot render on Lite** (prompt item 5): already enforced at the source
+  level by `lite-boundary-guard.mjs`'s existing forbidden-pattern check for `demoDataset`,
+  `demoOrganization`, `demoUserContext`, `"North East Health Mission"`, `"Ananya Rao"` inside any
+  Lite source file (XL-3, unchanged this pass) -- no new code needed, confirmed still passing.
+- **Verification re-run**: `pnpm run lite:guard` (26 files, extended checks included),
+  `pnpm exec vitest run src/proxy.test.ts src/features/lite src/config/liteSurfaceHosts.test.ts
+  src/demo/demoMode.test.ts` (all pass), `tsc --noEmit`, `eslint . --max-warnings=0` -- all clean.
+
+**Not done from the fuller prompt, deliberately:**
+- Did not create a second closeout file under the prompt's suggested
+  `XL4_LITE_HOST_RUNTIME_GATE_CLOSEOUT_2026_08_06.md` name -- see the filename note at the top of
+  this document.
+- Did not rebuild the API allowlist as a literal `liteAllowedApiPrefixes` +
+  `liteForbiddenApiPrefixes` two-array structure exactly as the prompt's illustrative snippet
+  shows. The shipped design (a single deny-by-default allowlist) is a strict superset of that
+  intent -- "denylist wins over allowlist" is trivially satisfied when nothing blocked is ever on
+  the allowlist, and deny-by-default is safer against a future route being added and forgotten in
+  either list. Documented here as a deliberate design choice, not an oversight.
+- Did not move surface detection to a new `src/app/surface/surfaceRuntime.ts` path -- the prompt
+  offered `liteSurface.ts` or a new path as alternatives; consolidating onto the existing, already
+  real `src/config/liteSurfaceHosts.ts` (shared with `src/demo/demoMode.ts`, which a brand-new
+  `src/app/surface/*` path would not have been) was judged the better fit.
+
+## Final Closeout Judgment
+
+**Question the prompt asks this closeout to answer:** Can the Lite Vercel project/domain safely
+run from the same repo/root app without exposing X0 or Demo surfaces?
+
+**Answer: Yes, for runtime route/API gating** -- live-verified in production
+(`lite.triaxisventures.com`): the full X0 page route tree redirects to `/lite` (XLA-21), the full
+X0/agentic/social-alert/admin API surface 404s at the edge (XL-4), and Investor Demo mode is
+forced off on the Lite surface both server- and client-side, independent of env-var
+misconfiguration. **The remaining caveat, unchanged from the prompt's own expected framing:** full
+build-level isolation still requires the `apps/lite-web` extraction and shared-core package work
+flagged as out of scope for this sprint (residual risks #1, #2, #4, #5, #6 in
+`AXXESS_LITE_MONOREPO_BOUNDARY_AND_BUILD_ISOLATION_2026_08_05.md`) -- a Lite deployment today is
+runtime-safe, not yet fully build-independent from X0.
 
 ## Commit Hash
 
-`29a37e7` -- `feat(lite): XL-4 -- Lite host runtime gate and API surface entitlement`
+- `29a37e7` -- `feat(lite): XL-4 -- Lite host runtime gate and API surface entitlement`
+- `af97e98`, `3d9edfe` -- closeout doc updates (commit hash, full-suite verification results)
+- `9b92ea9` -- `refactor(lite): consolidate liteSurface.ts onto liteSurfaceHosts.ts`
+- Plus the 2026-08-06 addendum commit (test coverage additions, guard script extension, docs
+  updates) -- see this branch's git log for the exact hash.
 
 ## Push/Deploy Status
 
-Not pushed or deployed as of writing this closeout -- pending final verification suite completion
-and explicit confirmation, per this repository's standing git/deployment discipline.
+**Pushed and deployed.** `29a37e7` merged to `main` via #184 (2026-08-05); `triaxis-product-lite-web`
+deployed to production and live-verified via `curl` (page redirect intact, blocked API paths
+return 404, allowed API paths reach their handler, X0 host unaffected). The 2026-08-06 addendum
+work (test coverage, guard extension, docs, `liteSurface.ts` consolidation) is committed on
+`canonical/sprint-1-35-unified-gitlab`; no runtime behavior changed by the addendum, so no
+redeploy is required for it to take effect -- push/PR status for the addendum commits to be
+confirmed separately.

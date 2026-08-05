@@ -98,6 +98,52 @@ if (files.length < 12) {
   failures.push(`Lite boundary scan saw only ${files.length} files; expected a non-trivial Lite surface.`);
 }
 
+// XL-4 (2026-08-06): the source/build-time checks above guard what Lite *code* can import, but say
+// nothing about whether the *runtime* host/API gate (src/proxy.ts + src/config/liteSurfaceHosts.ts)
+// still exists and still has real content. Checking for real code constructs (an actual populated
+// Set literal), not just the presence of an identifier name or a comment mentioning one -- a
+// stripped-comments string search alone would pass even if someone emptied the allowlist down to
+// `new Set([])` while leaving the surrounding prose comments untouched.
+const runtimeGateChecks = [
+  { path: "src/config/liteSurfaceHosts.ts", label: "Lite surface/host resolution module" },
+  { path: "src/proxy.ts", label: "Edge Runtime host/API gate" },
+];
+
+for (const { path: gatePath, label } of runtimeGateChecks) {
+  const fullPath = join(repoRoot, gatePath);
+  if (!existsSync(fullPath)) {
+    failures.push(`${gatePath}: required runtime gate file (${label}) is missing.`);
+  }
+}
+
+const proxyPath = join(repoRoot, "src/proxy.ts");
+if (existsSync(proxyPath)) {
+  const proxySource = stripComments(readFileSync(proxyPath, "utf8"));
+
+  const requiredExports = ["isLiteAllowedApiPath", "shouldBlockLiteApiRequest", "getLiteHostRedirectUrl"];
+  for (const exportName of requiredExports) {
+    if (!new RegExp(`export function ${exportName}\\b`).test(proxySource)) {
+      failures.push(`src/proxy.ts: missing required export \`${exportName}\` (Lite runtime gate).`);
+    }
+  }
+
+  // Real, populated Set literals -- not just the identifier name appearing somewhere (e.g. only in
+  // a comment, which stripComments would have already removed, or an emptied-out `new Set([])`).
+  const populatedSetChecks = [
+    { name: "liteAllowedApiExactPaths", pattern: /liteAllowedApiExactPaths\s*=\s*new Set\(\[\s*"/ },
+    { name: "liteAllowedRepositoryResources", pattern: /liteAllowedRepositoryResources\s*=\s*new Set\(\[\s*"/ },
+  ];
+  for (const { name, pattern } of populatedSetChecks) {
+    if (!pattern.test(proxySource)) {
+      failures.push(`src/proxy.ts: \`${name}\` must be a populated allowlist (Set with at least one real entry), not empty or comment-only.`);
+    }
+  }
+
+  if (!/liteAllowedApiPrefixes\s*=\s*\[\s*"/.test(proxySource)) {
+    failures.push("src/proxy.ts: `liteAllowedApiPrefixes` must be a populated array, not empty or comment-only.");
+  }
+}
+
 if (failures.length > 0) {
   console.error("AXXESS Lite boundary guard failed:");
   for (const failure of failures) console.error(`- ${failure}`);
