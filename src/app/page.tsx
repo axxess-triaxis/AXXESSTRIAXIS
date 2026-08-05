@@ -24,18 +24,24 @@ export default function HomePage() {
           >
             Experience AXXESS
           </a>
+          <a
+            href="https://lite.triaxisventures.com"
+            className="rounded-lg border border-[#b8c3d1] bg-white px-5 py-3 text-sm font-semibold text-[#1d2a38] transition hover:bg-[#eef2f6]"
+          >
+            Go Lite (For Now)
+          </a>
         </div>
         <section
-          aria-labelledby="launchlist-heading"
+          aria-label="Join the AXXESS waitlist"
           className="max-w-xl rounded-xl border border-[#d6dee8] bg-white p-5 shadow-sm"
         >
-          <p id="launchlist-heading" className="text-sm font-semibold text-[#1d2a38]">
-            Join the AXXESS pilot waitlist
-          </p>
-          <p className="mt-2 text-sm leading-6 text-[#526173]">
-            Register interest for pilot access, product updates, and enterprise beta availability.
-          </p>
-          <div className="launchlist-widget mt-4" data-key-id="ICROoX" />
+          <div className="launchlist-widget" data-key-id="ICROoX" />
+          <a
+            href="https://launch.li/p/axxess-triaxis-founders-club-edition"
+            className="mt-4 block text-sm font-medium text-[#8b1e2d] underline decoration-[#8b1e2d]/40 underline-offset-4 transition hover:text-[#741927]"
+          >
+            AXXESS the waitlist now with TRIaxis Ventures - Mr. Sudipta Koushik Sarmah (Founder) &amp; Mrs Ritashree Mahanta (Co-Founder)
+          </a>
         </section>
       </section>
     </main>
