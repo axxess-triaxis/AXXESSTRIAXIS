@@ -1,6 +1,5 @@
-import { CalendarDays } from "lucide-react";
-import { LitePlaceholderSection } from "../../../features/lite/sections/LitePlaceholderSection";
+import { LiteMeetingsSection } from "../../../features/lite/sections/LiteMeetingsSection";
 
 export default function LiteMeetingsPage() {
-  return <LitePlaceholderSection title="Meetings" description="Create meetings, record decisions, and set follow-ups." icon={CalendarDays} />;
+  return <LiteMeetingsSection />;
 }
