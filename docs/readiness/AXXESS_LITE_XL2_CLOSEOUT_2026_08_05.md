@@ -91,8 +91,11 @@ See the main doc's Section 18 -- summarized: (1) Reminders/Approvals sub-routing
 
 ## Commit Hash
 
-Not yet committed as of this closeout being written -- see the conversation turn immediately following this document's creation for the actual commit.
+Two commits, split by concern (Lite web surface vs. the shared `src/proxy.ts` middleware fix):
+
+- `5adc0ac` -- `feat(lite): build AXXESS Lite web shell and production navigation boundary` (XL-1 shell + XL-2 nav contract, combined since XL-1 was never separately committed).
+- `1829e1a` -- `fix(proxy): restrict the Lite Vercel domain to /lite routes (XLA-21)`.
 
 ## Push/Deploy Status
 
-Not pushed. Not deployed. Per this sprint's own instruction ("Push only after founder approval"), commit will follow standard verification; push and any deploy remain gated on explicit founder go-ahead in this conversation, consistent with every prior XL-sprint this session.
+Not pushed. Not deployed. Per this sprint's own instruction ("Push only after founder approval"), both commits are local to this branch; push and any deploy remain gated on explicit founder go-ahead in this conversation, consistent with every prior XL-sprint this session.
