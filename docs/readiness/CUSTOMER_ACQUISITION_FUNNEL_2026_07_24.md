@@ -89,3 +89,10 @@ Founder-stated, source artifact needed -- not independently verified from this r
 - **27 views, 7 sign-ups** on the LaunchList page on launch day ("Day 0").
 - Founder separately reported the same 7 sign-ups as occurring **within 5 hours of launch**, with a **~25% conversion rate** (7/27 = 25.9%, consistent with the Day 0 view/signup counts above).
 - Founder-stated, source artifact needed -- LaunchList is an external tool outside this repository; these figures are not independently verified from repo-internal evidence. Recorded as stated, per this document's and this program's standing evidence-chain discipline.
+
+### EOD 2026-08-05 metrics (screenshot-verified, LaunchList Overview dashboard)
+
+- **27 total sign-ups** (cumulative), **0 via referrals**, **0 verified emails**, **8 joined today** (2026-08-05).
+- **80 page views** (cumulative, hosted page only -- excludes embeds/API), **27 sign-ups from page**, **33.8% conversion rate** on the hosted page.
+- Total sign-ups (27) matches Day 0's founder-stated 7-sign-up figure only if a further ~12 sign-ups landed later on 2026-08-04 (after the "7 within 5 hours" snapshot) and 8 more landed on 2026-08-05 -- the two figures are not directly reconciled here, just both recorded as reported/observed at their respective times, per this document's evidence-chain discipline.
+- Source: a direct screenshot of the LaunchList Overview dashboard (`getlaunchlist.com/sites/axxess-triaxis-founders-club-edition`) shared in-session on 2026-08-05 -- a first-party tool screenshot, not founder recollection, but still an external tool's dashboard, not independently re-derivable from this repository.
