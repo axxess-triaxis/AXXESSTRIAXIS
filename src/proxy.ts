@@ -48,6 +48,24 @@ const dashboardRootRedirectHosts = new Set([
 const marketingOnlyPathname = "/";
 const launchListReferralParam = "ref";
 
+// XLA-21 (2026-08-05): the X Lite Web Vercel project (triaxis-product-lite-web) deploys this same
+// Next.js app -- without a host-based restriction, X0's full route tree (/dashboard, /admin/*,
+// etc.) was reachable on the Lite domain, confirmed live (docs/readiness/
+// AXXESS_LITE_DOCTRINE_AND_SURFACE_CONSTITUTION_2026_08_05.md Section 8 ADR addendum). Configurable
+// via env so both the default *.vercel.app domain and the eventual custom domain
+// (lite.triaxisventures.com, once assigned) are covered without a code change.
+const defaultLiteHosts = ["triaxis-product-lite-web.vercel.app"];
+const liteAllowedPathPrefixes = ["/lite", "/api", "/auth"];
+
+function getLiteHosts(): string[] {
+  const fromEnv = process.env.AXXESS_LITE_HOSTS;
+  if (!fromEnv) {
+    return defaultLiteHosts;
+  }
+  const parsed = fromEnv.split(",").map((host) => host.trim().toLowerCase()).filter(Boolean);
+  return parsed.length > 0 ? parsed : defaultLiteHosts;
+}
+
 const workspaceRoutePrefixes = ["/auth", ...protectedRoutePrefixes];
 
 function normalizeHost(host: string | null) {
@@ -116,6 +134,25 @@ export function getMarketingWorkspaceRedirectUrl(url: URL, host: string | null) 
   return redirectUrl;
 }
 
+export function getLiteHostRedirectUrl(url: URL, host: string | null) {
+  const normalizedHost = normalizeHost(host);
+  if (!normalizedHost || !getLiteHosts().includes(normalizedHost)) {
+    return null;
+  }
+
+  const isAllowedPath = liteAllowedPathPrefixes.some((prefix) => url.pathname.startsWith(prefix));
+  if (isAllowedPath) {
+    return null;
+  }
+
+  const redirectUrl = new URL(url.toString());
+  redirectUrl.protocol = "https:";
+  redirectUrl.host = normalizedHost;
+  redirectUrl.pathname = "/lite";
+  redirectUrl.search = "";
+  return redirectUrl;
+}
+
 // Matches the production-safe default in src/config/featureFlags.ts: real Supabase-backed
 // auth is required unless local mock auth is explicitly opted into with `=false`. A stale
 // `=== "true"` check here would silently let every deployed environment with the env var
@@ -147,6 +184,11 @@ export function shouldRedirectToLogin(
 // runtime behavior change (still an Edge Runtime request interceptor, same `config.matcher`).
 export function proxy(request: NextRequest) {
   const requestHost = request.headers.get("x-forwarded-host") ?? request.headers.get("host");
+
+  const liteHostRedirectUrl = getLiteHostRedirectUrl(request.nextUrl, requestHost);
+  if (liteHostRedirectUrl) {
+    return NextResponse.redirect(liteHostRedirectUrl, 307);
+  }
 
   const canonicalHostRedirectUrl = getCanonicalHostRedirectUrl(
     request.nextUrl,
