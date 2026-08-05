@@ -123,6 +123,48 @@ Additional exclusions confirmed by this sprint's audit, consistent with the road
 
 If any excluded capability is required later for an X Lite customer that grows into needing it, it must appear as an explicit upgrade path or an admin-only advanced section -- never as a first-run default, per the roadmap's own rule.
 
+### 6.3 Addendum, XL-1 (2026-08-05): founder-provided refined feature scope -- a hard boundary, not an accident
+
+The founder gave this explicit instruction directly: *"This is the AXXESS Lite production scope. It should be documented as a hard boundary: Lite is not 'smaller X0 by accident'; it is a deliberately scoped self-serve product."* This supersedes Sections 6.1/6.2 above where the two disagree in detail -- 6.1/6.2 remain the original XL-0 lists for historical/evidence-chain purposes, but this table is the current source of truth for what Lite includes and excludes, effective 2026-08-05.
+
+**Required (with the founder's own Lite interpretation of each):**
+
+| # | Feature | Lite interpretation |
+|---|---|---|
+| 1 | Simplified Executive Dashboard | Plain daily summary, not Tenant Health Command Center |
+| 2 | Meetings | Create, view, follow up |
+| 3 | Tasks | Create, assign, update |
+| 4 | Reminders | Lightweight due-date/follow-up loop |
+| 5 | Projects | Simple project tracking |
+| 6 | Programs | Group projects, but not enterprise portfolio complexity |
+| 7 | CRM & Stakeholders | Contacts, notes, follow-ups, basic pipeline |
+| 8 | Approvals & Governance | Simple approvals, not deep enterprise governance |
+| 9 | Settings | Account, org, plan, users, basic security |
+| 10 | Integrations | Only 10-15 useful connectors |
+| 11 | AI Workspace | Simple AI help over tasks/docs/meetings |
+| 12 | Audit & Compliance | Basic activity log + easy PDF/ZIP export |
+| 13 | Documents & Knowledge Hub | Upload, organize, index, ask |
+| 14 | Simplified Analytics | Usage/work/progress basics |
+
+**Explicitly not required:**
+
+| # | Excluded | Reason |
+|---|---|---|
+| 1 | Golden Path | Too enterprise/beta-readiness oriented |
+| 2 | Social Alerts | Not core daily self-serve need |
+| 3 | Large stakeholder maps | Too heavy for MSME/startup/NGO first use |
+| 4 | Complex analytics | Keep plain, actionable metrics |
+| 5 | Complex AI/agentic workflows | Lite AI should assist, not orchestrate everything |
+| 6 | 40+ integrations | 10-15 practical connectors enough |
+| 7 | Complex audit logs | Simple downloadable PDF/ZIP compliance pack |
+| 8 | Too many integrated workflows | Avoid workflow overload |
+
+**Product principle (founder's own words):** *"Lite should feel useful in 10 minutes, not impressive after 2 hours."*
+
+**Architecture implication (founder's own words, consistent with, not a change to, this doctrine's Section 4/5 doctrine):** X0 keeps breadth and depth. Lite uses shared backend capabilities but exposes a small, opinionated surface. **Lite navigation should have about 8-10 top-level areas max, not every X0 module.** Advanced X0 concepts can remain hidden, unavailable, or upgrade-gated.
+
+**Reconciliation note, not silently resolved:** the XL-1 shell built this sprint (`src/features/lite/liteNavigation.ts`) has 7 nav items (Home, Work, Files, People, Ask AXXESS, Payments, Help), which is inside the founder's stated 8-10 ceiling but does not yet cover this table's full 14-item required list -- notably, Meetings, Projects, Programs, CRM & Stakeholders (beyond "People"), Approvals & Governance, Settings, Integrations, and Audit & Compliance are not yet distinct nav items. Whether that means (a) some of these 14 features fold into the existing 7 nav areas rather than each getting its own top-level item (e.g. Meetings could live inside "Work"), consistent with the 8-10-area ceiling, or (b) the nav needs to grow toward 8-10 items to give more of these their own area, is a founder product decision, not decided by this addendum. **Not rebuilt in code this sprint** -- this addendum documents the scope; expanding `src/features/lite/` to match it is XL-2 (or a dedicated follow-up) scope, pending that decision.
+
 ---
 
 ## 7. Mobile Doctrine
@@ -150,6 +192,8 @@ If any excluded capability is required later for an X Lite customer that grows i
 - **Consequences:** X Lite inherits every future auth/tenancy/audit-logging fix automatically (positive). X Lite cannot inherit X0 UI fixes automatically, since its shell is separate by design (expected, not a defect). The `isDemoModeEnabled()` global flag (Section 14.10) threading through most shared feature-section components must be explicitly handled -- either overridden per-surface or the shared components refactored to accept demo-mode as an explicit prop/context rather than a global read -- before X Lite can safely reuse those components without risking Investor Demo data leakage into a real X Lite tenant's screen.
 - **Risks:** See Section 12.
 - **Reversal conditions:** If, after XL-1's technical spike, `src/app/lite/*` proves to create unacceptable bundle-size, routing-precedence, or deployment-isolation problems for X0 (e.g. X Lite's dependencies materially inflate X0's build, or a single Vercel project cannot safely serve independently-scaled traffic for both surfaces), the decision reverses to the `apps/lite-web` separate-workspace-member alternative already named as the fallback in the roadmap's Section 7 -- this is a pre-agreed reversal path, not a new decision to be made under pressure later.
+
+**Addendum, XL-1 (2026-08-05):** the technical spike ran. `src/app/lite/*` and `src/features/lite/*` were built (route tree, own navigation manifest, own shell, isolation tests -- 15/15 passing, plus the existing X0 regression suite re-run clean at 295/295). No bundle/routing/deployment problem was hit for X0. The spike also resolved a question this ADR had left open: whether "deployment isolation" (the founder's explicit want for a separate Web Lite Vercel project) requires Option B. It does not -- `src/app/lite/*` deployed to its own, independent third Vercel project (proposed `triaxis-product-lite-web`, not yet created; see `docs/readiness/AXXESS_LITE_VERCEL_PROJECT_SETUP_2026_08_05.md`) gives real deploy/build/domain/rollback separation using the same same-repo-multiple-Vercel-projects pattern already proven twice in this program (`triaxis-www-frontend-import`, `triaxis-product-investor-demo`), without Option B's shared-service-layer-extraction risk. One gap was found and is explicitly not yet closed: nothing today stops a request to `<lite-domain>/dashboard` from resolving, since it's the same Next.js app -- closing this needs host-based middleware or a Vercel-level rewrite, tracked as a new follow-up actionable (see `AXXESS_LITE_VERCEL_PROJECT_SETUP_2026_08_05.md`'s "known gap" note), not yet built, not silently claimed done.
 
 ---
 
@@ -250,8 +294,9 @@ ID prefix `XLA` (AXXESS Lite Actionable) used throughout to avoid collision with
 | XLA-18 | Write the Investor Demo isolation checklist for the X Lite era | Investor Demo (protection) | Claude Code | New checklist document, extending the existing demo-isolation discipline already in `ACTIONABLES_READINESS_MATRIX.md` (A-88 scope note) to explicitly cover X Lite | Checklist exists and is run at the end of XL-1, with pass/fail evidence recorded | Planned |
 | XLA-19 | Write the X Lite self-serve test suite proving Section 6.2's exclusions are structurally enforced, not just documented | X Lite Web | Claude Code | Automated tests (e.g. `render()` + `queryByText`/`queryByRole` assertions, and/or a static import-graph check) proving X Lite's bundle/tree never includes `DashboardSection`, `TenantHealthCommandCenter`, `BetaReadinessSection`, any `src/app/admin/*` route, or demo-mode components | Tests exist, pass, and are run in the standard verification suite (`pnpm run test`) alongside every other suite in this repository | Planned |
 | XLA-20 | Founder walkthrough of the completed XL-1 slice against Pilot User 1's original critique | X Lite Web | Founder (HITL), Claude Code (facilitation) | Recorded walkthrough notes, explicit founder statement of whether the slice answers the 70-80% simplification ask | Founder sign-off recorded in the XL-1 closeout document | Planned -- gated on XL-1 completion |
+| XLA-21 | Add host-based route restriction so the Lite Vercel project cannot serve X0 routes (e.g. `<lite-domain>/dashboard`) even though it's the same Next.js app | X Lite Web, X0 Web (protection) | Claude Code | Middleware change (extending `src/proxy.ts`'s existing host-aware redirect logic) or a Vercel-level rewrite/redirect rule scoped to the Lite project | A request to any non-`/lite` path on the Lite domain redirects or 404s rather than serving X0 content; a test proves this | **Done, code + tests (2026-08-05)** -- `getLiteHostRedirectUrl()` added to `src/proxy.ts`, wired into `proxy()`, 6 new tests in `src/proxy.test.ts` (all pass, alongside the pre-existing 29). **Not yet redeployed** to `triaxis-product-lite-web` as of this update -- the live deployment verified earlier this session still predates this fix. |
 
-Fifteen to twenty-five actionables were requested; twenty are listed above, spanning XL-1 (route/nav/shell), XL-2 (daily-use loop wiring), and XL-3 (payments/mobile/deployment) scope, plus the two protective checklists (XLA-17/18) and the founder-facing decisions (XLA-01, XLA-12, XLA-13) that gate the others. None are marked `Ready` or `Done` in this sprint, since XL-0 is a doctrine sprint and no implementation code was written.
+Fifteen to twenty-five actionables were requested; twenty-one are listed above (twenty from XL-0, one added during XL-1's own spike), spanning XL-1 (route/nav/shell), XL-2 (daily-use loop wiring), and XL-3 (payments/mobile/deployment) scope, plus the two protective checklists (XLA-17/18) and the founder-facing decisions (XLA-01, XLA-12, XLA-13) that gate the others. As of XL-0 none were marked `Ready` or `Done`, since XL-0 was a doctrine-only sprint; XL-1's own status update is recorded in this document's Section 8 ADR addendum and in `docs/readiness/AXXESS_LITE_PRODUCT_SURFACE_ROADMAP_2026_08_05.md`'s Section 9 checklist, not by rewriting this table's `Status` column sprint-by-sprint (that would require reconciling two sources of status truth; the checklist in the roadmap document is the authoritative per-sprint status tracker going forward, this table remains the actionable definitions).
 
 ---
 
