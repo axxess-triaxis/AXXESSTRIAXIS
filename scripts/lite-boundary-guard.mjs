@@ -9,6 +9,12 @@ const scanRoots = [
   "src/features/lite",
   "apps/lite-web",
   "apps/mobile-lite-capacitor",
+  // XL-5 (2026-08-06): packages/features-lite holds the first pure Lite modules extracted out of
+  // src/features/lite (docs/readiness/AXXESS_LITE_SHARED_CORE_EXTRACTION_PLAN_2026_08_06.md).
+  // Scanned under the same forbidden-import rules as the rest of the Lite surface -- a package
+  // meant to be genuinely portable (no X0/demo coupling) is exactly where that coupling must never
+  // creep in.
+  "packages/features-lite",
 ];
 
 const requiredPaths = [
@@ -16,6 +22,7 @@ const requiredPaths = [
   "src/features/lite",
   "apps/lite-web/package.json",
   "apps/mobile-lite-capacitor/capacitor.config.ts",
+  "packages/features-lite/package.json",
 ];
 
 const forbiddenPatterns = [
@@ -74,7 +81,7 @@ for (const filePath of files) {
   for (const { pattern, reason } of forbiddenPatterns) {
     if (pattern.test(source)) {
       const isTest = allowedTestFilePattern.test(filePath);
-      const isLiteBoundaryTest = isTest && rel.startsWith("src/features/lite/");
+      const isLiteBoundaryTest = isTest && (rel.startsWith("src/features/lite/") || rel.startsWith("packages/features-lite/"));
       if (isLiteBoundaryTest) continue;
       failures.push(`${rel}: ${reason} Pattern: ${pattern}`);
     }
