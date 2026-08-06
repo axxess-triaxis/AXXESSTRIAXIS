@@ -44,10 +44,22 @@ describe("Settings Integrations tab -- full catalogue, real logos (2026-07-30)",
     setIntegrationsTab();
     render(<SettingsSection />);
 
-    expect(screen.getAllByText("catalogued -- not yet available").length).toBeGreaterThan(0);
     expect(screen.queryByRole("link", { name: "Connect Jira" })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Connect Salesforce" })).not.toBeInTheDocument();
     expect(screen.getByText(/No connect flow ships yet for Jira/)).toBeInTheDocument();
+  });
+
+  // A-98 (2026-08-06): founder directive -- integration tiles across the product show icon + name
+  // only, no "gated"/"configured"/category status pill and no self-description text. Applies
+  // uniformly to this quick-connect grid, IntegrationsSection.tsx's Pilot Integrations grid, and
+  // its Enterprise Data & Billing Connections grid.
+  it("shows no status badge or self-description text on any tile -- just icon and name", () => {
+    setIntegrationsTab();
+    render(<SettingsSection />);
+
+    expect(screen.queryByText("configured")).not.toBeInTheDocument();
+    expect(screen.queryByText("catalogued -- not yet available")).not.toBeInTheDocument();
+    expect(screen.queryByText("provider-gated for production credentials")).not.toBeInTheDocument();
   });
 
   it("gives a real Connect link for pilot-enabled providers, including Gmail (previously excluded)", () => {

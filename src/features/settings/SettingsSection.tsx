@@ -264,25 +264,14 @@ function IntegrationsQuickConnectPanel() {
       {quickConnectPlugins.map((plugin) => {
         const brandIcon = brandIcons[plugin.id];
         const FallbackIcon = quickConnectIcons[plugin.id] ?? MessageSquare;
-        const badge = plugin.configured
-          ? { tone: "bg-emerald-50 text-emerald-700", label: "configured" }
-          : plugin.pilotEnabled
-            ? { tone: "bg-amber-50 text-amber-700", label: "provider-gated for production credentials" }
-            : { tone: "bg-gray-100 text-gray-600", label: "catalogued -- not yet available" };
         return (
           <Card key={plugin.id} className="p-5">
             <div className="mb-3 flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#8B1E2D]/8 text-[#8B1E2D]">
                 {brandIcon ? <BrandIcon icon={brandIcon} size={20} /> : <FallbackIcon size={18} />}
               </div>
-              <div>
-                <h3 className="text-sm font-semibold text-[#0F1117]">{plugin.name}</h3>
-                <span className={`mt-0.5 inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold ${badge.tone}`}>
-                  {badge.label}
-                </span>
-              </div>
+              <h3 className="text-sm font-semibold text-[#0F1117]">{plugin.name}</h3>
             </div>
-            <p className="mb-3 text-xs leading-relaxed text-[#5F6B73]">{plugin.useCases.join(" - ")}</p>
             {(plugin.id === "whatsapp_business" || plugin.id === "meta_business") && facebookLoginStatusCopy[facebookLoginStatus] && (
               <p className="mb-3 rounded-lg bg-[rgba(15,17,23,0.04)] px-2.5 py-2 text-[11px] leading-relaxed text-[#5F6B73]">
                 {facebookLoginStatusCopy[facebookLoginStatus]}
