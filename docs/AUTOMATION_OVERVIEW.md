@@ -6,7 +6,7 @@ This is the single consolidated reference for every automated check in this repo
 
 Three automation surfaces exist. They are independent of each other by design (see `docs/GITLAB_MIRROR.md` and `docs/GITHUB_INDEPENDENT_OPERATIONS.md` for why: this project has already had a Git host go down mid-project, so no single mechanism here depends on any other one being up):
 
-1. **GitHub Actions** (`.github/workflows/`) -- **2026-08-06 correction: this is stale.** The account is not suspended and workflows execute -- confirmed via `gh run list --repo axxess-triaxis/AXXESSTRIAXIS`, which shows real runs against the current HEAD (`5e38936`, 2026-08-06T05:32:58Z). However, as of that same run, 10 of 11 workflows are **failing** (`Supabase RLS Persona Tests` is the lone pass), all with the identical root cause `[ERR_PNPM_LOCKFILE_MISSING_DEPENDENCY] Broken lockfile: no entry for '@capacitor/app@7.1.2(@capacitor/core@7.6.7)' in pnpm-lock.yaml` during `pnpm install --frozen-lockfile`. This does **not** reproduce locally (`corepack pnpm install --frozen-lockfile` succeeds cleanly on this Windows machine against the same commit), so it is a CI-runner-specific (Linux) lockfile resolution issue, not confirmed root-caused as of this note. See the "Known Gaps And Risks" section below.
+1. **GitHub Actions** (`.github/workflows/`) -- **2026-08-06 correction: "account suspended" was stale.** The account is not suspended and workflows execute -- confirmed via `gh run list --repo axxess-triaxis/AXXESSTRIAXIS`. As of the 05:32Z run against `5e38936`, 10 of 11 workflows were failing on a real lockfile bug (`main` only, not this branch) that also broke Vercel production deploys -- **fixed same day**, see "Known Gaps And Risks" below and `docs/readiness/LOCKFILE_DEPLOY_PIPELINE_INCIDENT_CLOSEOUT_2026_08_06.md` for the full incident writeup.
 2. **GitLab CI** (`.gitlab-ci.yml`) -- runs on GitLab.com's shared runners.
 3. **Local Windows Scheduled Task** (`scripts/post-sprint-verify-and-preview-deploy.ps1`) -- runs on this machine, independent of any Git host.
 
@@ -16,7 +16,7 @@ Plus **GitLab Duo Code Review** -- a native GitLab AI feature for merge-request 
 
 | Mechanism | Runs where | Trigger | Currently active? |
 |---|---|---|---|
-| GitHub Actions (11 workflows currently defined) | GitHub-hosted runners | push / PR to GitHub | **Runs, but currently red.** Account active, not suspended (2026-08-06 correction). 10/11 latest runs failing on a CI-only `pnpm install --frozen-lockfile` lockfile error; 1/11 (`Supabase RLS Persona Tests`) passing. |
+| GitHub Actions (11 workflows currently defined) | GitHub-hosted runners | push / PR to GitHub | Account active, not suspended (2026-08-06 correction). The `main`-branch lockfile bug that broke 10/11 runs is **fixed** (PR #186, merge `b8866e2`); two unrelated pre-existing failures remain open (Vitest worker crash, one Playwright test) -- see `docs/readiness/LOCKFILE_DEPLOY_PIPELINE_INCIDENT_CLOSEOUT_2026_08_06.md`. |
 | GitLab CI `quality` job | GitLab.com shared runner | every MR, push to `main`/`staging`/`dev`, push to `canonical/sprint-1-35-unified-gitlab` | Yes |
 | GitLab CI `supabase-verify` job | GitLab.com shared runner | MR/`main` push, only if `supabase/**` or migration-verifier files changed | Yes |
 | GitLab CI `pnpm-audit` job | GitLab.com shared runner | every MR, push to `main`, push to `canonical/sprint-1-35-unified-gitlab` | Yes |
@@ -103,25 +103,26 @@ Be precise about this list -- it is the part most likely to be silently assumed 
 ## Known Gaps And Risks
 
 - GitHub Actions coverage (11 workflows, including Playwright E2E, RAG release gate, pilot golden-path gate, and mobile visual regression) has **no GitLab equivalent**. **2026-08-06: GitHub is not suspended and these DO run now, but as of the latest push (`5e38936`) 10 of 11 are failing** on `[ERR_PNPM_LOCKFILE_MISSING_DEPENDENCY] Broken lockfile: no entry for '@capacitor/app@7.1.2(@capacitor/core@7.6.7)' in pnpm-lock.yaml` during `pnpm install --frozen-lockfile`. This is CI-runner-specific: the identical command (`corepack pnpm install --frozen-lockfile`) succeeds cleanly on the local Windows dev machine against the same commit, and the lockfile has carried this exact entry since commit `bdbd4ec` (XL-5, 2026-08-05). Every gate downstream of this install step (Security Gates, RAG Release Gate, Pilot Golden Path, Mobile Store Release Readiness, Playwright E2E, Mobile Visual Regression, Repository Quality) is currently red because of this single shared failure, not because of 7 independent problems.
-  **2026-08-06, root cause confirmed and severity raised:** this is not CI-only -- it also breaks
-  live **Vercel production deploys**. `npx vercel ls triaxis-www-frontend-import --prod` shows the 2
-  most recent production deployment attempts (9m and 10m old at time of check) both `● Error`; `npx
-  vercel inspect <url> --logs` on the latest one shows the identical
-  `[ERR_PNPM_LOCKFILE_MISSING_DEPENDENCY]` failure during `pnpm install --frozen-lockfile`, on
-  `main` (commit `b43e30d`), meaning **new commits to `main` are not going live right now** -- the
-  site is serving whatever the last successful deploy (`main`, ~1 day old at time of check) happened
-  to contain. Exact root cause found by diffing `main`'s checked-in files: `git show
-  origin/main:apps/mobile-lite-capacitor/package.json` declares `"@capacitor/app": "7.1.2"`, but
-  `git show origin/main:pnpm-lock.yaml` only resolves `@capacitor/app@8.1.1` -- a genuine
-  package.json/lockfile version mismatch, not a phantom Linux-vs-Windows resolution difference as
-  originally guessed. The same mismatch is present on `canonical/sprint-1-35-unified-gitlab` (16
-  commits ahead of `main` as of this note) -- `main` is not a separately-drifted copy, both branches
-  carry the same underlying error. Fix: regenerate the lockfile (`pnpm install --no-frozen-lockfile`
-  or explicitly bump/pin `@capacitor/app` to match) so `pnpm-lock.yaml`'s resolved version agrees
-  with `package.json`'s declared version, then commit and redeploy both `main` and the working
-  branch. A background task (chip `task_7f4d6851`, "Fix GitHub Actions frozen-lockfile CI failure")
-  is already investigating this from the GitHub Actions angle -- this Vercel-production-deploy
-  finding should be folded into that same fix rather than worked separately.
+  **2026-08-06, root cause confirmed:** this is not CI-only -- it also broke live **Vercel
+  production deploys** on `main`, meaning new commits were not going live at all. Exact root cause
+  found by diffing `main`'s checked-in files: `apps/mobile-lite-capacitor/package.json` declares
+  `"@capacitor/app": "7.1.2"`, but `pnpm-lock.yaml` only resolved `@capacitor/app@8.1.1` -- a genuine
+  package.json/lockfile version mismatch, not a Linux-vs-Windows resolution difference as originally
+  guessed. **Correction:** an earlier version of this note claimed `canonical/sprint-1-35-unified-gitlab`
+  carried the same mismatch -- checked directly and that was wrong; canonical's own committed
+  lockfile already had the correct entries, even at the exact commit GitHub Actions had failed
+  against. Canonical's CI redness has a separate, still-unconfirmed cause -- not assumed solved by
+  this fix.
+  **2026-08-06, FIXED:** landed via [PR #186](https://github.com/axxess-triaxis/AXXESSTRIAXIS/pull/186)
+  (merge commit `b8866e2`) on `main`. Verified end to end, not just green CI: the merge triggered a
+  real production deployment, watched to completion (`Queued` -> `Building` -> `Ready` in ~6
+  minutes, `dpl_38Y7QHEa9g47R7hfLJvBKMSdDPZB`), and independently confirmed live via `vercel inspect
+  landing.triaxisventures.com` (aliased to the new `Ready` deployment) and a direct `curl` returning
+  `HTTP 307` (normal, not an error). Full incident writeup:
+  `docs/readiness/LOCKFILE_DEPLOY_PIPELINE_INCIDENT_CLOSEOUT_2026_08_06.md`. Two things this fix
+  does **not** close, named there: the pre-existing Vitest worker crash (unrelated, still open) and
+  a separate, pre-existing Playwright failure (`Sprint 27/29 Pilot Acceptance Gate`) surfaced while
+  triaging this PR's checks.
 - GitLab Duo Code Review's enablement is confirmed as of 2026-08-06 -- see the section above.
 - The local Windows Scheduled Task only runs while this specific machine exists and (per its `Interactive` logon type) generally while a user session is active on it -- it is not a cloud-hosted, always-on mechanism. If this machine is offline, nothing runs.
 - No mechanism here alerts a human when a scheduled run fails -- the local task logs to a local file (`.cache/post-sprint-automation/`) that must be checked manually; GitLab CI failures are visible in GitLab's UI but nothing pages anyone.
