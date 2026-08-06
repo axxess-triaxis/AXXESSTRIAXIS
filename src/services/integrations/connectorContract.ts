@@ -193,10 +193,15 @@ const connectorContracts: Record<ConnectorProviderId, ConnectorContract> = {
     // string) is not registered as an allowed OAuth Redirect URL on the Zoom App Marketplace app
     // itself -- a Zoom-dashboard-side registration gap, not independently confirmed since this
     // repository has no Zoom Marketplace access. **Exact HITL action needed:** Zoom App Marketplace
-    // -> Develop -> the app matching this connector's client_id -> App Credentials/OAuth ->
-    // Redirect URL for OAuth -> add exactly `https://landing.triaxisventures.com/api/connectors/
-    // oauth/callback?provider=zoom` (protocol, host, path, and query string all exact) -> Save,
-    // then retest "Connect Zoom" end to end. Status downgraded back to open pending that fix.
+    // -> Develop -> the app with client ID `EqhNb7X8TyCvaSlZFtebg` (founder-stated 2026-08-06 as the
+    // correct client ID for this integration -- note this differs from `pwdEZP8NTEy_JUvBYAoTBg`,
+    // the client_id that appeared in the live browser URL bar during the earlier reproduction of
+    // this bug; not reconciled from this repository, since ZOOM_CLIENT_ID's actual production value
+    // cannot be read from here -- HITL should confirm which app the production credential points at
+    // before editing redirect URLs) -> App Credentials/OAuth -> Redirect URL for OAuth -> add
+    // exactly `https://landing.triaxisventures.com/api/connectors/oauth/callback?provider=zoom`
+    // (protocol, host, path, and query string all exact) -> Save, then retest "Connect Zoom" end to
+    // end. Status downgraded back to open pending that fix.
     requiredScopes: ["meeting:write", "meeting:read"],
     webhookSupported: true,
     tenantOwned: true,
