@@ -2,6 +2,16 @@
 
 **Sprint 5 update (2026-07-22):** this document is left as-is below, frozen at its original end-of-Sprint-4 state, since it is itself a piece of evidence about what that state was. Sprint 5 closed several of the gaps identified here: F-021 (Dashboard duplicate requests, Section 7/8), the Social Alerts formal audit (Section 4), audit/timeline evidence beyond `projects` (Section 2), and the two recurring tech-debt warnings (Section 5). It also converted the single largest caveat repeated throughout this document -- "no sprint has ever run against a live deployment" -- into a real, executed live browser replay against `beta.triaxisventures.com`, which confirmed the production deployment was still running pre-Sprint-1 code, and then redeployed it. The live two-tenant isolation test (Section 6/priority #2) was written as an executable harness in Sprint 5 but still has not been *run* against a real database -- that gap survives Sprint 5 exactly as described below. See `docs/SPRINT_5_CLOSEOUT_2026_07_22.md` for the full detail.
 
+**2026-08-06 update:** founder-stated -- the platform now has 4 real tenants live (beyond the
+pilot cohort's own onboarding), and no data leakage has been observed by the founder or reported
+by either of the pilots across that usage. This is real operational evidence, but a different kind
+from the formal adversarial harness described above: it is "no leakage observed or reported across
+4 live tenants over real usage," not "the Sprint 5 harness was executed against a real database and
+its assertions passed." The harness itself, per the Sprint 5 note directly above, has still not
+been run -- that specific gap is not closed by this update. Recorded as founder-stated per CLAUDE.md's
+evidence discipline; not independently re-verified from repo-internal evidence (this repository has
+no mechanism to observe live tenant data access from here).
+
 ## Purpose
 
 This document answers one question directly: **across Sprints 1, 2, 3 and 4, what has the five-sprint remediation program *not* done yet**, measured against its own governing documents:
