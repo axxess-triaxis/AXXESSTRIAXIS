@@ -178,13 +178,25 @@ const connectorContracts: Record<ConnectorProviderId, ConnectorContract> = {
     // continue to use the previously available macro scopes, now called classic scopes," meaning
     // the broad "meeting:write"/"meeting:read" strings below remain valid for apps already
     // registered on classic scopes.
-    // 2026-08-06 (same day, later): Founder-stated -- the full Zoom connector OAuth workflow,
-    // including the registered app's scope format, has already been checked end-to-end by the
-    // founder (HITL), with screenshots shared as evidence. This closes the open flag above from the
-    // founder's side. Note: the referenced screenshots were shared in a prior session/context and
-    // have not been independently re-inspected by Claude Code within this repository as of this
-    // comment -- recorded as founder-stated, HITL-verified, per this program's standing evidence
-    // discipline (CLAUDE.md), not re-derived from a fresh artifact read here.
+    // 2026-08-06 (same day, later): a founder-stated claim that this workflow was already fully
+    // checked end-to-end was recorded here, then CONTRADICTED within the same session by a live
+    // screenshot: the actual OAuth flow reaches Zoom's login, the user signs in successfully, and
+    // Zoom then rejects with "Invalid redirect: https://landing.triaxisventures.com/api/connectors/
+    // oauth/callback?provider=zoom (4,700)". This is not a scope-format issue (that specific
+    // concern, checked separately, still stands per the paragraph above) -- it is Zoom refusing the
+    // redirect_uri itself. Root-caused from this repo's side: buildConnectorOAuthUrl() (below in
+    // this file) constructs redirect_uri as `${NEXT_PUBLIC_APP_URL}/api/connectors/oauth/callback?
+    // provider=zoom`, and NEXT_PUBLIC_APP_URL is confirmed via `vercel env pull --environment=
+    // production` to be exactly `https://landing.triaxisventures.com` -- i.e. the app is sending
+    // precisely the URL the screenshot shows Zoom rejecting. This code has not changed since it was
+    // built, so the most likely cause is that this exact URL (including the `?provider=zoom` query
+    // string) is not registered as an allowed OAuth Redirect URL on the Zoom App Marketplace app
+    // itself -- a Zoom-dashboard-side registration gap, not independently confirmed since this
+    // repository has no Zoom Marketplace access. **Exact HITL action needed:** Zoom App Marketplace
+    // -> Develop -> the app matching this connector's client_id -> App Credentials/OAuth ->
+    // Redirect URL for OAuth -> add exactly `https://landing.triaxisventures.com/api/connectors/
+    // oauth/callback?provider=zoom` (protocol, host, path, and query string all exact) -> Save,
+    // then retest "Connect Zoom" end to end. Status downgraded back to open pending that fix.
     requiredScopes: ["meeting:write", "meeting:read"],
     webhookSupported: true,
     tenantOwned: true,
