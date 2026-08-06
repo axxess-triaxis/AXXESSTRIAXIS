@@ -173,6 +173,14 @@ const connectorContracts: Record<ConnectorProviderId, ConnectorContract> = {
     // against the Zoom App Marketplace's current scope list for the specific app type registered
     // (Server-to-Server OAuth vs. General OAuth) before this goes live. Not independently verified
     // against live Zoom docs in this change.
+    // 2026-08-06: partially checked against Zoom's live developer docs
+    // (developers.zoom.us/docs/integrations/oauth-scopes/) -- Zoom confirms "existing apps will
+    // continue to use the previously available macro scopes, now called classic scopes," meaning
+    // the broad "meeting:write"/"meeting:read" strings below remain valid for apps already
+    // registered on classic scopes. Still not fully closeable from here: whether the specific Zoom
+    // app registered for this integration is on classic or granular scopes is Zoom-Marketplace-side
+    // state this repository cannot see, so the flag stays until a founder/HITL check of the actual
+    // registered app confirms which scope format it needs.
     requiredScopes: ["meeting:write", "meeting:read"],
     webhookSupported: true,
     tenantOwned: true,
