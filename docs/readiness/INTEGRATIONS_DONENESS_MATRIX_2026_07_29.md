@@ -24,7 +24,7 @@ of a completed, successful live test.
 
 | Connector | Doneness | Evidence |
 |---|---|---|
-| Zoom | 90% (founder-stated) | `ZOOM_CLIENT_ID`/`SECRET` set; founder live-tested "Connect Zoom" and the resulting Zoom sign-in URL confirms our authorize-request is correctly formed (right client_id, redirect_uri, state, scopes) -- Zoom accepted it, and the user can sign in successfully. **2026-08-06:** a founder-stated closure was recorded then reopened the same day by a live screenshot -- after sign-in, Zoom rejects with "Invalid redirect: `https://landing.triaxisventures.com/api/connectors/oauth/callback?provider=zoom` (4,700)". Same failure class already seen with Google Calendar/Drive below (redirect URI not registered/mismatched on the provider's side). Full diagnosis in `src/services/integrations/connectorContract.ts` next to the `zoom` contract. **2026-08-06, later same day -- founder-stated resolved:** "Zoom issue solved." Screenshot shown is Zoom's own account home page (signed-in Workplace Basic dashboard), confirming Zoom sign-in succeeds; it does not itself show the AXXESS-side callback landing (`landing.triaxisventures.com/integrations?provider=zoom&status=connected`) that would prove a completed token exchange. Held at 90%, not 100%, until that specific landing page is confirmed. Recorded as founder-stated, not independently reproduced from this repository. |
+| Zoom | 60% | `ZOOM_CLIENT_ID`/`SECRET` set; founder live-tested "Connect Zoom," reached Zoom's real login. **2026-08-06, reopened a second time:** a fresh screenshot of an actual "Connect Zoom" click from Settings > Integrations reproduced the identical "Invalid redirect" failure with the identical old `client_id` (`pwdEZP8NTEy_JUvBYAoTBg`). **Root cause confirmed -- not a Zoom Marketplace problem:** `vercel inspect landing.triaxisventures.com` shows the live deployment was built 2026-08-05 11:58 IST, and every deploy since has failed on the `@capacitor/app` lockfile mismatch (see `docs/AUTOMATION_OVERVIEW.md`). Vercel bakes env vars in at build time, so the corrected `ZOOM_CLIENT_ID` sitting in Vercel's dashboard cannot reach production until that lockfile bug is fixed and a deploy succeeds. This connector is blocked on the same fix as `task_7f4d6851`, not a separate issue. Full diagnosis in `src/services/integrations/connectorContract.ts` next to the `zoom` contract. |
 | Google Calendar (+ Meet) | 30% | Credentials complete (`GOOGLE_CLIENT_ID`/`SECRET`/`AXXESS_TOKEN_VAULT_KEY` all set). `redirect_uri_mismatch` fix identified. **New blocker found same day, not yet fixed:** even once redirect URI is corrected, Google's own consent screen returns `Error 403: access_denied` -- the OAuth Client is in "Testing" publishing status with no Test users added. See A-75 |
 | Google Drive | 30% | Same as Google Calendar -- same credentials, same two sequential blockers (`redirect_uri_mismatch`, then Google's Testing-mode access_denied), same fixes pending |
 | Gmail (connector, distinct from Gmail email/password sign-in) | Unconfirmed | Pre-existing from before this session ("already real" per earlier program history), not re-tested live in this session. Given the same exact-match redirect URI requirement just discovered for Calendar/Drive, its own `?provider=gmail` redirect URI may or may not already be registered -- not verified either way this session |
@@ -127,6 +127,11 @@ direct evidence wins when they conflict.
 
 **2026-08-06, later same day:** founder-stated Zoom is now resolved ("Zoom issue solved"), evidenced
 by a screenshot of Zoom's own signed-in account page rather than the AXXESS-side connected-callback
-landing page specifically -- see the Zoom row above. Held at 90%, not moved into the "Two meet the
-100% bar" opening sentence, pending that specific confirmation. Google Calendar/Drive remain
+landing page specifically. **Reopened again within the hour** -- a fresh screenshot of an actual
+"Connect Zoom" click reproduced the identical failure. Root cause now confirmed and it changes the
+whole picture: this was never really about Zoom Marketplace registration -- the live production
+deployment is stale (last successful build predates the corrected `ZOOM_CLIENT_ID`, and every deploy
+since has failed on the unrelated `@capacitor/app` lockfile bug), so the corrected credential
+literally cannot reach production yet. See the Zoom row above and
+`src/services/integrations/connectorContract.ts` for the full chain. Google Calendar/Drive remain
 unresolved and untouched by this update.
