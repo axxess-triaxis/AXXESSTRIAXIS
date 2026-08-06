@@ -81,4 +81,13 @@ describe("IntegrationsSection (Sprint 3 -- does not hang, no raw backend error t
     expect(source).toContain('"microsoft" in connectedProviders ? <ConnectedBadge connectedAt={connectedProviders.microsoft} /> : null');
     expect(source).toContain('"notion" in connectedProviders ? <ConnectedBadge connectedAt={connectedProviders.notion} /> : null');
   });
+
+  it("A-98 (2026-08-06): the Pilot Integrations and Enterprise Data & Billing catalogue grids show just icon and name -- no status badge, category label, or self-description text", () => {
+    expect(source).not.toContain('{plugin.configured ? "configured" : "gated"}');
+    expect(source).not.toContain("{plugin.useCases.join(\" - \")}");
+    expect(source).not.toContain("{plugin.category}");
+    expect(source).not.toContain('status === "configured" ? "configured" : status === "revoked" ? "revoked" : "not configured"');
+    expect(source).not.toContain("{provider.purpose}</p>");
+    expect(source).not.toContain("{provider.category}");
+  });
 });
