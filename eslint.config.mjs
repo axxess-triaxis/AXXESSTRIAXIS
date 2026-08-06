@@ -16,6 +16,7 @@ const eslintConfig = defineConfig([
       ".next/**",
       ".agents/**",
       ".cache/**",
+      ".claude/worktrees/**",
       ".pnpm-store/**",
       "dist/**",
       "node_modules/**",
