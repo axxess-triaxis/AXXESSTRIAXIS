@@ -15,6 +15,12 @@ const scanRoots = [
   // meant to be genuinely portable (no X0/demo coupling) is exactly where that coupling must never
   // creep in.
   "packages/features-lite",
+  // 2026-08-06: packages/core holds the domain/repository/service type layer extracted out of
+  // src/ (see AXXESS_LITE_VERCEL_PROJECT_SETUP_2026_08_05.md's "Extraction path to genuine Option
+  // B"). Unlike packages/features-lite, this package is shared by BOTH X0 and Lite -- it is
+  // scanned here for the same reason: a package meant to be genuinely universal must never absorb
+  // X0-only or demo-only coupling, since Lite depends on that purity holding.
+  "packages/core",
 ];
 
 const requiredPaths = [
@@ -23,6 +29,7 @@ const requiredPaths = [
   "apps/lite-web/package.json",
   "apps/mobile-lite-capacitor/capacitor.config.ts",
   "packages/features-lite/package.json",
+  "packages/core/package.json",
 ];
 
 const forbiddenPatterns = [
