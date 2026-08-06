@@ -18,7 +18,7 @@ of a completed, successful live test.
 | **Phone/SMS OTP (Twilio)** | **100%** | Founder: **"Twilio - OTP works."** Supabase settings confirm `phone: true`, `sms_provider: "twilio"`. |
 | **Google sign-in** | **100%** | Three sequential defects (redirect_uri_mismatch, Vercel Deployment Protection wall, Supabase credential-mapping error) all found and fixed same day. Founder confirmed a full Google sign-in now completes end to end. See A-26/A-73 |
 | Microsoft sign-in | 0% | Confirmed disabled: `azure: false` in Supabase settings, no `MICROSOFT_CLIENT_ID`/`SECRET` set anywhere |
-| Sign in with Zoom (Supabase's built-in social provider) | Unclear | Supabase settings show `zoom: true` -- but this is a *login-identity* provider, unrelated to the Zoom *connector* below. Never discussed as an intended feature; worth confirming whether this was deliberately enabled or should be turned off |
+| Sign in with Zoom (Supabase's built-in social provider) | Accidental, unresolved | Supabase settings show `zoom: true` -- but this is a *login-identity* provider, unrelated to the Zoom *connector* below. **2026-08-06 founder-stated:** enabled by accident, from a separate open browser tab while working on something else -- not an intended feature. **Not yet turned off** -- flipping a live Supabase Auth provider setting is a real production auth-config change and hasn't been done from this pass; still live as of this note |
 
 ## Tenant-Owned Meeting/Scheduling/Storage Connectors (built this session, Sprint SI-1)
 
