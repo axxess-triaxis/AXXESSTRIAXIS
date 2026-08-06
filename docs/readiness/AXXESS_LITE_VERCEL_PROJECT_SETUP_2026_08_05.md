@@ -22,6 +22,7 @@ Two implementation shapes were considered for X Lite Web, per this sprint's own 
 ## Proposed Vercel Project
 
 - **Name:** `triaxis-product-lite-web` (founder later reported this project has been created/deployed; not independently verified by this document).
+  **2026-08-06 closure:** now independently verified. `npx vercel project ls` (Vercel CLI, authenticated) lists `triaxis-product-lite-web` with Latest Production URL `https://lite.triaxisventures.com`, and `npx vercel alias ls` shows `lite.triaxisventures.com` aliased to a `triaxis-product-lite-*.vercel.app` deployment. A direct `curl -s -D - https://lite.triaxisventures.com` independently confirms `HTTP/1.1 307`, `Server: Vercel`, and an `X-Vercel-Id` header, i.e. the domain is live and actually served by this Vercel project, not just configured. This closes the "not independently verified" caveat; the project's Vercel-dashboard-only settings (e.g. host-restriction toggles not expressible via CLI) remain out of scope for this note.
 - **Framework:** Next.js (same as the two existing projects).
 - **Root directory:** `.` (repo root -- same codebase as X0/Investor Demo; Option A means there is no separate app subdirectory to point at).
 - **Build command:** `pnpm run build` (same as `triaxis-www-frontend-import`/`triaxis-product-investor-demo`; no Lite-specific build exists this sprint -- see the "known gap" note above and this sprint's decision not to fabricate a fake-distinct `lite:build` script, per this program's standing rule against checklist-theater/stat-padding).

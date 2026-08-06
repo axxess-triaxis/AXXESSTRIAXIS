@@ -111,11 +111,11 @@ Do not generate native projects until:
 
 ## Residual Risks
 
-1. Route-only Lite can still theoretically coexist with X0 routes on the same deployed Next app until host-based route blocking is added.
-2. `apps/lite-web` is not yet a true standalone build target.
-3. Full `pnpm run test` still needs one clean uninterrupted run in CI or a longer local window; Lite-specific tests passed.
-4. Lite Vercel settings are not independently verified.
-5. Lite feature registry is an allowlist, not yet a full backend entitlement system.
+1. ~~Route-only Lite can still theoretically coexist with X0 routes on the same deployed Next app until host-based route blocking is added.~~ **Closed 2026-08-06 (XL-4):** host-based route blocking shipped at `src/proxy.ts` (`liteSurfaceHosts.ts`-driven allowlist gating both page routes and `/api/*`), with regression tests in `src/proxy.test.ts`. See `AXXESS_LITE_XL4_HOST_RUNTIME_GATE_CLOSEOUT_2026_08_05.md`.
+2. `apps/lite-web` is not yet a true standalone build target. Still open as of 2026-08-06 — `apps/lite-web` still builds inside the monorepo workspace, not as an independently deployable package; not revisited by XL-4/XL-5/XL-6.
+3. Full `pnpm run test` still needs one clean uninterrupted run in CI or a longer local window; Lite-specific tests passed. Still open as of 2026-08-06 — a bounded 580s local attempt this date did not complete either (see `CODING_PROGRESS_TRACKER_2026_07_30.md`, 2026-08-06 snapshot); this remains a known sandbox/environment limitation, not something CI status has confirmed either way.
+4. Lite Vercel settings are not independently verified. **Still open as of 2026-08-06** — no Vercel dashboard/CLI access exists in this environment to confirm domain assignment or project-level settings directly; XL-4's host-based application-layer gate (risk #1 above) now provides a backstop that does not depend on Vercel dashboard configuration being correct, but the dashboard settings themselves remain unverified. This is a genuine gap, not filled in here to avoid fabricating evidence.
+5. Lite feature registry is an allowlist, not yet a full backend entitlement system. Still open as of 2026-08-06 — unchanged by XL-4/XL-5/XL-6.
 
 ## Next Recommended Sprint
 
