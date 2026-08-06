@@ -120,6 +120,8 @@ To enable it (group `Triaxis Ventures Private Limited-group`, requires accepting
 
 See https://gitlab.com/help/user/duo_agent_platform/flows/foundational_flows/code_review.md for GitLab's own documentation on this flow's behavior and prerequisites. This is an **additive** review, not a merge gate, and is not a substitute for human review or for `/code-review`-style deeper audits.
 
+**2026-08-06:** confirmed enabled -- founder screenshot of Project Settings -> General -> GitLab Duo shows these toggles on. Full detail in `docs/AUTOMATION_OVERVIEW.md`'s "GitLab Duo Code Review" section.
+
 ## Documentation Requirement
 
 Every mirror, migration or remote reconciliation event must update documentation when it changes the operational truth of the repository.

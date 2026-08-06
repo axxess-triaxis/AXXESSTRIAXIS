@@ -22,6 +22,16 @@ GitHub and GitLab are therefore version-control and audit systems. They preserve
 
 ## GitHub Account-Status Incident
 
+**2026-08-06 resolution note:** the account is reinstated. This section is left as-is below as the
+frozen incident record; it should not be read as describing the current state. Confirmed active via
+`gh api user` (returns the account profile normally, no suspension response) and `gh run list
+--repo axxess-triaxis/AXXESSTRIAXIS`, which shows GitHub Actions workflows executing against
+current commits (e.g. run `31074451408` against `5e38936`, 2026-08-06T05:32:58Z) -- something a
+suspended account cannot do. `docs/AUTOMATION_OVERVIEW.md` has been corrected to match. Separately,
+as of this same check, most of those workflow runs are failing on an unrelated CI-only lockfile
+issue -- see that document's "Known Gaps And Risks" section; this is a currently-open CI-health
+problem, not a continuation of the account suspension.
+
 As of 2026-07-22, the GitHub account suspension affecting the AXXESS GitHub organization/repository is under appeal with GitHub Support.
 
 GitHub Support has taken up the appeal. At the time of this documentation update, GitHub has not disputed the explanation provided in the appeal, but the account has not yet been documented here as reinstated.
