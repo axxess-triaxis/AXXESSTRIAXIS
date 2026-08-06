@@ -353,6 +353,11 @@ No cards moved yet.
   is Zoom-Marketplace-side state not visible from this repository, so this stays flagged until a
   founder/HITL check of the registered app confirms it. See the same note now in
   `src/services/integrations/connectorContract.ts` next to `requiredScopes`.
+  **2026-08-06 (same day, later) closure:** founder-stated -- the full Zoom connector OAuth
+  workflow, including the registered app's scope format, has already been checked end-to-end by the
+  founder (HITL), with screenshots shared as evidence. Recorded as founder-stated/HITL-verified per
+  CLAUDE.md's evidence discipline; the referenced screenshots were shared outside this conversation
+  and have not been independently re-inspected here.
 - Evidence added: `docs/readiness/SETTINGS_ADMIN_SI1_CLOSEOUT_2026_07_29.md`
 - HITL decision: requested -- register OAuth apps for Google Calendar (add the Calendar scope to
   the existing Google app), Zoom (new app), and Microsoft Teams (add scopes to the existing

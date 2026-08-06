@@ -24,7 +24,7 @@ of a completed, successful live test.
 
 | Connector | Doneness | Evidence |
 |---|---|---|
-| Zoom | 60% | `ZOOM_CLIENT_ID`/`SECRET` set; founder live-tested "Connect Zoom" and the resulting Zoom sign-in URL confirms our authorize-request is correctly formed (right client_id, redirect_uri, state, scopes) -- Zoom accepted it. **Full round trip (sign-in + consent + landing back connected) not yet confirmed by the founder** |
+| Zoom | 100% (founder-stated) | `ZOOM_CLIENT_ID`/`SECRET` set; founder live-tested "Connect Zoom" and the resulting Zoom sign-in URL confirms our authorize-request is correctly formed (right client_id, redirect_uri, state, scopes) -- Zoom accepted it. **2026-08-06 closure:** founder-stated the full round trip (sign-in + consent + landing back connected), including the registered app's OAuth scope format, has been checked end-to-end by the founder (HITL), with screenshots shared as evidence. Recorded as founder-stated/HITL-verified per CLAUDE.md's evidence discipline; the referenced screenshots were shared outside this conversation and have not been independently re-inspected here. |
 | Google Calendar (+ Meet) | 30% | Credentials complete (`GOOGLE_CLIENT_ID`/`SECRET`/`AXXESS_TOKEN_VAULT_KEY` all set). `redirect_uri_mismatch` fix identified. **New blocker found same day, not yet fixed:** even once redirect URI is corrected, Google's own consent screen returns `Error 403: access_denied` -- the OAuth Client is in "Testing" publishing status with no Test users added. See A-75 |
 | Google Drive | 30% | Same as Google Calendar -- same credentials, same two sequential blockers (`redirect_uri_mismatch`, then Google's Testing-mode access_denied), same fixes pending |
 | Gmail (connector, distinct from Gmail email/password sign-in) | Unconfirmed | Pre-existing from before this session ("already real" per earlier program history), not re-tested live in this session. Given the same exact-match redirect URI requirement just discovered for Calendar/Drive, its own `?provider=gmail` redirect URI may or may not already be registered -- not verified either way this session |
@@ -112,5 +112,10 @@ registrar/DNS), not a tenant-facing product integration. Not scored here.
 **Google sign-in** (resolved same day, after three sequential defects were found and fixed).
 Everything else is somewhere between "not configured at all" and "credentials complete, live test
 in progress or actively failing" -- none of the rest has both a completed real-workflow use and
-founder certification yet, including Zoom and Google Calendar/Drive, which made real progress this
-session but are not yet fully working end to end.
+founder certification yet, including Google Calendar/Drive, which made real progress this session
+but is not yet fully working end to end.
+
+**2026-08-06 update:** add **Zoom** to the list meeting the 100% bar -- founder-stated the full
+round trip (sign-in + consent + landing back connected) has been checked end-to-end, with
+screenshots shared as evidence (not independently re-inspected within this conversation; recorded
+per CLAUDE.md's founder-stated evidence discipline). See the Zoom row above for detail.
