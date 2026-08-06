@@ -102,7 +102,26 @@ Be precise about this list -- it is the part most likely to be silently assumed 
 
 ## Known Gaps And Risks
 
-- GitHub Actions coverage (11 workflows, including Playwright E2E, RAG release gate, pilot golden-path gate, and mobile visual regression) has **no GitLab equivalent**. **2026-08-06: GitHub is not suspended and these DO run now, but as of the latest push (`5e38936`) 10 of 11 are failing** on `[ERR_PNPM_LOCKFILE_MISSING_DEPENDENCY] Broken lockfile: no entry for '@capacitor/app@7.1.2(@capacitor/core@7.6.7)' in pnpm-lock.yaml` during `pnpm install --frozen-lockfile`. This is CI-runner-specific: the identical command (`corepack pnpm install --frozen-lockfile`) succeeds cleanly on the local Windows dev machine against the same commit, and the lockfile has carried this exact entry since commit `bdbd4ec` (XL-5, 2026-08-05). Root cause not yet confirmed (candidate: a Linux-runner-specific pnpm dependency-resolution difference from the Windows machine that generated the lockfile) -- flagged here rather than guessed at further. Every gate downstream of this install step (Security Gates, RAG Release Gate, Pilot Golden Path, Mobile Store Release Readiness, Playwright E2E, Mobile Visual Regression, Repository Quality) is currently red because of this single shared failure, not because of 7 independent problems.
+- GitHub Actions coverage (11 workflows, including Playwright E2E, RAG release gate, pilot golden-path gate, and mobile visual regression) has **no GitLab equivalent**. **2026-08-06: GitHub is not suspended and these DO run now, but as of the latest push (`5e38936`) 10 of 11 are failing** on `[ERR_PNPM_LOCKFILE_MISSING_DEPENDENCY] Broken lockfile: no entry for '@capacitor/app@7.1.2(@capacitor/core@7.6.7)' in pnpm-lock.yaml` during `pnpm install --frozen-lockfile`. This is CI-runner-specific: the identical command (`corepack pnpm install --frozen-lockfile`) succeeds cleanly on the local Windows dev machine against the same commit, and the lockfile has carried this exact entry since commit `bdbd4ec` (XL-5, 2026-08-05). Every gate downstream of this install step (Security Gates, RAG Release Gate, Pilot Golden Path, Mobile Store Release Readiness, Playwright E2E, Mobile Visual Regression, Repository Quality) is currently red because of this single shared failure, not because of 7 independent problems.
+  **2026-08-06, root cause confirmed and severity raised:** this is not CI-only -- it also breaks
+  live **Vercel production deploys**. `npx vercel ls triaxis-www-frontend-import --prod` shows the 2
+  most recent production deployment attempts (9m and 10m old at time of check) both `● Error`; `npx
+  vercel inspect <url> --logs` on the latest one shows the identical
+  `[ERR_PNPM_LOCKFILE_MISSING_DEPENDENCY]` failure during `pnpm install --frozen-lockfile`, on
+  `main` (commit `b43e30d`), meaning **new commits to `main` are not going live right now** -- the
+  site is serving whatever the last successful deploy (`main`, ~1 day old at time of check) happened
+  to contain. Exact root cause found by diffing `main`'s checked-in files: `git show
+  origin/main:apps/mobile-lite-capacitor/package.json` declares `"@capacitor/app": "7.1.2"`, but
+  `git show origin/main:pnpm-lock.yaml` only resolves `@capacitor/app@8.1.1` -- a genuine
+  package.json/lockfile version mismatch, not a phantom Linux-vs-Windows resolution difference as
+  originally guessed. The same mismatch is present on `canonical/sprint-1-35-unified-gitlab` (16
+  commits ahead of `main` as of this note) -- `main` is not a separately-drifted copy, both branches
+  carry the same underlying error. Fix: regenerate the lockfile (`pnpm install --no-frozen-lockfile`
+  or explicitly bump/pin `@capacitor/app` to match) so `pnpm-lock.yaml`'s resolved version agrees
+  with `package.json`'s declared version, then commit and redeploy both `main` and the working
+  branch. A background task (chip `task_7f4d6851`, "Fix GitHub Actions frozen-lockfile CI failure")
+  is already investigating this from the GitHub Actions angle -- this Vercel-production-deploy
+  finding should be folded into that same fix rather than worked separately.
 - GitLab Duo Code Review's enablement is confirmed as of 2026-08-06 -- see the section above.
 - The local Windows Scheduled Task only runs while this specific machine exists and (per its `Interactive` logon type) generally while a user session is active on it -- it is not a cloud-hosted, always-on mechanism. If this machine is offline, nothing runs.
 - No mechanism here alerts a human when a scheduled run fails -- the local task logs to a local file (`.cache/post-sprint-automation/`) that must be checked manually; GitLab CI failures are visible in GitLab's UI but nothing pages anyone.
