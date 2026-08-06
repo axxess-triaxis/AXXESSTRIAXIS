@@ -362,6 +362,12 @@ No cards moved yet.
   `src/services/integrations/connectorContract.ts` next to the `zoom` contract's `requiredScopes`.
   Status: open, blocked on a Zoom App Marketplace dashboard change (Zoom-side redirect URL
   registration), not a code fix.
+  **2026-08-06, later same day -- founder-stated resolved:** "Zoom issue solved." Screenshot shown
+  is Zoom's own account home page (signed-in Workplace Basic dashboard), confirming Zoom sign-in
+  succeeds; it does not itself show the AXXESS-side callback landing
+  (`landing.triaxisventures.com/integrations?provider=zoom&status=connected`) that would prove a
+  completed token exchange. Recorded as founder-stated closure per CLAUDE.md's evidence discipline,
+  not independently reproduced from this repository.
 - Evidence added: `docs/readiness/SETTINGS_ADMIN_SI1_CLOSEOUT_2026_07_29.md`
 - HITL decision: requested -- register OAuth apps for Google Calendar (add the Calendar scope to
   the existing Google app), Zoom (new app), and Microsoft Teams (add scopes to the existing
