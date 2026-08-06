@@ -202,14 +202,21 @@ const connectorContracts: Record<ConnectorProviderId, ConnectorContract> = {
     // exactly `https://landing.triaxisventures.com/api/connectors/oauth/callback?provider=zoom`
     // (protocol, host, path, and query string all exact) -> Save, then retest "Connect Zoom" end to
     // end. Status downgraded back to open pending that fix.
-    // 2026-08-06, later same day -- founder-stated resolved: "Zoom issue solved." Screenshot shown
-    // is Zoom's own account home page (zoom.us, signed-in Workplace Basic plan dashboard), which
-    // confirms Zoom sign-in succeeds but does not itself show the AXXESS-side callback landing
-    // (`landing.triaxisventures.com/integrations?provider=zoom&status=connected`, the marker
-    // `oauth/callback/route.ts` uses to prove a completed token exchange). Recorded as
-    // founder-stated closure per CLAUDE.md's evidence discipline -- the specific redirect-rejection
-    // screenshotted earlier is not independently reproduced as fixed from this repository, since
-    // that would require a real Zoom OAuth round trip this environment cannot perform.
+    // 2026-08-06, later same day -- founder-stated resolved, then REOPENED within the hour by a
+    // fresh screenshot of the actual "Connect Zoom" click from Settings > Integrations: identical
+    // failure, identical client_id (`pwdEZP8NTEy_JUvBYAoTBg`, not `EqhNb7X8TyCvaSlZFtebg`).
+    // **Root cause now confirmed, and it is not a Zoom Marketplace registration problem at all:**
+    // `npx vercel inspect landing.triaxisventures.com` shows the live deployment
+    // (`dpl_8pVFjyM7TQc6qwR34ToDPwdp5SVU`) was built 2026-08-05 11:58 IST -- the same "last
+    // successful deploy" already identified in `docs/AUTOMATION_OVERVIEW.md`'s lockfile-bug note.
+    // Vercel bakes non-`NEXT_PUBLIC_` env vars into the deployment at build time; updating
+    // `ZOOM_CLIENT_ID` in the dashboard does not change what an already-built deployment sends until
+    // a new deployment succeeds. Every deployment attempt since 2026-08-05 has failed on the
+    // `@capacitor/app` lockfile mismatch. So the live site is still running the old client_id
+    // regardless of what Vercel's env var currently holds -- **this will not be fixable by editing
+    // Zoom Marketplace redirect URLs until the lockfile bug is fixed and a fresh deploy succeeds.**
+    // Tracked together with the lockfile fix (background task `task_7f4d6851`), not as a separate
+    // item. Status: reopened.
     requiredScopes: ["meeting:write", "meeting:read"],
     webhookSupported: true,
     tenantOwned: true,
