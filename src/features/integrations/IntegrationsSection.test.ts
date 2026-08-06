@@ -66,4 +66,19 @@ describe("IntegrationsSection (Sprint 3 -- does not hang, no raw backend error t
     expect(source).toContain("need your approval the first time");
     expect(source).toContain("void revokeToolGrant(connection.id, grant.id)");
   });
+
+  it("A-97 (2026-08-06): reads the OAuth callback's provider/status/reason query params and surfaces a real toast instead of leaving the page looking unchanged after a successful connect", () => {
+    expect(source).toContain("window.location.search");
+    expect(source).toContain('status === "connected"');
+    expect(source).toContain('status === "not_configured"');
+    expect(source).toContain("window.history.replaceState(null, \"\", window.location.pathname)");
+  });
+
+  it("A-97 (2026-08-06): fetches real per-provider connected state from /api/connectors/status and shows a Connected badge instead of relying on a side effect like 'Load Microsoft inbox' succeeding", () => {
+    expect(source).toContain('fetch("/api/connectors/status?provider=gmail&provider=microsoft&provider=notion"');
+    expect(source).toContain("function ConnectedBadge(");
+    expect(source).toContain('"gmail" in connectedProviders ? <ConnectedBadge connectedAt={connectedProviders.gmail} /> : null');
+    expect(source).toContain('"microsoft" in connectedProviders ? <ConnectedBadge connectedAt={connectedProviders.microsoft} /> : null');
+    expect(source).toContain('"notion" in connectedProviders ? <ConnectedBadge connectedAt={connectedProviders.notion} /> : null');
+  });
 });

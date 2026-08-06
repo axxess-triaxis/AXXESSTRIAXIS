@@ -57,6 +57,8 @@ export default defineConfig({
     alias: {
       "@": fromRoot("./src"),
       "@axxess/shared": fromRoot("./packages/shared/src/index.ts"),
+      "@axxess/features-lite": fromRoot("./packages/features-lite/src/index.ts"),
+      "@axxess/core": fromRoot("./packages/core/src/index.ts"),
     },
   },
 });

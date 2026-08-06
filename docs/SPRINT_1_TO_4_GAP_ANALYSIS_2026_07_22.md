@@ -2,6 +2,35 @@
 
 **Sprint 5 update (2026-07-22):** this document is left as-is below, frozen at its original end-of-Sprint-4 state, since it is itself a piece of evidence about what that state was. Sprint 5 closed several of the gaps identified here: F-021 (Dashboard duplicate requests, Section 7/8), the Social Alerts formal audit (Section 4), audit/timeline evidence beyond `projects` (Section 2), and the two recurring tech-debt warnings (Section 5). It also converted the single largest caveat repeated throughout this document -- "no sprint has ever run against a live deployment" -- into a real, executed live browser replay against `beta.triaxisventures.com`, which confirmed the production deployment was still running pre-Sprint-1 code, and then redeployed it. The live two-tenant isolation test (Section 6/priority #2) was written as an executable harness in Sprint 5 but still has not been *run* against a real database -- that gap survives Sprint 5 exactly as described below. See `docs/SPRINT_5_CLOSEOUT_2026_07_22.md` for the full detail.
 
+**2026-08-06 update:** founder-stated -- the platform now has 4 real tenants live (beyond the
+pilot cohort's own onboarding), and no data leakage has been observed by the founder or reported
+by either of the pilots across that usage. This is real operational evidence, but a different kind
+from the formal adversarial harness described above: it is "no leakage observed or reported across
+4 live tenants over real usage," not "the Sprint 5 harness was executed against a real database and
+its assertions passed." The harness itself, per the Sprint 5 note directly above, has still not
+been run -- that specific gap is not closed by this update. Recorded as founder-stated per CLAUDE.md's
+evidence discipline; not independently re-verified from repo-internal evidence (this repository has
+no mechanism to observe live tenant data access from here).
+
+**2026-08-06, later same day -- the harness itself was finally executed.** Run `mshjon07`,
+`node scripts/verify-two-tenant-isolation.mjs`, against the real production Supabase project
+(`vnliomnfabaicvvvfwia.supabase.co`) backing `landing.triaxisventures.com` -- the same one the 5
+real tenants use. Two throwaway test tenants, two real Supabase Auth users, real access tokens,
+real RLS policies deciding the outcome, exactly as designed. Full detail and evidence chain in
+`docs/readiness/TWO_TENANT_ISOLATION_HARNESS_EXECUTION_2026_08_06.md`. Summary: 4 of 6 required
+resource types (`projects`, `tasks`, `documents`, `audit_logs`) were fully tested and **all four
+passed cleanly** -- tenant B's own real access token could not read or write a single row created
+by tenant A, for any of them. The other 2 (`knowledge_articles`, `workflow_timeline_events`) could
+not be tested -- the harness's own test-fixture setup hit an RLS rejection and a foreign-key
+violation respectively, before isolation itself could be checked. These are harness/fixture bugs
+to fix, not tenant-isolation failures. Overall harness status is `"failed"` per its own strict
+definition (all 6 must pass), which should not be misread as "isolation failed" -- isolation passed
+everywhere it was actually exercised; 2 of 6 resource types simply have no coverage yet. The
+harness's own cleanup step initially failed on foreign-key ordering (documented and then fixed with
+a manual cascade-ordered cleanup, confirmed all 24 steps succeeded, no leftover test data remains).
+This is now real, repo-citable evidence -- the Sprint 5 gap described at the top of this document is
+closed for 4 of 6 resource types; the remaining 2 need a harness fix, not a database problem.
+
 ## Purpose
 
 This document answers one question directly: **across Sprints 1, 2, 3 and 4, what has the five-sprint remediation program *not* done yet**, measured against its own governing documents:

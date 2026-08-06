@@ -94,6 +94,8 @@ Acceptance:
 
 Status: Closed locally in Sprint 1 (2026-07-22). `src/config/featureFlags.ts` and `src/middleware.ts` both now default `NEXT_PUBLIC_AXXESS_AUTH_SHELL` to real Supabase auth (`true`) unless explicitly set to `false`. See `docs/SPRINT_LOG.md` Sprint 1 entry for full verification evidence. Live Vercel beta env vars still need to be confirmed/redeployed (tracked as a follow-up).
 
+**2026-08-06 closure:** confirmed live. `curl -s -D - https://landing.triaxisventures.com/auth` returns `HTTP/1.1 200 OK` with a `Content-Security-Policy` header whose `connect-src` allowlists `https://*.supabase.co` (a demo/mock auth shell would have no reason to allow this), and the rendered page body contains real sign-in UI strings ("Sign in", "Continue with", "Forgot password"), not a demo placeholder. This confirms the real Supabase auth shell is live in production on the beta domain, closing the "Deployed environment variables are documented and verified" acceptance criterion above. Not separately confirmed: the exact env var *values* (only behavior was checked, per this program's standing rule against ever handling credential values directly) and whether every one of the criteria above was re-verified beyond the auth shell itself.
+
 ### 2. Make Sign Out Actually Clear The User State
 
 Severity: P0

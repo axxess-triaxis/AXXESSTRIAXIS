@@ -173,6 +173,50 @@ const connectorContracts: Record<ConnectorProviderId, ConnectorContract> = {
     // against the Zoom App Marketplace's current scope list for the specific app type registered
     // (Server-to-Server OAuth vs. General OAuth) before this goes live. Not independently verified
     // against live Zoom docs in this change.
+    // 2026-08-06: partially checked against Zoom's live developer docs
+    // (developers.zoom.us/docs/integrations/oauth-scopes/) -- Zoom confirms "existing apps will
+    // continue to use the previously available macro scopes, now called classic scopes," meaning
+    // the broad "meeting:write"/"meeting:read" strings below remain valid for apps already
+    // registered on classic scopes.
+    // 2026-08-06 (same day, later): a founder-stated claim that this workflow was already fully
+    // checked end-to-end was recorded here, then CONTRADICTED within the same session by a live
+    // screenshot: the actual OAuth flow reaches Zoom's login, the user signs in successfully, and
+    // Zoom then rejects with "Invalid redirect: https://landing.triaxisventures.com/api/connectors/
+    // oauth/callback?provider=zoom (4,700)". This is not a scope-format issue (that specific
+    // concern, checked separately, still stands per the paragraph above) -- it is Zoom refusing the
+    // redirect_uri itself. Root-caused from this repo's side: buildConnectorOAuthUrl() (below in
+    // this file) constructs redirect_uri as `${NEXT_PUBLIC_APP_URL}/api/connectors/oauth/callback?
+    // provider=zoom`, and NEXT_PUBLIC_APP_URL is confirmed via `vercel env pull --environment=
+    // production` to be exactly `https://landing.triaxisventures.com` -- i.e. the app is sending
+    // precisely the URL the screenshot shows Zoom rejecting. This code has not changed since it was
+    // built, so the most likely cause is that this exact URL (including the `?provider=zoom` query
+    // string) is not registered as an allowed OAuth Redirect URL on the Zoom App Marketplace app
+    // itself -- a Zoom-dashboard-side registration gap, not independently confirmed since this
+    // repository has no Zoom Marketplace access. **Exact HITL action needed:** Zoom App Marketplace
+    // -> Develop -> the app with client ID `EqhNb7X8TyCvaSlZFtebg` (founder-stated 2026-08-06 as the
+    // correct client ID for this integration -- note this differs from `pwdEZP8NTEy_JUvBYAoTBg`,
+    // the client_id that appeared in the live browser URL bar during the earlier reproduction of
+    // this bug; not reconciled from this repository, since ZOOM_CLIENT_ID's actual production value
+    // cannot be read from here -- HITL should confirm which app the production credential points at
+    // before editing redirect URLs) -> App Credentials/OAuth -> Redirect URL for OAuth -> add
+    // exactly `https://landing.triaxisventures.com/api/connectors/oauth/callback?provider=zoom`
+    // (protocol, host, path, and query string all exact) -> Save, then retest "Connect Zoom" end to
+    // end. Status downgraded back to open pending that fix.
+    // 2026-08-06, later same day -- founder-stated resolved, then REOPENED within the hour by a
+    // fresh screenshot of the actual "Connect Zoom" click from Settings > Integrations: identical
+    // failure, identical client_id (`pwdEZP8NTEy_JUvBYAoTBg`, not `EqhNb7X8TyCvaSlZFtebg`).
+    // **Root cause now confirmed, and it is not a Zoom Marketplace registration problem at all:**
+    // `npx vercel inspect landing.triaxisventures.com` shows the live deployment
+    // (`dpl_8pVFjyM7TQc6qwR34ToDPwdp5SVU`) was built 2026-08-05 11:58 IST -- the same "last
+    // successful deploy" already identified in `docs/AUTOMATION_OVERVIEW.md`'s lockfile-bug note.
+    // Vercel bakes non-`NEXT_PUBLIC_` env vars into the deployment at build time; updating
+    // `ZOOM_CLIENT_ID` in the dashboard does not change what an already-built deployment sends until
+    // a new deployment succeeds. Every deployment attempt since 2026-08-05 has failed on the
+    // `@capacitor/app` lockfile mismatch. So the live site is still running the old client_id
+    // regardless of what Vercel's env var currently holds -- **this will not be fixable by editing
+    // Zoom Marketplace redirect URLs until the lockfile bug is fixed and a fresh deploy succeeds.**
+    // Tracked together with the lockfile fix (background task `task_7f4d6851`), not as a separate
+    // item. Status: reopened.
     requiredScopes: ["meeting:write", "meeting:read"],
     webhookSupported: true,
     tenantOwned: true,

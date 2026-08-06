@@ -6,6 +6,20 @@ Source: Live HITL walkthrough of AI Workspace, AI Review Inbox, Knowledge Hub, D
 Scope: AI Workspace, governed RAG, Knowledge Hub indexing, AI Review Inbox, review-to-work workflows, and related navigation/configuration gaps  
 Status: Evidence log and remediation analysis only. No code changed by this document.
 
+**2026-08-06 status note:** this document is left as-is below, frozen at its original 2026-07-26
+state, as the evidence record of what the live walkthrough found. The central finding below --
+"RAG answer quality is not yet confirmed working" (A-55/A-61/A-62) -- was subsequently addressed by
+RAG Remediation Sprints 1-3 (`RAG_REMEDIATION_SPRINT_1_SOURCE_INTEGRITY_CLOSEOUT_2026_07_26.md`,
+`RAG_REMEDIATION_SPRINT_2_ANSWER_QUALITY_CLOSEOUT_2026_07_26.md`,
+`RAG_REMEDIATION_SPRINT_3_WORKFLOW_POLISH_CLOSEOUT_2026_07_26.md`), which fixed the stale-document
+source-integrity issue, proved the answer generator is not a stub (real embeddings), and made
+confidence explainable. Per `docs/MARKET_TO_PRODUCT_EVIDENCE_LEDGER.md`'s own status on this same
+finding: "Code shipped and unit-tested across all three sprints ... live production re-query,
+CRM-visibility confirmation, export confirmation, and email-delivery confirmation by the HITL not
+yet performed in this environment" -- i.e. code-level remediation is verified, a fresh live-production
+re-walkthrough confirming it from the founder's side has not been logged in this repository as of
+this note.
+
 ## Why This Matters
 
 The AI Review Inbox and governed RAG pipeline are the core differentiators of AXXESS TRIaxis.
