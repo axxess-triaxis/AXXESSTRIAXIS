@@ -183,3 +183,38 @@ XL-4 should:
 ## Status Judgment
 
 Same-repo Lite is tenable if these gates stay mandatory. Route-only Lite is transitional. The monorepo remains the correct cost-efficient model, but only with enforced workspace, build, runtime, mobile, and data boundaries.
+
+## XL-4 Update (2026-08-06)
+
+Residual risk #3 above ("host-based route blocking still needs explicit middleware or project
+routing") is now closed. `src/proxy.ts` enforces a runtime host/API gate: any non-`/lite`,
+non-`/auth` page path on a Lite host redirects to `/lite` (XLA-21), and a deny-by-default API
+allowlist (`src/config/liteSurfaceHosts.ts` + `src/proxy.ts`) 404s any `/api/*` path not
+explicitly needed by Lite's shipped/planned feature set. `AXXESS_SURFACE=lite` (predicted by this
+doc, row 146 above) now has real runtime meaning via `resolveIsLiteSurface()` -- an additive,
+optional declaration on top of host detection, not yet configured on any Vercel project. Full
+detail: `docs/readiness/AXXESS_LITE_XL4_HOST_RUNTIME_GATE_CLOSEOUT_2026_08_05.md`.
+
+Still open from this doc's original residual-risk list: #1 (`apps/lite-web` not fully extracted),
+#2 (root `vercel.json` project-settings override), #4 (tenant/plan gating), #5 (analytics/payment
+env separation), #6 (native mobile projects). XL-4 was scoped to runtime route/API gating only,
+per its own prompt's explicit non-negotiables (no repo split, no backend duplication, no schema
+fork) -- these remain correctly out of scope for a future sprint, not silently dropped.
+
+## XL-5 Update (2026-08-06): Phase 1 extraction started
+
+Residual risk #1 above ("`apps/lite-web` is not yet a fully extracted standalone Next app") is
+**narrowed, not closed**. `packages/features-lite` now exists, holding the first two pure Lite
+modules extracted out of `src/features/lite/` (`liteNavigation.ts`, `liteFeatureRegistry.ts`,
+zero framework/auth dependencies). `apps/lite-web` gained a README documenting exactly what it is
+and is not today (a boundary/control package whose scripts all delegate to the root app's build --
+not yet a standalone Next.js app). Full dependency audit, extraction sequence, and explicit
+blockers (why `liteSurface.ts` and all three Lite UI components could not move this pass):
+`docs/readiness/AXXESS_LITE_SHARED_CORE_EXTRACTION_PLAN_2026_08_06.md`. Closeout:
+`docs/readiness/XL5_LITE_WORKSPACE_EXTRACTION_PHASE1_CLOSEOUT_2026_08_06.md`.
+
+The "Surface marker" row in the Gates Added table above (`src/features/lite/liteSurface.ts`) is
+now stale in one respect: as of XL-4, it's real (delegates to `src/config/liteSurfaceHosts.ts`),
+not just a scaffold "for future runtime gates" -- those runtime gates already shipped.
+
+Residual risks #2, #4, #5, #6 remain open, unchanged, correctly out of scope for this pass.

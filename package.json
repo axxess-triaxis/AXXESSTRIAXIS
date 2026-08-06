@@ -16,7 +16,7 @@
     "dev": "next dev",
     "lint": "eslint . --max-warnings=0",
     "lite:guard": "node scripts/lite-boundary-guard.mjs",
-    "lite:test": "vitest run --config vitest.config.mjs src/features/lite src/app/lite",
+    "lite:test": "vitest run --config vitest.config.mjs src/features/lite src/app/lite packages/features-lite",
     "lite:typecheck": "tsc --noEmit",
     "lite:build": "pnpm --filter @axxess/lite-web build",
     "lite:mobile:validate": "node scripts/validate-lite-mobile-target.mjs",

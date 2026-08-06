@@ -121,6 +121,14 @@ Source: acceptance email "YOU'RE IN! Welcome to the Forge AI Residency," 2026-07
 **Status:** Application/pitch presented. **Update, 2026-07-26 (founder-reported): status is "Ongoing" -- grant conversations now specifically named as NRL Ideation, in addition to the NIDHI PoC grant below.**
 **Outcome:** Presented for the government NIDHI PoC grant, as an idea-stage startup.
 
+### 32. Amey Mashelkar -- JioGenNext Market Access Program (Reliance Jio)
+
+**Status:** Application decided -- not selected.
+Source: email "JioGenNext Market Access Program," 2026-08-06, 5:45 PM, from the JioGenNext team (cc'd two colleagues; names/emails not reproduced here per this repo's standing PII policy for a public repository).
+- Reason given: "not selected for the upcoming program due to limited fitment within our ecosystem at the moment." Explicitly framed as a hard decision -- the reviewer stated they "enjoyed going through your unique value proposition and felt the product/service that you are building is quite interesting."
+- Structured feedback given via JioGenNext's own "ASSURED" framework (quoted, lightly condensed): **A**ffordable -- how can pricing be made affordable for customers; **S**ustainable -- how to keep the business model viable for margins while doing so, recommending a detailed business plan; **S**calable -- test the tech and overall operational model for scalability; **U**ser Experience -- make the overall client experience "extremely intuitive and user-friendly"; **R**apid -- how to reach rapid execution and when to accelerate the model; **E**xcellence -- how to improve product/solution quality (team augmentation, better testing, more pilots); **D**istinctiveness -- create deep differentiation and a moat against larger institutional and emerging players, which JioGenNext explicitly called "the single biggest factor for the evaluation of a startup in the early stages."
+**Outcome:** Not selected, with substantive structured feedback (above) rather than a bare rejection. Consistent with this log's practice of recording rejections without softening (see #4, #9, #12).
+
 ## Recognition / Nomination Processes
 
 ### 14. Globalist Entrepreneur Mobility Summit 2026 by Forbes India

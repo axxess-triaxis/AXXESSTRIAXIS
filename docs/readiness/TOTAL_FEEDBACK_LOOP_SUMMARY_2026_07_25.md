@@ -15,12 +15,14 @@ inflated beyond what its source artifact shows.
 
 ## The Feedback Loop, Stated Plainly
 
-**1. 62 investor, enterprise, customer-scoping, and stakeholder calls.**
-**Verified, exact.** 22 investor/pitch calls (`docs/readiness/PITCH_AND_TRACTION_LOG_2026_07_24.md`)
+**1. 72 investor, enterprise, customer-scoping, and stakeholder calls (2026-08-06 recount, was 62 as of 2026-07-25).**
+**Verified, exact.** 32 investor/pitch calls (`docs/readiness/PITCH_AND_TRACTION_LOG_2026_07_24.md`,
+recounted 2026-08-06 -- was 22 as of this doc's original 2026-07-25 date; latest addition is the
+JioGenNext Market Access Program rejection, entry #32)
 + 16 client scoping calls, idea/prototype-stage market discovery not sales
 (`docs/readiness/CLIENT_SCOPING_CALLS_LOG_2026_07_25.md`) + 24 stakeholder idea-validation calls,
 already deduplicated against the two logs above
-(`docs/readiness/STAKEHOLDER_IDEA_VALIDATION_CALLS_LOG_2026_07_25.md`) = **62**, matching exactly.
+(`docs/readiness/STAKEHOLDER_IDEA_VALIDATION_CALLS_LOG_2026_07_25.md`) = **72**, matching exactly.
 All three logs name the individual, organization, or team per entry.
 
 **2. 15-16 hours of oral feedback and idea validation.**
@@ -145,7 +147,7 @@ distinct from the verified cost-per-metric numbers above it.
 balancing startup with fatherhood, entrepreneurship, satire, poetry, noir essays, my writeups on
 cofounding with life partner" -- personal-life and literary content, not product or market-signal
 content. Per this program's evidence-chain rule, this remains **founder personal-brand reach, not
-product-market evidence** in the same sense as the 62 calls, beta survey, or QA walkthroughs above,
+product-market evidence** in the same sense as the 72 calls, beta survey, or QA walkthroughs above,
 and should not be summed alongside those figures as though they were the same category.
 
 ## Company Stage Context (2026-07-25)
@@ -165,7 +167,7 @@ at needs to be stated plainly, per the founder's own framing (2026-07-25):
   multi-person, fully-funded team.
 - **Product category: enterprise SaaS, not a consumer app.** Enterprise SaaS traction is
   structurally slower and harder to generate than a consumer/no-code product -- it depends on named
-  organizational relationships, structured surveys, and multi-step pilot conversations (the 62 calls
+  organizational relationships, structured surveys, and multi-step pilot conversations (the 72 calls
   and 28-30-respondent survey above), not viral consumer adoption loops.
 - **Total burn: ~$1,000** -- $550 incorporation, $220 dev/product, $230 everything else (mostly
   marketing). This reconciles a discrepancy this program had previously flagged as open (see
@@ -176,7 +178,7 @@ at needs to be stated plainly, per the founder's own framing (2026-07-25):
   section 1.4) remains unreconciled against this $1,000 breakdown -- still an open item, not resolved
   by this one. `Founder-stated, source artifact needed` for the $550/$220/$230 split itself -- no
   incorporation-fee receipt, dev-tooling subscription record, or marketing spend record is in this
-  repository. Everything shipped and evidenced in this document -- the product, the 62 calls, the
+  repository. Everything shipped and evidenced in this document -- the product, the 72 calls, the
   beta survey, the 6 walkthroughs, the QA program -- was built on this budget.
 - Notably, the incorporation date (15/03/2026) lines up closely with the visible start of this
   document's own audience-growth data -- the Facebook company Page's viewer chart and the personal
@@ -194,7 +196,7 @@ the stage context immediately above, this holds
 up, with one boundary worth stating precisely rather than leaving implicit.
 
 **What is genuinely strong and verified:** a diversified, real evidence base across four
-independent categories -- market discovery (62 named calls, exact), product validation (1,112-1,236
+independent categories -- market discovery (72 named calls, exact), product validation (1,112-1,236
 survey data points from a real 28-30-respondent instrument, plus 6 logged live founder walkthrough
 sessions), execution volume (3 QA programs / 7 sprints, 405 commits across all refs, 449/449 tests
 passing, all per `docs/FOUNDER_EXECUTION_EVIDENCE_INDEX.md`), and audience reach across four separate

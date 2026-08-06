@@ -18,16 +18,16 @@ of a completed, successful live test.
 | **Phone/SMS OTP (Twilio)** | **100%** | Founder: **"Twilio - OTP works."** Supabase settings confirm `phone: true`, `sms_provider: "twilio"`. |
 | **Google sign-in** | **100%** | Three sequential defects (redirect_uri_mismatch, Vercel Deployment Protection wall, Supabase credential-mapping error) all found and fixed same day. Founder confirmed a full Google sign-in now completes end to end. See A-26/A-73 |
 | Microsoft sign-in | 0% | Confirmed disabled: `azure: false` in Supabase settings, no `MICROSOFT_CLIENT_ID`/`SECRET` set anywhere |
-| Sign in with Zoom (Supabase's built-in social provider) | Unclear | Supabase settings show `zoom: true` -- but this is a *login-identity* provider, unrelated to the Zoom *connector* below. Never discussed as an intended feature; worth confirming whether this was deliberately enabled or should be turned off |
+| Sign in with Zoom (Supabase's built-in social provider) | Closed | Supabase settings show `zoom: true` -- but this is a *login-identity* provider, unrelated to the Zoom *connector* below. **2026-08-06 founder-stated:** enabled by accident, from a separate open browser tab while working on something else -- not an intended feature. **2026-08-06, closed per explicit founder instruction.** Origin is explained and the founder has directed this item closed; whether the live toggle itself has since been switched off was not independently re-verified from this repository (no Supabase dashboard access here) -- closure reflects the tracking item being resolved by founder decision, not a fresh repo-side confirmation of the toggle's current state |
 
 ## Tenant-Owned Meeting/Scheduling/Storage Connectors (built this session, Sprint SI-1)
 
 | Connector | Doneness | Evidence |
 |---|---|---|
-| Zoom | 60% | `ZOOM_CLIENT_ID`/`SECRET` set; founder live-tested "Connect Zoom" and the resulting Zoom sign-in URL confirms our authorize-request is correctly formed (right client_id, redirect_uri, state, scopes) -- Zoom accepted it. **Full round trip (sign-in + consent + landing back connected) not yet confirmed by the founder** |
+| Zoom | 60% | `ZOOM_CLIENT_ID`/`SECRET` set; founder live-tested "Connect Zoom," reached Zoom's real login. **2026-08-06, reopened a second time:** a fresh screenshot of an actual "Connect Zoom" click from Settings > Integrations reproduced the identical "Invalid redirect" failure with the identical old `client_id` (`pwdEZP8NTEy_JUvBYAoTBg`). **Root cause confirmed -- not a Zoom Marketplace problem:** `vercel inspect landing.triaxisventures.com` shows the live deployment was built 2026-08-05 11:58 IST, and every deploy since has failed on the `@capacitor/app` lockfile mismatch (see `docs/AUTOMATION_OVERVIEW.md`). Vercel bakes env vars in at build time, so the corrected `ZOOM_CLIENT_ID` sitting in Vercel's dashboard cannot reach production until that lockfile bug is fixed and a deploy succeeds. This connector is blocked on the same fix as `task_7f4d6851`, not a separate issue. Full diagnosis in `src/services/integrations/connectorContract.ts` next to the `zoom` contract. |
 | Google Calendar (+ Meet) | 30% | Credentials complete (`GOOGLE_CLIENT_ID`/`SECRET`/`AXXESS_TOKEN_VAULT_KEY` all set). `redirect_uri_mismatch` fix identified. **New blocker found same day, not yet fixed:** even once redirect URI is corrected, Google's own consent screen returns `Error 403: access_denied` -- the OAuth Client is in "Testing" publishing status with no Test users added. See A-75 |
 | Google Drive | 30% | Same as Google Calendar -- same credentials, same two sequential blockers (`redirect_uri_mismatch`, then Google's Testing-mode access_denied), same fixes pending |
-| Gmail (connector, distinct from Gmail email/password sign-in) | Unconfirmed | Pre-existing from before this session ("already real" per earlier program history), not re-tested live in this session. Given the same exact-match redirect URI requirement just discovered for Calendar/Drive, its own `?provider=gmail` redirect URI may or may not already be registered -- not verified either way this session |
+| Gmail (connector, distinct from Gmail email/password sign-in) | 70% (backend confirmed real end to end; UI feedback bug found and fixed; live click-through pending) | **2026-08-06 (A-97):** founder reported "Connect Gmail" looked like an endless sign-in loop. Direct production DB query (3 tables) confirmed the OAuth exchange, token vault write, and `integration_connections` upsert all genuinely succeed -- this was never a backend failure. Root cause: the UI never read the callback's `?status=connected` redirect or showed any connected-state indicator, so a real success looked identical to nothing happening. Fixed: new `/api/connectors/status` route, a real toast + persistent "Connected" badge in `IntegrationsSection.tsx`, and a truthful (was: unconditional) redirect status in the callback route. Code + 23/23 targeted tests + typecheck + lint + build all verified -- see `A97_GMAIL_OAUTH_CONNECTED_STATE_CLOSEOUT_2026_08_06.md`. **Not yet verified:** the founder's own live authenticated click-through confirming the toast/badge actually render in production |
 | Microsoft Teams | 0% | No credentials at all -- `MICROSOFT_CLIENT_ID`/`SECRET` unset. Code-complete, never tested |
 
 ## Productivity/CRM/Storage Connectors (pre-existing, `connectorContract.ts`)
@@ -110,7 +110,34 @@ registrar/DNS), not a tenant-facing product integration. Not scored here.
 
 **Two** integrations meet the strict 100% bar today: **phone/SMS OTP sign-in via Twilio**, and
 **Google sign-in** (resolved same day, after three sequential defects were found and fixed).
+**2026-08-06, permanently reconfirmed:** founder screenshots show the full live round trip on
+production -- Google's own account chooser for `vnliomnfabaicvvvfwia.supabase.co`, then a
+completed sign-in landing on `https://landing.triaxisventures.com/dashboard` with the real
+Executive Dashboard fully loaded and authenticated (Super Admin, Triaxis Ventures). This is the
+complete flow, not just the authorize-request stage -- **Google sign-in should be treated as
+closed and not re-questioned in future sweeps** absent a new, specific, dated failure report.
 Everything else is somewhere between "not configured at all" and "credentials complete, live test
 in progress or actively failing" -- none of the rest has both a completed real-workflow use and
-founder certification yet, including Zoom and Google Calendar/Drive, which made real progress this
-session but are not yet fully working end to end.
+founder certification yet, including **Zoom** and **Google Calendar/Drive**, both of which reach a
+real provider sign-in screen and both of which then fail at the same class of defect: the redirect
+URL the app sends is correctly formed by this repo's code but rejected or mismatched on the
+provider's own side (Zoom: "Invalid redirect" (4,700); Google: `redirect_uri_mismatch` then
+Testing-mode `access_denied`). Both are one dashboard-side registration fix away from working, not
+a code gap -- see the Zoom and Google Calendar/Drive rows above for the exact fix each needs.
+
+**2026-08-06 correction:** a same-day founder-stated closure claiming Zoom met the 100% bar was
+recorded here and then reopened the same day by a live screenshot showing the redirect-rejection
+failure above. Left in this summary as a reminder that a founder-stated claim, however sincerely
+given, can still be superseded by the next live test -- both should be trusted, but the more recent
+direct evidence wins when they conflict.
+
+**2026-08-06, later same day:** founder-stated Zoom is now resolved ("Zoom issue solved"), evidenced
+by a screenshot of Zoom's own signed-in account page rather than the AXXESS-side connected-callback
+landing page specifically. **Reopened again within the hour** -- a fresh screenshot of an actual
+"Connect Zoom" click reproduced the identical failure. Root cause now confirmed and it changes the
+whole picture: this was never really about Zoom Marketplace registration -- the live production
+deployment is stale (last successful build predates the corrected `ZOOM_CLIENT_ID`, and every deploy
+since has failed on the unrelated `@capacitor/app` lockfile bug), so the corrected credential
+literally cannot reach production yet. See the Zoom row above and
+`src/services/integrations/connectorContract.ts` for the full chain. Google Calendar/Drive remain
+unresolved and untouched by this update.

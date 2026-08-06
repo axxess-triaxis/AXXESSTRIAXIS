@@ -255,6 +255,19 @@ Include:
 
 ## Addendum (Founder-specified, 2026-07-31): Pre-Trigger Logic Gate
 
+> **2026-08-06 status correction:** the line below ("not yet implemented, not yet verified") is
+> now stale. This addendum shipped the same sprint (A-79) and is implemented at
+> [src/services/agentic/actionableGate.ts](../../src/services/agentic/actionableGate.ts) —
+> `evaluateActionableGate()` implements all 5 gate signals, the trigger-count thresholds, the
+> `overrideRequired`/`compulsoryChoice`/`hitlClearanceRequired`/`explicitWarning` outcomes exactly
+> as specified below, plus a later hardening fix (A-81, provider-failure placeholder short-circuit)
+> layered on top without changing this contract. Documented in
+> [A79_AGENTIC_ACTION_FOLLOWTHROUGH_CLOSEOUT_2026_07_30.md](A79_AGENTIC_ACTION_FOLLOWTHROUGH_CLOSEOUT_2026_07_30.md#logic-gate-founder-addendum)
+> ("Logic Gate (Founder Addendum)" section) and covered by
+> [src/services/agentic/actionableGate.test.ts](../../src/services/agentic/actionableGate.test.ts).
+> Left the original sentence below unedited as the historical record of what was asked; this note
+> is the correction, not a rewrite.
+
 Founder-stated, captured verbatim in intent — not yet implemented, not yet verified. This
 addendum governs **when** the first pop-up (`What do you want me to do with this, {firstName}?`)
 fires, on top of the UX already specified above. Every AI/RAG response passes through this gate

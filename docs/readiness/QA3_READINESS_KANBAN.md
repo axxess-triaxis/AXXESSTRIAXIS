@@ -346,6 +346,30 @@ No cards moved yet.
   Entra, and sets the client id/secret env vars in production.
 - Flagged, not independently verified: Zoom's exact OAuth scope strings need confirming against
   Zoom's current App Marketplace docs before going live -- noted directly in code.
+  **2026-08-06 partial update:** checked Zoom's live developer docs directly
+  (`developers.zoom.us/docs/integrations/oauth-scopes/`) -- confirms broad "classic" scopes
+  (`meeting:write`/`meeting:read`, what this repo currently requests) remain valid for apps already
+  registered on classic scopes. Still open: which scope format the actual registered Zoom app uses
+  is Zoom-Marketplace-side state not visible from this repository, so this stays flagged until a
+  founder/HITL check of the registered app confirms it. See the same note now in
+  `src/services/integrations/connectorContract.ts` next to `requiredScopes`.
+  **2026-08-06 (same day, later) reopened:** a founder-stated closure was recorded here, then
+  contradicted within the same session by a live screenshot of the actual flow: Zoom's login
+  succeeds, then Zoom rejects with "Invalid redirect:
+  `https://landing.triaxisventures.com/api/connectors/oauth/callback?provider=zoom` (4,700)". This
+  is a redirect-URL registration issue, not the scope-format question this bullet originally
+  tracked -- see the full diagnosis and exact HITL fix in
+  `src/services/integrations/connectorContract.ts` next to the `zoom` contract's `requiredScopes`.
+  Status: open, blocked on a Zoom App Marketplace dashboard change (Zoom-side redirect URL
+  registration), not a code fix.
+  **2026-08-06, later same day -- founder-stated resolved, then REOPENED within the hour:** a fresh
+  screenshot of the actual "Connect Zoom" click reproduced the identical failure with the identical
+  old client_id. **Root cause now confirmed:** this was never a Zoom Marketplace registration
+  problem -- `npx vercel inspect landing.triaxisventures.com` shows the live deployment was built
+  2026-08-05 11:58 IST, and every deploy attempt since has failed on the `@capacitor/app` lockfile
+  mismatch (`docs/AUTOMATION_OVERVIEW.md`, "Known Gaps And Risks"). Vercel bakes non-public env vars
+  in at build time, so the current `ZOOM_CLIENT_ID` value can't reach production until that lockfile
+  bug is fixed and a deploy succeeds. Tracked together with `task_7f4d6851`, not separately.
 - Evidence added: `docs/readiness/SETTINGS_ADMIN_SI1_CLOSEOUT_2026_07_29.md`
 - HITL decision: requested -- register OAuth apps for Google Calendar (add the Calendar scope to
   the existing Google app), Zoom (new app), and Microsoft Teams (add scopes to the existing
