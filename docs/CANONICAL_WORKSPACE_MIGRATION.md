@@ -398,3 +398,33 @@ For future Codex, Claude Code, Cursor or manual engineering work:
 - GitLab is the verified continuity repository for this migration.
 - GitHub may remain as a mirror or historical remote where available.
 - Documentation must preserve evidence for technical, investor, enterprise, due-diligence and regulated-sector review.
+
+## 2026-08-06 Correction: "Physical Deduplication Status" is Stale
+
+This document's "Physical Deduplication Status" and "Completion Criteria" sections above (written
+2026-07-22) assert unconditional, permanent completion: "Physical duplicate-workspace deduplication
+is complete," verified at the time by `SOURCE_EXISTS=False` / `ARCHIVE_EXISTS=True`. That was
+accurate **at that moment**, but is stale as an ongoing claim -- direct filesystem verification
+today (`ls`/`test -d`, not assumed) found:
+
+- `C:\Users\Sudipta Sarmah\Downloads\Claude.migrated-archive-20260722` -- **still exists**, exactly
+  as this document originally recorded. The original migration's archival is intact.
+- `C:\Users\Sudipta Sarmah\Downloads\Claude` -- **exists again** (mtime 2026-07-22 20:19, ~20 hours
+  after the archive rename this document records at 00:23 the same day). Contents: empty except an
+  empty `supabase/snippets` directory skeleton -- `du -sh` reports 0 bytes, no `.git`, no project
+  files. This is **not a re-emergence of the original unmerged-work risk** this migration closed;
+  it is an empty directory shell, most likely created by something unrelated (two `Claude
+  Setup*.exe` installers sit in the same `Downloads` folder, dated 2026-07-20 -- plausibly a fresh
+  Claude Desktop install or a Supabase CLI default-project init recreating the path, not
+  independently confirmed).
+
+**Why this matters for this document's own evidence-chain discipline:** the README
+(`README.md`'s "Current Product Status" section) already carries the correctly-hedged version of
+this claim -- "physical deduplication is only fully complete after the old ... folder is archived
+or removed" -- while this document asserted unconditional completion. The two contradicted each
+other; this correction resolves that in favor of the more conservative, currently-accurate framing.
+
+**Current, accurate status:** the original migration's archival work is verified intact and closed.
+Whether the new, empty `Downloads\Claude` path represents anything worth cleaning up is a separate,
+open, low-risk question -- not answered here, not silently assumed either way. Founder action, not
+an agent's filesystem deletion, is the appropriate next step if removal is wanted.
