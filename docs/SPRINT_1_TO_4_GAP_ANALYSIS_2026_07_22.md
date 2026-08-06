@@ -12,6 +12,25 @@ been run -- that specific gap is not closed by this update. Recorded as founder-
 evidence discipline; not independently re-verified from repo-internal evidence (this repository has
 no mechanism to observe live tenant data access from here).
 
+**2026-08-06, later same day -- the harness itself was finally executed.** Run `mshjon07`,
+`node scripts/verify-two-tenant-isolation.mjs`, against the real production Supabase project
+(`vnliomnfabaicvvvfwia.supabase.co`) backing `landing.triaxisventures.com` -- the same one the 5
+real tenants use. Two throwaway test tenants, two real Supabase Auth users, real access tokens,
+real RLS policies deciding the outcome, exactly as designed. Full detail and evidence chain in
+`docs/readiness/TWO_TENANT_ISOLATION_HARNESS_EXECUTION_2026_08_06.md`. Summary: 4 of 6 required
+resource types (`projects`, `tasks`, `documents`, `audit_logs`) were fully tested and **all four
+passed cleanly** -- tenant B's own real access token could not read or write a single row created
+by tenant A, for any of them. The other 2 (`knowledge_articles`, `workflow_timeline_events`) could
+not be tested -- the harness's own test-fixture setup hit an RLS rejection and a foreign-key
+violation respectively, before isolation itself could be checked. These are harness/fixture bugs
+to fix, not tenant-isolation failures. Overall harness status is `"failed"` per its own strict
+definition (all 6 must pass), which should not be misread as "isolation failed" -- isolation passed
+everywhere it was actually exercised; 2 of 6 resource types simply have no coverage yet. The
+harness's own cleanup step initially failed on foreign-key ordering (documented and then fixed with
+a manual cascade-ordered cleanup, confirmed all 24 steps succeeded, no leftover test data remains).
+This is now real, repo-citable evidence -- the Sprint 5 gap described at the top of this document is
+closed for 4 of 6 resource types; the remaining 2 need a harness fix, not a database problem.
+
 ## Purpose
 
 This document answers one question directly: **across Sprints 1, 2, 3 and 4, what has the five-sprint remediation program *not* done yet**, measured against its own governing documents:
