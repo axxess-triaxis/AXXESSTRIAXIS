@@ -121,6 +121,15 @@ function SyncNowButton({ providerId }: { providerId: string }) {
   );
 }
 
+function ConnectedBadge({ connectedAt }: { connectedAt: string | null | undefined }) {
+  return (
+    <span className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700">
+      <span className="h-2 w-2 rounded-full bg-emerald-500" />
+      Connected{connectedAt ? ` ${new Date(connectedAt).toLocaleDateString()}` : ""}
+    </span>
+  );
+}
+
 export const IntegrationsSection = () => {
   const integrations = applicationServices.institutionalRepository.getIntegrations();
   const connectedCount = integrations.filter((integration) => integration.status === "connected").length;
@@ -143,6 +152,42 @@ export const IntegrationsSection = () => {
   const [notionPreview, setNotionPreview] = useState<{ pageId: string; title: string; bodyPreview: string } | null>(null);
   const [importingNotion, setImportingNotion] = useState(false);
   const [notionToast, setNotionToast] = useState<{ tone: "success" | "error" | "info"; message: string } | null>(null);
+  const [connectedProviders, setConnectedProviders] = useState<Partial<Record<ConnectorProviderId, string | null>>>({});
+
+  // A-97 (2026-08-06): the OAuth callback redirects back here with ?provider=&status=, but nothing
+  // previously read it -- a real, successful "Connect Gmail" looked identical to doing nothing, so
+  // the founder kept re-clicking it. Surface the outcome once, then clean the URL so a page refresh
+  // doesn't replay a stale toast.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const provider = params.get("provider");
+    const status = params.get("status");
+    const reason = params.get("reason");
+    if (!provider || !status) return;
+    const label = provider.charAt(0).toUpperCase() + provider.slice(1);
+    if (status === "connected") {
+      setToast({ tone: "success", message: `${label} connected.` });
+    } else if (status === "not_configured") {
+      setToast({ tone: "error", message: `${label} OAuth completed, but the server is not configured to store the connection. Contact an administrator.` });
+    } else if (status === "error") {
+      setToast({ tone: "error", message: `${label} connection failed${reason ? `: ${reason}` : "."}` });
+    }
+    window.history.replaceState(null, "", window.location.pathname);
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/connectors/status?provider=gmail&provider=microsoft&provider=notion", { credentials: "include", cache: "no-store" })
+      .then((response) => (response.ok ? response.json() : { connections: [] }))
+      .then((result: { connections?: { providerId: ConnectorProviderId; connectedAt: string | null }[] }) => {
+        if (cancelled) return;
+        const next: Partial<Record<ConnectorProviderId, string | null>> = {};
+        for (const connection of result.connections ?? []) next[connection.providerId] = connection.connectedAt;
+        setConnectedProviders(next);
+      })
+      .catch(() => undefined);
+    return () => { cancelled = true; };
+  }, [toast]);
   // SA-2b (2026-07-29): this used to fall back to the illustrative NEMH sample messages
   // unconditionally whenever a real tenant hadn't loaded a real inbox yet -- a real tenant who
   // just connected a real Gmail/Microsoft account saw fake seeded content indistinguishable from
@@ -335,8 +380,10 @@ export const IntegrationsSection = () => {
           <h3 className="text-sm font-semibold text-[#0F1117]">Email Connector Pilot</h3>
           <p className="mt-1 max-w-2xl text-xs leading-relaxed text-[#5F6B73]">Start OAuth for Gmail or Microsoft, then import only a selected email into the workspace. AXXESS previews tasks, decisions and stakeholders before any records are created.</p>
           <div className="mt-3 flex flex-wrap gap-2">
-            <a href="/api/connectors/oauth/start?provider=gmail" className="rounded-lg border border-[rgba(139,30,45,0.22)] bg-white px-3 py-2 text-xs font-semibold text-[#8B1E2D] hover:bg-[#8B1E2D]/5">Connect Gmail</a>
-            <a href="/api/connectors/oauth/start?provider=microsoft" className="rounded-lg border border-[rgba(139,30,45,0.22)] bg-white px-3 py-2 text-xs font-semibold text-[#8B1E2D] hover:bg-[#8B1E2D]/5">Connect Microsoft</a>
+            {"gmail" in connectedProviders ? <ConnectedBadge connectedAt={connectedProviders.gmail} /> : null}
+            <a href="/api/connectors/oauth/start?provider=gmail" className="rounded-lg border border-[rgba(139,30,45,0.22)] bg-white px-3 py-2 text-xs font-semibold text-[#8B1E2D] hover:bg-[#8B1E2D]/5">{"gmail" in connectedProviders ? "Reconnect Gmail" : "Connect Gmail"}</a>
+            {"microsoft" in connectedProviders ? <ConnectedBadge connectedAt={connectedProviders.microsoft} /> : null}
+            <a href="/api/connectors/oauth/start?provider=microsoft" className="rounded-lg border border-[rgba(139,30,45,0.22)] bg-white px-3 py-2 text-xs font-semibold text-[#8B1E2D] hover:bg-[#8B1E2D]/5">{"microsoft" in connectedProviders ? "Reconnect Microsoft" : "Connect Microsoft"}</a>
             <button type="button" onClick={() => void loadMicrosoftMailbox()} disabled={loadingMailbox} className="rounded-lg bg-[#8B1E2D] px-3 py-2 text-xs font-semibold text-white hover:bg-[#7a1a27] disabled:opacity-60">Load Microsoft inbox</button>
           </div>
         </div>
@@ -408,7 +455,8 @@ export const IntegrationsSection = () => {
           <h3 className="text-sm font-semibold text-[#0F1117]">Notion Knowledge Import</h3>
           <p className="mt-1 max-w-2xl text-xs leading-relaxed text-[#5F6B73]">Connect Notion, list pages from the connected workspace, then preview and import a page&apos;s text content as a governed tenant document available to the Knowledge Hub and AI Workspace.</p>
           <div className="mt-3 flex flex-wrap gap-2">
-            <a href="/api/connectors/oauth/start?provider=notion" className="rounded-lg border border-[rgba(139,30,45,0.22)] bg-white px-3 py-2 text-xs font-semibold text-[#8B1E2D] hover:bg-[#8B1E2D]/5">Connect Notion</a>
+            {"notion" in connectedProviders ? <ConnectedBadge connectedAt={connectedProviders.notion} /> : null}
+            <a href="/api/connectors/oauth/start?provider=notion" className="rounded-lg border border-[rgba(139,30,45,0.22)] bg-white px-3 py-2 text-xs font-semibold text-[#8B1E2D] hover:bg-[#8B1E2D]/5">{"notion" in connectedProviders ? "Reconnect Notion" : "Connect Notion"}</a>
             <button type="button" onClick={() => void loadNotionPages()} disabled={loadingNotion} className="rounded-lg bg-[#8B1E2D] px-3 py-2 text-xs font-semibold text-white hover:bg-[#7a1a27] disabled:opacity-60">List Notion pages</button>
           </div>
         </div>
