@@ -552,21 +552,12 @@ export const IntegrationsSection = () => {
           const brandIcon = brandIcons[plugin.id];
           return (
             <div key={plugin.id} className="rounded-xl border border-[rgba(0,0,0,0.06)] bg-[#F8F9FA] p-3">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white">
-                    {brandIcon ? <BrandIcon icon={brandIcon} size={16} /> : <Layers size={14} className="text-[#5F6B73]" />}
-                  </div>
-                  <div>
-                    <div className="text-sm font-semibold text-[#0F1117]">{plugin.name}</div>
-                    <div className="mt-0.5 font-mono text-[11px] uppercase text-[#5F6B73]">{plugin.category}</div>
-                  </div>
+              <div className="flex items-center gap-2">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white">
+                  {brandIcon ? <BrandIcon icon={brandIcon} size={16} /> : <Layers size={14} className="text-[#5F6B73]" />}
                 </div>
-                <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${plugin.configured ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"}`}>
-                  {plugin.configured ? "configured" : "gated"}
-                </span>
+                <div className="text-sm font-semibold text-[#0F1117]">{plugin.name}</div>
               </div>
-              <p className="mt-2 text-xs leading-relaxed text-[#5F6B73]">{plugin.useCases.join(" - ")}</p>
               {(plugin.id === "meta_business" || plugin.id === "threads") && <SyncNowButton providerId={plugin.id} />}
             </div>
           );
@@ -715,21 +706,12 @@ function EnterpriseConnectorCredentialsPanel() {
           const brandIcon = brandIcons[provider.providerId];
           return (
             <div key={provider.providerId} className="rounded-xl border border-[rgba(0,0,0,0.06)] bg-[#F8F9FA] p-3">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white">
-                    {brandIcon ? <BrandIcon icon={brandIcon} size={16} /> : <Layers size={14} className="text-[#5F6B73]" />}
-                  </div>
-                  <div>
-                    <div className="text-sm font-semibold text-[#0F1117]">{provider.displayName}</div>
-                    <div className="mt-0.5 font-mono text-[11px] uppercase text-[#5F6B73]">{provider.category}</div>
-                  </div>
+              <div className="flex items-center gap-2">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white">
+                  {brandIcon ? <BrandIcon icon={brandIcon} size={16} /> : <Layers size={14} className="text-[#5F6B73]" />}
                 </div>
-                <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${status === "configured" ? "bg-emerald-50 text-emerald-700" : status === "revoked" ? "bg-gray-100 text-gray-600" : "bg-amber-50 text-amber-700"}`}>
-                  {status === "configured" ? "configured" : status === "revoked" ? "revoked" : "not configured"}
-                </span>
+                <div className="text-sm font-semibold text-[#0F1117]">{provider.displayName}</div>
               </div>
-              <p className="mt-2 text-xs leading-relaxed text-[#5F6B73]">{provider.purpose}</p>
               {canConfigure ? (
                 <div className="mt-3">
                   <button
