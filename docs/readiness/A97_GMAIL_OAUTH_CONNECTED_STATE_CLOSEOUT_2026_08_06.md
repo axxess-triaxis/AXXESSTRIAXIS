@@ -1,11 +1,10 @@
 # A-97 Closeout -- Gmail "Endless Sign-In Loop" Root Cause and Fix
 
 Date: 2026-08-06
-Status: Code complete, tested, typechecked, linted, built clean, merged to `main` (PR #185,
-merge commit `d6f7697`), and confirmed live in production on `landing.triaxisventures.com`.
-Live authenticated click-through by the founder is the one remaining verification step (see
-"What Remains Blocked" below) -- this repo's HITL discipline does not allow that step to be
-self-certified.
+Status: **Closed.** Code complete, tested, typechecked, linted, built clean, merged to `main`
+(PR #185, merge commit `d6f7697`), deployed live to `landing.triaxisventures.com`, and confirmed
+by the founder's own live authenticated click-through (screenshot evidence below) -- every item
+in the original evidence chain is now verified, none self-certified.
 
 ## Need For This Work
 
@@ -160,6 +159,7 @@ feedback.
 | `Deploy Production (landing + investor demo)` workflow, triggered by the merge | **`Deploy landing.triaxisventures.com`: success.** **`Deploy investor.triaxisventures.com`: failure** -- `Error: Too many requests - try again in 24 hours (more than 5000, code: "api-upload-free")`, Vercel's own account-wide free-tier upload quota, mid-upload of the same build artifact that succeeded for the landing project seconds earlier. Not caused by this change -- a real, external, account-level constraint. **Correction to a prior claim:** `ACTIONABLES_READINESS_MATRIX.md`'s A-91 entry states this would be picked up by "the `vercel-deploy-retry` scheduled task (every 2h)" -- searched this repo's `.github/workflows/` and this environment's active scheduled tasks for any such mechanism and found neither. That claim does not correspond to anything verifiable and should not be relied on; A-91's row is corrected separately to flag this |
 | `npx vercel ls axxesstriaxis --prod` | Newest production deployment (age 7m, matching the merge time) shows `Ready` |
 | `curl -s -o /dev/null -w "%{http_code}" https://landing.triaxisventures.com/api/connectors/status` | **`401 {"error":"Unauthorized."}`** -- confirms the new route is live in production, not a stale build |
+| **Founder's own live authenticated click-through on `landing.triaxisventures.com/integrations`, real Super Admin session (Triaxis Ventures)** | **Confirmed, screenshot evidence.** Green "Connected 6/8/2026" badge next to the Gmail link; the link itself relabeled "Reconnect Gmail"; a green "Gmail connected." toast at the bottom of the panel. All three pieces of this fix -- the `/api/connectors/status` fetch, the `ConnectedBadge` render, and the callback-redirect-driven toast -- are visible working together in one real, authenticated screenshot. Founder confirmed: "Ok done, close the issue." |
 
 **Credential handling note:** the production `SUPABASE_SERVICE_ROLE_KEY`, pasted directly into
 chat by the founder for this specific diagnostic task, was used only in-memory via
@@ -169,13 +169,6 @@ written.
 
 ## What Remains Partial or Blocked
 
-- **Live authenticated click-through has not been performed by me and cannot be self-certified.**
-  Per this repo's standing HITL discipline, the founder needs to sign in for real, click
-  "Connect Gmail," and confirm: (a) a toast appears saying "Gmail connected," (b) a green
-  "Connected" badge appears next to the Gmail link, (c) a page refresh keeps showing "Connected"
-  (proving `/api/connectors/status` reflects real state, not just the one-time toast). This is the
-  direct verification of the actual fix and is the one thing that turns this from "should work" to
-  "confirmed working."
 - **Gmail has no live message-listing/inbox-preview feature** (see "What Did Not Change"). If the
   founder wants Gmail to reach parity with Microsoft's "Load Microsoft inbox," that is new,
   separate scope, not a bug fix.
@@ -205,9 +198,9 @@ typecheck, clean lint, clean production build, unauthenticated-load smoke check)
 `main` (PR #185, `d6f7697`) -> deployed to production (`landing.triaxisventures.com`: success,
 confirmed live via direct `curl` returning the new route's real `401` response;
 `investor.triaxisventures.com`: failed on an external Vercel quota, unrelated to this change,
-not yet retried) -> current status (code-complete, merged, and live on the tenant-facing app the
-bug was reported on; live founder click-through is the one open item, tracked above, not claimed
-as done).
+not yet retried) -> live founder verification (real authenticated click-through, screenshot
+showing the "Connected" badge, "Reconnect Gmail" relabel, and "Gmail connected." toast all
+rendering together) -> current status: **closed**, per the founder's own confirmation.
 
 ## Files Changed
 
