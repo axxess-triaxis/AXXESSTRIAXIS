@@ -437,6 +437,8 @@ importers:
         specifier: 7.6.7
         version: 7.6.7
 
+  packages/core: {}
+
   packages/features-lite: {}
 
   packages/shared: {}

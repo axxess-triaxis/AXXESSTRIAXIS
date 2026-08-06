@@ -1,1 +1,1 @@
-export type * from "./entities";
+export type * from "@axxess/core";

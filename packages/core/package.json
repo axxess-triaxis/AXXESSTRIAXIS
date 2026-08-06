@@ -1,0 +1,9 @@
+{
+  "name": "@axxess/core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Pure domain types, repository interfaces, and service contracts for AXXESS TRIaxis -- no framework, auth, or Supabase-runtime coupling. First step of the packages/core extraction plan referenced in AXXESS_LITE_VERCEL_PROJECT_SETUP_2026_08_05.md's 'Extraction path to genuine Option B'. Scoped deliberately to the zero-runtime-dependency subset (domain entities, service/repository interfaces) -- the concrete Supabase-backed repository implementations and applicationServices proxy remain in src/ pending a dedicated, fully regression-tested pass.",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts"
+}
