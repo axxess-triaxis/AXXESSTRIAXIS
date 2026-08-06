@@ -110,6 +110,12 @@ registrar/DNS), not a tenant-facing product integration. Not scored here.
 
 **Two** integrations meet the strict 100% bar today: **phone/SMS OTP sign-in via Twilio**, and
 **Google sign-in** (resolved same day, after three sequential defects were found and fixed).
+**2026-08-06, permanently reconfirmed:** founder screenshots show the full live round trip on
+production -- Google's own account chooser for `vnliomnfabaicvvvfwia.supabase.co`, then a
+completed sign-in landing on `https://landing.triaxisventures.com/dashboard` with the real
+Executive Dashboard fully loaded and authenticated (Super Admin, Triaxis Ventures). This is the
+complete flow, not just the authorize-request stage -- **Google sign-in should be treated as
+closed and not re-questioned in future sweeps** absent a new, specific, dated failure report.
 Everything else is somewhere between "not configured at all" and "credentials complete, live test
 in progress or actively failing" -- none of the rest has both a completed real-workflow use and
 founder certification yet, including **Zoom** and **Google Calendar/Drive**, both of which reach a
