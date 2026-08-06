@@ -362,12 +362,14 @@ No cards moved yet.
   `src/services/integrations/connectorContract.ts` next to the `zoom` contract's `requiredScopes`.
   Status: open, blocked on a Zoom App Marketplace dashboard change (Zoom-side redirect URL
   registration), not a code fix.
-  **2026-08-06, later same day -- founder-stated resolved:** "Zoom issue solved." Screenshot shown
-  is Zoom's own account home page (signed-in Workplace Basic dashboard), confirming Zoom sign-in
-  succeeds; it does not itself show the AXXESS-side callback landing
-  (`landing.triaxisventures.com/integrations?provider=zoom&status=connected`) that would prove a
-  completed token exchange. Recorded as founder-stated closure per CLAUDE.md's evidence discipline,
-  not independently reproduced from this repository.
+  **2026-08-06, later same day -- founder-stated resolved, then REOPENED within the hour:** a fresh
+  screenshot of the actual "Connect Zoom" click reproduced the identical failure with the identical
+  old client_id. **Root cause now confirmed:** this was never a Zoom Marketplace registration
+  problem -- `npx vercel inspect landing.triaxisventures.com` shows the live deployment was built
+  2026-08-05 11:58 IST, and every deploy attempt since has failed on the `@capacitor/app` lockfile
+  mismatch (`docs/AUTOMATION_OVERVIEW.md`, "Known Gaps And Risks"). Vercel bakes non-public env vars
+  in at build time, so the current `ZOOM_CLIENT_ID` value can't reach production until that lockfile
+  bug is fixed and a deploy succeeds. Tracked together with `task_7f4d6851`, not separately.
 - Evidence added: `docs/readiness/SETTINGS_ADMIN_SI1_CLOSEOUT_2026_07_29.md`
 - HITL decision: requested -- register OAuth apps for Google Calendar (add the Calendar scope to
   the existing Google app), Zoom (new app), and Microsoft Teams (add scopes to the existing
