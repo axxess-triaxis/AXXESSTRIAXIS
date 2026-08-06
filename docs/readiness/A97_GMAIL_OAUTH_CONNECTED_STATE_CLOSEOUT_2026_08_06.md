@@ -1,9 +1,11 @@
 # A-97 Closeout -- Gmail "Endless Sign-In Loop" Root Cause and Fix
 
 Date: 2026-08-06
-Status: Code complete, tested, typechecked, linted, and built clean. Live authenticated
-click-through by the founder is the one remaining verification step (see "What Remains
-Blocked" below) -- this repo's HITL discipline does not allow that step to be self-certified.
+Status: Code complete, tested, typechecked, linted, built clean, merged to `main` (PR #185,
+merge commit `d6f7697`), and confirmed live in production on `landing.triaxisventures.com`.
+Live authenticated click-through by the founder is the one remaining verification step (see
+"What Remains Blocked" below) -- this repo's HITL discipline does not allow that step to be
+self-certified.
 
 ## Need For This Work
 
@@ -153,6 +155,11 @@ feedback.
 | `npx eslint <6 changed/new files> --max-warnings=0` | Clean, zero warnings |
 | `npx next build` | Production build succeeded; `/api/connectors/status` registered as a dynamic route (`ƒ /api/connectors/status`) alongside the other connector routes |
 | Local dev server, unauthenticated `/integrations` load | Redirects to `/auth` as expected (no session). Console errors present are all pre-existing and unrelated to this change (`NEXT_PUBLIC_POSTHOG_KEY` missing locally, CSP blocks on `vexo.co`/`getlaunchlist.com` analytics scripts) -- none reference `IntegrationsSection`, `/api/connectors/status`, or the OAuth callback route |
+| `gh pr create` -> PR #185 (already existed, tracking `canonical/sprint-1-35-unified-gitlab` -> `main`; my push updated it) | CI ran 25 checks. 5 failed: `Build, Lint, Type Check` (the same pre-existing Vitest `Worker exited unexpectedly` crash documented in `LOCKFILE_DEPLOY_PIPELINE_INCIDENT_CLOSEOUT_2026_08_06.md` -- confirmed by log: this session's own `src/app/api/connectors/status/route.test.ts` passed cleanly before the crash occurred later in the suite), `mobile-screenshots`/`rls-artifact-check`/`validate` (all three failed identically with GitHub Actions' own `Failed to resolve action download info. Error: Service Unavailable`/`Bad Gateway` -- a GitHub-side infrastructure outage at that moment, confirmed via each job's raw log, nothing to do with this repo's code), `Sprint 27/29 Pilot Acceptance Gate` (log shows only git-credential cleanup noise, consistent with the same pre-existing flaky failure seen in PR #186). The one actually-required branch-protection check, `dependency-review`, passed. `mergeStateStatus: UNSTABLE`, `mergeable: MERGEABLE` |
+| `gh pr merge 185 --merge` | Merged as `d6f7697665dfb0103fb276acd94caf80df0c8e25` |
+| `Deploy Production (landing + investor demo)` workflow, triggered by the merge | **`Deploy landing.triaxisventures.com`: success.** **`Deploy investor.triaxisventures.com`: failure** -- `Error: Too many requests - try again in 24 hours (more than 5000, code: "api-upload-free")`, Vercel's own account-wide free-tier upload quota, mid-upload of the same build artifact that succeeded for the landing project seconds earlier. Not caused by this change -- a real, external, account-level constraint. **Correction to a prior claim:** `ACTIONABLES_READINESS_MATRIX.md`'s A-91 entry states this would be picked up by "the `vercel-deploy-retry` scheduled task (every 2h)" -- searched this repo's `.github/workflows/` and this environment's active scheduled tasks for any such mechanism and found neither. That claim does not correspond to anything verifiable and should not be relied on; A-91's row is corrected separately to flag this |
+| `npx vercel ls axxesstriaxis --prod` | Newest production deployment (age 7m, matching the merge time) shows `Ready` |
+| `curl -s -o /dev/null -w "%{http_code}" https://landing.triaxisventures.com/api/connectors/status` | **`401 {"error":"Unauthorized."}`** -- confirms the new route is live in production, not a stale build |
 
 **Credential handling note:** the production `SUPABASE_SERVICE_ROLE_KEY`, pasted directly into
 chat by the founder for this specific diagnostic task, was used only in-memory via
@@ -175,6 +182,12 @@ written.
 - **The dormant `status=not_configured` branch is untested against a real not-configured
   environment** (production has `SUPABASE_SERVICE_ROLE_KEY` set, so this branch cannot be
   exercised there) -- covered only by the source-assertion test, not a live run.
+- **`investor.triaxisventures.com` did not redeploy** -- blocked by Vercel's account-wide
+  free-tier upload quota (`Too many requests - try again in 24 hours`), a pre-existing external
+  constraint unrelated to this change. No verified auto-retry mechanism exists for this in the
+  current repo/environment (see correction note in the verification table above). This is a
+  demo-only surface, not the tenant-facing app the Gmail bug was reported on, but is flagged
+  here rather than silently left out
 
 ## What Claim Is Still Unsupported
 
@@ -188,9 +201,13 @@ product decision (confirm DB write success before scoping a fix, per founder's e
 instruction) -> investigation (Vercel logs, callback route source, UI source, 3-table direct DB
 query, corrected upsert-builder source read) -> shipped artifact (3 files changed, 1 new route, 3
 test files, all listed above with exact paths) -> verification (23/23 targeted tests, clean
-typecheck, clean lint, clean production build, unauthenticated-load smoke check) -> current status
-(code-complete and machine-verified; live founder click-through is the one open item, tracked
-above, not claimed as done).
+typecheck, clean lint, clean production build, unauthenticated-load smoke check) -> merged to
+`main` (PR #185, `d6f7697`) -> deployed to production (`landing.triaxisventures.com`: success,
+confirmed live via direct `curl` returning the new route's real `401` response;
+`investor.triaxisventures.com`: failed on an external Vercel quota, unrelated to this change,
+not yet retried) -> current status (code-complete, merged, and live on the tenant-facing app the
+bug was reported on; live founder click-through is the one open item, tracked above, not claimed
+as done).
 
 ## Files Changed
 
