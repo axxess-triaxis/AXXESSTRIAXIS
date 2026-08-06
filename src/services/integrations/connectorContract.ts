@@ -202,6 +202,14 @@ const connectorContracts: Record<ConnectorProviderId, ConnectorContract> = {
     // exactly `https://landing.triaxisventures.com/api/connectors/oauth/callback?provider=zoom`
     // (protocol, host, path, and query string all exact) -> Save, then retest "Connect Zoom" end to
     // end. Status downgraded back to open pending that fix.
+    // 2026-08-06, later same day -- founder-stated resolved: "Zoom issue solved." Screenshot shown
+    // is Zoom's own account home page (zoom.us, signed-in Workplace Basic plan dashboard), which
+    // confirms Zoom sign-in succeeds but does not itself show the AXXESS-side callback landing
+    // (`landing.triaxisventures.com/integrations?provider=zoom&status=connected`, the marker
+    // `oauth/callback/route.ts` uses to prove a completed token exchange). Recorded as
+    // founder-stated closure per CLAUDE.md's evidence discipline -- the specific redirect-rejection
+    // screenshotted earlier is not independently reproduced as fixed from this repository, since
+    // that would require a real Zoom OAuth round trip this environment cannot perform.
     requiredScopes: ["meeting:write", "meeting:read"],
     webhookSupported: true,
     tenantOwned: true,
