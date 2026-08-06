@@ -53,8 +53,9 @@ export async function GET(request: Request) {
   });
   const scope = tenantScopeFromUser(session.user, session.accessToken);
   const stateHash = hashOAuthState(state);
+  const adminConfigured = isSupabaseAdminConfigured();
 
-  if (isSupabaseAdminConfigured()) {
+  if (adminConfigured) {
     await supabaseAdminRest("oauth_token_vault", {
       method: "POST",
       query: new URLSearchParams({ on_conflict: "token_reference" }),
@@ -121,5 +122,9 @@ export async function GET(request: Request) {
     },
   }).catch(() => undefined);
 
-  return NextResponse.redirect(new URL(`/integrations?provider=${provider}&status=connected`, url.origin));
+  // A-97 (2026-08-06): this redirect used to unconditionally say "connected" even when
+  // isSupabaseAdminConfigured() is false and the whole write block above never ran -- the OAuth
+  // exchange itself succeeded, but nothing was persisted. Report the true outcome instead.
+  const finalStatus = adminConfigured ? "connected" : "not_configured";
+  return NextResponse.redirect(new URL(`/integrations?provider=${provider}&status=${finalStatus}`, url.origin));
 }

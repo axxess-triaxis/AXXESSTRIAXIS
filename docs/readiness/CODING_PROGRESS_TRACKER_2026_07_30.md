@@ -116,3 +116,58 @@ Copy this section when adding a new dated update.
 - The static test-case count is useful for trend tracking, but it should not be quoted externally
   as a passing-test number.
 
+## Snapshot -- 2026-08-06
+
+Captured from the canonical local workspace. This is the first update since the tracker's creation
+on 2026-07-30 -- the "Suggested Snapshot Template" above had never been used until now, despite the
+Update Cadence rule calling for a refresh after every major sprint closeout. Between the 2026-07-30
+snapshot and this one, the repository shipped (among other work) A-79 through A-96, ED-R1 through
+ED-R4, MC-1 through MC-4, and XL-0 through XL-6 -- all committed to
+`canonical/sprint-1-35-unified-gitlab`.
+
+| Metric | Count | Source / method | Notes |
+|---|---:|---|---|
+| Git commits | 583 | `git rev-list --count HEAD` | Current branch only. Up from 464 (+119). |
+| Current HEAD | `e5b1ce4` | `git rev-parse --short HEAD` | Snapshot commit; `e5b1ce4d3ffa84a366f078aca555d42b59ee313c`, 2026-08-06 09:30:01 +0530. |
+| Merged PRs | 134 | `gh pr list --repo axxess-triaxis/AXXESSTRIAXIS --state merged --limit 500 --json number -q '. \| length'` | Up from 113 (+21). |
+| Open PRs | 3 | `gh pr list --repo axxess-triaxis/AXXESSTRIAXIS --state open --limit 500 --json number -q '. \| length'` | Unchanged count from 2026-07-30 (different underlying PRs -- not re-verified as the same 3). |
+| Tracked files | 1,309 | `git ls-files \| wc -l` | Up from 1,074 (+235). |
+| Tracked text LOC | 282,346 | `git ls-files` filtered to `.ts .tsx .js .jsx .mjs .cjs .md .json .css .scss .yml .yaml .sql .sh`, then `wc -l` summed across all matched files | Up from 123,321 (+159,025). Note: the 2026-07-30 figure's exact filter list was not re-derivable from this doc's text alone, so this row is reproducible from this snapshot forward but may not be a strict apples-to-apples delta with 2026-07-30. |
+| Current working-tree text LOC | 316,274 | Same file set as above, tracked + untracked-but-not-gitignored (`git ls-files --others --exclude-standard --cached`) | Up from 132,801 (+183,473). Same reproducibility caveat as the row above. |
+| App/source LOC | 106,120 | `git ls-files 'src/*' 'apps/*' 'packages/*'` filtered to `.ts .tsx .js .jsx .mjs .cjs`, excluding `*.test.*`/`*.spec.*`, `wc -l` summed (528 files) | Up from 64,066 (+42,054), but methodology was tightened this pass (explicitly scoped to `src/`, `apps/`, `packages/` only, whereas the original row's exact scope was not fully specified in this doc) -- treat the delta as directionally correct, not a precise diff. |
+| Tracked test files | 264 | `git ls-files` filtered to `*.test.*`/`*.spec.*` (`.ts .tsx .js .jsx`) | Up from 192 (+72). |
+| Static declared test cases | 1,236 | `grep -ohE '^\s*(it\|test)\('` over all tracked test files, summed | Up from 786 (+450). Not passing-test evidence (Interpretation Rule 4). |
+| Fresh passing test count | Not verified in this run | `corepack pnpm run test` attempted three times: a 90s bounded attempt produced no result before cutoff; a 580s attempt was moved to a background process; that background run then completed with a Vitest worker crash (`Error: Worker exited unexpectedly`, `node:internal/worker:400`) before producing any pass/fail counts, exit code non-zero. | Per Interpretation Rule 5: recording this honestly rather than estimating. This matches this session's separately-documented, known sandbox limitation (Windows sandbox worker/memory ceiling) -- not a code regression. No passing-test number is claimed for this snapshot. |
+
+### What Changed Since Previous Snapshot
+
+- Repository growth across all measured axes (commits, PRs, tracked files, LOC, test files, static
+  test cases) consistent with the sprint work shipped between 2026-07-30 and 2026-08-06: A-79
+  (agentic actionables gate), A-84 (phone-link auth), A-96 (org admin demo rework), ED-R1 through
+  ED-R4 (Executive Dashboard tiering, mail/CRM/social, calendar/Zoom/financial, Threads/Meta
+  tiles), MC-1 through MC-4 (connector catalogue, WhatsApp/Meta/Threads ingestion), and XL-0
+  through XL-6 (AXXESS Lite surface, host runtime gate, workspace extraction into
+  `packages/features-lite`, daily-use loop).
+- `packages/features-lite` is a new git-tracked package as of XL-5 (2026-08-06), the first genuine
+  workspace-package extraction in this repo following the `packages/shared` precedent -- it
+  contributes directly to the Tracked files and App/source LOC growth in this snapshot.
+
+### What This Does Not Prove
+
+- None of the counts in this row prove tenant isolation, AI answer quality, security correctness,
+  or production readiness -- see the Purpose section and Interpretation Rules above, which apply
+  unchanged to this snapshot.
+- The static declared test case count (1,236) is not a passing-test count. No fresh passing-test
+  number is claimed in this snapshot; see the caveat in that row.
+- The Merged/Open PR counts are GitHub-only (`axxess-triaxis/AXXESSTRIAXIS`). This repository also
+  pushes to a `gitlab` remote as of the XL-4 sprint onward; GitLab-side merge-request counts were
+  not queried for this snapshot and are not represented here.
+
+### Evidence Links
+
+- Commands run and raw output: this session's tool-call history, 2026-08-06 (git, `gh pr list`,
+  `wc -l`, `grep` invocations listed in the Source/method column above).
+- Sprint closeout docs referenced above: `docs/readiness/XL4_...`, `XL5_LITE_WORKSPACE_EXTRACTION_PHASE1_CLOSEOUT_2026_08_06.md`,
+  `XL6_LITE_DAILY_USE_LOOP_PHASE1_CLOSEOUT_2026_08_06.md`, and this program's other dated closeout
+  documents in `docs/readiness/`.
+

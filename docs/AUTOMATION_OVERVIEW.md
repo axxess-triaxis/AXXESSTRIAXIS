@@ -6,7 +6,7 @@ This is the single consolidated reference for every automated check in this repo
 
 Three automation surfaces exist. They are independent of each other by design (see `docs/GITLAB_MIRROR.md` and `docs/GITHUB_INDEPENDENT_OPERATIONS.md` for why: this project has already had a Git host go down mid-project, so no single mechanism here depends on any other one being up):
 
-1. **GitHub Actions** (`.github/workflows/`) -- exists, currently **cannot run** (GitHub account suspended).
+1. **GitHub Actions** (`.github/workflows/`) -- **2026-08-06 correction: "account suspended" was stale.** The account is not suspended and workflows execute -- confirmed via `gh run list --repo axxess-triaxis/AXXESSTRIAXIS`. As of the 05:32Z run against `5e38936`, 10 of 11 workflows were failing on a real lockfile bug (`main` only, not this branch) that also broke Vercel production deploys -- **fixed same day**, see "Known Gaps And Risks" below and `docs/readiness/LOCKFILE_DEPLOY_PIPELINE_INCIDENT_CLOSEOUT_2026_08_06.md` for the full incident writeup.
 2. **GitLab CI** (`.gitlab-ci.yml`) -- runs on GitLab.com's shared runners.
 3. **Local Windows Scheduled Task** (`scripts/post-sprint-verify-and-preview-deploy.ps1`) -- runs on this machine, independent of any Git host.
 
@@ -16,12 +16,12 @@ Plus **GitLab Duo Code Review** -- a native GitLab AI feature for merge-request 
 
 | Mechanism | Runs where | Trigger | Currently active? |
 |---|---|---|---|
-| GitHub Actions (12 workflows) | GitHub-hosted runners | push / PR to GitHub | **No** -- GitHub account suspended, cannot execute |
+| GitHub Actions (11 workflows currently defined) | GitHub-hosted runners | push / PR to GitHub | Account active, not suspended (2026-08-06 correction). The `main`-branch lockfile bug that broke 10/11 runs is **fixed** (PR #186, merge `b8866e2`); two unrelated pre-existing failures remain open (Vitest worker crash, one Playwright test) -- see `docs/readiness/LOCKFILE_DEPLOY_PIPELINE_INCIDENT_CLOSEOUT_2026_08_06.md`. |
 | GitLab CI `quality` job | GitLab.com shared runner | every MR, push to `main`/`staging`/`dev`, push to `canonical/sprint-1-35-unified-gitlab` | Yes |
 | GitLab CI `supabase-verify` job | GitLab.com shared runner | MR/`main` push, only if `supabase/**` or migration-verifier files changed | Yes |
 | GitLab CI `pnpm-audit` job | GitLab.com shared runner | every MR, push to `main`, push to `canonical/sprint-1-35-unified-gitlab` | Yes |
 | GitLab CI SAST + Secret Detection | GitLab.com shared runner (GitLab template) | every pipeline run | Yes |
-| GitLab Duo Code Review | GitLab-hosted (Duo Agent Platform) | merge request opened/updated | **Setup steps documented, enablement not yet confirmed** -- see `docs/GITLAB_MIRROR.md` |
+| GitLab Duo Code Review | GitLab-hosted (Duo Agent Platform) | merge request opened/updated | **Yes -- confirmed 2026-08-06** via founder screenshot of Project Settings -> General -> GitLab Duo (`GitLab Duo`, `Allow flow execution`, `Allow foundational flows`, `Tool approval for sessions` all toggled on). Founder: "Done weeks ago." See `docs/GITLAB_MIRROR.md`. |
 | Local Scheduled Task (verify + preview deploy) | This developer's Windows machine | every 2 hours | Yes |
 | Actual `git commit` / `git push` | Wherever Claude Code or a human runs it | end of each sprint, manually invoked | **Not automatic** -- see below |
 | Live Vercel production deploy | N/A | N/A | **Never automatic** -- explicitly out of scope everywhere |
@@ -50,7 +50,9 @@ This is a genuine CI gate: it fails the pipeline (visible in GitLab's UI, blocks
 
 ### 3. GitLab Duo Code Review (native, not a custom script)
 
-GitLab's own Duo Agent Platform "Code Review" foundational flow. A custom `ai-code-review` CI job calling the Anthropic API directly was built and then deliberately removed the same day, once it became clear GitLab Duo access was the intended path rather than manually managing a `GITLAB_MR_BOT_TOKEN`/`ANTHROPIC_API_KEY` pair. To enable it (group `Triaxis Ventures Private Limited-group`, requires accepting GitLab's Duo AI Terms): Group -> Settings -> GitLab Duo -> Configuration -> turn on **GitLab Duo Agent Platform access**, then under Flows turn on **Allow flow execution**, **Allow foundational flows**, and confirm **Code Review** is enabled. **As of this writing, these toggles were walked through in chat but final enablement was not independently re-confirmed** -- check Group Settings -> GitLab Duo -> Configuration directly rather than assuming this is live. When active, it comments on merge requests automatically; it is additive (does not block merging) and is not a substitute for human review.
+GitLab's own Duo Agent Platform "Code Review" foundational flow. A custom `ai-code-review` CI job calling the Anthropic API directly was built and then deliberately removed the same day, once it became clear GitLab Duo access was the intended path rather than manually managing a `GITLAB_MR_BOT_TOKEN`/`ANTHROPIC_API_KEY` pair. To enable it (group `Triaxis Ventures Private Limited-group`, requires accepting GitLab's Duo AI Terms): Group -> Settings -> GitLab Duo -> Configuration -> turn on **GitLab Duo Agent Platform access**, then under Flows turn on **Allow flow execution**, **Allow foundational flows**, and confirm **Code Review** is enabled.
+
+**2026-08-06 closure:** confirmed enabled. Founder provided a screenshot of `Triaxis Ventures Private Limited-group / AXXESS TRIAXIS / General Settings`, GitLab Duo section, showing `GitLab Duo`, `Allow flow execution`, `Allow foundational flows`, and `Tool approval for sessions` all toggled on, with the confirmation banner "Project 'AXXESS TRIAXIS' was successfully updated." Founder: "Done weeks ago." Note this screenshot is the **project-level** Settings -> General page, not the group-level Settings -> GitLab Duo -> Configuration page this section originally described -- both may need to be enabled depending on GitLab's inheritance model, but the project-level toggles that gate flow execution are confirmed on. **2026-08-06, later same day -- fully closed:** founder provided two further screenshots scrolling through the complete "GitLab Duo" settings section on this same page, top to bottom (`GitLab Duo` -> `Allow flow execution` -> `Allow foundational flows` -> `Tool approval for sessions` -> `Store AI audit events` [off] -> `Turn on SAST false positive detection` -> `Turn on Secret Detection false positive detection` -> `Turn on Agentic Breaking Change Resolution` -> `Turn on SAST vulnerability resolution workflow`). No separate "Code Review" toggle exists anywhere in this section, distinct from `Allow foundational flows` -- confirming that setting (already on) is the umbrella control covering all of GitLab's foundational flows, Code Review included, with no further per-flow selector on this page. When active, it comments on merge requests automatically; it is additive (does not block merging) and is not a substitute for human review.
 
 ### 4. Local Windows Scheduled Task (git-host-independent)
 
@@ -87,21 +89,41 @@ Be precise about this list -- it is the part most likely to be silently assumed 
 | Supabase migration/RLS static verification | Yes -- GitLab CI (path-gated) and local scheduled task (every run) | N/A |
 | `pnpm audit` (critical vulnerabilities) | Yes -- GitLab CI only | N/A |
 | SAST / secret scanning | Yes -- GitLab CI (GitLab templates) | N/A |
-| MR code review (AI) | Pending confirmation -- GitLab Duo, once enabled | Until confirmed: a human reviewer, or Claude Code via `/code-review` |
+| MR code review (AI) | Yes -- GitLab Duo, confirmed enabled 2026-08-06 (founder screenshot) | N/A |
 | Vercel preview deploy | Yes -- local scheduled task, every 2h, only after a full local pass | N/A |
 | Vercel **production** deploy | No | A human, using the Vercel CLI/dashboard directly |
 | Supabase migration apply to live DB | No | A human, using `scripts/supabase-migrate-remote.mjs` after reviewing the dry run |
 | Live beta QA replay | No | Claude Code, manually invoked per the 5-sprint remediation plan (Sprint 5) |
 | Two-tenant live isolation check | No | A human or agent manually provisioning two tenants and testing (Sprint 2 unit tests only cover the query-logic layer) |
 | Mobile store submission | No | A human, via the store console, after `mobile:store:release-gate` passes |
-| Playwright E2E / RAG / pilot-golden-path / mobile visual regression | No (GitHub Actions only, GitHub is down) | Whoever needs the signal must run the underlying script locally until a GitLab equivalent exists or GitHub is restored |
+| Playwright E2E / RAG / pilot-golden-path / mobile visual regression | Runs on GitHub Actions (account active, not down) but **currently failing** -- see Known Gaps below | Whoever needs the signal must run the underlying script locally until the CI lockfile issue is fixed or a GitLab equivalent exists |
 | Git commit/push | No | Claude Code or a human, once per sprint/change, as explicitly instructed |
 | Documentation updates | No | Claude Code, as part of each sprint's explicit documentation checklist |
 
 ## Known Gaps And Risks
 
-- GitHub Actions coverage (12 workflows, including Playwright E2E, RAG release gate, pilot golden-path gate, and mobile visual regression) has **no GitLab equivalent**. If GitHub's suspension is not resolved, these checks have no automated home at all right now.
-- GitLab Duo Code Review's enablement was walked through step-by-step in chat but not independently re-verified as actually toggled on -- treat it as "documented, not confirmed" until checked directly in GitLab Group Settings.
+- GitHub Actions coverage (11 workflows, including Playwright E2E, RAG release gate, pilot golden-path gate, and mobile visual regression) has **no GitLab equivalent**. **2026-08-06: GitHub is not suspended and these DO run now, but as of the latest push (`5e38936`) 10 of 11 are failing** on `[ERR_PNPM_LOCKFILE_MISSING_DEPENDENCY] Broken lockfile: no entry for '@capacitor/app@7.1.2(@capacitor/core@7.6.7)' in pnpm-lock.yaml` during `pnpm install --frozen-lockfile`. This is CI-runner-specific: the identical command (`corepack pnpm install --frozen-lockfile`) succeeds cleanly on the local Windows dev machine against the same commit, and the lockfile has carried this exact entry since commit `bdbd4ec` (XL-5, 2026-08-05). Every gate downstream of this install step (Security Gates, RAG Release Gate, Pilot Golden Path, Mobile Store Release Readiness, Playwright E2E, Mobile Visual Regression, Repository Quality) is currently red because of this single shared failure, not because of 7 independent problems.
+  **2026-08-06, root cause confirmed:** this is not CI-only -- it also broke live **Vercel
+  production deploys** on `main`, meaning new commits were not going live at all. Exact root cause
+  found by diffing `main`'s checked-in files: `apps/mobile-lite-capacitor/package.json` declares
+  `"@capacitor/app": "7.1.2"`, but `pnpm-lock.yaml` only resolved `@capacitor/app@8.1.1` -- a genuine
+  package.json/lockfile version mismatch, not a Linux-vs-Windows resolution difference as originally
+  guessed. **Correction:** an earlier version of this note claimed `canonical/sprint-1-35-unified-gitlab`
+  carried the same mismatch -- checked directly and that was wrong; canonical's own committed
+  lockfile already had the correct entries, even at the exact commit GitHub Actions had failed
+  against. Canonical's CI redness has a separate, still-unconfirmed cause -- not assumed solved by
+  this fix.
+  **2026-08-06, FIXED:** landed via [PR #186](https://github.com/axxess-triaxis/AXXESSTRIAXIS/pull/186)
+  (merge commit `b8866e2`) on `main`. Verified end to end, not just green CI: the merge triggered a
+  real production deployment, watched to completion (`Queued` -> `Building` -> `Ready` in ~6
+  minutes, `dpl_38Y7QHEa9g47R7hfLJvBKMSdDPZB`), and independently confirmed live via `vercel inspect
+  landing.triaxisventures.com` (aliased to the new `Ready` deployment) and a direct `curl` returning
+  `HTTP 307` (normal, not an error). Full incident writeup:
+  `docs/readiness/LOCKFILE_DEPLOY_PIPELINE_INCIDENT_CLOSEOUT_2026_08_06.md`. Two things this fix
+  does **not** close, named there: the pre-existing Vitest worker crash (unrelated, still open) and
+  a separate, pre-existing Playwright failure (`Sprint 27/29 Pilot Acceptance Gate`) surfaced while
+  triaging this PR's checks.
+- GitLab Duo Code Review's enablement is confirmed as of 2026-08-06 -- see the section above.
 - The local Windows Scheduled Task only runs while this specific machine exists and (per its `Interactive` logon type) generally while a user session is active on it -- it is not a cloud-hosted, always-on mechanism. If this machine is offline, nothing runs.
 - No mechanism here alerts a human when a scheduled run fails -- the local task logs to a local file (`.cache/post-sprint-automation/`) that must be checked manually; GitLab CI failures are visible in GitLab's UI but nothing pages anyone.
 
