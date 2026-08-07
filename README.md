@@ -66,6 +66,23 @@ Start here to trace it:
 
 ---
 
+# Workflow Use Cases
+
+AXXESS is not designed against generic AI demos. It is designed against real, lived operational failure modes across the domains we serve, converted into implementation-ready workflow specifications: purpose, actors, triggers, preconditions, step-by-step flow, decision points, exceptions, escalation paths, data inputs/outputs, roles and permissions, audit trail requirements, KPIs, risks and controls, and acceptance criteria for engineering.
+
+**Every workflow below is `Status: Draft`** -- a completed operating-model specification, not a claim that the workflow is built or live in the product today. See [`docs/workflows/README.md`](docs/workflows/README.md) for the full documentation system and status vocabulary (`Draft` -> `Under Review` -> `Approved` -> `Implementation Ready` -> `Live`).
+
+| Workflow | Domain | Operational Pain | AXXESS Value |
+|---|---|---|---|
+| [Discharge Approval and Delegation Authority](docs/workflows/healthcare/discharge-approval-delegation-workflow.md) | Healthcare | Discharge is blocked because consultant approvals, policy rules, delegation authority, and family communication are scattered across calls, WhatsApp groups, and paper policy. | Retrieves policy, checks approval status, identifies delegated authority, routes human approval, drafts family communication, and logs every action. |
+| [OPD Follow-Up Investigation Adherence](docs/workflows/healthcare/opd-follow-up-investigation-adherence.md) | Healthcare | Patients miss investigations and later dispute whether follow-up was ever communicated. | Schedules reminders, sends secure upload links, tracks delivery/read receipts, triggers agentic IVR follow-up, marks non-response, and builds a defensible audit trail. |
+| [NRTS/NUID Registration Tracking](docs/workflows/education/nrts-nuid-registration-tracking.md) | Nursing Education / Healthcare Administration | Nursing graduates, colleges, and State Nursing Councils lack visibility into registration status, blocking employment joining dates. | Gives students self-service status tracking, colleges a cohort dashboard, councils process visibility, delay alerts, follow-up drafts, and audit history. |
+| [MSME Tender, Compliance, Inventory, and Finance Command Center](docs/workflows/shared/msme-tender-compliance-inventory-finance-command-center.md) | MSME / Construction / Government Contracts / Retail | Owner misses tender changes, GST readiness, warehouse inventory, consultant delays, bank updates, receivables, payables, and filing risk because signals are scattered across WhatsApp, email, social alerts, and staff who happen to be unavailable. | Integrates social alerts, Gmail, Outlook, Calendar, WhatsApp Business, accounting, GST, bank account aggregators, payment gateways, CMS, and loan tracking into reminders, escalations, notices, and a single owner finance/compliance dashboard. |
+
+**Design ownership:** the healthcare and nursing-registration workflows are based on operating models designed by Ritashree Mahanta, Cofounder & COO of AXXESS and Domain Head -- Healthcare, Non-Profits & Educational Institutions; the MSME workflow is based on an operating model designed by Sudipta Koushik Sarmah, Founder & MD.
+
+---
+
 # Why We Are Building AXXESS
 
 Enterprise AI adoption is accelerating faster than enterprise AI governance.
