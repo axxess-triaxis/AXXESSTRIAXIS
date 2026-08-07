@@ -7,6 +7,20 @@ The workflows document operating models designed by:
 - Mrs. Ritashree Mahanta, Cofounder & COO, AXXESS, and Domain Head - Healthcare, Non-Profits & Educational Institutions
 - Mr. Sudipta Koushik Sarmah, Founder & MD, AXXESS
 
+## Simulated AXXESS Use Case Based Workflows
+
+**Investor brief:** Please read these workflows to understand how AXXESS works.
+
+- [Discharge Approval and Delegation Authority](healthcare/discharge-approval-delegation-workflow.md)
+- [OPD Follow-Up Investigation Adherence](healthcare/opd-follow-up-investigation-adherence.md)
+- [Maternal Complication Referral Coordination](healthcare/maternal-complication-referral-coordination.md)
+- [NRTS/NUID Registration Tracking](education/nrts-nuid-registration-tracking.md)
+- [Multi-Level Grant Application Workflow for NGOs](non-profits/multi-level-grant-application-workflow.md)
+- [Coordinated Immunization Campaign Management](non-profits/coordinated-immunization-campaign-management.md)
+- [MSME Tender, Compliance, Inventory, and Finance Command Center](shared/msme-tender-compliance-inventory-finance-command-center.md)
+- [AI-Native Startup Enterprise Orchestration](shared/ai-native-startup-enterprise-orchestration.md)
+- [DIFC Enterprise Transformation Management](shared/difc-enterprise-transformation-management.md)
+
 ## Investor-Observable Summary
 
 These workflows are written so investors, enterprise buyers, and partners can quickly see how AXXESS converts domain-specific operating pain into executable software.
@@ -15,8 +29,13 @@ These workflows are written so investors, enterprise buyers, and partners can qu
 |---|---|---|---|
 | Discharge Approval and Delegation Authority | Healthcare | Discharge is blocked by scattered consultant approvals, policy rules, delegation authority, and family communication. | Retrieves policy, checks approval status, identifies delegated authority, routes approval, drafts communication, and logs every action. |
 | OPD Follow-Up Investigation Adherence | Healthcare | Patient follow-up is missed and later disputed. | Sends reminders, secure upload links, IVR calls, delivery/read receipts, non-response flags, and audit trail. |
+| Maternal Complication Referral Coordination | Healthcare / Public Health / Maternal Health | ANM identifies danger signs, but referral communication, acknowledgement, transport, ASHA follow-up, and district monitoring break down. | Triggers high-risk referral workflow, notifies CHC and ASHA, informs family, coordinates transport where integrated, tracks arrival, escalates missed referrals, and preserves audit trail. |
 | NRTS/NUID Registration Tracking | Nursing Education / Healthcare Administration | Students and colleges lack visibility into registration status. | Gives students status tracking, colleges dashboards, councils workflow visibility, delay alerts, and follow-up support. |
+| Multi-Level Grant Application Workflow for NGOs | Non-Profits / GovTech / Public Health | NGOs lose international grants because approvals, file movement, delegation, clarifications, and deadlines are fragmented. | Creates grant workspace, assigns tasks, manages approvals, activates delegation, monitors deadlines, routes WHO clarifications, and creates an audit trail. |
+| Coordinated Immunization Campaign Management | Non-Profits / Public Health / Community Health | Campaign schedules break when field teams, PHCs, volunteers, partners, and beneficiaries receive conflicting updates. | Synchronizes updates, regenerates village task lists, tracks acknowledgements, monitors readiness, alerts supervisors, and produces donor-ready reporting. |
 | MSME Tender, Compliance, Inventory, and Finance Command Center | MSME / Construction / Government Contracts / Retail | Owner misses tender, GST, inventory, finance, consultant, bank, receivable, payable, and filing signals across disconnected systems. | Integrates social alerts, Gmail, Outlook, Calendar, WhatsApp Business, accounting, GST, bank account aggregators, Groww-style investment summaries, payment gateways, CMS, loan tracking, EOD forms, reminders, notices, and audit trails. |
+| AI-Native Startup Enterprise Orchestration | AI-Native Startups / Venture-Backed Companies | Best-of-breed tools exist, but founders manually integrate engineering, product, sales, finance, legal, customers, investors, and external experts. | Connects GitHub, Jira/Linear, PostHog, Mixpanel, Salesforce, Stripe, Razorpay, DocuSign, support agents, investor reporting, procurement, HR, and expert workflows into one intelligence layer. |
+| DIFC Enterprise Transformation Management | Financial Services / DIFC / Regulated Enterprise | Large transformations fragment across HR, payroll, finance, IT, legal, compliance, risk, vendors, audit, regulators, and board committees. | Creates transformation workspace, dependency graph, policy governance, budget visibility, human capital tracking, executive dashboard, and audit-ready transformation record. |
 
 ## Platform Capabilities Visible Across Workflows
 
@@ -59,8 +78,13 @@ docs/
 |---|---|---|
 | Discharge Approval and Delegation Authority | Healthcare | `healthcare/discharge-approval-delegation-workflow.md` |
 | OPD Follow-Up Investigation Adherence | Healthcare | `healthcare/opd-follow-up-investigation-adherence.md` |
+| Maternal Complication Referral Coordination | Healthcare / Public Health / Maternal Health | `healthcare/maternal-complication-referral-coordination.md` |
 | NRTS/NUID Registration Tracking | Education / Healthcare Administration | `education/nrts-nuid-registration-tracking.md` |
+| Multi-Level Grant Application Workflow for NGOs | Non-Profits / GovTech / Public Health | `non-profits/multi-level-grant-application-workflow.md` |
+| Coordinated Immunization Campaign Management | Non-Profits / Public Health / Community Health | `non-profits/coordinated-immunization-campaign-management.md` |
 | MSME Tender, Compliance, Inventory, and Finance Command Center | MSME / Construction / Government Contracts / Retail Operations | `shared/msme-tender-compliance-inventory-finance-command-center.md` |
+| AI-Native Startup Enterprise Orchestration | AI-Native Startups / Venture-Backed Companies | `shared/ai-native-startup-enterprise-orchestration.md` |
+| DIFC Enterprise Transformation Management | Financial Services / DIFC / Regulated Enterprise | `shared/difc-enterprise-transformation-management.md` |
 
 ## Recommended File Naming
 
