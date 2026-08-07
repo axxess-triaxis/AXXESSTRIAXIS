@@ -59,7 +59,13 @@ jobs:
         run: npx vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Deploy
-        run: npx vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
+        # A-101 (2026-08-07): hit Vercel's account-wide free-tier upload quota ("Too many requests
+        # - try again in 24 hours (more than 5000, code: "api-upload-free")") three times in one
+        # day -- each `vercel deploy --prebuilt` uploads every built-output file individually.
+        # `--archive=tgz` bundles the deployment into one compressed tarball instead, which is
+        # Vercel's own suggested fix in that exact error message and drastically cuts the
+        # per-deploy file-upload count against the same quota.
+        run: npx vercel deploy --prebuilt --prod --archive=tgz --token=${{ secrets.VERCEL_TOKEN }}
 
   deploy-investor-demo:
     name: Deploy investor.triaxisventures.com
@@ -91,4 +97,10 @@ jobs:
         run: npx vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Deploy
-        run: npx vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
+        # A-101 (2026-08-07): hit Vercel's account-wide free-tier upload quota ("Too many requests
+        # - try again in 24 hours (more than 5000, code: "api-upload-free")") three times in one
+        # day -- each `vercel deploy --prebuilt` uploads every built-output file individually.
+        # `--archive=tgz` bundles the deployment into one compressed tarball instead, which is
+        # Vercel's own suggested fix in that exact error message and drastically cuts the
+        # per-deploy file-upload count against the same quota.
+        run: npx vercel deploy --prebuilt --prod --archive=tgz --token=${{ secrets.VERCEL_TOKEN }}
