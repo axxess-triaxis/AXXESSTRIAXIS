@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { DataStateBadge, DemoDataNotice, ModuleHeader, PageShell, SectionCard, StatusBadge, TenantScopeBadge } from "../../components/enterprise";
 import { InlineToast } from "../../components/forms/InlineToast";
 import { EmptyState } from "../../components/feedback/EmptyState";
@@ -31,7 +31,25 @@ function engagementBadgeClass(level: Stakeholder["engagementLevel"]) {
 export const StakeholdersSection = () => {
   const demoMode = isDemoModeEnabled();
   const { session } = useAuth();
-  const scope = session.user ? tenantScopeFromUser(session.user) : undefined;
+  const userId = session.user?.id;
+  const organizationId = session.user?.organizationId;
+  const role = session.user?.role;
+  // A-104-adjacent fix (2026-08-07): tenantScopeFromUser() returns a new object literal on every
+  // call. Calling it directly in the render body made `scope` a fresh reference on every render,
+  // which -- as a dependency of the notes-fetching useEffect below -- re-triggered that fetch (and
+  // its setNotesLoading(true) reset) on every render, including the render caused by that same
+  // fetch's own setNotesLoading(false)/setNotes() completing. The section could get stuck showing
+  // "Checking for AI-escalated notes..." indefinitely even after a note was successfully saved,
+  // because the next render always re-armed the loading state before the fetch that already
+  // resolved could be observed. Memoized on the underlying primitive fields (not the whole
+  // session.user object, which may itself be recreated per render) so the effect only re-fires
+  // when identity actually changes. No second argument was passed to tenantScopeFromUser here
+  // before this fix either -- accessToken stays unset, preserving the exact prior behavior.
+  // Deliberately depends on userId/organizationId/role, not session.user itself: session.user is a
+  // fresh object reference every render at the AuthProvider level, and including it here would
+  // reproduce exactly the bug this fix removes (see the block comment above).
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const scope = useMemo(() => (session.user ? tenantScopeFromUser(session.user) : undefined), [userId, organizationId, role]);
   const [liveStakeholders, setLiveStakeholders] = useState<Stakeholder[]>([]);
   const [loading, setLoading] = useState(!demoMode);
   const [showAddForm, setShowAddForm] = useState(false);
