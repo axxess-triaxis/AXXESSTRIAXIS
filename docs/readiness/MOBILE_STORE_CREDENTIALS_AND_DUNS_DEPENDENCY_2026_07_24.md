@@ -91,6 +91,27 @@ this program can manually expedite -- no engineering or product action changes a
 update; logged purely to keep the elapsed/remaining-time tracking and the founder's standing
 governance decision current.
 
+**Update, 2026-08-07 (founder-provided evidence -- new DNB confirmation email + supporting-document
+package):** a second confirmation email arrived from Dun & Bradstreet India (`DUNS_Request@dnb.com`,
+Fri 7 Aug 2026, 10:56 PM IST), **same reference number DR071320262903910840** as the original 2026-07-13
+request -- this is not a new, separate application, but the same request. Body text: "Thank you for
+sharing required documents for a new D-U-N-S Number for your business: Triaxis Ventures Private
+Limited... Please expect the D-U-N-S Number on or before 25-Aug-2026." **This confirms Dun &
+Bradstreet had requested additional supporting documents beyond the original 7/13 submission, which
+were supplied around 2026-08-07, and the expected-issuance date has moved from the original ~30-day
+estimate (~2026-08-12) to 25-Aug-2026 -- roughly two weeks later than first estimated.** The founder
+provided the four supporting documents submitted as part of this package for reference: a utility
+bill (APDCL electricity receipt), a municipal property-tax demand notice (Jorhat Municipal Board),
+the company's Certificate of Incorporation, and a PAN document. **These documents are not stored in
+this repository** -- they contain PII (PAN details, billing/property addresses, account numbers)
+and this repository is public; only the fact that they were requested and supplied, and the
+resulting reference number and updated date, are recorded here. **Elapsed/remaining tracking reset
+against the new date:** as of this update, 25 days have elapsed since the original 7/13 submission;
+the newly-stated target of 25-Aug-2026 is now the operative expected-issuance date, superseding the
+~2026-08-12 estimate in the entries above. No engineering or product action changes as a result --
+same external, non-expeditable Dun & Bradstreet dependency, logged to keep this document's own
+timeline accurate rather than stale relative to the founder's latest evidence.
+
 ## Governance Position
 
 AXXESS TRIaxis should not be released under an individual founder account if the intended product owner and operating company is Triaxis Ventures Private Limited.
