@@ -217,6 +217,18 @@ const connectorContracts: Record<ConnectorProviderId, ConnectorContract> = {
     // Zoom Marketplace redirect URLs until the lockfile bug is fixed and a fresh deploy succeeds.**
     // Tracked together with the lockfile fix (background task `task_7f4d6851`), not as a separate
     // item. Status: reopened.
+    // 2026-08-07: lockfile fix confirmed landed -- live retest reached Zoom's real authorize screen
+    // with the corrected client_id (`EqhNb7X8TyCvaSlZFtebg`), proving the redirect-URI/stale-deploy
+    // issue above is genuinely resolved. **New, distinct blocker found:** Zoom returned "You cannot
+    // authorize General app 779 BETA... Invalid scope. Edit on web portal." for the two classic
+    // macro scopes below. This app is a Zoom "General App" in BETA -- Zoom's newer app categories
+    // may require the granular scope format (e.g. `meeting:write:meeting`) instead of, or in
+    // addition to, the classic macro scopes (`meeting:write`), which is exactly the ambiguity this
+    // file's own 2026-08-06 comment above already flagged as unverified. Not resolved from this
+    // environment (no Zoom Marketplace access). **Exact HITL action needed:** Zoom App Marketplace
+    // -> the app with client ID `EqhNb7X8TyCvaSlZFtebg` -> Scopes tab ("Edit on web portal" from the
+    // error screen) -> add the meeting-create/meeting-read scopes in whatever format that app type
+    // accepts, Save, then retest "Connect Zoom" end to end.
     requiredScopes: ["meeting:write", "meeting:read"],
     webhookSupported: true,
     tenantOwned: true,
