@@ -25,10 +25,25 @@ of a completed, successful live test.
 | Connector | Doneness | Evidence |
 |---|---|---|
 | Zoom | 60% | `ZOOM_CLIENT_ID`/`SECRET` set; founder live-tested "Connect Zoom," reached Zoom's real login. **2026-08-06, reopened a second time:** a fresh screenshot of an actual "Connect Zoom" click from Settings > Integrations reproduced the identical "Invalid redirect" failure with the identical old `client_id` (`pwdEZP8NTEy_JUvBYAoTBg`). **Root cause confirmed -- not a Zoom Marketplace problem:** `vercel inspect landing.triaxisventures.com` shows the live deployment was built 2026-08-05 11:58 IST, and every deploy since has failed on the `@capacitor/app` lockfile mismatch (see `docs/AUTOMATION_OVERVIEW.md`). Vercel bakes env vars in at build time, so the corrected `ZOOM_CLIENT_ID` sitting in Vercel's dashboard cannot reach production until that lockfile bug is fixed and a deploy succeeds. This connector is blocked on the same fix as `task_7f4d6851`, not a separate issue. Full diagnosis in `src/services/integrations/connectorContract.ts` next to the `zoom` contract. |
-| Google Calendar (+ Meet) | 30% | Credentials complete (`GOOGLE_CLIENT_ID`/`SECRET`/`AXXESS_TOKEN_VAULT_KEY` all set). `redirect_uri_mismatch` fix identified. **New blocker found same day, not yet fixed:** even once redirect URI is corrected, Google's own consent screen returns `Error 403: access_denied` -- the OAuth Client is in "Testing" publishing status with no Test users added. See A-75 |
-| Google Drive | 30% | Same as Google Calendar -- same credentials, same two sequential blockers (`redirect_uri_mismatch`, then Google's Testing-mode access_denied), same fixes pending |
+| Google Calendar (+ Meet) | **90%** (live-confirmed for the founder's allowlisted account; Testing-mode 100-user cap still limits arbitrary pilot customers) | **2026-08-07 (A-75, closed for this instance):** founder screenshot shows a real `Google_calendar connected.` toast on `landing.triaxisventures.com/integrations` -- per `oauth/callback/route.ts`, only reachable after a genuine token exchange and DB write. Not 100%: a pilot customer outside the OAuth Client's Test users allowlist would still hit `Error 403: access_denied` until Google verification is completed (not started, not urgent per founder's own framing) |
+| Google Drive | **90%** (same basis as Calendar) | **2026-08-07 (A-75, closed for this instance):** founder screenshot shows a real `Google_drive connected.` toast, same session as Calendar above. Same Testing-mode cap caveat applies |
 | Gmail (connector, distinct from Gmail email/password sign-in) | **100%** (backend confirmed real end to end; UI feedback bug found, fixed, deployed, and confirmed via the founder's own live click-through) | **2026-08-06 (A-97, closed):** founder reported "Connect Gmail" looked like an endless sign-in loop. Direct production DB query (3 tables) confirmed the OAuth exchange, token vault write, and `integration_connections` upsert all genuinely succeed -- this was never a backend failure. Root cause: the UI never read the callback's `?status=connected` redirect or showed any connected-state indicator, so a real success looked identical to nothing happening. Fixed: new `/api/connectors/status` route, a real toast + persistent "Connected" badge in `IntegrationsSection.tsx`, and a truthful (was: unconditional) redirect status in the callback route. Code + 23/23 targeted tests + typecheck + lint + build all verified -- see `A97_GMAIL_OAUTH_CONNECTED_STATE_CLOSEOUT_2026_08_06.md`. **Verified:** founder's own live authenticated click-through on `landing.triaxisventures.com/integrations`, screenshot showing the green "Connected 6/8/2026" badge, "Reconnect Gmail" relabel, and "Gmail connected." toast all rendering together. Founder: "Ok done, close the issue." |
 | Microsoft Teams | 0% | No credentials at all -- `MICROSOFT_CLIENT_ID`/`SECRET` unset. Code-complete, never tested |
+
+## A-77 Connector Batch (added 2026-07-30, per founder-scoped YC RFS alignment work)
+
+Not present in this matrix's earlier revisions -- these 7 connectors did not exist in the codebase
+before 2026-07-30. Added here 2026-08-07 to stop this matrix silently omitting them.
+
+| Connector | Doneness | Evidence |
+|---|---|---|
+| Google Sheets | **100%** | Live-tested 2026-08-02 and reconfirmed independently 2026-08-07 -- real `Google_sheets connected.` toast, real token exchange and DB write per `oauth/callback/route.ts` |
+| Google Docs | **100%** | Live-tested and confirmed 2026-08-07 -- real `Google_docs connected.` toast. Previously only founder-stated ("works the same way" as Sheets, 2026-08-02) and not independently screenshotted; now independently confirmed |
+| Google Slides | **100%** | Live-tested and confirmed 2026-08-07 -- real `Google_slides connected.` toast. Same upgrade from founder-stated to independently confirmed as Docs |
+| WhatsApp Business | 60% (credentials set, live test blocked on external config) | `META_APP_ID`/`META_APP_SECRET` confirmed set in production (renamed from `WHATSAPP_BUSINESS_CLIENT_ID`/`_SECRET` on 2026-08-02). Last live test (2026-08-02, pre-rename) hit a real Meta App Domains config error on Facebook's side (`triaxisventures.com` missing from the app's App Domains allowlist) -- not yet fixed or retested since. Meta Business Suite Business Verification was "In review" as of 2026-08-02, status since not checked |
+| Linear | 0% (credentials) | Code-complete (`connectorContract.ts`), zero production credentials -- `LINEAR_CLIENT_ID`/`_SECRET` never set |
+| GitHub | 0% (credentials) | Code-complete, zero production credentials -- `GITHUB_CLIENT_ID`/`_SECRET` never set |
+| X (Twitter) | 0% (credentials) | Code-complete (PKCE-required contract), zero production credentials -- `X_CLIENT_ID`/`_SECRET` never set |
 
 ## Productivity/CRM/Storage Connectors (pre-existing, `connectorContract.ts`)
 
@@ -108,10 +123,15 @@ registrar/DNS), not a tenant-facing product integration. Not scored here.
 
 ## Summary
 
-**Three** integrations meet the strict 100% bar today: **phone/SMS OTP sign-in via Twilio**,
-**Google sign-in** (resolved same day, after three sequential defects were found and fixed), and
+**Six** integrations meet the strict 100% bar today: **phone/SMS OTP sign-in via Twilio**,
+**Google sign-in** (resolved same day, after three sequential defects were found and fixed),
 **the Gmail connector** (2026-08-06, A-97 -- backend was always real; a UI feedback gap made it
-look broken, fixed and founder-confirmed live).
+look broken, fixed and founder-confirmed live), and **Google Sheets, Docs, and Slides**
+(2026-08-07 -- all three independently live-tested with real `connected` toasts on production).
+**Google Calendar and Drive** are close behind at 90% -- live-confirmed for the founder's own
+allowlisted account (2026-08-07, A-75), but not counted at the full 100% bar since Google's
+Testing-mode 100-user cap still blocks an arbitrary pilot customer outside that allowlist; closing
+that gap requires completing Google's app-verification process, not further engineering work here.
 **2026-08-06, permanently reconfirmed:** founder screenshots show the full live round trip on
 production -- Google's own account chooser for `vnliomnfabaicvvvfwia.supabase.co`, then a
 completed sign-in landing on `https://landing.triaxisventures.com/dashboard` with the real
