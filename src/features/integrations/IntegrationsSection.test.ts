@@ -74,6 +74,11 @@ describe("IntegrationsSection (Sprint 3 -- does not hang, no raw backend error t
     expect(source).toContain("window.history.replaceState(null, \"\", window.location.pathname)");
   });
 
+  it("A-99 (2026-08-07): the connected-toast label title-cases every word of a multi-word provider id (was 'Google_calendar connected.', fixed to 'Google Calendar connected.')", () => {
+    expect(source).not.toContain('provider.charAt(0).toUpperCase() + provider.slice(1)');
+    expect(source).toContain('provider.split("_").map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(" ")');
+  });
+
   it("A-97 (2026-08-06): fetches real per-provider connected state from /api/connectors/status and shows a Connected badge instead of relying on a side effect like 'Load Microsoft inbox' succeeding", () => {
     expect(source).toContain('fetch("/api/connectors/status?provider=gmail&provider=microsoft&provider=notion"');
     expect(source).toContain("function ConnectedBadge(");

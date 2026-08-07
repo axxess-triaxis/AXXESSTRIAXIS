@@ -164,7 +164,7 @@ export const IntegrationsSection = () => {
     const status = params.get("status");
     const reason = params.get("reason");
     if (!provider || !status) return;
-    const label = provider.charAt(0).toUpperCase() + provider.slice(1);
+    const label = provider.split("_").map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(" ");
     if (status === "connected") {
       setToast({ tone: "success", message: `${label} connected.` });
     } else if (status === "not_configured") {
