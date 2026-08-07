@@ -22,7 +22,12 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const provider = providerId(url.searchParams.get("provider"));
   if (!provider || !getConnectorContract(provider)) return NextResponse.json({ error: "Unsupported connector provider." }, { status: 400 });
-  const error = url.searchParams.get("error");
+  // A-100 (2026-08-07): providers don't agree on an error param shape -- Google/Zoom/Microsoft send
+  // a plain `error`, but Meta (WhatsApp Business/meta_business) sends `error_code`/`error_message`
+  // instead and never sets `error` at all. Checking only `error` let a real Meta rejection
+  // ("URL Blocked: ...") fall through to the generic "OAuth code and state are required." 400 JSON
+  // below instead of redirecting to a real, readable error toast on /integrations.
+  const error = url.searchParams.get("error") ?? url.searchParams.get("error_message") ?? url.searchParams.get("error_code");
   if (error) return NextResponse.redirect(new URL(`/integrations?provider=${provider}&status=error&reason=${encodeURIComponent(error)}`, url.origin));
   const code = url.searchParams.get("code");
   const state = url.searchParams.get("state");
