@@ -76,156 +76,30 @@ AXXESS is not designed against generic AI demos. It is designed against real, li
 |---|---|---|---|
 | [Discharge Approval and Delegation Authority](docs/workflows/healthcare/discharge-approval-delegation-workflow.md) | Healthcare | Discharge is blocked because consultant approvals, policy rules, delegation authority, and family communication are scattered across calls, WhatsApp groups, and paper policy. | Retrieves policy, checks approval status, identifies delegated authority, routes human approval, drafts family communication, and logs every action. |
 | [OPD Follow-Up Investigation Adherence](docs/workflows/healthcare/opd-follow-up-investigation-adherence.md) | Healthcare | Patients miss investigations and later dispute whether follow-up was ever communicated. | Schedules reminders, sends secure upload links, tracks delivery/read receipts, triggers agentic IVR follow-up, marks non-response, and builds a defensible audit trail. |
+| [Maternal Complication Referral Coordination](docs/workflows/healthcare/maternal-complication-referral-coordination.md) | Healthcare / Public Health / Maternal Health | An ANM identifies a danger sign, but referral communication, acknowledgement, transport, ASHA follow-up, and district monitoring break down between the field and the referral facility. | Triggers a high-risk referral workflow, notifies the CHC and ASHA, informs the family, coordinates transport where integrated, tracks arrival, escalates missed referrals, and preserves an audit trail. |
 | [NRTS/NUID Registration Tracking](docs/workflows/education/nrts-nuid-registration-tracking.md) | Nursing Education / Healthcare Administration | Nursing graduates, colleges, and State Nursing Councils lack visibility into registration status, blocking employment joining dates. | Gives students self-service status tracking, colleges a cohort dashboard, councils process visibility, delay alerts, follow-up drafts, and audit history. |
+| [Multi-Level Grant Application Workflow for NGOs](docs/workflows/non-profits/multi-level-grant-application-workflow.md) | Non-Profits / GovTech / Public Health | NGOs lose international grants because approvals, file movement, delegation, clarifications, and deadlines are fragmented across email, paper, and informal follow-up. | Creates a grant workspace, assigns tasks, manages multi-level approvals, activates delegation, monitors deadlines, routes funder clarifications, and builds an audit trail. |
+| [Coordinated Immunization Campaign Management](docs/workflows/non-profits/coordinated-immunization-campaign-management.md) | Non-Profits / Public Health / Community Health | Campaign schedules break when field teams, PHCs, volunteers, partners, and beneficiaries receive conflicting updates with no single source of truth. | Synchronizes schedule updates, regenerates village task lists, tracks acknowledgements, monitors readiness, alerts supervisors, and produces donor-ready reporting. |
 | [MSME Tender, Compliance, Inventory, and Finance Command Center](docs/workflows/shared/msme-tender-compliance-inventory-finance-command-center.md) | MSME / Construction / Government Contracts / Retail | Owner misses tender changes, GST readiness, warehouse inventory, consultant delays, bank updates, receivables, payables, and filing risk because signals are scattered across WhatsApp, email, social alerts, and staff who happen to be unavailable. | Integrates social alerts, Gmail, Outlook, Calendar, WhatsApp Business, accounting, GST, bank account aggregators, payment gateways, CMS, and loan tracking into reminders, escalations, notices, and a single owner finance/compliance dashboard. |
+| [AI-Native Startup Enterprise Orchestration](docs/workflows/shared/ai-native-startup-enterprise-orchestration.md) | AI-Native Startups / Venture-Backed Companies | Best-of-breed tools already exist, but founders manually stitch together engineering, product, sales, finance, legal, customers, investors, and external experts themselves. | Connects GitHub, Jira/Linear, PostHog, Mixpanel, Salesforce, Stripe, Razorpay, DocuSign, support, investor reporting, procurement, and HR into one operating intelligence layer. |
+| [DIFC Enterprise Transformation Management](docs/workflows/shared/difc-enterprise-transformation-management.md) | Financial Services / DIFC / Regulated Enterprise | Large regulated transformations fragment across HR, payroll, finance, IT, legal, compliance, risk, vendors, audit, regulators, and board committees with no single dependency view. | Builds a transformation workspace, dependency graph, policy governance, budget visibility, human-capital tracking, executive dashboard, and audit-ready transformation record. |
 
-**Design ownership:** the healthcare and nursing-registration workflows are based on operating models designed by Ritashree Mahanta, Cofounder & COO of AXXESS and Domain Head -- Healthcare, Non-Profits & Educational Institutions; the MSME workflow is based on an operating model designed by Sudipta Koushik Sarmah, Founder & MD.
-
----
-
-# Why We Are Building AXXESS
-
-Enterprise AI adoption is accelerating faster than enterprise AI governance.
-
-Across industries, organizations are rapidly deploying large language models into customer service, knowledge management, operations, analytics and internal productivity. While these deployments often succeed as pilots, many struggle to transition into enterprise-wide production environments.
-
-The reason is consistent.
-
-Most AI products optimize for:
-
-- fast onboarding
-- rapid demonstrations
-- consumer-grade user experience
-- short-term experimentation
-
-Very few optimize for:
-
-- governance
-- policy enforcement
-- auditability
-- operational evidence
-- jurisdiction-aware deployment
-- enterprise security
-- regulatory readiness
-- multi-tenant isolation
-
-As organizations mature their AI adoption, these capabilities become mandatory rather than optional.
-
-Consequently, many organizations are forced into expensive architectural redesigns before AI can become a trusted operational layer.
-
-AXXESS exists to eliminate that redesign cycle.
-
-Instead of treating governance as an add-on introduced after product-market fit, AXXESS treats governance as infrastructure.
-
-Policy controls, operational evidence, auditability, observability, approval workflows and Human-in-the-Loop execution are designed as platform primitives rather than premium enterprise features.
-
-This philosophy enables future capabilities to compound without repeatedly rebuilding the underlying architecture.
+**Design ownership:** the healthcare and nursing-registration workflows are based on operating models designed by Ritashree Mahanta, Cofounder & COO of AXXESS and Domain Head -- Healthcare, Non-Profits & Educational Institutions; the MSME workflow is based on an operating model designed by Sudipta Koushik Sarmah, Founder & MD; the remaining simulated use cases (maternal referral, NGO grants, immunization campaigns, AI-native startup orchestration, DIFC transformation) were drafted by the AXXESS TRIaxis Team to demonstrate the platform against additional domains.
 
 ---
 
-# Our Product Thesis
+# Why AXXESS
 
-Enterprise AI should not require rebuilding itself every time governance requirements increase.
+Most AI products optimize for fast onboarding and rapid demos. Very few optimize for governance,
+policy enforcement, auditability, jurisdiction-aware deployment, and multi-tenant isolation — the
+things that become mandatory, not optional, once an organization tries to move an AI deployment
+from pilot to production. AXXESS treats those as platform primitives from the start: governance,
+policy, approvals, audit evidence, and tenant isolation are built into the architecture, not
+retrofitted after product-market fit.
 
-As organizations expand across business units, countries and regulatory environments, they inevitably encounter additional requirements relating to:
-
-- privacy
-- operational accountability
-- security
-- procurement
-- legal defensibility
-- internal controls
-- audit evidence
-- data residency
-
-Traditional AI platforms frequently address these requirements through incremental patches layered onto systems originally optimized for consumer workflows.
-
-AXXESS follows a different approach.
-
-Governance is integrated into every significant execution path.
-
-Every AI action should be capable of being:
-
-- reviewed
-- approved
-- explained
-- traced
-- reproduced
-- audited
-- attributed
-- governed
-
-This philosophy influences every architectural decision across the platform.
-
----
-
-# Design Principles
-
-The platform is guided by several long-term engineering principles.
-
-## Governance before autonomy
-
-Autonomous execution should always remain subordinate to organizational policy.
-
-Organizations—not models—retain authority over operational decisions.
-
----
-
-## Human-in-the-Loop by default
-
-AI accelerates decision-making.
-
-People remain responsible for consequential decisions.
-
-AXXESS therefore embeds review, approval, escalation and intervention directly into operational workflows.
-
----
-
-## Observability is infrastructure
-
-Production AI requires visibility.
-
-Every significant action should generate operational telemetry, structured logs, traces and evidence that can be reviewed by engineering, security, compliance and business stakeholders.
-
----
-
-## Auditability by design
-
-Audit evidence should emerge naturally from execution rather than being reconstructed afterwards.
-
-AXXESS records operational evidence as part of platform execution rather than relying on external documentation.
-
----
-
-## Enterprise-first architecture
-
-Consumer AI products optimize for individual productivity.
-
-AXXESS optimizes for organizational coordination.
-
-The platform is designed around:
-
-- multi-tenancy
-- policy enforcement
-- identity
-- governance
-- enterprise integrations
-- operational workflows
-- institutional knowledge
-- controlled execution
-
----
-
-## Sovereignty-aware deployment
-
-Different jurisdictions increasingly require organizations to maintain control over:
-
-- data
-- infrastructure
-- models
-- operational evidence
-
-AXXESS separates globally reusable platform components from jurisdiction-specific controls, allowing regional expansion without fundamental architectural redesign.
+That is a design decision, not a claim about the future. See "Architecture" below for what the
+layers actually are, and "QA, Remediation, and Live Verification" above for the evidence that they
+hold up under real defects and real production traffic, not just design intent.
 
 ---
 
@@ -398,13 +272,82 @@ The platform currently supports:
 - Usage Controls
 - Enterprise Readiness Scoring
 
-Additional capabilities continue to be introduced through structured sprint-based development.
-
 ---
 
 See "Live links" at the top of this document for the current marketing site, live beta, investor
 demo and Lite surfaces — the `axxesstriaxis.vercel.app` preview URL previously listed here predates
 the custom-domain hosting split and is superseded by those links.
+
+---
+
+# QA, Remediation, and Live Verification
+
+The bulk of the work behind AXXESS is not new-feature construction. It is finding real defects,
+fixing them, and proving the fix holds -- against a real production database, a real founder
+walkthrough, or a real CI gate, not a description of intent.
+
+**Scale, sourced and dated, not estimated:** 583 commits, 134 merged pull requests, 264 tracked
+test files, 1,236 declared test cases, and 316,274 lines of working-tree text (106,120 of that in
+`src/`, `apps/`, and `packages/` application source, excluding tests) as of the 2026-08-06 snapshot
+in `docs/readiness/CODING_PROGRESS_TRACKER_2026_07_30.md` -- with the exact `git`/`gh`/`wc`
+commands used to produce every number. More has landed since that snapshot and is not yet
+re-counted there; the tracker is updated after major closeouts, not continuously.
+
+**68 founder-reported defects, individually dispositioned, not summarized away.**
+`docs/readiness/FOUNDER_BUG_CLOSURE_LEDGER_2026_07_31.md` tracks every defect found in this
+program's own documentation across an 11-day window (2026-07-22 through 2026-08-01), cross-referenced
+against the actual commit history, then re-checked one by one by the founder against their own live
+product knowledge. Result: ~52 resolved (repo-verified and/or founder-confirmed live), 3 partial, 7
+still open with no fix, and roughly 5 blocked on a single identified root cause (SMTP/email
+delivery) rather than five unrelated failures. The ledger names every item, its root cause, its fix
+commit where one exists, and its exact current disposition -- nothing is rolled into a single "QA
+passed" line.
+
+**91 actionables tracked to individual evidence, not a status page.**
+`docs/readiness/ACTIONABLES_READINESS_MATRIX.md` carries 91 named actionable IDs, each with a
+required-evidence description, a `Yes` / `Blocked` / `No` status, a confidence score, and an evidence
+citation -- 50 currently `Yes`, 23 `Blocked` with a named owner and blocker apiece. This is the same
+matrix cited at the top of this document under "Evidence and Verification," and it is the actual
+mechanism, not a claim about one: every fix this program makes is required to close through it.
+
+**Founder walkthroughs and live HITL verification, named, not implied.** A representative sample,
+each with its own commit or screenshot evidence cited in the linked docs:
+
+- A-84, A-86, A-87 -- three critical authentication defects (phone-linked sign-in creating a
+  tenant-less identity; a concurrent refresh-token race permanently killing sessions on dashboard
+  mount; a fresh sign-in immediately signing itself back out) -- all three HITL live-confirmed by
+  the founder on 2026-08-03.
+- A-97 -- founder reported "Connect Gmail" looked like an endless sign-in loop on
+  `landing.triaxisventures.com`. Root cause was confirmed by direct production database
+  verification (not guessed) before any code changed: the OAuth backend had been working the whole
+  time; the actual defect was that the Integrations page never displayed a connected-state
+  indicator. Fixed, deployed, and confirmed by the founder's own live authenticated screenshot on
+  2026-08-06/07 -- see `docs/readiness/A97_GMAIL_OAUTH_CONNECTED_STATE_CLOSEOUT_2026_08_06.md`.
+- A two-tenant isolation harness run against the real production database (not a mock), using two
+  throwaway organizations and real, non-privileged Supabase Auth access tokens attempting
+  cross-tenant reads and writes -- real Row Level Security policies decided the outcome, not test
+  assumptions. See `docs/readiness/TWO_TENANT_ISOLATION_HARNESS_EXECUTION_2026_08_06.md`.
+- Four separate rounds of demo-data-leakage auditing (see "Demo Mode and Live Beta Are Fully
+  Partitioned" below) that found and closed real cases where illustrative demo content leaked into
+  a real tenant's view.
+
+**Automated QA gates that run on every pull request, not manual promises:** a Pilot Golden Path
+Release Gate, a RAG Release Gate, Supabase RLS persona tests, CodeQL, a dependency-review security
+gate, and a mobile validation pipeline -- all required checks in this repository's own CI, visible
+on any pull request, not asserted here.
+
+**Third-party signal, founder-stated, source artifact not held in this repository:** Paxel, a YC
+coding-telemetry tool that analyzes this codebase, is the same external tool that originally flagged
+the gap the Bug Closure Ledger above exists to close (see that ledger's own opening section). The
+founder reports that as the codebase grew from roughly 30,000 to 320,000+ lines, Paxel's own
+architecture/product/planning ratios shifted -- an expected base-rate effect at that scale -- while
+its overall assessment of the codebase improved. This is founder-reported, not an independently
+re-run Paxel report held in this repository; flagged as such rather than presented as verified.
+
+None of this is offered as proof of product-market fit or enterprise readiness on its own -- see
+"Pre-Revenue, Pre-Pilot Traction" below for what is and is not claimed about commercial signal. What
+it does show is that the engineering discipline behind AXXESS is iteration against real, tracked,
+individually-closed defects and live verification, not a roadmap of intentions.
 
 ---
 
@@ -546,12 +489,6 @@ Current capabilities include:
 - Tenant-scoped permissions
 - Protected administrative APIs
 
-Future roadmap includes:
-
-- SCIM
-- Enterprise SAML enhancements
-- Fine-grained delegated administration
-
 ---
 
 # Policy Engine
@@ -618,15 +555,6 @@ Benefits include:
 - enterprise governance
 - future sovereign model deployment
 
-Future routing policies may incorporate:
-
-- latency
-- jurisdiction
-- regulatory requirements
-- workload classification
-- model cost
-- enterprise policy
-
 ---
 
 # Prompt Runtime
@@ -640,13 +568,6 @@ Current capabilities include:
 - runtime configuration
 - execution metadata
 - workflow reproducibility
-
-Future roadmap includes:
-
-- prompt lineage
-- organizational prompt governance
-- prompt approval workflows
-- enterprise prompt registry
 
 ---
 
@@ -669,12 +590,6 @@ Workflow execution supports:
 - escalation
 - audit generation
 - policy validation
-
-Future workflow capabilities include:
-
-- graphical workflow designer
-- reusable workflow templates
-- enterprise orchestration marketplace
 
 ---
 
@@ -723,8 +638,6 @@ Supported connector categories include:
 - Internal APIs
 - Custom Enterprise Systems
 
-Connector coverage will continue expanding through future releases.
-
 ---
 
 # OAuth Infrastructure
@@ -745,8 +658,6 @@ Sprint 25 added:
 - tenant isolation
 - governance integration
 
-Automated refresh and rotation remain part of future connector hardening.
-
 ---
 
 # Token Vault
@@ -762,14 +673,6 @@ Responsibilities include:
 - connector authorization
 - secure retrieval
 - audit integration
-
-Future roadmap includes:
-
-- automatic refresh
-- rotation
-- revocation detection
-- secret versioning
-- enterprise HSM integration
 
 ---
 
@@ -824,13 +727,6 @@ Current capabilities include:
 - governed AI metrics
 - command-center snapshots
 
-Future roadmap includes:
-
-- operational dashboards
-- deployment analytics
-- SLA monitoring
-- organizational health scoring
-
 ---
 
 # Sandbox Execution
@@ -850,12 +746,6 @@ Current capabilities include:
 - dry-runs
 - execution evidence
 - Kubernetes-ready specifications
-
-Future roadmap includes:
-
-- production sandbox clusters
-- workload isolation
-- ephemeral execution environments
 
 ---
 
@@ -980,14 +870,6 @@ Current implementation supports:
 - Session-aware authorization
 - Connector authorization boundaries
 
-Future roadmap includes:
-
-- SCIM provisioning
-- Enterprise SAML
-- Attribute-Based Access Control (ABAC)
-- Delegated administration
-- Conditional access policies
-
 ---
 
 # Tenant Isolation
@@ -1071,14 +953,6 @@ Supported review actions include:
 - Escalate
 - Generate evidence
 
-Future roadmap includes:
-
-- Reviewer assignment
-- SLA tracking
-- Queue prioritization
-- Multi-stage approval workflows
-- Collaborative review
-
 ---
 
 # Pilot Command Center
@@ -1095,14 +969,6 @@ Current capabilities include:
 - Administrative oversight
 
 The Command Center provides operators with a centralized view of governed AI operations across the platform.
-
-Future roadmap includes:
-
-- Deployment health dashboards
-- Organization analytics
-- Operational KPIs
-- SLA monitoring
-- Incident management
 
 ---
 
@@ -1128,13 +994,6 @@ Evidence may include:
 - Timestamps
 - Region metadata
 
-Future roadmap includes:
-
-- Cryptographic signing
-- Immutable evidence bundles
-- Long-term archival
-- External audit exports
-
 ---
 
 # Observability
@@ -1159,13 +1018,6 @@ This information supports:
 - operational monitoring
 - enterprise reporting
 
-Future observability enhancements include:
-
-- OpenTelemetry integration
-- Distributed tracing
-- Organization dashboards
-- AI quality analytics
-
 ---
 
 # Sandbox Execution
@@ -1185,13 +1037,6 @@ Current implementation supports:
 - Policy attestation
 - Kubernetes-ready execution specifications
 - Controlled execution pathways
-
-Future roadmap includes:
-
-- Ephemeral containers
-- Dedicated execution clusters
-- Runtime isolation profiles
-- Organization-specific sandbox environments
 
 ---
 
@@ -1226,14 +1071,6 @@ Responsibilities include:
 - Runtime token retrieval
 - Governance integration
 
-Future enhancements include:
-
-- Automatic refresh
-- Token rotation
-- Revocation detection
-- Version history
-- HSM integration
-- BYOK support
 
 ---
 
@@ -1274,14 +1111,10 @@ Current controls include:
 - Provider quotas
 - Tenant usage controls
 - Enterprise readiness scoring
-
-Future enhancements include:
-
-- Budget enforcement
-- Cost allocation
-- Organization quotas
-- Department-level policies
-- AI consumption analytics
+- **Real-money budget enforcement**: `src/services/ai/aiSpendGuard.ts`, backed by the
+  `ai_provider_budget` table, checks remaining headroom before every live OpenAI call and fails
+  closed -- refusing the call rather than risking unmonitored spend -- if the budget can't be
+  verified or the ceiling is within a safety margin of being reached.
 
 ---
 
@@ -1301,14 +1134,6 @@ Current capabilities include:
 - Release validation
 - Required quality gates
 - CI integration
-
-Future roadmap includes:
-
-- Benchmark datasets
-- Hallucination analysis
-- Regression testing
-- Prompt quality scoring
-- Organization-specific evaluation suites
 
 ---
 
@@ -1588,14 +1413,6 @@ Current design principles include:
 - OAuth credential isolation
 - Audit logging
 - Operational traceability
-
-Future roadmap includes:
-
-- Data Subject Request workflows
-- Privacy administration
-- Consent management
-- Retention policies
-- Automated privacy reporting
 
 ---
 
@@ -2431,9 +2248,28 @@ numbered sprints, and this section did not previously reflect that work. Landed 
 - A-79: agentic actionables follow-through system (heuristic gate, draft handoff, review-inbox and
   workspace wiring)
 - A-96: Org Admin end-user demo rework
+- A-90: CI-automated production deploy for `landing.triaxisventures.com` and
+  `investor.triaxisventures.com` on merge to `main`, replacing manual `vercel --prod` runs
+- A-91: colorful, realistic demo data for the Executive Dashboard signal tiles on the investor-demo
+  domain only, with `landing.triaxisventures.com`'s honest real-tenant empty states left untouched
+- A-97: root-caused and fixed a Gmail connector bug the founder live-reported (repeated "Connect
+  Gmail" clicks looked like an endless loop) -- direct production DB verification showed the OAuth
+  backend was working the whole time; the real defect was the Integrations page never displaying a
+  connected-state indicator. Founder-confirmed live on `landing.triaxisventures.com` after the fix.
+- A-98: removed decorative "gated"/"configured" status badges and self-description text from every
+  integration tile across the product (Integrations page and Settings quick-connect), per explicit
+  founder UX direction -- tiles now show icon and name only
+- `packages/core`: first shared-package extraction (domain types, service contracts, repository
+  interfaces) toward making `apps/lite-web` a genuine standalone build target (Phase 1a; the larger
+  Supabase-backed repository extraction is deliberately deferred, see XLA-26)
+- Workflow use-cases documentation system (`docs/workflows/`): 9 draft operating-model
+  specifications spanning healthcare, education, non-profits, MSME, AI-native startups, and
+  regulated financial services -- see "Workflow Use Cases" above
 - AXXESS Lite (XL-0 through XL-2): see "AXXESS Lite" above
 
-The engineering focus now shifts from mobile store launch readiness and repository consolidation to live store reviewer automation, automated screenshot capture artifacts, crash provider wiring, production support telemetry, staged rollout runbooks, production tenant expansion and continuously auditable documentation.
+This list is maintained as work lands, not written once and left to go stale -- see
+`docs/readiness/ACTIONABLES_READINESS_MATRIX.md` for the live, per-actionable evidence trail behind
+every line above.
 
 ---
 
@@ -2631,14 +2467,6 @@ Current deployment workflow includes:
 - Required RAG Release Gates
 - Vercel Preview
 
-Future roadmap includes:
-
-- Progressive deployment
-- Canary releases
-- Blue/green deployments
-- Automated rollback
-- Deployment analytics
-
 ---
 
 # Configuration Management
@@ -2667,14 +2495,6 @@ Current secrets include:
 - Runtime secrets
 - CRON secrets
 - Database credentials
-
-Future roadmap includes:
-
-- Secret rotation
-- Enterprise vault integration
-- BYOK
-- HSM-backed encryption
-- Cloud-native secret managers
 
 ---
 
@@ -2765,14 +2585,6 @@ API categories include:
 - Command Center
 - Audit
 - Observability
-
-Future API roadmap includes:
-
-- GraphQL
-- SDKs
-- Connector SDK
-- Public developer documentation
-- Webhooks
 
 ---
 
@@ -2923,22 +2735,6 @@ Completed:
 
 ---
 
-## Sprint 32+
-
-Future priorities include:
-
-- Multi-region deployment
-- Disaster recovery
-- Compliance automation
-- Organization administration
-- Connector SDK
-- Enterprise APIs
-- Sovereign deployment options
-- Additional regional language support
-- Live store reviewer account provisioning and automated screenshot artifact capture
-
----
-
 # Current Product Maturity
 
 Current stage:
@@ -3026,35 +2822,12 @@ Current limitations include:
 
 # Non-Goals
 
-AXXESS is intentionally **not** designed to become:
-
-- A generic ChatGPT wrapper
-- A consumer productivity application
-- A prompt marketplace
-- A no-code chatbot builder
-- A model training platform
-- An autonomous agent platform without governance
-- A low-compliance workflow automation tool
-
-Instead, AXXESS focuses on becoming a trusted enterprise operating layer for governed AI execution.
+AXXESS is not a generic ChatGPT wrapper, a consumer productivity app, a prompt marketplace, a
+no-code chatbot builder, a model training platform, an autonomous agent platform without
+governance, or a low-compliance workflow automation tool.
 
 ---
 
-# Looking Ahead
-
-Our ambition is not to build another AI assistant.
-
-Our ambition is to build infrastructure that enables governments, regulated enterprises and high-trust organizations to deploy AI confidently, transparently and responsibly across jurisdictions.
-
-Every sprint, architectural decision and operational control contributes toward that objective.
-
-As the platform evolves, new capabilities should strengthen—not compromise—the principles on which AXXESS was originally founded:
-
-- Governance before autonomy
-- Human accountability before automation
-- Operational evidence before claims
-- Long-term architecture before short-term convenience
-- Enterprise trust before feature velocity
 # Frequently Asked Questions
 
 This section addresses common technical, operational and architectural questions about AXXESS.
