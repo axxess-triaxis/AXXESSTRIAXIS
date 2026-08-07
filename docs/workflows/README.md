@@ -2,11 +2,38 @@
 
 This folder contains GitHub-ready workflow documentation for AXXESS TRIaxis.
 
-The workflows are intended to document operating models designed by Mrs. Ritashree Mahanta, Cofounder & COO, AXXESS, and Domain Head - Healthcare, Non-Profits & Educational Institutions.
+The workflows document operating models designed by:
+
+- Mrs. Ritashree Mahanta, Cofounder & COO, AXXESS, and Domain Head - Healthcare, Non-Profits & Educational Institutions
+- Mr. Sudipta Koushik Sarmah, Founder & MD, AXXESS
+
+## Investor-Observable Summary
+
+These workflows are written so investors, enterprise buyers, and partners can quickly see how AXXESS converts domain-specific operating pain into executable software.
+
+| Workflow | Domain | Operational Pain | AXXESS Value |
+|---|---|---|---|
+| Discharge Approval and Delegation Authority | Healthcare | Discharge is blocked by scattered consultant approvals, policy rules, delegation authority, and family communication. | Retrieves policy, checks approval status, identifies delegated authority, routes approval, drafts communication, and logs every action. |
+| OPD Follow-Up Investigation Adherence | Healthcare | Patient follow-up is missed and later disputed. | Sends reminders, secure upload links, IVR calls, delivery/read receipts, non-response flags, and audit trail. |
+| NRTS/NUID Registration Tracking | Nursing Education / Healthcare Administration | Students and colleges lack visibility into registration status. | Gives students status tracking, colleges dashboards, councils workflow visibility, delay alerts, and follow-up support. |
+| MSME Tender, Compliance, Inventory, and Finance Command Center | MSME / Construction / Government Contracts / Retail | Owner misses tender, GST, inventory, finance, consultant, bank, receivable, payable, and filing signals across disconnected systems. | Integrates social alerts, Gmail, Outlook, Calendar, WhatsApp Business, accounting, GST, bank account aggregators, Groww-style investment summaries, payment gateways, CMS, loan tracking, EOD forms, reminders, notices, and audit trails. |
+
+## Platform Capabilities Visible Across Workflows
+
+- Enterprise RAG and Knowledge Hub
+- Workflow orchestration
+- Human-in-the-loop approvals
+- RBAC and tenant isolation
+- Audit trails
+- Notifications, reminders, notices, and escalations
+- Agentic IVR and reminder calls
+- Gmail, Outlook, Calendar, WhatsApp Business, accounting, GST, bank, payment gateway, and CMS integrations
+- Finance cockpit with current account, FD, mutual fund, investment platform, receivables, payables, covenant, and loan visibility
+- Compliance tracking for GST, tax, regulatory filings, tender readiness, and bank covenants
 
 ## Documentation Principles
 
-- Preserve Ritashree Mahanta's terminology, sequencing, and operational intent.
+- Preserve the workflow owner's terminology, sequencing, and operational intent.
 - Make every workflow implementation-ready for product, engineering, operations, customer success, and enterprise buyers.
 - Describe both the human process and the TRIaxis-enabled AI workflow.
 - Make governance, auditability, approvals, role boundaries, and escalation paths explicit.
@@ -33,6 +60,7 @@ docs/
 | Discharge Approval and Delegation Authority | Healthcare | `healthcare/discharge-approval-delegation-workflow.md` |
 | OPD Follow-Up Investigation Adherence | Healthcare | `healthcare/opd-follow-up-investigation-adherence.md` |
 | NRTS/NUID Registration Tracking | Education / Healthcare Administration | `education/nrts-nuid-registration-tracking.md` |
+| MSME Tender, Compliance, Inventory, and Finance Command Center | MSME / Construction / Government Contracts / Retail Operations | `shared/msme-tender-compliance-inventory-finance-command-center.md` |
 
 ## Recommended File Naming
 
