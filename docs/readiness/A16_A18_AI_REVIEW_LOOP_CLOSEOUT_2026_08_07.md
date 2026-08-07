@@ -1,10 +1,19 @@
-# Closeout -- A-16, A-18 (and audit of A-15, A-17, A-19, A-20)
+# Closeout -- A-15, A-16, A-18 (and audit of A-17, A-19, A-20)
 
 Date: 2026-08-07
 Governance source: `CLAUDE.md` evidence-chain discipline
-Status: **A-16 and A-18 permanently closed (`Yes`).** A-15, A-17, A-19 remain `Blocked`, each with a
+Status: **A-15, A-16, and A-18 permanently closed (`Yes`).** A-17, A-19 remain `Blocked`, each with a
 specific, cheap next action named. A-20 is downgraded from an implicit "probably fine" framing to
 explicitly `Blocked (contradicted)`, per new evidence.
+
+**2026-08-07, same-day addendum:** A-15 was initially left `Blocked` in this document's first pass
+(see the "A-15, A-17, A-19" section below, written before this addendum) because only the *approve*
+decision value had ever been clicked live. Immediately after that finding was reported, the founder
+live-tested "Reject" on a real pending review in production and provided screenshot evidence: the
+review's status badge changed `pending` -> `rejected`, with a confirmation banner reading "Review
+rejected and audit logging requested." A-15 is addressed in its own section below, added after the
+rest of this document was already written -- the "A-15, A-17, A-19" section's A-15 sub-bullet is
+superseded by it.
 
 ## Why This Document Exists
 
@@ -73,7 +82,37 @@ fixed literal in unchanged code, not a probabilistic guess.
 **Status changed:** `Blocked` -> `Yes`. **Confidence:** 90% (code) -> 92% (code + live HITL +
 code-guaranteed fields on that same live row).
 
-## A-15, A-17, A-19 -- Not closed, each missing one specific thing
+## A-15 -- AI Review Inbox approval: CLOSED (same-day addendum)
+
+**Criterion:** "AI answer can be approved, rejected, or edited."
+
+**Live evidence:** the 2026-07-25 walkthrough already live-confirmed *approve* ("Create Task" +
+"Approve and Create"). On 2026-08-07, the founder live-clicked "Reject" on a real pending review in
+production: the review's status badge changed `pending` -> `rejected`, with a confirmation banner
+"Review rejected and audit logging requested." Two of the three named decision values are now
+independently HITL-confirmed on different dates.
+
+**Third value ("Mark edited") not separately clicked, addressed by code inspection, not
+inference alone:** direct read of `src/features/ai-workspace/AIReviewInboxPage.tsx:249,419-423`
+confirms all three buttons -- Approve, Mark edited, Reject -- call the identical
+`decideAndClearMessage(review.id, decision)` -> `decide()` -> `POST /api/ai/reviews` request path,
+differing *only* in the literal decision string passed (`"approved"` \| `"edited"` \| `"rejected"`).
+There is no separate edit-text form, no distinct validation branch, no different response handling
+for `"edited"` specifically -- it is the exact same code that was just proven live for `"rejected"`,
+with one string constant swapped.
+
+**Why this is closeable, and how it differs from A-19's still-open status (see below):** A-19 was
+kept `Blocked` because its criterion spans five elements across multiple genuinely distinct
+subsystems (source ingestion, AI answer generation, human decision, work-item creation, and audit
+logging) that have never all been observed together in one pass -- closing it on inference alone
+would have papered over a real, stated gap in this program's own synthesis document. A-15's
+remaining gap is categorically smaller: one function, three call sites, two of the three literal
+values already independently live-proven on different dates, the third differing only by which
+string is passed to the same request. Closing here on that basis, not on vibes.
+
+**Status changed:** `Blocked` -> `Yes`. **Confidence:** 82% -> 92%.
+
+## A-17, A-19 -- Not closed, each missing one specific thing
 
 These three were re-audited with the same rigor and found genuinely short of live evidence for
 their specific criteria, despite closely related work having happened. Each is left `Blocked` with
