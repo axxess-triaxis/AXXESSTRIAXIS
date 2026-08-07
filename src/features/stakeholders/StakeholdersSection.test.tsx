@@ -211,6 +211,48 @@ describe("StakeholdersSection (Sprint 3 F-011 non-hanging guarantee, Sprint 5 li
     });
   });
 
+  // 2026-08-07: founder live-tested this exact flow in production and found the newly-saved note
+  // never became visible -- the "AI-escalated notes" panel stayed stuck on "Checking for
+  // AI-escalated notes..." indefinitely, even though the POST had genuinely succeeded (a "Saved as
+  // a stakeholder note." toast rendered). Root cause: tenantScopeFromUser() returns a new object
+  // literal on every call; calling it directly in the render body (not memoized) made `scope` a
+  // fresh reference on every render, re-triggering the notes-fetching useEffect -- including its
+  // setNotesLoading(true) reset -- on every render, so the loading state never durably resolved to
+  // false long enough for the just-added note to render. This test forces multiple re-renders via
+  // an unrelated state update (opening the add-contact form) after a note is saved, and asserts the
+  // note is still visible afterward -- it would have failed against the pre-fix code.
+  it("keeps a newly-saved AI-escalated note visible even after later, unrelated re-renders", async () => {
+    writeAgenticDraft({
+      actionType: "stakeholder_mapping",
+      summary: "District stakeholder map: Dr. Bora leads oxygen resilience.",
+      sourceType: "rag_answer",
+      createdAt: new Date().toISOString(),
+    });
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url.includes("/api/stakeholders/notes") && init?.method === "POST") {
+        return new Response(JSON.stringify({ note: { id: "note-new", title: "Stakeholder mapping from AI Workspace", body: "District stakeholder map: Dr. Bora leads oxygen resilience." } }), { status: 201 });
+      }
+      if (url.includes("/api/stakeholders/notes")) return new Response(JSON.stringify({ notes: [] }), { status: 200 });
+      return new Response(JSON.stringify({}), { status: 404 });
+    }));
+
+    render(<StakeholdersSection />);
+    fireEvent.click(await screen.findByRole("button", { name: /Save as note/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText("Stakeholder mapping from AI Workspace")).toBeInTheDocument();
+    });
+
+    // Trigger further re-renders unrelated to the notes fetch, mirroring the founder's real session
+    // (navigating, other state updates) that exposed the unstable-scope bug in production.
+    fireEvent.click(screen.getByRole("button", { name: /Add Contact/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Add Contact/i }));
+
+    expect(screen.getByText("Stakeholder mapping from AI Workspace")).toBeInTheDocument();
+    expect(screen.queryByText(/Checking for AI-escalated notes/i)).not.toBeInTheDocument();
+  });
+
   it("lists real stakeholders for a live tenant that has them", async () => {
     stubNotesFetch();
     state.stakeholders = [{ id: "s1", organizationId: "org-1", name: "Real Contact", affiliation: "Ministry of Health", influenceScore: 72, engagementLevel: "high" }];

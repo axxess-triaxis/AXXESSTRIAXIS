@@ -48,7 +48,15 @@ export function getAiRouterStatusSnapshot(env: NodeJS.ProcessEnv = process.env) 
   const providers = buildAiProviderAdapters(env).map((adapter) => adapter.config);
   return {
     enabled: env.AXXESS_AI_ROUTER_ENABLED !== "false",
-    mode: env.AXXESS_AI_ROUTING_MODE ?? "demo",
+    // 2026-08-07: this used to default to the literal string "demo" whenever AXXESS_AI_ROUTING_MODE
+    // was unset -- which it always has been in production, so a real Super Admin's own AI Workspace
+    // showed "Mode: demo" on a real, live tenant session. Founder: "Still has words like 'demo',
+    // loses user trust." This is display text only (AiRouterStatus.mode is never compared against
+    // a specific string anywhere in src/ -- confirmed by grep before this change); the actual
+    // routing-eligibility behavior tied to an unset AXXESS_AI_ROUTING_MODE (whether the "local"
+    // deterministic fallback provider is an eligible candidate, model-routing-policy.ts:97) is
+    // untouched by this fix -- that's a separate, functional decision this pass does not change.
+    mode: env.AXXESS_AI_ROUTING_MODE ?? "standard",
     defaultProvider: env.AXXESS_AI_DEFAULT_PROVIDER ?? "local",
     providers,
     configuredCount: providers.filter((provider) => provider.configured && provider.name !== "local").length,
