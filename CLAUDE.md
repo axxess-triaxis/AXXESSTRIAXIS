@@ -70,3 +70,15 @@ Standard verification suite for this repo: `pnpm run typecheck`, `pnpm --dir app
 - Never push or deploy to production without explicit confirmation in the current conversation, even if a prior conversation already approved a similar action.
 - Prefer new commits over amending; never force-push without explicit request.
 - Before any destructive git operation, run `git status` and preserve uncommitted work.
+
+### Production Gate Bypass -- Standing Rule
+
+Any deploy or merge that reaches production without its normal gate passing -- `--skip-checks`, `--no-verify`, an admin merge override, or any other mechanism that lets a change through a failed or unavailable check -- requires all five of the following, stated explicitly *before* the bypass happens, not reconstructed afterward:
+
+1. **Explicit reason** -- why the gate is being bypassed right now, not deferred until it can pass normally.
+2. **Known failed/unavailable gate, named exactly** -- which specific check failed or was unavailable (e.g., "Vitest worker crash, known pre-existing infra issue," not a vague "checks didn't pass").
+3. **Accepted risk, stated** -- what could concretely go wrong in production as a direct result of skipping this specific gate.
+4. **Rollback condition, stated** -- the exact observable condition that triggers a rollback, decided before deploying, not improvised after an incident.
+5. **Mandatory post-deployment verification** -- a specific, named check performed immediately after the bypassed deploy goes live, confirming the risk in (3) did not materialize.
+
+Absent all five, do not bypass the gate -- stop and fix the underlying failure, or hand back to the founder for an explicit go/no-go decision instead. This rule exists because a real instance of bypassing a gate under pressure, without this structure, was flagged as a growth area in external session analysis (Paxel Report #13, `docs/readiness/PAXEL_REPORT_13_CODEX_BEHAVIORAL_ANALYSIS_2026_08_07.md`) -- it formalizes the stronger pattern this program has shown elsewhere (named passing gates, explicit risk acceptance) as the baseline, not the exception.
