@@ -66,6 +66,22 @@ Start here to trace it:
 
 ---
 
+## Simulated AXXESS Use Case Based Workflows
+
+**Investor brief:** Please read these workflows to understand how AXXESS works.
+
+- [Discharge Approval and Delegation Authority](docs/workflows/healthcare/discharge-approval-delegation-workflow.md)
+- [OPD Follow-Up Investigation Adherence](docs/workflows/healthcare/opd-follow-up-investigation-adherence.md)
+- [Maternal Complication Referral Coordination](docs/workflows/healthcare/maternal-complication-referral-coordination.md)
+- [NRTS/NUID Registration Tracking](docs/workflows/education/nrts-nuid-registration-tracking.md)
+- [Multi-Level Grant Application Workflow for NGOs](docs/workflows/non-profits/multi-level-grant-application-workflow.md)
+- [Coordinated Immunization Campaign Management](docs/workflows/non-profits/coordinated-immunization-campaign-management.md)
+- [MSME Tender, Compliance, Inventory, and Finance Command Center](docs/workflows/shared/msme-tender-compliance-inventory-finance-command-center.md)
+- [AI-Native Startup Enterprise Orchestration](docs/workflows/shared/ai-native-startup-enterprise-orchestration.md)
+- [DIFC Enterprise Transformation Management](docs/workflows/shared/difc-enterprise-transformation-management.md)
+
+---
+
 # Workflow Use Cases
 
 AXXESS is not designed against generic AI demos. It is designed against real, lived operational failure modes across the domains we serve, converted into implementation-ready workflow specifications: purpose, actors, triggers, preconditions, step-by-step flow, decision points, exceptions, escalation paths, data inputs/outputs, roles and permissions, audit trail requirements, KPIs, risks and controls, and acceptance criteria for engineering.
