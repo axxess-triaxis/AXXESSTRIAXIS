@@ -110,6 +110,10 @@ row-level percentage:
    receiving events per this program's analytics-event-taxonomy work (see A-22), but with the
    product's current real user count, neither yet has enough volume to produce meaningful
    dashboards/insights.
+10. **Part of roadmap but scrapped** -- a connector/integration that was previously planned or
+    named as intended work, then explicitly decided against, rather than merely deferred or not
+    yet started. **Currently no entries (2026-08-08)** -- tier defined for future use, nothing in
+    this matrix qualifies as of this update.
 
 These tiers apply *within* a row, per connector -- they do not replace the row's own overall
 `Yes`/`Blocked`/`Partial`/etc. status, which still governs whether the row as a whole counts as
