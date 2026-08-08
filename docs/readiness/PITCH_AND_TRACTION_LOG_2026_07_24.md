@@ -43,6 +43,15 @@ Source: result email from Ananya, Innopreneurs India (Lemon Ideas), 2026-07-08: 
 - This is a genuine pass, consistent with this log's practice of recording investor/evaluator-side rejections without softening (see #9, #12, #19, #22). The founder's own later description to 3one4 Capital ("Presented in the Top 500 round of Innopreneurs Season 13") is accurate as far as it goes but did not mention this outcome -- recorded here to close that gap, not to imply the earlier statement was false.
 **Outcome:** Not selected for the current cohort, with named constructive jury feedback (above). Reached the Top 500 round before the pass.
 
+### 33. Pitch Karo India -- competition organized by IIT Delhi, BISE, and other named organizers (final round invitation)
+
+**Status:** Invited to the final round. **Founder decision: not responding, not attending, not formally declining.** Numbered out of the main entry sequence (added after #32), same reasoning as entries #26-32 above -- grouped here under Competitions and Panels by content, not position.
+**Source:** invitation PDF supplied by the founder, 2026-08-08 (filename `Pitch Karo India.pdf`). **This session attempted to extract the PDF's text via `pdftotext` and confirmed it returns no extractable text (an image-only PDF); no PDF-rendering or OCR tooling (`pdftoppm`, ImageMagick, Ghostscript, `tesseract`) was available in this environment to view it visually.** The competition's exact dates, prize/terms structure, and the full list of named organizers beyond IIT Delhi and BISE are therefore not independently confirmed from the document itself -- everything below is founder-stated, not extracted.
+- Founder-stated: the company originally applied in May 2026, "as an unvalidated idea." The final-round invitation now received is **on a fully self-funded basis**.
+- Founder's own framing, quoted verbatim: "We are not going to respond or even decline extractive offers. So we are documenting and moving." And: "In current stage makes no sense to even attend."
+- **This is a distinct outcome type from this log's established patterns.** It differs from the "declined, to preserve runway" entries (#9 Startup Wise Guys, #12 Forge AI, #15 Web Summit) and from the explicit paid-stage decline in #14 (Forbes India DGEMS, "We will pass for now") -- both of those involved an active decline communicated to the other party. This is a deliberate **non-response**: the founder is not engaging with the invitation at all, framing it as an "extractive" ask (a self-funded final round for an idea now well past the idea stage it was originally submitted at) rather than a genuine opportunity worth a decline conversation.
+**Outcome:** No response given to the organizers. Logged here for the record and treated as closed by non-engagement, not by an active decline exchange.
+
 ## Incubation Programs
 
 ### 5. Nandini Singh -- SIIC, IIT Kanpur
