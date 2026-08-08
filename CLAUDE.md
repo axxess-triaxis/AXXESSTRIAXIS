@@ -11,6 +11,14 @@ This file is read automatically at the start of any Claude Code session in this 
 - **Sudipta Koushik Sarmah**, Founder and Managing Director, is the HITL (human-in-the-loop) authority.
 - Work happens inside this canonical repository only. Do not create a second app, a duplicate project structure, or a parallel repo to satisfy a request -- extend what exists here.
 
+### Mandatory Plan-First Sessions -- Standing Rule
+
+Every session in this repository must start in Plan Mode automatically -- no separate prompt or slash command from the founder should be required to trigger it. This is enforced at the harness level via `.claude/settings.json` (`permissions.defaultMode: "plan"`), not left to a memory/instruction that could be forgotten or skipped under time pressure: a session opening in this repo starts gated behind an approved plan before any file edit or command executes.
+
+This directly closes a growth area named in external session analysis (Paxel Report #13, `docs/readiness/PAXEL_REPORT_13_CODEX_BEHAVIORAL_ANALYSIS_2026_08_07.md`): "Your plan-first loop needs more measurement... only 1 of 27 sessions showed a plan file before shipping." Rather than relying on remembering to invoke planning, it is now the default entry state for the whole repository.
+
+If a task is genuinely too small or too urgent to warrant a written plan (e.g. a one-line typo fix, or an already-agreed-next-step continuing from a prior turn's plan), say so explicitly and ask the founder to exit plan mode for that turn rather than silently treating the gate as optional.
+
 ## The Evidence Chain -- Standing Rule
 
 Every material claim about status, progress, or completion in this repository's own documentation must be traceable through:
