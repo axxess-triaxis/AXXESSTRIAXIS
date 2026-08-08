@@ -2820,6 +2820,24 @@ Current limitations include:
 
 ---
 
+## Positioning
+
+- Founder-stated, source artifact needed for the broader claim below -- but the underlying assessment
+  is a real pilot customer's own words, recorded in full at
+  `docs/LOIS_BETA_PILOT_INTEREST_REFERRAL_AND_STRATEGIC_PARTNERSHIPS_LOG.md` (Ekora Hive pilot
+  testimonial, 2026-08-08): the product is "not ready to be called 'Business Brain' or 'AI powered
+  Business Intelligence,'" and "is quite far from being 'AI operating infrastructure for enterprise'"
+  -- language this document itself currently uses (see "Is AXXESS another AI chatbot?" above: "AXXESS
+  is an enterprise AI operating platform"). Logged here as an explicit caution against the gap between
+  current product-marketing language and current functional maturity, not as a claim this document is
+  wrong to make -- a product-scoping/positioning decision for the founder, not a code defect.
+- The same pilot feedback separately notes the AI layer currently calculates, orchestrates,
+  aggregates, and summarizes, but does not yet operationally automate and execute end-to-end on the
+  customer's behalf -- tracked as a functional gap (see `A-78`, `A-102` in
+  `docs/readiness/ACTIONABLES_READINESS_MATRIX.md`), not just a messaging one.
+
+---
+
 # Non-Goals
 
 AXXESS is not a generic ChatGPT wrapper, a consumer productivity app, a prompt marketplace, a
