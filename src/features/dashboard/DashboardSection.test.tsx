@@ -242,3 +242,32 @@ describe("DashboardSection (Executive Dashboard Redesign Sprint ED-R1)", () => {
     expect(screen.queryByText("Live Ops")).not.toBeInTheDocument();
   });
 });
+
+// A-110: Executive Dashboard top section -- Daily/Weekly/Monthly/Year-on-Year Snapshot, Insights,
+// Actionables. This test only confirms mount position (the true top of the page, between the
+// header and the command search); DashboardSnapshotBar's own real-data/tab/insight/actionable
+// behavior is covered directly in DashboardSnapshotBar.test.tsx.
+describe("DashboardSection (A-110 -- Snapshot bar mount position)", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    window.localStorage.clear();
+  });
+
+  it("renders the Snapshot bar between the module header and the command search, in DOM order", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ user: null }), { status: 401 })));
+    render(
+      <AnalyticsProviderShell provider={new MockAnalyticsProvider()}>
+        <AuthProvider>
+          <DashboardSection />
+        </AuthProvider>
+      </AnalyticsProviderShell>,
+    );
+
+    const header = await screen.findByText("Executive Dashboard");
+    const snapshot = await screen.findByText("Snapshot");
+    const search = screen.getByPlaceholderText("Search projects and priority actions");
+
+    expect(header.compareDocumentPosition(snapshot) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(snapshot.compareDocumentPosition(search) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+});
