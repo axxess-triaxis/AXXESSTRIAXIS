@@ -15,7 +15,7 @@ import { Avatar } from "../../components/ui/Avatar";
 import { Card } from "../../components/ui/Card";
 import { RiskBadge } from "../../components/ui/RiskBadge";
 import { StatusBadge } from "../../components/ui/StatusBadge";
-import type { Program, Project, Task, User } from "../../domain";
+import type { Program, Project, Reminder, Task, User } from "../../domain";
 import { applicationServices } from "../../providers/serviceProvider";
 import { tenantScopeFromUser } from "../../repositories/supabaseEnterpriseRepositories";
 import { useAnalytics } from "../../services/analytics";
@@ -89,6 +89,10 @@ export const TasksSection = () => {
   const [completionFeedbackPromptShown, setCompletionFeedbackPromptShown] = useState(false);
   const [feedbackModalOpen, setFeedbackModalOpen] = useState(false);
   const [agenticDraftBanner, setAgenticDraftBanner] = useState<string | null>(null);
+  // A-103 (2026-08-09): a real, dedicated Reminders view inside this same workspace, not a
+  // separate top-level section -- see RemindersPanel below.
+  const [view, setView] = useState<"tasks" | "reminders">("tasks");
+  const [reminderDraft, setReminderDraft] = useState<{ title: string; description: string } | null>(null);
   const completionCelebration = useWorkflowCompletionCelebration();
   const taskTimeline = useWorkflowTimeline(scope, { limit: 5, resourceType: selectedTask ? "task" : undefined, resourceId: selectedTask?.id });
 
@@ -120,13 +124,12 @@ export const TasksSection = () => {
     void loadTasks();
   }, [loadTasks]);
 
-  // A-79: a "Create task"/"Reminder" selection from the AI Workspace actionables pop-up lands
-  // here as a sessionStorage draft (agenticDraftHandoff.ts) -- pre-fills this section's own,
-  // already-validated New Task form rather than creating a row directly, so Save Task is still
-  // the real, explicit confirmation. AXXESS has no dedicated Reminder type, so "reminder" drafts
-  // open as a tagged Task, disclosed in the banner rather than silently reinterpreted.
+  // A-79: a "Create task" selection from the AI Workspace actionables pop-up lands here as a
+  // sessionStorage draft (agenticDraftHandoff.ts) -- pre-fills this section's own, already-validated
+  // New Task form rather than creating a row directly, so Save Task is still the real, explicit
+  // confirmation.
   useEffect(() => {
-    const draft = readAndClearAgenticDraft("task") ?? readAndClearAgenticDraft("reminder");
+    const draft = readAndClearAgenticDraft("task");
     if (!draft) return;
     setErrors({});
     setEditingTask(undefined);
@@ -135,11 +138,23 @@ export const TasksSection = () => {
       ...taskForm(),
       title: draft.summary.length > 80 ? `${draft.summary.slice(0, 77)}...` : draft.summary,
       description: draft.summary,
-      tags: draft.actionType === "reminder" ? "reminder" : "",
     });
-    setAgenticDraftBanner(draft.actionType === "reminder"
-      ? "Drafted from AI Workspace as a reminder -- AXXESS doesn't yet have a dedicated Reminder type, so this opened as a tagged Task. Review and Save Task to create it."
-      : "Drafted from AI Workspace -- review and Save Task to create it.");
+    setAgenticDraftBanner("Drafted from AI Workspace -- review and Save Task to create it.");
+  }, []);
+
+  // A-103 (2026-08-09): a "Create reminder" selection now opens the real Reminders view (not a
+  // tagged Task -- see the removed AGENTIC_ROUTE_CAVEAT.reminder in agenticActionTypes.ts). Split
+  // into its own effect from the task-draft one above: per readAndClearAgenticDraft's own
+  // staleness/type-match contract, a mismatched draft type is left in place for whichever call
+  // actually matches it, so both effects can run independently and safely on mount.
+  useEffect(() => {
+    const draft = readAndClearAgenticDraft("reminder");
+    if (!draft) return;
+    setView("reminders");
+    setReminderDraft({
+      title: draft.summary.length > 80 ? `${draft.summary.slice(0, 77)}...` : draft.summary,
+      description: draft.summary,
+    });
   }, []);
 
   const openForm = (task?: Task) => {
@@ -302,7 +317,7 @@ export const TasksSection = () => {
         }
       />
 
-      {demoMode && (
+      {demoMode && view === "tasks" && (
         <>
           <DemoDataNotice label="The workflow surface demonstrates how AI output becomes assigned work, approval requests, and audit history rather than static analysis." />
           <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
@@ -313,6 +328,22 @@ export const TasksSection = () => {
         </>
       )}
 
+      <div className="flex gap-1 border-b border-[rgba(0,0,0,0.08)]">
+        {(["tasks", "reminders"] as const).map((tab) => (
+          <button
+            key={tab}
+            type="button"
+            onClick={() => setView(tab)}
+            className={`text-xs px-3 py-2 font-semibold border-b-2 -mb-px transition-colors ${view === tab ? "border-[#8B1E2D] text-[#8B1E2D]" : "border-transparent text-[#5F6B73] hover:text-[#0F1117]"}`}
+          >
+            {tab === "tasks" ? "Tasks" : "Reminders"}
+          </button>
+        ))}
+      </div>
+
+      {view === "reminders" ? (
+        <RemindersPanel scope={scope} users={users} draft={reminderDraft} onDraftConsumed={() => setReminderDraft(null)} />
+      ) : (
       <div className="grid min-h-[520px] grid-cols-1 gap-4 xl:grid-cols-[1fr_360px]">
         <div className="min-w-0">
           {toast && <div className="mb-3"><InlineToast tone={toast.tone} message={toast.message} /></div>}
@@ -467,8 +498,260 @@ export const TasksSection = () => {
           )}
         </Card>
       </div>
+      )}
     </PageShell>
   );
 };
+
+type ReminderFormState = {
+  title: string;
+  description: string;
+  remindAt: string;
+  recurrence: Reminder["recurrence"];
+  ownerId: string;
+  status: Reminder["status"];
+};
+
+function reminderForm(reminder?: Reminder, draft?: { title: string; description: string } | null): ReminderFormState {
+  return {
+    title: reminder?.title ?? draft?.title ?? "",
+    description: reminder?.description ?? draft?.description ?? "",
+    remindAt: reminder?.remindAt?.slice(0, 16) ?? "",
+    recurrence: reminder?.recurrence ?? "none",
+    ownerId: reminder?.ownerId ?? "",
+    status: reminder?.status ?? "pending",
+  };
+}
+
+const reminderRecurrenceOptions = [
+  { value: "none", label: "One-time" },
+  { value: "daily", label: "Daily" },
+  { value: "weekly", label: "Weekly" },
+  { value: "monthly", label: "Monthly" },
+];
+
+const reminderStatusOptions: { value: Reminder["status"]; label: string }[] = [
+  { value: "pending", label: "Pending" },
+  { value: "completed", label: "Completed" },
+  { value: "dismissed", label: "Dismissed" },
+];
+
+// A-103 (2026-08-09): a real, dedicated Reminder type/view inside Tasks & Workflow -- previously a
+// Reminder created from an AI answer silently became a Task tagged "reminder." Sibling function in
+// this same file (not a new module) so it shares `scope`/`users` with TasksSection without a new
+// prop-drilling boundary, matching the same list+detail/edit shape as the Tasks UI above but backed
+// by remindersRepository instead of tasksRepository.
+function RemindersPanel({
+  scope,
+  users,
+  draft,
+  onDraftConsumed,
+}: {
+  scope?: ReturnType<typeof tenantScopeFromUser>;
+  users: User[];
+  draft: { title: string; description: string } | null;
+  onDraftConsumed: () => void;
+}) {
+  const [reminders, setReminders] = useState<Reminder[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [selectedReminder, setSelectedReminder] = useState<Reminder | undefined>();
+  const [editingReminder, setEditingReminder] = useState<Reminder | undefined>();
+  const [form, setForm] = useState<ReminderFormState>(() => reminderForm());
+  const [toast, setToast] = useState<{ tone: "success" | "error" | "info"; message: string } | null>(null);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [draftBanner, setDraftBanner] = useState<string | null>(null);
+
+  const canManageReminders = Boolean(scope && ["Super Admin", "Organization Admin", "Executive", "Manager", "Employee"].includes(scope.role));
+
+  const loadReminders = useCallback(async () => {
+    if (!scope) return;
+    setLoading(true);
+    setToast(null);
+    try {
+      const rows = await applicationServices.remindersRepository.list(scope);
+      setReminders(rows);
+    } catch {
+      setToast({ tone: "error", message: "Unable to load reminders." });
+    } finally {
+      setLoading(false);
+    }
+  }, [scope]);
+
+  useEffect(() => {
+    void loadReminders();
+  }, [loadReminders]);
+
+  useEffect(() => {
+    if (!draft) return;
+    setErrors({});
+    setEditingReminder(undefined);
+    setSelectedReminder(undefined);
+    setForm(reminderForm(undefined, draft));
+    setDraftBanner("Drafted from AI Workspace as a reminder -- review and Save Reminder to create it.");
+    onDraftConsumed();
+    // onDraftConsumed is a fresh function reference from the parent each render -- excluding it is
+    // deliberate, matching how the parent's own agentic-draft effects (above) intentionally run
+    // only on the draft value changing, not on every parent re-render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draft]);
+
+  function openForm(reminder?: Reminder) {
+    setErrors({});
+    setEditingReminder(reminder);
+    setSelectedReminder(reminder);
+    setForm(reminderForm(reminder));
+    setDraftBanner(null);
+  }
+
+  function validate() {
+    const nextErrors: Record<string, string> = {};
+    if (!form.title.trim()) nextErrors.title = "Reminder title is required.";
+    if (!form.remindAt) nextErrors.remindAt = "Remind-at date/time is required.";
+    setErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
+  }
+
+  async function submitReminder() {
+    if (!scope || !validate()) return;
+    setSaving(true);
+    setToast(null);
+    try {
+      const payload = {
+        title: form.title.trim(),
+        description: form.description.trim() || undefined,
+        remindAt: new Date(form.remindAt).toISOString(),
+        recurrence: form.recurrence,
+        ownerId: form.ownerId || undefined,
+        status: form.status,
+      };
+      const saved = editingReminder
+        ? await applicationServices.remindersRepository.update(scope, editingReminder.id, payload)
+        : await applicationServices.remindersRepository.create(scope, payload);
+      setSelectedReminder(saved);
+      setEditingReminder(undefined);
+      setDraftBanner(null);
+      setToast({ tone: "success", message: editingReminder ? "Reminder updated." : "Reminder created." });
+      await loadReminders();
+    } catch {
+      setToast({ tone: "error", message: "Reminder could not be saved." });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const ownerOptions = [{ value: "", label: "Unassigned" }, ...users.map((owner) => ({ value: owner.id, label: `${owner.displayName} (${owner.role})` }))];
+
+  if (loading) return <LoadingState label="Reminders" />;
+
+  return (
+    <div className="grid min-h-[520px] grid-cols-1 gap-4 xl:grid-cols-[1fr_360px]">
+      <div className="min-w-0">
+        {toast && <div className="mb-3"><InlineToast tone={toast.tone} message={toast.message} /></div>}
+        <Card className="overflow-hidden">
+          <div className="flex items-center justify-between gap-4 border-b border-[rgba(0,0,0,0.06)] bg-[#F8F9FA] px-4 py-2.5">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-[#5F6B73]">Reminder</span>
+            <button
+              type="button"
+              onClick={() => openForm()}
+              disabled={!canManageReminders}
+              className="flex items-center gap-1.5 rounded-lg bg-[#8B1E2D] px-3 py-1.5 text-xs text-white hover:bg-[#7a1a27] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <Plus size={12} /> New Reminder
+            </button>
+          </div>
+          {reminders.length === 0 && (
+            <div className="p-8">
+              <EmptyState
+                title="No reminders yet"
+                message="Create a reminder to be notified of a follow-up, at a real date and time."
+                action={
+                  <button
+                    type="button"
+                    disabled={!canManageReminders}
+                    onClick={() => openForm()}
+                    className="flex items-center gap-1.5 rounded-lg bg-[#8B1E2D] px-3 py-1.5 text-xs text-white hover:bg-[#7a1a27] disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    <Plus size={12} /> Create your first reminder
+                  </button>
+                }
+              />
+            </div>
+          )}
+          {reminders.map((reminder) => {
+            const owner = users.find((row) => row.id === reminder.ownerId);
+            return (
+              <button
+                key={reminder.id}
+                onClick={() => setSelectedReminder(reminder)}
+                className="flex w-full items-center gap-3 border-b border-[rgba(0,0,0,0.04)] px-4 py-3 text-left transition-colors hover:bg-[#F8F9FA]"
+              >
+                <div className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-medium text-[#0F1117]">{reminder.title}</span>
+                  <span className="text-[10px] text-[#5F6B73]">{reminder.status === "completed" ? "Completed" : reminder.status === "dismissed" ? "Dismissed" : "Pending"}</span>
+                </div>
+                <div className="flex w-20 justify-center"><Avatar initials={owner?.avatarInitials ?? "UA"} /></div>
+                <span className="w-32 text-right font-mono text-[11px] text-[#5F6B73]">{new Date(reminder.remindAt).toLocaleString()}</span>
+              </button>
+            );
+          })}
+        </Card>
+      </div>
+
+      <Card className="h-full overflow-y-auto p-4">
+        {editingReminder || !selectedReminder ? (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-[#0F1117]">{editingReminder ? "Edit Reminder" : "New Reminder"}</h3>
+              {editingReminder && <button onClick={() => setEditingReminder(undefined)} className="rounded-lg p-1.5 text-[#5F6B73] hover:bg-[#F2F3F5]"><X size={14} /></button>}
+            </div>
+            {draftBanner && (
+              <div className="flex items-start justify-between gap-2 rounded-lg border border-[#8B1E2D]/20 bg-[#FFF8F8] p-2.5 text-[11px] leading-relaxed text-[#8B1E2D]">
+                <span>{draftBanner}</span>
+                <button type="button" onClick={() => setDraftBanner(null)} aria-label="Dismiss" className="text-[#8B1E2D] hover:opacity-70"><X size={12} /></button>
+              </div>
+            )}
+            <TextField label="Title" value={form.title} error={errors.title} onChange={(event) => setForm({ ...form, title: event.target.value })} disabled={!canManageReminders || saving} />
+            <TextAreaField label="Description" value={form.description} onChange={(event) => setForm({ ...form, description: event.target.value })} disabled={!canManageReminders || saving} />
+            <TextField label="Remind at" type="datetime-local" value={form.remindAt} error={errors.remindAt} onChange={(event) => setForm({ ...form, remindAt: event.target.value })} disabled={!canManageReminders || saving} />
+            <SelectField label="Recurrence" value={form.recurrence} options={reminderRecurrenceOptions} onChange={(event) => setForm({ ...form, recurrence: event.target.value as Reminder["recurrence"] })} disabled={!canManageReminders || saving} />
+            <SelectField label="Owner" value={form.ownerId} options={ownerOptions} onChange={(event) => setForm({ ...form, ownerId: event.target.value })} disabled={!canManageReminders || saving} />
+            <SelectField label="Status" value={form.status} options={reminderStatusOptions} onChange={(event) => setForm({ ...form, status: event.target.value as Reminder["status"] })} disabled={!canManageReminders || saving} />
+            <button
+              onClick={submitReminder}
+              disabled={!canManageReminders || saving}
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#8B1E2D] px-3 py-2 text-xs font-semibold text-white hover:bg-[#7a1a27] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <Save size={13} /> {saving ? "Saving..." : "Save Reminder"}
+            </button>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-[#5F6B73]">Reminder Details</p>
+                <h3 className="mt-1 text-base font-semibold leading-snug text-[#0F1117]">{selectedReminder.title}</h3>
+              </div>
+              <button
+                onClick={() => openForm(selectedReminder)}
+                disabled={!canManageReminders}
+                className="flex items-center gap-1 rounded-lg border border-[rgba(0,0,0,0.1)] px-2 py-1.5 text-xs font-semibold text-[#5F6B73] hover:bg-[#F2F3F5] disabled:opacity-60"
+              >
+                <Edit3 size={12} /> Edit
+              </button>
+            </div>
+            <p className="text-xs leading-relaxed text-[#5F6B73]">{selectedReminder.description || "No description recorded."}</p>
+            <div className="grid grid-cols-2 gap-3 text-xs">
+              <div className="rounded-lg bg-[#F8F9FA] p-3"><span className="block text-[10px] uppercase text-[#5F6B73]">Status</span><StatusBadge status={selectedReminder.status === "completed" ? "Completed" : selectedReminder.status === "dismissed" ? "Dismissed" : "Pending"} /></div>
+              <div className="rounded-lg bg-[#F8F9FA] p-3"><span className="block text-[10px] uppercase text-[#5F6B73]">Recurrence</span><span className="font-semibold text-[#0F1117] capitalize">{selectedReminder.recurrence}</span></div>
+              <div className="rounded-lg bg-[#F8F9FA] p-3"><span className="block text-[10px] uppercase text-[#5F6B73]">Owner</span><span className="font-semibold text-[#0F1117]">{users.find((row) => row.id === selectedReminder.ownerId)?.displayName ?? "Unassigned"}</span></div>
+              <div className="rounded-lg bg-[#F8F9FA] p-3"><span className="block text-[10px] uppercase text-[#5F6B73]">Remind at</span><span className="font-mono text-[#0F1117]">{new Date(selectedReminder.remindAt).toLocaleString()}</span></div>
+            </div>
+          </div>
+        )}
+      </Card>
+    </div>
+  );
+}
 
 export default TasksSection;

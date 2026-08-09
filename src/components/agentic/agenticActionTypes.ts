@@ -76,9 +76,12 @@ export const AGENTIC_ROUTE_FOR_ACTION: Partial<Record<AgenticFirstAction, Agenti
 };
 
 // Shown in the destination page's pre-fill banner for actions with no dedicated form of their own.
+// A-103 (2026-08-09): the "reminder" entry that lived here was removed now that a real, dedicated
+// Reminder type/view exists inside Tasks & Workflow (RemindersPanel in TasksSection.tsx) -- this
+// caveat's own wording always said it applied only "until" that existed. "program" is a separate,
+// still-open gap of the same shape (opens as a Project) -- not part of this change.
 export const AGENTIC_ROUTE_CAVEAT: Partial<Record<AgenticFirstAction, string>> = {
   program: "AXXESS does not yet have a dedicated Program creation form -- this opens as a new Project you can link to a Program.",
-  reminder: "AXXESS does not yet have a dedicated Reminder type -- this opens as a new Task tagged \"reminder.\"",
 };
 
 export type AgenticGateSignals = {

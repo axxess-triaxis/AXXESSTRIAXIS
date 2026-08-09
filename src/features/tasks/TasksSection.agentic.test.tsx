@@ -25,6 +25,7 @@ vi.mock("../../services/analytics", () => ({
 vi.mock("../../providers/serviceProvider", () => ({
   applicationServices: {
     tasksRepository: { list: async () => [] },
+    remindersRepository: { list: async () => [] },
     projectsRepository: { list: async () => [] },
     programsRepository: { list: async () => [] },
     usersRepository: { listByOrganization: async () => [] },
@@ -55,7 +56,7 @@ describe("TasksSection agentic draft pre-fill (A-79)", () => {
     expect(screen.getByLabelText("Title")).toHaveValue("Escalate the Dibrugarh referral SLA variance.");
   });
 
-  it("opens a 'reminder' draft as a tagged Task, with an honest caveat in the banner", async () => {
+  it("A-103 (2026-08-09): opens a 'reminder' draft in the real Reminders tab, pre-filled, not as a tagged Task", async () => {
     writeAgenticDraft({
       actionType: "reminder",
       summary: "Follow up on the pending approval by Friday.",
@@ -66,9 +67,12 @@ describe("TasksSection agentic draft pre-fill (A-79)", () => {
     render(<TasksSection />);
 
     await waitFor(() => {
-      expect(screen.getByText(/AXXESS doesn't yet have a dedicated Reminder type/)).toBeInTheDocument();
+      expect(screen.getByRole("heading", { name: "New Reminder" })).toBeInTheDocument();
     });
-    expect(screen.getByDisplayValue("reminder")).toBeInTheDocument();
+    expect(screen.getByText(/Drafted from AI Workspace as a reminder -- review and Save Reminder/)).toBeInTheDocument();
+    expect(screen.getByLabelText("Title")).toHaveValue("Follow up on the pending approval by Friday.");
+    // No more "AXXESS doesn't yet have a dedicated Reminder type" caveat -- a real type exists now.
+    expect(screen.queryByText(/dedicated Reminder type/)).not.toBeInTheDocument();
   });
 
   it("does not open a pre-filled form when there is no pending draft", async () => {
