@@ -41,9 +41,31 @@ export async function POST(request: Request) {
     createAction?: boolean;
     actionType?: ReviewWorkflowActionType;
     actionTitle?: string;
+    editedAnswer?: string;
+    escalationType?: "mapped_stakeholder" | "external_email" | "internal_unmapped";
+    escalationTarget?: { stakeholderId?: string; stakeholderName?: string; email?: string; employeeCode?: string; name?: string };
   };
   if (!body.reviewId || !body.decision) {
     return NextResponse.json({ error: "Review id and decision are required." }, { status: 400 });
+  }
+  // A-102 (2026-08-09): "Mark edited" and "Escalate" previously recorded a decision with no real
+  // substance -- require the actual content the reviewer captured, not just the decision label.
+  if (body.decision === "edited" && !body.editedAnswer?.trim()) {
+    return NextResponse.json({ error: "Edited answer text is required." }, { status: 400 });
+  }
+  if (body.decision === "escalated") {
+    if (!body.escalationType) {
+      return NextResponse.json({ error: "An escalation target is required." }, { status: 400 });
+    }
+    const target = body.escalationTarget;
+    const targetValid = body.escalationType === "mapped_stakeholder"
+      ? Boolean(target?.stakeholderId)
+      : body.escalationType === "external_email"
+        ? Boolean(target?.email?.trim())
+        : Boolean(target?.email?.trim() || target?.employeeCode?.trim());
+    if (!targetValid) {
+      return NextResponse.json({ error: "A valid escalation target is required." }, { status: 400 });
+    }
   }
 
   const scope = tenantScopeFromUser(session.user, session.accessToken);
@@ -69,6 +91,9 @@ export async function POST(request: Request) {
     reviewerUserId: session.user.id,
     decision: body.decision,
     decisionReason: body.decisionReason,
+    editedAnswer: body.editedAnswer,
+    escalationType: body.escalationType,
+    escalationTarget: body.escalationTarget,
   });
   const auditLog = await auditLogsRepository.record(scope, {
     action: `ai.review.${body.decision}`,
@@ -77,8 +102,22 @@ export async function POST(request: Request) {
     category: "ai-governance",
     metadata: {
       decisionReason: body.decisionReason,
+      escalationType: body.escalationType,
     },
   }).catch(() => undefined);
+
+  // A-102: a "mapped stakeholder" escalation creates a real, visible record in Stakeholders & CRM
+  // (the same stakeholderNotesRepository the "Create Stakeholder Note" flow already uses), not just
+  // a label on the review row -- so escalating actually routes somewhere a human will see it.
+  if (body.decision === "escalated" && body.escalationType === "mapped_stakeholder" && body.escalationTarget?.stakeholderId) {
+    await stakeholderNotesRepository.create(scope, {
+      stakeholderId: body.escalationTarget.stakeholderId,
+      title: `AI review escalated: ${targetReview.answerExcerpt.slice(0, 80)}`,
+      body: body.decisionReason ?? "Escalated from the AI Review Inbox.",
+      sentiment: "urgent",
+      sourceAiReviewId: body.reviewId,
+    }).catch(() => undefined);
+  }
 
   if (body.createAction && body.decision === "approved") {
     const reviews = await listAiReviewInbox(session.user.organizationId);

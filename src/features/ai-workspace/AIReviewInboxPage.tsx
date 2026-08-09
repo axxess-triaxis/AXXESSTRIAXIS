@@ -29,6 +29,9 @@ import { writeAgenticDraft } from "../../services/agentic/agenticDraftHandoff";
 import { isAgenticGateEnabled } from "../../services/agentic/agenticGateToggle";
 import { applicationServices } from "../../providers/serviceProvider";
 import { tenantScopeFromUser } from "../../repositories/supabaseEnterpriseRepositories";
+import type { Stakeholder } from "../../domain";
+import { MarkEditedModal } from "../../components/ai-review/MarkEditedModal";
+import { EscalateReviewModal, type EscalationResult } from "../../components/ai-review/EscalateReviewModal";
 
 type ReviewResponse = {
   reviews?: AiReviewInboxItem[];
@@ -37,6 +40,9 @@ type ReviewResponse = {
 
 type DecisionResponse = {
   error?: string;
+  editedAnswer?: string;
+  escalationType?: string;
+  escalationTarget?: Record<string, unknown>;
   workflowAction?: {
     actionType?: ReviewWorkflowActionType;
     createdTask?: { id: string; title: string };
@@ -67,6 +73,11 @@ export function AIReviewInboxPage() {
   const [bulkApproving, setBulkApproving] = useState(false);
   const [agenticPrompt, setAgenticPrompt] = useState<{ gateContext?: AgenticGateResult; source: AgenticPromptSource } | null>(null);
   const [agenticMessage, setAgenticMessage] = useState<string | null>(null);
+  // A-102 (2026-08-09): "Mark edited"/"Escalate" now open a real modal instead of submitting a
+  // fixed template string directly.
+  const [editModalReview, setEditModalReview] = useState<AiReviewInboxItem | null>(null);
+  const [escalateModalReview, setEscalateModalReview] = useState<AiReviewInboxItem | null>(null);
+  const [stakeholders, setStakeholders] = useState<Stakeholder[]>([]);
   const workflowTimeline = useWorkflowTimeline(undefined, { limit: 6 });
   const microSurvey = useMicroSurveyPrompt();
   const completionCelebration = useWorkflowCompletionCelebration();
@@ -80,8 +91,10 @@ export function AIReviewInboxPage() {
     if (!tenantScope) return;
     let isMounted = true;
     applicationServices.stakeholdersRepository.list(tenantScope, { pageSize: 200 })
-      .then((stakeholders) => {
-        if (isMounted) knownStakeholderNamesRef.current = stakeholders.map((stakeholder) => stakeholder.name);
+      .then((rows) => {
+        if (!isMounted) return;
+        knownStakeholderNamesRef.current = rows.map((stakeholder) => stakeholder.name);
+        setStakeholders(rows);
       })
       .catch(() => undefined);
     return () => {
@@ -246,7 +259,13 @@ export function AIReviewInboxPage() {
     navigateToSection(destination);
   }
 
-  async function decide(reviewId: string, decision: "approved" | "edited" | "rejected" | "escalated", createAction = false, decisionReasonOverride?: string): Promise<boolean> {
+  async function decide(
+    reviewId: string,
+    decision: "approved" | "edited" | "rejected" | "escalated",
+    createAction = false,
+    decisionReasonOverride?: string,
+    extras?: { editedAnswer?: string; escalationType?: EscalationResult["escalationType"]; escalationTarget?: EscalationResult["escalationTarget"] },
+  ): Promise<boolean> {
     const response = await fetch("/api/ai/reviews", {
       method: "POST",
       credentials: "include",
@@ -258,6 +277,9 @@ export function AIReviewInboxPage() {
         createAction,
         actionType,
         actionTitle: actionTitles[reviewId],
+        editedAnswer: extras?.editedAnswer,
+        escalationType: extras?.escalationType,
+        escalationTarget: extras?.escalationTarget,
       }),
     });
     const payload = await response.json().catch(() => ({})) as DecisionResponse;
@@ -418,8 +440,8 @@ export function AIReviewInboxPage() {
               <div className="mt-4 flex flex-wrap gap-2">
                 <button disabled={decisionDisabled} onClick={() => void decideAndClearMessage(review.id, "approved", true)} className="rounded-lg bg-[#8B1E2D] px-3 py-2 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-50">Approve and create</button>
                 <button disabled={decisionDisabled} onClick={() => void decideAndClearMessage(review.id, "approved")} className="rounded-lg border border-[rgba(15,17,23,0.12)] bg-white px-3 py-2 text-xs font-bold text-[#0F1117] disabled:cursor-not-allowed disabled:opacity-50">Approve only</button>
-                <button disabled={decisionDisabled} onClick={() => void decideAndClearMessage(review.id, "edited")} className="rounded-lg border border-[rgba(15,17,23,0.12)] bg-white px-3 py-2 text-xs font-bold text-[#0F1117] disabled:cursor-not-allowed disabled:opacity-50">Mark edited</button>
-                <button disabled={decisionDisabled} onClick={() => void decideAndClearMessage(review.id, "escalated")} className="rounded-lg border border-[rgba(15,17,23,0.12)] bg-white px-3 py-2 text-xs font-bold text-[#0F1117] disabled:cursor-not-allowed disabled:opacity-50">Escalate</button>
+                <button disabled={decisionDisabled} onClick={() => setEditModalReview(review)} className="rounded-lg border border-[rgba(15,17,23,0.12)] bg-white px-3 py-2 text-xs font-bold text-[#0F1117] disabled:cursor-not-allowed disabled:opacity-50">Mark edited</button>
+                <button disabled={decisionDisabled} onClick={() => setEscalateModalReview(review)} className="rounded-lg border border-[rgba(15,17,23,0.12)] bg-white px-3 py-2 text-xs font-bold text-[#0F1117] disabled:cursor-not-allowed disabled:opacity-50">Escalate</button>
                 <button disabled={decisionDisabled} onClick={() => void decideAndClearMessage(review.id, "rejected")} className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700 disabled:cursor-not-allowed disabled:opacity-50">Reject</button>
               </div>
             </Card>
@@ -458,6 +480,30 @@ export function AIReviewInboxPage() {
           disabledReasons={AGENTIC_UNAVAILABLE_ACTIONS}
           onResolved={resolveAgenticPrompt}
           onClose={() => setAgenticPrompt(null)}
+        />
+      )}
+      {editModalReview && (
+        <MarkEditedModal
+          open
+          originalAnswer={editModalReview.fullAnswer ?? editModalReview.answerExcerpt}
+          onCancel={() => setEditModalReview(null)}
+          onConfirm={(editedText) => {
+            const review = editModalReview;
+            setEditModalReview(null);
+            void decideAndClearMessage(review.id, "edited", false, "Edited from tenant AI review inbox.", { editedAnswer: editedText });
+          }}
+        />
+      )}
+      {escalateModalReview && (
+        <EscalateReviewModal
+          open
+          stakeholders={stakeholders}
+          onCancel={() => setEscalateModalReview(null)}
+          onConfirm={({ escalationType, escalationTarget }) => {
+            const review = escalateModalReview;
+            setEscalateModalReview(null);
+            void decideAndClearMessage(review.id, "escalated", false, `Escalated (${escalationType}) from tenant AI review inbox.`, { escalationType, escalationTarget });
+          }}
         />
       )}
     </main>
