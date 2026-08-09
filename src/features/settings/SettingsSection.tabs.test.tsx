@@ -22,6 +22,13 @@ vi.mock("../../providers/serviceProvider", () => ({
   },
 }));
 
+// 2026-08-08: default tab changed from "security" (removed) to "profile", so every render in this
+// file now mounts ProfilePanel, which calls useAnalytics() -- mock it the same way
+// SettingsSection.linkedPhone.test.tsx already does for its own Profile-tab renders.
+vi.mock("../../services/analytics", () => ({
+  useAnalytics: () => ({ trackEvent: vi.fn() }),
+}));
+
 describe("Settings tab list (SA-3 -- AI Configuration removed, Demo gated)", () => {
   beforeEach(() => {
     vi.resetModules();
@@ -61,8 +68,23 @@ describe("Settings tab list (SA-3 -- AI Configuration removed, Demo gated)", () 
     vi.stubEnv("NEXT_PUBLIC_AXXESS_DEMO_MODE", "false");
     const { SettingsSection } = await import("./SettingsSection");
     render(<SettingsSection />);
-    for (const label of ["Profile", "Organization", "Security", "Integrations", "Users", "Permissions"]) {
+    for (const label of ["Profile", "Organization", "Integrations", "Users", "Permissions"]) {
       expect(screen.getByText(label)).toBeInTheDocument();
     }
+  });
+
+  it("never shows Security -- removed 2026-08-08, founder: 'is an eyesore and getting it live will be very high effort low reward'", async () => {
+    vi.stubEnv("NEXT_PUBLIC_AXXESS_DEMO_MODE", "false");
+    const { SettingsSection, validTabs } = await import("./SettingsSection");
+    expect(validTabs).not.toContain("security");
+    render(<SettingsSection />);
+    expect(screen.queryByText("Security")).not.toBeInTheDocument();
+  });
+
+  it("falls back to Profile, not the removed Security tab, when no ?tab= is given or an invalid one is requested", async () => {
+    vi.stubEnv("NEXT_PUBLIC_AXXESS_DEMO_MODE", "false");
+    window.history.pushState({}, "", "/settings?tab=security");
+    const { initialTabFromLocation } = await import("./SettingsSection");
+    expect(initialTabFromLocation()).toBe("profile");
   });
 });

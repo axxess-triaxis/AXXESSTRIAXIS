@@ -19,7 +19,7 @@ import { useFacebookLoginStatus, type FacebookLoginStatus } from "../../hooks/us
 import { isAgenticGateEnabled, setAgenticGateEnabled } from "../../services/agentic/agenticGateToggle";
 import { BrandIcon } from "../../components/ui/BrandIcon";
 import { brandIcons } from "../../components/ui/brandIcons";
-import { Building2, Calendar, Check, CheckCircle2, CheckSquare, Cloud, Database, FileSignature, FileSpreadsheet, FileText, Github, HardDrive, IndianRupee, Kanban, Layers, ListTodo, MessageCircle, MessageSquare, Presentation, RotateCcw, Save, Send, Settings, ShieldCheck, Smartphone, Sparkles, UserPlus, Video, X, XCircle } from "lucide-react";
+import { Building2, Calendar, CheckSquare, Cloud, Database, FileSignature, FileSpreadsheet, FileText, Github, HardDrive, IndianRupee, Kanban, Layers, ListTodo, MessageCircle, MessageSquare, Presentation, RotateCcw, Save, Send, Settings, ShieldCheck, Smartphone, Sparkles, UserPlus, Video } from "lucide-react";
 
 // SA-3 (2026-07-29): "AI Configuration" removed entirely -- founder's own words, "I don't think
 // this tab is user relevant anymore with OpenRouter coming in" (routing is now a single unified
@@ -28,17 +28,21 @@ import { Building2, Calendar, Check, CheckCircle2, CheckSquare, Cloud, Database,
 // screen with placeholder data in live beta") -- but kept reachable on deployments where demo mode
 // is the deployment's own forced configuration (e.g. investor.triaxisventures.com), since that's
 // where "Reset Preview Data" is operationally needed before demo/sales sessions.
-export const validTabs = ["profile", "organization", "security", "integrations", "users", "permissions", ...(isDemoModeForcedByEnv() ? ["demo"] : [])];
+// 2026-08-08: "Security" removed entirely -- founder's own words, "is an eyesore and getting it
+// live will be very high effort low reward" (the tab's own "Configure" controls were already
+// disabled dead ends per SA-1, and its Role-Based Permissions table was static/hardcoded -- see
+// A-29/A-30 in the readiness matrix, now closed by removal rather than left as unfinished UI).
+export const validTabs = ["profile", "organization", "integrations", "users", "permissions", ...(isDemoModeForcedByEnv() ? ["demo"] : [])];
 
 export function initialTabFromLocation(): string {
-  if (typeof window === "undefined") return "security";
+  if (typeof window === "undefined") return "profile";
   const requested = new URLSearchParams(window.location.search).get("tab")?.toLowerCase();
-  return requested && validTabs.includes(requested) ? requested : "security";
+  return requested && validTabs.includes(requested) ? requested : "profile";
 }
 
 export const SettingsSection = () => {
   const [tab, setTab] = useState(initialTabFromLocation);
-  const tabs = ["Profile", "Organization", "Security", "Integrations", "Users", "Permissions", ...(isDemoModeForcedByEnv() ? ["Demo"] : [])];
+  const tabs = ["Profile", "Organization", "Integrations", "Users", "Permissions", ...(isDemoModeForcedByEnv() ? ["Demo"] : [])];
 
   return (
     <div>
@@ -54,77 +58,6 @@ export const SettingsSection = () => {
           </button>
         ))}
       </div>
-
-      {tab === "security" && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <Card className="p-5">
-            <h3 className="text-sm font-semibold text-[#0F1117] mb-4">Security Status</h3>
-            <div className="space-y-3">
-              {[
-                { label: "Multi-Factor Authentication", status: true, detail: "TOTP + Hardware Key", configureDisabledReason: "Pending production security configuration" },
-                { label: "Single Sign-On (SAML 2.0)", status: true, detail: "Azure AD configured", configureDisabledReason: "Managed by tenant policy" },
-                { label: "Audit Logging", status: true, detail: "All actions · 7-year retention", configureDisabledReason: "Managed by tenant policy" },
-                { label: "End-to-End Encryption", status: true, detail: "AES-256 at rest + TLS 1.3 in transit", configureDisabledReason: "Managed by tenant policy" },
-                { label: "IP Allowlisting", status: false, detail: "Not configured", configureDisabledReason: "Requires organization admin setup" },
-                { label: "Session Timeout", status: true, detail: "8 hours inactivity", configureDisabledReason: "Pending production security configuration" },
-              ].map((item, i) => (
-                <div key={i} className="flex items-center gap-3 py-2 border-b border-[rgba(0,0,0,0.04)] last:border-0">
-                  {item.status ? <CheckCircle2 size={15} className="text-emerald-500 flex-shrink-0" /> : <XCircle size={15} className="text-red-400 flex-shrink-0" />}
-                  <div className="flex-1">
-                    <div className="text-xs font-semibold text-[#0F1117]">{item.label}</div>
-                    <div className="text-[11px] text-[#5F6B73]">{item.detail}</div>
-                  </div>
-                  {/* SA-1 (2026-07-28): every "Configure" button here was a plain <button> with
-                      no onClick at all -- a real dead end, not a placeholder-styled one. None of
-                      these 6 items has a real configuration screen yet. Disabled with an honest,
-                      specific reason instead of leaving an active-looking control that does
-                      nothing when clicked. */}
-                  <button
-                    type="button"
-                    disabled
-                    aria-disabled="true"
-                    title={item.configureDisabledReason}
-                    className="cursor-not-allowed text-[11px] text-[#9AA1A6]"
-                  >
-                    {item.configureDisabledReason}
-                  </button>
-                </div>
-              ))}
-            </div>
-          </Card>
-          <Card className="p-5">
-            <h3 className="text-sm font-semibold text-[#0F1117] mb-4">Role-Based Permissions</h3>
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs">
-                <thead>
-                  <tr className="border-b border-[rgba(0,0,0,0.06)]">
-                    <th className="text-left text-[11px] font-semibold text-[#5F6B73] pb-2">Role</th>
-                    {["View", "Edit", "Approve", "Admin"].map((h) => <th key={h} className="text-center text-[11px] font-semibold text-[#5F6B73] pb-2">{h}</th>)}
-                  </tr>
-                </thead>
-                <tbody>
-                  {[
-                    { role: "Executive", perms: [true, false, true, false] },
-                    { role: "Program Manager", perms: [true, true, true, false] },
-                    { role: "Analyst", perms: [true, true, false, false] },
-                    { role: "Stakeholder (External)", perms: [true, false, false, false] },
-                    { role: "System Administrator", perms: [true, true, true, true] },
-                  ].map((row, i) => (
-                    <tr key={i} className="border-b border-[rgba(0,0,0,0.04)] last:border-0">
-                      <td className="py-2.5 font-medium text-[#0F1117]">{row.role}</td>
-                      {row.perms.map((p, j) => (
-                        <td key={j} className="py-2.5 text-center">
-                          {p ? <Check size={13} className="text-emerald-500 mx-auto" /> : <X size={13} className="text-gray-300 mx-auto" />}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </Card>
-        </div>
-      )}
 
       {tab === "integrations" && <IntegrationsQuickConnectPanel />}
 

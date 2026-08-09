@@ -162,6 +162,107 @@ expected ~7-14 days after pilot start (standard definition, see note above; not 
 here since no pilot has started)
 **Next meeting:** Not stated in source document
 
+**Pilot feedback, 2026-08-08 (email, "Feedback: Axxess," from [PILOT_CONTACT_EMAIL_MASKED_EHIVE] to
+[FOUNDER_EMAIL_MASKED], Sat Aug 8 2026 7:53 PM, verbatim, recorded in full per this log's evidence
+discipline -- praise and criticism both, not selectively quoted; PDF source document could not be
+independently text-extracted in this session (image-only PDF, no OCR/rendering tooling available in
+this environment) -- the founder pasted the email's full text directly, superseding the extraction
+gap):**
+
+> Dear Sudipta and Ritashree,
+>
+> We at Ekora Hive are happy to be one of your first customers and are happy to give you our feedback.
+>
+> We are yet to use the full range of the software and so feedback will be limited right now.
+>
+> First of all being made by a non-engineer, we had not expected a full scale product, but the product actually looks polished and sophisticated.
+>
+> Secondly, current use in our operation is limited as it is currently not integrating fully with the tools we use as a hospitality establishment. Gmail etc can be connected but is not loading inside AXXESS yet. Also apps we use like Airbnb, Makemytrip, Booking are not built into the software yet.
+>
+> My advice would be to not try to be another CRM software. Your vision of agentic automation with human element is quite strong and should be the differentiator. Another point could be that small firms need value for money. So if accounting, CRM, tax filing, invoicing everything can happen on same platform you will get lots of customers.
+>
+> Just a few weeks ago we had to replace an air conditioner suddenly in one of our homestay suites on a very hot day. The previous air conditioner was new but not powerful enough. These things come up suddenly and impact profit & loss for long time.
+>
+> You were a banker and already know that if such an expense happened in April 2026; I would understand its full impact only in June 2027 when my CA provides me the accounts at financial year end. That is a major gap in information and intelligence.
+>
+> There is no definite way for small businesses now to accurately calculate cash flow, monthly P&L, payable, cancelled booking refunds etc. The old air conditioner's accounting also depended on whether they take return and refund how much % of price. If you can solve these kind of pain points; I think nothing can stop you from gaining huge market.
+>
+> Also currently the software feels like it could be powerful and is built well, but screens take time to load. Might be a problem of using hosting with less capacity for what looks like a heavily built software.
+>
+> And like you mentioned; you are building not only brain of a company but a full automated executive suite. So then brain will not be enough; arms, legs and speech will also be very crucial for your global success. Currently; the limbs and speech are lagging behind the vision. Integrating a few apps very well along with AI agent based execution might give it more complete feel.
+>
+> Also, it is good to see a startup from Assam aiming globally. Which means if you have millions of customers someday, you cannot add every app that every user wants from your side. See if anything is possible at level of Windows, App Store and Play Store that users can add whatever app they want safely.
+>
+> There are many good things about this product but on call, you had said that you are more interested in the flaws right now than positives. So this looks very critical probably.
+>
+> Wishing you and Ritashree godspeed in your journey.
+>
+> As discussed, if you ever want us to make a small token advance payment in the future, we would be happy to. Your plans are anyways going to be highly affordable.
+>
+> Regards
+>
+> Diksha Rajkhowa
+> Ekora Hive
+
+**Key points extracted, not independently verified beyond what the letter itself states:**
+- Positive: unprompted praise for build quality/polish, explicitly against low expectations for a non-engineer-led team.
+- Real, specific defect reports: (1) Gmail connects but does not load inside AXXESS -- a distinct symptom from the OAuth-connection-success question already tracked elsewhere (A-97); (2) no hospitality-vertical integrations (Airbnb, MakeMyTrip, Booking.com) exist.
+- Unsolicited strategic advice: position against "agentic automation with human element," not as a generic CRM; bundle accounting/CRM/tax/invoicing for SMB affordability and stickiness.
+- A named, concrete SMB pain point (delayed P&L visibility -- an expense's full financial impact only understood at annual CA close, "April 2026" expense not understood until "June 2027" accounts) with a directly stated real-time cash-flow/P&L/payables/refund-tracking product opportunity.
+- **Independent corroboration of a defect already logged this session:** "screens take time to load... hosting with less capacity for what looks like a heavily built software" matches [A-105](ACTIONABLES_READINESS_MATRIX.md) (severe LCP regression, 18.54s, discovered via PostHog Web Vitals on 2026-08-08, the same day this email was sent) -- a real pilot customer independently reporting the same symptom PostHog measured, from a completely separate evidence source.
+- Echoes the founder's own "brain of a company" / "full automated executive suite" framing back with a critique: integrations and agent-driven execution ("limbs and speech") lag behind the product vision ("brain") -- directly relevant to A-78's incomplete production certification and the broader Integration Maturity Tiers gaps already tracked across the matrix.
+- A platform/marketplace idea for long-term scale: a safe, user-driven app-installation model (named analogy: Windows/App Store/Play Store) rather than AXXESS building every integration itself.
+- Confirms the founder explicitly asked for critical feedback over positive feedback on a prior call, explaining the letter's blunt tone -- recorded as context, not as the letter being unusually harsh.
+- Reaffirms the standing oral $20-30 advance-payment offer already recorded above (still uncollected, pending the Triaxis Ventures IDFC First Bank current account) -- continuity, not new information.
+
+**Founder's own synthesis of this feedback, 2026-08-08 (recorded verbatim as numbered by the founder,
+distinct from the AI-extracted key points above -- this is the founder's own strategic reading, not
+this session's interpretation):**
+
+1. Hosting is underpowered.
+2. AXXESS looks good but isn't ready to be called "Business Brain" or "AI powered Business
+   Intelligence." It is quite far from being "AI operating infrastructure for enterprise."
+3. The point about integration at Windows, App Store and Play Store level rather than adding each
+   SaaS integration one by one as AXXESS scales (practically impossible) -- i.e. architectural
+   integration (critical) as an approach, so the Integrations area should not become a catalogue of
+   labels but actually improve UX by enabling user-level customization.
+4. Intelligence means "insights" practically for Tier 1-3 customers (India base basically) -- they
+   want readymade intelligence and actionable insights, not a huge spread of tables and numbers to
+   navigate. The problem is information gap and latency, not a dearth of features as such.
+5. Pace on integrations and agentic automation needs to increase.
+6. Apps and software are currently "toasting" with AXXESS but actual functionality isn't there yet.
+7. Still feels a lot like a generic CRM, though the look is good.
+8. AI on AXXESS should not simply calculate, orchestrate, aggregate, or summarize. It has to
+   operationally automate and execute to fulfil customer need.
+9. Customer needs daily, weekly, monthly, annual performance tracking on the Executive Dashboard.
+10. Customer liked the pilot enough to offer to make an advance.
+
+**Cross-referenced against current tracked state and live code, same session (2026-08-08), not asserted
+without checking:**
+- **#1 (hosting underpowered)** is the same finding as [A-105](ACTIONABLES_READINESS_MATRIX.md) (18.54s
+  LCP regression, PostHog-measured), already logged above -- two independent readings of the same
+  underlying problem.
+- **#3 (architectural, App-Store-level integration, not a catalogue of labels)** is a direct, sharper
+  articulation of a real structural issue found live in this same session: `landing.triaxisventures.com`
+  currently has two separate, inconsistently-built "Integrations" surfaces (`/integrations`, where the
+  A-78 Agent Connections panel actually lives, vs. `/settings` -> Integrations tab, a simpler
+  label-and-button catalogue with no App-Store-style customization) -- not yet logged as its own
+  actionable.
+- **#8 (AI must execute, not just summarize/aggregate)** sharpens the existing "brain vs. limbs" framing
+  from the raw feedback above into a functional requirement. Connects to [A-78](ACTIONABLES_READINESS_MATRIX.md)
+  (Agentic Infrastructure Phase 1 -- migration and deploy now confirmed live, one functional test still
+  outstanding) and [A-102](ACTIONABLES_READINESS_MATRIX.md) ("Mark edited"/"Escalate" AI Review Inbox
+  decisions carrying no real substance) -- both already-tracked instances of the same underlying gap.
+- **#9 (daily/weekly/monthly/annual performance tracking on the Executive Dashboard)** checked directly
+  against `src/features/dashboard/` in this session: **no time-period selector (daily/weekly/monthly/
+  annual) exists anywhere in the current Executive Dashboard build.** This is a genuine, currently-real
+  gap, not a duplicate of existing ED-R1 through ED-R4 work.
+- **#2, #4, #6, #7 (positioning/messaging claims, Tier 1-3 insight-first UX, "toasting" without real
+  functionality, "still feels like generic CRM")** are strategic/product-direction observations, not
+  individually mapped to an existing tracked defect -- flagged here for a founder decision on whether
+  any should become their own actionables, rather than unilaterally created.
+- **#5, #10** are pace/sentiment observations, not independently actionable line items.
+
 ---
 
 ## 4-6. Mahanta & Sons Filling Station / Trimurti Blocks & Pavers / P. D. Wine Shop

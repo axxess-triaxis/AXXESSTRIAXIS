@@ -10,6 +10,7 @@ import {
   isDemoLogin,
   isDemoModeEnabled,
   isDemoModeForcedByEnv,
+  isDemoModeSsrSafe,
   refreshDemoSessionCookie,
   setDemoModeEnabled,
 } from "../demo/demoMode";
@@ -62,7 +63,14 @@ function sessionFromUser(user: UserContext, source: "supabase-auth" | "mock-rbac
 }
 
 function getInitialClientSession(): AuthSession {
-  if (isDemoModeEnabled()) return createMockAuthSession();
+  // A-106 fix (2026-08-09): must use isDemoModeSsrSafe(), not isDemoModeEnabled(), here specifically --
+  // this function seeds a useState lazy initializer, which React calls both during SSR and during the
+  // client's hydration-time first render. isDemoModeEnabled() reads localStorage (client-only), so it
+  // could disagree between those two calls for a returning demo-mode visitor, producing a real
+  // hydration mismatch. The useEffect below re-resolves the real, localStorage-aware answer immediately
+  // after mount, so this only changes what renders for one frame before that correction lands -- see
+  // docs/readiness/A105_A106_A107_ROOT_CAUSE_ANALYSIS_2026_08_09.md.
+  if (isDemoModeSsrSafe()) return createMockAuthSession();
   if (!featureFlags.enableAuthShell) return createMockAuthSession();
   return { status: "loading", source: "initializing", user: null };
 }
