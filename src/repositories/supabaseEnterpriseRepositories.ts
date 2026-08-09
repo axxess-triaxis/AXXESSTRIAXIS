@@ -15,6 +15,7 @@ import type {
   Organization,
   Program,
   Project,
+  Reminder,
   RoleName,
   Stakeholder,
   Task,
@@ -43,6 +44,7 @@ import type {
   OrganizationsRepository,
   ProgramsRepository,
   ProjectsRepository,
+  RemindersRepository,
   RepositoryQuery,
   StakeholdersRepository,
   TasksRepository,
@@ -71,7 +73,8 @@ export type ResourceName =
   | "audit_logs"
   | "invitations"
   | "beta_feedback"
-  | "stakeholders";
+  | "stakeholders"
+  | "reminders";
 
 type SupabaseRestOptions = {
   method?: "GET" | "POST" | "PATCH";
@@ -154,6 +157,23 @@ type TaskRow = {
   status: string;
   due_date: string | null;
   tags: string[] | null;
+};
+
+// A-103 (2026-08-09): real Reminder row shape, mirroring TaskRow's own structure -- see
+// supabase/migrations/20260809130000_reminders.sql.
+type ReminderRow = {
+  id: string;
+  organization_id: string;
+  title: string;
+  description: string | null;
+  remind_at: string;
+  recurrence: Reminder["recurrence"];
+  linked_entity_type: Reminder["linkedEntityType"] | null;
+  linked_entity_id: string | null;
+  owner_id: string | null;
+  status: Reminder["status"];
+  created_at: string;
+  updated_at: string;
 };
 
 type DocumentRow = {
@@ -841,6 +861,34 @@ function taskUpdateMutation(_scope: TenantScope, input: Record<string, unknown>)
   });
 }
 
+// A-103 (2026-08-09): real Reminder mutations, mirroring taskMutation/taskUpdateMutation's shape.
+function reminderMutation(scope: TenantScope, input: Record<string, unknown>) {
+  return compactMutation({
+    organization_id: scope.organizationId,
+    title: nullableString(input.title),
+    description: nullableString(input.description),
+    remind_at: nullableString(input.remindAt),
+    recurrence: input.recurrence ?? "none",
+    linked_entity_type: nullableString(input.linkedEntityType),
+    linked_entity_id: nullableString(input.linkedEntityId),
+    owner_id: nullableString(input.ownerId),
+    status: input.status ?? "pending",
+  });
+}
+
+function reminderUpdateMutation(_scope: TenantScope, input: Record<string, unknown>) {
+  return compactMutation({
+    title: input.title === undefined ? undefined : nullableString(input.title),
+    description: input.description === undefined ? undefined : nullableString(input.description),
+    remind_at: input.remindAt === undefined ? undefined : nullableString(input.remindAt),
+    recurrence: input.recurrence,
+    linked_entity_type: input.linkedEntityType === undefined ? undefined : nullableString(input.linkedEntityType),
+    linked_entity_id: input.linkedEntityId === undefined ? undefined : nullableString(input.linkedEntityId),
+    owner_id: input.ownerId === undefined ? undefined : nullableString(input.ownerId),
+    status: input.status,
+  });
+}
+
 // Sprint 5, Priority 4: minimal live Stakeholders/CRM path. The stakeholders table and its RLS
 // (supabase/migrations/20260702165736_initial_enterprise_schema.sql) already existed with zero
 // application code ever reading or writing it -- this closes that gap with the same pattern every
@@ -1078,6 +1126,32 @@ const taskConfig: ResourceConfig<TaskRow, Task> = {
   }),
   toInsert: taskMutation,
   toUpdate: taskUpdateMutation,
+};
+
+// A-103 (2026-08-09): real, dedicated Reminder resource -- previously a Reminder created from an AI
+// answer silently became a Task tagged "reminder" (see agenticActionTypes.ts's now-removed
+// AGENTIC_ROUTE_CAVEAT.reminder).
+const reminderConfig: ResourceConfig<ReminderRow, Reminder> = {
+  table: "reminders",
+  select: "id,organization_id,title,description,remind_at,recurrence,linked_entity_type,linked_entity_id,owner_id,status,created_at,updated_at",
+  searchColumns: ["title", "description"],
+  defaultOrder: "remind_at.asc",
+  map: (row) => ({
+    id: row.id,
+    organizationId: row.organization_id,
+    title: row.title,
+    description: row.description ?? undefined,
+    remindAt: row.remind_at,
+    recurrence: row.recurrence ?? "none",
+    linkedEntityType: row.linked_entity_type ?? undefined,
+    linkedEntityId: row.linked_entity_id ?? undefined,
+    ownerId: row.owner_id ?? undefined,
+    status: row.status,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  }),
+  toInsert: reminderMutation,
+  toUpdate: reminderUpdateMutation,
 };
 
 const documentConfig: ResourceConfig<DocumentRow, Document> = {
@@ -1392,6 +1466,7 @@ export const usersRepository: UsersRepository = {
 export const programsRepository: ProgramsRepository = createTenantRepository("programs", programConfig);
 export const projectsRepository: ProjectsRepository = createMutableTenantRepository("projects", projectConfig);
 export const tasksRepository: TasksRepository = createMutableTenantRepository("tasks", taskConfig);
+export const remindersRepository: RemindersRepository = createMutableTenantRepository("reminders", reminderConfig);
 export const stakeholdersRepository: StakeholdersRepository = createMutableTenantRepository("stakeholders", stakeholderConfig);
 const baseDocumentsRepository = createMutableTenantRepository("documents", documentConfig);
 export const documentVersionsRepository: DocumentVersionsRepository = createMutableTenantRepository("document_versions", documentVersionConfig);
@@ -1628,6 +1703,7 @@ export const resourceRepositories = {
   programs: programsRepository,
   projects: projectsRepository,
   tasks: tasksRepository,
+  reminders: remindersRepository,
   stakeholders: stakeholdersRepository,
   documents: documentsRepository,
   document_versions: documentVersionsRepository,

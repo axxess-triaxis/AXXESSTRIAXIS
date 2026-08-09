@@ -13,6 +13,7 @@ import type {
   Notification,
   Program,
   Project,
+  Reminder,
   Stakeholder,
   Task,
 } from "../domain";
@@ -40,6 +41,7 @@ import type {
   OrganizationsRepository,
   ProgramsRepository,
   ProjectsRepository,
+  RemindersRepository,
   RepositoryQuery,
   StakeholdersRepository,
   StorageRepository,
@@ -213,6 +215,12 @@ export const demoTasksRepository: TasksRepository = mutableRepository<"tasks", T
   priority: "medium",
   status: "pending",
   tags: [],
+}));
+
+// A-103 (2026-08-09): real, dedicated Reminder type, mirroring demoTasksRepository's own pattern.
+export const demoRemindersRepository: RemindersRepository = mutableRepository<"reminders", Reminder>("reminders", "reminder_demo", () => ({
+  recurrence: "none",
+  status: "pending",
 }));
 
 export const demoStakeholdersRepository: StakeholdersRepository = mutableRepository<"stakeholders", Stakeholder>("stakeholders", "stakeholder_demo", () => ({
@@ -460,6 +468,7 @@ export const demoRepositories = {
   organizationsRepository: demoOrganizationsRepository,
   programsRepository: demoProgramsRepository,
   projectsRepository: demoProjectsRepository,
+  remindersRepository: demoRemindersRepository,
   stakeholdersRepository: demoStakeholdersRepository,
   storageRepository: demoStorageRepository,
   tasksRepository: demoTasksRepository,
