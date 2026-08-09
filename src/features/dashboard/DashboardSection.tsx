@@ -28,9 +28,11 @@ import { demoRecentActivity } from "../../lib/demo/demoActivity";
 import { demoInstitution } from "../../lib/demo/seedData";
 import { BetaOnboardingChecklist } from "../onboarding/BetaOnboardingChecklist";
 import { DashboardTier } from "./DashboardTier";
+import { DashboardSnapshotBar } from "./DashboardSnapshotBar";
 import { SampleDataBanner } from "./SampleDataBanner";
 import { UrgentAttentionBarStack } from "./UrgentAttentionBarStack";
 import { useDashboardSnapshot } from "./useDashboardSnapshot";
+import { useDashboardSnapshotPeriods } from "../../hooks/useDashboardSnapshotPeriods";
 import {
   demoAiRecommendations,
   demoObjectives,
@@ -196,7 +198,12 @@ export function DashboardSection() {
   // 2026-08-04, so Analytics can share this exact scored-tile stack): the Priority x Criticality
   // scored tile set, built purely from live hooks -- see
   // docs/readiness/EXECUTIVE_DASHBOARD_REDESIGN_PLAN_2026_08_01.md for the full scoring rationale.
-  const { snapshot: dashboardSnapshot, liveMetrics, pendingAiReviewCount, auditLogCount, workflowTimeline } = useDashboardSnapshot(tenantScope, refreshToken, projects);
+  const { snapshot: dashboardSnapshot, liveMetrics, pendingAiReviewCount, auditLogCount, workflowTimeline, overdueTaskCount, overdueMeetingCount } = useDashboardSnapshot(tenantScope, refreshToken, projects);
+  // A-110 (2026-08-09): Daily/Weekly/Monthly/Year-on-Year snapshots, Insights, Actionables -- a new,
+  // parallel layer to the tile-scoring stack above (see DashboardSnapshotBar.tsx's own header
+  // comment). Shares refreshToken with the rest of this page's hooks, so the "Refresh" button below
+  // refreshes this section for free.
+  const snapshotPeriods = useDashboardSnapshotPeriods(tenantScope, refreshToken);
   // Executive Dashboard Sprint ED-2: a real, literal count of pending AI review items (from the
   // same GET /api/ai/reviews the AI Review Inbox itself uses), replacing the pendingApprovals/10
   // heuristic previously used by both the Golden Path step and the Tenant Health Command Center tile.
@@ -319,6 +326,14 @@ export function DashboardSection() {
             </button>
           </div>
         }
+      />
+
+      <DashboardSnapshotBar
+        periods={snapshotPeriods}
+        actionQueue={enterpriseJourney.actionQueue}
+        pendingAiReviewCount={pendingAiReviewCount}
+        overdueTaskCount={overdueTaskCount}
+        overdueMeetingCount={overdueMeetingCount}
       />
 
       {demoMode && (

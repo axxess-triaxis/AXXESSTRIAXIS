@@ -68,5 +68,8 @@ export function useDashboardSnapshot(
     [liveMetrics, overdueTaskCount, overdueMeetingCount, pendingAiReviewCount, auditLogCount, socialAlertsStatus.anyLiveProviderConfigured, workflowTimeline.timeline.length, projects, mailSignals, crmLeads, socialSignals, calendarSignals, externalMeetingsSignals, financialWatchItems, threadsSignals, metaBusinessSignals],
   );
 
-  return { snapshot, liveMetrics, pendingAiReviewCount, auditLogCount, workflowTimeline };
+  // A-110 (2026-08-09): overdueTaskCount/overdueMeetingCount were already computed above for the
+  // tile-scoring snapshot -- now also returned so the Executive Dashboard's Actionables sub-section
+  // can compose them without a duplicate fetch.
+  return { snapshot, liveMetrics, pendingAiReviewCount, auditLogCount, workflowTimeline, overdueTaskCount, overdueMeetingCount };
 }
