@@ -1,14 +1,18 @@
+import { act, renderHook } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createDemoDataset, demoDatasetSummary } from "./demoDataset";
 import {
+  demoModeChangedEvent,
   demoSessionCookieName,
   demoUserContext,
   isDemoLogin,
   isDemoModeEnabled,
   isDemoModeForcedByEnv,
+  isDemoModeSsrSafe,
   refreshDemoSessionCookie,
   resetDemoEnvironment,
   setDemoModeEnabled,
+  useDemoModeEnabled,
 } from "./demoMode";
 import { demoProjectsRepository, demoKnowledgeSearchRepository, resetDemoRepositoryStore } from "./demoRepositories";
 import type { TenantScope } from "../repositories/interfaces";
@@ -152,5 +156,61 @@ describe("isDemoModeForcedByEnv refuses to honor NEXT_PUBLIC_AXXESS_DEMO_MODE on
 
     vi.stubEnv("NEXT_PUBLIC_AXXESS_DEMO_MODE", "false");
     expect(isDemoModeForcedByEnv()).toBe(false);
+  });
+});
+
+// A-106 (2026-08-09): isDemoModeEnabled() reads window.localStorage, which is unavailable during SSR
+// but always available by the time the client hydrates -- calling it directly in a render body or a
+// useState lazy initializer could disagree between the server's render and the client's first
+// (hydration) render for any visitor with the flag already set, producing a real React hydration
+// mismatch (error #418). isDemoModeSsrSafe() and useDemoModeEnabled() are the fix -- see
+// docs/readiness/A105_A106_A107_ROOT_CAUSE_ANALYSIS_2026_08_09.md.
+describe("isDemoModeSsrSafe (A-106 fix)", () => {
+  it("matches isDemoModeEnabled() whenever env-forced, the only state the server can also compute", () => {
+    vi.stubEnv("NEXT_PUBLIC_AXXESS_DEMO_MODE", "true");
+    expect(isDemoModeSsrSafe()).toBe(true);
+    expect(isDemoModeSsrSafe()).toBe(isDemoModeEnabled());
+  });
+
+  it("stays false even when localStorage alone says demo mode is on -- the exact case isDemoModeEnabled() cannot safely answer during SSR", () => {
+    setDemoModeEnabled(true);
+    expect(isDemoModeEnabled()).toBe(true);
+    expect(isDemoModeSsrSafe()).toBe(false);
+  });
+
+  it("is false with no env override and no localStorage flag, matching isDemoModeEnabled()", () => {
+    expect(isDemoModeSsrSafe()).toBe(false);
+    expect(isDemoModeSsrSafe()).toBe(isDemoModeEnabled());
+  });
+});
+
+describe("useDemoModeEnabled (A-106 fix)", () => {
+  it("seeds from the SSR-safe value, then corrects to the real localStorage-aware value after mount", () => {
+    setDemoModeEnabled(true);
+
+    const { result } = renderHook(() => useDemoModeEnabled());
+
+    // Post-effect (renderHook flushes effects synchronously in the testing-library act wrapper), the
+    // hook has already corrected to the real answer -- this asserts the corrected steady state, since
+    // asserting the one-render SSR-safe seed would require intercepting before React's first effect
+    // flush, not a meaningful behavior to lock a test to.
+    expect(result.current).toBe(true);
+  });
+
+  it("returns false when neither env-forced nor localStorage-enabled", () => {
+    const { result } = renderHook(() => useDemoModeEnabled());
+    expect(result.current).toBe(false);
+  });
+
+  it("reacts live to a demoModeChangedEvent dispatched after mount", () => {
+    const { result } = renderHook(() => useDemoModeEnabled());
+    expect(result.current).toBe(false);
+
+    act(() => {
+      window.localStorage.setItem("axxess.demoMode.enabled", "true");
+      window.dispatchEvent(new CustomEvent(demoModeChangedEvent));
+    });
+
+    expect(result.current).toBe(true);
   });
 });
