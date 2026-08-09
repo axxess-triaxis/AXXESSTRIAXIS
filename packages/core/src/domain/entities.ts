@@ -104,6 +104,25 @@ export interface Task {
   tags: string[];
 }
 
+// A-103 (2026-08-09): a real, dedicated Reminder type inside Tasks & Workflow -- previously a
+// Reminder created from an AI answer silently became a Task tagged "reminder" (see
+// AGENTIC_ROUTE_CAVEAT.reminder, now removed since this type exists). See
+// supabase/migrations/20260809130000_reminders.sql.
+export interface Reminder {
+  id: EntityId;
+  organizationId: EntityId;
+  title: string;
+  description?: string;
+  remindAt: ISODateTime;
+  recurrence: "none" | "daily" | "weekly" | "monthly";
+  linkedEntityType?: "task" | "project" | "stakeholder";
+  linkedEntityId?: EntityId;
+  ownerId?: EntityId;
+  status: "pending" | "completed" | "dismissed";
+  createdAt: ISODateTime;
+  updatedAt: ISODateTime;
+}
+
 export interface Stakeholder {
   id: EntityId;
   organizationId: EntityId;
