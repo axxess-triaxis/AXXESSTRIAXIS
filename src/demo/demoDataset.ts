@@ -14,6 +14,7 @@ import type {
   Organization,
   Program,
   Project,
+  Reminder,
   RoleName,
   Stakeholder,
   Task,
@@ -176,6 +177,7 @@ export type DemoDataset = {
   programs: Program[];
   projects: Project[];
   tasks: Task[];
+  reminders: Reminder[];
   stakeholders: Stakeholder[];
   documents: Document[];
   documentVersions: DocumentVersion[];
@@ -291,6 +293,27 @@ export function createDemoDataset(): DemoDataset {
       status: pick(taskStatuses, index + Math.floor(index / 6)),
       dueDate: dayOffset(-18 + (index % 74)),
       tags: project.tags.slice(0, 2),
+    };
+  });
+
+  // A-103 (2026-08-09): a lighter-weight secondary type than tasks (520 rows) -- 18 seeded
+  // reminders is enough to make the new Reminders tab feel real without needing task-scale volume.
+  const reminders: Reminder[] = Array.from({ length: 18 }, (_, index) => {
+    const project = projects[index % projects.length];
+    const remindAtOffset = dayOffset(-4 + (index % 21));
+    return {
+      id: id("reminder_nehealth", index),
+      organizationId: organization.id,
+      title: `${pick(["Follow up on", "Check status of", "Confirm", "Send reminder for"], index)} ${pick(["district briefing", "procurement packet", "budget variance review", "training roster"], index + 1)}`,
+      description: `Reminder linked to ${project.name}.`,
+      remindAt: remindAtOffset,
+      recurrence: pick(["none", "none", "weekly", "monthly"], index) as Reminder["recurrence"],
+      linkedEntityType: "project",
+      linkedEntityId: project.id,
+      ownerId: users[(index % (users.length - 1)) + 1].id,
+      status: index % 6 === 0 ? "completed" : index % 7 === 0 ? "dismissed" : "pending",
+      createdAt: dayOffset(-30 + index),
+      updatedAt: dayOffset(-30 + index),
     };
   });
 
@@ -682,6 +705,7 @@ export function createDemoDataset(): DemoDataset {
     programs,
     projects,
     tasks,
+    reminders,
     stakeholders,
     documents,
     documentVersions,

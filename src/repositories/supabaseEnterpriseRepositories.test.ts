@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { auditLogsRepository, invitationsRepository, projectsRepository, stakeholdersRepository, tasksRepository } from "./supabaseEnterpriseRepositories";
+import { auditLogsRepository, invitationsRepository, projectsRepository, remindersRepository, stakeholdersRepository, tasksRepository } from "./supabaseEnterpriseRepositories";
 import type { TenantScope } from "./interfaces";
 
 const scope: TenantScope = {
@@ -409,5 +409,70 @@ describe("Supabase enterprise repositories", () => {
     await expect(
       tasksRepository.update({ ...scope, accessToken: "server-token" }, "task_belonging_to_other_tenant", { title: "Should not apply" }),
     ).rejects.toThrow();
+  });
+
+  // A-103 (2026-08-09): remindersRepository, mirroring tasksRepository/stakeholdersRepository's own
+  // CRUD test coverage.
+  it("lists reminders through direct Supabase REST calls when a server-side access token is supplied", async () => {
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify([
+      {
+        id: "reminder_1",
+        organization_id: "org_public_safety",
+        title: "Follow up on district briefing",
+        description: null,
+        remind_at: "2026-08-10T09:00:00.000Z",
+        recurrence: "none",
+        linked_entity_type: null,
+        linked_entity_id: null,
+        owner_id: null,
+        status: "pending",
+        created_at: "2026-08-09T00:00:00.000Z",
+        updated_at: "2026-08-09T00:00:00.000Z",
+      },
+    ]), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://example.supabase.co");
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY", "anon-key");
+
+    const reminders = await remindersRepository.list({ ...scope, accessToken: "server-token" });
+
+    expect(reminders).toHaveLength(1);
+    expect(reminders[0].organizationId).toBe("org_public_safety");
+    expect(reminders[0].recurrence).toBe("none");
+    const [url] = fetchCall(fetchMock);
+    expect(String(url)).toContain("https://example.supabase.co/rest/v1/reminders");
+  });
+
+  it("creates a reminder, always writing the acting session's own org, ignoring a spoofed organizationId", async () => {
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify([{
+      id: "reminder_2",
+      organization_id: "org_public_safety",
+      title: "Confirm training roster",
+      description: null,
+      remind_at: "2026-08-11T09:00:00.000Z",
+      recurrence: "weekly",
+      linked_entity_type: null,
+      linked_entity_id: null,
+      owner_id: null,
+      status: "pending",
+      created_at: "2026-08-09T00:00:00.000Z",
+      updated_at: "2026-08-09T00:00:00.000Z",
+    }]), { status: 201 }));
+    vi.stubGlobal("fetch", fetchMock);
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://example.supabase.co");
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY", "anon-key");
+
+    const reminder = await remindersRepository.create({ ...scope, accessToken: "server-token" }, {
+      organizationId: "org_someone_elses_tenant",
+      title: "Confirm training roster",
+      remindAt: "2026-08-11T09:00:00.000Z",
+      recurrence: "weekly",
+    } as never);
+
+    expect(reminder.title).toBe("Confirm training roster");
+    const [url, init] = fetchCall(fetchMock);
+    expect(String(url)).toContain("/rest/v1/reminders");
+    expect(String(init?.body)).toContain("org_public_safety");
+    expect(String(init?.body)).not.toContain("org_someone_elses_tenant");
   });
 });
