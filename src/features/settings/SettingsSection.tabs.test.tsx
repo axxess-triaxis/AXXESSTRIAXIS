@@ -68,7 +68,7 @@ describe("Settings tab list (SA-3 -- AI Configuration removed, Demo gated)", () 
     vi.stubEnv("NEXT_PUBLIC_AXXESS_DEMO_MODE", "false");
     const { SettingsSection } = await import("./SettingsSection");
     render(<SettingsSection />);
-    for (const label of ["Profile", "Organization", "Integrations", "Users", "Permissions"]) {
+    for (const label of ["Profile", "Organization", "Users", "Permissions"]) {
       expect(screen.getByText(label)).toBeInTheDocument();
     }
   });
@@ -84,6 +84,21 @@ describe("Settings tab list (SA-3 -- AI Configuration removed, Demo gated)", () 
   it("falls back to Profile, not the removed Security tab, when no ?tab= is given or an invalid one is requested", async () => {
     vi.stubEnv("NEXT_PUBLIC_AXXESS_DEMO_MODE", "false");
     window.history.pushState({}, "", "/settings?tab=security");
+    const { initialTabFromLocation } = await import("./SettingsSection");
+    expect(initialTabFromLocation()).toBe("profile");
+  });
+
+  it("never shows Integrations -- removed 2026-08-09 (A-109), founder: \"No need of the one in 'User Profile', only in 'Integrations' option in sidebar\"", async () => {
+    vi.stubEnv("NEXT_PUBLIC_AXXESS_DEMO_MODE", "false");
+    const { SettingsSection, validTabs } = await import("./SettingsSection");
+    expect(validTabs).not.toContain("integrations");
+    render(<SettingsSection />);
+    expect(screen.queryByText("Integrations")).not.toBeInTheDocument();
+  });
+
+  it("falls back to Profile when ?tab=integrations is requested", async () => {
+    vi.stubEnv("NEXT_PUBLIC_AXXESS_DEMO_MODE", "false");
+    window.history.pushState({}, "", "/settings?tab=integrations");
     const { initialTabFromLocation } = await import("./SettingsSection");
     expect(initialTabFromLocation()).toBe("profile");
   });
