@@ -13,18 +13,25 @@ vi.mock("../../../../auth/serverSession", () => ({
   getServerAuthSession: async () => state.session,
 }));
 
+const recordedDecisions: Array<Record<string, unknown>> = [];
 vi.mock("../../../../services/ai/reviewInbox", async () => {
   const actual = await vi.importActual<typeof import("../../../../services/ai/reviewInbox")>("../../../../services/ai/reviewInbox");
   return {
     ...actual,
     listAiReviewInbox: async () => state.reviews,
     getAiReviewById: async (_organizationId: string, reviewId: string) => state.reviews.find((review) => review.id === reviewId),
-    recordAiReviewDecision: async (input: { reviewId: string; decision: string; reviewerUserId: string }) => ({
-      id: input.reviewId,
-      organizationId: "org-1",
-      status: input.decision,
-      reviewedAt: "2026-07-24T00:00:00.000Z",
-    }),
+    recordAiReviewDecision: async (input: Record<string, unknown> & { reviewId: string; decision: string }) => {
+      recordedDecisions.push(input);
+      return {
+        id: input.reviewId,
+        organizationId: "org-1",
+        status: input.decision,
+        reviewedAt: "2026-07-24T00:00:00.000Z",
+        editedAnswer: input.editedAnswer,
+        escalationType: input.escalationType,
+        escalationTarget: input.escalationTarget,
+      };
+    },
   };
 });
 
@@ -43,10 +50,16 @@ vi.mock("../../../../repositories/supabaseEnterpriseRepositories", () => ({
   tasksRepository: {},
 }));
 
+const recordedStakeholderNotes: Array<Record<string, unknown>> = [];
 vi.mock("../../../../repositories/workflowActionRepositories", () => ({
   approvalRequestsRepository: {},
   projectUpdatesRepository: {},
-  stakeholderNotesRepository: {},
+  stakeholderNotesRepository: {
+    create: async (_scope: unknown, input: Record<string, unknown>) => {
+      recordedStakeholderNotes.push(input);
+      return { id: "note-1", ...input };
+    },
+  },
 }));
 
 vi.mock("../../../../services/workflows/liveTenantWorkflow", () => ({
@@ -64,6 +77,8 @@ describe("GET/POST /api/ai/reviews (Sprint 5 role/ownership fix)", () => {
     state.session = null;
     state.reviews = [];
     recordedAudits.length = 0;
+    recordedDecisions.length = 0;
+    recordedStakeholderNotes.length = 0;
     vi.clearAllMocks();
   });
 
@@ -175,5 +190,119 @@ describe("GET/POST /api/ai/reviews (Sprint 5 role/ownership fix)", () => {
 
     expect(response.status).toBe(403);
     expect(body.error).toBe("This review is not assigned to you.");
+  });
+
+  // A-102 (2026-08-09): "Mark edited"/"Escalate" now require real substance, not just a decision label.
+  describe("A-102 -- edited/escalation substance", () => {
+    it("POST 400s when decision is 'edited' with no editedAnswer", async () => {
+      state.session = { user: user("user-reviewer", "Employee") };
+      state.reviews = [{ id: "review-1", organizationId: "org-1", reviewerUserId: "user-reviewer" }];
+
+      const response = await POST(new Request("http://localhost/api/ai/reviews", {
+        method: "POST",
+        body: JSON.stringify({ reviewId: "review-1", decision: "edited" }),
+      }));
+      const body = await response.json() as { error?: string };
+
+      expect(response.status).toBe(400);
+      expect(body.error).toBe("Edited answer text is required.");
+    });
+
+    it("POST succeeds when decision is 'edited' with real editedAnswer text", async () => {
+      state.session = { user: user("user-reviewer", "Employee") };
+      state.reviews = [{ id: "review-1", organizationId: "org-1", reviewerUserId: "user-reviewer" }];
+
+      const response = await POST(new Request("http://localhost/api/ai/reviews", {
+        method: "POST",
+        body: JSON.stringify({ reviewId: "review-1", decision: "edited", editedAnswer: "The corrected text." }),
+      }));
+
+      expect(response.status).toBe(200);
+      expect(recordedDecisions.at(-1)?.editedAnswer).toBe("The corrected text.");
+    });
+
+    it("POST 400s when decision is 'escalated' with no escalationType", async () => {
+      state.session = { user: user("user-reviewer", "Employee") };
+      state.reviews = [{ id: "review-1", organizationId: "org-1", reviewerUserId: "user-reviewer" }];
+
+      const response = await POST(new Request("http://localhost/api/ai/reviews", {
+        method: "POST",
+        body: JSON.stringify({ reviewId: "review-1", decision: "escalated" }),
+      }));
+      const body = await response.json() as { error?: string };
+
+      expect(response.status).toBe(400);
+      expect(body.error).toBe("An escalation target is required.");
+    });
+
+    it("POST 400s when escalationType is 'mapped_stakeholder' but no stakeholderId is given", async () => {
+      state.session = { user: user("user-reviewer", "Employee") };
+      state.reviews = [{ id: "review-1", organizationId: "org-1", reviewerUserId: "user-reviewer" }];
+
+      const response = await POST(new Request("http://localhost/api/ai/reviews", {
+        method: "POST",
+        body: JSON.stringify({ reviewId: "review-1", decision: "escalated", escalationType: "mapped_stakeholder", escalationTarget: {} }),
+      }));
+
+      expect(response.status).toBe(400);
+    });
+
+    it("POST 400s when escalationType is 'internal_unmapped' with neither email nor employeeCode", async () => {
+      state.session = { user: user("user-reviewer", "Employee") };
+      state.reviews = [{ id: "review-1", organizationId: "org-1", reviewerUserId: "user-reviewer" }];
+
+      const response = await POST(new Request("http://localhost/api/ai/reviews", {
+        method: "POST",
+        body: JSON.stringify({ reviewId: "review-1", decision: "escalated", escalationType: "internal_unmapped", escalationTarget: { name: "Someone" } }),
+      }));
+
+      expect(response.status).toBe(400);
+    });
+
+    it("POST succeeds and forwards escalation fields for a valid external_email escalation", async () => {
+      state.session = { user: user("user-reviewer", "Employee") };
+      state.reviews = [{ id: "review-1", organizationId: "org-1", reviewerUserId: "user-reviewer" }];
+
+      const response = await POST(new Request("http://localhost/api/ai/reviews", {
+        method: "POST",
+        body: JSON.stringify({ reviewId: "review-1", decision: "escalated", escalationType: "external_email", escalationTarget: { email: "external@example.com" } }),
+      }));
+
+      expect(response.status).toBe(200);
+      expect(recordedDecisions.at(-1)?.escalationType).toBe("external_email");
+      expect(recordedDecisions.at(-1)?.escalationTarget).toEqual({ email: "external@example.com" });
+    });
+
+    it("POST calls stakeholderNotesRepository.create for a mapped_stakeholder escalation", async () => {
+      state.session = { user: user("user-reviewer", "Employee") };
+      state.reviews = [{ id: "review-1", organizationId: "org-1", reviewerUserId: "user-reviewer", answerExcerpt: "Oxygen resilience summary." }];
+
+      const response = await POST(new Request("http://localhost/api/ai/reviews", {
+        method: "POST",
+        body: JSON.stringify({
+          reviewId: "review-1",
+          decision: "escalated",
+          escalationType: "mapped_stakeholder",
+          escalationTarget: { stakeholderId: "stakeholder-1", stakeholderName: "District Coordinator" },
+        }),
+      }));
+
+      expect(response.status).toBe(200);
+      expect(recordedStakeholderNotes).toHaveLength(1);
+      expect(recordedStakeholderNotes[0].stakeholderId).toBe("stakeholder-1");
+      expect(recordedStakeholderNotes[0].sourceAiReviewId).toBe("review-1");
+    });
+
+    it("POST does not call stakeholderNotesRepository.create for a non-mapped-stakeholder escalation", async () => {
+      state.session = { user: user("user-reviewer", "Employee") };
+      state.reviews = [{ id: "review-1", organizationId: "org-1", reviewerUserId: "user-reviewer" }];
+
+      await POST(new Request("http://localhost/api/ai/reviews", {
+        method: "POST",
+        body: JSON.stringify({ reviewId: "review-1", decision: "escalated", escalationType: "external_email", escalationTarget: { email: "external@example.com" } }),
+      }));
+
+      expect(recordedStakeholderNotes).toHaveLength(0);
+    });
   });
 });

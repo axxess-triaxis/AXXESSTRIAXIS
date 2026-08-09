@@ -33,6 +33,19 @@ export type AiReviewInboxItem = {
   question?: string;
   fullAnswer?: string;
   confidenceExplanation?: RagConfidenceExplanation;
+  /** A-102 (2026-08-09): the reviewer's actual edited text (for decision "edited") and the
+   * escalation target (for decision "escalated") -- previously the decision carried no real
+   * substance beyond a fixed template string. See supabase/migrations/20260809120000_ai_review_decision_substance.sql. */
+  editedAnswer?: string;
+  escalationType?: "mapped_stakeholder" | "external_email" | "internal_unmapped";
+  escalationTarget?: {
+    stakeholderId?: string;
+    stakeholderName?: string;
+    stakeholderNoteId?: string;
+    email?: string;
+    employeeCode?: string;
+    name?: string;
+  };
 };
 
 export type AiReviewRow = {
@@ -51,6 +64,9 @@ export type AiReviewRow = {
   created_at: string;
   reviewed_at: string | null;
   decision_reason: string | null;
+  edited_answer: string | null;
+  escalation_type: AiReviewInboxItem["escalationType"] | null;
+  escalation_target: AiReviewInboxItem["escalationTarget"] | null;
 };
 
 // Exported for direct unit testing of the metadata -> question/fullAnswer/confidenceExplanation
@@ -74,6 +90,9 @@ export function toInboxItem(row: AiReviewRow): AiReviewInboxItem {
     question: row.metadata?.question,
     fullAnswer: row.metadata?.fullAnswer,
     confidenceExplanation: row.metadata?.confidenceExplanation,
+    editedAnswer: row.edited_answer ?? undefined,
+    escalationType: row.escalation_type ?? undefined,
+    escalationTarget: row.escalation_target ?? undefined,
   };
 }
 
@@ -135,7 +154,7 @@ export async function listAiReviewInbox(organizationId: string, limit = 25): Pro
   if (!isSupabaseAdminConfigured()) return isDemoModeEnabled() ? fallbackAiReviewInbox(organizationId) : [];
   const query = new URLSearchParams({
     organization_id: `eq.${organizationId}`,
-    select: "id,organization_id,created_by_user_id,reviewer_user_id,source_audit_id,task_category,status,confidence,human_review_flag,answer_excerpt,citations,metadata,created_at,reviewed_at,decision_reason",
+    select: "id,organization_id,created_by_user_id,reviewer_user_id,source_audit_id,task_category,status,confidence,human_review_flag,answer_excerpt,citations,metadata,created_at,reviewed_at,decision_reason,edited_answer,escalation_type,escalation_target",
     order: "created_at.desc",
     limit: String(limit),
   });
@@ -150,7 +169,7 @@ export async function getAiReviewById(organizationId: string, reviewId: string):
   const query = new URLSearchParams({
     organization_id: `eq.${organizationId}`,
     id: `eq.${reviewId}`,
-    select: "id,organization_id,created_by_user_id,reviewer_user_id,source_audit_id,task_category,status,confidence,human_review_flag,answer_excerpt,citations,metadata,created_at,reviewed_at,decision_reason",
+    select: "id,organization_id,created_by_user_id,reviewer_user_id,source_audit_id,task_category,status,confidence,human_review_flag,answer_excerpt,citations,metadata,created_at,reviewed_at,decision_reason,edited_answer,escalation_type,escalation_target",
     limit: "1",
   });
   const rows = await supabaseAdminRest<AiReviewRow[]>("ai_operation_reviews", { query }).catch(() => []);
@@ -163,6 +182,9 @@ export async function recordAiReviewDecision(input: {
   reviewerUserId: string;
   decision: "approved" | "edited" | "rejected" | "escalated";
   decisionReason?: string;
+  editedAnswer?: string;
+  escalationType?: AiReviewInboxItem["escalationType"];
+  escalationTarget?: AiReviewInboxItem["escalationTarget"];
 }) {
   const reviewedAt = new Date().toISOString();
   if (isSupabaseAdminConfigured()) {
@@ -174,6 +196,9 @@ export async function recordAiReviewDecision(input: {
         status: input.decision,
         decision_reason: input.decisionReason ?? null,
         reviewed_at: reviewedAt,
+        edited_answer: input.editedAnswer ?? null,
+        escalation_type: input.escalationType ?? null,
+        escalation_target: input.escalationTarget ?? {},
       },
     });
   }
@@ -184,5 +209,8 @@ export async function recordAiReviewDecision(input: {
     status: input.decision,
     reviewedAt,
     decisionReason: input.decisionReason,
+    editedAnswer: input.editedAnswer,
+    escalationType: input.escalationType,
+    escalationTarget: input.escalationTarget,
   };
 }
