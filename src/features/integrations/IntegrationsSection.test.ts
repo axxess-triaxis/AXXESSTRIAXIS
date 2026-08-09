@@ -95,4 +95,13 @@ describe("IntegrationsSection (Sprint 3 -- does not hang, no raw backend error t
     expect(source).not.toContain("{provider.purpose}</p>");
     expect(source).not.toContain("{provider.category}");
   });
+
+  it("A-109 (2026-08-09): the 3 pieces of functionality unique to the now-removed Settings > Integrations tab were migrated here, not deleted", () => {
+    expect(source).toContain('import { WhatsAppPhoneNumberField } from "./WhatsAppPhoneNumberField"');
+    expect(source).toContain('import { useFacebookLoginStatus, facebookLoginStatusCopy } from "../../hooks/useFacebookLoginStatus"');
+    expect(source).toContain('plugin.id === "whatsapp_business" && canConnect');
+    expect(source).toContain("<WhatsAppPhoneNumberField />");
+    expect(source).toContain("facebookLoginStatusCopy[facebookLoginStatus]");
+    expect(source).toContain("Calendly&apos;s API requires a Standard plan or higher");
+  });
 });

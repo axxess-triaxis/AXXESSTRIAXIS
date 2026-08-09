@@ -63,3 +63,13 @@ export function useFacebookLoginStatus() {
 
   return status;
 }
+
+// A-109 (2026-08-09): moved here verbatim from src/features/settings/SettingsSection.tsx's now-removed
+// Integrations tab -- co-located with the type it's keyed on rather than living in either
+// SettingsSection.tsx or IntegrationsSection.tsx, avoiding a cross-feature import in either direction.
+export const facebookLoginStatusCopy: Record<FacebookLoginStatus, string> = {
+  connected: "This browser has an authorized Facebook session -- Connect will likely skip straight to Meta's account picker.",
+  not_authorized: "This browser is signed into Facebook but hasn't authorized this app yet -- Connect will prompt for permissions.",
+  unknown: "Not currently signed into Facebook in this browser -- Connect will prompt for Facebook login.",
+  unavailable: "",
+};
