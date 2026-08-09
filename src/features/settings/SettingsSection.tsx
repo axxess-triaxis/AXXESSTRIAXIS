@@ -14,12 +14,8 @@ import { applicationServices } from "../../providers/serviceProvider";
 import { tenantScopeFromUser } from "../../repositories/supabaseEnterpriseRepositories";
 import { markPostDemoSatisfactionPromptPending } from "../../hooks/usePostDemoSatisfactionPrompt";
 import { useAnalytics } from "../../services/analytics";
-import { getProductivityPluginRegistry } from "../../services/integrations/pluginRegistry";
-import { useFacebookLoginStatus, type FacebookLoginStatus } from "../../hooks/useFacebookLoginStatus";
 import { isAgenticGateEnabled, setAgenticGateEnabled } from "../../services/agentic/agenticGateToggle";
-import { BrandIcon } from "../../components/ui/BrandIcon";
-import { brandIcons } from "../../components/ui/brandIcons";
-import { Building2, Calendar, CheckSquare, Cloud, Database, FileSignature, FileSpreadsheet, FileText, Github, HardDrive, IndianRupee, Kanban, Layers, ListTodo, MessageCircle, MessageSquare, Presentation, RotateCcw, Save, Send, Settings, ShieldCheck, Smartphone, Sparkles, UserPlus, Video } from "lucide-react";
+import { Building2, Database, RotateCcw, Save, Send, Settings, ShieldCheck, Smartphone, Sparkles, UserPlus } from "lucide-react";
 
 // SA-3 (2026-07-29): "AI Configuration" removed entirely -- founder's own words, "I don't think
 // this tab is user relevant anymore with OpenRouter coming in" (routing is now a single unified
@@ -32,7 +28,13 @@ import { Building2, Calendar, CheckSquare, Cloud, Database, FileSignature, FileS
 // live will be very high effort low reward" (the tab's own "Configure" controls were already
 // disabled dead ends per SA-1, and its Role-Based Permissions table was static/hardcoded -- see
 // A-29/A-30 in the readiness matrix, now closed by removal rather than left as unfinished UI).
-export const validTabs = ["profile", "organization", "integrations", "users", "permissions", ...(isDemoModeForcedByEnv() ? ["demo"] : [])];
+// 2026-08-09 (A-109): "Integrations" removed entirely -- founder's own words, "No need of the one
+// in 'User Profile', only in 'Integrations' option in sidebar." The standalone `/integrations` page
+// (IntegrationsSection.tsx, reachable from the main sidebar) is now the single canonical surface;
+// the 3 pieces of functionality unique to this tab (WhatsApp phone-number-ID field, Facebook
+// login-status hint, Calendly plan-requirement warning) were migrated there rather than deleted --
+// see src/features/integrations/WhatsAppPhoneNumberField.tsx and useFacebookLoginStatus.ts.
+export const validTabs = ["profile", "organization", "users", "permissions", ...(isDemoModeForcedByEnv() ? ["demo"] : [])];
 
 export function initialTabFromLocation(): string {
   if (typeof window === "undefined") return "profile";
@@ -42,7 +44,7 @@ export function initialTabFromLocation(): string {
 
 export const SettingsSection = () => {
   const [tab, setTab] = useState(initialTabFromLocation);
-  const tabs = ["Profile", "Organization", "Integrations", "Users", "Permissions", ...(isDemoModeForcedByEnv() ? ["Demo"] : [])];
+  const tabs = ["Profile", "Organization", "Users", "Permissions", ...(isDemoModeForcedByEnv() ? ["Demo"] : [])];
 
   return (
     <div>
@@ -59,8 +61,6 @@ export const SettingsSection = () => {
         ))}
       </div>
 
-      {tab === "integrations" && <IntegrationsQuickConnectPanel />}
-
       {tab === "users" && <UserAdministration />}
 
       {tab === "demo" && <DemoModePanel />}
@@ -75,172 +75,6 @@ export const SettingsSection = () => {
     </div>
   );
 };
-
-// Fallback for the providers simple-icons has no accurate mark for (brand-owner takedown
-// history -- see brandIcons.ts) or that aren't in the icon library at all. Real brandIcons.ts
-// entries take priority over this map wherever both exist.
-const quickConnectIcons: Record<string, typeof MessageSquare> = {
-  slack: MessageSquare,
-  calendly: Calendar,
-  airtable: Database,
-  hubspot: Building2,
-  notion: FileText,
-  google_calendar: Calendar,
-  zoom: Video,
-  teams: Video,
-  outlook: FileText,
-  google_drive: HardDrive,
-  linear: Layers,
-  github: Github,
-  google_sheets: FileSpreadsheet,
-  google_docs: FileText,
-  google_slides: Presentation,
-  whatsapp_business: MessageCircle,
-  jira: Kanban,
-  trello: ListTodo,
-  asana: CheckSquare,
-  salesforce: Cloud,
-  docusign: FileSignature,
-  razorpay: IndianRupee,
-};
-
-// pluginRegistry.ts's catalogue ids are display-only and don't all match connectorContract.ts's
-// real OAuth provider ids -- "outlook" is the one live mismatch (the OAuth contract calls it
-// "microsoft", since one Entra app registration backs both Outlook mail and Teams). Sending the
-// catalogue id straight through as ?provider= 404/400'd on connect. Everything else already
-// matches 1:1, so this only needs to remap the one known exception, not build a full alias table.
-const CONNECTOR_OAUTH_PROVIDER_ID: Record<string, string> = { outlook: "microsoft" };
-
-// MC-3 (2026-08-02): the tenant-side half of WhatsApp webhook attribution -- Meta's webhook
-// subscription is app-level, not per-tenant, so the webhook receiver resolves which organization an
-// inbound event belongs to by matching this registered phone_number_id. See
-// src/repositories/whatsappEventsRepository.ts's findWhatsAppConnectionByPhoneNumberId.
-function WhatsAppPhoneNumberField() {
-  const [value, setValue] = useState("");
-  const [status, setStatus] = useState<{ tone: "success" | "error"; message: string } | null>(null);
-  const [saving, setSaving] = useState(false);
-
-  async function handleSave() {
-    if (!value.trim()) return;
-    setSaving(true);
-    setStatus(null);
-    try {
-      const response = await fetch("/api/whatsapp/settings/phone-number", {
-        method: "PATCH",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ wabaPhoneNumberId: value.trim() }),
-      });
-      if (!response.ok) {
-        const payload = await response.json().catch(() => ({})) as { error?: string };
-        setStatus({ tone: "error", message: payload.error ?? "Unable to save phone number." });
-        return;
-      }
-      setStatus({ tone: "success", message: "Phone number registered -- live WhatsApp events for this number will now attribute to your organization." });
-    } catch {
-      setStatus({ tone: "error", message: "Unable to reach the server. Try again." });
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  return (
-    <div className="mb-3 rounded-lg border border-[rgba(0,0,0,0.08)] p-2.5">
-      <label htmlFor="whatsapp-phone-number-id" className="text-[11px] font-semibold text-[#0F1117]">WhatsApp phone number ID (Meta phone_number_id)</label>
-      <p className="mt-0.5 text-[10px] leading-relaxed text-[#5F6B73]">Required for live message/status pop-ups -- find this in Meta Business Suite under your WABA&apos;s phone number settings.</p>
-      <div className="mt-2 flex gap-2">
-        <input
-          id="whatsapp-phone-number-id"
-          type="text"
-          value={value}
-          onChange={(event) => setValue(event.target.value)}
-          placeholder="e.g. 109876543210987"
-          className="flex-1 rounded-lg border border-[rgba(0,0,0,0.12)] px-2.5 py-1.5 text-xs"
-        />
-        <button
-          type="button"
-          onClick={handleSave}
-          disabled={saving || !value.trim()}
-          className="rounded-lg bg-[#8B1E2D] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#7a1a27] disabled:opacity-60"
-        >
-          {saving ? "Saving..." : "Save"}
-        </button>
-      </div>
-      {status && <div className="mt-2"><InlineToast tone={status.tone} message={status.message} /></div>}
-    </div>
-  );
-}
-
-const facebookLoginStatusCopy: Record<FacebookLoginStatus, string> = {
-  connected: "This browser has an authorized Facebook session -- Connect will likely skip straight to Meta's account picker.",
-  not_authorized: "This browser is signed into Facebook but hasn't authorized this app yet -- Connect will prompt for permissions.",
-  unknown: "Not currently signed into Facebook in this browser -- Connect will prompt for Facebook login.",
-  unavailable: "",
-};
-
-function IntegrationsQuickConnectPanel() {
-  const { session } = useAuth();
-  // 2026-07-30: previously showed only pilot-enabled connectors, excluding Gmail/Outlook entirely
-  // (they had no card anywhere on this tab) -- founder flagged the tab as "looking patchy" with
-  // integrations missing. Now shows the full catalogue so nothing is silently absent; each tile's
-  // badge honestly reflects its real state (configured / gated on credentials / not yet built) so
-  // a "coming soon" tile is never presented as connectable.
-  const quickConnectPlugins = getProductivityPluginRegistry();
-  const canConnect = Boolean(session.user && ["Super Admin", "Organization Admin"].includes(session.user.role));
-  // A-95 (2026-08-04): client-side-only status check (see useFacebookLoginStatus.ts) surfaced next
-  // to the two Meta-App-backed tiles (WhatsApp Business, Meta Business) -- informational only, does
-  // not change the actual connect flow, which stays the existing server-side OAuth exchange below.
-  const facebookLoginStatus = useFacebookLoginStatus();
-
-  return (
-    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-      {quickConnectPlugins.map((plugin) => {
-        const brandIcon = brandIcons[plugin.id];
-        const FallbackIcon = quickConnectIcons[plugin.id] ?? MessageSquare;
-        return (
-          <Card key={plugin.id} className="p-5">
-            <div className="mb-3 flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#8B1E2D]/8 text-[#8B1E2D]">
-                {brandIcon ? <BrandIcon icon={brandIcon} size={20} /> : <FallbackIcon size={18} />}
-              </div>
-              <h3 className="text-sm font-semibold text-[#0F1117]">{plugin.name}</h3>
-            </div>
-            {(plugin.id === "whatsapp_business" || plugin.id === "meta_business") && facebookLoginStatusCopy[facebookLoginStatus] && (
-              <p className="mb-3 rounded-lg bg-[rgba(15,17,23,0.04)] px-2.5 py-2 text-[11px] leading-relaxed text-[#5F6B73]">
-                {facebookLoginStatusCopy[facebookLoginStatus]}
-              </p>
-            )}
-            {plugin.id === "calendly" && (
-              <p className="mb-3 rounded-lg bg-amber-50 px-2.5 py-2 text-[11px] leading-relaxed text-amber-800">
-                Calendly&apos;s API requires a Standard plan or higher on the account you connect -- it isn&apos;t available on Calendly&apos;s free tier. This is a cost on your own Calendly subscription, not an AXXESS charge.
-              </p>
-            )}
-            {plugin.id === "whatsapp_business" && (
-              <>
-                <p className="mb-3 rounded-lg bg-amber-50 px-2.5 py-2 text-[11px] leading-relaxed text-amber-800">
-                  Requires a Meta Business Manager account with a verified, provisioned WhatsApp Business Account (WABA) and Meta App Review approval -- connecting here alone does not complete WhatsApp Business setup.
-                </p>
-                {canConnect && <WhatsAppPhoneNumberField />}
-              </>
-            )}
-            {!plugin.pilotEnabled ? (
-              <p className="text-[11px] text-[#5F6B73]">No connect flow ships yet for {plugin.name} -- tracked for a future release, not available to connect today.</p>
-            ) : canConnect ? (
-              <a
-                href={`/api/connectors/oauth/start?provider=${CONNECTOR_OAUTH_PROVIDER_ID[plugin.id] ?? plugin.id}`}
-                className="inline-flex items-center gap-2 rounded-lg border border-[rgba(139,30,45,0.22)] bg-white px-3 py-2 text-xs font-semibold text-[#8B1E2D] hover:bg-[#8B1E2D]/5"
-              >
-                Connect {plugin.name}
-              </a>
-            ) : (
-              <InlineToast tone="info" message="Only Organization Admins can connect this workspace's integrations." />
-            )}
-          </Card>
-        );
-      })}
-    </div>
-  );
-}
 
 const departmentOptions = [
   "Mission Secretariat",

@@ -15,6 +15,8 @@ import { previewSelectedEmailImport, type ConnectorProviderId, type EmailImportP
 import type { MicrosoftGraphMailboxMessageSummary } from "../../services/integrations/microsoftGraphMailbox";
 import type { NotionPageSummary } from "../../services/integrations/notionPages";
 import { getIntegrationHealth, getInfrastructureOnlyIntegrations, getPilotIntegrations } from "../../services/integrations/pluginRegistry";
+import { useFacebookLoginStatus, facebookLoginStatusCopy } from "../../hooks/useFacebookLoginStatus";
+import { WhatsAppPhoneNumberField } from "./WhatsAppPhoneNumberField";
 import { Layers } from "lucide-react";
 
 // Illustrative connector gallery for the investor-demo experience only -- real connector status
@@ -134,6 +136,11 @@ export const IntegrationsSection = () => {
   const integrations = applicationServices.institutionalRepository.getIntegrations();
   const connectedCount = integrations.filter((integration) => integration.status === "connected").length;
   const disconnectedCount = integrations.length - connectedCount;
+  // A-109 (2026-08-09): moved from Settings > Integrations (now removed) -- gates the WhatsApp
+  // phone-number-ID field, same admin-role check that tab used.
+  const { session } = useAuth();
+  const canConnect = Boolean(session.user && ["Super Admin", "Organization Admin"].includes(session.user.role));
+  const facebookLoginStatus = useFacebookLoginStatus();
 
   const [emailForm, setEmailForm] = useState({
     providerId: "gmail",
@@ -558,6 +565,21 @@ export const IntegrationsSection = () => {
                 </div>
                 <div className="text-sm font-semibold text-[#0F1117]">{plugin.name}</div>
               </div>
+              {/* A-109 (2026-08-09): migrated from Settings > Integrations (now removed) rather than
+                  deleted -- these three pieces weren't duplicated anywhere on this page before. */}
+              {(plugin.id === "whatsapp_business" || plugin.id === "meta_business") && facebookLoginStatusCopy[facebookLoginStatus] && (
+                <p className="mt-2 rounded-lg bg-[rgba(15,17,23,0.04)] px-2.5 py-2 text-[11px] leading-relaxed text-[#5F6B73]">
+                  {facebookLoginStatusCopy[facebookLoginStatus]}
+                </p>
+              )}
+              {plugin.id === "calendly" && (
+                <p className="mt-2 rounded-lg bg-amber-50 px-2.5 py-2 text-[11px] leading-relaxed text-amber-800">
+                  Calendly&apos;s API requires a Standard plan or higher on the account you connect -- it isn&apos;t available on Calendly&apos;s free tier. This is a cost on your own Calendly subscription, not an AXXESS charge.
+                </p>
+              )}
+              {plugin.id === "whatsapp_business" && canConnect && (
+                <div className="mt-2"><WhatsAppPhoneNumberField /></div>
+              )}
               {(plugin.id === "meta_business" || plugin.id === "threads") && <SyncNowButton providerId={plugin.id} />}
             </div>
           );

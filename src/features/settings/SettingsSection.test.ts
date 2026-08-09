@@ -14,9 +14,9 @@ describe("initialTabFromLocation (A-36/A-37 fix -- respects ?tab= intent instead
     window.history.pushState({}, "", "/settings");
   });
 
-  it("defaults to security when no tab is requested", () => {
+  it("defaults to profile when no tab is requested (Security removed 2026-08-08, A-29)", () => {
     setLocationSearch("");
-    expect(initialTabFromLocation()).toBe("security");
+    expect(initialTabFromLocation()).toBe("profile");
   });
 
   it("honors ?tab=users (the real Invite Pilot Team / role-change destination)", () => {
@@ -29,9 +29,9 @@ describe("initialTabFromLocation (A-36/A-37 fix -- respects ?tab= intent instead
     expect(initialTabFromLocation()).toBe("permissions");
   });
 
-  it("falls back to security for an unrecognized tab value rather than rendering nothing", () => {
+  it("falls back to profile for an unrecognized tab value rather than rendering nothing (Security removed 2026-08-08, A-29)", () => {
     setLocationSearch("?tab=not-a-real-tab");
-    expect(initialTabFromLocation()).toBe("security");
+    expect(initialTabFromLocation()).toBe("profile");
   });
 });
 
@@ -74,19 +74,11 @@ describe("inviteUser (A-08/A-65 fix -- 'Send Invite' must actually send the invi
   });
 });
 
-describe("Integrations quick-connect (outlook -> microsoft OAuth provider id, live-confirmed 2026-07-31)", () => {
-  // Real bug: pluginRegistry.ts's catalogue id for the Microsoft Outlook tile is "outlook" (a
-  // display-only id), but connectorContract.ts's real OAuth provider id for it is "microsoft"
-  // (one Entra app registration backs Outlook + Teams). The "Connect Microsoft Outlook" button
-  // built its link straight from the catalogue id, so GET /api/connectors/oauth/start?provider=
-  // outlook always 400'd ("Unsupported connector provider.") -- confirmed via live production
-  // logs, not assumed.
-  it("maps the display-only 'outlook' catalogue id to the real 'microsoft' OAuth provider id", () => {
-    expect(source).toContain('CONNECTOR_OAUTH_PROVIDER_ID: Record<string, string> = { outlook: "microsoft" }');
-  });
-
-  it("builds the connect link through the mapping, not the raw catalogue id", () => {
-    expect(source).toContain("href={`/api/connectors/oauth/start?provider=${CONNECTOR_OAUTH_PROVIDER_ID[plugin.id] ?? plugin.id}`}");
-    expect(source).not.toContain("href={`/api/connectors/oauth/start?provider=${plugin.id}`}");
-  });
-});
+// A-109 (2026-08-09): the "Integrations quick-connect" describe block that lived here tested
+// CONNECTOR_OAUTH_PROVIDER_ID and IntegrationsQuickConnectPanel, both deleted along with the
+// Settings > Integrations tab itself -- the underlying outlook->microsoft OAuth provider-id fix
+// this block verified is not lost, it's just tested from the surviving surface now: the standalone
+// /integrations page (src/features/integrations/IntegrationsSection.tsx) never used the display-only
+// "outlook" catalogue id for its Microsoft tile in the first place -- it hardcodes
+// `?provider=microsoft` directly (see IntegrationsSection.tsx's "Connect Microsoft" link), so no
+// remap table was ever needed there and none was migrated in.
