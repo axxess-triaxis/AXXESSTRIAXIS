@@ -2,7 +2,7 @@ import { Download, FolderKanban, PlayCircle, Plus, RefreshCw, Search, Sparkles }
 import { useEffect, useMemo, useState } from "react";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { useAuth } from "../../auth/AuthProvider";
-import { isDemoModeEnabled } from "../../demo/demoMode";
+import { isDemoModeEnabled, isDemoModeSsrSafe, useDemoModeEnabled } from "../../demo/demoMode";
 import {
   ActivityFeed,
   DataStateBadge,
@@ -178,7 +178,11 @@ export function deriveDashboardRecommendations(pendingAiReviewCount: number, pro
 export function DashboardSection() {
   const { session } = useAuth();
   const tenantScope = useMemo(() => session.user ? dashboardScopeForUser(session.user) : undefined, [session.user]);
-  const [projects, setProjects] = useState<DashboardProject[]>(() => (isDemoModeEnabled() ? getDashboardFallbackProjects() : []));
+  // A-106 fix (2026-08-09): isDemoModeSsrSafe(), not isDemoModeEnabled(), for this initial-state seed --
+  // see the identical reasoning in AuthProvider.tsx's getInitialClientSession(). The useEffect below
+  // (which calls getDashboardProjects(), itself demo-mode-aware) corrects this to the real,
+  // localStorage-aware value immediately after mount.
+  const [projects, setProjects] = useState<DashboardProject[]>(() => (isDemoModeSsrSafe() ? getDashboardFallbackProjects() : []));
   const [objectives, setObjectives] = useState<DashboardStrategicObjective[]>([]);
   const [refreshToken, setRefreshToken] = useState(0);
   // Executive Dashboard Redesign addendum (2026-08-01): the "Enterprise golden path" panel used to
@@ -278,7 +282,11 @@ export function DashboardSection() {
     };
   }, [tenantScope, refreshToken]);
 
-  const demoMode = isDemoModeEnabled();
+  // A-106 fix (2026-08-09): useDemoModeEnabled(), not isDemoModeEnabled(), directly in the render body --
+  // this value branches entire JSX subtrees below (e.g. the Recent Institutional Activity panel), so a
+  // server/client divergence here was the confirmed root cause of the reported hydration error. See
+  // docs/readiness/A105_A106_A107_ROOT_CAUSE_ANALYSIS_2026_08_09.md.
+  const demoMode = useDemoModeEnabled();
 
   return (
     <PageShell>
