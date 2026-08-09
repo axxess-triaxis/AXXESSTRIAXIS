@@ -31,3 +31,25 @@ describe("AIReviewInboxPage (Sprint 3 -- no raw backend error text, F-016)", () 
     expect(source).toContain("console.error(\"AI review decision request failed.\"");
   });
 });
+
+describe("AIReviewInboxPage (A-102 -- 'Mark edited'/'Escalate' open real modals, not a fixed template string)", () => {
+  it("'Mark edited' opens MarkEditedModal instead of submitting a decision directly", () => {
+    expect(source).toContain('onClick={() => setEditModalReview(review)}');
+    expect(source).not.toContain('onClick={() => void decideAndClearMessage(review.id, "edited")}');
+  });
+
+  it("'Escalate' opens EscalateReviewModal instead of submitting a decision directly", () => {
+    expect(source).toContain('onClick={() => setEscalateModalReview(review)}');
+    expect(source).not.toContain('onClick={() => void decideAndClearMessage(review.id, "escalated")}');
+  });
+
+  it("the edit modal's confirm handler forwards real editedAnswer text, not a fixed string", () => {
+    const editModalBlock = source.slice(source.indexOf("{editModalReview && ("), source.indexOf("{escalateModalReview && ("));
+    expect(editModalBlock).toContain("{ editedAnswer: editedText }");
+  });
+
+  it("the escalate modal's confirm handler forwards a real escalationType/escalationTarget, not a fixed string", () => {
+    const escalateModalBlock = source.slice(source.indexOf("{escalateModalReview && ("));
+    expect(escalateModalBlock).toContain("{ escalationType, escalationTarget }");
+  });
+});
