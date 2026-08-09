@@ -20,6 +20,7 @@ import {
   organizationsRepository,
   programsRepository,
   projectsRepository,
+  remindersRepository,
   stakeholdersRepository,
   tasksRepository,
   usersRepository,
@@ -45,6 +46,7 @@ import type {
   OrganizationsRepository,
   ProgramsRepository,
   ProjectsRepository,
+  RemindersRepository,
   StakeholdersRepository,
   StorageRepository,
   TasksRepository,
@@ -111,6 +113,7 @@ export type ApplicationServices = {
   projectsRepository: ProjectsRepository;
   stakeholdersRepository: StakeholdersRepository;
   tasksRepository: TasksRepository;
+  remindersRepository: RemindersRepository;
   meetingsRepository: MeetingsRepository;
   notificationsRepository: NotificationsRepository;
   documentsRepository: DocumentsRepository;
@@ -145,6 +148,7 @@ const liveRepositories: RepositoryServices = {
   projectsRepository,
   stakeholdersRepository,
   tasksRepository,
+  remindersRepository,
   meetingsRepository,
   notificationsRepository,
   documentsRepository,
@@ -236,6 +240,7 @@ const resilientRepositories: RepositoryServices = {
   projectsRepository: resilientMutableRepository(liveRepositories.projectsRepository, emptyRepositories.projectsRepository),
   stakeholdersRepository: resilientMutableRepository(liveRepositories.stakeholdersRepository, emptyRepositories.stakeholdersRepository),
   tasksRepository: resilientMutableRepository(liveRepositories.tasksRepository, emptyRepositories.tasksRepository),
+  remindersRepository: resilientMutableRepository(liveRepositories.remindersRepository, emptyRepositories.remindersRepository),
   meetingsRepository: resilientMutableRepository(liveRepositories.meetingsRepository, emptyRepositories.meetingsRepository),
   notificationsRepository: resilientMutableRepository(liveRepositories.notificationsRepository, emptyRepositories.notificationsRepository),
   documentsRepository: {
