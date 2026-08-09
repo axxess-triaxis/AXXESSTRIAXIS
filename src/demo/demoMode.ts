@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import type { UserContext } from "../security/rbac";
 import { isLiteHost } from "../config/liteSurfaceHosts";
 
@@ -67,6 +68,45 @@ export function isDemoModeEnabled() {
   if (isDemoModeForcedByEnv()) return true;
   if (typeof window === "undefined") return false;
   return window.localStorage.getItem(demoModeStorageKey) === "true";
+}
+
+// A-106 fix (2026-08-09): isDemoModeEnabled() reads window.localStorage, which is unavailable during
+// SSR and always available by the time the client hydrates -- so calling it directly in a render body
+// or a useState lazy initializer returns `false` on the server but can return `true` on the client's
+// very first render for any visitor whose browser previously had the (non-expiring) demo-mode flag
+// set, e.g. from an earlier Investor Preview session. That's a real, structural server/client mismatch
+// (React error #418), confirmed as the root cause of A-106 via two call sites in
+// src/features/dashboard/DashboardSection.tsx and src/auth/AuthProvider.tsx's session initializer --
+// see docs/readiness/A105_A106_A107_ROOT_CAUSE_ANALYSIS_2026_08_09.md. isDemoModeForcedByEnv() alone is
+// safe to call in either context (a build-time env var, identical server and client), so it's the
+// correct seed value for anything that must match the server's own render exactly.
+export function isDemoModeSsrSafe() {
+  return isDemoModeForcedByEnv();
+}
+
+// Hydration-safe replacement for calling isDemoModeEnabled() directly in a component's render body.
+// Seeds state with the SSR-safe value (matching what the server actually rendered), then corrects to
+// the real, localStorage-aware answer in an effect once the client has mounted -- the standard fix for
+// this class of mismatch. Costs one extra render after mount for the narrow set of visitors whose
+// answer actually differs (accepted trade-off: a brief content swap instead of a hydration crash).
+// Also re-resolves on demoModeChangedEvent so an in-session demo-mode toggle still updates live.
+export function useDemoModeEnabled(): boolean {
+  const [enabled, setEnabled] = useState(isDemoModeSsrSafe);
+
+  useEffect(() => {
+    setEnabled(isDemoModeEnabled());
+    function handleChange() {
+      setEnabled(isDemoModeEnabled());
+    }
+    window.addEventListener(demoModeChangedEvent, handleChange);
+    window.addEventListener(demoResetEvent, handleChange);
+    return () => {
+      window.removeEventListener(demoModeChangedEvent, handleChange);
+      window.removeEventListener(demoResetEvent, handleChange);
+    };
+  }, []);
+
+  return enabled;
 }
 
 export type RuntimeMode = "demo" | "live-tenant" | "unauthenticated";
