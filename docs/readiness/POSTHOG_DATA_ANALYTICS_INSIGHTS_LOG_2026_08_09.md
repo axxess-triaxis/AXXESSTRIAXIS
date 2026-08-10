@@ -144,11 +144,37 @@ Source: matrix A-108, "Follow-up data point, upgraded to real screenshot evidenc
 
 (Superseded same-day figure, no longer current: an earlier founder-stated 5 visitors / 24 page views, recorded before this screenshot became available.)
 
+### 2.2b Fuller pull, ~36h later (founder-shared screenshots, window August 8, 2026 to now)
+
+Source: 5 founder-shared screenshots of the authenticated PostHog Web Analytics view, filtered to `https://investor.triaxisventures.com`, pulled 2026-08-09/10. Supersedes §2.2's 7-visitor sample with a much larger one from the same ongoing window.
+
+| Metric | Value |
+|---|---|
+| Visitors | 102 |
+| Page views | 122 |
+| Sessions | 102 |
+| Avg. session duration | 36.9s |
+| Bounce rate | 40% |
+
+**Top paths:** `/dashboard` dominates overwhelmingly (108 visitors / 109 views, 42.1% bounce); every other path is single-digit visitors (`/stakeholders` 2, `/approvals` 2, `/ai-workspace` 1, `/alerts` 1, `/documents` 1, `/tasks` 1, `/admin/audit-logs` 1, `/ai-workspace/review-inbox` 1, `/analytics` 1).
+
+**Sources by channel:** Paid Social 96 visitors / 97 views -- Organic Social 7 / 7 -- Direct 5 / 24.
+
+**Devices:** Mobile 105 visitors / 125 views -- Desktop 3 / 3.
+
+**Geography (Countries):** India 102 / 105 -- United States 3 / 3 -- Nepal 1 / 18 -- Germany 1 / 1 -- Ireland 1 / 1.
+
+**Geography (India, by Region):** Kerala 11, Gujarat 10, Tamil Nadu 10, Assam 9, West Bengal 8, Maharashtra 7, Uttar Pradesh 5, (not set) 5, Rajasthan 4, Telangana 4 -- broad spread across states, not concentrated in one city.
+
+**Retention:** Aug 2-8 cohort (size 4) -- 100% Week 0, 0% Week 1. Aug 9-15 cohort (size 3) had not reached Week 1 yet at pull time.
+
+**Read on this data, founder-corrected (2026-08-09/10):** this session's first pass at this pull flagged the Paid-Social/mobile dominance, the Nepal views-outlier, and the 0%-retention figure as things needing explanation -- incorrectly. Founder's direct correction: this is the demo domain, openly and deliberately promoted on paid social (FB/Instagram) for the Founders Club waitlist (see `project_founders_club_waitlist` memory) -- 94% Paid Social and 97% mobile is exactly the expected signature of that campaign converting to real clicks, not a traffic-authenticity question to interrogate. The scrutiny applied to `landing.triaxisventures.com`'s traffic in §1.6 (a live product with real Auth and no real accounts to explain a spike) does not transfer here, where the entire premise is public paid promotion. Retention/return-visit rate is not a meaningful metric for a single-touch demo/waitlist funnel and should not be read as a shortfall. The broad India-wide regional spread (not concentrated in one city, unlike `landing`'s Guwahati pattern) is, if anything, a positive, non-suspicious signal. See `feedback_demo_vs_live_traffic_scrutiny` memory for the standing correction this produced.
+
 ### 2.3 Why this domain's data is structurally cleaner than `landing`'s
 
 - **No Auth gate.** This is the forced-demo deployment -- every visitor loads the demo content directly. There is no shared-credential ambiguity of the kind that confounds the `landing.triaxisventures.com` `/auth` breakdown above (round 2/3 of that analysis).
 - **Founder does not visit it himself** (founder-stated) -- unlike `landing`, none of this domain's traffic is the founder's own testing.
-- **Founder's characterization of the mix:** "actual investor/customer/social media traffic" -- a genuinely mixed real-audience source, not solely the founder's own testing, and this is the domain actually promoted on FB/Instagram/LinkedIn/WhatsApp for the Founders Club waitlist (see `project_founders_club_waitlist` memory).
+- **Founder's characterization of the mix:** "actual investor/customer/social media traffic" -- a genuinely mixed real-audience source, not solely the founder's own testing, and this is the domain actually promoted on FB/Instagram/LinkedIn/WhatsApp for the Founders Club waitlist (see `project_founders_club_waitlist` memory). The fuller §2.2b pull sharpens this: the mix is overwhelmingly (94%) Paid Social -- i.e., the FB/Instagram promotion itself, working as intended, not an ambiguous "who is this" question.
 - **Caveat that still applies regardless:** PostHog's `distinct_id` is a per-browser-profile identifier, not per-person -- an incognito window or a second browser from the same physical visitor still mints a new "unique visitor." This mechanic is domain-agnostic and applies here exactly as it does to `landing`'s count; it is just not compounded by the shared-Auth-credential question on this domain.
 - **Still a single day's data as of the last pull** -- not yet a trend. Re-pull after a longer window before treating this domain's numbers as a stable baseline.
 
