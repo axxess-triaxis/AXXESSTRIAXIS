@@ -2,7 +2,7 @@
 
 Live tracking file per the audit's Founder Query Protocol. Every uncertainty encountered during the audit is logged here with a question ID, not resolved silently. Nothing here is answered by inference -- only by direct founder response, logged verbatim in the FOUNDER ANSWER field.
 
-Status vocabulary: `OPEN` (awaiting founder answer) / `ANSWERED` (founder responded, recorded verbatim) / `RESOLVED` (answer plus, where required, corroborating evidence now exists) / `PARTIALLY CLEARED` (founder-directed label for an issue with real, verified evidence covering part but not all of what the question asked -- used when a full RESOLVED would overstate what's actually covered).
+Status vocabulary: `OPEN` (awaiting founder answer) / `ANSWERED` (founder responded, recorded verbatim) / `RESOLVED` (answer plus, where required, corroborating evidence now exists) / `PARTIALLY CLEARED` (founder-directed label for an issue with real, verified evidence covering part but not all of what the question asked -- used when a full RESOLVED would overstate what's actually covered) / `OPEN ISSUE` (founder-directed label: the founder has acknowledged this as a real, standing problem rather than answering which interpretation is correct -- distinct from plain `OPEN`, which just means no founder response yet at all).
 
 ---
 
@@ -99,8 +99,8 @@ B. An oversight -- this table should be queried via the caller's JWT like the re
 
 **What evidence would resolve it:** Founder confirmation of intent, and/or extending the two-tenant harness to also cover `rag_document_chunks`.
 
-**Founder answer:** _(blank)_
+**Founder answer (2026-08-10):** "Log Q-005 as Open Issue" -- founder directed this be tracked as an acknowledged standing problem, not resolved with interpretation A or B from above.
 
-**Status:** OPEN
+**Status:** OPEN ISSUE -- acknowledged as real, not yet fixed, no interpretation (A/B) selected. Distinct from a pending question: this is a confirmed gap awaiting remediation, tracked for follow-up in Phase 5 (Enterprise Readiness) and Phase 16 (Red Team).
 
 ---
