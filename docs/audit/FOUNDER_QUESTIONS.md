@@ -79,6 +79,28 @@ B. This is a genuine, previously-unflagged testing gap that should be prioritize
 - The harness's own cleanup step had a real bug (wrong delete order, left test rows in production), diagnosed and manually cleaned up the same session (24/24 deletes verified), but not yet patched in the script itself.
 - This was a **single run**, not a repeated or CI-integrated regression check.
 
-**Status:** PARTIALLY CLEARED (founder's own tracking label) -- real, adversarial, production-database proof of isolation exists for 4 of 6 resource types, materially upgrading this row from Phase 2's "NOT FOUND" framing. Not fully cleared: `knowledge_articles`/`workflow_timeline_events` coverage remains unverified, and this proof is a one-time manual execution, not something that runs automatically on every deploy to catch a future regression. See Phase 2 document, updated accordingly.
+**Status:** PARTIALLY CLEARED (founder's own tracking label) -- real, adversarial, production-database proof of isolation exists for 4 of 6 resource types, materially upgrading this row from Phase 2's "NOT FOUND" framing. Not fully cleared: `knowledge_articles`/`workflow_timeline_events` coverage remains unverified, and this proof is a one-time manual execution, not something that runs automatically on every deploy to catch a future regression. See Phase 2 document, updated accordingly. **Important scope note added by Phase 3 (Q-005 below): none of the 6 resource types this harness tested is `rag_document_chunks` -- the table the AI/RAG pipeline actually retrieves from, which uses a different, weaker isolation mechanism. This "partially cleared" status does not extend to that table.**
+
+---
+
+## Q-005
+
+**Category:** AI/RAG architecture -- tenant isolation
+
+**Question:** The real, indexed-document RAG retrieval path (`src/services/rag/tenantRagWorkflow.ts::persistentCitationsForQuestion`, the path used in production) queries `rag_document_chunks` using a Supabase **service-role** client, which bypasses Postgres RLS entirely -- unlike the general CRUD repositories elsewhere in the app, which authenticate with the caller's own JWT and are subject to real RLS enforcement. A real RLS policy exists on `rag_document_chunks`, but it provides no actual protection on this path since the service-role client is exempt from it by definition. Isolation for this specific table rests entirely on the application remembering to filter every query by `organization_id`, with no database-level backstop -- and this is also the table the Q-004 two-tenant production harness never tested. Is this a deliberate architectural choice, or a genuine gap worth closing?
+
+**Why this matters:** This is the table an AI answer is actually grounded in -- if isolation ever failed here, a tenant could receive an AI-generated answer synthesized in part from another tenant's confidential documents.
+
+**Current evidence:** `src/repositories/supabaseAdmin.ts:8-13,19-32` (service-role client, always used); `tenantRagWorkflow.ts:325,330,335` (the query + redundant app-level filter); `supabase/migrations/202607100001_sprint14_rag_integrations_alerts.sql:87-91` (the RLS policy that doesn't apply on this path); `tenantRagWorkflow.answerGrounding.test.ts:169-187` (a real, deliberately adversarial unit test simulating a cross-org leak -- but unit-level, not a live-database proof).
+
+**Possible interpretations:**
+A. Deliberate and considered sufficient -- service-role was chosen for a specific technical reason, and the app-level filter plus adversarial unit tests are the intended isolation mechanism for this table.
+B. An oversight -- this table should be queried via the caller's JWT like the rest of the app, or added to the two-tenant harness's coverage.
+
+**What evidence would resolve it:** Founder confirmation of intent, and/or extending the two-tenant harness to also cover `rag_document_chunks`.
+
+**Founder answer:** _(blank)_
+
+**Status:** OPEN
 
 ---
