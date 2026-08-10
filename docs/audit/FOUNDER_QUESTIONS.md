@@ -23,8 +23,32 @@ C. Prioritize a specific subset (e.g., Claims Register, Commercial Evidence, Red
 
 **What evidence would resolve it:** Your direction.
 
-**Founder answer:** _(blank)_
+**Founder answer (2026-08-10):** "all phases attempted before you review anything, phase-by-phase with your sign-off between each - This is ideal" -- read as: within each phase, complete the work without pausing to ask conversationally (log open questions to this file per the protocol instead); present the completed phase for sign-off before starting the next one. This is option B, with the clarification that in-phase execution should not be interrupted by chat-level questions.
 
-**Status:** OPEN
+**Status:** ANSWERED
+
+---
+
+## Q-002
+
+**Category:** Audit scope / historical completeness
+
+**Question:** Does this repository represent the complete history of AXXESS TRIaxis's product development, or did meaningful work happen before 2026-07-02 (the first commit) outside this repository?
+
+**Founder answer (2026-08-10):** "This repo contains 100% of AXXESS."
+
+**Status:** ANSWERED -- repository age (39 days as of this audit) is confirmed to equal company/product age, not merely the most recent slice of a longer history.
+
+---
+
+## Q-003
+
+**Category:** Repository forensics / author identity
+
+**Question:** Is the `Triaxis Ventures <noreply@triaxis.ventures>` git identity (435 of 669 commits, 65%) the founder?
+
+**Founder answer (2026-08-10):** "Yes."
+
+**Status:** ANSWERED -- all 5 human-labeled git identities (per Phase 0's email-level breakdown) are now confirmed as the same person. 669 of 669 non-bot-attributed commits (618 after excluding the 51 dependabot + 3 Vercel + 1 vexo-ai + 1 posthog bot commits = 618 human commits) are the founder's.
 
 ---
