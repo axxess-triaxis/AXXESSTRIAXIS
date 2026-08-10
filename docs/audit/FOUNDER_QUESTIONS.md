@@ -103,4 +103,46 @@ B. An oversight -- this table should be queried via the caller's JWT like the re
 
 **Status:** OPEN ISSUE -- acknowledged as real, not yet fixed, no interpretation (A/B) selected. Distinct from a pending question: this is a confirmed gap awaiting remediation, tracked for follow-up in Phase 5 (Enterprise Readiness) and Phase 16 (Red Team).
 
+**Phase 5 update:** formally scored as a **CRITICAL GAP** in `docs/audit/05_ENTERPRISE_READINESS.md`, the highest severity tier this audit uses -- a failure here means a tenant could receive an AI-generated answer synthesized in part from another tenant's confidential documents, not just a stray row in an admin list.
+
+---
+
+## Q-006
+
+**Category:** Data privacy / regulatory readiness
+
+**Question:** The account-deletion request endpoint and the data-export request endpoint both perform zero actual data operations -- they record a canned message stating the request will be manually processed, and one doesn't even write an audit log entry for itself. A separately-built erasure-planning module (`src/privacy/privacyEngine.ts`) that would do the real work exists but is never called by any production code path. Is this a known, deliberate "beta-stage manual process," or an unaddressed gap that hasn't been prioritized?
+
+**Why this matters:** This is the mechanism a GDPR Article 17 / India DPDP-equivalent "right to erasure" claim would rest on. Scored **CRITICAL GAP** in Phase 5.
+
+**Current evidence:** `src/app/api/account/deletion-request/route.ts`, `src/app/api/privacy/export-request/route.ts`, `src/privacy/privacyEngine.ts` (zero non-type-only production importers), `docs/PRIVACY_ENGINEERING.md`'s own "Operational Gaps" section.
+
+**Possible interpretations:**
+A. Known and accepted for beta stage -- a human genuinely processes these manually today.
+B. Not previously flagged -- should move up in priority given any real customer/regulatory exposure.
+
+**Founder answer:** _(blank)_
+
+**Status:** OPEN
+
+---
+
+## Q-007
+
+**Category:** AI governance / audit trail completeness
+
+**Question:** The MCP agent tool-call approval flow -- where a human approves/rejects what an autonomous AI agent can do to tenant data -- writes zero entries to the `audit_logs` table every other privileged action uses as its system of record. Is this intentional, or should it log the same way role changes and invitations do?
+
+**Why this matters:** This is the human checkpoint for the single highest-autonomy surface in the product. Scored **GAP** in Phase 5.
+
+**Current evidence:** `src/app/api/approvals/[id]/route.ts` (zero `auditLogsRepository` calls), `src/repositories/workflowActionRepositories.ts:239-257`, `src/services/agents/agentGrantsRepository.ts:50-70`, no DB trigger on either underlying table.
+
+**Possible interpretations:**
+A. Deliberate -- `approval_requests`/`agent_action_grants` were considered adequate as their own record.
+B. An oversight -- should be logged for consistency and single-source-of-truth compliance reporting.
+
+**Founder answer:** _(blank)_
+
+**Status:** OPEN
+
 ---
