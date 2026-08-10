@@ -122,6 +122,30 @@ This question was worked through iteratively across several founder-shared scree
 
 **Audience denominator (founder-stated, source artifact needed):** founder states the link has been shared with "very few people except me, YC and my 2 pilot customers" (both Assam-based). Not independently verifiable from PostHog itself -- PostHog has no identity information tying an anonymous visitor to any of these three groups without separately configured user identification, which is not confirmed to exist in this deployment.
 
+### 1.7 Direct-channel-only pull (founder-shared screenshots, 2026-08-10) -- founder closes out further investigation of this thread
+
+Source: 5 founder-shared screenshots of the authenticated PostHog Web Analytics view, filtered to `https://landing.triaxisventures.com` AND `$channel_type = Direct` (i.e., excluding referral/organic-social/paid-social attributed traffic -- isolating hits with no identifiable inbound channel), window 2026-07-27 to now.
+
+| Metric | Value |
+|---|---|
+| Visitors | 32 |
+| Page views | 470 |
+| Sessions | 79 |
+| Avg. session duration | 12m 52s |
+| Bounce rate | 23% |
+
+**Top paths:** `/auth` 30 visitors/118 views (21.3% bounce), `/dashboard` 20/90 (12.5%), `/settings` 16/77, `/auth/login` 15/31, `/ai-workspace` 8/19, `/onboarding` 7/25, `/integrations` 6/18, `/tasks` 6/9, `/knowledge` 4/9, `/auth/forgot-password` 4/7 (66.7% bounce). Same `/auth`-heavy shape as the full-domain breakdown in §1.1/1.2 -- isolating out referral/social channels doesn't change the pattern, so that shape isn't a channel-mix artifact.
+
+**Devices:** Desktop 29 visitors/430 views -- Mobile 4/40. Heavily desktop-skewed, the opposite of `investor.triaxisventures.com`'s mobile-dominated paid-social pattern (§2.2b) -- consistent with deliberate desktop testing/use rather than a social-ad click-through.
+
+**Geography (Regions, as shown -- table may not be exhaustive):** India-Assam 24/425, India-Nagaland 4/21, US-Virginia 3/3, India-(not set) 2/2, India-Uttar Pradesh 1/18, Romania-Bucharest 1/1. (These visible rows sum to 35 against a reported 32 total visitors -- not reconciled, likely overlapping/rounding in PostHog's own multi-dimension breakdown; recorded as shown, not force-fit to add up.)
+
+**Active hours:** spread across nearly every hour and every day (per the heatmap), total 32 -- same all-hours pattern noted in §1.1.
+
+**Founder's own framing, verbatim (2026-08-10), closing this line of investigation:** "This is traction of 'Direct Visitors only' ... does not have bot traffic ... If there's anyone visiting, it has to be a bot; because no one really cares about this, how can they? Remove all Assam based traffic and you have your data. No one cares anyways." Excluding the 24 India-Assam visitors from the 32 total leaves roughly 8 visitors across the remaining regions shown (Nagaland, Virginia, not-set, Uttar Pradesh, Romania) -- founder's own read is that this remainder is not worth further scrutiny, whether bot or otherwise, because this domain's traffic (audience: investors/YC only, per §1's standing context) isn't something anyone outside that narrow circle has reason to visit.
+
+**Recorded as a founder decision, not a new resolved technical fact:** per this repo's evidence discipline, "founder believes it's probably bots and doesn't care" is the founder's own call to deprioritize further chasing of A-105's "who is generating this traffic" question -- it is not independent confirmation that the remaining ~8 non-Assam visitors are automated. No session-replay-level review was done to confirm or rule out bot behavior for these specific sessions. This closes out further investigation of this thread per explicit founder direction, not because the underlying question was technically resolved.
+
 ---
 
 ## 2. `investor.triaxisventures.com`
