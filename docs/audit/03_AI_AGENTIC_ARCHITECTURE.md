@@ -113,6 +113,6 @@ B. An oversight -- this table should be queried the same way the rest of the app
 
 **What evidence would resolve it:** Founder confirmation of intent, and/or a future run of the two-tenant harness (once its `knowledge_articles`/`workflow_timeline_events` fixture bugs are fixed) extended to also cover `rag_document_chunks`.
 
-**Founder answer:** _(blank)_
+**Founder answer (2026-08-10):** "Log Q-005 as Open Issue" -- directed to be tracked as an acknowledged standing problem, not resolved with interpretation A or B above.
 
-**Status:** OPEN
+**Status:** OPEN ISSUE -- acknowledged as real, not yet fixed. Tracked for follow-up in Phase 5 (Enterprise Readiness) and Phase 16 (Red Team). See `FOUNDER_QUESTIONS.md` for the canonical record.
