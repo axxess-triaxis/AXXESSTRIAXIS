@@ -2,7 +2,7 @@
 
 Live tracking file per the audit's Founder Query Protocol. Every uncertainty encountered during the audit is logged here with a question ID, not resolved silently. Nothing here is answered by inference -- only by direct founder response, logged verbatim in the FOUNDER ANSWER field.
 
-Status vocabulary: `OPEN` (awaiting founder answer) / `ANSWERED` (founder responded, recorded verbatim) / `RESOLVED` (answer plus, where required, corroborating evidence now exists).
+Status vocabulary: `OPEN` (awaiting founder answer) / `ANSWERED` (founder responded, recorded verbatim) / `RESOLVED` (answer plus, where required, corroborating evidence now exists) / `PARTIALLY CLEARED` (founder-directed label for an issue with real, verified evidence covering part but not all of what the question asked -- used when a full RESOLVED would overstate what's actually covered).
 
 ---
 
@@ -69,8 +69,16 @@ B. This is a genuine, previously-unflagged testing gap that should be prioritize
 
 **What evidence would resolve it:** Founder confirmation, plus pointing this audit at any existing manual isolation verification so it can be independently checked in a later phase.
 
-**Founder answer:** _(blank)_
+**Founder answer (2026-08-10):** "This was tested, 4 out of 6 criteria passed (refer Git docs)."
 
-**Status:** OPEN
+**Independently verified against `docs/readiness/TWO_TENANT_ISOLATION_HARNESS_EXECUTION_2026_08_06.md`:** the founder's claim is accurate and directly corroborated. On 2026-08-06, `scripts/verify-two-tenant-isolation.mjs` (written Sprint 5, 2026-07-22, but never previously executed against a real database) was run against the actual **production** Supabase project backing `landing.triaxisventures.com`, using two throwaway test tenants with real, non-privileged access tokens (not a service-role bypass) -- i.e., real RLS policies decided every outcome, not application code or a mock.
+
+**Results, exactly as documented (run ID `mshjon07`):**
+- `projects`, `tasks`, `documents`, `audit_logs` -- **4 of 6 resource types, both cross-tenant read AND write blocked, zero leakage found.**
+- `knowledge_articles`, `workflow_timeline_events` -- **not verified**, because tenant A's own row-creation attempt failed before isolation could even be checked (a harness/fixture bug: `knowledge_articles` rejected the create with a `403` RLS violation on the *owning* tenant's own insert, flagged in the doc itself as deserving a closer look to rule out the RLS policy being overly strict rather than assumed to be a fixture-payload issue; `workflow_timeline_events` failed on an unrelated foreign-key issue in the test fixture).
+- The harness's own cleanup step had a real bug (wrong delete order, left test rows in production), diagnosed and manually cleaned up the same session (24/24 deletes verified), but not yet patched in the script itself.
+- This was a **single run**, not a repeated or CI-integrated regression check.
+
+**Status:** PARTIALLY CLEARED (founder's own tracking label) -- real, adversarial, production-database proof of isolation exists for 4 of 6 resource types, materially upgrading this row from Phase 2's "NOT FOUND" framing. Not fully cleared: `knowledge_articles`/`workflow_timeline_events` coverage remains unverified, and this proof is a one-time manual execution, not something that runs automatically on every deploy to catch a future regression. See Phase 2 document, updated accordingly.
 
 ---
