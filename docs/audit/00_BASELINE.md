@@ -95,9 +95,9 @@ C. The 173-file "Initial AXXESS MVP foundation" commit was itself imported/scaff
 
 **What evidence would resolve it:** Founder confirmation, plus any dated artifacts (docs, deck versions, prior repo, correspondence) predating 2026-07-02 if they exist.
 
-**Founder answer:** _(blank)_
+**Founder answer (2026-08-10):** "This repo contains 100% of AXXESS."
 
-**Status:** OPEN
+**Status:** ANSWERED -- repository age (39 days) equals product/company age; not a partial slice of a longer history.
 
 ### Q-003
 
@@ -115,6 +115,6 @@ B. It represents another contributor's commits, attributed to the org rather tha
 
 **What evidence would resolve it:** Founder confirmation.
 
-**Founder answer:** _(blank)_
+**Founder answer (2026-08-10):** "Yes."
 
-**Status:** OPEN
+**Status:** ANSWERED -- all 5 human-labeled git identities confirmed as the founder. Of 669 total commits, 56 are bot-attributed (51 dependabot, 3 Vercel, 1 vexo-ai, 1 posthog) and the remaining 613 are the founder's.
