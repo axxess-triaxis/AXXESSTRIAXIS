@@ -213,21 +213,37 @@ B. An oversight -- should be logged for consistency and single-source-of-truth c
 
 **Current evidence:** `docs/readiness/PITCH_AND_TRACTION_LOG_2026_07_24.md` entry #32 (email-sourced, dated); this session's verbal statement (2026-08-11, undated artifact).
 
-**Founder answer:** _(blank)_
+**Founder answer (2026-08-11):** "Reliance Jio Gennext rejected but read the mail (it's already documented)... You will know reason for softer framing... Context and tone are important not everything is 0/1." Confirmed: the rejection is accurate and stands as documented in entry #32 -- the founder read the email and isn't disputing it. The softer verbal framing given earlier in this session was conversational register when relaying a mixed outcome (a real rejection that also contained genuine, specific praise), not a factual disagreement with the documented record.
 
-**Status:** OPEN
+**Status:** RESOLVED -- not a discrepancy requiring one framing to be chosen over the other. The rejection (entry #32) is the accurate record for any external/written claim; the founder's softer verbal description in conversation was tone, not a competing factual claim, and this phase's original framing of it as an open discrepancy needing resolution was itself too rigid -- corrected here per the founder's direct feedback.
 
 ---
 
 ## Q-012
 
-**Category:** Commercial evidence -- LOI/pilot figures sent to a third party vs. internal tracker
+**Category:** Commercial evidence -- customer-LOI count reported to an investor vs. internal tracker
 
-**Question:** `docs/readiness/PITCH_AND_TRACTION_LOG_2026_07_24.md` entry #10 (Plug and Play UAE) already flags an unresolved discrepancy from 2026-08-03: an outbound founder email to the Plug and Play team cited "5 signed LOIs, 2 additional committed LOIs," "2 active commercial pilots, 3 additional pilots commencing shortly," and other figures that do not match `docs/LOIS_BETA_PILOT_INTEREST_REFERRAL_AND_STRATEGIC_PARTNERSHIPS_LOG.md`'s own tracked 6 entities. This was not resolved when first found and remains unresolved as of Phase 8.
+**Clarification (2026-08-11):** Plug and Play UAE is an accelerator/investor program, not a
+customer -- there is no LOI between AXXESS and Plug and Play, and this question was never about one.
+The founder flagged that the original phrasing here read as if it were; corrected below. What this
+question is actually about: a claim the founder made *to* Plug and Play, about AXXESS's *own
+customer* LOI count, that doesn't match the internal customer-LOI tracker.
 
-**Why this matters:** This is an external-facing commercial claim sent directly to a real investor/accelerator contact -- if the internal tracker is incomplete (real progress not yet logged) that's a documentation gap; if the outbound email overstated the position, that's a claims-accuracy issue this program's own evidence discipline is built to catch.
+**Question:** `docs/readiness/PITCH_AND_TRACTION_LOG_2026_07_24.md` entry #10 (Plug and Play UAE)
+already flags an unresolved discrepancy from 2026-08-03: on 2026-08-01, the founder sent Plug and
+Play's investor team a traction-update email reporting AXXESS's own customer-facing figures --
+"5 signed LOIs, 2 additional committed LOIs," "2 active commercial pilots, 3 additional pilots
+commencing shortly" -- as evidence of traction. Those specific figures do not match
+`docs/LOIS_BETA_PILOT_INTEREST_REFERRAL_AND_STRATEGIC_PARTNERSHIPS_LOG.md`'s own tracked 6 customer
+entities. This was not resolved when first found and remains unresolved as of Phase 8.
 
-**Current evidence:** Full detail already in `PITCH_AND_TRACTION_LOG_2026_07_24.md` entry #10's own reconciliation flag; not re-derived here.
+**Why this matters:** This is a customer-traction claim made directly to a real investor -- if the
+internal tracker is simply incomplete (real customer progress not yet logged there), that's a
+documentation gap; if the investor email overstated the position, that's a claims-accuracy issue.
+Either way, not about Plug and Play itself.
+
+**Current evidence:** Full detail already in `PITCH_AND_TRACTION_LOG_2026_07_24.md` entry #10's own
+reconciliation flag; not re-derived here.
 
 **Founder answer:** _(blank)_
 
