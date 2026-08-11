@@ -8,13 +8,14 @@ not softening it with the surrounding context that the earlier phases already pr
 ## Tier 1 -- Findings That Would Fail a Serious Enterprise/Government Security Review Today
 
 1. **The AI answer-generation path bypasses row-level security entirely.** (Q-005, Phase 3/5)
-   `rag_document_chunks` -- the table an AI answer is actually grounded in -- is queried with a
-   Supabase service-role client, which is exempt from RLS by definition. Isolation rests entirely on
-   the application remembering to filter by `organization_id` on every query, with zero
-   database-level backstop. **Worst case:** a single missed filter in a future code change could leak
-   one tenant's confidential documents into another tenant's AI-generated answer, silently, with no
-   RLS policy to catch it. This table was also never covered by the one real, adversarial,
-   production-database isolation test this program has run (Q-004).
+   The table an AI answer is actually grounded in is queried with an elevated-privilege database
+   client, exempt from row-level tenant isolation by definition. Isolation rests entirely on the
+   application remembering to filter by tenant on every query, with zero database-level backstop.
+   **Worst case:** a single missed filter in a future code change could leak one tenant's
+   confidential documents into another tenant's AI-generated answer, silently, with no isolation
+   policy to catch it. This table was also never covered by the one real, adversarial,
+   production-database isolation test this program has run (Q-004). *(Exact table/file-level detail
+   redacted from this public copy.)*
 2. **This program's own "RLS tests" do not test RLS.** (Phase 2) 14 files across this repo assert
    that policy *SQL text* was written (`readFileSync` + `toContain`), not that the policy actually
    blocks a real cross-tenant read against a live database. One file explicitly designed for live

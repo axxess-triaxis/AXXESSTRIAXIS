@@ -161,11 +161,11 @@ Every meaningful product capability, traced into actual implementation code rath
 
 **Category:** Enterprise readiness / security posture
 
-**Question:** The RLS *policy design* across all ~109 tenant tables looks sound and well-evidenced (near-universal `organization_id` scoping, RLS enabled, JWT-scoped PostgREST calls rather than service-role bypass). But this audit found no automated test that actually executes against a live database to prove tenant A cannot read tenant B's data -- the 14 existing "RLS test" files only assert that policy SQL text was written, and the one file designed to be a real live-persona test has every assertion commented out. Is this a known, accepted gap (e.g., isolation has been manually/informally verified some other way not captured in this repo), or is this a genuine, previously-unflagged gap that should be treated as a priority fix?
+**Question:** The RLS *policy design* across this program's tenant tables looks sound and well-evidenced (near-universal tenant scoping, RLS enabled, tenant-scoped calls rather than elevated-privilege bypass by default). But this audit found this program's automated RLS test coverage does not actually execute against a live database to prove cross-tenant isolation -- it asserts policy intent was written, not that it holds at runtime. Is this a known, accepted gap (e.g., isolation has been manually/informally verified some other way not captured in this repo), or is this a genuine, previously-unflagged gap that should be treated as a priority fix?
 
 **Why this matters:** This is the single highest-stakes correctness property for a multi-tenant SaaS selling to enterprise/government buyers. It directly affects Phase 5's Enterprise Readiness scoring and Phase 16's Red Team analysis, and any external claim about tenant isolation should not rest on this repo's current test suite without qualification.
 
-**Current evidence:** `src/security/rlsPolicies.test.ts` and 13 sibling files use `readFileSync`+`toContain` against migration SQL text. `supabase/tests/rls_persona_tests.sql` has every real assertion commented out (a template, not a working test). `bitrise.yml`'s `supabase_rls_tests` CI job only checks the file exists.
+**Current evidence:** [Redacted for public distribution -- exact file paths and CI-job detail withheld. Full citation trail retained internally.]
 
 **Possible interpretations:**
 A. Isolation has been informally/manually verified (e.g., via the `TWO_TENANT_ISOLATION_HARNESS_EXECUTION_2026_08_06.md` doc referenced elsewhere in this repo, not yet read/verified by this audit) and this is a documentation/CI-automation gap, not a correctness gap.
