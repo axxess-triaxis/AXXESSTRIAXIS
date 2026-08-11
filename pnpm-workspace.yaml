@@ -52,3 +52,36 @@ overrides:
   # Dependabot #59 (low): arbitrary file read via the esbuild dev server on Windows, fixed
   # upstream in 0.28.1. Dev-server-only, not present in the production build output.
   esbuild@>=0.27.3 <0.28.1: '>=0.28.1'
+  # main branch CI incident 2026-08-11: dependabot's pdfjs-dist bump (PR #194, commit b70a43a)
+  # triggered a full lockfile re-resolution that pulled in caniuse-lite/electron-to-chromium/
+  # node-releases/update-browserslist-db versions published <7 days ago, tripping the
+  # minimumReleaseAge supply-chain gate. Pinned back to the immediately-prior, already-aged
+  # versions (transitive only via browserslist tooling, not a direct dep anywhere in the repo).
+  caniuse-lite: 1.0.30001806
+  electron-to-chromium: 1.5.396
+  node-releases: 2.0.51
+  update-browserslist-db: 1.2.3
+  # Pinned alongside the above: applying the 4 overrides above requires a full lockfile
+  # regeneration (pnpm does not retroactively apply overrides to an already-resolved lockfile
+  # entry without one -- confirmed by testing `pnpm install --no-frozen-lockfile`, `pnpm update`,
+  # and `pnpm install --no-frozen-lockfile --force` against the existing committed lockfile, none
+  # of which re-resolved the 4 packages above; only `pnpm clean --lockfile && pnpm install` did).
+  # A full regeneration also lets every other direct dependency float to the newest version still
+  # satisfying its existing package.json range, which is out of scope for this supply-chain fix and
+  # already caused two real regressions while verifying this change (eslint-config-next@16.3.0 adds
+  # a new lint rule that fails against pre-existing window.location.assign() usages; next@16.3.0
+  # changes Turbopack's Server/Client Component boundary analysis and breaks the production build).
+  # The 11 packages below are every other package `pnpm outdated` showed drifting away from main's
+  # committed lockfile version during that regeneration -- pinned back to hold this PR to exactly
+  # the 4 intended changes, verified via `pnpm outdated` showing zero further mismatches afterward.
+  eslint-config-next: 16.2.12
+  next: 16.2.12
+  '@napi-rs/canvas': 1.0.2
+  '@playwright/test': 1.62.0
+  '@types/node': 26.1.1
+  '@types/react': 19.2.17
+  '@types/react-dom': 19.2.3
+  '@vitejs/plugin-react-swc': 4.3.2
+  posthog-js: 1.407.3
+  posthog-node: 5.46.1
+  simple-icons: 16.27.1
