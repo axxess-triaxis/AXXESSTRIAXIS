@@ -1,0 +1,166 @@
+{
+  "_meta": {
+    "title": "AXXESS TRIaxis Forensic Progress Audit -- Machine-Readable Evidence",
+    "audit_phase": 19,
+    "generated": "2026-08-11",
+    "repository": "axxess-triaxis/AXXESSTRIAXIS",
+    "branch": "audit/phase0-baseline",
+    "note": "Every field below is sourced to a specific phase document (00-18) in docs/audit/. This file adds no new evidence -- it is a structured export of what those 19 phases already established. Values marked \"founder-stated\" were not independently re-verified against an external artifact by this audit."
+  },
+  "repository_facts": {
+    "first_commit_date": "2026-07-02",
+    "audit_date": "2026-08-11",
+    "age_days": 40,
+    "total_commits_main": 737,
+    "total_commits_audit_branch": 678,
+    "loc_code_only_ts_tsx_js_jsx": 73051,
+    "loc_reconciled_sum_incl_sql_md_json_yaml_css": 151902,
+    "loc_full_repo_unreconciled": 330622,
+    "loc_unreconciled_gap_lines": 160600,
+    "pull_requests_total": 183,
+    "pull_requests_merged": 166,
+    "pull_requests_closed_unmerged": 17,
+    "pull_requests_open": 0,
+    "test_files_total": 251,
+    "test_files_executed": 249,
+    "test_files_unconfirmed_env_blocked": 2,
+    "tests_executed": 1217,
+    "tests_passing": 1213,
+    "tests_failing_real": 4,
+    "tests_never_executed": 10,
+    "actionables_main_tracker_total": 101,
+    "actionables_main_tracker_closed_yes": 70,
+    "actionables_main_tracker_blocked": 13,
+    "actionables_main_tracker_no": 7,
+    "actionables_main_tracker_partial": 5,
+    "actionables_main_tracker_deferred": 2,
+    "actionables_lite_xla_total": 26,
+    "actionables_lite_xla_done": 2,
+    "actionables_lite_xla_blocked": 6,
+    "actionables_lite_xla_planned": 17,
+    "actionables_lite_xla_deferred": 1,
+    "bug_ledger_total_defects": 68,
+    "bug_ledger_resolved": 52,
+    "bug_ledger_partial": 3,
+    "bug_ledger_open": 7,
+    "bug_ledger_blocked_smtp_root_cause": 5,
+    "combined_tracked_items_all_three_trackers": 195,
+    "combined_closed_equivalent": 124,
+    "combined_deduplication_status": "not cross-deduplicated, sum of three separately-tracked lists"
+  },
+  "usage_evidence": {
+    "source": "live PostHog dashboard, read directly by this audit, 2026-08-11",
+    "monthly_active_users": 377,
+    "monthly_active_users_test_filter": false,
+    "peak_dau": 236,
+    "peak_dau_date": "2026-08-10",
+    "traffic_spike_explained": false,
+    "geography_top_country": "India",
+    "geography_top_country_share_pct": 97,
+    "active_error_issues": 7,
+    "error_issues_all_in_spike_window": "claimed by source, contradicted by one issue's own first-seen date (2026-07-29, 11 days before the claimed window) -- internal inconsistency in the source artifact itself, not resolved by this audit",
+    "retention_tracking_functional": false,
+    "retention_issue_cause": "posthog.identify() likely not called post-login/signup"
+  },
+  "commercial_evidence": {
+    "signed_customer_lois": 5,
+    "loi_documents": 3,
+    "loi_advance_commitment_total_inr": "25000-30000",
+    "loi_advance_written_count": 1,
+    "loi_advance_oral_count": 4,
+    "loi_advance_collected": 0,
+    "active_live_pilots": 2,
+    "revenue_signed_contracts": 0,
+    "pitch_pipeline_entries": 33,
+    "waitlist_signups_founder_stated": 30,
+    "financial_operational_blockers": [
+      "current business account under processing",
+      "GST registration pending",
+      "Razorpay/Stripe coded but not credentialed",
+      "DUNS submitted, mobile store credentials/launch possibly end-Aug 2026"
+    ]
+  },
+  "mobile_cross_platform": {
+    "surfaces": [
+      {
+        "name": "X0 Mobile (Capacitor shell)",
+        "path": "apps/mobile-capacitor",
+        "maturity": "code-complete, 100% kernel reuse with web app",
+        "blocker": "external, non-technical -- DUNS Number clearance",
+        "blocker_applied_date": "2026-07-13",
+        "blocker_expected_resolution": "possibly end-Aug 2026, founder-stated hedge"
+      },
+      {
+        "name": "Native Expo/React Native app",
+        "path": "apps/mobile",
+        "maturity": "early scaffolding, hardcoded UI values, no live data wiring",
+        "confirmed_by": "direct file read, apps/mobile/app/dashboard.tsx"
+      },
+      {
+        "name": "AXXESS Lite mobile",
+        "path": "apps/mobile-lite-capacitor",
+        "maturity": "earliest stage, config file only, no app source directory"
+      }
+    ],
+    "mobile_dedicated_ci_workflows": 7,
+    "total_ci_workflows": 15,
+    "mobile_ci_share_pct": 47
+  },
+  "founder_questions": [
+    {"id": "Q-001", "category": "audit scope/pacing", "status": "ANSWERED"},
+    {"id": "Q-002", "category": "audit scope/historical completeness", "status": "ANSWERED"},
+    {"id": "Q-003", "category": "repository forensics/author identity", "status": "ANSWERED"},
+    {"id": "Q-004", "category": "tenant isolation coverage", "status": "PARTIALLY CLEARED", "detail": "4 of 6 resource types proven live in production; knowledge_articles and workflow_timeline_events untested", "left_open_by_founder_choice": true},
+    {"id": "Q-005", "category": "RAG tenant isolation", "status": "OPEN ISSUE", "severity": "CRITICAL GAP", "detail": "AI answer-grounding path uses a service-role client, bypassing RLS entirely", "left_open_by_founder_choice": true},
+    {"id": "Q-006", "category": "data erasure/export", "status": "OPEN", "severity": "CRITICAL GAP", "detail": "erasure/export endpoints are non-functional stubs", "left_open_by_founder_choice": true},
+    {"id": "Q-007", "category": "AI agent audit trail", "status": "OPEN", "severity": "GAP", "detail": "MCP agent tool-call approvals write zero audit_logs entries", "left_open_by_founder_choice": true},
+    {"id": "Q-008", "category": "testing, real defect", "status": "OPEN", "detail": "2 real failing tests in SettingsSection.test.ts, stale tab-default assertion", "left_open_by_founder_choice": true},
+    {"id": "Q-009", "category": "usage/observability", "status": "RESOLVED", "detail": "founder PostHog error/traffic claims traced to a real, live-read PostHog AI report"},
+    {"id": "Q-010", "category": "testing, environment", "status": "OPEN", "detail": "2 test files (10 tests) unconfirmed, session-long memory exhaustion, not a code defect", "left_open_by_founder_choice": true},
+    {"id": "Q-011", "category": "commercial evidence, pitch outcome framing", "status": "RESOLVED", "detail": "real rejection (Reliance Jio GenNext) alongside genuine documented product interest; both true, founder-clarified"},
+    {"id": "Q-012", "category": "commercial evidence, LOI count reconciliation", "status": "RESOLVED", "detail": "founder's figure to Plug and Play (5 signed, 2 committed) reconciles against the internal tracker's own expected-customers section"},
+    {"id": "Q-013", "category": "commercial evidence, LOI advance amount", "status": "RESOLVED", "detail": "INR 25,000-30,000 total, 1 written + 4 oral commitments, founder-clarified"}
+  ],
+  "maturity_scorecard": {
+    "vocabulary": ["READY", "PARTIALLY READY", "GAP", "CRITICAL GAP"],
+    "dimensions": [
+      {"dimension": "product_capability_breadth", "verdict": "PARTIALLY READY", "phase": 2},
+      {"dimension": "ai_rag_agentic_architecture", "verdict": "GAP", "phase": 3},
+      {"dimension": "architecture_maturity", "verdict": "PARTIALLY READY", "phase": 4},
+      {"dimension": "security_governance_enterprise_readiness", "verdict": "CRITICAL GAP", "phase": 5},
+      {"dimension": "testing_reliability", "verdict": "PARTIALLY READY", "phase": 6},
+      {"dimension": "customer_driven_iteration", "verdict": "PARTIALLY READY", "phase": 7},
+      {"dimension": "commercial_traction", "verdict": "GAP", "phase": 8},
+      {"dimension": "usage_observability", "verdict": "PARTIALLY READY", "phase": 9},
+      {"dimension": "mobile_cross_platform", "verdict": "PARTIALLY READY", "phase": 10},
+      {"dimension": "engineering_velocity", "verdict": "READY", "phase": 11},
+      {"dimension": "capital_efficiency", "verdict": "READY", "phase": 12},
+      {"dimension": "founder_execution", "verdict": "READY", "phase": 13},
+      {"dimension": "claims_accuracy", "verdict": "PARTIALLY READY", "phase": 14},
+      {"dimension": "progress_velocity_vs_prior_checkpoint", "verdict": "READY", "phase": 15}
+    ],
+    "distribution": {"READY": 4, "PARTIALLY READY": 7, "GAP": 2, "CRITICAL GAP": 1}
+  },
+  "claims_register_summary": {
+    "claims_checked": 10,
+    "verified": 3,
+    "close_or_plausible": 5,
+    "unsupported_forward_looking_not_yet_materialized": 1,
+    "contradicted_already_self_corrected_pre_audit": 1,
+    "source_phase": 14
+  },
+  "red_team_top_risks_ranked": [
+    {"rank": 1, "finding": "RAG tenant-isolation failure risk, zero database-level backstop", "source_phase": 16},
+    {"rank": 2, "finding": "founder unavailability, bus factor of 1", "source_phase": 16},
+    {"rank": 3, "finding": "CI cannot reliably complete its own test command, masking risk", "source_phase": 16}
+  ],
+  "yc_progress_delta_14_day_window": {
+    "baseline_date": "2026-07-28",
+    "current_date": "2026-08-11",
+    "commits": {"before": 422, "after": 737, "delta_pct": 75},
+    "prs_merged": {"before": 113, "after": 166, "delta_pct": 47},
+    "tests_passing": {"before": 625, "after": 1213, "delta_pct": 94},
+    "actionables_confirmed_rate_pct": {"before": 53, "after": 69},
+    "mobile_readiness_pct": {"android_before": 70, "android_after": 70, "ios_before": 30, "ios_after": 30, "reason_flat": "external DUNS blocker unchanged"}
+  }
+}

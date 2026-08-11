@@ -4,6 +4,17 @@ Live tracking file per the audit's Founder Query Protocol. Every uncertainty enc
 
 Status vocabulary: `OPEN` (awaiting founder answer) / `ANSWERED` (founder responded, recorded verbatim) / `RESOLVED` (answer plus, where required, corroborating evidence now exists) / `PARTIALLY CLEARED` (founder-directed label for an issue with real, verified evidence covering part but not all of what the question asked -- used when a full RESOLVED would overstate what's actually covered) / `OPEN ISSUE` (founder-directed label: the founder has acknowledged this as a real, standing problem rather than answering which interpretation is correct -- distinct from plain `OPEN`, which just means no founder response yet at all).
 
+**Pre-Phase-18 consolidated open-items checkpoint (2026-08-11):** per the audit protocol's own rule
+("before producing any final score or executive conclusion, present the founder with a consolidated
+list of all unresolved material questions and require explicit answers or explicit permission to
+leave them unresolved"), 6 items remained open at this point: Q-004 (partial tenant-isolation
+coverage), Q-005 (RAG service-role RLS bypass, CRITICAL GAP), Q-006 (non-functional data-erasure
+pipeline, CRITICAL GAP), Q-007 (no agent-approval audit trail, GAP), Q-008 (2 real failing tests),
+Q-010 (2 test files unconfirmed, environment memory exhaustion). Presented to the founder via
+AskUserQuestion; **founder's explicit choice: "Leave all 6 open, proceed"** -- explicit permission
+granted to proceed to Phase 18 with all 6 stated as open/unresolved risk rather than resolved or
+deferred. This satisfies the protocol's own requirement; Phase 18 proceeds on this basis.
+
 ---
 
 ## Q-001
