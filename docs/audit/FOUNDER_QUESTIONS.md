@@ -202,3 +202,51 @@ B. An oversight -- should be logged for consistency and single-source-of-truth c
 **Status:** OPEN -- environment-capacity issue, not a code defect. Would very likely pass on a memory-fresh run (a new session, or after killing accumulated node processes) -- not re-attempted further in this pass to avoid compounding the same resource pressure on other in-progress work.
 
 ---
+
+## Q-011
+
+**Category:** Commercial evidence -- pitch outcome framing discrepancy
+
+**Question:** `PITCH_AND_TRACTION_LOG_2026_07_24.md` entry #32 (Reliance Jio GenNext / Amey Mashelkar) documents an actual rejection email (2026-08-06): *"not selected for the upcoming program due to limited fitment within our ecosystem at the moment,"* with structured "ASSURED"-framework feedback. In this session, the founder described the same relationship as: "Pitched to Reliance Group (Reliance Jio Gennext) - Aligned on technology and product utility, lacks scope to initiate pilot immediately." Both can be simultaneously true (the rejection email itself called the product "quite interesting"), but they read very differently to an external audience -- "not selected" vs. "lacks scope to initiate pilot immediately." Which framing should be used going forward, or should both be carried?
+
+**Why this matters:** Phase 8 (Commercial Traction Evidence) cites this pipeline relationship; using the softer framing externally while the repo's own documented evidence shows a clear rejection would be an inflated claim under this program's own evidence-chain rule.
+
+**Current evidence:** `docs/readiness/PITCH_AND_TRACTION_LOG_2026_07_24.md` entry #32 (email-sourced, dated); this session's verbal statement (2026-08-11, undated artifact).
+
+**Founder answer:** _(blank)_
+
+**Status:** OPEN
+
+---
+
+## Q-012
+
+**Category:** Commercial evidence -- LOI/pilot figures sent to a third party vs. internal tracker
+
+**Question:** `docs/readiness/PITCH_AND_TRACTION_LOG_2026_07_24.md` entry #10 (Plug and Play UAE) already flags an unresolved discrepancy from 2026-08-03: an outbound founder email to the Plug and Play team cited "5 signed LOIs, 2 additional committed LOIs," "2 active commercial pilots, 3 additional pilots commencing shortly," and other figures that do not match `docs/LOIS_BETA_PILOT_INTEREST_REFERRAL_AND_STRATEGIC_PARTNERSHIPS_LOG.md`'s own tracked 6 entities. This was not resolved when first found and remains unresolved as of Phase 8.
+
+**Why this matters:** This is an external-facing commercial claim sent directly to a real investor/accelerator contact -- if the internal tracker is incomplete (real progress not yet logged) that's a documentation gap; if the outbound email overstated the position, that's a claims-accuracy issue this program's own evidence discipline is built to catch.
+
+**Current evidence:** Full detail already in `PITCH_AND_TRACTION_LOG_2026_07_24.md` entry #10's own reconciliation flag; not re-derived here.
+
+**Founder answer:** _(blank)_
+
+**Status:** OPEN
+
+---
+
+## Q-013
+
+**Category:** Commercial evidence -- LOI advance-payment amount discrepancy
+
+**Question:** `docs/LOIS_BETA_PILOT_INTEREST_REFERRAL_AND_STRATEGIC_PARTNERSHIPS_LOG.md` records both Imprints Production's and Ekora Hive's oral advance-payment offers as **$20-30 USD each** (not yet collected). In this session, the founder stated Ekora's commitment as ~INR 5,000 and the remaining 4 LOIs (including Imprints) as INR 20,000-25,000 combined -- a total of INR 25,000-30,000 across all 5. Five LOIs at $20-30 each would total roughly $100-150 (~INR 8,500-12,750), well under the figure given this session. Have these amounts actually been renegotiated upward since the log's last update (2026-08-08), or is this a different figure being described?
+
+**Why this matters:** These are real (if uncollected) financial commitments cited in Phase 8; an unreconciled 2-3x discrepancy in the total should not be carried forward into external material without resolving which figure is current.
+
+**Current evidence:** `docs/LOIS_BETA_PILOT_INTEREST_REFERRAL_AND_STRATEGIC_PARTNERSHIPS_LOG.md` (2026-08-08, last updated); this session's verbal statement (2026-08-11).
+
+**Founder answer:** _(blank)_
+
+**Status:** OPEN
+
+---
