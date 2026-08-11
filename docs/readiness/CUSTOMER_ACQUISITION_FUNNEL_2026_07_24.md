@@ -96,3 +96,21 @@ Founder-stated, source artifact needed -- not independently verified from this r
 - **80 page views** (cumulative, hosted page only -- excludes embeds/API), **27 sign-ups from page**, **33.8% conversion rate** on the hosted page.
 - Total sign-ups (27) matches Day 0's founder-stated 7-sign-up figure only if a further ~12 sign-ups landed later on 2026-08-04 (after the "7 within 5 hours" snapshot) and 8 more landed on 2026-08-05 -- the two figures are not directly reconciled here, just both recorded as reported/observed at their respective times, per this document's evidence-chain discipline.
 - Source: a direct screenshot of the LaunchList Overview dashboard (`getlaunchlist.com/sites/axxess-triaxis-founders-club-edition`) shared in-session on 2026-08-05 -- a first-party tool screenshot, not founder recollection, but still an external tool's dashboard, not independently re-derivable from this repository.
+
+## Update (2026-08-11): Promotional content (demo video, UX screenshots) on WhatsApp Status
+
+Founder-stated: a demo video, UX screenshots, and promotional videos (produced with Gemini,
+ElevenLabs, and similar AI content tools) have been posted as WhatsApp / WhatsApp Business status
+updates, as part of multi-platform promotional campaigns already described above (Facebook,
+Instagram, LinkedIn, WhatsApp, WhatsApp Business).
+
+- **4,000+ views** and **50-60 reacts** on this content, per WhatsApp/WhatsApp Business status
+  view-count and reaction counters.
+- Founder-stated, source artifact needed -- WhatsApp status view/reaction counts are read from the
+  WhatsApp client UI, not exportable to or independently verifiable from this repository. No
+  screenshot of the status view-count has been shared in this session; recorded as founder-reported
+  only, per this document's standing evidence-chain discipline (see the Day 0 LaunchList entry above
+  for the distinction between founder-stated and screenshot-verified figures).
+- This is WhatsApp/WhatsApp Business **status** views (an ephemeral, 24-hour broadcast feature to the
+  founder's own contact list), not the LaunchList waitlist page's own view counter tracked above --
+  the two are separate metrics on separate surfaces and should not be summed or conflated.
