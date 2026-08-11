@@ -68,11 +68,11 @@ C. Prioritize a specific subset (e.g., Claims Register, Commercial Evidence, Red
 
 **Category:** Enterprise readiness / security posture
 
-**Question:** The RLS *policy design* across all ~109 tenant tables looks sound and well-evidenced (near-universal `organization_id` scoping, RLS enabled, JWT-scoped PostgREST calls rather than service-role bypass). But Phase 2 found no automated test that actually executes against a live database to prove tenant A cannot read tenant B's data -- the 14 existing "RLS test" files only assert that policy SQL text was written, and the one file designed to be a real live-persona test has every assertion commented out. Is this a known, accepted gap (e.g., isolation has been manually/informally verified some other way not captured in this repo), or is this a genuine, previously-unflagged gap that should be treated as a priority fix?
+**Question:** The RLS *policy design* across this program's tenant tables looks sound and well-evidenced (near-universal tenant scoping, RLS enabled, JWT-scoped calls rather than service-role bypass by default). But Phase 2 found this program's automated RLS test coverage does not actually execute against a live database to prove cross-tenant isolation -- it asserts policy intent was written, not that it holds at runtime. Is this a known, accepted gap (e.g., isolation has been manually/informally verified some other way not captured in this repo), or is this a genuine, previously-unflagged gap that should be treated as a priority fix?
 
 **Why this matters:** This is the single highest-stakes correctness property for a multi-tenant SaaS selling to enterprise/government buyers. It directly affects Phase 5 (Enterprise Readiness) scoring and Phase 16 (Red Team) analysis.
 
-**Current evidence:** `src/security/rlsPolicies.test.ts` and 13 sibling files use `readFileSync`+`toContain` against migration SQL text, not live-DB execution. `supabase/tests/rls_persona_tests.sql` has every real assertion commented out. `bitrise.yml`'s `supabase_rls_tests` CI job only checks the file exists.
+**Current evidence:** [Redacted for public distribution -- exact file paths and CI-job detail withheld. Full citation trail retained internally.]
 
 **Possible interpretations:**
 A. Isolation has been informally/manually verified (a `TWO_TENANT_ISOLATION_HARNESS_EXECUTION_2026_08_06.md` doc exists elsewhere in this repo and has not yet been read/verified by this audit) and this is a documentation/CI-automation gap, not a correctness gap.
@@ -90,7 +90,7 @@ B. This is a genuine, previously-unflagged testing gap that should be prioritize
 - The harness's own cleanup step had a real bug (wrong delete order, left test rows in production), diagnosed and manually cleaned up the same session (24/24 deletes verified), but not yet patched in the script itself.
 - This was a **single run**, not a repeated or CI-integrated regression check.
 
-**Status:** PARTIALLY CLEARED (founder's own tracking label) -- real, adversarial, production-database proof of isolation exists for 4 of 6 resource types, materially upgrading this row from Phase 2's "NOT FOUND" framing. Not fully cleared: `knowledge_articles`/`workflow_timeline_events` coverage remains unverified, and this proof is a one-time manual execution, not something that runs automatically on every deploy to catch a future regression. See Phase 2 document, updated accordingly. **Important scope note added by Phase 3 (Q-005 below): none of the 6 resource types this harness tested is `rag_document_chunks` -- the table the AI/RAG pipeline actually retrieves from, which uses a different, weaker isolation mechanism. This "partially cleared" status does not extend to that table.**
+**Status:** PARTIALLY CLEARED (founder's own tracking label) -- real, adversarial, production-database proof of isolation exists for 4 of 6 resource types tested, materially upgrading this row from Phase 2's "NOT FOUND" framing. Not fully cleared: 2 of the 6 resource types remain unverified, and this proof is a one-time manual execution, not something that runs automatically on every deploy to catch a future regression. See Phase 2 document, updated accordingly. **Important scope note added by Phase 3 (Q-005 below): the table the AI/RAG pipeline actually retrieves from was not among the 6 resource types this harness tested, and uses a different, weaker isolation mechanism. This "partially cleared" status does not extend to that table -- see Q-005.**
 
 ---
 
@@ -98,17 +98,17 @@ B. This is a genuine, previously-unflagged testing gap that should be prioritize
 
 **Category:** AI/RAG architecture -- tenant isolation
 
-**Question:** The real, indexed-document RAG retrieval path (`src/services/rag/tenantRagWorkflow.ts::persistentCitationsForQuestion`, the path used in production) queries `rag_document_chunks` using a Supabase **service-role** client, which bypasses Postgres RLS entirely -- unlike the general CRUD repositories elsewhere in the app, which authenticate with the caller's own JWT and are subject to real RLS enforcement. A real RLS policy exists on `rag_document_chunks`, but it provides no actual protection on this path since the service-role client is exempt from it by definition. Isolation for this specific table rests entirely on the application remembering to filter every query by `organization_id`, with no database-level backstop -- and this is also the table the Q-004 two-tenant production harness never tested. Is this a deliberate architectural choice, or a genuine gap worth closing?
+**Question:** The production AI/RAG document-retrieval path uses an elevated-privilege database client on one specific table that bypasses standard row-level tenant isolation, unlike the general CRUD repositories elsewhere in the app, which enforce real per-tenant isolation on every call. A row-level security policy exists on that table, but does not apply on this particular access path. Isolation there currently rests entirely on the application remembering to filter every query by tenant, with no database-level backstop -- and this is also the one table the Q-004 two-tenant production harness never tested. Is this a deliberate architectural choice, or a genuine gap worth closing?
 
-**Why this matters:** This is the table an AI answer is actually grounded in -- if isolation ever failed here, a tenant could receive an AI-generated answer synthesized in part from another tenant's confidential documents.
+**Why this matters:** This is the data an AI answer is actually grounded in -- if isolation ever failed here, a tenant could receive an AI-generated answer synthesized in part from another tenant's confidential documents.
 
-**Current evidence:** `src/repositories/supabaseAdmin.ts:8-13,19-32` (service-role client, always used); `tenantRagWorkflow.ts:325,330,335` (the query + redundant app-level filter); `supabase/migrations/202607100001_sprint14_rag_integrations_alerts.sql:87-91` (the RLS policy that doesn't apply on this path); `tenantRagWorkflow.answerGrounding.test.ts:169-187` (a real, deliberately adversarial unit test simulating a cross-org leak -- but unit-level, not a live-database proof).
+**Current evidence:** [Redacted for public distribution -- exact file paths, line numbers, and the affected table/migration/test names are withheld from this public copy. Full citation trail, including a real adversarial unit test simulating the failure mode, retained internally.]
 
 **Possible interpretations:**
-A. Deliberate and considered sufficient -- service-role was chosen for a specific technical reason, and the app-level filter plus adversarial unit tests are the intended isolation mechanism for this table.
-B. An oversight -- this table should be queried via the caller's JWT like the rest of the app, or added to the two-tenant harness's coverage.
+A. Deliberate and considered sufficient -- the elevated-privilege access was chosen for a specific technical reason, and the app-level filter plus adversarial unit tests are the intended isolation mechanism for this table.
+B. An oversight -- this table should be queried the same way the rest of the app is, or added to the two-tenant harness's coverage.
 
-**What evidence would resolve it:** Founder confirmation of intent, and/or extending the two-tenant harness to also cover `rag_document_chunks`.
+**What evidence would resolve it:** Founder confirmation of intent, and/or extending the two-tenant harness to also cover this table.
 
 **Founder answer (2026-08-10):** "Log Q-005 as Open Issue" -- founder directed this be tracked as an acknowledged standing problem, not resolved with interpretation A or B from above.
 
@@ -122,11 +122,11 @@ B. An oversight -- this table should be queried via the caller's JWT like the re
 
 **Category:** Data privacy / regulatory readiness
 
-**Question:** The account-deletion request endpoint and the data-export request endpoint both perform zero actual data operations -- they record a canned message stating the request will be manually processed, and one doesn't even write an audit log entry for itself. A separately-built erasure-planning module (`src/privacy/privacyEngine.ts`) that would do the real work exists but is never called by any production code path. Is this a known, deliberate "beta-stage manual process," or an unaddressed gap that hasn't been prioritized?
+**Question:** The account-deletion request flow and the data-export request flow both perform zero actual data operations today -- they record a canned message stating the request will be manually processed, and one doesn't even log its own invocation. A separately-built erasure-planning module that would do the real work exists in the codebase but is never called by any production code path. Is this a known, deliberate "beta-stage manual process," or an unaddressed gap that hasn't been prioritized?
 
 **Why this matters:** This is the mechanism a GDPR Article 17 / India DPDP-equivalent "right to erasure" claim would rest on. Scored **CRITICAL GAP** in Phase 5.
 
-**Current evidence:** `src/app/api/account/deletion-request/route.ts`, `src/app/api/privacy/export-request/route.ts`, `src/privacy/privacyEngine.ts` (zero non-type-only production importers), `docs/PRIVACY_ENGINEERING.md`'s own "Operational Gaps" section.
+**Current evidence:** [Redacted for public distribution -- exact endpoint/file paths withheld from this public copy. Full citation trail retained internally.]
 
 **Possible interpretations:**
 A. Known and accepted for beta stage -- a human genuinely processes these manually today.
@@ -142,11 +142,11 @@ B. Not previously flagged -- should move up in priority given any real customer/
 
 **Category:** AI governance / audit trail completeness
 
-**Question:** The MCP agent tool-call approval flow -- where a human approves/rejects what an autonomous AI agent can do to tenant data -- writes zero entries to the `audit_logs` table every other privileged action uses as its system of record. Is this intentional, or should it log the same way role changes and invitations do?
+**Question:** The AI agent tool-call approval flow -- where a human approves/rejects what an autonomous AI agent can do to tenant data -- writes zero entries to the audit-log table every other privileged action uses as its system of record. Is this intentional, or should it log the same way role changes and invitations do?
 
 **Why this matters:** This is the human checkpoint for the single highest-autonomy surface in the product. Scored **GAP** in Phase 5.
 
-**Current evidence:** `src/app/api/approvals/[id]/route.ts` (zero `auditLogsRepository` calls), `src/repositories/workflowActionRepositories.ts:239-257`, `src/services/agents/agentGrantsRepository.ts:50-70`, no DB trigger on either underlying table.
+**Current evidence:** [Redacted for public distribution -- exact file paths withheld from this public copy. Full citation trail retained internally.]
 
 **Possible interpretations:**
 A. Deliberate -- `approval_requests`/`agent_action_grants` were considered adequate as their own record.

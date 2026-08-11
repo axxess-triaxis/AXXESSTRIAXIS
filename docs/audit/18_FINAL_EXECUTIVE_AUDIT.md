@@ -36,10 +36,11 @@ live authenticated source (Phase 9's PostHog data), or directly counted from rep
 ## The Real Gaps, Stated Without Softening
 
 1. **Security/governance is this program's weakest dimension, and by a meaningful margin** (Phase
-   17's only `CRITICAL GAP`). The AI answer-grounding path bypasses row-level security via a
-   service-role client (Q-005), the data-erasure pipeline is non-functional (Q-006), and the highest-
-   autonomy AI-agent surface has zero audit trail (Q-007). All three remain open by the founder's own
-   explicit choice at this audit's pre-Phase-18 checkpoint, not by this audit's oversight.
+   17's only `CRITICAL GAP`). The AI answer-grounding path bypasses row-level tenant isolation via an
+   elevated-privilege access path (Q-005), the data-erasure pipeline is non-functional (Q-006), and
+   the highest-autonomy AI-agent surface has zero audit trail (Q-007). All three remain open by the
+   founder's own explicit choice at this audit's pre-Phase-18 checkpoint, not by this audit's
+   oversight.
 2. **Zero revenue, anywhere in this program's history.** Phase 8's commercial evidence is real and
    verifiable, but every figure in it is an intent, interest, or uncollected-commitment signal --
    never a transaction. The company also cannot yet legally collect the money already verbally

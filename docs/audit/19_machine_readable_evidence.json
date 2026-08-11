@@ -111,7 +111,7 @@
     {"id": "Q-002", "category": "audit scope/historical completeness", "status": "ANSWERED"},
     {"id": "Q-003", "category": "repository forensics/author identity", "status": "ANSWERED"},
     {"id": "Q-004", "category": "tenant isolation coverage", "status": "PARTIALLY CLEARED", "detail": "4 of 6 resource types proven live in production; knowledge_articles and workflow_timeline_events untested", "left_open_by_founder_choice": true},
-    {"id": "Q-005", "category": "RAG tenant isolation", "status": "OPEN ISSUE", "severity": "CRITICAL GAP", "detail": "AI answer-grounding path uses a service-role client, bypassing RLS entirely", "left_open_by_founder_choice": true},
+    {"id": "Q-005", "category": "RAG tenant isolation", "status": "OPEN ISSUE", "severity": "CRITICAL GAP", "detail": "AI answer-grounding path uses an elevated-privilege access mode on one table, bypassing row-level tenant isolation (exact file/table detail redacted from this public copy)", "left_open_by_founder_choice": true},
     {"id": "Q-006", "category": "data erasure/export", "status": "OPEN", "severity": "CRITICAL GAP", "detail": "erasure/export endpoints are non-functional stubs", "left_open_by_founder_choice": true},
     {"id": "Q-007", "category": "AI agent audit trail", "status": "OPEN", "severity": "GAP", "detail": "MCP agent tool-call approvals write zero audit_logs entries", "left_open_by_founder_choice": true},
     {"id": "Q-008", "category": "testing, real defect", "status": "OPEN", "detail": "2 real failing tests in SettingsSection.test.ts, stale tab-default assertion", "left_open_by_founder_choice": true},
