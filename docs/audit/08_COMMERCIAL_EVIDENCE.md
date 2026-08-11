@@ -32,20 +32,18 @@ diverge rather than silently picking one.
 - **SIIC IIT Kanpur** = entries #5/#6: Round 3 in progress.
 - **NASSCOM CoE Gurugram** = entry #7: incubation offered, onboarding actively in progress (not yet
   formalized -- no payment confirmation exists in the evidence reviewed).
+- **Reliance Jio GenNext (entry #32, Amey Mashelkar) -- reconciled with the founder's own more
+  precise framing (Q-011, RESOLVED, 2026-08-11), not a clean match or a clean discrepancy.** The
+  documented email (2026-08-06) is a real, closed program-selection "no" -- *"not selected for the
+  upcoming program due to limited fitment within our ecosystem at the moment"* -- occurring
+  *alongside* genuine, specific product interest in the same email (*"felt the product/service that
+  you are building is quite interesting"*). Founder's own words: "The rejection is real, but it was
+  because they liked the product while having no current scope to pilot (not exactly a binary
+  rejection)." Both halves should be carried together in any external material -- neither a bare
+  "rejected" nor a bare "aligned, lacks scope" alone represents this accurately.
 
 ### Reconciled with a real discrepancy, flagged not resolved
 
-- **Reliance Jio GenNext (entry #32, Amey Mashelkar).** The documented email evidence (2026-08-06)
-  states explicitly: *"not selected for the upcoming program due to limited fitment within our
-  ecosystem at the moment,"* with structured rejection feedback via JioGenNext's own "ASSURED"
-  framework. What the founder told this session directly was materially softer: "aligned on
-  technology and product utility, lacks scope to initiate pilot immediately." Both can be true at
-  once (a rejection can include genuine praise -- the email also called the product "quite
-  interesting"), but "not selected" and "lacks scope to initiate pilot immediately" read differently
-  to an external audience. **Logged as Q-011, since resolved by the founder (2026-08-11): the
-  rejection is accurate and stands as documented; the softer verbal framing was conversational
-  tone when relaying a mixed outcome, not a competing factual claim -- see Q-011 for the founder's
-  own words on why context and tone matter here.**
 - **Startup Wise Guys (entry #9, Davide Coppola).** The log records this offer as **declined by the
   founder, to preserve runway** (EUR 1,500+VAT entry fee). Today's session mentioned only the offer
   itself (50% discount on the Founders Club) without mentioning the decline -- both are recorded, the
@@ -105,14 +103,15 @@ attestation plus, for Ekora Hive, a live screenshot of a real provisioned tenant
 Both include a detailed, substantive testimonial already logged in full (see Phase 7 for the
 product-iteration trace of this feedback).
 
-**Advance-payment discrepancy, flagged not resolved (Q-013).** The LOI log records both Imprints
-Production's and Ekora Hive's oral advance offers as **$20-30 USD each** (not yet collected, pending
-the Triaxis Ventures IDFC First Bank current account opening). What the founder told this session
-directly was a total of **INR 25,000-30,000** across all 5 LOIs (Ekora ~INR 5,000; the remaining 4,
-including Imprints, INR 20,000-25,000 combined). Five LOIs at $20-30 each would total roughly
-$100-150 (~INR 8,500-12,750 at current rates) -- well under the INR 25,000-30,000 figure given today.
-This may reflect renegotiated/increased amounts since the log was last updated (2026-08-08), or a
-different figure being described; not reconciled by this phase.
+**Advance-payment commitment, resolved (Q-013): total INR 25,000-30,000, 1 written + 4 oral.**
+Ekora Hive's commitment (~INR 5,000) is **in writing**; the remaining 4 (Imprints Production + the 3
+Mahanta-group firms), combining to INR 20,000-25,000, are **oral commitments**. None of the INR
+25,000-30,000 total has been collected yet -- pending the Triaxis Ventures IDFC First Bank current
+account opening (see "Operational / Legal Readiness" below). Note for the record, not treated as an
+open contradiction: `docs/LOIS_BETA_PILOT_INTEREST_REFERRAL_AND_STRATEGIC_PARTNERSHIPS_LOG.md` (last
+updated 2026-08-08) still records Ekora's offer as oral and $20-30 USD, not written/INR-denominated --
+most likely the commitment firmed up between that update and now, and the tracker doc simply hasn't
+caught up; the founder's figure here is the more current, direct source.
 
 ## Enterprise Beta Survey (Intent Signal, Not Traction)
 
@@ -185,11 +184,15 @@ own existing "Explicit Non-Claims" section, which this phase does not contradict
 
 ## New Founder Questions Logged This Phase
 
-- **Q-011**: Reliance Jio GenNext outcome -- documented rejection email vs. today's softer framing.
-- **Q-012**: Plug and Play UAE's outbound LOI/pilot figures vs. this repo's internal LOI tracker
-  (pre-existing flag from 2026-08-03, not newly created, restated here for Phase 8 completeness).
-- **Q-013**: LOI advance-payment amounts -- $20-30 USD per LOI (tracked) vs. INR 25,000-30,000 total
-  (stated this session).
+- **Q-011** (RESOLVED): Reliance Jio GenNext outcome -- founder confirmed the documented rejection
+  stands accurate; the softer verbal framing given earlier this session was tone, not a competing
+  factual claim.
+- **Q-012** (OPEN): AXXESS's own customer-LOI count as reported to Plug and Play's investor team
+  vs. this repo's internal customer-LOI tracker -- not about Plug and Play itself, which has no LOI
+  with AXXESS (pre-existing flag from 2026-08-03, restated here for Phase 8 completeness).
+- **Q-013** (RESOLVED): LOI advance-payment total is INR 25,000-30,000 -- 1 written commitment
+  (Ekora Hive, ~INR 5,000) + 4 oral commitments (Imprints Production + 3 Mahanta-group firms,
+  INR 20,000-25,000 combined). Not yet collected, pending the current account opening.
 
 ## Cross-References
 
