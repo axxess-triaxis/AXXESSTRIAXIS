@@ -42,15 +42,21 @@ diverge rather than silently picking one.
   technology and product utility, lacks scope to initiate pilot immediately." Both can be true at
   once (a rejection can include genuine praise -- the email also called the product "quite
   interesting"), but "not selected" and "lacks scope to initiate pilot immediately" read differently
-  to an external audience. **Recorded as Q-011, both framings preserved, neither silently chosen.**
+  to an external audience. **Logged as Q-011, since resolved by the founder (2026-08-11): the
+  rejection is accurate and stands as documented; the softer verbal framing was conversational
+  tone when relaying a mixed outcome, not a competing factual claim -- see Q-011 for the founder's
+  own words on why context and tone matter here.**
 - **Startup Wise Guys (entry #9, Davide Coppola).** The log records this offer as **declined by the
   founder, to preserve runway** (EUR 1,500+VAT entry fee). Today's session mentioned only the offer
   itself (50% discount on the Founders Club) without mentioning the decline -- both are recorded, the
   decline is the documented status.
-- **Plug and Play UAE (entry #10).** This entry already carries its own unresolved internal flag from
-  2026-08-03: a founder email sent directly to the Plug and Play team cited "5 signed LOIs, 2
-  additional committed LOIs" and other figures that do not match this repo's own internal LOI tracker
-  (which names 6 total entities). **Recorded as Q-012, not newly resolved by this phase.**
+- **Plug and Play UAE (entry #10) -- clarified per founder question (2026-08-11): Plug and Play is
+  an accelerator/investor, not a customer, and has no LOI with AXXESS.** The actual discrepancy is
+  about a claim the founder made *to* Plug and Play's investor team, not about Plug and Play itself:
+  this entry already carries its own unresolved internal flag from 2026-08-03, when a founder email
+  to that team cited AXXESS's *own customer-facing* traction figures -- "5 signed LOIs, 2 additional
+  committed LOIs" -- that do not match this repo's own internal customer-LOI tracker (which names 6
+  total entities). **Recorded as Q-012, not newly resolved by this phase.**
 
 ### Not found in this repo's documentation
 
