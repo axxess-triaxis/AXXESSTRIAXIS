@@ -4,6 +4,7 @@ const state = {
   session: null as null | { user: { id: string; organizationId: string; role: string } },
   decideResult: null as null | { id: string; status: string; metadata: Record<string, unknown> },
   grantCalls: [] as Array<Record<string, unknown>>,
+  auditCalls: [] as Array<{ scope: unknown; input: Record<string, unknown> }>,
 };
 
 vi.mock("../../../../auth/serverSession", () => ({
@@ -12,6 +13,12 @@ vi.mock("../../../../auth/serverSession", () => ({
 
 vi.mock("../../../../repositories/supabaseEnterpriseRepositories", () => ({
   tenantScopeFromUser: (user: { id: string; organizationId: string; role: string }) => ({ userId: user.id, organizationId: user.organizationId, role: user.role }),
+  auditLogsRepository: {
+    record: async (scope: unknown, input: Record<string, unknown>) => {
+      state.auditCalls.push({ scope, input });
+      return { id: "audit-log-1" };
+    },
+  },
 }));
 
 vi.mock("../../../../repositories/workflowActionRepositories", () => ({
@@ -45,6 +52,7 @@ describe("PATCH /api/approvals/[id]", () => {
     state.session = null;
     state.decideResult = null;
     state.grantCalls = [];
+    state.auditCalls = [];
     vi.clearAllMocks();
   });
 
@@ -76,6 +84,11 @@ describe("PATCH /api/approvals/[id]", () => {
     expect(body.approval.status).toBe("approved");
     expect(body.grantCreated).toBe(false);
     expect(state.grantCalls).toHaveLength(0);
+    expect(state.auditCalls).toHaveLength(1);
+    expect(state.auditCalls[0].input.action).toBe("approval.approved");
+    expect(state.auditCalls[0].input.resourceType).toBe("approval_request");
+    expect(state.auditCalls[0].input.resourceId).toBe("approval-1");
+    expect(state.auditCalls[0].input.category).toBe("ai-governance");
   });
 
   it("approving an agent-originated approval with alwaysAllow creates a real grant scoped to that connection+tool", async () => {
@@ -87,9 +100,16 @@ describe("PATCH /api/approvals/[id]", () => {
 
     expect(body.grantCreated).toBe(true);
     expect(state.grantCalls).toEqual([{ organizationId: "org-1", agentConnectionId: "conn-1", toolName: "create_meeting", grantedByUserId: "user-1" }]);
+
+    // Two audit-log writes: the approval decision itself, then the grant creation, in that order.
+    expect(state.auditCalls).toHaveLength(2);
+    expect(state.auditCalls[0].input.action).toBe("approval.approved");
+    expect(state.auditCalls[1].input.action).toBe("agent_grant.created");
+    expect(state.auditCalls[1].input.resourceType).toBe("agent_action_grant");
+    expect(state.auditCalls[1].input.resourceId).toBe("grant-1");
   });
 
-  it("rejecting never creates a grant, even with alwaysAllow set", async () => {
+  it("rejecting never creates a grant, even with alwaysAllow set, but still audit-logs the rejection", async () => {
     state.session = { user: user("user-1", "Organization Admin") };
     state.decideResult = { id: "approval-1", status: "pending", metadata: { agentConnectionId: "conn-1", toolName: "create_meeting" } };
 
@@ -98,5 +118,7 @@ describe("PATCH /api/approvals/[id]", () => {
 
     expect(body.grantCreated).toBe(false);
     expect(state.grantCalls).toHaveLength(0);
+    expect(state.auditCalls).toHaveLength(1);
+    expect(state.auditCalls[0].input.action).toBe("approval.rejected");
   });
 });
