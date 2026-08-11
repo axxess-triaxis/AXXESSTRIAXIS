@@ -14,7 +14,7 @@ below) -- not estimated, not carried over from a README, not assumed from a prio
 | Test files unable to execute (environment-blocked, not a code defect) | 2 |
 | Total tests executed | 1,217 |
 | Tests passing | 1,213 |
-| Tests failing (real, reproducible) | 4 |
+| Tests failing (real, reproducible) | 3 |
 | Tests never executed (pass/fail unknown) | 10 (2 files) |
 | E2E spec files | 14 (12 gated behind `E2E_RUN_SEEDED=true`, set in exactly 1 of 3 CI systems) |
 | `it.skip`/`test.skip`/`describe.skip`/`.todo` markers found anywhere in the suite | 0 |
