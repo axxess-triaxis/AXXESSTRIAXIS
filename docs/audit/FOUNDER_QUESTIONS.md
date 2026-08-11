@@ -146,3 +146,59 @@ B. An oversight -- should be logged for consistency and single-source-of-truth c
 **Status:** OPEN
 
 ---
+
+## Q-008
+
+**Category:** Testing & reliability -- genuine (non-infra) test failure
+
+**Question:** Running the real test suite (Phase 6, after fixing an unrelated `node_modules` corruption issue) surfaced 2 real, reproducible, non-infra failures in `src/features/settings/SettingsSection.test.ts`: `"defaults to security when no tab is requested"` and `"falls back to security for an unrecognized tab value rather than rendering nothing"`, both asserting `initialTabFromLocation()` returns `"security"`. But `SettingsSection.tsx` line 38/40 currently defaults to `"profile"` (a change from an earlier, already-shipped removal of the Security tab). Confirmed via `git diff` that this mismatch exists identically on both `audit/phase0-baseline` and `main` -- this is not audit-branch staleness, it is a present, unfixed test/implementation mismatch on the branch this audit found in the repository right now. Is this a known, already-scheduled fix, or a new finding?
+
+**Why this matters:** It's a real, currently-red test on the branch examined -- direct evidence for Phase 6's "does the test count represent real engineering confidence" question, independent of the separate worker-crash infra issue found in the same phase.
+
+**Current evidence:** `src/features/settings/SettingsSection.test.ts:17-34`; `src/features/settings/SettingsSection.tsx:35-40`; confirmed identical on `main` via `git diff audit/phase0-baseline main -- src/features/settings/SettingsSection.test.ts` (empty diff).
+
+**Founder answer:** _(blank)_
+
+**Status:** OPEN
+
+---
+
+## Q-009
+
+**Category:** Usage & observability -- production error rate (founder-stated, mid-audit)
+
+**Question:** Founder stated, unprompted, mid-Phase-6: "Posthog also shows 40+ failures (mostly script) in 300+ views" and "We have 10-15% failure rate on beta and demo combined; depending on denominator." No screenshot or exported artifact was shared for either figure. Per the founder's own standing instruction earlier this session ("No no dont fit all this PostHog data. Needs heavy data purification based on IP, location etc... You purify it in PostHog, then share the result"), this audit is not independently pulling or logging raw PostHog numbers. Is this observation intended as a claim this audit should carry into Phase 9 (Usage & Observability) once a purified source artifact is shared, or informal context only?
+
+**Why this matters:** A double-digit production error rate is a material reliability signal, but it is currently a verbal, hedged ("depending on denominator") founder statement with no attached artifact -- exactly the category CLAUDE.md's evidence discipline requires tagging as "Founder-stated, source artifact needed" rather than treated as verified.
+
+**Current evidence:** None in-repo. No PostHog export, dashboard screenshot, or error-tracking config has been reviewed by this audit for this claim.
+
+**Founder answer:** "You can get your data purified Posthog Insights from here" -- shared a live PostHog AI report URL (`us.posthog.com/project/498426/ai`, chat `479104be-094b-455a-bbe5-06fdc20978eb`), then logged in when this session's browser hit PostHog's login wall.
+
+**Resolved against a real artifact, read directly by this session (2026-08-11), not re-typed from a screenshot:** PostHog's own AI-generated "Product analytics & error report -- Aug 11, 2026." Key findings, with PostHog's own caveats preserved:
+- **Traffic (last 30 days):** MAU 377, peak DAU 236 (Aug 10), partial-week WAU ~333+ (Aug 9-11) -- all explicitly flagged by PostHog itself as **"no test filter"** (includes all traffic, not just real users).
+- **Traffic spike, Aug 9-10:** DAU jumped from a 2-10/day baseline (Jul 27-Aug 8) to 98 (Aug 9) then 236 (Aug 10) -- unexplained; PostHog's own report recommends checking referrer/UTM data to confirm organic vs. bot traffic, and does not itself resolve this.
+- **Geography (test-filtered):** India 364 users (~97%), US 9, plus Germany/Ireland/Nepal/Romania.
+- **7 active error issues, test-filtered, Aug 9-11 spike window:** (1) cross-origin script error, 42 occurrences/38 users -- needs `crossorigin="anonymous"` + CORS headers; (2) Android WebView `postMessage` bridge error (native method called on a destroyed WebView), ~40 occurrences/~39 users across 4 sub-groups -- needs a null-check/try-catch guard; (3) React error #418 SSR hydration mismatch, 13 occurrences/6 users/8 sessions.
+- **Internal contradiction in PostHog's own report, flagged not resolved:** the report's headline claims all 7 issues "emerged in the last 3 days (Aug 9-11)," but issue #3's own "First seen" date is Jul 29 -- 11 days earlier than that claim. Not reconciled by this session; recorded as a data-quality flag in the source itself.
+- Retention shows ~0% beyond week 0 for both measured cohorts, but PostHog attributes this to `posthog.identify()` likely not being called post-login/signup, not necessarily real churn.
+
+**Status:** RESOLVED -- founder's "40+ failures... 300+ views" and "10-15% failure rate" claims are now traceable to a real, dated PostHog artifact rather than left as an unverified recollection. Note the artifact itself does not cleanly support either of those two exact figures as stated (the 7-issue/~130-total-occurrence error count and the unresolved traffic-spike numbers are closer to what's actually in the report) -- recorded as resolved-with-real-evidence, not resolved-by-confirming-the-original-numbers-were-exact.
+
+---
+
+## Q-010
+
+**Category:** Testing & reliability -- environment memory exhaustion late in a long session
+
+**Question:** Two settings test files -- `SettingsSection.linkedPhone.test.tsx` (4 tests) and `SettingsSection.tabs.test.tsx` -- each failed to execute in complete isolation, multiple attempts, across two vitest pool configurations (`threads` default and `--pool=forks`), well after every other file in the 251-file suite had already run individually or in small batches without this problem. Source inspection of both files found nothing unusual (standard `it()` blocks, standard `vi.mock()` usage, structurally identical to sibling files that ran cleanly earlier in the same session). **Root cause identified directly, not inferred:** `systeminfo` showed this machine has only 7,933 MB total physical memory, and by the time these two files were reached, only **1,658 MB was available** -- after many hours of this session's repeated vitest invocations (dozens of full/sharded runs performed for this same Phase 6 investigation). This is not a defect in either test file; it is this machine running low on memory late in an unusually long, repeated-test-invocation session.
+
+**Why this matters:** This is a distinct failure mode from the broader, already-documented `fileParallelism`/worker-crash tradeoff (commit `181f1e1`, cited in Phase 6) -- that tradeoff explains crashes under concurrent load across many files started together; this is sequential, single-file runs failing late in a long session due to cumulative memory pressure on a memory-constrained (8GB) machine, which that commit's comment does not describe. Real pass/fail status for these 2 files' combined ~10-11 tests remains unconfirmed, purely because the environment couldn't sustain another vitest invocation, not because of anything in the code.
+
+**Current evidence:** 7 raw command outputs this session (2026-08-11) across the two files, all ending in `Error: Worker exited unexpectedly` or an unresponsive process needing a manual kill; `systeminfo` output showing 1,658 MB / 7,933 MB available physical memory at time of the last attempts; both files reviewed directly, no code defect found.
+
+**Founder answer:** _(blank)_
+
+**Status:** OPEN -- environment-capacity issue, not a code defect. Would very likely pass on a memory-fresh run (a new session, or after killing accumulated node processes) -- not re-attempted further in this pass to avoid compounding the same resource pressure on other in-progress work.
+
+---
