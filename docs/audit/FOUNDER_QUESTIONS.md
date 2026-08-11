@@ -245,9 +245,19 @@ Either way, not about Plug and Play itself.
 **Current evidence:** Full detail already in `PITCH_AND_TRACTION_LOG_2026_07_24.md` entry #10's own
 reconciliation flag; not re-derived here.
 
-**Founder answer:** _(blank)_
+**Founder answer (2026-08-11):** "LOI - 5 signed (3 docs total) and 2 committed."
 
-**Status:** OPEN
+**Status:** RESOLVED -- reconciles cleanly against `docs/LOIS_BETA_PILOT_INTEREST_REFERRAL_AND_
+STRATEGIC_PARTNERSHIPS_LOG.md`'s own "Pending / Expected (Not Yet Received)" section, which this
+question's earlier framing had not fully connected to the Plug and Play figures. That section
+states the founder was expecting "3-4 additional LOI documents... covering 7-8 prospective
+customers," with "3 of those LOI documents received so far (Imprints Production, Ekora Hive, and
+the Mahanta group letter), together covering 5 of the expected 7-8 customers." The founder's answer
+here -- 5 signed across 3 documents, 2 committed -- matches that tracked expectation almost exactly
+(7-8 expected minus 5 received leaves 2-3 still outstanding, matching "2 committed"). The 2026-08-01
+email to Plug and Play was accurate against this repo's own internal tracking at the time; the
+apparent mismatch in the original flag came from comparing against the tracker's 6-entity summary
+table alone without also reading its own forward-looking expected-customers section.
 
 ---
 

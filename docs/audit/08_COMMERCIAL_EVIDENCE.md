@@ -41,6 +41,17 @@ diverge rather than silently picking one.
   because they liked the product while having no current scope to pilot (not exactly a binary
   rejection)." Both halves should be carried together in any external material -- neither a bare
   "rejected" nor a bare "aligned, lacks scope" alone represents this accurately.
+- **Plug and Play UAE (entry #10) -- reconciled (Q-012, RESOLVED, 2026-08-11).** Clarification
+  first: Plug and Play is an accelerator/investor, not a customer, and has no LOI with AXXESS -- the
+  actual question was always about a claim the founder made *to* Plug and Play's investor team, not
+  about Plug and Play itself. That claim (2026-08-01 email: "5 signed LOIs, 2 additional committed
+  LOIs") reconciles cleanly against `docs/LOIS_BETA_PILOT_INTEREST_REFERRAL_AND_STRATEGIC_
+  PARTNERSHIPS_LOG.md`'s own "Pending / Expected" section, which states 7-8 customers were expected
+  across 3-4 LOI documents, with 5 customers across 3 documents already received at that log's own
+  last update. Founder's confirmation: "LOI - 5 signed (3 docs total) and 2 committed" -- matching
+  that tracked expectation (7-8 expected minus 5 received leaves 2-3 outstanding). The original flag
+  came from comparing only against the tracker's 6-entity summary table, not its forward-looking
+  expected-customers section.
 
 ### Reconciled with a real discrepancy, flagged not resolved
 
@@ -48,13 +59,6 @@ diverge rather than silently picking one.
   founder, to preserve runway** (EUR 1,500+VAT entry fee). Today's session mentioned only the offer
   itself (50% discount on the Founders Club) without mentioning the decline -- both are recorded, the
   decline is the documented status.
-- **Plug and Play UAE (entry #10) -- clarified per founder question (2026-08-11): Plug and Play is
-  an accelerator/investor, not a customer, and has no LOI with AXXESS.** The actual discrepancy is
-  about a claim the founder made *to* Plug and Play's investor team, not about Plug and Play itself:
-  this entry already carries its own unresolved internal flag from 2026-08-03, when a founder email
-  to that team cited AXXESS's *own customer-facing* traction figures -- "5 signed LOIs, 2 additional
-  committed LOIs" -- that do not match this repo's own internal customer-LOI tracker (which names 6
-  total entities). **Recorded as Q-012, not newly resolved by this phase.**
 
 ### Not found in this repo's documentation
 
@@ -184,15 +188,18 @@ own existing "Explicit Non-Claims" section, which this phase does not contradict
 
 ## New Founder Questions Logged This Phase
 
-- **Q-011** (RESOLVED): Reliance Jio GenNext outcome -- founder confirmed the documented rejection
-  stands accurate; the softer verbal framing given earlier this session was tone, not a competing
-  factual claim.
-- **Q-012** (OPEN): AXXESS's own customer-LOI count as reported to Plug and Play's investor team
-  vs. this repo's internal customer-LOI tracker -- not about Plug and Play itself, which has no LOI
-  with AXXESS (pre-existing flag from 2026-08-03, restated here for Phase 8 completeness).
+- **Q-011** (RESOLVED): Reliance Jio GenNext outcome -- a real, closed program-selection "no,"
+  occurring alongside genuine specific product interest in the same email; both halves carried
+  together per the founder's own more precise framing.
+- **Q-012** (RESOLVED): AXXESS's own customer-LOI count as reported to Plug and Play's investor team
+  ("5 signed LOIs, 2 additional committed") reconciles cleanly against the internal tracker's own
+  "Pending / Expected" section (7-8 customers expected, 5 already received across 3 documents) --
+  the original flag came from checking only the tracker's 6-entity summary table, not that section.
 - **Q-013** (RESOLVED): LOI advance-payment total is INR 25,000-30,000 -- 1 written commitment
   (Ekora Hive, ~INR 5,000) + 4 oral commitments (Imprints Production + 3 Mahanta-group firms,
   INR 20,000-25,000 combined). Not yet collected, pending the current account opening.
+
+**All three questions logged in this phase are now resolved.**
 
 ## Cross-References
 
