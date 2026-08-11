@@ -19,6 +19,25 @@ This directly closes a growth area named in external session analysis (Paxel Rep
 
 If a task is genuinely too small or too urgent to warrant a written plan (e.g. a one-line typo fix, or an already-agreed-next-step continuing from a prior turn's plan), say so explicitly and ask the founder to exit plan mode for that turn rather than silently treating the gate as optional.
 
+### Decision Ledger -- Standing Rule
+
+For every session with a major redirect, architecture call, or product-boundary decision -- not every session, but any session where one of those actually happened -- close it with a short, explicit decision ledger rather than leaving the outcome to be reconstructed later from git log or transcript alone:
+
+```
+Decision:
+Why:
+What changed:
+Architecture boundary:
+Product boundary:
+Verification:
+Outcome:
+Follow-up:
+```
+
+This is lighter-weight than, and distinct from, the closeout `*_CLOSEOUT_*.md` documents (which cover a shipped unit of work) -- it applies to any session with a major call in it, whether or not that session shipped a completed feature.
+
+This directly closes a growth area named in external session analysis (Paxel Report #14, `docs/readiness/PAXEL_REPORT_14_BEHAVIORAL_ANALYSIS_2026_08_10.md`): of 98 high-value decisions detected across this repository's session history, only 9 were recorded with a verified positive outcome (strategic redirects 8/61, technical catches 0/14, product insights 1/23). Per the founder's own framing when adopting this rule: "AXXESS became more complex, but Paxel's observable closure signals did not scale with the complexity... the correction is process, not identity" -- this is not read as a capability gap, but as an evidence-trail gap, the same category of fix as the Plan-First rule above.
+
 ## The Evidence Chain -- Standing Rule
 
 Every material claim about status, progress, or completion in this repository's own documentation must be traceable through:

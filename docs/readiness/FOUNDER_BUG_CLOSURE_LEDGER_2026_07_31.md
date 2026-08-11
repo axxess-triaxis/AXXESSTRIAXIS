@@ -1,5 +1,21 @@
 # Founder Bug Closure Ledger
 
+**Analysis note:** This ledger is the canonical founder-reviewed defect closeout record as of
+2026-08-01. Counts should be cited from this summary table rather than re-derived ad hoc. Items
+marked Blocked may include multiple symptom tickets sharing one external dependency, such as
+SMTP/DNS.
+
+**Closure evidence:**
+- Main tracker: `docs/readiness/ACTIONABLES_READINESS_MATRIX.md`
+- Lite tracker: `docs/readiness/AXXESS_LITE_DOCTRINE_AND_SURFACE_CONSTITUTION_2026_08_05.md`
+  (`XLA-01` through `XLA-26`)
+- Defect tracker: this document (`FOUNDER_BUG_CLOSURE_LEDGER_2026_07_31.md`)
+- Combined status (as tallied 2026-08-11, `docs/audit/FOUNDER_QUESTIONS.md` audit thread): 195
+  tracked items across the three trackers above, ~124 closed-equivalent (101 main-tracker items, 70
+  `Yes`; 26 Lite items, 2 `Done`; 68 bug-ledger items, ~52 `Resolved`). This is a sum across three
+  separately-tracked lists, not a cross-deduplicated unique-issue count -- some items (e.g. A-84,
+  A-86) may appear in more than one tracker under different framing.
+
 **Why this exists:** an external session-analysis tool ("Paxel") flagged that despite diligent, conclusive in-session debugging, there is no durable, externally-visible "bug reported → fix → verification → outcome" trail across this program's history. This ledger is that trail — every founder-reported defect found in this repo's documentation (2026-07-22 through 2026-07-31), cross-referenced against the actual commit history, then **individually re-dispositioned by the founder from live, first-hand knowledge on 2026-08-01.**
 
 **Method:** built from two independent research passes over repo evidence — (1) full read of `docs/readiness/ACTIONABLES_READINESS_MATRIX.md`, `docs/TENANT_0_ONBOARDING_FINDINGS_2026_07_22.md`, every `*_CLOSEOUT_*.md` in `docs/readiness/`, and the beta feedback folder; (2) full `git log` (474 commits, 2026-07-02 → 2026-07-31). That first pass is the *repo-verified* evidence layer (commit hashes, test counts, deployment IDs, closeout-doc quotes) cited inline below. **The founder then reviewed every single item against their own live product knowledge and corrected or upgraded the disposition where the repo's own docs were silent, stale, or hadn't caught up to a fix the founder knows landed** — those are marked **Founder-confirmed (2026-08-01)** to keep the two evidence types distinct, per this program's standing rule that founder attestation and independently-verified repo evidence are both real evidence, but not the same kind.
