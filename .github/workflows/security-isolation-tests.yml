@@ -1,0 +1,85 @@
+name: Security Isolation Tests
+
+# Security Hardening Sprint (Q-004/005/006/007), 2026-08-11: a fast, narrowly-scoped job covering
+# only the RAG tenant-isolation adversarial tests, tenantGuard.ts's own unit tests, and the
+# agent-approval audit-log tests. These tests are ALSO already exercised by the existing "Repository
+# Quality" workflow's full `pnpm run test` run (that job is required/blocking) -- this job does not
+# change their pre-existing gating status. It exists because that full-suite run is documented as
+# unreliable to complete in a single invocation on this repo's CI environment (see
+# docs/audit/06_TEST_RELIABILITY_AUDIT.md), so this gives a small, fast, dedicated, reliably-
+# completing signal specifically for the security-critical subset, independent of full-suite flake.
+#
+# Deliberately does NOT run scripts/verify-two-tenant-isolation.mjs: that harness performs real
+# writes against a live Supabase project. Running it automatically on every PR is a materially
+# different risk profile than a deliberate, manual, monitored run -- it stays a manual/staging tool
+# (pnpm run supabase:verify:two-tenant-isolation) unless/until a dedicated CI-safe staging Supabase
+# project is provisioned, which is a separate infrastructure decision.
+#
+# Ships advisory-first (continue-on-error: true) for a rollout window to confirm it isn't flaky,
+# then should flip to a required status check on main, per the founder's own instruction.
+
+on:
+  pull_request:
+    paths:
+      - "src/services/rag/**"
+      - "src/security/tenantGuard.ts"
+      - "src/security/tenantGuard.test.ts"
+      - "src/app/api/approvals/**"
+      - "src/services/agents/agentGrantsRepository.ts"
+      - ".github/workflows/security-isolation-tests.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "src/services/rag/**"
+      - "src/security/tenantGuard.ts"
+      - "src/security/tenantGuard.test.ts"
+      - "src/app/api/approvals/**"
+      - "src/services/agents/agentGrantsRepository.ts"
+      - ".github/workflows/security-isolation-tests.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  security-isolation-tests:
+    name: Security Isolation Tests (advisory)
+    runs-on: ubuntu-latest
+    # Advisory rollout window -- flip to false once this job is confirmed non-flaky over a real
+    # sample of PRs, then require it as a status check on main.
+    continue-on-error: true
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 11.7.0
+          run_install: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: RAG tenant-isolation adversarial tests + tenantGuard unit tests + approval audit-log tests
+        run: >
+          pnpm exec vitest run
+          src/services/rag/tenantRagWorkflow.answerGrounding.test.ts
+          src/security/tenantGuard.test.ts
+          "src/app/api/approvals/[id]/route.test.ts"
+          src/app/api/privacy/export-request/route.test.ts
+          src/app/api/account/deletion-request/route.test.ts
+          scripts/verify-two-tenant-isolation.test.mjs
