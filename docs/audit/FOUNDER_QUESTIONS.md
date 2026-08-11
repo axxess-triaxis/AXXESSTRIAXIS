@@ -213,9 +213,9 @@ B. An oversight -- should be logged for consistency and single-source-of-truth c
 
 **Current evidence:** `docs/readiness/PITCH_AND_TRACTION_LOG_2026_07_24.md` entry #32 (email-sourced, dated); this session's verbal statement (2026-08-11, undated artifact).
 
-**Founder answer (2026-08-11):** "Reliance Jio Gennext rejected but read the mail (it's already documented)... You will know reason for softer framing... Context and tone are important not everything is 0/1." Confirmed: the rejection is accurate and stands as documented in entry #32 -- the founder read the email and isn't disputing it. The softer verbal framing given earlier in this session was conversational register when relaying a mixed outcome (a real rejection that also contained genuine, specific praise), not a factual disagreement with the documented record.
+**Founder answer (2026-08-11):** "Reliance Jio Gennext rejected but read the mail (it's already documented)... You will know reason for softer framing... Context and tone are important not everything is 0/1." **Refined further, same thread:** "The rejection is real, but it was because they liked the product while having no current scope to pilot (not exactly a binary rejection)."
 
-**Status:** RESOLVED -- not a discrepancy requiring one framing to be chosen over the other. The rejection (entry #32) is the accurate record for any external/written claim; the founder's softer verbal description in conversation was tone, not a competing factual claim, and this phase's original framing of it as an open discrepancy needing resolution was itself too rigid -- corrected here per the founder's direct feedback.
+**Status:** RESOLVED, with the founder's own more precise framing recorded rather than this phase's cruder first-pass summary. Not "a rejection, softened in conversation" -- the actual, accurate shape of the outcome is: a real program-selection "no" (entry #32's own email, "not selected... due to limited fitment within our ecosystem at the moment"), driven specifically by JioGenNext's program-fit/scope constraints at this time, occurring *alongside* genuine, specific product interest from the same email ("felt the product/service that you are building is quite interesting"). Both are true at once and neither should be dropped -- "rejected" alone undersells the real interest shown; "aligned, lacks scope" alone undersells that this was a real, closed program decision, not an open door. Both framings from entry #32 and this session should be carried together going forward, not collapsed into either a bare "rejected" or a bare "aligned but not now."
 
 ---
 
@@ -261,8 +261,8 @@ reconciliation flag; not re-derived here.
 
 **Current evidence:** `docs/LOIS_BETA_PILOT_INTEREST_REFERRAL_AND_STRATEGIC_PARTNERSHIPS_LOG.md` (2026-08-08, last updated); this session's verbal statement (2026-08-11).
 
-**Founder answer:** _(blank)_
+**Founder answer (2026-08-11):** "About advance payment: Mention total INR 25-30k advance commitment (written 1 and oral 4)." Breakdown: 1 of the 5 commitments is **in writing** (Ekora Hive, ~INR 5,000, matching what the founder stated earlier this session -- "Committed token advance around INR 5,000) in writing"); the remaining 4 (Imprints Production + the 3 Mahanta-group firms) are **oral commitments**, combining to INR 20,000-25,000. Total: INR 25,000-30,000 across all 5, written + oral combined.
 
-**Status:** OPEN
+**Status:** RESOLVED, with one open note carried forward, not silently dropped. The founder's total (INR 25-30k, 1 written + 4 oral) is now the current figure to use. This does not exactly reconcile with `LOIS_BETA_PILOT_INTEREST_REFERRAL_AND_STRATEGIC_PARTNERSHIPS_LOG.md`'s own text (last updated 2026-08-08), which records *both* Imprints's and Ekora's offers as oral, $20-30 USD each -- i.e. that document has Ekora's commitment as oral/USD-denominated, not written/INR-denominated as now stated. Most likely explanation: the commitment terms firmed up (moved from an oral USD estimate to a written INR figure) between 2026-08-08 and today, which the tracker doc simply hasn't been updated to reflect yet -- not treated as a contradiction requiring further founder confirmation, since the founder's answer here is the more current, direct source.
 
 ---
