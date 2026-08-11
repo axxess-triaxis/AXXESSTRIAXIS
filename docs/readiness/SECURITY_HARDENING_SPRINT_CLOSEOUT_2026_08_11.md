@@ -159,6 +159,12 @@ docs/readiness/CUSTOMER_ACQUISITION_FUNNEL_2026_07_24.md  (unrelated addendum, s
    NULL-actor limitation is ever judged acceptable.
 5. Per the founder's own sequencing instruction this session: next up is the Codebase De-Bloat Sprint
    (dead-code audit/deletion/guardrails), a separate, larger effort deserving its own Plan Mode pass.
+6. `docs/readiness/ACTIONABLES_READINESS_MATRIX.md`'s A-102/A-103/A-109/A-110 rows still read
+   `No -- (net-new work, not yet scoped or built)` despite all 4 being merged (PRs #213-216) and
+   passing 103 combined tests (verified this session, no code changes). Not updated here -- each row
+   is one very long, densely pipe-delimited line, and editing them safely without a full-file read
+   (deferred this pass for time) risked corrupting the table. Named explicitly rather than silently
+   left stale a second time.
 
 ## Outcome
 
