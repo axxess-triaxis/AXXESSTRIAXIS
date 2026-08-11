@@ -42,4 +42,12 @@ describe("two-tenant isolation harness (Sprint 5 -- WS2, gap-analysis Phase 4 fo
     const packageJson = JSON.parse(readFileSync(join(process.cwd(), "package.json"), "utf8"));
     expect(packageJson.scripts["supabase:verify:two-tenant-isolation"]).toBe("node scripts/verify-two-tenant-isolation.mjs");
   });
+
+  it("Q-004: sets author_user_id on the knowledge_articles fixture so the insert RLS policy's with-check passes", () => {
+    expect(source).toContain("author_user_id: tenant.userId");
+  });
+
+  it("Q-004: creates a matching public.users row per tenant so workflow_timeline_events.actor_user_id's FK is satisfiable", () => {
+    expect(source).toContain('"/rest/v1/users"');
+  });
 });
