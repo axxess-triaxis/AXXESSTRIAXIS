@@ -24,6 +24,11 @@ Linked issue: `AXX-___` or `N/A`
 - [ ] Accessibility impact considered
 - [ ] Audit logging impact considered
 - [ ] RLS impact considered
+- [ ] This PR does not add a >500 LOC file without a documented reason (`pnpm run repo:large-files`)
+- [ ] This PR does not add duplicate surface code (a second implementation of something that already exists)
+- [ ] This PR does not add generated/build files to git (`pnpm run repo:bloat:guard`)
+- [ ] This PR does not increase memory-heavy imports (large parsers/SDKs pulled into a route or bundle where not needed)
+- [ ] If this PR leaves something dead or half-migrated, a deletion/refactor follow-up is named (not silently left for someone else to find)
 
 ## Verification
 
