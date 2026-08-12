@@ -256,7 +256,7 @@ follow-on investment of up to approximately €250,000 based on progress and fut
 No change to status -- this is corroboration of an already-logged in-progress evaluation, not a new
 outcome.
 
-### 36. Hub71 -- main program, Abu Dhabi
+### 36. Hub71 Access -- main program, Abu Dhabi
 
 **Status:** Rejected/not shortlisted. **New, 2026-08-12.**
 Source: "Hub71 Program Application Update" email, 2026-07-15, 1:33 PM.
@@ -273,15 +273,24 @@ Source: "Hub71 Program Application Update" email, 2026-07-15, 1:33 PM.
 - **Cross-reference:** consistent with the founder's stated MENA/Abu Dhabi relocation ambitions
   already logged in entry #11 (Founder Institute Dubai transfer request) and entry #10 (Plug and Play
   UAE, Dubai Founders HQ Accelerator).
+- **Founder's own read of the probable reason (2026-08-12): Hub71 Access invests seed to Series B
+  only.** The rejection email itself does not state a funding-stage criterion as the reason for this
+  specific application -- this is the founder's own understanding of the program's actual investment
+  focus, not a quote from Startup Estonia-style boilerplate or from this rejection email. If accurate,
+  this would mean the mismatch was stage-based (AXXESS being pre-seed, no institutional funding round
+  closed) rather than a judgment on the product or team -- but this entry does not claim the email
+  confirms that; it's recorded as the founder's stated interpretation only. **See entry #37 below for
+  a related, opposite-direction stage-mismatch read on Hub71's other program.**
 **Outcome:** Not shortlisted, with general programmatic feedback (above) rather than
-application-specific reasoning.
+application-specific reasoning. Founder's own probable-cause read: stage mismatch (pre-seed vs. the
+program's seed-to-Series-B focus), not independently confirmed by the rejection email itself.
 
 ### 37. Hub71 -- Initiate Programme, Abu Dhabi
 
 **Status:** Rejected/not shortlisted -- a separate, later application to a distinct Hub71 program.
 **New, 2026-08-12.**
 Source: "An update on your Hub71 Initiate application" email, 2026-07-24, 1:48 PM -- 9 days after
-entry #36's main-program rejection above.
+entry #36's Hub71 Access rejection above.
 - Quoted: "we regret to inform you that your startup was not shortlisted for the programme at this
   stage. This is not a judgement of your potential as a founder. The Initiate Programme has a specific
   focus on founders ready to co-build with our Venture Builder partners, and not every strong
@@ -292,8 +301,22 @@ entry #36's main-program rejection above.
 - Continued engagement offered despite the rejection: invited to Hub71's "founder activation
   sessions," hands-on sessions for early-stage founders, and the Hub71 community newsletter/events.
   Same ADGM referral (`bd@adgm.com`) as entry #36.
+- **Founder's own read of the probable reason (2026-08-12): AXXESS was too advanced for the
+  venture-builder co-build stage Initiate targets**, not too early -- the opposite direction of
+  mismatch from entry #36's Hub71 Access read. This is consistent with the rejection email's own
+  language ("a specific focus on founders ready to co-build with our Venture Builder partners, and not
+  every strong application is the right fit at the right time"), which describes a fit/stage
+  mismatch rather than a quality judgment, though the email itself does not specify which direction.
+  **Founder's interpretation, not Hub71's own stated finding.**
+- **Taken together, entries #36 and #37 suggest (per the founder's own reading, not confirmed by
+  either rejection email) that AXXESS currently sits between Hub71's two program bands** -- past the
+  idea/co-build stage Initiate serves, but not yet at the seed-to-Series-B funding stage Access
+  targets. Recorded as the founder's own structural read of these two outcomes together, not an
+  independent finding by this log.
 **Outcome:** Not shortlisted for this specific program track, with an explicit door left open to
-Hub71's broader community activities and a future reapplication.
+Hub71's broader community activities and a future reapplication. Founder's own probable-cause read:
+stage mismatch (already past the co-build stage this program serves), not independently confirmed by
+the rejection email itself.
 
 ### 38. Kristjan Nork -- Startup Wise Guys, Flagship Accelerator
 
@@ -465,7 +488,7 @@ Three entries stand apart from the "impressed" pattern, recorded here just as pl
 The angel/VC outreach entries (16-22) add a second, distinct pattern: active, in-progress fundraising conversations across mentorship (Bezbora), direct angel pitches (Kashyap, Verma, Orban), ecosystem/connector relationships (Purshan, Sufiyan), and formal VC outreach (3one4 Capital). Unlike the accelerator entries, none of these has yet produced a firm offer; two (3one4 Capital, David Orban) have produced a decisive pass rather than an open outcome -- both recorded here as real, unsoftened signals, not as claimed traction.
 
 **Update, 2026-08-12 -- a third pattern, added with entries #36-40:** four rejections from
-international relocation-oriented programs (Hub71 main program and Initiate Programme, entries #36
+international relocation-oriented programs (Hub71 Access and Initiate Programme, entries #36
 and #37; the Estonian and Lithuanian startup-visa applications, entries #39 and #40) arrived within
 roughly a four-week span (2026-07-15 through 2026-08-12). Where specific reasons were given (Hub71
 main program, entry #36; Lithuania, entry #40), they cite some combination of early stage,
