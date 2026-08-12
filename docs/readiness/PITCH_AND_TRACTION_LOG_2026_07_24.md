@@ -488,11 +488,26 @@ These two entries are different in kind from #1-22 above: they are roles where t
 
 ### 25. iCreate Idea Catalyst 2026 (International Centre for Entrepreneurship and Technology, Gujarat)
 
-**Status:** Shortlisted in preliminary screening (2026-06-23). **No founder decision (accept/decline/payment) is evidenced in this thread** -- recorded as an open item, not assumed accepted or declined.
+**Status:** Shortlisted in preliminary screening (2026-06-23); **founder-side decline, not attended.
+Corrected, 2026-08-12 -- previously recorded as "status unknown," which understated what's actually
+known.**
 Source: shortlist/offer email from iCreate, 2026-06-23.
 - Program structure: on-campus training and development, 2026-07-13 through 07-17 (reporting 2026-07-12, departing 2026-07-18); virtual market-survey and pitching sessions 2026-07-20 through 07-24, with an online pitching session on 2026-07-24.
 - Paid program: a participation fee is stated, with an internal inconsistency in iCreate's own email -- the numeral given is "Rs 5,000" but the words in parentheses read "(Rupees Seven Thousand Five Hundred only)." Quoted as-is; not resolved here, since it is an inconsistency in the source document itself, not in this founder's reporting.
-- No reply, payment confirmation, or decision from the founder appears in this single-email thread. Given the July 2026 program dates have since passed as of this log's most recent updates, and no attendance or outcome has been reported elsewhere in this program's documentation, this is recorded as **status unknown / not independently confirmed either way**, rather than assumed lapsed or attended.
+- **Founder-stated reasoning (2026-08-12): AXXESS enrolled, then refused to attend** -- a materially
+  different sequence than entry #33 (Pitch Karo India)'s pure non-response, and not evidenced in the
+  single shortlist email this session reviewed (that email predates the enrollment step being
+  described; no separate enrollment-confirmation document has been reviewed in this pass). By this
+  point AXXESS had already reached MVP stage -- iCreate's Idea Catalyst is explicitly an idea-stage
+  program (per its own name), and the founder judged the required airfare not worth spending on a
+  program targeting an earlier stage than AXXESS had already passed, after having enrolled.
+  Accommodation itself was funded by the Government of Gujarat (not a founder cost) -- the specific
+  cost weighed against the program's fit was airfare, not accommodation.
+**Outcome:** Enrolled, then declined to attend -- a founder-side decision on stage-fit/cost-benefit
+grounds (already past idea stage; airfare not justified once enrolled), not an institutional
+rejection. Sixth entry in the founder-side-decline category (see Summary Pattern), alongside #9,
+#12, #14, #15, #33 -- though distinct from all five of those in sequence (enroll-then-withdraw,
+not decline-before-enrolling or pure non-response).
 
 ## Summary Pattern (As Reported)
 
@@ -531,14 +546,16 @@ this framing, aside from entry #4.
 
 **Separately, several "no" outcomes in this log are founder-side declines, not institutional
 rejections at all** -- the other party never said no; AXXESS chose not to proceed. This group now
-spans five entries: Startup Wise Guys' Founders Club (#9) and Forge AI's Founder Residency (#12) and
+spans six entries: Startup Wise Guys' Founders Club (#9) and Forge AI's Founder Residency (#12) and
 Web Summit Alpha (#15), all explicitly "declined, to preserve runway"; Forbes India DGEMS's paid
-Stage 3 nomination (#14, "We will pass for now"); and Pitch Karo India (#33) -- a government-funded,
-IIT Delhi/BISE-backed competition requiring self-funded Delhi travel and accommodation, which the
-founder judged **negative cost-benefit given AXXESS's current traction level**, leading to deliberate
-non-response rather than a formal decline message. These five are recorded as a distinct category
-from the institutional "no"s discussed above -- AXXESS's own capital-efficiency decisions, not
-signals about how AXXESS was received.
+Stage 3 nomination (#14, "We will pass for now"); Pitch Karo India (#33) -- a government-funded, IIT
+Delhi/BISE-backed competition requiring self-funded Delhi travel and accommodation, judged **negative
+cost-benefit given AXXESS's current traction level**; and iCreate Idea Catalyst 2026 (#25, corrected
+2026-08-12 from a previous "status unknown" label) -- an idea-stage program AXXESS had already grown
+past by the time of the shortlist, where the founder judged the required airfare (accommodation
+itself was Government of Gujarat-funded) not worth spending on a stage-mismatched program. All six
+are recorded as a distinct category from the institutional "no"s discussed above -- AXXESS's own
+capital-efficiency and stage-fit decisions, not signals about how AXXESS was received.
 
 ## Status Update, 2026-07-26 (Founder-Reported)
 
