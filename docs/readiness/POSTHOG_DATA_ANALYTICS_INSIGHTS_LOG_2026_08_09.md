@@ -186,6 +186,8 @@ Source: 5 founder-shared screenshots of the authenticated PostHog Web Analytics 
 
 **Devices:** Mobile 105 visitors / 125 views -- Desktop 3 / 3.
 
+**Reconciliation note (breakdown totals vs. headline):** The per-breakdown visitor counts (e.g. Devices: 105+3=108, Top paths: sum across all paths exceeds 102) are expected to exceed the headline Visitors figure of 102. PostHog Web Analytics counts a "visitor" in a breakdown dimension for each distinct path/device/geography segment that visitor touched within the window -- a single visitor who loaded `/dashboard` on Mobile and then on Desktop increments both the Mobile and the `/dashboard` path rows independently. The headline Visitors (102) is the deduplicated count of unique `distinct_id` values across the whole window; the breakdown rows are not mutually exclusive subsets of that deduplicated total and are not intended to sum to it. This is the same PostHog semantics already noted for Geography in §1.7.
+
 **Geography (Countries):** India 102 / 105 -- United States 3 / 3 -- Nepal 1 / 18 -- Germany 1 / 1 -- Ireland 1 / 1.
 
 **Geography (India, by Region):** Kerala 11, Gujarat 10, Tamil Nadu 10, Assam 9, West Bengal 8, Maharashtra 7, Uttar Pradesh 5, (not set) 5, Rajasthan 4, Telangana 4 -- broad spread across states, not concentrated in one city.
