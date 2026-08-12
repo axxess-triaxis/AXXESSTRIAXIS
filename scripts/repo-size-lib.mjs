@@ -15,6 +15,7 @@ export const binaryExtensions = new Set([
   "pdf", "zip", "gz", "tar", "7z",
   "woff", "woff2", "ttf", "eot", "otf",
   "mp3", "mp4", "mov", "avi", "webm",
+  "wasm",
 ]);
 
 export function isBinaryPath(path) {
