@@ -12,9 +12,9 @@ import {
   refreshDemoSessionCookie,
   resetDemoEnvironment,
   setDemoModeEnabled,
-  useDemoModeEnabled,
 } from "./demoMode";
 import { demoProjectsRepository, demoKnowledgeSearchRepository, resetDemoRepositoryStore } from "./demoRepositories";
+import { useDemoModeEnabled } from "./useDemoModeEnabled";
 import type { TenantScope } from "../repositories/interfaces";
 
 const demoScope: TenantScope = {
