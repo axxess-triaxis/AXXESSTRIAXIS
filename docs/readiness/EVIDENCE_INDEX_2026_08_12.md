@@ -4,11 +4,15 @@ Live index of evidence artifacts classified as `MOVE_CANDIDATE_PENDING_APPROVAL`
 `docs/readiness/EVIDENCE_STORAGE_POLICY_2026_08_12.md` (Sprint 2), using that document's own
 index-entry template. Established by Codebase De-Bloat Sprint 3 (2026-08-12).
 
-**Current status: no artifact listed here has actually moved anywhere.** Every `External location`
-field below reads "pending" -- this document exists so each artifact's existence, description, and
-classification reasoning are recorded in one place *before* the physical move happens, per Sprint
-2's own policy. Update this file's `External location` field (and only that field) once a
-destination is chosen and the actual upload happens -- do not re-derive the rest of each entry.
+**Current status (updated 2026-08-12): the 4 LOI/engagement-letter documents have moved** -- to a
+local, gitignored folder on the same machine as this repo (`evidence-private/`, listed in
+`.gitignore`, confirmed via `git check-ignore -v`). This satisfies the founder's chosen move-out
+mechanism: local storage, external to git tracking. **The beta-feedback exports and rendered
+screenshots below have not moved** -- unlike the LOI documents, these are *already tracked in git
+history*, so moving them requires a different, more consequential action (removing already-
+committed content from git tracking) that was deliberately not executed in this same pass -- see
+the closeout doc for why. Update this file's `External location`/`Moved` fields (and only those
+fields) once each remaining item's move executes -- do not re-derive the rest of each entry.
 
 ## Beta-feedback survey exports
 
@@ -93,16 +97,21 @@ destination is chosen and the actual upload happens -- do not re-derive the rest
 ## LOI / engagement-letter source documents
 
 Sprint 2 found these were cited by `docs/LOIS_BETA_PILOT_INTEREST_REFERRAL_AND_STRATEGIC_PARTNERSHIPS_LOG.md`
-but not present anywhere in this repository. The founder provided 3 of the 4 cited documents
-directly during Sprint 3 (read in full, then discussed) -- **all 3 are confirmed to contain
-unmasked personal contact information** and, per explicit founder decision, **were never copied
-into this repository at any point, even temporarily**. They remain wherever the founder currently
-holds them (outside this repo) until an external storage destination is chosen.
+but not present anywhere in this repository. The founder provided all 4 cited documents directly
+during Sprint 3 (read in full, then discussed) -- **all 4 name real individuals, and 3 of the 4
+contain unmasked personal contact information**. Per explicit founder decision (move-out mechanism:
+same local machine as this repo, but never git-tracked), all 4 now live at
+`evidence-private/loi-and-engagement-letters/` -- a directory listed in `.gitignore` (confirmed via
+`git check-ignore -v` before and after placing the files there) so it can never be tracked via a
+future `git add -A`. **This is the move -- it is complete for these 4 files.** Unlike the beta-
+feedback exports and screenshots below (still git-tracked, still pending an actual move), these 4
+were never in git history at all, so this local-but-ignored placement is their final state under
+the current policy, not an interim step.
 
 ### LOI 1 -- Imprints Production
 
-- **Original path:** N/A -- never in this repository; founder-provided file currently outside repo
-- **Moved:** N/A (never present to move)
+- **Original path:** N/A -- was never tracked in this repository
+- **Moved:** 2026-08-12, to `evidence-private/loi-and-engagement-letters/LOI 1 Imprints Production.pdf`
 - **Description:** Email LOI/beta-access expression of interest from Prajnyan Goswami, Proprietor,
   Imprints Production (Jorhat, Assam), dated 29 Jul 2026 (email timestamp). Corresponds to entry 2
   in `LOIS_BETA_PILOT_INTEREST_REFERRAL_AND_STRATEGIC_PARTNERSHIPS_LOG.md`.
@@ -110,49 +119,53 @@ holds them (outside this repo) until an external storage destination is chosen.
 - **Classification reason:** Contains a personal email address (the sender's) and the founder's own
   personal email as recipient. Not masked. Per explicit founder decision this sprint: keep out of
   the public repo entirely.
-- **External location:** pending -- currently held by the founder outside this repository
-- **Checksum:** not computed (this session never wrote the file's bytes anywhere in the repo working
-  tree, so no checksum was generated from a repo-adjacent copy)
+- **External location:** `evidence-private/loi-and-engagement-letters/LOI 1 Imprints Production.pdf`
+  (local, gitignored -- not "external" in the cloud-storage sense, but external to git tracking,
+  which is the property this policy actually needs)
+- **Checksum (SHA-256):** `782636061a2b94ba0df56b6fc38dec72388806a611c8484cfff5e1ad84dad169`
 
 ### LOI 2 -- Ekora Hive
 
-- **Original path:** N/A -- never in this repository
-- **Moved:** N/A
+- **Original path:** N/A -- was never tracked in this repository
+- **Moved:** 2026-08-12, to `evidence-private/loi-and-engagement-letters/LOI 2 Ekora.pdf`
 - **Description:** Email LOI/beta-access expression of interest from Diksha Rajkhowa, Proprietor,
   Ekora Hive, dated 29 Jul 2026 (email timestamp). Corresponds to entry 3 in
   `LOIS_BETA_PILOT_INTEREST_REFERRAL_AND_STRATEGIC_PARTNERSHIPS_LOG.md`.
 - **Size:** 179.3 KB
 - **Classification reason:** Same as LOI 1 -- personal email addresses present, not masked.
-- **External location:** pending
-- **Checksum:** not computed
+- **External location:** `evidence-private/loi-and-engagement-letters/LOI 2 Ekora.pdf` (local,
+  gitignored)
+- **Checksum (SHA-256):** `3ddf7a0334e506c6a250ff871258cab4808f0a6e854853ad3a3bcdf3135bc3df`
 
 ### LOI 3 -- Mahanta & Sons Filling Station / Trimurti Blocks & Pavers / P. D. Wine Shop
 
-- **Original path:** N/A -- never in this repository
-- **Moved:** N/A
+- **Original path:** N/A -- was never tracked in this repository
+- **Moved:** 2026-08-12, to `evidence-private/loi-and-engagement-letters/LOI 3 - 3 customers
+  (Mahanta & Sons Filling Station, P D Wine Shops, Trimurti Blocks & Pavers.pdf`
 - **Description:** Signed letter LOI from Pollob Mahanta, Proprietor, covering 3 affiliated
   businesses (Mahanta & Sons Filling Station, Trimurti Blocks & Pavers, P. D. Wine Shop), dated
   28 Jul 2026. Corresponds to entries 4-6 in
   `LOIS_BETA_PILOT_INTEREST_REFERRAL_AND_STRATEGIC_PARTNERSHIPS_LOG.md`.
 - **Size:** 134.9 KB
 - **Classification reason:** Contains a handwritten signature, a personal email address, two
-  personal cell phone numbers, and a full business address -- the most identifying of the 3
+  personal cell phone numbers, and a full business address -- the most identifying of the 4
   documents provided. Not masked. Per explicit founder decision this sprint: keep out of the
   public repo entirely.
-- **External location:** pending
-- **Checksum:** not computed
+- **External location:** `evidence-private/loi-and-engagement-letters/LOI 3 - 3 customers (...)`.pdf
+  (local, gitignored)
+- **Checksum (SHA-256):** `9341afc530c973de2688b79157425b5ee29ceacd665e74334663ca90f43b9c9f`
 
 ### Sakura Law Chambers -- signed engagement letter
 
-- **Original path:** N/A -- never in this repository; founder-provided file currently outside repo
-- **Moved:** N/A (never present to move)
+- **Original path:** N/A -- was never tracked in this repository
+- **Moved:** 2026-08-12, to `evidence-private/loi-and-engagement-letters/Sakura signed engagement
+  letter_signed.pdf`
 - **Description:** Strategic Collaboration and Referral Agreement between Sakura Law Chambers and
   Triaxis Ventures Private Limited (non-exclusive referral/managed-delivery framework for
   legal/fundraising/investor-readiness/pitch-deck advisory services), dated 19.06.2026, digitally
   signed by the founder 24-06-2026 09:17 am. Corresponds to entry 1 in
   `LOIS_BETA_PILOT_INTEREST_REFERRAL_AND_STRATEGIC_PARTNERSHIPS_LOG.md` and the full detailed record
-  in `docs/LOIS_ENGAGEMENT_LETTERS_AND_STRATEGIC_PARTNERSHIPS.md`. Now located and reviewed in full
-  (Sprint 3 follow-up, same session as the 3 LOIs above).
+  in `docs/LOIS_ENGAGEMENT_LETTERS_AND_STRATEGIC_PARTNERSHIPS.md`.
 - **Size:** 283.5 KB
 - **Classification reason:** Distinct risk profile from the 3 LOIs above -- contains no personal
   phone number, personal email, or personal home address for either party (unlike the LOIs). It
@@ -161,8 +174,9 @@ holds them (outside this repo) until an external storage destination is chosen.
   policy applied to the other 3: no signed document naming a third party goes into the public repo
   without that party's explicit consent, regardless of the specific risk level of the fields
   present. Kept out of the public repo entirely, same as the LOIs.
-- **External location:** pending -- currently held by the founder outside this repository
-- **Checksum:** not computed (never written into the repo working tree)
+- **External location:** `evidence-private/loi-and-engagement-letters/Sakura signed engagement
+  letter_signed.pdf` (local, gitignored)
+- **Checksum (SHA-256):** `d0ca59baf2854a3e51dfe01a5ed3992dfa5282f759aa2c0cf610942e51d62da7`
 
 ## What this index does not do
 
