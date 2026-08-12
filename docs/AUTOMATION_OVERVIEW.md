@@ -123,6 +123,19 @@ Be precise about this list -- it is the part most likely to be silently assumed 
   does **not** close, named there: the pre-existing Vitest worker crash (unrelated, still open) and
   a separate, pre-existing Playwright failure (`Sprint 27/29 Pilot Acceptance Gate`) surfaced while
   triaging this PR's checks.
+- **2026-08-11/12, second and unrelated incident, also FIXED:** `main` was blocked again --
+  `[ERR_PNPM_MINIMUM_RELEASE_AGE_VIOLATION]` during `pnpm install --frozen-lockfile` (4 transitive
+  browserslist-chain packages published inside the repo's 7-day `minimumReleaseAge` policy window,
+  pulled in by a dependabot pdfjs-dist bump, PR #194, commit `b70a43a`), plus a pre-existing
+  Turbopack Server/Client Component boundary bug in `src/demo/demoMode.ts` that the install failure
+  had been masking. Both fixed via [PR #221](https://github.com/axxess-triaxis/AXXESSTRIAXIS/pull/221)
+  (merge commit `8e82fe0`). Verified end to end: `Deploy Production` and `Security Gates` both green
+  on `main` post-merge, plus a direct `curl` against both live production domains (`HTTP 307`,
+  normal). Full incident writeup, including a reasoned recurrence-risk and fix-permanence
+  assessment for both root causes:
+  `docs/readiness/RELEASE_AGE_GATE_AND_BUILD_INCIDENT_CLOSEOUT_2026_08_12.md`. Same two
+  pre-existing items as the prior incident remain open (Vitest worker crash, Sprint 27/29
+  Playwright failure) -- confirmed present again, still not fixed.
 - GitLab Duo Code Review's enablement is confirmed as of 2026-08-06 -- see the section above.
 - The local Windows Scheduled Task only runs while this specific machine exists and (per its `Interactive` logon type) generally while a user session is active on it -- it is not a cloud-hosted, always-on mechanism. If this machine is offline, nothing runs.
 - No mechanism here alerts a human when a scheduled run fails -- the local task logs to a local file (`.cache/post-sprint-automation/`) that must be checked manually; GitLab CI failures are visible in GitLab's UI but nothing pages anyone.
