@@ -92,6 +92,10 @@ B. This is a genuine, previously-unflagged testing gap that should be prioritize
 
 **Status:** PARTIALLY CLEARED (founder's own tracking label) -- real, adversarial, production-database proof of isolation exists for 4 of 6 resource types tested, materially upgrading this row from Phase 2's "NOT FOUND" framing. Not fully cleared: 2 of the 6 resource types remain unverified, and this proof is a one-time manual execution, not something that runs automatically on every deploy to catch a future regression. See Phase 2 document, updated accordingly. **Important scope note added by Phase 3 (Q-005 below): the table the AI/RAG pipeline actually retrieves from was not among the 6 resource types this harness tested, and uses a different, weaker isolation mechanism. This "partially cleared" status does not extend to that table -- see Q-005.**
 
+**Security Hardening Sprint update (2026-08-11):** both fixture bugs root-caused and fixed in `scripts/verify-two-tenant-isolation.mjs`. (1) `knowledge_articles`: the insert RLS policy's `with check` requires `author_user_id = auth.uid()`; a NULL `author_user_id` evaluates to NULL (not true) in Postgres, so tenant A's own insert 403'd before cross-tenant isolation was ever exercised -- fixed by setting `author_user_id: tenant.userId` on the fixture. (2) `workflow_timeline_events`: `actor_user_id` FKs to `public.users(id)`, but `setUpTenant` never inserted a `public.users` row (only `profiles`/`organization_members`/`roles`/`user_roles`) -- fixed by inserting one, matching what real production code paths always do. Two new assertions added to `verify-two-tenant-isolation.test.mjs` confirming both fixes are present in source. **What remains genuinely unverified, requiring HITL:** this fix has NOT yet been re-run against a real Supabase project -- the harness requires live `SUPABASE_SERVICE_ROLE_KEY`/`SUPABASE_URL`/anon-key credentials this session does not have and should not be given. **A human with those credentials needs to run `pnpm run supabase:verify:two-tenant-isolation` against a real (ideally staging, not production) project and confirm all 6 of 6 resource types now report `crossTenantReadBlocked: true`/`crossTenantWriteBlocked: true` before this item can move from PARTIALLY CLEARED to fully cleared.** The code fix itself is verified only by static source assertion (`verify-two-tenant-isolation.test.mjs`), not by a live run -- that distinction is deliberate, not an oversight.
+
+**Status:** PARTIALLY CLEARED -- fixture fix applied and source-verified; live re-run against a real Supabase project still required (HITL).
+
 ---
 
 ## Q-005
@@ -116,6 +120,10 @@ B. An oversight -- this table should be queried the same way the rest of the app
 
 **Phase 5 update:** formally scored as a **CRITICAL GAP** in `docs/audit/05_ENTERPRISE_READINESS.md`, the highest severity tier this audit uses -- a failure here means a tenant could receive an AI-generated answer synthesized in part from another tenant's confidential documents, not just a stray row in an admin list.
 
+**Security Hardening Sprint update (2026-08-11):** fixed. A hard-enforced tenant-boundary guard (`assertTenantBoundary`, `src/security/tenantGuard.ts`) now runs on every row `rag_document_chunks` returns before it can reach an answer, and on `ingestTenantDocument`'s write path -- both throw a `TenantAccessError` on a cross-organization mismatch instead of silently filtering. The pre-existing adversarial test in `tenantRagWorkflow.answerGrounding.test.ts` (which deliberately returns a cross-org chunk row) was rewritten to assert the throw rather than an implicit "no error means it worked." **Verified:** `npx tsc --noEmit` (0 errors, full repo), `npx eslint` (0 problems on touched files), `npx vitest run src/services/rag/tenantRagWorkflow.answerGrounding.test.ts src/services/rag/tenantRagWorkflow.test.ts src/security/tenantGuard.test.ts` (all passing, adversarial test now asserts `.rejects.toThrow(/cross-organization access denied/i)`). Service-role access to `rag_document_chunks` itself is unchanged (still bypasses RLS) -- this closes the application-layer gap with a hard, throw-on-mismatch guard, not a switch to JWT-scoped access; a database-level backstop (e.g., RLS enforcement on this specific access path) remains a larger, separate architectural change not attempted this pass. **Status updated to RESOLVED.**
+
+**Status:** RESOLVED
+
 ---
 
 ## Q-006
@@ -134,7 +142,9 @@ B. Not previously flagged -- should move up in priority given any real customer/
 
 **Founder answer:** _(blank)_
 
-**Status:** OPEN
+**Security Hardening Sprint update (2026-08-11):** honest queued-state fix applied (founder-approved scope: a real recorded request + a real computed plan, not a full multi-store execution engine -- that engine doesn't exist anywhere in this codebase and is a separate, larger sprint). Both `POST /api/account/deletion-request` and `POST /api/privacy/export-request` now insert a real `privacy_requests` row, call the existing (previously-orphaned) `buildPrivacyExecutionPlan()` and store its real, structured output in the row's `execution_plan` column, and audit-log the request via `auditLogsRepository.record`. If the insert itself fails (Supabase admin misconfigured, network/RLS error), the response no longer claims "queued" -- it says persistence could not be confirmed, so a caller is never told something happened that didn't (stress-tested explicitly: `route.test.ts`'s "never claims 'queued' when the insert itself fails" case in both routes). **Explicitly still not built, named as follow-up, not implied as done:** automated execution of the plan's own steps (real storage-object deletion, real vector-chunk deletion, real cache purge, search-index removal, export package assembly/signing) -- `docs/PRIVACY_ENGINEERING.md`'s "Operational Gaps" section already lists these as outstanding. **Verified:** `npx tsc --noEmit` (0 errors), `npx eslint` (0 problems), `npx vitest run src/app/api/account/deletion-request/route.test.ts src/app/api/privacy/export-request/route.test.ts` (10 tests, all passing). **Status updated to RESOLVED** for the queued-state scope described here; full automated erasure/export execution remains a distinct, larger, unscheduled item.
+
+**Status:** RESOLVED
 
 ---
 
@@ -154,7 +164,9 @@ B. An oversight -- should be logged for consistency and single-source-of-truth c
 
 **Founder answer:** _(blank)_
 
-**Status:** OPEN
+**Security Hardening Sprint update (2026-08-11):** fixed at the application layer. `PATCH /api/approvals/[id]` now calls `auditLogsRepository.record` after every decision (`action: "approval.approved"` or `"approval.rejected"`, `category: "ai-governance"`, with `decisionReason`/`agentConnectionId`/`toolName`/`alwaysAllow` in `metadata`), and a second time when an "Always Allow" grant is created (`action: "agent_grant.created"`, `resourceId` set to the real created grant's id). Both actions are now reconstructable from `audit_logs`, the same system of record used for role changes and invitations. **Deliberately not built this pass:** a defense-in-depth database trigger extending `record_enterprise_audit_log()` to cover `approval_requests`/`agent_action_grants` directly -- both tables are written exclusively via the service-role client (no per-user JWT), so a DB-level trigger would populate `actor_user_id`/`actor_role` as NULL, a materially weaker record than the app-level write above; documented as a known limitation of that option rather than silently shipped. **Verified:** `npx tsc --noEmit` (0 errors), `npx eslint` (0 problems), `npx vitest run "src/app/api/approvals/[id]/route.test.ts"` (7 tests, all passing, including new assertions for both audit-log action types and rejection still logging without a grant). **Status updated to RESOLVED** for the app-level audit trail described here.
+
+**Status:** RESOLVED
 
 ---
 

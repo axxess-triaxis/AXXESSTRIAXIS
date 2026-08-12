@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getServerAuthSession } from "../../../../auth/serverSession";
-import { tenantScopeFromUser } from "../../../../repositories/supabaseEnterpriseRepositories";
+import { auditLogsRepository, tenantScopeFromUser } from "../../../../repositories/supabaseEnterpriseRepositories";
 import { approvalRequestsRepository } from "../../../../repositories/workflowActionRepositories";
 import { createGrant } from "../../../../services/agents/agentGrantsRepository";
 
@@ -30,16 +30,42 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     decisionReason: body.decisionReason,
   });
 
-  let grantCreated = false;
   const metadata = decided.metadata as { agentConnectionId?: string; toolName?: string };
+
+  // Q-007: neither approval_requests nor agent_action_grants (both written service-role-only) has
+  // an audit_logs trigger -- this is the human checkpoint for the highest-autonomy AI-agent surface
+  // in the product, so it gets its own explicit audit-log write, matching the pattern already used
+  // for invitation/role-change actions.
+  await auditLogsRepository.record(scope, {
+    action: body.status === "approved" ? "approval.approved" : "approval.rejected",
+    resourceType: "approval_request",
+    resourceId: id,
+    category: "ai-governance",
+    metadata: {
+      decisionReason: body.decisionReason ?? null,
+      agentConnectionId: metadata.agentConnectionId ?? null,
+      toolName: metadata.toolName ?? null,
+      alwaysAllow: Boolean(body.alwaysAllow),
+    },
+  }).catch(() => undefined);
+
+  let grantCreated = false;
   if (body.status === "approved" && body.alwaysAllow && metadata.agentConnectionId && metadata.toolName) {
-    await createGrant({
+    const grant = await createGrant({
       organizationId: scope.organizationId,
       agentConnectionId: metadata.agentConnectionId,
       toolName: metadata.toolName,
       grantedByUserId: session.user.id,
     });
     grantCreated = true;
+
+    await auditLogsRepository.record(scope, {
+      action: "agent_grant.created",
+      resourceType: "agent_action_grant",
+      resourceId: grant.id,
+      category: "ai-governance",
+      metadata: { agentConnectionId: metadata.agentConnectionId, toolName: metadata.toolName },
+    }).catch(() => undefined);
   }
 
   return NextResponse.json({ approval: decided, grantCreated });
