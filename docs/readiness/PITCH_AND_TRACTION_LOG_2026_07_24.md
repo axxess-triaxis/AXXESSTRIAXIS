@@ -328,14 +328,20 @@ materially.
 
 ### 39. Startup Estonia -- Estonian Startup Visa Application
 
-**Status:** Rejected, after passing an earlier "moved to voting" stage. **New, 2026-08-12.**
-Source: two emails, 2 days apart -- "...has been moved to Voting" (2026-07-15, 6:04 PM) and "...has
-been reviewed and rejected" (2026-07-17, 5:00 AM). Application ID `AVZQ-EPBB-1976`.
+**Status:** Rejected, after passing an earlier "moved to voting" (committee) stage. **New,
+2026-08-12.**
+Source: two emails -- "...has been moved to Voting" (2026-07-15, 6:04 PM) and "...has been reviewed
+and rejected" (2026-07-17, 5:00 AM). Application ID `AVZQ-EPBB-1976`.
 - 2026-07-15: "Triaxis Ventures application to Estonian Startup Visa Application has been moved to
-  evaluation. We will get back to you as soon as the Startup Committee has made a decision."
+  evaluation. We will get back to you as soon as the Startup Committee has made a decision." A real
+  progression signal -- the application reached the Startup Committee voting stage, not a first-pass
+  screen-out.
 - 2026-07-17: **"Triaxis Ventures did not meet the definition of a startup according to Estonian law
-  and does not qualify for the Startup Visa programme."** Five reasons given, quoted in full since
-  each is a distinct, substantive point, not a single generic pass:
+  and does not qualify for the Startup Visa programme."** The rejection email's own framing, quoted
+  precisely: **"This is because of one or more of the following reasons"** -- an explicitly generic,
+  non-diagnostic checklist of possible categories, not a personalized finding stating which one(s)
+  actually applied to this application. Listed in full for completeness, not because any specific
+  item is confirmed to be the actual reason:
   1. "The product is not developed enough (including MVP readiness and product-market fit)"
   2. "The application did not include sufficient information about the company to allow for an
      informed assessment"
@@ -343,18 +349,25 @@ been reviewed and rejected" (2026-07-17, 5:00 AM). Application ID `AVZQ-EPBB-197
      internationally"
   4. "The application did not show a clear benefit to the Estonian economy (local jobs, R&D, or
      contribution to the startup ecosystem)"
-  5. **"The business appears to be a local service or retail shop. This programme only supports
-     scalable, innovation-driven startups."**
-- **This is a materially harder rejection than most other entries in this log** -- reason 5 directly
-  disputes the company's own self-categorization as a scalable tech startup, a specific challenge to
-  the core positioning that no other rejection recorded in this log states this explicitly.
+  5. "The business appears to be a local service or retail shop. This programme only supports
+     scalable, innovation-driven startups."
+- **Founder's own assessment of the probable actual reason (2026-08-12, informed by input from
+  people described as knowledgeable on this specific process): the application likely fell short on
+  reason 4 specifically (insufficient demonstrated benefit to the Estonian economy), not the others.**
+  This reading is supported by two real, favorable signals the boilerplate rejection text doesn't
+  reflect: the application reached the final voting/committee stage at all (most applications would
+  not, if e.g. reason 5's "not a real startup" concern were the actual blocker), and progressed to
+  that committee stage quickly after submission. **This is the founder's own interpretation, not a
+  statement made by Startup Estonia itself** -- the rejection email does not confirm or rule out any
+  single one of the five listed reasons, and this entry should not be read as claiming otherwise.
 - Alternative paths offered, neither pursued as of this evidence: Estonian e-Residency (a
   government-backed digital ID for running an Estonian company remotely), or a business-owner
   residence permit requiring a minimum EUR65,000 investment in Estonia (EUR16,000 if self-employed).
   Invited to reapply once programme requirements are met.
-**Outcome:** Rejected, with the most specific and critical reasoning of any rejection in this log to
-date -- not merely "too early," but a direct challenge to whether the business qualifies as a scalable
-startup at all under the programme's own definition.
+**Outcome:** Rejected via a generic, multi-reason boilerplate that does not specify which factor(s)
+actually applied. Real evidence of meaningful progress exists alongside the rejection -- reaching the
+Startup Committee's final voting stage -- which the founder reads as most consistent with reason 4
+(economic-benefit articulation) being the actual gap, not reasons 1-3 or 5.
 
 ### 40. Startup Visa Lithuania
 
@@ -454,14 +467,18 @@ The angel/VC outreach entries (16-22) add a second, distinct pattern: active, in
 **Update, 2026-08-12 -- a third pattern, added with entries #36-40:** four rejections from
 international relocation-oriented programs (Hub71 main program and Initiate Programme, entries #36
 and #37; the Estonian and Lithuanian startup-visa applications, entries #39 and #40) arrived within
-roughly a four-week span (2026-07-15 through 2026-08-12). Where reasons were given, all four cite
-some combination of early stage, pre-revenue status, and insufficient proven market traction --
-consistent with, not contradicting, the pattern already established by David Orban's angel-round pass
-(entry #19) and 3one4 Capital's second pass (entry #22). The Estonian rejection (entry #39) is the
-single most pointed piece of external feedback in this entire log, directly disputing the company's
-own self-categorization as a scalable startup rather than "a local service or retail shop" -- this is
-recorded here as a real, unsoftened signal worth the founder's direct attention, not reframed as a
-generic "too early" pass like the others.
+roughly a four-week span (2026-07-15 through 2026-08-12). Where specific reasons were given (Hub71
+main program, entry #36; Lithuania, entry #40), they cite some combination of early stage,
+pre-revenue status, and insufficient proven market traction -- consistent with, not contradicting,
+the pattern already established by David Orban's angel-round pass (entry #19) and 3one4 Capital's
+second pass (entry #22). **The Estonian rejection (entry #39) is a different kind of evidence, not a
+harder version of the same pattern** -- its own rejection text is an explicitly generic,
+"one-or-more-of-the-following" checklist that does not state which factor(s) actually applied, and
+the application had real, favorable signal alongside it (reaching the Startup Committee's final
+voting stage). The founder's own read, informed by people described as knowledgeable on this
+specific process -- that the likely actual gap was insufficient demonstrated benefit to the Estonian
+economy, not a "not a real startup" judgment -- is recorded in entry #39 as the founder's
+interpretation, not as Startup Estonia's own stated finding.
 
 ## Status Update, 2026-07-26 (Founder-Reported)
 
