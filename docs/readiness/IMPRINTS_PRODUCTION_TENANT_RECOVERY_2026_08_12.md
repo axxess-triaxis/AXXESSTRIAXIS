@@ -216,10 +216,19 @@ history, regardless of source).
 - **The customer was not contacted.** Whether and how to inform Imprints Production that their
   account was affected is a business decision for the founder, not made or assumed here.
 
-## Follow-Up, Named Not Silently Dropped
+## Follow-Up -- Founder Decisions (2026-08-12, same day)
 
-1. Whether to run a broader audit of all remaining real tenants for similar gaps -- not done this
-   pass.
-2. Whether/how to contact the affected customer -- founder's decision, not addressed here.
-3. The 2026-08-06 root-cause hypothesis remains unconfirmed -- no further evidence is available in
-   this repository to strengthen or weaken it beyond what's stated above.
+All three items below were explicitly decided by the founder, not left open by default:
+
+1. **Broader audit of remaining real tenants for similar gaps: "Not needed now."** Deliberately
+   deferred, not ruled out -- if a similar gap surfaces again, this decision should be revisited,
+   not treated as a permanent "no."
+2. **Contacting the affected customer: "Will do it over call."** The founder will handle this
+   directly, outside this repository -- not delegated to or attempted by any AI-assisted session.
+3. **The 2026-08-06 root-cause hypothesis: "Not needed now."** Further investigation into whether
+   that incident's own uncommitted cleanup script is actually what caused this is deliberately not
+   being pursued. The hypothesis in the section above remains exactly that -- a stated hypothesis,
+   never elevated to a confirmed finding -- and should not be cited as settled fact in any future
+   document.
+
+No further action is expected on any of these three items unless the founder reopens them.
