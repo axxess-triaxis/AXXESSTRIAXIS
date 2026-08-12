@@ -12,6 +12,14 @@ errors, full route table compiled), `npx tsc --noEmit` still 0 errors, and the 6
 (73 tests) still all pass. The original text below is left as written -- it was an accurate record of
 this branch's state at the time -- this note is the update, not a retroactive edit.
 
+Two residual CI gaps remain on `main` after that fix, confirmed pre-existing and unrelated to both
+that incident and this sprint's own changes: the standing Vitest worker-startup crash (this sprint's
+own verification runs hit the same pattern repeatedly, see above) and `Sprint 27/29 Pilot Acceptance
+Gate`'s Playwright failure (`expect(locator).toBeVisible()` on "Review extracted tasks", first named
+in the 2026-08-06 lockfile incident, confirmed present a second time). Full detail:
+`docs/readiness/RELEASE_AGE_GATE_AND_BUILD_INCIDENT_CLOSEOUT_2026_08_12.md`, "What Remains Open."
+Not this sprint's scope to fix -- named here so this closeout's own picture stays current.
+
 ## Operation
 
 Close the three founder-acknowledged open security/governance gaps (Q-005, Q-006, Q-007 --
