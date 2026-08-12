@@ -419,10 +419,13 @@ Source: Dealum message from Julija Mikelske, Startup Visa Lithuania, 2026-08-12,
 - Named milestones for a stronger future application, quoted: "securing initial paying customers,
   completing pilot projects, and demonstrating measurable user adoption."
 - Encouraged to reapply "once additional commercial validation has been achieved."
-**Outcome:** Rejected on pre-revenue/no-pilot-evidence grounds -- the same "prospective, not yet
-converted" gap already named by other evaluators in this log (compare David Orban, entry #19; 3one4
-Capital's second pass, entry #22), now also the stated basis for two separate national startup-visa
-rejections (this entry and entry #39) within roughly a month of each other.
+**Outcome:** Not proceeding at this time, with an explicit invitation to reapply once specific,
+named progress milestones are met (paying customers, completed pilots, measurable user adoption) --
+not a closed door. The stated reason is the same "prospective, not yet converted" gap already named
+by other evaluators in this log (compare David Orban, entry #19; 3one4 Capital's second pass, entry
+#22), and is also the stated basis for entry #39's Estonia rejection, within roughly a month of each
+other -- but unlike Estonia's generic multi-reason checklist, this rejection names one specific,
+actionable gap and an explicit reapplication path once it's closed.
 
 ## Angel Investor Conversations
 
