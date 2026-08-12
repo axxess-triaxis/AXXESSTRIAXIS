@@ -1,0 +1,40 @@
+name: Repo Hygiene
+
+# Codebase De-Bloat Sprint 1 (2026-08-12): a standalone, dependency-free, fast bloat-guard check.
+# ci.yml's `quality` job already runs the same `repo:bloat:guard` check on every push to
+# main/staging/dev and every PR -- this workflow exists only to extend that same coverage to the
+# GitLab mirror branch (`canonical/sprint-1-35-unified-gitlab`, confirmed real: this repo mirrors to
+# both GitHub and GitLab, see the `gitlab:mirror` package.json script), which ci.yml's own trigger
+# does not cover and which this sprint deliberately did not add there -- doing so would put the
+# *entire* quality suite (typecheck/lint/test/build) on every mirror-branch push, a materially
+# bigger CI cost than intended for what is just a bloat-guard extension. Push-only, deliberately: PR
+# coverage is already provided by ci.yml, so this workflow does not also trigger on pull_request --
+# that would just duplicate the identical check on every PR for no added signal.
+
+on:
+  push:
+    branches:
+      - canonical/sprint-1-35-unified-gitlab
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  bloat-guard:
+    name: Repo Bloat Guard
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - name: Run repo bloat guard
+        run: node scripts/repo-bloat-guard.mjs
