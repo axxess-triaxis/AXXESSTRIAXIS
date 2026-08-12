@@ -155,6 +155,16 @@ async function setUpTenant(label, runId) {
     prefer: "return=minimal",
     body: { organization_id: org.id, user_id: userId, role_id: role.id },
   });
+  // Q-004: workflow_timeline_events.actor_user_id FKs to public.users(id), which this fixture
+  // never populated (only profiles/organization_members/roles/user_roles) -- so the
+  // workflow_timeline_events insert below failed on a FK violation before isolation was exercised.
+  // Real production inserts always set actor_user_id against a real public.users row, so mirror
+  // that here rather than dropping the field from the fixture.
+  await adminRequest("/rest/v1/users", {
+    method: "POST",
+    prefer: "return=minimal",
+    body: { id: userId, organization_id: org.id, email, display_name: `QA Isolation Tester ${label.toUpperCase()}`, role: "Organization Admin" },
+  });
 
   const accessToken = await signIn(email, password);
   return { orgId: org.id, userId, email, roleId: role.id, accessToken };
@@ -225,7 +235,10 @@ async function main() {
     },
     {
       resource: "knowledge_articles",
-      createBody: (tenant) => ({ organization_id: tenant.orgId, title: `Isolation test article ${runId}`, status: "draft" }),
+      // Q-004: the insert RLS policy's with-check requires author_user_id = auth.uid() -- a NULL
+      // author_user_id evaluates to NULL (not true) in Postgres, so tenant A's own insert 403s
+      // before cross-tenant isolation is ever exercised. This fixture previously never set it.
+      createBody: (tenant) => ({ organization_id: tenant.orgId, title: `Isolation test article ${runId}`, status: "draft", author_user_id: tenant.userId }),
       updateBody: { title: "Mutated by tenant B" },
     },
     {

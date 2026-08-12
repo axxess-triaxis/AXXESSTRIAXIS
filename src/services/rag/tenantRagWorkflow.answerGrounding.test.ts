@@ -166,13 +166,14 @@ describe("answerTenantQuestion grounding against real indexed content (RAG Remed
   // and what these tests actually verify, is that the specific excluded chunk's own text -- the
   // cross-tenant/restricted content itself -- never appears anywhere in the answer.
 
-  it("never includes another tenant's indexed chunk content, even if it were returned under a shared document id", async () => {
+  it("throws instead of silently filtering when a chunk row claims a different organization_id (Q-005 hard tenant guard)", async () => {
     const embedding = await deterministicEmbeddingProvider.embed(REAL_CHUNK_TEXT);
-    // Defends persistentCitationsForQuestion's own row-level `row.organization_id ===
-    // scope.organizationId` check: this tenant legitimately owns "doc-1" (so it passes the
+    // Defends persistentCitationsForQuestion's hard tenant-boundary guard (assertTenantBoundary,
+    // src/security/tenantGuard.ts): this tenant legitimately owns "doc-1" (so it passes the
     // authorized-documents gate and the row query includes doc-1), but the chunk row claims a
     // different organization_id -- simulating a cross-tenant data leak at the storage layer, which
-    // the application-layer filter must still reject regardless of how the row arrived.
+    // rag_document_chunks is exposed to since it's read via the service-role client (bypasses RLS).
+    // A leak attempt must throw loudly (catchable/loggable), not be silently dropped.
     mockChunkRows = [{
       id: "chunk-cross-org", organization_id: otherOrgScope.organizationId, document_id: "doc-1", chunk_index: 0,
       chunk_text: REAL_CHUNK_TEXT, embedding_hash: embedding, visibility: "organization", role_allowlist: [],
@@ -180,10 +181,8 @@ describe("answerTenantQuestion grounding against real indexed content (RAG Remed
     }];
     const repo = repositories([document({ id: "doc-1", title: "District Oxygen Resilience Note" })]);
 
-    const answer = await answerTenantQuestion(repo, scope, "What is the oxygen resilience risk for Dibrugarh?");
-
-    expect(answer.sources.every((source) => source.excerpt !== REAL_CHUNK_TEXT)).toBe(true);
-    expect(answer.answer).not.toContain("adjoining referral corridors");
+    await expect(answerTenantQuestion(repo, scope, "What is the oxygen resilience risk for Dibrugarh?"))
+      .rejects.toThrow(/cross-organization access denied/i);
   });
 
   it("never includes a chunk's content when it is restricted to a role the caller does not have", async () => {

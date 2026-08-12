@@ -17,6 +17,27 @@ import { buildConfidenceExplanation } from "./confidenceExplanation";
 import { deterministicEmbeddingProvider } from "./embeddings/embeddingProvider";
 import { buildRagIngestionRecord, chunkInstitutionalText } from "./ingestion/ingestionPipeline";
 import { recordWorkflowTimelineEvent } from "../workflows/liveTenantWorkflow";
+import { assertTenantBoundary, type TenantRequestContext } from "../../security/tenantGuard";
+import type { EnterpriseRole } from "../../security/enterpriseIam";
+
+/**
+ * rag_document_chunks is read/written via supabaseAdminRest (service-role client), which bypasses
+ * RLS entirely -- the org_id querystring filter and any post-fetch row check are soft, defeatable
+ * application-layer trust, not a database backstop (Q-005). This builds the hard tenant-boundary
+ * context for assertTenantBoundary. TenantRequestContext requires tenantId, which TenantScope has
+ * no equivalent field for anywhere else in this codebase -- organizationId is reused as tenantId
+ * since it's the only tenant boundary in use. role is cast because TenantRequestContext.role
+ * (EnterpriseRole) and TenantScope.role (RoleName) are different literal unions that only overlap
+ * on a few values; assertTenantBoundary never reads context.role, so the cast is safe at runtime.
+ */
+function tenantRequestContextFromScope(scope: TenantScope): TenantRequestContext {
+  return {
+    tenantId: scope.organizationId,
+    organizationId: scope.organizationId,
+    userId: scope.userId,
+    role: scope.role as unknown as EnterpriseRole,
+  };
+}
 
 export type TenantRagRepositories = {
   documentsRepository: DocumentsRepository;
@@ -256,6 +277,8 @@ export async function ingestTenantDocument(
     });
     ingestionRunId = runs[0]?.id;
 
+    assertTenantBoundary(tenantRequestContextFromScope(scope), { id: document.id, organizationId: document.organizationId });
+
     const chunkRows = await Promise.all(chunks.map(async (chunk, index) => ({
       organization_id: scope.organizationId,
       document_id: document.id,
@@ -331,8 +354,16 @@ async function persistentCitationsForQuestion(
   const questionVector = await deterministicEmbeddingProvider.embed(question);
   const documentById = new Map(authorizedDocuments.map((document) => [document.id, document]));
 
+  // Hard tenant-boundary guard (Q-005): the querystring org filter above and the row-shape checks
+  // below are soft, defeatable application-layer trust -- rag_document_chunks is read via the
+  // service-role client, which bypasses RLS entirely. Throw loudly on a mismatch instead of
+  // silently dropping the row, so a leak attempt is caught and logged rather than quietly hidden.
+  const tenantContext = tenantRequestContextFromScope(scope);
+  for (const row of rows) {
+    assertTenantBoundary(tenantContext, { id: row.id, organizationId: row.organization_id });
+  }
+
   return rows
-    .filter((row) => row.organization_id === scope.organizationId)
     .filter((row) => {
       const document = documentById.get(row.document_id);
       if (!document) return false;
