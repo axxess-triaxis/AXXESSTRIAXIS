@@ -336,9 +336,21 @@ the full underlying message.
   evaluation) -- Startup Wise Guys runs multiple parallel, differently-branded programs, each tracked
   here as its own relationship per this log's existing convention (see entry #31's own note on being
   "a distinct Startup Wise Guys-affiliated program from entry #9").
-**Outcome:** Application submitted; a response arrived 2026-08-11 but its actual content/decision is
-not evidenced in this pass. **If the full email or Dealum thread becomes available, this entry should
-be updated with the real outcome rather than left on this placeholder.**
+- **Founder-stated context (2026-08-12), not from the email evidence above:** a Flagship partner told
+  the founder directly (verbally, not in the Dealum message reviewed here) that **at least EUR 10,000
+  MRR is a requisite for Flagship**. AXXESS is pre-revenue as of this log's other current entries (see
+  entry #40, Lithuania) -- if this stated bar is accurate, it would explain a stage mismatch for this
+  specific program, distinct from Ignition Fund (entry #31), which the founder describes as actually
+  fitting AXXESS's current stage and which is the one of the three SWG programs actively progressing
+  ("moved forward for further evaluation," per entry #31). **This is founder-reported verbal context,
+  not confirmed by any written evidence reviewed for this entry -- it explains a plausible reason for
+  a stage mismatch, but does not itself confirm Flagship's actual decision on this application.**
+**Outcome:** Application submitted; a response arrived 2026-08-11 but its actual written
+content/decision is not evidenced in this pass. Founder-stated context suggests a likely stage
+mismatch (EUR 10,000 MRR bar vs. AXXESS's pre-revenue status) distinct from Ignition Fund, which the
+founder describes as the better-fitting, actively-progressing SWG relationship. **If the full email
+or Dealum thread becomes available, this entry should be updated with the real, written outcome
+rather than left on this placeholder.**
 
 ## Startup Visa / Relocation Programs
 
