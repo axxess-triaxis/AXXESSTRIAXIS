@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import type { UserContext } from "../security/rbac";
 import { isLiteHost } from "../config/liteSurfaceHosts";
 
@@ -82,31 +81,6 @@ export function isDemoModeEnabled() {
 // correct seed value for anything that must match the server's own render exactly.
 export function isDemoModeSsrSafe() {
   return isDemoModeForcedByEnv();
-}
-
-// Hydration-safe replacement for calling isDemoModeEnabled() directly in a component's render body.
-// Seeds state with the SSR-safe value (matching what the server actually rendered), then corrects to
-// the real, localStorage-aware answer in an effect once the client has mounted -- the standard fix for
-// this class of mismatch. Costs one extra render after mount for the narrow set of visitors whose
-// answer actually differs (accepted trade-off: a brief content swap instead of a hydration crash).
-// Also re-resolves on demoModeChangedEvent so an in-session demo-mode toggle still updates live.
-export function useDemoModeEnabled(): boolean {
-  const [enabled, setEnabled] = useState(isDemoModeSsrSafe);
-
-  useEffect(() => {
-    setEnabled(isDemoModeEnabled());
-    function handleChange() {
-      setEnabled(isDemoModeEnabled());
-    }
-    window.addEventListener(demoModeChangedEvent, handleChange);
-    window.addEventListener(demoResetEvent, handleChange);
-    return () => {
-      window.removeEventListener(demoModeChangedEvent, handleChange);
-      window.removeEventListener(demoResetEvent, handleChange);
-    };
-  }, []);
-
-  return enabled;
 }
 
 export type RuntimeMode = "demo" | "live-tenant" | "unauthenticated";

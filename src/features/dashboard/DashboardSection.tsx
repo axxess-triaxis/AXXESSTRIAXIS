@@ -2,7 +2,8 @@ import { Download, FolderKanban, PlayCircle, Plus, RefreshCw, Search, Sparkles }
 import { useEffect, useMemo, useState } from "react";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { useAuth } from "../../auth/AuthProvider";
-import { isDemoModeEnabled, isDemoModeSsrSafe, useDemoModeEnabled } from "../../demo/demoMode";
+import { isDemoModeEnabled, isDemoModeSsrSafe } from "../../demo/demoMode";
+import { useDemoModeEnabled } from "../../demo/useDemoModeEnabled";
 import {
   ActivityFeed,
   DataStateBadge,
