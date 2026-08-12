@@ -54,6 +54,36 @@ Source: result email from Ananya, Innopreneurs India (Lemon Ideas), 2026-07-08: 
 - **This is a distinct outcome type from this log's established patterns.** It differs from the "declined, to preserve runway" entries (#9 Startup Wise Guys, #12 Forge AI, #15 Web Summit) and from the explicit paid-stage decline in #14 (Forbes India DGEMS, "We will pass for now") -- both of those involved an active decline communicated to the other party. This is a deliberate **non-response**: despite there being no participation fee, the founder judges the unreimbursed travel/accommodation cost and time commitment (for an idea invited at a much earlier stage, in May 2026) as not worth engaging with now, and is not confirming a pitching day, attending, or sending any decline message.
 **Outcome:** No response given to the organizers; the dashboard confirmation step (choose a day among 12/13/14 August) will not be completed. Logged here for the record and treated as closed by non-engagement, not by an active decline exchange.
 
+**Update, 2026-08-12:** a second, formal booking-confirmation email for the same event was received,
+this time addressed directly to cofounder Ritashree Mahanta rather than the founder, dated 2026-08-10
+("Your Pitching Arena access, 12-14 August, Bharat Mandapam"). Content matches everything already
+logged above exactly -- same venue (Bharat Mandapam, Pragati Maidan, ITPO Gate No. 9), same dates
+(12-14 August), no participation fee, ₹3,00,000 prize pool, 30+ investors/VCs/angels, 2-minute fast
+pitch format (English or Hindi), same "accommodation not provided / no stall / travel not reimbursed"
+exclusions. **This is corroborating evidence for the same event, not a new relationship or a changed
+outcome** -- the founder's prior non-response decision (above) is not stated to have changed by this
+new artifact; recorded as received, not as a reason to revisit that decision.
+
+### 34. Peachscore Accelerator -- Startup Elevator Pitch Competition
+
+**Status:** Invited. **New, 2026-08-12.** No evidence of attendance or a result in this pass --
+recorded as an open item, not assumed attended or won.
+Source: invitation email via Luma ("You're invited to Peachscore Startup Elevator Pitch
+Competition"), sent 2026-08-11, 10:44 PM IST.
+- Event scheduled for Friday, 2026-08-14, live on Zoom. **Internal inconsistency in the source email
+  itself, quoted as-is, not resolved here:** the event card states "10:30 pm - 11:30 pm IST," but a
+  separate line in the same email states "10:00 AM to 11:00 AM PST" -- these two times do not
+  correspond to the same moment (10:30 PM IST on 2026-08-14 is roughly 10:00 AM PDT the same day, not
+  11:00 AM PST as stated), a genuine discrepancy in the source document, recorded rather than silently
+  reconciled, in the same spirit as this log's existing practice for source-document inconsistencies
+  (see iCreate, entry #25).
+- Format: an open-stage, 1-minute elevator pitch (no slide presentation), covering three points --
+  who you are, the problem being solved, and the solution. Founders also get to hear other pitches and
+  network.
+- Prize: Peachscore will select the strongest elevator pitch and award "a full scholarship for free
+  enrollment into the Equity-Free, Global Peachscore Data-driven Accelerator."
+**Outcome:** Invitation received; attendance and any result are not evidenced in this pass.
+
 ## Incubation Programs
 
 ### 5. Nandini Singh -- SIIC, IIT Kanpur
@@ -85,6 +115,25 @@ Source: rejection email from SINE IIT Bombay, 2026-06-08, Application No. SINE/I
 - Stated reason, quoted: **"At a very early stage."** SINE recommended applying to prototyping/validation grants first, naming six specific programs: NIDHI-PRAYAS, NIDHI-EIR, MeitY Startup Hub (TIDE 2.0), BIRAC-BIG, Startup India Seed Fund, and MSInS.
 - Decision, quoted: **"Based on this we are not able to proceed further with your application at this point."** This is a rejection at the current stage with an implicit door left open ("at this point"), not a specific "come back after MVP" instruction as the prior summary implied -- the email never mentions MVP. The founder's 2026-07-26 "now actively reapplying" update is still consistent with this actual wording (a rejected applicant choosing to reapply later), just not with the more specific "revisit post-MVP" phrasing this entry previously used.
 **Outcome:** Rejected at the early/pre-prototype stage, with SINE naming specific non-dilutive grant programs as a recommended next step before reapplying -- not independently confirmed whether any of those six grants have been pursued.
+
+### 35. IIMV FIELD -- Naaripreneur for Her Program (NFHP), Cohort 2
+
+**Status:** Shortlisted for Phase 2. **New, 2026-08-12.** Next steps for Phase 2 not yet
+communicated -- recorded as open, not assumed imminent.
+Source: "Congratulations | IIMV FIELD | Shortlisted for Phase 2 NFHP Cohort 2" email, 2026-08-11,
+7:24 PM.
+- IIMV FIELD is the incubation and startup hub of IIM Visakhapatnam. This application/evaluation was
+  addressed and responded to directly to cofounder **Ritashree Mahanta**, not the founder -- distinct
+  from every other entry in this log, which are addressed to the founder unless otherwise noted (see
+  entry #34's Peachscore invite and this entry, both addressed to Ritashree Mahanta).
+- The program's own name ("Naaripreneur for Her") indicates a women-entrepreneur-focused cohort --
+  recorded as the program's own framing, not independently characterized further here.
+- Quoted: "your startup Triaxis Ventures (powered by AXXESS Triaxis) has been shortlisted for Phase 2
+  of NFHP Cohort 2 at IIMV FIELD." The email also notes a bulk-send/spam-folder caveat ("many of these
+  bulk emails are unfortunately landing in spam folders") and states Phase 2 next-step details are
+  still to come ("We'll be in touch shortly").
+**Outcome:** Passed Phase 1, shortlisted for Phase 2 -- program's next-step communication not yet
+received as of this evidence.
 
 ## Accelerator / Pre-Accelerator Programs
 
@@ -198,6 +247,135 @@ Source: application-status message via Dealum (app.dealum.com), from Povilas Urb
 - Next steps as stated: may receive additional questions or a call invitation "in the coming weeks" -- **no evidence in this screenshot that either has happened yet.**
 **Outcome:** Under active evaluation. Recorded here as an open, in-progress item -- explicitly not a pass, an offer, or a completed conversation.
 
+**Update, 2026-08-12 (source-corroborated, not just Dealum-screenshot-inferred):** the underlying
+Dealum message from Povilas Urbonas, 2026-08-03, is now available directly (not just referenced) and
+confirms every figure already recorded above, word for word: "the next stage of our selection process
+for the accelerator cohort planned for Q4 2026," "3-month founder-focused program," "participation in
+the program is free of charge," "initial investment of approximately €150,000, with the potential for
+follow-on investment of up to approximately €250,000 based on progress and future funding rounds."
+No change to status -- this is corroboration of an already-logged in-progress evaluation, not a new
+outcome.
+
+### 36. Hub71 -- main program, Abu Dhabi
+
+**Status:** Rejected/not shortlisted. **New, 2026-08-12.**
+Source: "Hub71 Program Application Update" email, 2026-07-15, 1:33 PM.
+- Quoted: "we regret to inform you that your startup was not shortlisted for the Hub71 program... We
+  received an overwhelming number of applications, making the selection process highly competitive."
+- Reasons the shortlisted startups stood out, quoted from the email's own bulleted list: "clearly
+  defined a critical and widely prevalent problem," "presented compelling evidence showcasing the
+  effectiveness and scalability of their implemented solution," "a profound understanding of their
+  market, product, and end users," had "reached a stage where they can fully leverage the benefits of
+  the program," and "meticulously considered the significance of joining Hub71 and the opportunities
+  available in Abu Dhabi."
+- Encouraged to reapply in the future. Separately directed to `bd@adgm.com` (Abu Dhabi Global Market)
+  for company-setup inquiries at ADGM, independent of the Hub71 program itself.
+- **Cross-reference:** consistent with the founder's stated MENA/Abu Dhabi relocation ambitions
+  already logged in entry #11 (Founder Institute Dubai transfer request) and entry #10 (Plug and Play
+  UAE, Dubai Founders HQ Accelerator).
+**Outcome:** Not shortlisted, with general programmatic feedback (above) rather than
+application-specific reasoning.
+
+### 37. Hub71 -- Initiate Programme, Abu Dhabi
+
+**Status:** Rejected/not shortlisted -- a separate, later application to a distinct Hub71 program.
+**New, 2026-08-12.**
+Source: "An update on your Hub71 Initiate application" email, 2026-07-24, 1:48 PM -- 9 days after
+entry #36's main-program rejection above.
+- Quoted: "we regret to inform you that your startup was not shortlisted for the programme at this
+  stage. This is not a judgement of your potential as a founder. The Initiate Programme has a specific
+  focus on founders ready to co-build with our Venture Builder partners, and not every strong
+  application is the right fit at the right time."
+- Notably more specific and softer in framing than entry #36's rejection -- explicitly disclaims
+  being a judgment of founder potential, and names program-fit (co-building with Venture Builder
+  partners) as the specific mismatch rather than a general quality bar.
+- Continued engagement offered despite the rejection: invited to Hub71's "founder activation
+  sessions," hands-on sessions for early-stage founders, and the Hub71 community newsletter/events.
+  Same ADGM referral (`bd@adgm.com`) as entry #36.
+**Outcome:** Not shortlisted for this specific program track, with an explicit door left open to
+Hub71's broader community activities and a future reapplication.
+
+### 38. Kristjan Nork -- Startup Wise Guys, Flagship Accelerator
+
+**Status:** Applied; a response was received but its content is not confirmed in this pass. **New,
+2026-08-12. Explicitly incomplete evidence, not guessed at.**
+Source: Dealum "New activity" notification, 2026-08-11, 7:03 AM -- a notification email only, not
+the full underlying message.
+- The notification's entire visible content: "Kristjan Nork from Startup Wise Guys - Flagship
+  Accelerator sent a message to Triaxis Ventures: 'Hey Sudipta, Thank you for taking the time to apply
+  to our accelerato...'" -- **the message is truncated mid-word in the source PDF itself; the full
+  content and actual outcome (accepted, rejected, or requesting more information) are not visible in
+  this evidence and are not inferred here.** "Thank you for taking the time to apply" is a common
+  opening phrase for both acceptance and rejection emails elsewhere in this log (compare entries #4,
+  #7, #36) -- its presence alone is not read as evidence of either outcome.
+- **This is a third, distinct Startup Wise Guys program**, alongside entry #9 (Founders Club,
+  pre-accelerator, declined by the founder) and entry #31 (Ignition Fund Accelerator, under
+  evaluation) -- Startup Wise Guys runs multiple parallel, differently-branded programs, each tracked
+  here as its own relationship per this log's existing convention (see entry #31's own note on being
+  "a distinct Startup Wise Guys-affiliated program from entry #9").
+**Outcome:** Application submitted; a response arrived 2026-08-11 but its actual content/decision is
+not evidenced in this pass. **If the full email or Dealum thread becomes available, this entry should
+be updated with the real outcome rather than left on this placeholder.**
+
+## Startup Visa / Relocation Programs
+
+Two government-run "startup visa" schemes, evaluated by their respective national startup
+committees -- distinct in kind from the accelerator/incubator entries above (no equity, mentorship,
+or investment offered; the "prize" being evaluated for is a residence/work permit pathway tied to
+company relocation). Grouped in their own section rather than folded into "Accelerator /
+Pre-Accelerator Programs" above, since the evaluation criteria and what's actually on offer differ
+materially.
+
+### 39. Startup Estonia -- Estonian Startup Visa Application
+
+**Status:** Rejected, after passing an earlier "moved to voting" stage. **New, 2026-08-12.**
+Source: two emails, 2 days apart -- "...has been moved to Voting" (2026-07-15, 6:04 PM) and "...has
+been reviewed and rejected" (2026-07-17, 5:00 AM). Application ID `AVZQ-EPBB-1976`.
+- 2026-07-15: "Triaxis Ventures application to Estonian Startup Visa Application has been moved to
+  evaluation. We will get back to you as soon as the Startup Committee has made a decision."
+- 2026-07-17: **"Triaxis Ventures did not meet the definition of a startup according to Estonian law
+  and does not qualify for the Startup Visa programme."** Five reasons given, quoted in full since
+  each is a distinct, substantive point, not a single generic pass:
+  1. "The product is not developed enough (including MVP readiness and product-market fit)"
+  2. "The application did not include sufficient information about the company to allow for an
+     informed assessment"
+  3. "The application did not clearly explain your company's potential to scale and grow
+     internationally"
+  4. "The application did not show a clear benefit to the Estonian economy (local jobs, R&D, or
+     contribution to the startup ecosystem)"
+  5. **"The business appears to be a local service or retail shop. This programme only supports
+     scalable, innovation-driven startups."**
+- **This is a materially harder rejection than most other entries in this log** -- reason 5 directly
+  disputes the company's own self-categorization as a scalable tech startup, a specific challenge to
+  the core positioning that no other rejection recorded in this log states this explicitly.
+- Alternative paths offered, neither pursued as of this evidence: Estonian e-Residency (a
+  government-backed digital ID for running an Estonian company remotely), or a business-owner
+  residence permit requiring a minimum EUR65,000 investment in Estonia (EUR16,000 if self-employed).
+  Invited to reapply once programme requirements are met.
+**Outcome:** Rejected, with the most specific and critical reasoning of any rejection in this log to
+date -- not merely "too early," but a direct challenge to whether the business qualifies as a scalable
+startup at all under the programme's own definition.
+
+### 40. Startup Visa Lithuania
+
+**Status:** Rejected -- "decided not to proceed with the application at this time." **New,
+2026-08-12 (same day as this log entry).**
+Source: Dealum message from Julija Mikelske, Startup Visa Lithuania, 2026-08-12, 8:41 PM.
+- Addressed to both cofounders directly: "Dear Sudipta and Ritashree" -- distinct from most other
+  entries in this log, which name only the founder unless otherwise noted.
+- Quoted: "The project is currently at a relatively early stage of commercialization. While a beta
+  version has been launched, the business remains pre-revenue and has not yet demonstrated sufficient
+  market validation through paying customers, pilot deployments, or other evidence of sustained
+  customer adoption." And: "At this stage, much of the application is based on future plans and
+  anticipated growth rather than proven traction in the market."
+- Named milestones for a stronger future application, quoted: "securing initial paying customers,
+  completing pilot projects, and demonstrating measurable user adoption."
+- Encouraged to reapply "once additional commercial validation has been achieved."
+**Outcome:** Rejected on pre-revenue/no-pilot-evidence grounds -- the same "prospective, not yet
+converted" gap already named by other evaluators in this log (compare David Orban, entry #19; 3one4
+Capital's second pass, entry #22), now also the stated basis for two separate national startup-visa
+rejections (this entry and entry #39) within roughly a month of each other.
+
 ## Angel Investor Conversations
 
 ### 17. Anshuman Kashyap -- IIT Guwahati, IIM Calcutta, ex-Flipkart (RSU holder), ex-Gulf Marketing Group, Founder of Elevate Wealth X, Dubai resident
@@ -272,6 +450,18 @@ Reading across all twenty-two named entries: the recurring pattern is strong qua
 Three entries stand apart from the "impressed" pattern, recorded here just as plainly: **SINE IIT Bombay deferred incubation until post-MVP**, **3one4 Capital passed twice** on an analyst-track relationship (first "too early for us" in June, then "still service-led, doesn't fit our venture-scale thesis" in August, after a documented traction update -- see entry #22), and **David Orban passed** on an angel round, citing prospective-only traction metrics, no disclosed compliance posture (SOC 2, data isolation) for a government/healthcare/NGO target market, and target-market breadth exceeding what the current stage supports -- the most detailed, specific investor-side feedback recorded in this log to date, including five named due-diligence questions for future conversations. All three are genuine, unreframed signals that AXXESS is still viewed by some evaluators as pre-incubation/pre-investment stage -- consistent with, not contradicting, the honest-limitations framing already established across this program's documentation. 3one4's second pass is notable specifically because it came *after* a real traction update, and moved from a stage objection to a business-model objection -- a harder, more specific signal, not a repeat of the same one.
 
 The angel/VC outreach entries (16-22) add a second, distinct pattern: active, in-progress fundraising conversations across mentorship (Bezbora), direct angel pitches (Kashyap, Verma, Orban), ecosystem/connector relationships (Purshan, Sufiyan), and formal VC outreach (3one4 Capital). Unlike the accelerator entries, none of these has yet produced a firm offer; two (3one4 Capital, David Orban) have produced a decisive pass rather than an open outcome -- both recorded here as real, unsoftened signals, not as claimed traction.
+
+**Update, 2026-08-12 -- a third pattern, added with entries #36-40:** four rejections from
+international relocation-oriented programs (Hub71 main program and Initiate Programme, entries #36
+and #37; the Estonian and Lithuanian startup-visa applications, entries #39 and #40) arrived within
+roughly a four-week span (2026-07-15 through 2026-08-12). Where reasons were given, all four cite
+some combination of early stage, pre-revenue status, and insufficient proven market traction --
+consistent with, not contradicting, the pattern already established by David Orban's angel-round pass
+(entry #19) and 3one4 Capital's second pass (entry #22). The Estonian rejection (entry #39) is the
+single most pointed piece of external feedback in this entire log, directly disputing the company's
+own self-categorization as a scalable startup rather than "a local service or retail shop" -- this is
+recorded here as a real, unsoftened signal worth the founder's direct attention, not reframed as a
+generic "too early" pass like the others.
 
 ## Status Update, 2026-07-26 (Founder-Reported)
 
