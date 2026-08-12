@@ -518,6 +518,28 @@ specific process -- that the likely actual gap was insufficient demonstrated ben
 economy, not a "not a real startup" judgment -- is recorded in entry #39 as the founder's
 interpretation, not as Startup Estonia's own stated finding.
 
+**Update, 2026-08-12 -- founder's own framing of this log's "no" outcomes, checked against the
+entries themselves rather than accepted at face value:** the founder's stated position is that this
+log contains **no single hard, quality-based, no-path-back rejection from an institution, with one
+named exception (Innopreneurs Season 13, entry #4)** -- every other institutional "no" carries either
+an explicit reapplication invitation, a stage/fit-based reason rather than a merit judgment, or an
+explicit disclaimer that it isn't a judgment of the founder/company (see entry #37's "This is not a
+judgement of your potential as a founder," entry #39's Estonia reapply path, entry #40's Lithuania
+reapply path, entry #32's JioGenNext "felt the product/service... is quite interesting"). Checked
+against every entry currently labeled Rejected/Passed/Declined in this log and found consistent with
+this framing, aside from entry #4.
+
+**Separately, several "no" outcomes in this log are founder-side declines, not institutional
+rejections at all** -- the other party never said no; AXXESS chose not to proceed. This group now
+spans five entries: Startup Wise Guys' Founders Club (#9) and Forge AI's Founder Residency (#12) and
+Web Summit Alpha (#15), all explicitly "declined, to preserve runway"; Forbes India DGEMS's paid
+Stage 3 nomination (#14, "We will pass for now"); and Pitch Karo India (#33) -- a government-funded,
+IIT Delhi/BISE-backed competition requiring self-funded Delhi travel and accommodation, which the
+founder judged **negative cost-benefit given AXXESS's current traction level**, leading to deliberate
+non-response rather than a formal decline message. These five are recorded as a distinct category
+from the institutional "no"s discussed above -- AXXESS's own capital-efficiency decisions, not
+signals about how AXXESS was received.
+
 ## Status Update, 2026-07-26 (Founder-Reported)
 
 The founder supplied a status refresh on 8 of the entries above, in-session. Recorded inline on each
