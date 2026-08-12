@@ -144,15 +144,31 @@ holds them (outside this repo) until an external storage destination is chosen.
 
 ### Sakura Law Chambers -- signed engagement letter
 
-- **Status:** still not located this sprint. Not provided by the founder this session; remains an
-  open sourcing question. Cited in `LOIS_BETA_PILOT_INTEREST_REFERRAL_AND_STRATEGIC_PARTNERSHIPS_LOG.md`
-  entry 1 and `docs/LOIS_ENGAGEMENT_LETTERS_AND_STRATEGIC_PARTNERSHIPS.md`. Not indexed here since
-  neither its content nor its exact current location is confirmed.
+- **Original path:** N/A -- never in this repository; founder-provided file currently outside repo
+- **Moved:** N/A (never present to move)
+- **Description:** Strategic Collaboration and Referral Agreement between Sakura Law Chambers and
+  Triaxis Ventures Private Limited (non-exclusive referral/managed-delivery framework for
+  legal/fundraising/investor-readiness/pitch-deck advisory services), dated 19.06.2026, digitally
+  signed by the founder 24-06-2026 09:17 am. Corresponds to entry 1 in
+  `LOIS_BETA_PILOT_INTEREST_REFERRAL_AND_STRATEGIC_PARTNERSHIPS_LOG.md` and the full detailed record
+  in `docs/LOIS_ENGAGEMENT_LETTERS_AND_STRATEGIC_PARTNERSHIPS.md`. Now located and reviewed in full
+  (Sprint 3 follow-up, same session as the 3 LOIs above).
+- **Size:** 283.5 KB
+- **Classification reason:** Distinct risk profile from the 3 LOIs above -- contains no personal
+  phone number, personal email, or personal home address for either party (unlike the LOIs). It
+  does name a third party by name and professional title (Shradhanjali Sarma, Partner, Sakura Law
+  Chambers) in a signed legal agreement. Per explicit founder decision, given the same consistent
+  policy applied to the other 3: no signed document naming a third party goes into the public repo
+  without that party's explicit consent, regardless of the specific risk level of the fields
+  present. Kept out of the public repo entirely, same as the LOIs.
+- **External location:** pending -- currently held by the founder outside this repository
+- **Checksum:** not computed (never written into the repo working tree)
 
 ## What this index does not do
 
 It does not mean any artifact has actually left the repo or arrived anywhere external -- every
 entry's `External location` is "pending." It does not claim the 18 unsampled product-survey
 response PDFs were individually verified PII-free -- only that 3 representative samples across the
-full range showed an identical, identity-free template structure. It does not claim the Sakura
-engagement letter's status is resolved -- it remains unlocated.
+full range showed an identical, identity-free template structure. It does not claim any legal
+conclusion about the Sakura agreement's own confidentiality terms -- only what fields the document
+itself contains, reported factually.
