@@ -63,6 +63,15 @@ next-dev*.log
 /upload.sh
 /paxel-upload.sh
 
+# Evidence Storage Policy (docs/readiness/EVIDENCE_STORAGE_POLICY_2026_08_12.md): local-only home
+# for evidence artifacts that must never enter this public repo's git history (unmasked personal
+# contact info, signed documents naming third parties, real-customer-PII-bearing SQL scripts,
+# etc). Keep this folder out of git so a future `git add -A` can never accidentally track anything
+# inside it. (This entry also exists on the docs/codebase-debloat-sprint-3-evidence-index branch,
+# PR #227, not yet merged to main as of this branch's creation -- added here independently so this
+# branch is safe on its own regardless of merge order.)
+/evidence-private/
+
 # Operating system and editor files
 .DS_Store
 Thumbs.db
