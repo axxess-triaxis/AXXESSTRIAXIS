@@ -8,18 +8,25 @@ index-entry template. Established by Codebase De-Bloat Sprint 3 (2026-08-12).
 local, gitignored folder on the same machine as this repo (`evidence-private/`, listed in
 `.gitignore`, confirmed via `git check-ignore -v`). This satisfies the founder's chosen move-out
 mechanism: local storage, external to git tracking. **The beta-feedback exports and rendered
-screenshots below have not moved** -- unlike the LOI documents, these are *already tracked in git
-history*, so moving them requires a different, more consequential action (removing already-
-committed content from git tracking) that was deliberately not executed in this same pass -- see
-the closeout doc for why. Update this file's `External location`/`Moved` fields (and only those
-fields) once each remaining item's move executes -- do not re-derive the rest of each entry.
+screenshots below have not moved, and now will not move.** Unlike the LOI documents, these are
+*already tracked in git history*, so moving them out of the repo requires a different, more
+consequential action (a git history rewrite -- `git filter-repo`/BFG -- to purge already-committed
+blobs, not just a new commit deleting them from the current tree). History rewriting was an
+explicit non-negotiable of this initiative, requiring its own separate authorization given its
+destructive, force-push-requiring nature. **Founder's final decision (2026-08-12): no rewrite.**
+The entries below remain in this index as a permanent, accurate record of what these files are and
+why they were classified as evidence -- not as a to-do list of pending moves. See the Decision
+Ledger in `CODEBASE_DEBLOAT_SPRINT3_CLOSEOUT_2026_08_12.md` for the full reasoning. The Codebase
+De-Bloat initiative (Sprints 1-3) is concluded.
 
 ## Beta-feedback survey exports
 
 ### AXXESS Enterprise Beta Feedback (PII-masked).zip
 
 - **Original path:** `Enterprise beta feedback - Batch 1 (30 responses)/AXXESS Enterprise Beta Feedback (PII-masked).zip`
-- **Moved:** not yet
+- **Moved:** no -- final. Founder decided against a git history rewrite (the only mechanism that
+  could move this file, since it's already git-tracked); this file remains in the repo permanently.
+  See Decision Ledger, `CODEBASE_DEBLOAT_SPRINT3_CLOSEOUT_2026_08_12.md`.
 - **Description:** Raw enterprise-beta survey response export, 30 responses. Filename explicitly
   states PII-masked; not independently re-verified this sprint (out of scope -- the founder-labeled
   status was taken as given; only the sibling file below, which carried no such label, was
@@ -27,14 +34,15 @@ fields) once each remaining item's move executes -- do not re-derive the rest of
 - **Size:** 14 MB
 - **Classification reason:** Large (Evidence Storage Policy criterion 4), real customer/beta-user
   evidence, not something a diligence reviewer needs to open directly from the repo.
-- **External location:** pending -- destination not yet chosen (see closeout doc)
-- **Checksum:** not yet computed (compute at time of actual move, not before, so it reflects the
-  exact bytes transferred)
+- **External location:** N/A -- not moving. See `Moved` field above.
+- **Checksum:** not computed. Not applicable -- file is not moving.
 
 ### AXXESS by Triaxis Beta User Product Feedback Survey.zip
 
 - **Original path:** `Enterprise beta feedback - Batch 1 (30 responses)/AXXESS by Triaxis Beta User Product Feedback Survey.zip`
-- **Moved:** not yet
+- **Moved:** no -- final. Founder decided against a git history rewrite (the only mechanism that
+  could move this file, since it's already git-tracked); this file remains in the repo permanently.
+  See Decision Ledger, `CODEBASE_DEBLOAT_SPRINT3_CLOSEOUT_2026_08_12.md`.
 - **Description:** Raw product-survey response export, 21 individual response PDFs (`number_1.pdf`
   through `number_21.pdf`).
 - **Size:** 4.8 MB
@@ -49,36 +57,42 @@ fields) once each remaining item's move executes -- do not re-derive the rest of
   across the full set of 21, though the remaining 18 were not individually opened. This file was
   effectively already safe -- the missing "PII-masked" label in its filename reflected inconsistent
   naming, not an actual gap in masking.
-- **External location:** pending -- destination not yet chosen
-- **Checksum:** not yet computed
+- **External location:** N/A -- not moving. See `Moved` field above.
+- **Checksum:** not computed. Not applicable -- file is not moving.
 
 ### AXXESS Enterprise Beta Feedback-NPS Report.pdf
 
 - **Original path:** `Enterprise beta feedback - Batch 1 (30 responses)/AXXESS Enterprise Beta Feedback-NPS Report.pdf`
-- **Moved:** not yet
+- **Moved:** no -- final. Founder decided against a git history rewrite (the only mechanism that
+  could move this file, since it's already git-tracked); this file remains in the repo permanently.
+  See Decision Ledger, `CODEBASE_DEBLOAT_SPRINT3_CLOSEOUT_2026_08_12.md`.
 - **Description:** Rendered NPS summary report for the enterprise beta survey.
 - **Size:** 152 KB
 - **Classification reason:** Aggregate report derived from the survey data above; travels with it
   under the same policy for consistency, even though its own size is small.
-- **External location:** pending
-- **Checksum:** not yet computed
+- **External location:** N/A -- not moving. See `Moved` field above.
+- **Checksum:** not computed. Not applicable -- file is not moving.
 
 ### AXXESS by Triaxis Beta User Product Feedback Survey-NPS Report.pdf
 
 - **Original path:** `Enterprise beta feedback - Batch 1 (30 responses)/AXXESS by Triaxis Beta User Product Feedback Survey-NPS Report.pdf`
-- **Moved:** not yet
+- **Moved:** no -- final. Founder decided against a git history rewrite (the only mechanism that
+  could move this file, since it's already git-tracked); this file remains in the repo permanently.
+  See Decision Ledger, `CODEBASE_DEBLOAT_SPRINT3_CLOSEOUT_2026_08_12.md`.
 - **Description:** Rendered NPS summary report for the product survey.
 - **Size:** 1.5 MB
 - **Classification reason:** Same as above.
-- **External location:** pending
-- **Checksum:** not yet computed
+- **External location:** N/A -- not moving. See `Moved` field above.
+- **Checksum:** not computed. Not applicable -- file is not moving.
 
 ## Rendered survey-report screenshots (grouped entry)
 
 - **Original path:** `docs/feedback-artifacts/rendered/*.png` (44 files -- see
   `docs/readiness/CODEBASE_DEBLOAT_SPRINT2_EVIDENCE_ARTIFACT_AUDIT_2026_08_12.md` for the full
   per-file list, or `git ls-files docs/feedback-artifacts/rendered/`)
-- **Moved:** not yet
+- **Moved:** no -- final. Founder decided against a git history rewrite (the only mechanism that
+  could move this file, since it's already git-tracked); this file remains in the repo permanently.
+  See Decision Ledger, `CODEBASE_DEBLOAT_SPRINT3_CLOSEOUT_2026_08_12.md`.
 - **Description:** Rendered visual captures of the same underlying survey reports (enterprise
   "detailed" and "default" views, product "short"/"NPS" views). No generator script exists for
   these -- confirmed via `git grep` in Sprint 2 -- they are not build output and cannot be
@@ -89,10 +103,8 @@ fields) once each remaining item's move executes -- do not re-derive the rest of
 - **Classification reason:** Large as a group, evidence, not something a diligence reviewer expects
   to click through individually from the repo (the aggregate NPS report PDFs above serve that
   purpose already).
-- **External location:** pending -- likely moves as one archive/folder rather than 44 separate
-  uploads, but that packaging decision is deferred to whoever executes the actual move
-- **Checksum:** not yet computed (would need to be per-file or a combined archive checksum,
-  decided at move time)
+- **External location:** N/A -- not moving. See `Moved` field above.
+- **Checksum:** not computed. Not applicable -- these files are not moving.
 
 ## LOI / engagement-letter source documents
 
@@ -180,9 +192,12 @@ the current policy, not an interim step.
 
 ## What this index does not do
 
-It does not mean any artifact has actually left the repo or arrived anywhere external -- every
-entry's `External location` is "pending." It does not claim the 18 unsampled product-survey
-response PDFs were individually verified PII-free -- only that 3 representative samples across the
-full range showed an identical, identity-free template structure. It does not claim any legal
-conclusion about the Sakura agreement's own confidentiality terms -- only what fields the document
-itself contains, reported factually.
+For the 4 LOI/engagement-letter documents, the move is real and complete -- verified checksums,
+real paths, confirmed gitignored. For the beta-feedback exports and rendered screenshots, this
+index does not mean any artifact has left the repo or will -- the founder's final decision
+(2026-08-12, see Decision Ledger in `CODEBASE_DEBLOAT_SPRINT3_CLOSEOUT_2026_08_12.md`) is that
+these stay, permanently, since moving them would require a history rewrite that was declined. It
+does not claim the 18 unsampled product-survey response PDFs were individually verified PII-free --
+only that 3 representative samples across the full range showed an identical, identity-free
+template structure. It does not claim any legal conclusion about the Sakura agreement's own
+confidentiality terms -- only what fields the document itself contains, reported factually.
