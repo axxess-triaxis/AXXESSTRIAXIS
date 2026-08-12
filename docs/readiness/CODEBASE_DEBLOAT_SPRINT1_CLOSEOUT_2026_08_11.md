@@ -5,6 +5,22 @@ closeout. Full evidence and methodology in the companion docs this sprint produc
 `CODEBASE_DEBLOAT_AUDIT_AND_DELETION_PLAN_2026_08_11.md`, `CODEBASE_DEBLOAT_KANBAN_2026_08_11.md`,
 `CODEBASE_DEBLOAT_CHECKLIST_2026_08_11.md`, `REPO_HYGIENE_AND_BLOAT_GUARDRAILS.md`.
 
+**Update (2026-08-12): both blockers this closeout originally named as "pre-existing, unrelated"
+are resolved on `main`.** A separate, concurrent session fixed the `pnpm` lockfile
+`minimumReleaseAge` policy violation and `src/demo/demoMode.ts`'s RSC-boundary build bug (PR #221,
+merge `8e82fe0`; closeout: `docs/readiness/RELEASE_AGE_GATE_AND_BUILD_INCIDENT_CLOSEOUT_2026_08_12.md`).
+This branch was rebased onto the fixed `main` and re-verified: `npx next build` now completes
+cleanly (0 errors, full route table), and `pnpm run mobile:lite:capacitor:doctor` now completes
+successfully (previously blocked entirely by the lockfile issue -- `cap doctor` reports normal
+version-drift info, not an error). Both items move from "Tasks that did not clear" to resolved.
+
+**Two residual CI gaps remain on `main`, confirmed pre-existing and unrelated to both that incident
+and this sprint:** the standing Vitest worker-startup crash (this sprint's own verification runs hit
+the same pattern repeatedly, documented above) and `Sprint 27/29 Pilot Acceptance Gate`'s Playwright
+failure. Neither is new, neither is caused by this sprint's changes, neither is this sprint's scope
+to fix. Full detail: `docs/readiness/RELEASE_AGE_GATE_AND_BUILD_INCIDENT_CLOSEOUT_2026_08_12.md`,
+"What Remains Open."
+
 **"LOC reduction is not a measure of product quality. It is a repo hygiene and operational-risk
 control metric." This closeout does not claim the repo is clean, that memory problems are solved, or
 that dead code is fully removed.**
