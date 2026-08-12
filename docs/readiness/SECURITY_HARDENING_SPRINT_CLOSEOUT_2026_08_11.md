@@ -2,6 +2,16 @@
 
 PR: [#220](https://github.com/axxess-triaxis/AXXESSTRIAXIS/pull/220), branch `security/q005-rag-tenant-guard` -> `main`. Not yet merged as of this closeout.
 
+**Update (2026-08-12): the `pnpm run build` failure named throughout this doc as "pre-existing and
+unrelated" is now resolved on `main`.** A separate, concurrent session fixed `src/demo/demoMode.ts`'s
+RSC-boundary violation (PR #221, commit `a39f602`, "split `useDemoModeEnabled` into its own client
+module") alongside an unrelated pnpm lockfile `minimumReleaseAge` policy fix, with a closeout doc at
+`docs/readiness/RELEASE_AGE_GATE_AND_BUILD_INCIDENT_CLOSEOUT_2026_08_12.md` (PR #222). This branch was
+rebased onto the fixed `main` and re-verified 2026-08-12: `npx next build` now completes cleanly (0
+errors, full route table compiled), `npx tsc --noEmit` still 0 errors, and the 6 targeted test files
+(73 tests) still all pass. The original text below is left as written -- it was an accurate record of
+this branch's state at the time -- this note is the update, not a retroactive edit.
+
 ## Operation
 
 Close the three founder-acknowledged open security/governance gaps (Q-005, Q-006, Q-007 --
