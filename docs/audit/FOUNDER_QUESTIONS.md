@@ -96,6 +96,35 @@ B. This is a genuine, previously-unflagged testing gap that should be prioritize
 
 **Status:** PARTIALLY CLEARED -- fixture fix applied and source-verified; live re-run against a real Supabase project still required (HITL).
 
+**Live re-verification and organization hard-delete trigger fix (2026-08-12, PR #227 and PR #228):**
+the live re-run this row's own "Status" line above named as the remaining requirement was completed
+-- founder ran `scripts/verify-two-tenant-isolation.mjs` against production twice (run IDs
+`msq54ahj`, `msq54k48`), both `"passed"`, all 6 of 6 `REQUIRED_COVERAGE` resource types (`projects`,
+`tasks`, `documents`, `knowledge_articles`, `audit_logs`, `workflow_timeline_events`) showing both
+`crossTenantReadBlocked: true` and `crossTenantWriteBlocked: true`. Full account:
+`docs/readiness/TWO_TENANT_ISOLATION_HARNESS_EXECUTION_2026_08_12.md` (PR #227).
+
+**A separate, real defect was found during that same verification, not part of the original
+question**: the harness's own cleanup step failed on both passing runs, root-caused to a trigger
+(`audit_user_roles_changes`/`record_enterprise_audit_log()`) that made **organization
+hard-deletion structurally impossible through any code path** -- every attempt failed atomically
+with `SQLSTATE 23503`. This was designed, implemented, and deployed as its own separate,
+explicitly-authorized production-schema change (3 sequential migrations were required; the first
+two each surfaced additional live-only defects and were corrected before the next attempt, each
+step gated on founder authorization -- full account in
+`docs/readiness/ORGANIZATION_HARD_DELETE_TRIGGER_FIX_2026_08_12.md`, PR #228). **Final verification
+(run `msqb1xi6`, 2026-08-12): 6/6 isolation checks pass AND `cleanupErrors: []` -- organization
+hard-delete succeeds for the first time since this schema existed (Sprint 6, 2026-07-03).**
+
+While verifying this, one real production tenant ("Imprints Production") was separately found
+missing and recovered -- unrelated in cause to either the isolation proof or the trigger fix, full
+account in `docs/readiness/IMPRINTS_PRODUCTION_TENANT_RECOVERY_2026_08_12.md`.
+
+**Status:** RESOLVED -- all 6 of 6 resource types proven, zero cross-tenant leakage, against
+production, with real non-privileged access tokens on both sides (PR #227). The organization
+hard-delete defect found during this verification is also now fixed and deployed, verified against
+production (PR #228) -- not merely diagnosed. Both are closed, not open items carried forward.
+
 ---
 
 ## Q-005
@@ -144,7 +173,21 @@ B. Not previously flagged -- should move up in priority given any real customer/
 
 **Security Hardening Sprint update (2026-08-11):** honest queued-state fix applied (founder-approved scope: a real recorded request + a real computed plan, not a full multi-store execution engine -- that engine doesn't exist anywhere in this codebase and is a separate, larger sprint). Both `POST /api/account/deletion-request` and `POST /api/privacy/export-request` now insert a real `privacy_requests` row, call the existing (previously-orphaned) `buildPrivacyExecutionPlan()` and store its real, structured output in the row's `execution_plan` column, and audit-log the request via `auditLogsRepository.record`. If the insert itself fails (Supabase admin misconfigured, network/RLS error), the response no longer claims "queued" -- it says persistence could not be confirmed, so a caller is never told something happened that didn't (stress-tested explicitly: `route.test.ts`'s "never claims 'queued' when the insert itself fails" case in both routes). **Explicitly still not built, named as follow-up, not implied as done:** automated execution of the plan's own steps (real storage-object deletion, real vector-chunk deletion, real cache purge, search-index removal, export package assembly/signing) -- `docs/PRIVACY_ENGINEERING.md`'s "Operational Gaps" section already lists these as outstanding. **Verified:** `npx tsc --noEmit` (0 errors), `npx eslint` (0 problems), `npx vitest run src/app/api/account/deletion-request/route.test.ts src/app/api/privacy/export-request/route.test.ts` (10 tests, all passing). **Status updated to RESOLVED** for the queued-state scope described here; full automated erasure/export execution remains a distinct, larger, unscheduled item.
 
-**Status:** RESOLVED
+**Structural-blocker removal, relevant but not itself erasure (2026-08-12, PR #228):** a real
+defect blocking organization/tenant hard-deletion at the database layer was found and fixed --
+`docs/readiness/ORGANIZATION_HARD_DELETE_TRIGGER_FIX_2026_08_12.md` has the full account. This
+matters directly to this row: any future automated execution engine for the "operational gaps"
+this row already names (real storage-object deletion, real vector-chunk deletion, cache purge,
+search-index removal) would eventually need to delete the tenant/organization record itself as the
+terminal step of a full erasure, and that step was, until this fix, guaranteed to fail every time.
+**This does not move Q-006 closer to RESOLVED for full automated execution** -- no execution engine
+exists, none was built this pass, and this fix does not simulate or imply one. It removes a
+blocker a future engine would otherwise hit, nothing more. Recorded here so a future session
+building that engine does not need to rediscover this dependency.
+
+**Status:** RESOLVED (for the queued-state scope this row's own answer describes -- unchanged by
+the above). Full automated erasure/export execution remains open, unscheduled, and is not affected
+by the trigger fix beyond having one fewer structural obstacle in its path.
 
 ---
 
