@@ -304,7 +304,12 @@ of the three firms was not specified in this update -- flagged as an open detail
 the filling station by default just because it is listed first. **Oral commitment to an advance
 payment was also made, not yet collected or documented** -- same "founder-stated, source artifact
 needed" treatment already applied to Imprints Production's (Pilot 1, entry #2) advance-payment
-commitment above; no signed agreement, invoice, or payment record exists for this yet.
+commitment above; no signed agreement, invoice, or payment record exists for this yet. **Confirmed,
+2026-08-13:** the three Mahanta firms account for three of the "4 more oral commitments" the
+founder counted in the Aggregate Advance-Commitment Pipeline note after entry #7 below (Elevate
+Group FZE, entry #7, is the fourth) -- founder-stated basis: **oral, based on a long-standing
+relationship**, not a written or newly-formed one. No per-firm dollar breakdown was given; the
+$120-200 combined figure covers all four commitments together, not per firm.
 **Beta access requested:** Yes -- explicitly states "We are also looking to register on your
 platform and take a beta look at its services and workflow"
 **Commercial intent:** Yes, post-launch, subject to pricing/terms -- the letter states "We feel
@@ -346,7 +351,12 @@ AXXESS TRIaxis could be highly relevant to our business. We would be interested 
 implementation within Elevate Group FZE once the product is commercially launched and market-ready,"
 and "we understand that the final pricing, commercial terms, scope of services, and other conditions
 can be discussed and mutually agreed upon closer to the commercial launch." Same deferred-pricing
-structure already established with entries #2-6.
+structure already established with entries #2-6. **Founder-stated, source artifact needed
+(2026-08-13, oral commitment, not stated in the source email above):** an oral advance-payment
+commitment was also made, on the same basis as the Mahanta group's (entry #4-6) -- **oral, based
+on a long-standing relationship**. This is the fourth of the "4 more oral commitments" in the
+Aggregate Advance-Commitment Pipeline note after this entry; no per-entity dollar figure was given,
+and no signed agreement, invoice, or payment record exists for this yet.
 **Scope:** Elevate Group FZE (entity implementing, per the letter) -- website `elevatewealthx.com`.
 **Pilot start date:** Not stated in source document.
 **Tenant provisioned:** No.
@@ -377,15 +387,12 @@ from any single entry above and recorded here rather than folded silently into o
   source document, both figures were always founder-recalled, not document-sourced).
 - **Ekora Hive (entry #3): $50** oral advance commitment (same revision, from entry #3 above).
 - **"4 more oral commitments"** (founder's own count, 2026-08-13): conservatively $120 combined
-  (~$30/customer), or up to $200 combined (~$50/customer) optimistically. **Founder-stated, source
-  artifact needed -- not yet itemized against specific log entries in this document.** The only
-  already-logged candidate is the Mahanta group's entry #4-6, which records "Oral commitment to an
-  advance payment was also made" at the group level, with no dollar figure and no confirmation of
-  whether that is one commitment across all three firms or three separate ones. Entry #7 (Elevate
-  Group FZE) currently records no oral advance-commitment mention at all. **This log does not
-  currently have four distinct, individually-sourced oral commitments beyond Imprints and Ekora
-  it can point to** -- this gap is noted rather than silently resolved by assuming the "4 more"
-  maps onto the 3 Mahanta firms plus Elevate, since the founder did not confirm that mapping.
+  (~$30/customer), or up to $200 combined (~$50/customer) optimistically. **Confirmed, 2026-08-13:**
+  the three Mahanta-group firms (entry #4-6) and Elevate Group FZE (entry #7) -- three plus one.
+  **Founder-stated basis for all four: oral, based on long-standing relationships**, not written
+  documents and not newly-formed contacts. No per-entity dollar breakdown was given for these
+  four -- only the $120-200 combined figure. No signed agreement, invoice, or payment record exists
+  for any of the four.
 - **Founder's stated total: $220-300** ($50 + $50 + $120-200), explicitly framed as "basically 4-6
   customers committing to paying [the $50/year] annual fee upfront; not simply for [the] sake of
   it" -- i.e. the founder's point is that this is a materially meaningful advance-commitment
@@ -393,9 +400,10 @@ from any single entry above and recorded here rather than folded silently into o
   figure in it remains oral, uncollected, and founder-recalled rather than document- or
   ledger-sourced.
 
-**Open item, not resolved this session:** which specific customers make up the "4 more" beyond
-Imprints and Ekora, and whether the Mahanta group's existing group-level oral commitment (entry
-#4-6) is one of those four or a separate, fifth data point, is not yet confirmed.
+**Full roster of the six commitments behind the $220-300 figure:** Imprints Production ($50,
+entry #2), Ekora Hive ($50, entry #3), Mahanta & Sons Filling Station / Trimurti Blocks & Pavers /
+P. D. Wine Shop (3 firms, combined within $120-200, entry #4-6), Elevate Group FZE (within
+$120-200, entry #7).
 
 ---
 
