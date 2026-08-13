@@ -63,6 +63,13 @@ next-dev*.log
 /upload.sh
 /paxel-upload.sh
 
+# Evidence Storage Policy (docs/readiness/EVIDENCE_STORAGE_POLICY_2026_08_12.md): local-only home
+# for evidence artifacts that must never enter this public repo's git history (unmasked personal
+# contact info, signed documents naming third parties, etc). Indexed by description, never by
+# content, in docs/readiness/EVIDENCE_INDEX_2026_08_12.md -- keep this folder out of git so a
+# future `git add -A` can never accidentally track anything inside it.
+/evidence-private/
+
 # Operating system and editor files
 .DS_Store
 Thumbs.db
