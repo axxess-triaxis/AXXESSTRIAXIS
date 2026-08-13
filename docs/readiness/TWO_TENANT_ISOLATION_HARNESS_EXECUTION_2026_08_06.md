@@ -3,6 +3,17 @@
 Date: 2026-08-06
 Governance source: `docs/FOUNDER_EXECUTION_EVIDENCE_GOVERNANCE.md`
 
+**Correction (2026-08-12):** the root-cause diagnosis in the "Cleanup Incident" section below --
+that pre-existing `audit_logs` rows blocked the organization delete because they weren't cleaned up
+first -- was imprecise and has been superseded by a more exact diagnosis found during the 2026-08-12
+live re-run. The actual mechanism is a trigger (`audit_user_roles_changes`) inserting a *new*
+`audit_logs` row during the delete's own cascade, not old rows blocking anything; this also means
+the recommended fix below ("delete all six resource tables before organizations") is broader than
+necessary -- deleting `user_roles` alone, first, is sufficient. See
+`docs/readiness/TWO_TENANT_ISOLATION_HARNESS_EXECUTION_2026_08_12.md` for the corrected root cause,
+exact file/line citations, and the verified-working fix. This section is left as originally written
+below for the historical record, not rewritten.
+
 ## Need For This Test
 
 `scripts/verify-two-tenant-isolation.mjs` was written in Sprint 5 (2026-07-22) but had never been
