@@ -85,9 +85,9 @@ Live-measured this session (not a PostHog figure, a direct reproduction): a real
 
 ### 1.3b Web Vitals, P99, full path breakdown (live browser session, 2026-08-13)
 
-Source: pulled directly by this Claude Code session against the authenticated PostHog UI, at the specific URL the founder shared (`/project/498426/web/web-vitals?date_from=2026-07-08T00:00:00&...&percentile=p99&domain=https://landing.triaxisventures.com&filter_test_accounts=true`). Window **2026-07-08 to now (~5-6 weeks)** -- the widest window pulled for this domain so far, and the first at the **P99** percentile specifically (the worst 1% of loads, not median/typical experience -- read accordingly, this is a tail-latency view, not "what most visitors experience"). "Filter test accounts" ON.
+Source: pulled directly by this Claude Code session against the authenticated PostHog UI, at the specific URL the founder shared (`/project/498426/web/web-vitals?date_from=2026-07-08T00:00:00&...&percentile=p99&domain=https://landing.triaxisventures.com&filter_test_accounts=true`). Window **2026-07-27 to now (~17 days)** -- landing.triaxisventures.com's real PostHog wiring start date (per this document's own domain table above), not the 2026-07-08 date literally present in the shared URL, which predates any real instrumentation on this domain and was corrected after the founder flagged it -- the widest window pulled for this domain so far, and the first at the **P99** percentile specifically (the worst 1% of loads, not median/typical experience -- read accordingly, this is a tail-latency view, not "what most visitors experience"). "Filter test accounts" ON.
 
-**Top-line tiles (caveat: PostHog labels these "from the last day in the selected time range," i.e. a single recent day's P99, not the full ~5-6 week window):** INP 48ms (Great), LCP 4.61s (Poor), FCP 1.17s (Good), CLS 0.00 (Good).
+**Top-line tiles (caveat: PostHog labels these "from the last day in the selected time range," i.e. a single recent day's P99, not the full ~17-day window):** INP 48ms (Great), LCP 4.61s (Poor), FCP 1.17s (Good), CLS 0.00 (Good).
 
 **LCP path breakdown, full window, P99 (this is the systematic, multi-week view -- not a single-day snapshot):**
 
@@ -108,7 +108,7 @@ Source: pulled directly by this Claude Code session against the authenticated Po
 | Poor | `/integrations` | 27.14s |
 | Poor | `/dashboard` | **43.25s** |
 
-**Reading this against A-105:** this is a materially richer data set than the single 18.54s figure A-105 was built on (a 7-day snapshot, one number). At P99 over ~5-6 weeks, `/dashboard` -- the same route A-105's redirect-chain root-cause theory (`/` -> `/dashboard` -> `/auth?next=...`) already names as the likely dominant contributor -- shows a **43.25s** tail-latency LCP, over 2x the original 18.54s figure. This is consistent with, not contradictory to, A-105's redirect-chain theory: it confirms `/dashboard` specifically as the worst offender, not a general site-wide problem. But it also shows the poor-LCP pattern is not confined to `/dashboard` alone -- `/integrations` (27.14s), `/settings` (23.84s), and `/knowledge` (19.93s) all show severe P99 tail latency too, none of which the redirect-chain theory (specific to the `/` entry point) explains on its own. **This P99 breakdown does not identify a new root cause** -- it confirms the LCP problem is real, worse at the tail than the original snapshot suggested, and spans more authenticated routes than previously evidenced, without resolving which of them share the redirect-chain's cause versus have their own separate one.
+**Reading this against A-105:** this is a materially richer data set than the single 18.54s figure A-105 was built on (a 7-day snapshot, one number). At P99 over ~17 days, `/dashboard` -- the same route A-105's redirect-chain root-cause theory (`/` -> `/dashboard` -> `/auth?next=...`) already names as the likely dominant contributor -- shows a **43.25s** tail-latency LCP, over 2x the original 18.54s figure. This is consistent with, not contradictory to, A-105's redirect-chain theory: it confirms `/dashboard` specifically as the worst offender, not a general site-wide problem. But it also shows the poor-LCP pattern is not confined to `/dashboard` alone -- `/integrations` (27.14s), `/settings` (23.84s), and `/knowledge` (19.93s) all show severe P99 tail latency too, none of which the redirect-chain theory (specific to the `/` entry point) explains on its own. **This P99 breakdown does not identify a new root cause** -- it confirms the LCP problem is real, worse at the tail than the original snapshot suggested, and spans more authenticated routes than previously evidenced, without resolving which of them share the redirect-chain's cause versus have their own separate one.
 
 **FCP path breakdown, same pull, P99 (checked because the founder asked specifically):**
 
@@ -155,6 +155,30 @@ Source: pulled directly by this Claude Code session against the authenticated Po
 | Poor (>500ms) | `/auth/sign-up` | 1.10s |
 
 This is genuinely Good across nearly every path, including the exact ones that are worst on LCP -- `/dashboard` (136ms INP vs. 43.25s LCP), `/settings` (70ms vs. 23.84s), `/integrations` (54ms vs. 27.14s), `/knowledge` (132ms vs. 19.93s). **This sharpens, not just adds to, the diagnostic picture:** INP measures how responsive the page is to user interaction, which requires the main JS thread not to be blocked. If it were heavy client-side JS execution blocking the thread, INP would degrade on these same pages -- it doesn't. Combined with the FCP/LCP contrast above, the shape across all three metrics on `/dashboard`/`/settings`/`/integrations`/`/knowledge` is consistent with a slow data fetch or large asset load delaying the main content specifically, while the page shell renders fast and stays interactive throughout. Still not a confirmed root cause -- no server-side timing or network-waterfall data has been pulled to verify this -- but it is a real, three-metric-consistent pattern, not a guess from one number.
+
+### 1.3c P75 vs. P99 comparison, both domains (live browser session, 2026-08-13)
+
+Checked directly, both domains, after the founder asked whether P99 could actually read as *better* than P75 on some pages -- it does not, on either domain. P99 is the worst-case tail and P75 the more typical outcome, so P99 >= P75 is the mathematically expected relationship; no reversal was found anywhere this session, on either metric, on either domain.
+
+**`landing.triaxisventures.com`, `/dashboard` LCP (window 2026-07-27 to now, ~17 days):**
+
+| Percentile | LCP |
+|---|---|
+| P75 | 10.87s |
+| P99 | 43.25s (§1.3b above) |
+
+Full P75 breakdown: Good -- `/auth/sign-up` 820ms, `/ai-workspace/review-inbox` 1.00s, `/onboarding/complete` 1.23s, `/auth/forgot-password` 1.51s, `/auth/login` 1.65s, `/onboarding/join-organization` 1.79s. Needs improvement -- `/onboarding` 3.00s, `/auth` 3.15s. Poor -- `/knowledge` 5.64s, `/tasks` 5.85s, `/ai-workspace` 6.59s, `/integrations` 6.98s, `/settings` 7.08s, `/dashboard` 10.87s.
+
+**`investor.triaxisventures.com`, `/dashboard` LCP (window 2026-08-08 to now, ~5-6 days):**
+
+| Percentile | LCP |
+|---|---|
+| P75 | 3.60s |
+| P99 | 6.37s |
+
+Full P75 breakdown: Good -- `/projects` 48ms, `/ai-workspace` 677ms, `/meetings` 1.10s, `/ai-workspace/review-inbox` 1.54s, `/documents` 2.43s. Needs improvement -- `/dashboard` 3.60s. Nothing in the Poor bucket at P75 on this domain (unlike P99, where `/dashboard` alone is Poor at 6.37s).
+
+**Same check on FCP, `investor.triaxisventures.com` top-line (last day):** P75 1.92s (Needs improvement) vs. P99 4.73s (Poor) -- also worse at P99, confirming the pattern holds across metrics, not just LCP.
 
 ### 1.4 Error Tracking (A-106)
 
@@ -297,9 +321,9 @@ Source: 5 founder-shared screenshots of the authenticated PostHog Web Analytics 
 - **Caveat that still applies regardless:** PostHog's `distinct_id` is a per-browser-profile identifier, not per-person -- an incognito window or a second browser from the same physical visitor still mints a new "unique visitor." This mechanic is domain-agnostic and applies here exactly as it does to `landing`'s count; it is just not compounded by the shared-Auth-credential question on this domain.
 - **Still a single day's data as of the last pull** -- not yet a trend. Re-pull after a longer window before treating this domain's numbers as a stable baseline.
 
-### 2.4 Full-domain pull, live browser session (2026-08-13) -- first multi-week window for this domain
+### 2.4 Full-domain pull, live browser session (2026-08-13) -- first multi-day window for this domain
 
-Source: same live-pull method as §1.8, filtered to `https://investor.triaxisventures.com`, window **2026-07-27 to now (~17 days)**, "Filter test accounts" **ON**. Supersedes §2.2/§2.2b's ~24-36h snapshots with the first multi-week window this domain has had -- the "still a single day's data" caveat immediately above no longer applies.
+Source: same live-pull method as §1.8, filtered to `https://investor.triaxisventures.com`, window **2026-08-08 to now (~5-6 days)** -- this domain's real PostHog wiring start date (per the A-108 fix, this document's own domain table above), **not** 2026-07-27, which is `landing`'s wiring date, mistakenly applied here in an earlier pass of this pull and corrected after the founder flagged it. Confirmed empirically, not just by the documented date: re-pulling with the corrected start date returns figures numerically identical to the incorrect wider window, meaning zero real traffic existed on this domain before 2026-08-08 anyway. "Filter test accounts" **ON**. Supersedes §2.2/§2.2b's ~24-36h snapshots with the first multi-day window this domain has had -- the "still a single day's data" caveat immediately above no longer applies, though "multi-week" was an overstatement even before the correction; it's multi-day.
 
 | Metric | Value |
 |---|---|
