@@ -23,19 +23,19 @@ Founder shared a PostHog URL and logged in inside this Claude Code session's bro
 - No application code, migration, or config file was touched -- this is a pure evidence/documentation session.
 - A-105's **status** field is unchanged (`No` -- the redirect-chain theory remains the primary root-cause candidate). The new P99/P75 data was added as supporting evidence, not used to flip the row's disposition.
 - No new actionable (A-### row) was created for the LCP findings; everything landed as an update to the existing A-105 row.
-- The Vercel/Supabase capacity hypothesis was **not** promoted to a confirmed finding -- it stays explicitly founder-stated/unverified, per the verification gap below.
+- The Vercel/Supabase capacity hypothesis was **not** promoted to a confirmed root cause -- it remains a plausible, complementary theory to the redirect-chain theory, not a replacement for it. (Its Supabase-tier premise is now founder-confirmed, per "What was verified" below -- but confirming the premise is not the same as confirming it explains the LCP regression.)
 
 ## What was verified
 
 - **Installation Health, live pull:** 6 of 6 checks passed (`/project/498426/web/health`) -- event tracking 3/3, configuration 2/2 (Authorized URLs, reverse proxy), performance 1/1 (`$web_vitals` confirmed tracked). Rules out instrumentation misconfiguration as an explanation for the Poor LCP readings.
 - **Vercel Hobby tier:** independently confirmed against existing repo evidence (`VERCEL_PLATFORM_METRICS_SNAPSHOT_2026_07_29.md`, screenshot-based, predates this session) -- not founder-stated-only.
+- **Supabase plan tier:** founder-confirmed 2026-08-13 -- **Free tier.** Resolves the one open item this closeout originally flagged (a Supabase Dashboard billing-page check). Both halves of the A-105 capacity hypothesis (Vercel Hobby + Supabase Free) are now confirmed as real; the hypothesis itself -- that this capacity level is contributing to the LCP regression -- remains unconfirmed, since confirming the infra tier is not the same as confirming it's the cause.
 - **P75 vs. P99, no reversal:** checked directly by pulling both percentiles on both domains rather than accepting the founder's initial framing. Confirmed P99 >= P75 everywhere checked (`landing` `/dashboard`: 10.87s P75 vs 43.25s P99; `investor` `/dashboard`: 3.60s P75 vs 6.37s P99; `investor` FCP: 1.92s P75 vs 4.73s P99) -- the mathematically expected direction, no anomaly found.
 - **Window-label errors, self-caught after founder correction:** the founder pointed out the shared URL's literal `date_from=2026-07-08` predates real PostHog instrumentation on both domains ("Landing is July 27 onwards, investor is 8 Aug onwards... July 8 is irrelevant date"). Checked and confirmed two separate mislabeling errors in already-committed text (§1.3b said "~5-6 weeks," §2.4 had wrongly applied `landing`'s 2026-07-27 date to the `investor` entry instead of `investor`'s real 2026-08-08 start). Both fixed in commit `9119a0a`. **Verified empirically, not just by the documented wiring dates:** re-pulling each domain with its corrected start date returned figures numerically identical to the incorrect wider window, confirming zero real traffic existed on either domain before its actual wiring date -- the underlying numbers were never wrong, only the window labels describing them.
 - Every commit on this branch passed `node scripts/repo-bloat-guard.mjs` and `git diff --check` before being pushed (doc-only diffs, no code touched).
 
 ## What remains partial or blocked
 
-- **Supabase plan tier (free vs. paid) is not independently confirmed anywhere in this repo.** The capacity hypothesis added to A-105 is recorded as founder-stated only, explicitly flagged as needing a Supabase Dashboard billing-page check to move past that status.
 - **No root cause has been confirmed for the LCP regression.** The redirect-chain theory (A-105's existing primary candidate) and the Vercel/Supabase capacity theory (new this session) are both live, unconfirmed candidates -- this session's data narrows and enriches the picture (confirms `/dashboard` as the worst offender at a much higher tail value than previously known, shows the pattern spans four authenticated routes not one, rules out client-side JS blocking via the INP data) but does not isolate which candidate, or what combination, is the actual cause. No server-side timing or network-waterfall data has been pulled.
 - **No fix has been attempted or proposed this session.** This was an evidence-gathering pass only.
 
@@ -54,5 +54,5 @@ Founder shared a PostHog URL and logged in inside this Claude Code session's bro
 ## Follow-up
 
 1. Founder decision needed: merge PR #233 (or continue adding to it).
-2. Check Supabase Dashboard billing/plan page to resolve the free-vs-paid-tier question the A-105 hypothesis currently leaves open.
+2. ~~Check Supabase Dashboard billing/plan page~~ -- done, founder-confirmed Free tier, 2026-08-13.
 3. If pursuing the LCP root cause further: server-side timing or a network-waterfall capture (e.g. a Lighthouse/WebPageTest run against `/dashboard`) would be the next evidence tier beyond what PostHog's aggregate percentiles can show.
