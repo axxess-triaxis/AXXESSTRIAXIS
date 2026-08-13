@@ -8,6 +8,20 @@ evidence-completeness gap found along the way. **This is a classification pass. 
 or deleted this pass -- see `EVIDENCE_STORAGE_POLICY_2026_08_12.md` for the proposed policy and
 `CODEBASE_DEBLOAT_SPRINT2_CLOSEOUT_2026_08_12.md` for what remains a founder decision.**
 
+**Update (2026-08-12, Sprint 3): resolved.** The founder provided all 4 LOI/engagement-letter
+documents this audit found missing (`LOI 1 Imprints Production.pdf`, `LOI 2 Ekora.pdf`, `LOI 3 - 3
+customers (...).pdf` -- covering all 5 LOI customers -- plus the `Sakura signed engagement
+letter_signed.pdf`, provided in a follow-up to this same sprint). Read in full: the 3 LOIs are not
+PII-masked (personal phone numbers, personal emails, a signature, a business address are present);
+the Sakura letter contains no personal phone/email/address but does name a third party (a law-firm
+partner) by name and professional title in a signed agreement. Per explicit founder decision, all
+4 were treated consistently and never copied into this repository -- see
+`docs/readiness/EVIDENCE_INDEX_2026_08_12.md` for their indexed entries (external location
+pending). Separately, Sprint 3 also resolved this doc's open PII question on `AXXESS by Triaxis
+Beta User Product Feedback Survey.zip` (the file not labeled PII-masked, unlike its sibling) --
+direct inspection of 3 representative samples found zero identifying fields; the survey tool's own
+template never collected respondent identity. Full detail in the Evidence Index.
+
 ## Baseline (recomputed this session)
 
 ```
