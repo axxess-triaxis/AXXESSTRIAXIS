@@ -146,6 +146,26 @@ Source: 5 founder-shared screenshots of the authenticated PostHog Web Analytics 
 
 **Correction, same session:** an earlier draft of this entry characterized the quote above as the founder directing that A-105's "who is generating this traffic" question be closed out / deprioritized. Founder corrected this directly -- no such direction was given; that framing was this document's own overreach, not something said. The quote above is recorded as the founder's characterization of the data (skepticism that the non-Assam remainder is meaningful), nothing more -- it is neither a confirmed technical finding that this traffic is bot-driven, nor an instruction to stop investigating. A-105's traffic-composition question (§1.6) remains open exactly as recorded there.
 
+### 1.8 Full-domain pull, live browser session (2026-08-13)
+
+Source: pulled directly by this Claude Code session against the authenticated PostHog Web Analytics UI at `https://us.posthog.com/project/498426/web`, after the founder logged in within the session's browser pane. Filtered to `https://landing.triaxisventures.com`, window **2026-07-27 to now (~17 days)**, "Filter test accounts" toggle **ON** (this is the dedup the founder referred to when sharing the URL -- PostHog's own internal/test-account exclusion filter, not a manual dedup step performed separately). Different access method than every prior entry in this document (which were founder-shared screenshots) -- recorded as `(b)` per this document's own source-discipline categories, a live pull against the authenticated UI, not a screenshot.
+
+| Metric | Value |
+|---|---|
+| Visitors | 41 |
+| Page views | 551 |
+| Sessions | 106 |
+| Avg. session duration | 11m |
+| Bounce rate | 24% |
+
+**Top paths:** `/auth` 39 visitors/150 views (23.5% bounce), `/dashboard` 24/116 (8.3%), `/settings` 18/87, `/auth/login` 16/35, `/ai-workspace` 8/19, `/onboarding` 7/28, `/integrations` 6/18, `/tasks` 6/9, `/auth/sign-up` 5/10 (50.0% bounce), `/auth/forgot-password` 5/8 (66.7% bounce). Same `/auth`-heavy shape as every prior pull (§1.1, §1.2, §1.7) -- consistent across almost three weeks now, not a one-off artifact.
+
+**Channels:** Direct 32/470, Referral 13/76, Organic Social 2/5.
+
+**Devices:** Desktop 32/493, Mobile 11/58 -- same desktop-skewed pattern as §1.7, opposite of `investor`'s mobile/paid-social pattern (§2.4 below).
+
+**Reconciles cleanly against §1.1's 2026-08-09 snapshot** (39 visitors/548 views/104 sessions over the same start date, ~4 days earlier): +2 visitors, +3 views, +2 sessions in the intervening ~4 days -- small, steady, incremental growth, not a spike or a discontinuity.
+
 ---
 
 ## 2. `investor.triaxisventures.com`
@@ -204,6 +224,28 @@ Source: 5 founder-shared screenshots of the authenticated PostHog Web Analytics 
 - **Caveat that still applies regardless:** PostHog's `distinct_id` is a per-browser-profile identifier, not per-person -- an incognito window or a second browser from the same physical visitor still mints a new "unique visitor." This mechanic is domain-agnostic and applies here exactly as it does to `landing`'s count; it is just not compounded by the shared-Auth-credential question on this domain.
 - **Still a single day's data as of the last pull** -- not yet a trend. Re-pull after a longer window before treating this domain's numbers as a stable baseline.
 
+### 2.4 Full-domain pull, live browser session (2026-08-13) -- first multi-week window for this domain
+
+Source: same live-pull method as §1.8, filtered to `https://investor.triaxisventures.com`, window **2026-07-27 to now (~17 days)**, "Filter test accounts" **ON**. Supersedes §2.2/§2.2b's ~24-36h snapshots with the first multi-week window this domain has had -- the "still a single day's data" caveat immediately above no longer applies.
+
+| Metric | Value |
+|---|---|
+| Visitors | 592 |
+| Page views | 672 |
+| Sessions | 643 |
+| Avg. session duration | 25.9s |
+| Bounce rate | 45% |
+
+**Top paths:** `/dashboard` 592 visitors/650 views (44.9% bounce) -- overwhelmingly dominant, everything else in single digits: `/approvals` 3/3, `/ai-workspace` 2/3, `/documents` 2/3, `/stakeholders` 2/3, `/alerts` 1/2, `/tasks` 1/2, `/admin/audit-logs` 1/1, `/ai-workspace/review-inbox` 1/1, `/analytics` 1/1.
+
+**Channels:** Paid Social 567/625, Direct 11/30, Organic Social 10/13, Organic Search 4/4. Paid Social is 96% of visitors -- even more concentrated than §2.2b's 94% figure, consistent with the founder's own reading in §2.3 (this is the FB/Instagram Founders Club campaign converting to clicks, not a traffic-authenticity question).
+
+**Devices:** Mobile 580/660, Desktop 12/12 -- 98% mobile, same signature noted in §2.3.
+
+**Retention:** Mean 100% Week 0 / 0% Week 1 / 0% Week 2 across the full window -- consistent with §2.2's read that this is a single-touch demo/waitlist funnel, not a returning-user product, and (per §2.3) not a shortfall to read into.
+
+**Session duration dropped sharply** (25.9s here vs. no prior multi-week baseline to compare against) alongside a much larger sample -- consistent with the visitor mix shifting further toward brief, single-page paid-social click-throughs as the campaign scaled, not a product regression on this demo-only domain.
+
 ---
 
 ## 3. Cross-cutting notes (apply to both domains)
@@ -220,3 +262,4 @@ Source: 5 founder-shared screenshots of the authenticated PostHog Web Analytics 
 | `landing` OAuth exchange failure | `ACTIONABLES_READINESS_MATRIX.md` row A-107; `docs/readiness/A105_A106_A107_ROOT_CAUSE_ANALYSIS_2026_08_09.md` |
 | `investor` instrumentation fix + Web Analytics | `ACTIONABLES_READINESS_MATRIX.md` row A-108 |
 | Hydration-error code fix detail | `docs/readiness/A106_HYDRATION_FIX_CLOSEOUT_2026_08_09.md` |
+| 2026-08-13 live-pull, both domains, ~17-day window | This document, §1.8 and §2.4 -- first Claude Code session live pull against authenticated PostHog UI (all prior entries were founder-shared screenshots) |
