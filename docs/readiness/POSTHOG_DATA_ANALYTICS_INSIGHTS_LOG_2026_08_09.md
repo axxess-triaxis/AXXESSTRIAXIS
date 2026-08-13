@@ -83,6 +83,56 @@ Source: matrix A-105, PostHog Web Vitals tab, "Last 7 days" pulled 2026-08-08 (2
 
 Live-measured this session (not a PostHog figure, a direct reproduction): a real 2-hop redirect chain `/` -> `/dashboard` -> `/auth?next=...`, ~8x cold-vs-warm variance (~1.7s redirect + ~7.6s full load cold vs. ~0.25s + ~0.9s warm). Flagged as the likely dominant contributor to the 18.54s LCP figure, though the exact live LCP value itself was not captured (Paint Timing API returned empty in-session). Full detail: `docs/readiness/A105_A106_A107_ROOT_CAUSE_ANALYSIS_2026_08_09.md`.
 
+### 1.3b Web Vitals, P99, full path breakdown (live browser session, 2026-08-13)
+
+Source: pulled directly by this Claude Code session against the authenticated PostHog UI, at the specific URL the founder shared (`/project/498426/web/web-vitals?date_from=2026-07-08T00:00:00&...&percentile=p99&domain=https://landing.triaxisventures.com&filter_test_accounts=true`). Window **2026-07-08 to now (~5-6 weeks)** -- the widest window pulled for this domain so far, and the first at the **P99** percentile specifically (the worst 1% of loads, not median/typical experience -- read accordingly, this is a tail-latency view, not "what most visitors experience"). "Filter test accounts" ON.
+
+**Top-line tiles (caveat: PostHog labels these "from the last day in the selected time range," i.e. a single recent day's P99, not the full ~5-6 week window):** INP 48ms (Great), LCP 4.61s (Poor), FCP 1.17s (Good), CLS 0.00 (Good).
+
+**LCP path breakdown, full window, P99 (this is the systematic, multi-week view -- not a single-day snapshot):**
+
+| Bucket | Path | LCP (P99) |
+|---|---|---|
+| Good (<2.5s) | `/ai-workspace/review-inbox` | 1.22s |
+| Good | `/onboarding/complete` | 1.29s |
+| Good | `/onboarding/join-organization` | 1.79s |
+| Good | `/auth/login` | 1.83s |
+| Needs improvement (2.5-4s) | `/auth/sign-up` | 3.32s |
+| Poor (>4s) | `/auth/forgot-password` | 4.68s |
+| Poor | `/tasks` | 5.97s |
+| Poor | `/onboarding` | 7.45s |
+| Poor | `/auth` | 8.99s |
+| Poor | `/ai-workspace` | 9.86s |
+| Poor | `/knowledge` | 19.93s |
+| Poor | `/settings` | 23.84s |
+| Poor | `/integrations` | 27.14s |
+| Poor | `/dashboard` | **43.25s** |
+
+**Reading this against A-105:** this is a materially richer data set than the single 18.54s figure A-105 was built on (a 7-day snapshot, one number). At P99 over ~5-6 weeks, `/dashboard` -- the same route A-105's redirect-chain root-cause theory (`/` -> `/dashboard` -> `/auth?next=...`) already names as the likely dominant contributor -- shows a **43.25s** tail-latency LCP, over 2x the original 18.54s figure. This is consistent with, not contradictory to, A-105's redirect-chain theory: it confirms `/dashboard` specifically as the worst offender, not a general site-wide problem. But it also shows the poor-LCP pattern is not confined to `/dashboard` alone -- `/integrations` (27.14s), `/settings` (23.84s), and `/knowledge` (19.93s) all show severe P99 tail latency too, none of which the redirect-chain theory (specific to the `/` entry point) explains on its own. **This P99 breakdown does not identify a new root cause** -- it confirms the LCP problem is real, worse at the tail than the original snapshot suggested, and spans more authenticated routes than previously evidenced, without resolving which of them share the redirect-chain's cause versus have their own separate one.
+
+**FCP path breakdown, same pull, P99 (checked because the founder asked specifically):**
+
+| Bucket | Path | FCP (P99) |
+|---|---|---|
+| Good (<1.8s) | `/onboarding/join-organization` | 412ms |
+| Good | `/api/agents/mcp` | 456ms |
+| Good | `/settings` | 660ms |
+| Good | `/projects` | 768ms |
+| Good | `/tasks` | 850ms |
+| Good | `/ai-workspace/review-inbox` | 1.00s |
+| Good | `/onboarding/complete` | 1.02s |
+| Good | `/auth/sign-up` | 1.08s |
+| Good | `/ai-workspace` | 1.16s |
+| Good | `/onboarding` | 1.42s |
+| Good | `/approvals` | 1.48s |
+| Good | `/auth/forgot-password` | 1.51s |
+| Needs improvement (1.8-3s) | `/auth/login` | 2.22s |
+| Poor (>3s) | `/auth` | 3.26s |
+| Poor | `/dashboard` | 3.66s |
+| Poor | `/integrations` | 5.10s |
+
+**A real, notable contrast with the LCP table above, recorded as observed rather than diagnosed:** `/settings` is Good on FCP (660ms) but Poor on LCP (23.84s) -- the page's first paint happens fast, but its largest/main content takes over 30x longer to finish rendering. Same shape, smaller gap, on `/dashboard` (FCP 3.66s Poor vs. LCP 43.25s Poor -- both bad, but LCP is ~12x worse) and `/integrations` (FCP 5.10s Poor vs. LCP 27.14s Poor, ~5x worse). This pattern -- fast initial shell paint, much slower full-content paint -- is consistent with an async-loading large element (chart, data table, image) on these specific pages, but this document does not claim that as a confirmed cause; it is an observation from the shape of the two tables, not a root-cause finding.
+
 ### 1.4 Error Tracking (A-106)
 
 Source: matrix A-106, PostHog Error Tracking, "Last 7 days" pulled 2026-08-08.
