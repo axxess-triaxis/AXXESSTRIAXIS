@@ -133,6 +133,29 @@ Source: pulled directly by this Claude Code session against the authenticated Po
 
 **A real, notable contrast with the LCP table above, recorded as observed rather than diagnosed:** `/settings` is Good on FCP (660ms) but Poor on LCP (23.84s) -- the page's first paint happens fast, but its largest/main content takes over 30x longer to finish rendering. Same shape, smaller gap, on `/dashboard` (FCP 3.66s Poor vs. LCP 43.25s Poor -- both bad, but LCP is ~12x worse) and `/integrations` (FCP 5.10s Poor vs. LCP 27.14s Poor, ~5x worse). This pattern -- fast initial shell paint, much slower full-content paint -- is consistent with an async-loading large element (chart, data table, image) on these specific pages, but this document does not claim that as a confirmed cause; it is an observation from the shape of the two tables, not a root-cause finding.
 
+**INP path breakdown, same pull, P99 (checked because the founder specifically noted the top-line 44ms is Great):**
+
+| Bucket | Path | INP (P99) |
+|---|---|---|
+| Good (<200ms) | `/admin/audit-logs` | 40ms |
+| Good | `/ai-workspace/review-inbox` | 40ms |
+| Good | `/alerts` | 40ms |
+| Good | `/integrations` | 54ms |
+| Good | `/onboarding` | 68ms |
+| Good | `/settings` | 70ms |
+| Good | `/auth/forgot-password` | 80ms |
+| Good | `/auth` | 84ms |
+| Good | `/ai-workspace` | 106ms |
+| Good | `/knowledge` | 132ms |
+| Good | `/auth/login` | 136ms |
+| Good | `/dashboard` | 136ms |
+| Good | `/documents` | 136ms |
+| Good | `/onboarding/complete` | 168ms |
+| Needs improvement (200-500ms) | `/onboarding/sector` | 344ms |
+| Poor (>500ms) | `/auth/sign-up` | 1.10s |
+
+This is genuinely Good across nearly every path, including the exact ones that are worst on LCP -- `/dashboard` (136ms INP vs. 43.25s LCP), `/settings` (70ms vs. 23.84s), `/integrations` (54ms vs. 27.14s), `/knowledge` (132ms vs. 19.93s). **This sharpens, not just adds to, the diagnostic picture:** INP measures how responsive the page is to user interaction, which requires the main JS thread not to be blocked. If it were heavy client-side JS execution blocking the thread, INP would degrade on these same pages -- it doesn't. Combined with the FCP/LCP contrast above, the shape across all three metrics on `/dashboard`/`/settings`/`/integrations`/`/knowledge` is consistent with a slow data fetch or large asset load delaying the main content specifically, while the page shell renders fast and stays interactive throughout. Still not a confirmed root cause -- no server-side timing or network-waterfall data has been pulled to verify this -- but it is a real, three-metric-consistent pattern, not a guess from one number.
+
 ### 1.4 Error Tracking (A-106)
 
 Source: matrix A-106, PostHog Error Tracking, "Last 7 days" pulled 2026-08-08.
