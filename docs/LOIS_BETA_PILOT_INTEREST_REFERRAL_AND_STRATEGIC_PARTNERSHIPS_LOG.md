@@ -178,7 +178,13 @@ here since no pilot has started)
 discipline -- praise and criticism both, not selectively quoted; PDF source document could not be
 independently text-extracted in this session (image-only PDF, no OCR/rendering tooling available in
 this environment) -- the founder pasted the email's full text directly, superseding the extraction
-gap):**
+gap. **Confirmed, 2026-08-12:** the actual source PDF (`Ekora Pilot Customer 2 Testimonial & Payment
+Commitment.pdf`) was subsequently supplied and is now readable -- its content matches the
+2026-08-08 pasted text word-for-word, including the closing advance-payment offer already recorded
+below. Within this entry specifically, this is the same single commitment reference already logged,
+not a second Ekora-specific one. **Across the pilot customer base, this program now has 2 total
+payment commitments on record** -- this one (Ekora Hive) and Imprints Production's, entry #2 above
+(upgraded 2026-08-12 from oral to written). Neither has been collected yet.):**
 
 > Dear Sudipta and Ritashree,
 >
