@@ -33,11 +33,12 @@ than treated as verified. Applied below to entries where a pilot has not yet sta
 | # | Organization | Type | Sector | Proprietor | Status | Source File |
 |---|---|---|---|---|---|---|
 | 1 | Sakura Law Chambers | Signed engagement letter (referral/strategic collaboration) | -- | Shradhanjali Sarma | Signed, active | `Sakura signed engagement letter_signed.pdf` |
-| 2 | Imprints Production -- Pilot 1 | LOI / beta interest email | Startup | Mr. Prajnyan Ballav Goswami | **Onboarded (founder-confirmed); $20-30 advance offered orally, not yet collected pending IDFC First Bank current account** | `LOI 1 Imprints Production.pdf` |
+| 2 | Imprints Production -- Pilot 1 | LOI / beta interest email | Startup | Mr. Prajnyan Ballav Goswami | **Onboarded; $20-30 advance now committed in writing (2026-08-12), not yet collected -- pending Triaxis's own IDFC First Bank current account + GST setup** | `LOI 1 Imprints Production.pdf`, `Imprints Commitment to Pay.pdf` |
 | 3 | Ekora Hive -- Pilot 2 | LOI / beta interest email | Startup | Mrs. Diksha Rajkhowa | **Onboarded (live-verified); $20-30 advance offered orally, not yet collected pending IDFC First Bank current account** | `LOI 2 Ekora.pdf` |
 | 4 | Mahanta & Sons Filling Station | LOI / beta interest letter | -- | Pollob Mahanta | LOI received | `LOI 3 - 3 customers (...).pdf` |
 | 5 | Trimurti Blocks & Pavers | LOI / beta interest letter | -- | Pollob Mahanta | LOI received | `LOI 3 - 3 customers (...).pdf` |
 | 6 | P. D. Wine Shop | LOI / beta interest letter | -- | Pollob Mahanta | LOI received | `LOI 3 - 3 customers (...).pdf` |
+| 7 | Elevate Group FZE (Elevate Wealth X) | Expression of interest / beta interest email | Financial services | Satabdi Parashar | Expression of interest received | `Elevate Wealth X LOI.pdf` |
 
 ---
 
@@ -87,6 +88,16 @@ Triaxis Ventures' current/business account is still in processing with IDFC Firs
 founder is deliberately not accepting the advance into a founder/co-founder personal account, to
 avoid a compliance mistake. No advance has actually been received; this is an oral commitment
 only, not a payment or a written agreement.
+**Update, 2026-08-12 -- first written evidence of this commitment, upgraded from oral-only:** email
+from [PILOT_CONTACT_EMAIL_MASKED_IMPRINTS] to [FOUNDER_EMAIL_MASKED], subject "Reg: Axxess," 11:42 PM,
+quoted in full: **"As discussed on call, we are willing to pay a token advance once your current
+account and GST are setup."** Signed Prajnyan Goswami, Imprints Production. **The blocker named in
+this email is on Triaxis's own side, not the customer's** -- Imprints Production is not asking for
+anything further; the advance is contingent on Triaxis completing its own current-account and GST
+setup, which per the entry above was still in processing with IDFC First Bank as of 2026-07-29 and
+is not independently confirmed as resolved by this update. Still no payment received and still no
+signed agreement -- this is a real, written, dated commitment, but the collection precondition
+remains on Triaxis, not Imprints Production.
 **Scope:** Group of companies (exact number/names of entities not stated in source document)
 **Pilot start date:** 2026-07-29 (onboarding attempt observed same day)
 **Tenant provisioned:** **Yes -- Founder-stated, source artifact needed.** The onboarding wizard
@@ -302,6 +313,46 @@ declares full workflow experienced (via survey form); tenant completes Pilot Exp
 expected ~7-14 days after pilot start (standard definition, see note above; not yet applicable
 here since no pilot has started)
 **Next meeting:** Not stated in source document
+
+---
+
+## 7. Elevate Group FZE (Elevate Wealth X)
+
+**Contact:** Satabdi Parashar, Founder & Managing Partner. **Founder-stated (2026-08-12), not from
+the source email itself:** Satabdi Parashar is the life partner and co-director of Anshuman Kashyap,
+who is separately logged as an angel-investor pitch contact for the same company in
+`docs/readiness/PITCH_AND_TRACTION_LOG_2026_07_24.md` entry #17 ("Founder of Elevate Wealth X, Dubai
+resident"). No discrepancy between the two names -- both are real, current co-directors of the same
+entity, per the founder.
+**Location:** Not stated in the source email (entry #17's own context: Dubai resident/UAE --
+"FZE" itself signals a UAE free-zone entity).
+**Status:** Expression of interest received (email dated 2026-08-12, 11:38 PM, from
+[ELEVATE_CONTACT_EMAIL_MASKED] to [FOUNDER_EMAIL_MASKED], subject "Expression of Interest in AXXESS
+TRIaxis").
+**Beta access requested:** Yes -- explicitly states "we would also be interested in registering on
+the platform and participating in the beta phase, so that we can evaluate the platform's services,
+features, and overall workflow."
+**Commercial intent:** Yes, post-commercial-launch, subject to pricing/terms -- quoted: "we believe
+AXXESS TRIaxis could be highly relevant to our business. We would be interested in exploring
+implementation within Elevate Group FZE once the product is commercially launched and market-ready,"
+and "we understand that the final pricing, commercial terms, scope of services, and other conditions
+can be discussed and mutually agreed upon closer to the commercial launch." Same deferred-pricing
+structure already established with entries #2-6.
+**Scope:** Elevate Group FZE (entity implementing, per the letter) -- website `elevatewealthx.com`.
+**Pilot start date:** Not stated in source document.
+**Tenant provisioned:** No.
+**Users invited:** No.
+**Primary workflows:** Not stated in source document.
+**Success criteria:** Founder-stated, source artifact needed -- same standard definition as other
+entries in this log (tenant provisioned; full workflow declared via survey; Pilot Experience Survey
+~7-14 days after start), not yet applicable since no pilot has started.
+**Next meeting:** Not stated in source document.
+**Cross-reference:** relates to, but is distinct from, the angel-investor relationship with Anshuman
+Kashyap already tracked in `docs/readiness/PITCH_AND_TRACTION_LOG_2026_07_24.md` entry #17 -- that
+entry covers Kashyap being pitched as a potential angel investor; this entry covers Elevate Group
+FZE's own interest in becoming a product customer/beta participant, initiated by his co-director.
+Both relationships involve the same company; neither should be read as evidence for the other
+(a customer expression of interest is not investment traction, and vice versa).
 
 ---
 
