@@ -40,6 +40,33 @@ This document's GTM Readiness row and Suggested External Wording (below) were wr
 
 **Explicit GTM gap, not filled in here:** the roadmap's own Section 5 pricing cohort table (first 300 self-serve signups get 1 year free, then graduated discounting) and the Rs. 5,000/year figure discussed directly with Pilot User 1 (`PITCH_AND_TRACTION_LOG_2026_07_24.md` entry 29 context, `LOIS_...` entry 2) describe intent, not a built or launched self-serve GTM funnel. `docs/readiness/CUSTOMER_ACQUISITION_FUNNEL_2026_07_24.md` remains the design doc for the general acquisition funnel (Website -> Demo -> Beta Sign Up) and the Founders Club waitlist -- neither currently distinguishes an X0-bound visitor from an X Lite-bound one. Building that distinction (separate landing messaging, separate signup path, separate pricing display per motion) is the concrete next GTM-side actionable this update surfaces, not something this document builds itself.
 
+## Update, 2026-08-13: Revised LOI/pilot counts, waitlist and beta-survey figures (enterprise/GCC motion)
+
+This document's Executive Summary and Market Readiness row (both dated 2026-07-31, below and unchanged in place) described **5 signed LOIs, 4 oral paying-interest indications, 2 incoming LOIs, 2 ongoing pilots, 3 incoming pilots, 1 referral agreement**. Founder-stated figures given this session (2026-08-13) are **6 signed LOIs, 1 committed LOI, 2 pilots ongoing, 3 upcoming**. Checked directly against the current `docs/LOIS_BETA_PILOT_INTEREST_REFERRAL_AND_STRATEGIC_PARTNERSHIPS_LOG.md` Summary Table (7 entries) rather than accepted at face value:
+
+| Founder figure | Reconciles to |
+|---|---|
+| 6 signed LOIs | Sakura Law Chambers (signed engagement letter, entry 1), Imprints Production (signed LOI, entry 2), Ekora Hive (signed LOI, entry 3), Mahanta & Sons Filling Station / Trimurti Blocks & Pavers / P. D. Wine Shop (signed LOI letters, entries 4-6, all three under Pollob Mahanta). The prior "2 incoming LOIs" (07-31) are now both received -- this is where that delta went. |
+| 1 committed LOI | Elevate Group FZE / Elevate Wealth X (entry 7, Satabdi Parashar) -- an expression-of-interest email, not yet a signed LOI document, hence "committed" rather than "signed." |
+| 2 pilots ongoing | Imprints Production and Ekora Hive -- both already onboarded/provisioned tenants (entries 2-3). Unchanged from the 07-31 figure. |
+| 3 upcoming | The three Mahanta-group firms (entries 4-6) -- LOI received, pilot not yet started for any of the three as distinct engagements. Unchanged from the 07-31 "3 incoming pilots" figure. |
+
+This reconciliation is clean -- every founder-stated figure maps to a specific, already-logged entry, with no unexplained gap in either direction. The "4 oral paying-interest indications" and "1 referral agreement" lines from the 07-31 baseline are not restated here because they were not part of this session's founder-stated figures, not because they are believed stale; they remain as last recorded.
+
+**Additional figures given this session, checked against existing repo evidence rather than logged as new:**
+
+- **"30+ beta waitlist"** (founder-stated, 2026-08-13, no new artifact this session) -- the last independently verified figure is **27 total signups, 80 page views, 33.8% conversion, screenshot-verified as of EOD 2026-08-05** (this document's own GTM Readiness (India self-serve motion) row, and `CUSTOMER_ACQUISITION_FUNNEL_2026_07_24.md`). "30+" is plausible organic growth in the 8 days since, but is **founder-stated, source artifact needed** -- not re-verified via a fresh screenshot or admin-panel check this session.
+- **"9 pilot interest from beta survey"** -- this one is already repo-verified, not merely founder-stated: `ENTERPRISE_BETA_FEEDBACK_SECTOR_PILOT_MAPPING_2026_07_28.md` documents "9 of 10 raw responses gave immediate, near-term or conditional pilot interest" at response-level detail. Matches exactly; no correction needed.
+- **"2 pilot testimonials"** driving product iteration -- Imprints Production and Ekora Hive (`LOIS_...LOG.md` entries 2-3) are the program's only two onboarded pilots and the only two with logged feedback/testimonial content in that log. The founder's framing that iteration has followed from these two specifically is consistent with what's on record there (e.g. Pilot User 1's "simplify this 70-80%" feedback already cited above as the direct source signal for the X Lite build); this update does not additionally verify a fix-by-fix trace from testimonial to shipped change beyond what is already cross-referenced in this document's 2026-08-05 update above.
+
+**Founder's own framing:** "That's significant interest for a 4 month old startup making Enterprise SaaS." This was flagged as a discrepancy against Q-002's 39-43-day repo-age finding pending clarification; the founder subsequently resolved it (2026-08-13) with the company's actual timeline, which explains the gap rather than contradicting either figure:
+
+- **End-February 2026:** idea conceptualized.
+- **2026-03-15:** Triaxis Ventures Private Limited incorporated.
+- **March-June 2026:** pre-build phase -- a large volume of calls, meetings, networking, and pitching to bureaucrats, politicians, CXOs, startup-ecosystem enablers, incubators, and venture builders; entries into multiple pitch competitions; grant applications (this is the same activity this document's sibling `PITCH_AND_TRACTION_LOG_2026_07_24.md` records in detail). Three conclusions came out of this phase: (1) the underlying idea was strong; (2) outsourcing development of a proprietary product this complex to an agency or venture builder wasn't viable -- their template was Salesforce/Zoho-style CRM tooling, and AXXESS is deliberately not another CRM; (3) the founder decided instead to learn AI-native coding/tooling/automation and build the product in-house.
+- **End-June 2026:** that build-it-in-house decision was finalized.
+- **Early July 2026:** actual coding began -- this is the point Q-002's 39-43-day repo-age measurement is dating from, not the company's founding. **Two different clocks, not a contradiction:** company age (~5 months, from incorporation) and codebase age (~5-6 weeks, from when coding started) are both accurate simultaneously, each answering a different question. "4 month old startup" is the company-age framing and is roughly right (4 months 29 days from incorporation to this session's date); Q-002's 39-43 days is the codebase-age framing and is also right. Neither figure should be read as correcting the other going forward.
+
 ## Readiness Board
 
 | Track | Current Readiness | Status | Evidence Basis | Main Blocker |

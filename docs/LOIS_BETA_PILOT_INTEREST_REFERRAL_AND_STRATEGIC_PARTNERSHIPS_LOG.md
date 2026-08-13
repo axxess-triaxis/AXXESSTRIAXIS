@@ -33,11 +33,12 @@ than treated as verified. Applied below to entries where a pilot has not yet sta
 | # | Organization | Type | Sector | Proprietor | Status | Source File |
 |---|---|---|---|---|---|---|
 | 1 | Sakura Law Chambers | Signed engagement letter (referral/strategic collaboration) | -- | Shradhanjali Sarma | Signed, active | `Sakura signed engagement letter_signed.pdf` |
-| 2 | Imprints Production -- Pilot 1 | LOI / beta interest email | Startup | Mr. Prajnyan Ballav Goswami | **Onboarded (founder-confirmed); $20-30 advance offered orally, not yet collected pending IDFC First Bank current account** | `LOI 1 Imprints Production.pdf` |
-| 3 | Ekora Hive -- Pilot 2 | LOI / beta interest email | Startup | Mrs. Diksha Rajkhowa | **Onboarded (live-verified); $20-30 advance offered orally, not yet collected pending IDFC First Bank current account** | `LOI 2 Ekora.pdf` |
+| 2 | Imprints Production -- Pilot 1 | LOI / beta interest email | Startup | Mr. Prajnyan Ballav Goswami | **Onboarded; $50 advance now committed in writing (2026-08-12), not yet collected -- pending Triaxis's own IDFC First Bank current account + GST setup** | `LOI 1 Imprints Production.pdf`, `Imprints Commitment to Pay.pdf` |
+| 3 | Ekora Hive -- Pilot 2 | LOI / beta interest email | Startup | Mrs. Diksha Rajkhowa | **Onboarded (live-verified); $50 advance offered orally, not yet collected pending IDFC First Bank current account** | `LOI 2 Ekora.pdf` |
 | 4 | Mahanta & Sons Filling Station | LOI / beta interest letter | -- | Pollob Mahanta | LOI received | `LOI 3 - 3 customers (...).pdf` |
 | 5 | Trimurti Blocks & Pavers | LOI / beta interest letter | -- | Pollob Mahanta | LOI received | `LOI 3 - 3 customers (...).pdf` |
 | 6 | P. D. Wine Shop | LOI / beta interest letter | -- | Pollob Mahanta | LOI received | `LOI 3 - 3 customers (...).pdf` |
+| 7 | Elevate Group FZE (Elevate Wealth X) | Expression of interest / beta interest email | Financial services | Satabdi Parashar | Expression of interest received | `Elevate Wealth X LOI.pdf` |
 
 ---
 
@@ -82,11 +83,23 @@ access" ahead of commercial launch
 "highly interested in implementing AXXESS across our group of companies as soon as it officially
 launches commercially" and are "happy to discuss the pricing, terms, and conditions once it is
 fully market-ready". **Founder-stated, source artifact needed (2026-07-29, oral commitment, not a
-signed document):** offered a $20-30 advance payment for AXXESS TRIaxis. Not yet collected --
+signed document):** offered a $50 advance payment for AXXESS TRIaxis (revised 2026-08-13 from an
+earlier founder-recalled $20-30 figure -- see "Aggregate Advance-Commitment Pipeline" note after
+entry #7 below). Not yet collected --
 Triaxis Ventures' current/business account is still in processing with IDFC First Bank, and the
 founder is deliberately not accepting the advance into a founder/co-founder personal account, to
 avoid a compliance mistake. No advance has actually been received; this is an oral commitment
 only, not a payment or a written agreement.
+**Update, 2026-08-12 -- first written evidence of this commitment, upgraded from oral-only:** email
+from [PILOT_CONTACT_EMAIL_MASKED_IMPRINTS] to [FOUNDER_EMAIL_MASKED], subject "Reg: Axxess," 11:42 PM,
+quoted in full: **"As discussed on call, we are willing to pay a token advance once your current
+account and GST are setup."** Signed Prajnyan Goswami, Imprints Production. **The blocker named in
+this email is on Triaxis's own side, not the customer's** -- Imprints Production is not asking for
+anything further; the advance is contingent on Triaxis completing its own current-account and GST
+setup, which per the entry above was still in processing with IDFC First Bank as of 2026-07-29 and
+is not independently confirmed as resolved by this update. Still no payment received and still no
+signed agreement -- this is a real, written, dated commitment, but the collection precondition
+remains on Triaxis, not Imprints Production.
 **Scope:** Group of companies (exact number/names of entities not stated in source document)
 **Pilot start date:** 2026-07-29 (onboarding attempt observed same day)
 **Tenant provisioned:** **Yes -- Founder-stated, source artifact needed.** The onboarding wizard
@@ -138,7 +151,8 @@ rollout" to "evaluate your workflows and services in advance"
 launched for commercial use" and are "perfectly comfortable deferring the finalization of pricing,
 licensing terms, and commercial conditions until the product is fully market-ready". **Founder-
 stated, source artifact needed (2026-07-29, oral commitment, not a signed document):** offered a
-$20-30 advance payment for AXXESS TRIaxis. Not yet collected -- Triaxis Ventures' current/business
+$50 advance payment for AXXESS TRIaxis (revised 2026-08-13 from an earlier founder-recalled $20-30
+figure -- see "Aggregate Advance-Commitment Pipeline" note after entry #7 below). Not yet collected -- Triaxis Ventures' current/business
 account is still in processing with IDFC First Bank, and the founder is deliberately not accepting
 the advance into a founder/co-founder personal account, to avoid a compliance mistake. No advance
 has actually been received; this is an oral commitment only, not a payment or a written agreement.
@@ -167,7 +181,13 @@ here since no pilot has started)
 discipline -- praise and criticism both, not selectively quoted; PDF source document could not be
 independently text-extracted in this session (image-only PDF, no OCR/rendering tooling available in
 this environment) -- the founder pasted the email's full text directly, superseding the extraction
-gap):**
+gap. **Confirmed, 2026-08-12:** the actual source PDF (`Ekora Pilot Customer 2 Testimonial & Payment
+Commitment.pdf`) was subsequently supplied and is now readable -- its content matches the
+2026-08-08 pasted text word-for-word, including the closing advance-payment offer already recorded
+below. Within this entry specifically, this is the same single commitment reference already logged,
+not a second Ekora-specific one. **Across the pilot customer base, this program now has 2 total
+payment commitments on record** -- this one (Ekora Hive) and Imprints Production's, entry #2 above
+(upgraded 2026-08-12 from oral to written). Neither has been collected yet.):**
 
 > Dear Sudipta and Ritashree,
 >
@@ -213,7 +233,7 @@ gap):**
 - Echoes the founder's own "brain of a company" / "full automated executive suite" framing back with a critique: integrations and agent-driven execution ("limbs and speech") lag behind the product vision ("brain") -- directly relevant to A-78's incomplete production certification and the broader Integration Maturity Tiers gaps already tracked across the matrix.
 - A platform/marketplace idea for long-term scale: a safe, user-driven app-installation model (named analogy: Windows/App Store/Play Store) rather than AXXESS building every integration itself.
 - Confirms the founder explicitly asked for critical feedback over positive feedback on a prior call, explaining the letter's blunt tone -- recorded as context, not as the letter being unusually harsh.
-- Reaffirms the standing oral $20-30 advance-payment offer already recorded above (still uncollected, pending the Triaxis Ventures IDFC First Bank current account) -- continuity, not new information.
+- Reaffirms the standing oral $50 advance-payment offer already recorded above (still uncollected, pending the Triaxis Ventures IDFC First Bank current account) -- continuity, not new information.
 
 **Founder's own synthesis of this feedback, 2026-08-08 (recorded verbatim as numbered by the founder,
 distinct from the AI-extracted key points above -- this is the founder's own strategic reading, not
@@ -284,7 +304,12 @@ of the three firms was not specified in this update -- flagged as an open detail
 the filling station by default just because it is listed first. **Oral commitment to an advance
 payment was also made, not yet collected or documented** -- same "founder-stated, source artifact
 needed" treatment already applied to Imprints Production's (Pilot 1, entry #2) advance-payment
-commitment above; no signed agreement, invoice, or payment record exists for this yet.
+commitment above; no signed agreement, invoice, or payment record exists for this yet. **Confirmed,
+2026-08-13:** the three Mahanta firms account for three of the "4 more oral commitments" the
+founder counted in the Aggregate Advance-Commitment Pipeline note after entry #7 below (Elevate
+Group FZE, entry #7, is the fourth) -- founder-stated basis: **oral, based on a long-standing
+relationship**, not a written or newly-formed one. No per-firm dollar breakdown was given; the
+$120-200 combined figure covers all four commitments together, not per firm.
 **Beta access requested:** Yes -- explicitly states "We are also looking to register on your
 platform and take a beta look at its services and workflow"
 **Commercial intent:** Yes, post-launch, subject to pricing/terms -- the letter states "We feel
@@ -302,6 +327,83 @@ declares full workflow experienced (via survey form); tenant completes Pilot Exp
 expected ~7-14 days after pilot start (standard definition, see note above; not yet applicable
 here since no pilot has started)
 **Next meeting:** Not stated in source document
+
+---
+
+## 7. Elevate Group FZE (Elevate Wealth X)
+
+**Contact:** Satabdi Parashar, Founder & Managing Partner. **Founder-stated (2026-08-12), not from
+the source email itself:** Satabdi Parashar is the life partner and co-director of Anshuman Kashyap,
+who is separately logged as an angel-investor pitch contact for the same company in
+`docs/readiness/PITCH_AND_TRACTION_LOG_2026_07_24.md` entry #17 ("Founder of Elevate Wealth X, Dubai
+resident"). No discrepancy between the two names -- both are real, current co-directors of the same
+entity, per the founder.
+**Location:** Not stated in the source email (entry #17's own context: Dubai resident/UAE --
+"FZE" itself signals a UAE free-zone entity).
+**Status:** Expression of interest received (email dated 2026-08-12, 11:38 PM, from
+[ELEVATE_CONTACT_EMAIL_MASKED] to [FOUNDER_EMAIL_MASKED], subject "Expression of Interest in AXXESS
+TRIaxis").
+**Beta access requested:** Yes -- explicitly states "we would also be interested in registering on
+the platform and participating in the beta phase, so that we can evaluate the platform's services,
+features, and overall workflow."
+**Commercial intent:** Yes, post-commercial-launch, subject to pricing/terms -- quoted: "we believe
+AXXESS TRIaxis could be highly relevant to our business. We would be interested in exploring
+implementation within Elevate Group FZE once the product is commercially launched and market-ready,"
+and "we understand that the final pricing, commercial terms, scope of services, and other conditions
+can be discussed and mutually agreed upon closer to the commercial launch." Same deferred-pricing
+structure already established with entries #2-6. **Founder-stated, source artifact needed
+(2026-08-13, oral commitment, not stated in the source email above):** an oral advance-payment
+commitment was also made, on the same basis as the Mahanta group's (entry #4-6) -- **oral, based
+on a long-standing relationship**. This is the fourth of the "4 more oral commitments" in the
+Aggregate Advance-Commitment Pipeline note after this entry; no per-entity dollar figure was given,
+and no signed agreement, invoice, or payment record exists for this yet.
+**Scope:** Elevate Group FZE (entity implementing, per the letter) -- website `elevatewealthx.com`.
+**Pilot start date:** Not stated in source document.
+**Tenant provisioned:** No.
+**Users invited:** No.
+**Primary workflows:** Not stated in source document.
+**Success criteria:** Founder-stated, source artifact needed -- same standard definition as other
+entries in this log (tenant provisioned; full workflow declared via survey; Pilot Experience Survey
+~7-14 days after start), not yet applicable since no pilot has started.
+**Next meeting:** Not stated in source document.
+**Cross-reference:** relates to, but is distinct from, the angel-investor relationship with Anshuman
+Kashyap already tracked in `docs/readiness/PITCH_AND_TRACTION_LOG_2026_07_24.md` entry #17 -- that
+entry covers Kashyap being pitched as a potential angel investor; this entry covers Elevate Group
+FZE's own interest in becoming a product customer/beta participant, initiated by his co-director.
+Both relationships involve the same company; neither should be read as evidence for the other
+(a customer expression of interest is not investment traction, and vice versa).
+
+---
+
+## Aggregate Advance-Commitment Pipeline (Founder-stated, 2026-08-13)
+
+The founder gave the following pricing and aggregate-commitment context this session, distinct
+from any single entry above and recorded here rather than folded silently into one of them:
+
+- **Minimum pricing tier: $50/year**, stated as affordable to hold given the program's low burn
+  rate.
+- **Imprints Production (entry #2): $50** oral/written advance commitment (revised 2026-08-13 from
+  an earlier founder-recalled $20-30 figure -- see entry #2 above; not a correction of any written
+  source document, both figures were always founder-recalled, not document-sourced).
+- **Ekora Hive (entry #3): $50** oral advance commitment (same revision, from entry #3 above).
+- **"4 more oral commitments"** (founder's own count, 2026-08-13): conservatively $120 combined
+  (~$30/customer), or up to $200 combined (~$50/customer) optimistically. **Confirmed, 2026-08-13:**
+  the three Mahanta-group firms (entry #4-6) and Elevate Group FZE (entry #7) -- three plus one.
+  **Founder-stated basis for all four: oral, based on long-standing relationships**, not written
+  documents and not newly-formed contacts. No per-entity dollar breakdown was given for these
+  four -- only the $120-200 combined figure. No signed agreement, invoice, or payment record exists
+  for any of the four.
+- **Founder's stated total: $220-300** ($50 + $50 + $120-200), explicitly framed as "basically 4-6
+  customers committing to paying [the $50/year] annual fee upfront; not simply for [the] sake of
+  it" -- i.e. the founder's point is that this is a materially meaningful advance-commitment
+  pipeline relative to the company's pricing floor, not a token/symbolic amount, even though every
+  figure in it remains oral, uncollected, and founder-recalled rather than document- or
+  ledger-sourced.
+
+**Full roster of the six commitments behind the $220-300 figure:** Imprints Production ($50,
+entry #2), Ekora Hive ($50, entry #3), Mahanta & Sons Filling Station / Trimurti Blocks & Pavers /
+P. D. Wine Shop (3 firms, combined within $120-200, entry #4-6), Elevate Group FZE (within
+$120-200, entry #7).
 
 ---
 
