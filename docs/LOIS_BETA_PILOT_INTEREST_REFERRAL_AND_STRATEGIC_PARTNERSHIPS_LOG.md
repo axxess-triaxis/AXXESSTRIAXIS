@@ -33,8 +33,8 @@ than treated as verified. Applied below to entries where a pilot has not yet sta
 | # | Organization | Type | Sector | Proprietor | Status | Source File |
 |---|---|---|---|---|---|---|
 | 1 | Sakura Law Chambers | Signed engagement letter (referral/strategic collaboration) | -- | Shradhanjali Sarma | Signed, active | `Sakura signed engagement letter_signed.pdf` |
-| 2 | Imprints Production -- Pilot 1 | LOI / beta interest email | Startup | Mr. Prajnyan Ballav Goswami | **Onboarded; $20-30 advance now committed in writing (2026-08-12), not yet collected -- pending Triaxis's own IDFC First Bank current account + GST setup** | `LOI 1 Imprints Production.pdf`, `Imprints Commitment to Pay.pdf` |
-| 3 | Ekora Hive -- Pilot 2 | LOI / beta interest email | Startup | Mrs. Diksha Rajkhowa | **Onboarded (live-verified); $20-30 advance offered orally, not yet collected pending IDFC First Bank current account** | `LOI 2 Ekora.pdf` |
+| 2 | Imprints Production -- Pilot 1 | LOI / beta interest email | Startup | Mr. Prajnyan Ballav Goswami | **Onboarded; $50 advance now committed in writing (2026-08-12), not yet collected -- pending Triaxis's own IDFC First Bank current account + GST setup** | `LOI 1 Imprints Production.pdf`, `Imprints Commitment to Pay.pdf` |
+| 3 | Ekora Hive -- Pilot 2 | LOI / beta interest email | Startup | Mrs. Diksha Rajkhowa | **Onboarded (live-verified); $50 advance offered orally, not yet collected pending IDFC First Bank current account** | `LOI 2 Ekora.pdf` |
 | 4 | Mahanta & Sons Filling Station | LOI / beta interest letter | -- | Pollob Mahanta | LOI received | `LOI 3 - 3 customers (...).pdf` |
 | 5 | Trimurti Blocks & Pavers | LOI / beta interest letter | -- | Pollob Mahanta | LOI received | `LOI 3 - 3 customers (...).pdf` |
 | 6 | P. D. Wine Shop | LOI / beta interest letter | -- | Pollob Mahanta | LOI received | `LOI 3 - 3 customers (...).pdf` |
@@ -83,7 +83,9 @@ access" ahead of commercial launch
 "highly interested in implementing AXXESS across our group of companies as soon as it officially
 launches commercially" and are "happy to discuss the pricing, terms, and conditions once it is
 fully market-ready". **Founder-stated, source artifact needed (2026-07-29, oral commitment, not a
-signed document):** offered a $20-30 advance payment for AXXESS TRIaxis. Not yet collected --
+signed document):** offered a $50 advance payment for AXXESS TRIaxis (revised 2026-08-13 from an
+earlier founder-recalled $20-30 figure -- see "Aggregate Advance-Commitment Pipeline" note after
+entry #7 below). Not yet collected --
 Triaxis Ventures' current/business account is still in processing with IDFC First Bank, and the
 founder is deliberately not accepting the advance into a founder/co-founder personal account, to
 avoid a compliance mistake. No advance has actually been received; this is an oral commitment
@@ -149,7 +151,8 @@ rollout" to "evaluate your workflows and services in advance"
 launched for commercial use" and are "perfectly comfortable deferring the finalization of pricing,
 licensing terms, and commercial conditions until the product is fully market-ready". **Founder-
 stated, source artifact needed (2026-07-29, oral commitment, not a signed document):** offered a
-$20-30 advance payment for AXXESS TRIaxis. Not yet collected -- Triaxis Ventures' current/business
+$50 advance payment for AXXESS TRIaxis (revised 2026-08-13 from an earlier founder-recalled $20-30
+figure -- see "Aggregate Advance-Commitment Pipeline" note after entry #7 below). Not yet collected -- Triaxis Ventures' current/business
 account is still in processing with IDFC First Bank, and the founder is deliberately not accepting
 the advance into a founder/co-founder personal account, to avoid a compliance mistake. No advance
 has actually been received; this is an oral commitment only, not a payment or a written agreement.
@@ -230,7 +233,7 @@ payment commitments on record** -- this one (Ekora Hive) and Imprints Production
 - Echoes the founder's own "brain of a company" / "full automated executive suite" framing back with a critique: integrations and agent-driven execution ("limbs and speech") lag behind the product vision ("brain") -- directly relevant to A-78's incomplete production certification and the broader Integration Maturity Tiers gaps already tracked across the matrix.
 - A platform/marketplace idea for long-term scale: a safe, user-driven app-installation model (named analogy: Windows/App Store/Play Store) rather than AXXESS building every integration itself.
 - Confirms the founder explicitly asked for critical feedback over positive feedback on a prior call, explaining the letter's blunt tone -- recorded as context, not as the letter being unusually harsh.
-- Reaffirms the standing oral $20-30 advance-payment offer already recorded above (still uncollected, pending the Triaxis Ventures IDFC First Bank current account) -- continuity, not new information.
+- Reaffirms the standing oral $50 advance-payment offer already recorded above (still uncollected, pending the Triaxis Ventures IDFC First Bank current account) -- continuity, not new information.
 
 **Founder's own synthesis of this feedback, 2026-08-08 (recorded verbatim as numbered by the founder,
 distinct from the AI-extracted key points above -- this is the founder's own strategic reading, not
@@ -359,6 +362,40 @@ entry covers Kashyap being pitched as a potential angel investor; this entry cov
 FZE's own interest in becoming a product customer/beta participant, initiated by his co-director.
 Both relationships involve the same company; neither should be read as evidence for the other
 (a customer expression of interest is not investment traction, and vice versa).
+
+---
+
+## Aggregate Advance-Commitment Pipeline (Founder-stated, 2026-08-13)
+
+The founder gave the following pricing and aggregate-commitment context this session, distinct
+from any single entry above and recorded here rather than folded silently into one of them:
+
+- **Minimum pricing tier: $50/year**, stated as affordable to hold given the program's low burn
+  rate.
+- **Imprints Production (entry #2): $50** oral/written advance commitment (revised 2026-08-13 from
+  an earlier founder-recalled $20-30 figure -- see entry #2 above; not a correction of any written
+  source document, both figures were always founder-recalled, not document-sourced).
+- **Ekora Hive (entry #3): $50** oral advance commitment (same revision, from entry #3 above).
+- **"4 more oral commitments"** (founder's own count, 2026-08-13): conservatively $120 combined
+  (~$30/customer), or up to $200 combined (~$50/customer) optimistically. **Founder-stated, source
+  artifact needed -- not yet itemized against specific log entries in this document.** The only
+  already-logged candidate is the Mahanta group's entry #4-6, which records "Oral commitment to an
+  advance payment was also made" at the group level, with no dollar figure and no confirmation of
+  whether that is one commitment across all three firms or three separate ones. Entry #7 (Elevate
+  Group FZE) currently records no oral advance-commitment mention at all. **This log does not
+  currently have four distinct, individually-sourced oral commitments beyond Imprints and Ekora
+  it can point to** -- this gap is noted rather than silently resolved by assuming the "4 more"
+  maps onto the 3 Mahanta firms plus Elevate, since the founder did not confirm that mapping.
+- **Founder's stated total: $220-300** ($50 + $50 + $120-200), explicitly framed as "basically 4-6
+  customers committing to paying [the $50/year] annual fee upfront; not simply for [the] sake of
+  it" -- i.e. the founder's point is that this is a materially meaningful advance-commitment
+  pipeline relative to the company's pricing floor, not a token/symbolic amount, even though every
+  figure in it remains oral, uncollected, and founder-recalled rather than document- or
+  ledger-sourced.
+
+**Open item, not resolved this session:** which specific customers make up the "4 more" beyond
+Imprints and Ekora, and whether the Mahanta group's existing group-level oral commitment (entry
+#4-6) is one of those four or a separate, fifth data point, is not yet confirmed.
 
 ---
 
