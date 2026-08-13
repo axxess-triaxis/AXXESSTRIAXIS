@@ -434,6 +434,15 @@ actionable gap and an explicit reapplication path once it's closed.
 **Status:** Pitched, relationship active. **Update, 2026-08-04: provided GCC market-entry feedback, distinct from the original angel pitch.** (Name spelling corrected per the founder.)
 **Outcome:** Pitched to him as a potential angel investor. Separately, as a Dubai resident and GCC-based founder, gave feedback on the GCC market, regulatory landscape, market-entry approach, free-zone incorporation, and potential partnerships -- founder-summarized in this session; the specific content of that feedback is not itself recorded in this log (no transcript/message thread reviewed for this entry, unlike the S. B./A. B. entries above).
 
+**Update, 2026-08-12 -- separate, distinct development, not part of the angel pitch above:** Elevate
+Group FZE (operating as Elevate Wealth X) sent an expression of interest in becoming an AXXESS
+customer/beta participant, signed by S. P., Founder & Managing Partner -- per the founder,
+A. K.'s life partner and co-director of the same entity, not a different company or a naming
+discrepancy. Full detail in
+`docs/LOIS_BETA_PILOT_INTEREST_REFERRAL_AND_STRATEGIC_PARTNERSHIPS_LOG.md` entry #7 -- this is a
+customer-track relationship, distinct from the angel-investor pitch tracked in this entry; neither
+should be read as evidence for the other.
+
 ### 18. P. V. -- ex-SBI Probationary Officer, MBA IIM Calcutta, product roles at Cleartax and Coinbase, Founder/CPO of Yaary, Dubai Golden Visa (startup category) holder
 
 **Status:** Pitched, feedback received. **Update, 2026-08-04: he listened to the full pitch and gave extensive feedback; separately, agreed to forward the pitch deck to other angels in his network.**
