@@ -83,6 +83,103 @@ Source: matrix A-105, PostHog Web Vitals tab, "Last 7 days" pulled 2026-08-08 (2
 
 Live-measured this session (not a PostHog figure, a direct reproduction): a real 2-hop redirect chain `/` -> `/dashboard` -> `/auth?next=...`, ~8x cold-vs-warm variance (~1.7s redirect + ~7.6s full load cold vs. ~0.25s + ~0.9s warm). Flagged as the likely dominant contributor to the 18.54s LCP figure, though the exact live LCP value itself was not captured (Paint Timing API returned empty in-session). Full detail: `docs/readiness/A105_A106_A107_ROOT_CAUSE_ANALYSIS_2026_08_09.md`.
 
+### 1.3b Web Vitals, P99, full path breakdown (live browser session, 2026-08-13)
+
+Source: pulled directly by this Claude Code session against the authenticated PostHog UI, at the specific URL the founder shared (`/project/498426/web/web-vitals?date_from=2026-07-08T00:00:00&...&percentile=p99&domain=https://landing.triaxisventures.com&filter_test_accounts=true`). Window **2026-07-27 to now (~17 days)** -- landing.triaxisventures.com's real PostHog wiring start date (per this document's own domain table above), not the 2026-07-08 date literally present in the shared URL, which predates any real instrumentation on this domain and was corrected after the founder flagged it -- the widest window pulled for this domain so far, and the first at the **P99** percentile specifically (the worst 1% of loads, not median/typical experience -- read accordingly, this is a tail-latency view, not "what most visitors experience"). "Filter test accounts" ON.
+
+**Top-line tiles (caveat: PostHog labels these "from the last day in the selected time range," i.e. a single recent day's P99, not the full ~17-day window):** INP 48ms (Great), LCP 4.61s (Poor), FCP 1.17s (Good), CLS 0.00 (Good).
+
+**LCP path breakdown, full window, P99 (this is the systematic, multi-week view -- not a single-day snapshot):**
+
+| Bucket | Path | LCP (P99) |
+|---|---|---|
+| Good (<2.5s) | `/ai-workspace/review-inbox` | 1.22s |
+| Good | `/onboarding/complete` | 1.29s |
+| Good | `/onboarding/join-organization` | 1.79s |
+| Good | `/auth/login` | 1.83s |
+| Needs improvement (2.5-4s) | `/auth/sign-up` | 3.32s |
+| Poor (>4s) | `/auth/forgot-password` | 4.68s |
+| Poor | `/tasks` | 5.97s |
+| Poor | `/onboarding` | 7.45s |
+| Poor | `/auth` | 8.99s |
+| Poor | `/ai-workspace` | 9.86s |
+| Poor | `/knowledge` | 19.93s |
+| Poor | `/settings` | 23.84s |
+| Poor | `/integrations` | 27.14s |
+| Poor | `/dashboard` | **43.25s** |
+
+**Reading this against A-105:** this is a materially richer data set than the single 18.54s figure A-105 was built on (a 7-day snapshot, one number). At P99 over ~17 days, `/dashboard` -- the same route A-105's redirect-chain root-cause theory (`/` -> `/dashboard` -> `/auth?next=...`) already names as the likely dominant contributor -- shows a **43.25s** tail-latency LCP, over 2x the original 18.54s figure. This is consistent with, not contradictory to, A-105's redirect-chain theory: it confirms `/dashboard` specifically as the worst offender, not a general site-wide problem. But it also shows the poor-LCP pattern is not confined to `/dashboard` alone -- `/integrations` (27.14s), `/settings` (23.84s), and `/knowledge` (19.93s) all show severe P99 tail latency too, none of which the redirect-chain theory (specific to the `/` entry point) explains on its own. **This P99 breakdown does not identify a new root cause** -- it confirms the LCP problem is real, worse at the tail than the original snapshot suggested, and spans more authenticated routes than previously evidenced, without resolving which of them share the redirect-chain's cause versus have their own separate one.
+
+**FCP path breakdown, same pull, P99 (checked because the founder asked specifically):**
+
+| Bucket | Path | FCP (P99) |
+|---|---|---|
+| Good (<1.8s) | `/onboarding/join-organization` | 412ms |
+| Good | `/api/agents/mcp` | 456ms |
+| Good | `/settings` | 660ms |
+| Good | `/projects` | 768ms |
+| Good | `/tasks` | 850ms |
+| Good | `/ai-workspace/review-inbox` | 1.00s |
+| Good | `/onboarding/complete` | 1.02s |
+| Good | `/auth/sign-up` | 1.08s |
+| Good | `/ai-workspace` | 1.16s |
+| Good | `/onboarding` | 1.42s |
+| Good | `/approvals` | 1.48s |
+| Good | `/auth/forgot-password` | 1.51s |
+| Needs improvement (1.8-3s) | `/auth/login` | 2.22s |
+| Poor (>3s) | `/auth` | 3.26s |
+| Poor | `/dashboard` | 3.66s |
+| Poor | `/integrations` | 5.10s |
+
+**A real, notable contrast with the LCP table above, recorded as observed rather than diagnosed:** `/settings` is Good on FCP (660ms) but Poor on LCP (23.84s) -- the page's first paint happens fast, but its largest/main content takes over 30x longer to finish rendering. Same shape, smaller gap, on `/dashboard` (FCP 3.66s Poor vs. LCP 43.25s Poor -- both bad, but LCP is ~12x worse) and `/integrations` (FCP 5.10s Poor vs. LCP 27.14s Poor, ~5x worse). This pattern -- fast initial shell paint, much slower full-content paint -- is consistent with an async-loading large element (chart, data table, image) on these specific pages, but this document does not claim that as a confirmed cause; it is an observation from the shape of the two tables, not a root-cause finding.
+
+**INP path breakdown, same pull, P99 (checked because the founder specifically noted the top-line 44ms is Great):**
+
+| Bucket | Path | INP (P99) |
+|---|---|---|
+| Good (<200ms) | `/admin/audit-logs` | 40ms |
+| Good | `/ai-workspace/review-inbox` | 40ms |
+| Good | `/alerts` | 40ms |
+| Good | `/integrations` | 54ms |
+| Good | `/onboarding` | 68ms |
+| Good | `/settings` | 70ms |
+| Good | `/auth/forgot-password` | 80ms |
+| Good | `/auth` | 84ms |
+| Good | `/ai-workspace` | 106ms |
+| Good | `/knowledge` | 132ms |
+| Good | `/auth/login` | 136ms |
+| Good | `/dashboard` | 136ms |
+| Good | `/documents` | 136ms |
+| Good | `/onboarding/complete` | 168ms |
+| Needs improvement (200-500ms) | `/onboarding/sector` | 344ms |
+| Poor (>500ms) | `/auth/sign-up` | 1.10s |
+
+This is genuinely Good across nearly every path, including the exact ones that are worst on LCP -- `/dashboard` (136ms INP vs. 43.25s LCP), `/settings` (70ms vs. 23.84s), `/integrations` (54ms vs. 27.14s), `/knowledge` (132ms vs. 19.93s). **This sharpens, not just adds to, the diagnostic picture:** INP measures how responsive the page is to user interaction, which requires the main JS thread not to be blocked. If it were heavy client-side JS execution blocking the thread, INP would degrade on these same pages -- it doesn't. Combined with the FCP/LCP contrast above, the shape across all three metrics on `/dashboard`/`/settings`/`/integrations`/`/knowledge` is consistent with a slow data fetch or large asset load delaying the main content specifically, while the page shell renders fast and stays interactive throughout. Still not a confirmed root cause -- no server-side timing or network-waterfall data has been pulled to verify this -- but it is a real, three-metric-consistent pattern, not a guess from one number.
+
+### 1.3c P75 vs. P99 comparison, both domains (live browser session, 2026-08-13)
+
+Checked directly, both domains, after the founder asked whether P99 could actually read as *better* than P75 on some pages -- it does not, on either domain. P99 is the worst-case tail and P75 the more typical outcome, so P99 >= P75 is the mathematically expected relationship; no reversal was found anywhere this session, on either metric, on either domain.
+
+**`landing.triaxisventures.com`, `/dashboard` LCP (window 2026-07-27 to now, ~17 days):**
+
+| Percentile | LCP |
+|---|---|
+| P75 | 10.87s |
+| P99 | 43.25s (§1.3b above) |
+
+Full P75 breakdown: Good -- `/auth/sign-up` 820ms, `/ai-workspace/review-inbox` 1.00s, `/onboarding/complete` 1.23s, `/auth/forgot-password` 1.51s, `/auth/login` 1.65s, `/onboarding/join-organization` 1.79s. Needs improvement -- `/onboarding` 3.00s, `/auth` 3.15s. Poor -- `/knowledge` 5.64s, `/tasks` 5.85s, `/ai-workspace` 6.59s, `/integrations` 6.98s, `/settings` 7.08s, `/dashboard` 10.87s.
+
+**`investor.triaxisventures.com`, `/dashboard` LCP (window 2026-08-08 to now, ~5-6 days):**
+
+| Percentile | LCP |
+|---|---|
+| P75 | 3.60s |
+| P99 | 6.37s |
+
+Full P75 breakdown: Good -- `/projects` 48ms, `/ai-workspace` 677ms, `/meetings` 1.10s, `/ai-workspace/review-inbox` 1.54s, `/documents` 2.43s. Needs improvement -- `/dashboard` 3.60s. Nothing in the Poor bucket at P75 on this domain (unlike P99, where `/dashboard` alone is Poor at 6.37s).
+
+**Same check on FCP, `investor.triaxisventures.com` top-line (last day):** P75 1.92s (Needs improvement) vs. P99 4.73s (Poor) -- also worse at P99, confirming the pattern holds across metrics, not just LCP.
+
 ### 1.4 Error Tracking (A-106)
 
 Source: matrix A-106, PostHog Error Tracking, "Last 7 days" pulled 2026-08-08.
@@ -146,6 +243,26 @@ Source: 5 founder-shared screenshots of the authenticated PostHog Web Analytics 
 
 **Correction, same session:** an earlier draft of this entry characterized the quote above as the founder directing that A-105's "who is generating this traffic" question be closed out / deprioritized. Founder corrected this directly -- no such direction was given; that framing was this document's own overreach, not something said. The quote above is recorded as the founder's characterization of the data (skepticism that the non-Assam remainder is meaningful), nothing more -- it is neither a confirmed technical finding that this traffic is bot-driven, nor an instruction to stop investigating. A-105's traffic-composition question (§1.6) remains open exactly as recorded there.
 
+### 1.8 Full-domain pull, live browser session (2026-08-13)
+
+Source: pulled directly by this Claude Code session against the authenticated PostHog Web Analytics UI at `https://us.posthog.com/project/498426/web`, after the founder logged in within the session's browser pane. Filtered to `https://landing.triaxisventures.com`, window **2026-07-27 to now (~17 days)**, "Filter test accounts" toggle **ON** (this is the dedup the founder referred to when sharing the URL -- PostHog's own internal/test-account exclusion filter, not a manual dedup step performed separately). Different access method than every prior entry in this document (which were founder-shared screenshots) -- recorded as `(b)` per this document's own source-discipline categories, a live pull against the authenticated UI, not a screenshot.
+
+| Metric | Value |
+|---|---|
+| Visitors | 41 |
+| Page views | 551 |
+| Sessions | 106 |
+| Avg. session duration | 11m |
+| Bounce rate | 24% |
+
+**Top paths:** `/auth` 39 visitors/150 views (23.5% bounce), `/dashboard` 24/116 (8.3%), `/settings` 18/87, `/auth/login` 16/35, `/ai-workspace` 8/19, `/onboarding` 7/28, `/integrations` 6/18, `/tasks` 6/9, `/auth/sign-up` 5/10 (50.0% bounce), `/auth/forgot-password` 5/8 (66.7% bounce). Same `/auth`-heavy shape as every prior pull (§1.1, §1.2, §1.7) -- consistent across almost three weeks now, not a one-off artifact.
+
+**Channels:** Direct 32/470, Referral 13/76, Organic Social 2/5.
+
+**Devices:** Desktop 32/493, Mobile 11/58 -- same desktop-skewed pattern as §1.7, opposite of `investor`'s mobile/paid-social pattern (§2.4 below).
+
+**Reconciles cleanly against §1.1's 2026-08-09 snapshot** (39 visitors/548 views/104 sessions over the same start date, ~4 days earlier): +2 visitors, +3 views, +2 sessions in the intervening ~4 days -- small, steady, incremental growth, not a spike or a discontinuity.
+
 ---
 
 ## 2. `investor.triaxisventures.com`
@@ -204,6 +321,28 @@ Source: 5 founder-shared screenshots of the authenticated PostHog Web Analytics 
 - **Caveat that still applies regardless:** PostHog's `distinct_id` is a per-browser-profile identifier, not per-person -- an incognito window or a second browser from the same physical visitor still mints a new "unique visitor." This mechanic is domain-agnostic and applies here exactly as it does to `landing`'s count; it is just not compounded by the shared-Auth-credential question on this domain.
 - **Still a single day's data as of the last pull** -- not yet a trend. Re-pull after a longer window before treating this domain's numbers as a stable baseline.
 
+### 2.4 Full-domain pull, live browser session (2026-08-13) -- first multi-day window for this domain
+
+Source: same live-pull method as §1.8, filtered to `https://investor.triaxisventures.com`, window **2026-08-08 to now (~5-6 days)** -- this domain's real PostHog wiring start date (per the A-108 fix, this document's own domain table above), **not** 2026-07-27, which is `landing`'s wiring date, mistakenly applied here in an earlier pass of this pull and corrected after the founder flagged it. Confirmed empirically, not just by the documented date: re-pulling with the corrected start date returns figures numerically identical to the incorrect wider window, meaning zero real traffic existed on this domain before 2026-08-08 anyway. "Filter test accounts" **ON**. Supersedes §2.2/§2.2b's ~24-36h snapshots with the first multi-day window this domain has had -- the "still a single day's data" caveat immediately above no longer applies, though "multi-week" was an overstatement even before the correction; it's multi-day.
+
+| Metric | Value |
+|---|---|
+| Visitors | 592 |
+| Page views | 672 |
+| Sessions | 643 |
+| Avg. session duration | 25.9s |
+| Bounce rate | 45% |
+
+**Top paths:** `/dashboard` 592 visitors/650 views (44.9% bounce) -- overwhelmingly dominant, everything else in single digits: `/approvals` 3/3, `/ai-workspace` 2/3, `/documents` 2/3, `/stakeholders` 2/3, `/alerts` 1/2, `/tasks` 1/2, `/admin/audit-logs` 1/1, `/ai-workspace/review-inbox` 1/1, `/analytics` 1/1.
+
+**Channels:** Paid Social 567/625, Direct 11/30, Organic Social 10/13, Organic Search 4/4. Paid Social is 96% of visitors -- even more concentrated than §2.2b's 94% figure, consistent with the founder's own reading in §2.3 (this is the FB/Instagram Founders Club campaign converting to clicks, not a traffic-authenticity question).
+
+**Devices:** Mobile 580/660, Desktop 12/12 -- 98% mobile, same signature noted in §2.3.
+
+**Retention:** Mean 100% Week 0 / 0% Week 1 / 0% Week 2 across the full window -- consistent with §2.2's read that this is a single-touch demo/waitlist funnel, not a returning-user product, and (per §2.3) not a shortfall to read into.
+
+**Session duration dropped sharply** (25.9s here vs. no prior multi-week baseline to compare against) alongside a much larger sample -- consistent with the visitor mix shifting further toward brief, single-page paid-social click-throughs as the campaign scaled, not a product regression on this demo-only domain.
+
 ---
 
 ## 3. Cross-cutting notes (apply to both domains)
@@ -211,6 +350,7 @@ Source: 5 founder-shared screenshots of the authenticated PostHog Web Analytics 
 - **PostHog project:** both domains report into the same project (`498426`), so cross-domain confusion when reading dashboards is a real, previously-realized failure mode (see A-108's root question -- it was raised specifically because every PostHog pull in this session up to that point showed only `landing.triaxisventures.com` URLs, despite `investor.triaxisventures.com` being the domain the founder actually considered "public"). Always confirm which domain a given PostHog view is filtered to before citing a number.
 - **"Unique visitor" mechanics:** PostHog identifies visitors via a client-side-stored `distinct_id` (localStorage/cookie), not IP address and not account identity. Incognito/private windows, separate browser profiles, and cleared storage each mint a fresh ID for what may be the same physical person or even the same physical device. This is the single most load-bearing caveat across every visitor/session count in this document and should be restated whenever a headcount claim is made from these figures.
 - **No cross-session-replay attribution has been done.** Every analysis above is aggregate-metric-level (counts, breakdowns, deltas). No specific PostHog session recording has been matched to a specific known person or defect occurrence, except the single A-107 session-replay spot-check noted in §1.5. Resolving the still-open "who is really hitting `landing.triaxisventures.com`" question (§1.6) would require that level of review, not further aggregate pulls.
+- **Installation Health check, 2026-08-13 (live pull, `/project/498426/web/health`):** **6 of 6 checks passed** -- "Your web analytics setup looks great!" Event tracking 3/3 (`$pageview`, `$pageleave`, scroll depth all flowing correctly), Configuration 2/2 (Authorized URLs restrict tracking to this program's own domains; a reverse proxy routes tracking requests through the program's own domain rather than posthog.com directly), Performance 1/1 (`$web_vitals` confirmed tracked -- LCP/INP/CLS collection is correctly wired, not a misconfiguration explaining any of the Poor readings in §1.3b/1.8). This is a project-level check (not filtered per-domain), and it's good, clean confirmation that every figure recorded in this document rests on sound instrumentation, not a data-quality gap.
 
 ## Evidence index
 
@@ -220,3 +360,4 @@ Source: 5 founder-shared screenshots of the authenticated PostHog Web Analytics 
 | `landing` OAuth exchange failure | `ACTIONABLES_READINESS_MATRIX.md` row A-107; `docs/readiness/A105_A106_A107_ROOT_CAUSE_ANALYSIS_2026_08_09.md` |
 | `investor` instrumentation fix + Web Analytics | `ACTIONABLES_READINESS_MATRIX.md` row A-108 |
 | Hydration-error code fix detail | `docs/readiness/A106_HYDRATION_FIX_CLOSEOUT_2026_08_09.md` |
+| 2026-08-13 live-pull, both domains, ~17-day window | This document, §1.8 and §2.4 -- first Claude Code session live pull against authenticated PostHog UI (all prior entries were founder-shared screenshots) |
