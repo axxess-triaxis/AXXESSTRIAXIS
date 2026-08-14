@@ -427,6 +427,29 @@ by other evaluators in this log (compare David Orban, entry #19; 3one4 Capital's
 other -- but unlike Estonia's generic multi-reason checklist, this rejection names one specific,
 actionable gap and an explicit reapplication path once it's closed.
 
+### 41. Pitch Protocol (AI-native fundraising application platform)
+
+**Status:** Applied -- submitted, awaiting fund response. **2026-08-13.**
+Source: live application submitted this session via a new MCP connection to `api.pitchprotocol.vc`
+(the founder connected the service, then instructed submission -- not a registry-listed/pre-vetted
+connector; see `PITCH_PROTOCOL_APPLICATION_SUBMISSION_CLOSEOUT_2026_08_13.md` for the full,
+step-by-step account, including every field's source and every judgment call made during assembly).
+- Application ID `711D5959-FDBA-4478-ACBC-F17F6763B644`. Company profile, $2M pre-seed raise, and
+  team/traction data assembled from the founder's own pitch deck (`Triaxis Ventures 12082026.pdf`,
+  2026-08-12), this session's own live-verified traction figures, and direct founder answers for
+  every field neither source covered (location, LinkedIn profiles, equity split, valuation math,
+  burn rate, market size).
+- Traction figures used: **6 signed LOIs, 1 committed LOI, 2 active pilots, 3 incoming pilots** --
+  this session's 2026-08-13 figures, one day fresher than the deck's own 5-signed/2-committed count,
+  per the founder's explicit choice to use the more current numbers.
+- 5 platform-generated intake questions answered in full by the founder (banking/treasury career
+  timeline, the two active pilots' dogfooding and iteration history, positioning against Palantir
+  AIP, self-serve-India traction signals, and the banking/nursing domain insight behind the product's
+  governance architecture) before the application was finalized and locked.
+**Outcome:** Fully submitted, `status: submitted`, founder-confirmed receipt of the platform's own
+confirmation email. No fund response yet -- this entry will get a dated update if and when one
+arrives, per this log's standing pattern.
+
 ## Angel Investor Conversations
 
 ### 17. Anshuman Kashyap -- IIT Guwahati, IIM Calcutta, ex-Flipkart (RSU holder), ex-Gulf Marketing Group, Founder of Elevate Wealth X, Dubai resident

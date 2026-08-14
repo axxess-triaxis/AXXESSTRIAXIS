@@ -3,7 +3,7 @@ import { resolveAgentScopeFromApiKey, recordAgentToolAuditEvent } from "../../..
 import { hasGrant } from "../../../../services/agents/agentGrantsRepository";
 import { approvalRequestsRepository } from "../../../../repositories/workflowActionRepositories";
 import { agentScopeHasCapability, type AgentScope } from "../../../../security/agentScope";
-import { agentToolRegistry, getAgentTool } from "../../../../services/agents/toolRegistry";
+import { agentToolRegistry, getAgentTool, validateAgentToolArguments } from "../../../../services/agents/toolRegistry";
 import type { RoleName } from "../../../../domain";
 
 // Agentic Infrastructure Phase 1 (2026-07-30): a real MCP (Model Context Protocol) server over the
@@ -15,6 +15,7 @@ import type { RoleName } from "../../../../domain";
 
 const serverInfo = { name: "axxess-triaxis-agent-server", version: "1.0.0" };
 const protocolVersion = "2025-06-18";
+const maxMcpRequestBytes = 64 * 1024;
 
 type JsonRpcRequest = {
   jsonrpc: "2.0";
@@ -43,6 +44,11 @@ function tenantScopeForApproval(scope: AgentScope) {
 }
 
 export async function POST(request: Request) {
+  const contentLength = Number(request.headers.get("content-length") ?? "0");
+  if (contentLength > maxMcpRequestBytes) {
+    return NextResponse.json({ error: "MCP request payload is too large." }, { status: 413 });
+  }
+
   const authorization = request.headers.get("authorization") ?? "";
   const rawKey = authorization.startsWith("Bearer ") ? authorization.slice("Bearer ".length).trim() : "";
   if (!rawKey) {
@@ -77,7 +83,7 @@ export async function POST(request: Request) {
 
   if (body.method === "tools/call") {
     const toolName = typeof body.params?.name === "string" ? body.params.name : "";
-    const toolArgs = (body.params?.arguments ?? {}) as Record<string, unknown>;
+    const rawToolArgs = body.params?.arguments ?? {};
     const tool = getAgentTool(toolName);
 
     if (!tool) return rpcError(body.id, -32601, `Unknown tool: ${toolName}`);
@@ -85,6 +91,13 @@ export async function POST(request: Request) {
       await recordAgentToolAuditEvent(scope, { toolName, success: false, errorMessage: "capability not granted" });
       return rpcError(body.id, -32001, `This agent connection does not have the ${tool.requiredCapability} capability.`);
     }
+
+    const validation = validateAgentToolArguments(tool, rawToolArgs);
+    if (!validation.ok) {
+      await recordAgentToolAuditEvent(scope, { toolName, success: false, errorMessage: validation.message });
+      return rpcError(body.id, -32602, validation.message);
+    }
+    const toolArgs = validation.args;
 
     // Agentic Infrastructure Phase 2 (2026-07-30): critical tools (anything real-world-visible --
     // notifies people, writes an external-facing record, or spends money on an external model

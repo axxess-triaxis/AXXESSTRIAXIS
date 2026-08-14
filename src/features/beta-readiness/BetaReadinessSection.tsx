@@ -7,7 +7,6 @@ import { LoadingState } from "../../components/feedback/LoadingState";
 import { SectionHeader } from "../../components/layout/SectionHeader";
 import { Card } from "../../components/ui/Card";
 import { WorkflowStepCard } from "../../components/enterprise";
-import type { AuditLog } from "../../domain";
 import { applicationServices } from "../../providers/serviceProvider";
 import { tenantScopeFromUser } from "../../repositories/supabaseEnterpriseRepositories";
 import { useAnalytics } from "../../services/analytics";
@@ -15,7 +14,7 @@ import {
   betaReadinessSnapshotMeta,
   engineeringMetrics,
   outreachMetrics,
-  pilotTestimonial,
+  pilotTestimonials,
   readinessKanbans,
   tractionMetrics,
   waitlist,
@@ -29,7 +28,6 @@ type BetaReadinessMetrics = {
   tasks: number;
   meetings: number;
   feedback: number;
-  auditLogs: AuditLog[];
   supabaseReady: boolean;
   feedbackReady: boolean;
 };
@@ -41,7 +39,6 @@ const emptyMetrics: BetaReadinessMetrics = {
   tasks: 0,
   meetings: 0,
   feedback: 0,
-  auditLogs: [],
   supabaseReady: false,
   feedbackReady: false,
 };
@@ -99,14 +96,13 @@ export function BetaReadinessSection() {
   const loadReadiness = useCallback(async () => {
     if (!scope) return;
     setLoading(true);
-    const [organizations, users, projects, tasks, meetings, feedback, auditLogs] = await Promise.allSettled([
+    const [organizations, users, projects, tasks, meetings, feedback] = await Promise.allSettled([
       applicationServices.organizationsRepository.list(scope, { pageSize: 100 }),
       applicationServices.usersRepository.listByOrganization(scope, { pageSize: 100 }),
       applicationServices.projectsRepository.list(scope, { pageSize: 100 }),
       applicationServices.tasksRepository.list(scope, { pageSize: 100 }),
       applicationServices.meetingsRepository.list(scope, { pageSize: 100 }),
       applicationServices.betaFeedbackRepository.list(scope, { pageSize: 100 }),
-      applicationServices.auditLogsRepository.list(scope, { pageSize: 8 }),
     ]);
 
     setMetrics({
@@ -116,7 +112,6 @@ export function BetaReadinessSection() {
       tasks: tasks.status === "fulfilled" ? tasks.value.length : 0,
       meetings: meetings.status === "fulfilled" ? meetings.value.length : 0,
       feedback: feedback.status === "fulfilled" ? feedback.value.length : 0,
-      auditLogs: auditLogs.status === "fulfilled" ? auditLogs.value : [],
       supabaseReady: Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY && organizations.status === "fulfilled"),
       feedbackReady: feedback.status === "fulfilled",
     });
@@ -254,46 +249,34 @@ export function BetaReadinessSection() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <Card className="p-5">
-          <h3 className="text-sm font-semibold text-[#0F1117]">Pilot Testimonial</h3>
-          <div className="mt-3 space-y-1.5">
-            {pilotTestimonial.quotes.map((quote) => (
-              <p key={quote} className="text-xs leading-relaxed text-[#0F1117]">&ldquo;{quote}&rdquo;</p>
-            ))}
-          </div>
-          <p className="mt-3 text-xs font-semibold text-[#8B1E2D]">-- {pilotTestimonial.attribution}</p>
-          <p className="mt-2 text-[11px] leading-relaxed text-[#5F6B73]">{pilotTestimonial.note}</p>
-        </Card>
-
-        <Card className="p-5">
-          <h3 className="text-sm font-semibold text-[#0F1117]">Public Waitlist</h3>
-          <p className="mt-2 text-xs leading-relaxed text-[#5F6B73]">{waitlist.label}</p>
-          <a
-            href={waitlist.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-[#8B1E2D]/25 bg-white px-3 py-2 text-xs font-semibold text-[#8B1E2D] hover:bg-[#8B1E2D]/5"
-          >
-            <ExternalLink size={12} /> Open waitlist page
-          </a>
-          <p className="mt-3 text-[11px] leading-relaxed text-[#5F6B73]">Promoted on: {waitlist.channels}</p>
-        </Card>
+      <div>
+        <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-[#5F6B73]">Pilot Testimonials</h2>
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          {pilotTestimonials.map((testimonial) => (
+            <Card key={testimonial.attribution} className="p-5">
+              <div className="space-y-1.5">
+                {testimonial.quotes.map((quote) => (
+                  <p key={quote} className="text-xs leading-relaxed text-[#0F1117]">&ldquo;{quote}&rdquo;</p>
+                ))}
+              </div>
+              <p className="mt-3 text-xs font-semibold text-[#8B1E2D]">-- {testimonial.attribution}</p>
+            </Card>
+          ))}
+        </div>
       </div>
 
-      <Card className="overflow-hidden">
-        <div className="border-b border-[rgba(0,0,0,0.06)] px-4 py-3">
-          <h3 className="text-sm font-semibold text-[#0F1117]">Recent Audit Logs</h3>
-        </div>
-        {metrics.auditLogs.length ? metrics.auditLogs.map((log) => (
-          <div key={log.id} className="flex items-center gap-3 border-b border-[rgba(0,0,0,0.04)] px-4 py-3">
-            <span className="rounded-full bg-[#F2F3F5] px-2 py-1 font-mono text-[10px] text-[#5F6B73]">{log.category ?? "system"}</span>
-            <span className="text-xs font-medium text-[#0F1117]">{log.action}</span>
-            <span className="ml-auto font-mono text-[10px] text-[#5F6B73]">{log.createdAt.slice(0, 19)}</span>
-          </div>
-        )) : (
-          <div className="px-4 py-8 text-center text-xs text-[#5F6B73]">No audit logs available</div>
-        )}
+      <Card className="p-5">
+        <h3 className="text-sm font-semibold text-[#0F1117]">Public Waitlist</h3>
+        <p className="mt-2 text-xs leading-relaxed text-[#5F6B73]">{waitlist.label}</p>
+        <a
+          href={waitlist.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-[#8B1E2D]/25 bg-white px-3 py-2 text-xs font-semibold text-[#8B1E2D] hover:bg-[#8B1E2D]/5"
+        >
+          <ExternalLink size={12} /> Open waitlist page
+        </a>
+        <p className="mt-3 text-[11px] leading-relaxed text-[#5F6B73]">Promoted on: {waitlist.channels}</p>
       </Card>
     </div>
   );

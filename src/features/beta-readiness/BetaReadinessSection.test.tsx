@@ -1,5 +1,5 @@
 import { render, screen, waitFor } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { AnalyticsProviderShell } from "../../services/analytics";
 import { MockAnalyticsProvider } from "../../services/analytics/MockAnalyticsProvider";
 
@@ -8,10 +8,6 @@ import { MockAnalyticsProvider } from "../../services/analytics/MockAnalyticsPro
 // metrics. These tests confirm both layers render, and that the snapshot is never silently editable
 // outside the intended propagation loop (i.e. it renders exactly what betaReadinessSnapshot.ts
 // exports, not fabricated inline data).
-const state = {
-  auditLogs: [] as Array<{ id: string; organizationId: string; action: string; category?: string; resourceType: string; createdAt: string }>,
-};
-
 vi.mock("../../auth/AuthProvider", () => ({
   useAuth: () => ({ session: { user: { id: "admin-1", organizationId: "org-1", role: "Organization Admin" }, status: "authenticated" } }),
 }));
@@ -28,7 +24,6 @@ vi.mock("../../providers/serviceProvider", () => ({
     tasksRepository: { list: async () => [] },
     meetingsRepository: { list: async () => [] },
     betaFeedbackRepository: { list: async () => [] },
-    auditLogsRepository: { list: async () => state.auditLogs },
   },
 }));
 
@@ -44,10 +39,6 @@ function renderSection() {
 }
 
 describe("BetaReadinessSection", () => {
-  afterEach(() => {
-    state.auditLogs = [];
-  });
-
   it("renders the founder-cleared Traction Snapshot metrics from betaReadinessSnapshot.ts", async () => {
     renderSection();
 
@@ -61,7 +52,7 @@ describe("BetaReadinessSection", () => {
     // Values are only spot-checked for figures distinctive enough not to collide with unrelated
     // numbers elsewhere on the page (e.g. WorkflowStepCard step-index badges) -- this still proves
     // real snapshot data renders, without making the test fragile to incidental digit collisions.
-    expect(screen.getByText("1,000+")).toBeInTheDocument();
+    expect(screen.getByText("41 visitors")).toBeInTheDocument();
     expect(screen.getByText("82.61")).toBeInTheDocument();
     expect(screen.getByText("70%")).toBeInTheDocument();
     expect(screen.getByText("9/10")).toBeInTheDocument();
@@ -99,13 +90,15 @@ describe("BetaReadinessSection", () => {
     }
   });
 
-  it("renders the real pilot testimonial with its attribution", async () => {
+  it("renders both real pilot testimonials with their attributions", async () => {
     renderSection();
 
-    await waitFor(() => expect(screen.getByText("Pilot Testimonial")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText("Pilot Testimonials")).toBeInTheDocument());
 
     expect(screen.getByText(/Your pace and vision here are correct/)).toBeInTheDocument();
     expect(screen.getByText(/Prajnyan Ballav Goswami/)).toBeInTheDocument();
+    expect(screen.getByText(/agentic automation with human element/)).toBeInTheDocument();
+    expect(screen.getByText(/Diksha Rajkhowa/)).toBeInTheDocument();
   });
 
   it("renders a real, clickable link to the public waitlist", async () => {
@@ -122,7 +115,6 @@ describe("BetaReadinessSection", () => {
 
     await waitFor(() => expect(screen.getByText("This Tenant (live)")).toBeInTheDocument());
 
-    expect(screen.getByText("Recent Audit Logs")).toBeInTheDocument();
-    expect(screen.getByText("No audit logs available")).toBeInTheDocument();
+    expect(screen.getAllByText("Organizations").length).toBeGreaterThan(0);
   });
 });
