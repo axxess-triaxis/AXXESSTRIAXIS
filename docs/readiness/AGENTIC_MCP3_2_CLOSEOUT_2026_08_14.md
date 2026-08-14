@@ -103,9 +103,12 @@ Not run / not claimed:
   approve-and-execute path against a running deployment. This is the same class of gap flagged in
   every prior MCP sprint's closeout (MCP2, MCP3-1) and remains a founder/HITL action item, not
   something a coding session can close unilaterally.
-- **Not deployed.** Per the execution prompt's own scope ("Commit: ..."), this sprint's work is
-  committed locally only -- no push, PR, merge, or deploy was performed, matching this repo's
-  standing rule that production actions require separate explicit confirmation.
+- **Deployed** (2026-08-14, after separate explicit founder confirmation to push/PR/deploy):
+  PR #240 merged to `main`, `deploy-production.yml` run `31799806561` succeeded on both
+  `landing.triaxisventures.com` (5m41s) and `investor.triaxisventures.com` (3m33s). Live-verified
+  with an unauthenticated `curl` against the new route on both domains --
+  `GET /api/agents/profiles` returns `401` (not `404`) on both, confirming the route exists and is
+  reachable. This is route-presence confirmation only, not live MCP validation (see next point).
 - **A failed pending tool call has no retry path.** This is deliberate (avoids uncontrolled
   re-execution) but means a founder/admin currently has no in-product way to re-attempt a failed
   execution other than the agent issuing a fresh MCP call -- worth a smaller follow-up if this
@@ -116,7 +119,10 @@ Not run / not claimed:
 
 ## Closeout Position
 
-MCP3-2 is code-complete and verified at typecheck, lint, mobile-typecheck, Supabase-migration, and
-targeted-test levels, with all 8 of the execution prompt's required test scenarios passing. It is
-not production-certified: no deploy has happened this sprint, and live MCP validation (the same gap
-open since MCP2) remains outstanding and requires direct HITL action against a real provider.
+MCP3-2 is code-complete, verified at typecheck, lint, mobile-typecheck, Supabase-migration, and
+targeted-test levels (all 8 of the execution prompt's required test scenarios passing), and
+**deployed** to both `landing.triaxisventures.com` and `investor.triaxisventures.com` as of
+2026-08-14. It is not yet production-certified in the fuller sense: live MCP validation (real key
+generation, `tools/list`, an auto-tool call, a real approve-and-execute round trip) remains
+outstanding -- the same class of gap open since MCP2 -- and requires direct HITL action against a
+real provider.

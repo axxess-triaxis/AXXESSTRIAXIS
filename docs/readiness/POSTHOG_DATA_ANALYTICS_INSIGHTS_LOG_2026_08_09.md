@@ -352,6 +352,72 @@ Source: same live-pull method as §1.8, filtered to `https://investor.triaxisven
 - **No cross-session-replay attribution has been done.** Every analysis above is aggregate-metric-level (counts, breakdowns, deltas). No specific PostHog session recording has been matched to a specific known person or defect occurrence, except the single A-107 session-replay spot-check noted in §1.5. Resolving the still-open "who is really hitting `landing.triaxisventures.com`" question (§1.6) would require that level of review, not further aggregate pulls.
 - **Installation Health check, 2026-08-13 (live pull, `/project/498426/web/health`):** **6 of 6 checks passed** -- "Your web analytics setup looks great!" Event tracking 3/3 (`$pageview`, `$pageleave`, scroll depth all flowing correctly), Configuration 2/2 (Authorized URLs restrict tracking to this program's own domains; a reverse proxy routes tracking requests through the program's own domain rather than posthog.com directly), Performance 1/1 (`$web_vitals` confirmed tracked -- LCP/INP/CLS collection is correctly wired, not a misconfiguration explaining any of the Poor readings in §1.3b/1.8). This is a project-level check (not filtered per-domain), and it's good, clean confirmation that every figure recorded in this document rests on sound instrumentation, not a data-quality gap.
 
+## 4. Combined-domain, instrumentation-age-corrected dashboard, 2026-08-14 (Codex via PostHog CLI)
+
+**Source and access method, different from every entry above:** founder-shared, produced by Codex directly against the PostHog CLI (not a screenshot, not a Claude Code live UI pull). Recorded per this document's own source-discipline convention as a fourth access method alongside (a) founder-shared screenshot, (b) Claude Code live UI pull, (c) founder-stated claim.
+
+**Flag before reading the figures below: this entry merges both domains into one combined footprint.** This document's own header states, verbatim, "kept fully separate per explicit founder instruction (2026-08-09) -- do not merge their figures or narratives." Codex's dashboard explicitly acknowledges the same tension from its own side -- "Because I haven't yet split the 643 unique visitors between the two hostnames, it would be mathematically wrong to simply divide 643 by either 18 or 6 and call that the site's visitor run-rate" -- i.e., the combined total is presented as a footprint figure, not a per-domain run-rate, and the source itself flags that a hostname split has not yet been done. Recorded here as given, not reconciled against the separate-domain convention above; a hostname-split re-pull would be needed before this entry's combined figures can be cited as a replacement for, rather than an addition to, §1 and §2's domain-specific numbers.
+
+**Instrumentation-age reframing (the core correction this entry makes):**
+
+| Property | PostHog configured | Age as of 2026-08-14 |
+|---|---|---|
+| `landing.triaxisventures.com` | 2026-07-27 | 18 days |
+| `investor.triaxisventures.com` | 2026-08-08 | 6 days |
+
+This matches this document's own domain table at the top exactly (both dates). The correction Codex draws from it: a combined "30-day" or "monthly" framing is not supportable, since neither property has 30 days of instrumentation -- 18 and 6 days respectively are the real observable windows.
+
+**Combined observed footprint (both domains, un-split):**
+
+| Metric | Recorded |
+|---|---|
+| Unique visitors | 643 |
+| Sessions | 764 |
+| Pageviews | 1,327 |
+| Pageviews / visitor | 2.06 |
+| Pageviews / session | 1.74 |
+| Sessions / visitor | 1.19 |
+| Regular-traffic pageviews | 1,323 (99.7%) |
+| AI-agent pageviews | 4 (0.3%) |
+| Web-vital measurements | 694 |
+| Rage clicks | 6 |
+
+**Cross-check against this document's own separate-domain figures:** §1.8 (landing, pulled 2026-08-13) recorded 41 visitors/551 views/106 sessions. §2.4 (investor, pulled 2026-08-13) recorded 592 visitors/672 views/643 sessions. Summing those two same-day-prior-pull figures: 633 visitors, 1,223 views, 749 sessions -- close to but not identical to this entry's 643/1,327/764 (pulled a day later, 2026-08-14, so some growth is expected; the visitor sum in particular is very close, consistent with the two domains' visitor pools being close to non-overlapping, though this is an inference from the arithmetic, not confirmed by an actual hostname-split query).
+
+**Acquisition surge, Aug 10-12 (620 of 1,327 pageviews, 46.7%):**
+
+| Date | Pageviews |
+|---|---|
+| Aug 10 | 254 |
+| Aug 11 | 199 |
+| Aug 12 | 167 |
+
+Rolling visitor count reported: 77 -> 314 -> 492 -> 634 -> 643 (Aug 9 through pull date) -- 557 of the eventual 643 added between the Aug 9 and Aug 12 readings. Codex's framing: this is early-launch acquisition velocity concentrated in a narrow window relative to the properties' own instrumentation age (roughly days 3-5 of `investor`'s tracking), not steady monthly traffic -- consistent with §2.4's own finding that `investor`'s traffic is ~96% Paid Social (the Founders Club FB/Instagram campaign), which is the most likely driver of this specific surge, though this entry does not itself re-confirm the channel breakdown for the Aug 10-12 window specifically.
+
+**Geography (combined, pageviews):**
+
+| Geography | Pageviews | Share |
+|---|---|---|
+| India | 1,279 | 96.4% |
+| United States | 25 | 1.9% |
+| Nepal | 18 | 1.4% |
+| Bangladesh | 2 | 0.15% |
+| Germany | 1 | 0.08% |
+| Ireland | 1 | 0.08% |
+| Romania | 1 | 0.08% |
+
+Consistent in shape with both domains' individually-recorded geography above (landing: India-dominant per §1.2/1.7; investor: India-dominant, broader state spread, per §2.2b).
+
+**Errors, concentrated in the same surge window:** 157 captured exceptions total, 141 (~90%) during Aug 10-12 (57/47/37 by day). Fingerprints: "Script error." 83, "postMessage: Java object is gone" family 61, React #418 family 13 -- the React #418 figure is the same hydration-mismatch fingerprint already tracked in §1.4 (A-106), now with a materially larger occurrence count than the 6 recorded there on 2026-08-08, consistent with the fix referenced in §1.4 ("code shipped... not yet deployed or re-confirmed against post-deploy PostHog data") still not having closed out this error class as of this pull.
+
+**Conversion/product events (combined, still sparse):** Completed signup 2, Login 3, Logout 4, Organization created 1, Invitations sent 0, AI queries submitted 0. Codex's own framing, recorded as given: a 2/643 signup-conversion calculation would be invalid as a KPI here, since `investor` visitors are not expected to sign up at all (demo-only domain, no Auth gate, per §2.1/§2.3) -- collapsing both domains into one signup denominator understates whatever real conversion exists on `landing` specifically. A hostname-specific funnel, not a combined one, would be needed to state a real conversion figure.
+
+**AI observability:** still not instrumented -- no `$ai_generation`, trace/span, latency, token, cost, feedback, or evaluation events found; `ai_query_submitted` at zero. Recorded, consistent with this being an instrumentation gap rather than evidence that zero AI usage occurred.
+
+**Retention, re-flagged as the wrong metric:** the Aug 10 cohort figures Codex cites (237 first-time visitors -> 12 D1 returns, ~5.1%; 14 D2, ~5.9%) match the shape of this document's own `investor` retention read in §2.2b/§2.4 (single-touch demo/waitlist funnel, not a returning-user product) -- Codex's recommendation to measure retention from an activation event (account created -> organization created -> meaningful action -> repeat) rather than raw `$pageview` is consistent with, not a new departure from, this document's existing framing of `investor`'s retention numbers as not meaningful in isolation (§2.3).
+
+**Not independently re-verified by this Claude Code session:** every figure in this section came from the founder-shared Codex output, not from a live pull against the PostHog UI or CLI performed directly in this session (unlike §1.8/§2.4/§1.3b/§1.3c above, which were). Treated as founder-relayed product evidence per `CLAUDE.md`'s evidence-chain rule, not as independently confirmed.
+
 ## Evidence index
 
 | Claim group | Primary source |
