@@ -110,11 +110,23 @@ describe("BetaReadinessSection", () => {
     expect(link).toHaveAttribute("href", "https://getlaunchlist.com/pages/axxess-triaxis-founders-club-edition");
   });
 
-  it("still renders the real, live per-tenant metrics section separately from the static snapshot", async () => {
+  // A-116 (2026-08-14): removed per the founder's direct live review -- "This Tenant (live)" mixed
+  // a single demo tenant's raw, pageSize-capped counts (Projects/Tasks always showed "100," the
+  // fetch cap, not a real total) into what's meant to be company-wide investor evidence. The
+  // Release Status/Connections/Recent Errors cards were removed in the same pass: Release Status
+  // duplicated a hardcoded, since-corrected version constant; Connections showed only 3 systems
+  // against a real ~40-integration surface (misleadingly narrow); Recent Errors always read "No
+  // recent errors recorded" regardless of real PostHog error-tracking data this program already
+  // has -- a fabricated-by-omission claim. No test replaces this one; the removed content had no
+  // remaining evidence-bearing purpose on this specific page.
+  it("no longer renders the removed This Tenant (live) / Release Status / Connections / Recent Errors blocks", async () => {
     renderSection();
 
-    await waitFor(() => expect(screen.getByText("This Tenant (live)")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText("Traction Snapshot")).toBeInTheDocument());
 
-    expect(screen.getAllByText("Organizations").length).toBeGreaterThan(0);
+    expect(screen.queryByText("This Tenant (live)")).not.toBeInTheDocument();
+    expect(screen.queryByText("Release Status")).not.toBeInTheDocument();
+    expect(screen.queryByText("Connections")).not.toBeInTheDocument();
+    expect(screen.queryByText("Recent Errors")).not.toBeInTheDocument();
   });
 });

@@ -12,6 +12,8 @@ import { tenantScopeFromUser } from "../../repositories/supabaseEnterpriseReposi
 import type { Stakeholder } from "../../domain";
 import type { StakeholderNote } from "../../services/workflows/workflowActionRecords";
 import { readAndClearAgenticDraft, type AgenticDraft } from "../../services/agentic/agenticDraftHandoff";
+import { writeStakeholderNoteDraft } from "../../services/agentic/stakeholderActionHandoff";
+import { SendBriefingModal } from "./SendBriefingModal";
 import { Plus, Sparkles, X } from "lucide-react";
 
 const engagementOptions: { value: Stakeholder["engagementLevel"]; label: string }[] = [
@@ -27,6 +29,33 @@ function engagementBadgeClass(level: Stakeholder["engagementLevel"]) {
   if (level === "low") return "bg-gray-100 text-gray-600";
   return "bg-gray-50 text-gray-400 italic";
 }
+
+// Normalized shape for the detail tile -- the live table (Stakeholder domain rows: affiliation,
+// influenceScore, engagementLevel) and the demo table (institutionalRepository rows: org, influence,
+// engagement, avatar, lastContact) have different field names for the same concepts, so both are
+// mapped into this common shape before rendering.
+type ContactProfile = {
+  id: string;
+  name: string;
+  org: string;
+  role: string;
+  influence?: number;
+  engagement: string;
+  lastContact?: string;
+};
+
+// institutionalRepository.getStakeholders() rows, normalized to a string id (see the demoStakeholders
+// assignment below for why).
+type DemoStakeholderRow = { id: string; avatar: string; name: string; org: string; role: string; influence: number; engagement: string; lastContact: string };
+
+const engagementTone: Record<string, string> = {
+  high: "bg-emerald-50 text-emerald-700",
+  High: "bg-emerald-50 text-emerald-700",
+  medium: "bg-amber-50 text-amber-700",
+  Medium: "bg-amber-50 text-amber-700",
+  low: "bg-gray-100 text-gray-600",
+  Low: "bg-gray-100 text-gray-600",
+};
 
 export const StakeholdersSection = () => {
   const demoMode = isDemoModeEnabled();
@@ -60,7 +89,19 @@ export const StakeholdersSection = () => {
   const [notesLoading, setNotesLoading] = useState(!demoMode);
   const [agenticDraft, setAgenticDraft] = useState<AgenticDraft | null>(null);
   const [savingAgenticNote, setSavingAgenticNote] = useState(false);
-  const stakeholders = demoMode ? applicationServices.institutionalRepository.getStakeholders() : [];
+  const [demoAddedStakeholders, setDemoAddedStakeholders] = useState<DemoStakeholderRow[]>([]);
+  const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
+  const [briefingFor, setBriefingFor] = useState<ContactProfile | null>(null);
+  // institutionalRepository.getStakeholders() rows carry a numeric `id` -- normalized to string
+  // here so it can share selectedContactId/ContactProfile.id (string) with the live-tenant table,
+  // which uses real Stakeholder domain rows (string ids), and with demoAddedStakeholders (locally
+  // constructed, string ids from Date.now()).
+  const stakeholders: DemoStakeholderRow[] = useMemo(() => {
+    const rows = demoMode
+      ? applicationServices.institutionalRepository.getStakeholders().map((row) => ({ ...row, id: String(row.id) }))
+      : [];
+    return [...rows, ...demoAddedStakeholders];
+  }, [demoMode, demoAddedStakeholders]);
 
   // A-79: "Save stakeholder mapping" from the AI Workspace actionables pop-up lands here -- a
   // mapping isn't a new Contact, so it offers a "Save as note" card instead of pre-filling the
@@ -127,7 +168,6 @@ export const StakeholdersSection = () => {
   }, [demoMode, scope]);
 
   async function addContact() {
-    if (!scope) return;
     if (!form.name.trim()) {
       setToast({ tone: "error", message: "Enter a contact name before saving." });
       return;
@@ -138,6 +178,34 @@ export const StakeholdersSection = () => {
       setToast({ tone: "error", message: "Influence must be a number between 0 and 100, or left blank." });
       return;
     }
+
+    // A-116 (2026-08-14): "Add Contact" was fully disabled in demo mode (button + form both gated
+    // on !demoMode), so the investor demo's own headline CRM action was dead by design. Demo mode
+    // has no real backend to persist to -- this appends a locally-constructed row to session-only
+    // state, matching every other demo-interactivity fix this session (Notifications, etc.). Real-
+    // tenant behavior (the repository branch below) is unchanged.
+    if (demoMode) {
+      const initials = form.name.trim().split(/\s+/).map((part) => part[0]).slice(0, 2).join("").toUpperCase() || "NC";
+      setDemoAddedStakeholders((current) => [
+        {
+          id: `demo-added-${Date.now()}`,
+          avatar: initials,
+          name: form.name.trim(),
+          org: form.affiliation.trim() || "--",
+          role: form.role.trim() || "--",
+          influence: influenceScore ?? 0,
+          engagement: form.engagementLevel === "unrated" ? "Low" : form.engagementLevel[0].toUpperCase() + form.engagementLevel.slice(1),
+          lastContact: new Date().toISOString().slice(0, 10),
+        },
+        ...current,
+      ]);
+      setForm({ name: "", affiliation: "", role: "", influenceScore: "", engagementLevel: "unrated" });
+      setShowAddForm(false);
+      setToast({ tone: "success", message: `${form.name.trim()} added to Stakeholders (session only -- demo data resets on reload).` });
+      return;
+    }
+
+    if (!scope) return;
     setSaving(true);
     setToast(null);
     try {
@@ -163,6 +231,91 @@ export const StakeholdersSection = () => {
     }
   }
 
+  // A-116 (2026-08-14): shared by the top-3 demo "AI-generated briefing" cards, the contact table
+  // rows (both demo and live), and the Relationship Network nodes -- previously each surface had
+  // its own dead/half-wired copy of these three actions (a plain <button> with no handler at all
+  // for "Add note", and two plain <a href> links with zero feedback for "Create task"/"Send
+  // briefing"). Founder's explicit direction: "They need to work both in demo and live."
+  function handleAddNote(profile: ContactProfile) {
+    const enrichment = demoStakeholderCardFor(profile.name);
+    writeStakeholderNoteDraft({ stakeholderName: profile.name, presetBody: enrichment?.suggestion });
+    window.location.assign("/tasks");
+  }
+
+  async function handleCreateTask(profile: ContactProfile) {
+    if (!demoMode && scope) {
+      try {
+        await applicationServices.tasksRepository.create(scope, {
+          title: `Follow up with ${profile.name}`,
+          description: demoStakeholderCardFor(profile.name)?.nextFollowUp ?? "",
+          priority: "medium",
+        } as Partial<import("../../domain").Task> & { title: string });
+      } catch {
+        // Real creation failed (e.g. missing required server-side fields) -- still navigate to
+        // Tasks & Workflow, matching this action's pre-existing plain-link behavior, rather than
+        // leaving the click silently inert.
+      }
+    }
+    window.location.assign("/tasks");
+  }
+
+  function openBriefingModal(profile: ContactProfile) {
+    setBriefingFor(profile);
+  }
+
+  async function saveBriefing(profile: ContactProfile, fields: { to: string; cc: string; bcc: string; subject: string; body: string }) {
+    const noteBody = `To: ${fields.to || "--"}\nCC: ${fields.cc || "--"}\nBCC: ${fields.bcc || "--"}\n\n${fields.body}`;
+    if (demoMode) {
+      setToast({ tone: "success", message: `Briefing recorded for ${profile.name} (session only).` });
+    } else if (scope) {
+      try {
+        await fetch("/api/stakeholders/notes", {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title: fields.subject, body: noteBody }),
+        });
+        setToast({ tone: "success", message: `Briefing recorded for ${profile.name}.` });
+      } catch {
+        setToast({ tone: "error", message: "Could not record this briefing. Try again." });
+      }
+    }
+    setBriefingFor(null);
+  }
+
+  function demoStakeholderCardFor(name: string) {
+    return demoStakeholderCards.find((card) => card.name === name);
+  }
+
+  const selectedProfile: ContactProfile | undefined = useMemo(() => {
+    if (!selectedContactId) return undefined;
+    const liveMatch = liveStakeholders.find((row) => row.id === selectedContactId);
+    if (liveMatch) {
+      return {
+        id: liveMatch.id,
+        name: liveMatch.name,
+        org: liveMatch.affiliation || "--",
+        role: "--",
+        influence: liveMatch.engagementLevel === "unrated" ? undefined : liveMatch.influenceScore,
+        engagement: liveMatch.engagementLevel,
+        lastContact: undefined,
+      };
+    }
+    const demoMatch = stakeholders.find((row) => row.id === selectedContactId);
+    if (demoMatch) {
+      return {
+        id: demoMatch.id,
+        name: demoMatch.name,
+        org: demoMatch.org,
+        role: demoMatch.role,
+        influence: demoMatch.influence,
+        engagement: demoMatch.engagement,
+        lastContact: demoMatch.lastContact,
+      };
+    }
+    return undefined;
+  }, [selectedContactId, liveStakeholders, stakeholders]);
+
   return (
   <PageShell>
     <ModuleHeader
@@ -176,15 +329,23 @@ export const StakeholdersSection = () => {
       actions={
         <button
           onClick={() => setShowAddForm((current) => !current)}
-          disabled={demoMode}
-          className="text-xs bg-[#8B1E2D] text-white px-3 py-2 rounded-lg flex items-center gap-1.5 hover:bg-[#7a1a27] disabled:cursor-not-allowed disabled:opacity-60"
+          className="text-xs bg-[#8B1E2D] text-white px-3 py-2 rounded-lg flex items-center gap-1.5 hover:bg-[#7a1a27]"
         >
           <Plus size={12} /> Add Contact
         </button>
       }
     />
     {toast && <InlineToast tone={toast.tone} message={toast.message} />}
-    {!demoMode && showAddForm && (
+    {briefingFor && (
+      <SendBriefingModal
+        open
+        stakeholderName={briefingFor.name}
+        defaultBody={demoStakeholderCardFor(briefingFor.name)?.suggestion ?? ""}
+        onSave={(fields) => void saveBriefing(briefingFor, fields)}
+        onCancel={() => setBriefingFor(null)}
+      />
+    )}
+    {showAddForm && (
       <Card className="p-4">
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
           <input aria-label="Contact name" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} placeholder="Name" className="rounded-lg border border-[rgba(0,0,0,0.12)] bg-white px-3 py-2 text-xs outline-none" />
@@ -210,6 +371,41 @@ export const StakeholdersSection = () => {
         </div>
       </Card>
     )}
+
+    {selectedProfile && (
+      <Card className="border-[#8B1E2D]/20 p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-[#5F6B73]">Contact Profile</p>
+            <h3 className="mt-1 text-base font-semibold text-[#0F1117]">{selectedProfile.name}</h3>
+            <p className="text-xs text-[#5F6B73]">{selectedProfile.org} - {selectedProfile.role}</p>
+          </div>
+          <button type="button" onClick={() => setSelectedContactId(null)} aria-label="Close profile" className="text-[#5F6B73] hover:text-[#0F1117]"><X size={16} /></button>
+        </div>
+        <div className="mt-3 grid grid-cols-2 gap-3 text-xs sm:grid-cols-4">
+          <div className="rounded-lg bg-[#F8F9FA] p-3"><span className="block text-[10px] uppercase text-[#5F6B73]">Influence</span><span className="font-mono font-semibold text-[#0F1117]">{selectedProfile.influence ?? "--"}</span></div>
+          <div className="rounded-lg bg-[#F8F9FA] p-3"><span className="block text-[10px] uppercase text-[#5F6B73]">Engagement</span><span className={`inline-block rounded-full px-2 py-0.5 text-[11px] font-medium capitalize ${engagementTone[selectedProfile.engagement] ?? "bg-gray-100 text-gray-600"}`}>{selectedProfile.engagement}</span></div>
+          <div className="rounded-lg bg-[#F8F9FA] p-3 sm:col-span-2"><span className="block text-[10px] uppercase text-[#5F6B73]">Last contact</span><span className="font-mono text-[#0F1117]">{selectedProfile.lastContact ?? "--"}</span></div>
+        </div>
+        {(() => {
+          const enrichment = demoStakeholderCardFor(selectedProfile.name);
+          return enrichment ? (
+            <div className="mt-3 space-y-2 text-xs text-[#5F6B73]">
+              <p><strong className="text-[#0F1117]">Next follow-up:</strong> {enrichment.nextFollowUp}</p>
+              <p><strong className="text-[#0F1117]">Linked project:</strong> {enrichment.linkedProject}</p>
+              <p><strong className="text-[#0F1117]">Linked document:</strong> {enrichment.linkedDocument}</p>
+              <p className="rounded-lg bg-[#F8F9FA] p-3 leading-relaxed"><strong className="text-[#0F1117]">AI suggestion:</strong> {enrichment.suggestion}</p>
+            </div>
+          ) : null;
+        })()}
+        <div className="mt-3 flex flex-wrap gap-2 text-xs">
+          <button onClick={() => handleAddNote(selectedProfile)} className="rounded-lg border border-[rgba(15,17,23,0.1)] px-3 py-2 font-semibold text-[#5F6B73] hover:bg-[#F2F3F5]">Add note</button>
+          <button onClick={() => void handleCreateTask(selectedProfile)} className="rounded-lg border border-[rgba(15,17,23,0.1)] px-3 py-2 font-semibold text-[#5F6B73] hover:bg-[#F2F3F5]">Create task</button>
+          <button onClick={() => openBriefingModal(selectedProfile)} className="rounded-lg bg-[#8B1E2D] px-3 py-2 font-semibold text-white hover:bg-[#7a1a27]">Send briefing</button>
+        </div>
+      </Card>
+    )}
+
     {!demoMode && !loading && liveStakeholders.length === 0 && (
       <Card className="p-8">
         <EmptyState message="No stakeholders yet. Add your first contact to start tracking relationships, follow-ups, and linked workflows." />
@@ -227,7 +423,11 @@ export const StakeholdersSection = () => {
           </thead>
           <tbody>
             {liveStakeholders.map((stakeholder) => (
-              <tr key={stakeholder.id} className="border-b border-[rgba(0,0,0,0.04)]">
+              <tr
+                key={stakeholder.id}
+                onClick={() => setSelectedContactId(stakeholder.id)}
+                className={`cursor-pointer border-b border-[rgba(0,0,0,0.04)] transition-colors hover:bg-[#F8F9FA] ${selectedContactId === stakeholder.id ? "bg-[#F8F9FA]" : ""}`}
+              >
                 <td className="px-4 py-3 text-xs font-semibold text-[#0F1117]">{stakeholder.name}</td>
                 <td className="px-4 py-3 text-xs text-[#5F6B73]">{stakeholder.affiliation || "--"}</td>
                 <td className="px-4 py-3 text-xs font-mono text-[#5F6B73]">{stakeholder.engagementLevel === "unrated" ? "--" : stakeholder.influenceScore}</td>
@@ -293,7 +493,15 @@ export const StakeholdersSection = () => {
     {demoMode && (
     <>
     <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
-      {demoStakeholderCards.map((stakeholder) => (
+      {demoStakeholderCards.map((stakeholder) => {
+        const profile: ContactProfile = {
+          id: stakeholders.find((row) => row.name === stakeholder.name)?.id ?? stakeholder.name,
+          name: stakeholder.name,
+          org: stakeholder.organization,
+          role: stakeholder.type,
+          engagement: stakeholder.strength,
+        };
+        return (
         <SectionCard key={stakeholder.name} title={stakeholder.name} description={`${stakeholder.organization} - ${stakeholder.lastInteraction}`}>
           <div className="space-y-3 text-xs text-[#5F6B73]">
             <div className="flex flex-wrap gap-2">
@@ -305,13 +513,14 @@ export const StakeholdersSection = () => {
             <p><strong className="text-[#0F1117]">Linked document:</strong> {stakeholder.linkedDocument}</p>
             <p className="rounded-lg bg-[#F8F9FA] p-3 leading-relaxed"><strong className="text-[#0F1117]">AI suggestion:</strong> {stakeholder.suggestion}</p>
             <div className="flex flex-wrap gap-2">
-              <button className="rounded-lg border border-[rgba(15,17,23,0.1)] px-3 py-2 font-semibold text-[#5F6B73] hover:bg-[#F2F3F5]">Add note</button>
-              <a href="/tasks" className="rounded-lg border border-[rgba(15,17,23,0.1)] px-3 py-2 font-semibold text-[#5F6B73] hover:bg-[#F2F3F5]">Create task</a>
-              <a href="/ai-workspace" className="rounded-lg bg-[#8B1E2D] px-3 py-2 font-semibold text-white hover:bg-[#7a1a27]">Send briefing</a>
+              <button onClick={() => handleAddNote(profile)} className="rounded-lg border border-[rgba(15,17,23,0.1)] px-3 py-2 font-semibold text-[#5F6B73] hover:bg-[#F2F3F5]">Add note</button>
+              <button onClick={() => void handleCreateTask(profile)} className="rounded-lg border border-[rgba(15,17,23,0.1)] px-3 py-2 font-semibold text-[#5F6B73] hover:bg-[#F2F3F5]">Create task</button>
+              <button onClick={() => openBriefingModal(profile)} className="rounded-lg bg-[#8B1E2D] px-3 py-2 font-semibold text-white hover:bg-[#7a1a27]">Send briefing</button>
             </div>
           </div>
         </SectionCard>
-      ))}
+        );
+      })}
     </div>
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
       <div className="lg:col-span-2">
@@ -326,7 +535,11 @@ export const StakeholdersSection = () => {
             </thead>
             <tbody>
               {stakeholders.map((s) => (
-                <tr key={s.id} className="border-b border-[rgba(0,0,0,0.04)] hover:bg-[#F8F9FA] transition-colors cursor-pointer">
+                <tr
+                  key={s.id}
+                  onClick={() => setSelectedContactId(s.id)}
+                  className={`border-b border-[rgba(0,0,0,0.04)] hover:bg-[#F8F9FA] transition-colors cursor-pointer ${selectedContactId === s.id ? "bg-[#F8F9FA]" : ""}`}
+                >
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2.5">
                       <Avatar initials={s.avatar} />
@@ -367,15 +580,17 @@ export const StakeholdersSection = () => {
               const x = 100 + r * Math.cos(angle);
               const y = 80 + r * Math.sin(angle);
               const strokeW = s.influence > 85 ? 2 : 1;
+              const isSelected = selectedContactId === s.id;
               return (
-                <g key={s.id}>
-                  <line x1="100" y1="80" x2={x} y2={y} stroke="#C9A227" strokeWidth={strokeW} strokeOpacity="0.4" />
-                  <circle cx={x} cy={y} r="12" fill="#2C4A7C" opacity="0.8" />
+                <g key={s.id} onClick={() => setSelectedContactId(s.id)} className="cursor-pointer">
+                  <line x1="100" y1="80" x2={x} y2={y} stroke="#C9A227" strokeWidth={strokeW} strokeOpacity={isSelected ? 0.9 : 0.4} />
+                  <circle cx={x} cy={y} r={isSelected ? 14 : 12} fill={isSelected ? "#8B1E2D" : "#2C4A7C"} opacity="0.9" stroke={isSelected ? "#8B1E2D" : "none"} strokeWidth={isSelected ? 2 : 0} />
                   <text x={x} y={y + 3} textAnchor="middle" fill="white" fontSize="7" fontWeight="bold">{s.avatar}</text>
                 </g>
               );
             })}
           </svg>
+          <p className="mt-2 text-[10px] leading-relaxed text-[#5F6B73]">Line thickness reflects relationship influence. Click a node or a table row to open that contact&apos;s profile above.</p>
         </Card>
         <Card className="p-4">
           <h3 className="text-xs font-semibold text-[#0F1117] uppercase tracking-wider mb-3">Engagement Timeline</h3>
