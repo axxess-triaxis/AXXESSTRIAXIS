@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerAuthSession } from "../../../../auth/serverSession";
-import { createAgentConnection, listAgentConnections, revokeAgentConnection } from "../../../../services/agents/agentConnectionRepository";
-import { agentProviderIds, type AgentProviderId } from "../../../../security/agentScope";
+import { createAgentConnection, listAgentConnections, revokeAgentConnection, updateAgentConnectionCapabilities } from "../../../../services/agents/agentConnectionRepository";
+import { agentProviderIds, normalizeAgentCapabilities, type AgentProviderId } from "../../../../security/agentScope";
 
 const adminRoles = ["Super Admin", "Organization Admin"];
 
@@ -47,6 +47,29 @@ export async function POST(request: Request) {
   // rawApiKey is returned exactly once here -- it is never persisted (only its hash is) and this
   // response is the only opportunity the tenant admin has to copy it.
   return NextResponse.json({ connection, rawApiKey }, { status: 201 });
+}
+
+export async function PATCH(request: Request) {
+  const authResult = await requireAdminSession();
+  if (!authResult.ok) return authResult.error;
+
+  const body = await request.json().catch(() => null) as { id?: string; capabilities?: unknown } | null;
+  const id = body?.id?.trim();
+  if (!id) return NextResponse.json({ error: "id is required." }, { status: 400 });
+  if (!Array.isArray(body?.capabilities)) return NextResponse.json({ error: "capabilities must be an array." }, { status: 400 });
+
+  const requested = body.capabilities;
+  const normalized = normalizeAgentCapabilities(requested);
+  if (normalized.length !== requested.length) {
+    return NextResponse.json({ error: "capabilities contains an unsupported tool capability." }, { status: 400 });
+  }
+
+  const connection = await updateAgentConnectionCapabilities({
+    organizationId: authResult.session.user.organizationId,
+    connectionId: id,
+    capabilities: normalized,
+  });
+  return NextResponse.json({ connection });
 }
 
 export async function DELETE(request: Request) {

@@ -16,7 +16,7 @@ vi.mock("../../repositories/supabaseAdmin", () => ({
 
 const env = { AXXESS_TOKEN_VAULT_KEY: "test-token-vault-key-with-at-least-32-characters" } as unknown as NodeJS.ProcessEnv;
 
-import { createAgentConnection, listAgentConnections, resolveAgentScopeFromApiKey, revokeAgentConnection } from "./agentConnectionRepository";
+import { createAgentConnection, listAgentConnections, resolveAgentScopeFromApiKey, revokeAgentConnection, updateAgentConnectionCapabilities } from "./agentConnectionRepository";
 import { hashAgentApiKey } from "./agentConnectionVault";
 
 function connectionRow(overrides: Partial<Record<string, unknown>> = {}) {
@@ -62,6 +62,25 @@ describe("agentConnectionRepository", () => {
     const insertedBody = state.calls[0].options.body as Record<string, unknown>;
     expect(insertedBody.api_key_hash).not.toBe(rawApiKey);
     expect(JSON.stringify(insertedBody)).not.toContain(rawApiKey);
+    expect(insertedBody.capabilities).toEqual(["create_task", "query_knowledge_hub", "list_projects", "create_meeting", "create_project", "list_stakeholders", "create_stakeholder", "query_external_model"]);
+    expect(insertedBody.capabilities).not.toContain("search_audit_logs");
+  });
+
+  it("lets an admin explicitly update a connection's capability list without accepting unknown tools", async () => {
+    state.responses = [[connectionRow({ capabilities: ["create_task", "list_tasks"] })]];
+
+    const connection = await updateAgentConnectionCapabilities({
+      organizationId: "org-1",
+      connectionId: "conn-1",
+      capabilities: ["create_task", "list_tasks", "drop_tables"],
+    });
+
+    const query = state.calls[0].options.query as URLSearchParams;
+    const body = state.calls[0].options.body as Record<string, unknown>;
+    expect(query.get("id")).toBe("eq.conn-1");
+    expect(query.get("organization_id")).toBe("eq.org-1");
+    expect(body.capabilities).toEqual(["create_task", "list_tasks"]);
+    expect(connection.capabilities).toEqual(["create_task", "list_tasks"]);
   });
 
   it("lists connections scoped to the caller's organization only, via an organization_id filter", async () => {

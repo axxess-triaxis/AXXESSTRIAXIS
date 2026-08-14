@@ -5,6 +5,8 @@ const state = {
   connections: [] as unknown[],
   createResult: null as null | { connection: unknown; rawApiKey: string },
   revokeCalls: [] as Array<{ organizationId: string; connectionId: string }>,
+  updateCalls: [] as Array<{ organizationId: string; connectionId: string; capabilities: unknown }>,
+  updateResult: null as unknown,
 };
 
 vi.mock("../../../../auth/serverSession", () => ({
@@ -17,9 +19,13 @@ vi.mock("../../../../services/agents/agentConnectionRepository", () => ({
   revokeAgentConnection: async (organizationId: string, connectionId: string) => {
     state.revokeCalls.push({ organizationId, connectionId });
   },
+  updateAgentConnectionCapabilities: async (input: { organizationId: string; connectionId: string; capabilities: unknown }) => {
+    state.updateCalls.push(input);
+    return state.updateResult ?? { id: input.connectionId, capabilities: input.capabilities };
+  },
 }));
 
-import { DELETE, GET, POST } from "./route";
+import { DELETE, GET, PATCH, POST } from "./route";
 
 function user(id: string, role: string, organizationId = "org-1") {
   return { id, organizationId, role };
@@ -31,6 +37,8 @@ describe("GET/POST/DELETE /api/agents/connections", () => {
     state.connections = [];
     state.createResult = null;
     state.revokeCalls = [];
+    state.updateCalls = [];
+    state.updateResult = null;
     vi.clearAllMocks();
   });
 
@@ -70,6 +78,34 @@ describe("GET/POST/DELETE /api/agents/connections", () => {
     expect(response.status).toBe(201);
     expect(body.rawApiKey).toBe("axa_live_abc");
     expect(body.connection.id).toBe("conn-1");
+  });
+
+  it("PATCH updates a connection's explicit capability list for the caller's organization", async () => {
+    state.session = { user: user("user-1", "Organization Admin", "org-7") };
+    const request = new Request("https://example.com/api/agents/connections", {
+      method: "PATCH",
+      body: JSON.stringify({ id: "conn-1", capabilities: ["create_task", "list_tasks"] }),
+    });
+
+    const response = await PATCH(request);
+    const body = await response.json() as { connection: { id: string; capabilities: string[] } };
+
+    expect(response.status).toBe(200);
+    expect(state.updateCalls).toEqual([{ organizationId: "org-7", connectionId: "conn-1", capabilities: ["create_task", "list_tasks"] }]);
+    expect(body.connection.capabilities).toEqual(["create_task", "list_tasks"]);
+  });
+
+  it("PATCH rejects unsupported capabilities instead of silently granting unknown tools", async () => {
+    state.session = { user: user("user-1", "Organization Admin") };
+    const request = new Request("https://example.com/api/agents/connections", {
+      method: "PATCH",
+      body: JSON.stringify({ id: "conn-1", capabilities: ["create_task", "drop_tables"] }),
+    });
+
+    const response = await PATCH(request);
+
+    expect(response.status).toBe(400);
+    expect(state.updateCalls).toHaveLength(0);
   });
 
   it("DELETE requires an id and revokes scoped to the caller's own organization", async () => {
