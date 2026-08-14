@@ -18,6 +18,7 @@ import { getIntegrationHealth, getInfrastructureOnlyIntegrations, getPilotIntegr
 import { useFacebookLoginStatus, facebookLoginStatusCopy } from "../../hooks/useFacebookLoginStatus";
 import { WhatsAppPhoneNumberField } from "./WhatsAppPhoneNumberField";
 import { allAgentCapabilities, mcp2AgentCapabilities, type AgentCapability } from "../../security/agentScope";
+import { agentPolicyTemplates } from "../../services/agents/agentPolicyTemplates";
 import { Layers } from "lucide-react";
 
 // Illustrative connector gallery for the investor-demo experience only -- real connector status
@@ -813,7 +814,31 @@ type AgentConnectionSummary = {
   lastUsedAt?: string;
   createdAt: string;
   revokedAt?: string;
+  agentProfileId?: string;
 };
+
+// MCP3-2 (2026-08-14): a named, reusable agent persona a connection can be issued from -- see
+// src/services/agents/agentProfileRepository.ts (server-only; this is a local mirror of its
+// AgentProfileSummary shape, same convention already used for AgentConnectionSummary above).
+type AgentProfileSummary = {
+  id: string;
+  provider: "openai" | "anthropic" | "microsoft_copilot";
+  displayName: string;
+  purpose?: string;
+  instructions?: string;
+  riskTier: "low" | "standard" | "elevated" | "high";
+  defaultCapabilities: AgentCapability[];
+  policyTemplate?: string;
+  status: "active" | "revoked";
+  createdAt: string;
+};
+
+const riskTierOptions: Array<{ id: "low" | "standard" | "elevated" | "high"; label: string }> = [
+  { id: "low", label: "Low" },
+  { id: "standard", label: "Standard" },
+  { id: "elevated", label: "Elevated" },
+  { id: "high", label: "High" },
+];
 
 // Agentic Infrastructure Phase 1 (2026-07-30): lets a tenant admin issue an AXXESS API key for an
 // external AI agent platform to connect to the real MCP server at /api/agents/mcp
@@ -872,6 +897,12 @@ function AgentConnectionsPanel() {
   const [connections, setConnections] = useState<AgentConnectionSummary[]>([]);
   const [provider, setProvider] = useState<"openai" | "anthropic" | "microsoft_copilot">("openai");
   const [label, setLabel] = useState("");
+  // MCP3-2: reusable agent personas a connection can be issued from, plus the compact create form.
+  const [profiles, setProfiles] = useState<AgentProfileSummary[]>([]);
+  const [selectedProfileId, setSelectedProfileId] = useState("");
+  const [showProfileForm, setShowProfileForm] = useState(false);
+  const [newProfile, setNewProfile] = useState({ displayName: "", purpose: "", provider: "openai" as typeof provider, riskTier: "standard" as AgentProfileSummary["riskTier"], policyTemplateId: "" });
+  const [savingProfile, setSavingProfile] = useState(false);
   const [issuedKey, setIssuedKey] = useState<{ provider: string; rawApiKey: string } | null>(null);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<{ tone: "success" | "error" | "info"; message: string } | null>(null);
@@ -957,11 +988,50 @@ function AgentConnectionsPanel() {
         if (isMounted) setConnections(result.connections ?? []);
       })
       .catch(() => undefined);
+    fetch("/api/agents/profiles", { credentials: "include", cache: "no-store" })
+      .then((response) => response.json())
+      .then((result: { profiles?: AgentProfileSummary[] }) => {
+        if (isMounted) setProfiles(result.profiles ?? []);
+      })
+      .catch(() => undefined);
     void loadAgentActivity();
     return () => {
       isMounted = false;
     };
   }, [canManage]);
+
+  async function createProfile() {
+    if (!newProfile.displayName.trim()) {
+      setToast({ tone: "error", message: "Enter a display name before creating a profile." });
+      return;
+    }
+    setSavingProfile(true);
+    setToast(null);
+    try {
+      const response = await fetch("/api/agents/profiles", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          provider: newProfile.provider,
+          displayName: newProfile.displayName.trim(),
+          purpose: newProfile.purpose.trim() || undefined,
+          riskTier: newProfile.riskTier,
+          policyTemplateId: newProfile.policyTemplateId || undefined,
+        }),
+      });
+      const result = await response.json().catch(() => ({} as { profile?: AgentProfileSummary; error?: string }));
+      if (!response.ok || !result.profile) throw new Error(result.error ?? "Creating this agent profile failed.");
+      setProfiles((current) => [result.profile as AgentProfileSummary, ...current]);
+      setNewProfile({ displayName: "", purpose: "", provider: "openai", riskTier: "standard", policyTemplateId: "" });
+      setShowProfileForm(false);
+      setToast({ tone: "success", message: `Profile "${result.profile.displayName}" created.` });
+    } catch (error) {
+      setToast({ tone: "error", message: error instanceof Error ? error.message : "Creating this agent profile failed." });
+    } finally {
+      setSavingProfile(false);
+    }
+  }
 
   async function generateKey() {
     setSaving(true);
@@ -971,7 +1041,7 @@ function AgentConnectionsPanel() {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ provider, label: label.trim() || undefined }),
+        body: JSON.stringify({ provider, label: label.trim() || undefined, agentProfileId: selectedProfileId || undefined }),
       });
       const result = await response.json().catch(() => ({} as { connection?: AgentConnectionSummary; rawApiKey?: string; error?: string }));
       if (!response.ok || !result.connection || !result.rawApiKey) {
@@ -1046,6 +1116,89 @@ function AgentConnectionsPanel() {
           </div>
         </div>
       )}
+      <div className="mb-4 rounded-lg border border-[rgba(0,0,0,0.08)] p-3">
+        <div className="mb-2 flex items-center justify-between">
+          <div>
+            <h4 className="text-xs font-semibold text-[#0F1117]">Agent Profiles</h4>
+            <p className="mt-0.5 text-[11px] text-[#5F6B73]">A reusable persona (purpose, risk tier, default capabilities) a connection can be issued from, instead of picking every capability by hand.</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowProfileForm((current) => !current)}
+            className="rounded-lg border border-[rgba(0,0,0,0.12)] px-2.5 py-1 text-[11px] font-semibold text-[#0F1117] hover:bg-[#F2F3F5]"
+          >
+            {showProfileForm ? "Cancel" : "New profile"}
+          </button>
+        </div>
+        {showProfileForm && (
+          <div className="mb-3 grid gap-2 rounded-lg bg-[#F8F9FA] p-3 md:grid-cols-2">
+            <input
+              aria-label="Profile display name"
+              type="text"
+              placeholder="Display name"
+              value={newProfile.displayName}
+              onChange={(event) => setNewProfile((current) => ({ ...current, displayName: event.target.value }))}
+              className="rounded-lg border border-[rgba(0,0,0,0.12)] bg-white px-3 py-2 text-xs outline-none"
+            />
+            <select
+              aria-label="Profile provider"
+              value={newProfile.provider}
+              onChange={(event) => setNewProfile((current) => ({ ...current, provider: event.target.value as typeof provider }))}
+              className="rounded-lg border border-[rgba(0,0,0,0.12)] bg-white px-3 py-2 text-xs outline-none"
+            >
+              {agentProviderOptions.map((option) => <option key={option.id} value={option.id}>{option.label}</option>)}
+            </select>
+            <input
+              aria-label="Profile purpose"
+              type="text"
+              placeholder="Purpose (optional)"
+              value={newProfile.purpose}
+              onChange={(event) => setNewProfile((current) => ({ ...current, purpose: event.target.value }))}
+              className="rounded-lg border border-[rgba(0,0,0,0.12)] bg-white px-3 py-2 text-xs outline-none md:col-span-2"
+            />
+            <select
+              aria-label="Profile risk tier"
+              value={newProfile.riskTier}
+              onChange={(event) => setNewProfile((current) => ({ ...current, riskTier: event.target.value as AgentProfileSummary["riskTier"] }))}
+              className="rounded-lg border border-[rgba(0,0,0,0.12)] bg-white px-3 py-2 text-xs outline-none"
+            >
+              {riskTierOptions.map((option) => <option key={option.id} value={option.id}>{option.label} risk</option>)}
+            </select>
+            <select
+              aria-label="Policy template"
+              value={newProfile.policyTemplateId}
+              onChange={(event) => setNewProfile((current) => ({ ...current, policyTemplateId: event.target.value }))}
+              className="rounded-lg border border-[rgba(0,0,0,0.12)] bg-white px-3 py-2 text-xs outline-none"
+            >
+              <option value="">Custom (set capabilities after creating)</option>
+              {agentPolicyTemplates.map((template) => <option key={template.id} value={template.id}>{template.label}</option>)}
+            </select>
+            {newProfile.policyTemplateId && (
+              <p className="text-[11px] text-[#5F6B73] md:col-span-2">{agentPolicyTemplates.find((template) => template.id === newProfile.policyTemplateId)?.description}</p>
+            )}
+            <button
+              type="button"
+              onClick={() => void createProfile()}
+              disabled={savingProfile}
+              className="rounded-lg bg-[#8B1E2D] px-3 py-2 text-xs font-semibold text-white hover:bg-[#7a1a27] disabled:opacity-60 md:col-span-2"
+            >
+              Create profile
+            </button>
+          </div>
+        )}
+        {profiles.length > 0 ? (
+          <div className="grid gap-1.5">
+            {profiles.map((profile) => (
+              <div key={profile.id} className="flex items-center justify-between rounded-lg bg-[#F8F9FA] px-2.5 py-1.5 text-[11px]">
+                <span className="font-semibold text-[#0F1117]">{profile.displayName}</span>
+                <span className="text-[#5F6B73]">{agentProviderOptions.find((option) => option.id === profile.provider)?.label} - {profile.riskTier} risk - {profile.defaultCapabilities.length} tool{profile.defaultCapabilities.length === 1 ? "" : "s"}</span>
+              </div>
+            ))}
+          </div>
+        ) : !showProfileForm && (
+          <p className="text-[11px] text-[#5F6B73]">No agent profiles yet.</p>
+        )}
+      </div>
       <div className="flex flex-wrap items-end gap-2">
         <label className="text-xs">
           <span className="mb-1 block font-semibold text-[#0F1117]">Provider</span>
@@ -1065,6 +1218,17 @@ function AgentConnectionsPanel() {
           onChange={(event) => setLabel(event.target.value)}
           className="rounded-lg border border-[rgba(0,0,0,0.12)] bg-white px-3 py-2 text-xs outline-none"
         />
+        <label className="text-xs">
+          <span className="mb-1 block font-semibold text-[#0F1117]">Profile (optional)</span>
+          <select
+            value={selectedProfileId}
+            onChange={(event) => setSelectedProfileId(event.target.value)}
+            className="rounded-lg border border-[rgba(0,0,0,0.12)] bg-white px-3 py-2 text-xs outline-none"
+          >
+            <option value="">None (default capabilities)</option>
+            {profiles.filter((profile) => profile.status === "active").map((profile) => <option key={profile.id} value={profile.id}>{profile.displayName}</option>)}
+          </select>
+        </label>
         <button
           type="button"
           onClick={() => void generateKey()}

@@ -236,6 +236,12 @@ export const approvalRequestsRepository: ApprovalRequestsRepository = {
   // the LIVE approvals table had no action buttons at all. This is what makes a real decision
   // possible for both a human reviewing the live queue and the MCP route resolving a pending
   // agent tool-call approval.
+  //
+  // MCP3-2 (2026-08-14): added status=eq.pending to the WHERE clause -- previously this PATCH
+  // matched on id+organization_id alone, so a second decide() call on an already-decided approval
+  // silently overwrote status/decision_reason/decided_at again. Now a repeat call affects 0 rows
+  // and throws the same "not found" error a genuinely missing/wrong-org id would -- the caller
+  // (PATCH /api/approvals/[id]) treats that as "already decided" rather than re-processing.
   async decide(scope, id, input) {
     if (!isSupabaseAdminConfigured()) throw new Error("Approval decisions require Supabase admin configuration.");
     const rows = await supabaseAdminRest<ApprovalRequestRow[]>("approval_requests", {
@@ -243,6 +249,7 @@ export const approvalRequestsRepository: ApprovalRequestsRepository = {
       query: new URLSearchParams({
         id: `eq.${id}`,
         organization_id: `eq.${scope.organizationId}`,
+        status: "eq.pending",
       }),
       body: {
         status: input.status,
@@ -252,7 +259,7 @@ export const approvalRequestsRepository: ApprovalRequestsRepository = {
       },
     });
     const row = rows[0];
-    if (!row) throw new Error("Approval request was not found for this organization.");
+    if (!row) throw new Error("Approval request was not found, not owned by this organization, or was already decided.");
     return approvalRequestFromRow(row);
   },
 };

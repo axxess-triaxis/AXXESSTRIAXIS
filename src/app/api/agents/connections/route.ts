@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerAuthSession } from "../../../../auth/serverSession";
 import { createAgentConnection, listAgentConnections, revokeAgentConnection, updateAgentConnectionCapabilities } from "../../../../services/agents/agentConnectionRepository";
+import { getAgentProfile } from "../../../../services/agents/agentProfileRepository";
 import { agentProviderIds, normalizeAgentCapabilities, type AgentProviderId } from "../../../../security/agentScope";
 
 const adminRoles = ["Super Admin", "Organization Admin"];
@@ -30,10 +31,22 @@ export async function POST(request: Request) {
   if (!authResult.ok) return authResult.error;
   const { session } = authResult;
 
-  const body = await request.json().catch(() => null) as { provider?: string; label?: string } | null;
+  const body = await request.json().catch(() => null) as { provider?: string; label?: string; agentProfileId?: string } | null;
   const provider = body?.provider as AgentProviderId | undefined;
   if (!provider || !agentProviderIds.includes(provider)) {
     return NextResponse.json({ error: `provider must be one of: ${agentProviderIds.join(", ")}` }, { status: 400 });
+  }
+
+  // MCP3-2: an optional profile issues the connection with that profile's reviewed
+  // default_capabilities instead of the hardcoded MCP1 default -- absent agentProfileId, behavior
+  // is byte-for-byte what it was before this sprint.
+  let profileCapabilities: ReturnType<typeof normalizeAgentCapabilities> | undefined;
+  if (body?.agentProfileId) {
+    const profile = await getAgentProfile(session.user.organizationId, body.agentProfileId);
+    if (!profile || profile.status !== "active") {
+      return NextResponse.json({ error: "agentProfileId does not match an active profile for this organization." }, { status: 400 });
+    }
+    profileCapabilities = profile.defaultCapabilities;
   }
 
   const { connection, rawApiKey } = await createAgentConnection({
@@ -42,6 +55,8 @@ export async function POST(request: Request) {
     label: body?.label?.trim() || provider,
     issuedByUserId: session.user.id,
     issuedByRole: session.user.role,
+    capabilities: profileCapabilities,
+    agentProfileId: body?.agentProfileId,
   });
 
   // rawApiKey is returned exactly once here -- it is never persisted (only its hash is) and this

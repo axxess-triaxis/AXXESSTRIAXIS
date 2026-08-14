@@ -15,6 +15,7 @@ export type AgentConnectionSummary = {
   lastUsedAt?: string;
   createdAt: string;
   revokedAt?: string;
+  agentProfileId?: string;
 };
 
 type AgentConnectionRow = {
@@ -31,9 +32,10 @@ type AgentConnectionRow = {
   last_used_at: string | null;
   created_at: string;
   revoked_at: string | null;
+  agent_profile_id: string | null;
 };
 
-const summarySelect = "id,organization_id,provider,label,api_key_prefix,capabilities,status,issued_by_user_id,issued_by_role,last_used_at,created_at,revoked_at";
+const summarySelect = "id,organization_id,provider,label,api_key_prefix,capabilities,status,issued_by_user_id,issued_by_role,last_used_at,created_at,revoked_at,agent_profile_id";
 
 function toSummary(row: AgentConnectionRow): AgentConnectionSummary {
   return {
@@ -49,6 +51,7 @@ function toSummary(row: AgentConnectionRow): AgentConnectionSummary {
     lastUsedAt: row.last_used_at ?? undefined,
     createdAt: row.created_at,
     revokedAt: row.revoked_at ?? undefined,
+    agentProfileId: row.agent_profile_id ?? undefined,
   };
 }
 
@@ -59,6 +62,7 @@ export async function createAgentConnection(input: {
   issuedByUserId: string;
   issuedByRole: string;
   capabilities?: AgentCapability[];
+  agentProfileId?: string;
 }, env: NodeJS.ProcessEnv = process.env): Promise<{ connection: AgentConnectionSummary; rawApiKey: string }> {
   const { rawKey, prefix } = generateAgentApiKey();
   const rows = await supabaseAdminRest<AgentConnectionRow[]>("agent_connections", {
@@ -74,6 +78,7 @@ export async function createAgentConnection(input: {
       status: "active",
       issued_by_user_id: input.issuedByUserId,
       issued_by_role: input.issuedByRole,
+      agent_profile_id: input.agentProfileId ?? null,
     },
   });
   const row = rows?.[0];
@@ -98,6 +103,24 @@ export async function updateAgentConnectionCapabilities(input: {
   const row = rows?.[0];
   if (!row) throw new Error("Agent connection was not found for this organization.");
   return toSummary(row);
+}
+
+// MCP3-2: looked up by PATCH /api/approvals/[id] when resuming a pending tool call, to build an
+// AgentScope carrying the connection's real capabilities and issuedByUserId/issuedByRole -- the
+// same fields toolRegistry.ts handlers use to attribute created_by_user_id/owner_role honestly,
+// rather than fabricating an actor for a call now running outside the original MCP request.
+export async function getAgentConnectionById(organizationId: string, connectionId: string): Promise<AgentConnectionSummary | undefined> {
+  const rows = await supabaseAdminRest<AgentConnectionRow[]>("agent_connections", {
+    method: "GET",
+    query: new URLSearchParams({
+      select: summarySelect,
+      id: `eq.${connectionId}`,
+      organization_id: `eq.${organizationId}`,
+      limit: "1",
+    }),
+  });
+  const row = rows?.[0];
+  return row ? toSummary(row) : undefined;
 }
 
 export async function listAgentConnections(organizationId: string): Promise<AgentConnectionSummary[]> {

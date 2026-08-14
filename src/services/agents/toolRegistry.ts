@@ -11,6 +11,11 @@ export type McpToolResult = { content: McpToolContent[]; isError?: boolean };
 
 export type McpToolDefinition = {
   name: string;
+  // MCP3-2 (2026-08-14): a plain string version tag, visible in tools/list and stamped onto any
+  // approval_requests/agent_pending_tool_calls metadata created for this tool -- lets a future
+  // schema change be identified in an audit trail without needing to diff inputSchema by hand.
+  // Every tool starts at "1"; nothing currently reads/branches on this value.
+  version: string;
   description: string;
   requiredCapability: AgentCapability;
   // Agentic Infrastructure Phase 2 (2026-07-30): "auto" executes immediately (Phase 1's elevated
@@ -235,6 +240,7 @@ function syntheticRagScope(agentScope: AgentScope): TenantScope {
 
 const queryKnowledgeHubTool: McpToolDefinition = {
   name: "query_knowledge_hub",
+  version: "1",
   description: "Ask a question against this tenant's governed Knowledge Hub (documents and knowledge articles). Returns a synthesized answer with cited sources and a confidence score.",
   requiredCapability: "query_knowledge_hub",
   criticality: "auto",
@@ -284,6 +290,7 @@ function mapTaskRow(row: TaskRow): Task {
 
 const createTaskTool: McpToolDefinition = {
   name: "create_task",
+  version: "1",
   description: "Create a real task in this tenant's workspace. Executes immediately -- no human approval step (Phase 1 elevated-access agent path).",
   requiredCapability: "create_task",
   criticality: "auto",
@@ -329,6 +336,7 @@ const createTaskTool: McpToolDefinition = {
 
 const listTasksTool: McpToolDefinition = {
   name: "list_tasks",
+  version: "1",
   description: "List this tenant's tasks, scoped to the agent connection's organization.",
   requiredCapability: "list_tasks",
   criticality: "auto",
@@ -356,6 +364,7 @@ const listTasksTool: McpToolDefinition = {
 
 const updateTaskStatusTool: McpToolDefinition = {
   name: "update_task_status",
+  version: "1",
   description: "Update the status of an existing task in this tenant. Requires human approval unless this connection has Always Allow for this tool.",
   requiredCapability: "update_task_status",
   criticality: "critical",
@@ -409,6 +418,7 @@ function mapProjectRow(row: ProjectRow): Project {
 
 const listProjectsTool: McpToolDefinition = {
   name: "list_projects",
+  version: "1",
   description: "List this tenant's projects, most recently due first.",
   requiredCapability: "list_projects",
   criticality: "auto",
@@ -434,6 +444,7 @@ const listProjectsTool: McpToolDefinition = {
 
 const getDashboardSnapshotTool: McpToolDefinition = {
   name: "get_dashboard_snapshot",
+  version: "1",
   description: "Return a compact tenant-scoped dashboard snapshot with counts for projects, tasks, documents, meetings, approvals and recent audit events.",
   requiredCapability: "get_dashboard_snapshot",
   criticality: "auto",
@@ -492,6 +503,7 @@ function mapMeetingRow(row: MeetingRow): Meeting {
 
 const createMeetingTool: McpToolDefinition = {
   name: "create_meeting",
+  version: "1",
   description: "Schedule a real meeting in this tenant's workspace, notifying real attendees. Requires human approval unless this connection has been granted Always Allow for this tool.",
   requiredCapability: "create_meeting",
   criticality: "critical",
@@ -543,6 +555,7 @@ const createMeetingTool: McpToolDefinition = {
 
 const listMeetingsTool: McpToolDefinition = {
   name: "list_meetings",
+  version: "1",
   description: "List this tenant's meetings, scoped to the agent connection's organization.",
   requiredCapability: "list_meetings",
   criticality: "auto",
@@ -570,6 +583,7 @@ const listMeetingsTool: McpToolDefinition = {
 
 const listDocumentsTool: McpToolDefinition = {
   name: "list_documents",
+  version: "1",
   description: "List this tenant's Knowledge Hub documents without exposing file bytes.",
   requiredCapability: "list_documents",
   criticality: "auto",
@@ -611,6 +625,7 @@ const listDocumentsTool: McpToolDefinition = {
 
 const createProjectTool: McpToolDefinition = {
   name: "create_project",
+  version: "1",
   description: "Create a real project in this tenant's workspace. Requires human approval unless this connection has been granted Always Allow for this tool.",
   requiredCapability: "create_project",
   criticality: "critical",
@@ -674,6 +689,7 @@ function mapStakeholderRow(row: StakeholderRow): Stakeholder {
 
 const listStakeholdersTool: McpToolDefinition = {
   name: "list_stakeholders",
+  version: "1",
   description: "List this tenant's stakeholders (a flat CRM-style contact list -- not a relationship graph).",
   requiredCapability: "list_stakeholders",
   criticality: "auto",
@@ -699,6 +715,7 @@ const listStakeholdersTool: McpToolDefinition = {
 
 const createStakeholderTool: McpToolDefinition = {
   name: "create_stakeholder",
+  version: "1",
   description: "Add a real stakeholder to this tenant's CRM. Requires human approval unless this connection has been granted Always Allow for this tool.",
   requiredCapability: "create_stakeholder",
   criticality: "critical",
@@ -735,6 +752,7 @@ const createStakeholderTool: McpToolDefinition = {
 
 const addStakeholderNoteTool: McpToolDefinition = {
   name: "add_stakeholder_note",
+  version: "1",
   description: "Add a real note to the tenant's stakeholder workspace. Requires human approval unless this connection has Always Allow for this tool.",
   requiredCapability: "add_stakeholder_note",
   criticality: "critical",
@@ -770,6 +788,7 @@ type AuditLogAgentRow = {
 
 const searchAuditLogsTool: McpToolDefinition = {
   name: "search_audit_logs",
+  version: "1",
   description: "Search recent tenant audit events. Sensitive governance read; requires approval unless Always Allow is active.",
   requiredCapability: "search_audit_logs",
   criticality: "critical",
@@ -809,6 +828,7 @@ const searchAuditLogsTool: McpToolDefinition = {
 
 const queryExternalModelTool: McpToolDefinition = {
   name: "query_external_model",
+  version: "1",
   description: "Route an open-ended prompt through AXXESS's own governed OpenRouter-backed AI router (same path /api/ai uses). Requires human approval unless this connection has been granted Always Allow for this tool.",
   requiredCapability: "query_external_model",
   criticality: "critical",
