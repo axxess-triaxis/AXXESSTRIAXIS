@@ -2,7 +2,7 @@
   "name": "axxess-enterprise-saas",
   "private": true,
   "description": "AI-enabled human-in-the-loop institutional intelligence platform for enterprise, government, healthcare, NGO, and consulting organizations.",
-  "version": "0.6.0-beta",
+  "version": "0.7.0-beta",
   "license": "Apache-2.0",
   "type": "module",
   "packageManager": "pnpm@11.7.0",
