@@ -7,6 +7,8 @@ const state = {
   revokeCalls: [] as Array<{ organizationId: string; connectionId: string }>,
   updateCalls: [] as Array<{ organizationId: string; connectionId: string; capabilities: unknown }>,
   updateResult: null as unknown,
+  createCalls: [] as Array<Record<string, unknown>>,
+  profile: null as null | { status: "active" | "revoked"; defaultCapabilities: string[] },
 };
 
 vi.mock("../../../../auth/serverSession", () => ({
@@ -15,7 +17,10 @@ vi.mock("../../../../auth/serverSession", () => ({
 
 vi.mock("../../../../services/agents/agentConnectionRepository", () => ({
   listAgentConnections: async () => state.connections,
-  createAgentConnection: async () => state.createResult,
+  createAgentConnection: async (input: Record<string, unknown>) => {
+    state.createCalls.push(input);
+    return state.createResult;
+  },
   revokeAgentConnection: async (organizationId: string, connectionId: string) => {
     state.revokeCalls.push({ organizationId, connectionId });
   },
@@ -23,6 +28,11 @@ vi.mock("../../../../services/agents/agentConnectionRepository", () => ({
     state.updateCalls.push(input);
     return state.updateResult ?? { id: input.connectionId, capabilities: input.capabilities };
   },
+}));
+
+// MCP3-2: connection creation can optionally be issued from a named agent profile.
+vi.mock("../../../../services/agents/agentProfileRepository", () => ({
+  getAgentProfile: async () => state.profile,
 }));
 
 import { DELETE, GET, PATCH, POST } from "./route";
@@ -39,6 +49,8 @@ describe("GET/POST/DELETE /api/agents/connections", () => {
     state.revokeCalls = [];
     state.updateCalls = [];
     state.updateResult = null;
+    state.createCalls = [];
+    state.profile = null;
     vi.clearAllMocks();
   });
 
@@ -116,5 +128,33 @@ describe("GET/POST/DELETE /api/agents/connections", () => {
     const withId = await DELETE(new Request("https://example.com/api/agents/connections?id=conn-1", { method: "DELETE" }));
     expect(withId.status).toBe(200);
     expect(state.revokeCalls).toEqual([{ organizationId: "org-7", connectionId: "conn-1" }]);
+  });
+
+  // MCP3-2: connection creation can optionally be issued from a named agent profile.
+  it("POST with an active agentProfileId issues the connection using that profile's default capabilities", async () => {
+    state.session = { user: user("user-1", "Organization Admin") };
+    state.profile = { status: "active", defaultCapabilities: ["query_knowledge_hub", "list_projects"] };
+    state.createResult = { connection: { id: "conn-1", provider: "openai" }, rawApiKey: "axa_live_abc" };
+    const request = new Request("https://example.com/api/agents/connections", {
+      method: "POST",
+      body: JSON.stringify({ provider: "openai", label: "Analyst", agentProfileId: "profile-1" }),
+    });
+
+    const response = await POST(request);
+    expect(response.status).toBe(201);
+    expect(state.createCalls[0]).toMatchObject({ agentProfileId: "profile-1", capabilities: ["query_knowledge_hub", "list_projects"] });
+  });
+
+  it("POST with a revoked or unknown agentProfileId rejects rather than silently ignoring it", async () => {
+    state.session = { user: user("user-1", "Organization Admin") };
+    state.profile = null;
+    const request = new Request("https://example.com/api/agents/connections", {
+      method: "POST",
+      body: JSON.stringify({ provider: "openai", agentProfileId: "profile-does-not-exist" }),
+    });
+
+    const response = await POST(request);
+    expect(response.status).toBe(400);
+    expect(state.createCalls).toHaveLength(0);
   });
 });
