@@ -132,10 +132,16 @@ export const DocumentsSection = () => {
       />
 
       {showIngest && (
-        <Card className="mb-4 p-4">
-          <div className="mb-3 flex items-center gap-2">
-            <Sparkles size={14} className="text-[#8B1E2D]" />
-            <h3 className="text-sm font-semibold text-[#0F1117]">Index a document for governed retrieval</h3>
+        <div className="fixed inset-0 z-[80] flex items-center justify-center overflow-y-auto bg-black/30 px-4 py-8" role="dialog" aria-modal="true" aria-labelledby="upload-document-title">
+        <Card className="w-full max-w-2xl p-4">
+          <div className="mb-3 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <Sparkles size={14} className="text-[#8B1E2D]" />
+              <h3 id="upload-document-title" className="text-sm font-semibold text-[#0F1117]">Index a document for governed retrieval</h3>
+            </div>
+            <button type="button" onClick={() => setShowIngest(false)} aria-label="Close" className="rounded-lg px-2 py-1 text-xs font-semibold text-[#5F6B73] hover:bg-[#F2F3F5]">
+              Close
+            </button>
           </div>
           <label className="mb-3 block">
             <span className="mb-1 block text-[11px] font-semibold text-[#0F1117]">Index an uploaded document</span>
@@ -194,10 +200,16 @@ export const DocumentsSection = () => {
             <textarea value={form.bodyText} onChange={(event) => setForm({ ...form, bodyText: event.target.value })} rows={6} className="w-full rounded-lg border border-[rgba(0,0,0,0.12)] bg-white px-3 py-2 text-sm outline-none focus:border-[#8B1E2D]" />
           </label>
           {message && <p className={`mt-3 rounded-lg px-3 py-2 text-xs font-medium ${message.tone === "error" ? "bg-red-50 text-red-700" : "bg-emerald-50 text-emerald-700"}`}>{message.text}</p>}
-          <button onClick={() => void ingestDocument()} disabled={ingesting} className="mt-3 rounded-lg bg-[#8B1E2D] px-3 py-2 text-xs font-semibold text-white hover:bg-[#7a1a27] disabled:cursor-not-allowed disabled:opacity-60">
-            {ingesting ? "Indexing..." : "Index document"}
-          </button>
+          <div className="mt-3 flex justify-end gap-2">
+            <button type="button" onClick={() => setShowIngest(false)} className="rounded-lg border border-[rgba(0,0,0,0.12)] px-3 py-2 text-xs font-semibold text-[#5F6B73] hover:bg-[#F2F3F5]">
+              Cancel
+            </button>
+            <button onClick={() => void ingestDocument()} disabled={ingesting} className="rounded-lg bg-[#8B1E2D] px-3 py-2 text-xs font-semibold text-white hover:bg-[#7a1a27] disabled:cursor-not-allowed disabled:opacity-60">
+              {ingesting ? "Indexing..." : "Index document"}
+            </button>
+          </div>
         </Card>
+        </div>
       )}
 
       <div className="mb-4">

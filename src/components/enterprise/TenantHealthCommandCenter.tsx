@@ -23,13 +23,15 @@ export function TenantHealthCommandCenter({
   metrics,
   pendingAiReviewsCount,
   auditLogCount,
+  demoMode = false,
 }: {
   snapshot: EnterpriseGoldenPathSnapshot;
   metrics: LiveWorkspaceMetrics;
   pendingAiReviewsCount?: number;
   auditLogCount?: number;
+  demoMode?: boolean;
 }) {
-  const indicators = buildTenantHealthIndicators(snapshot, metrics, pendingAiReviewsCount, auditLogCount);
+  const indicators = buildTenantHealthIndicators(snapshot, metrics, pendingAiReviewsCount, auditLogCount, demoMode);
   const blockedCount = indicators.filter((indicator) => indicator.tone === "danger").length;
   const warningCount = indicators.filter((indicator) => indicator.tone === "warning").length;
 
