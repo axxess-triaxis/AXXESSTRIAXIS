@@ -131,6 +131,36 @@ export type SnapshotPeriodResult = {
   previous: SnapshotPeriodCounts;
 };
 
+// Investor-demo fallback (2026-08-14): this bar reads through a real authenticated Next.js API
+// route (getServerAuthSession) backed by supabaseAdminRest -- unlike every other tile on this
+// page, which reads client-side demo data via demoRepositories.ts and never makes a server round
+// trip. The investor-demo persona has no real Supabase auth session, so that route always
+// returned 401 and the bar was stuck on "Loading..." forever. Real window boundaries (periodWindow
+// is pure date math, unchanged) paired with plausible, clearly-demo counts -- never a real Supabase
+// query for this path, matching this page's existing demoMode convention elsewhere.
+const demoPeriodCounts: Record<Exclude<SnapshotPeriodKey, "yoy">, { current: SnapshotPeriodCounts; previous: SnapshotPeriodCounts }> = {
+  daily: {
+    current: { tasksCreated: 3, tasksCompleted: 2, meetingsHeld: 1, aiReviewsCreated: 4, aiReviewsDecided: 3, aiReviewsEscalated: 0, documentsAdded: 2, auditEvents: 6, workflowEvents: 5 },
+    previous: { tasksCreated: 2, tasksCompleted: 1, meetingsHeld: 0, aiReviewsCreated: 3, aiReviewsDecided: 2, aiReviewsEscalated: 1, documentsAdded: 1, auditEvents: 4, workflowEvents: 3 },
+  },
+  weekly: {
+    current: { tasksCreated: 14, tasksCompleted: 11, meetingsHeld: 5, aiReviewsCreated: 19, aiReviewsDecided: 16, aiReviewsEscalated: 2, documentsAdded: 7, auditEvents: 28, workflowEvents: 22 },
+    previous: { tasksCreated: 10, tasksCompleted: 8, meetingsHeld: 4, aiReviewsCreated: 15, aiReviewsDecided: 13, aiReviewsEscalated: 3, documentsAdded: 5, auditEvents: 21, workflowEvents: 17 },
+  },
+  monthly: {
+    current: { tasksCreated: 52, tasksCompleted: 41, meetingsHeld: 18, aiReviewsCreated: 74, aiReviewsDecided: 63, aiReviewsEscalated: 6, documentsAdded: 24, auditEvents: 96, workflowEvents: 81 },
+    previous: { tasksCreated: 44, tasksCompleted: 35, meetingsHeld: 15, aiReviewsCreated: 61, aiReviewsDecided: 52, aiReviewsEscalated: 9, documentsAdded: 19, auditEvents: 78, workflowEvents: 65 },
+  },
+};
+
+export function buildDemoSnapshotPeriod(period: Exclude<SnapshotPeriodKey, "yoy">, now: Date = new Date()): SnapshotPeriodResult {
+  return { period, window: periodWindow(period, now), ...demoPeriodCounts[period] };
+}
+
+// Illustrative "recording since" anchor matching this program's established beta-launch date
+// (2026-07-05, see betaReadinessSnapshot.ts) -- not a real per-tenant lookup for the demo path.
+export const demoYoyEarliestActivityDate = "2026-07-05T00:00:00.000Z";
+
 export async function buildSnapshotPeriod(
   organizationId: string,
   period: Exclude<SnapshotPeriodKey, "yoy">,
