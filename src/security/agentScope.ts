@@ -17,7 +17,15 @@ export type AgentCapability =
   | "create_project"
   | "list_stakeholders"
   | "create_stakeholder"
-  | "query_external_model";
+  | "query_external_model"
+  // MCP2 (2026-08-14):
+  | "list_tasks"
+  | "list_meetings"
+  | "list_documents"
+  | "get_dashboard_snapshot"
+  | "update_task_status"
+  | "add_stakeholder_note"
+  | "search_audit_logs";
 
 // Every connection is granted every registered tool -- no per-tenant capability toggle UI yet
 // (explicitly deferred in the approved plan). Kept as an array on the row/scope now so a future
@@ -25,7 +33,7 @@ export type AgentCapability =
 // distinct from criticality (McpToolDefinition.criticality, toolRegistry.ts): capability answers
 // "can this connection call this tool at all," criticality answers "does calling it right now
 // need a fresh or existing approval."
-export const allAgentCapabilities: AgentCapability[] = [
+export const mcp1AgentCapabilities: AgentCapability[] = [
   "create_task",
   "query_knowledge_hub",
   "list_projects",
@@ -35,6 +43,26 @@ export const allAgentCapabilities: AgentCapability[] = [
   "create_stakeholder",
   "query_external_model",
 ];
+
+export const mcp2AgentCapabilities: AgentCapability[] = [
+  "list_tasks",
+  "list_meetings",
+  "list_documents",
+  "get_dashboard_snapshot",
+  "update_task_status",
+  "add_stakeholder_note",
+  "search_audit_logs",
+];
+
+export const allAgentCapabilities: AgentCapability[] = [
+  ...mcp1AgentCapabilities,
+  ...mcp2AgentCapabilities,
+];
+
+// New connections default to the already-reviewed MCP1 surface. MCP2 tools are deliberately
+// opt-in through the connection capability list so old or newly-created keys do not silently gain
+// a broader surface just because the registry grows.
+export const defaultAgentCapabilities: AgentCapability[] = [...mcp1AgentCapabilities];
 
 export type AgentScope = {
   organizationId: string;
@@ -47,4 +75,13 @@ export type AgentScope = {
 
 export function agentScopeHasCapability(scope: AgentScope, capability: AgentCapability): boolean {
   return scope.capabilities.includes(capability);
+}
+
+export function isAgentCapability(value: unknown): value is AgentCapability {
+  return typeof value === "string" && allAgentCapabilities.includes(value as AgentCapability);
+}
+
+export function normalizeAgentCapabilities(values: unknown): AgentCapability[] {
+  if (!Array.isArray(values)) return [];
+  return Array.from(new Set(values.filter(isAgentCapability)));
 }

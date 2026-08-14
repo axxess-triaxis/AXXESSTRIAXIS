@@ -8,6 +8,8 @@ const state = {
   projects: [] as unknown[],
   meetings: [] as unknown[],
   stakeholders: [] as unknown[],
+  auditLogs: [] as unknown[],
+  stakeholderNotes: [] as unknown[],
   calls: [] as Array<{ table: string; options: Record<string, unknown> }>,
 };
 
@@ -22,6 +24,8 @@ vi.mock("../../repositories/supabaseAdmin", () => ({
     if (table === "projects") return state.projects;
     if (table === "meetings") return state.meetings;
     if (table === "stakeholders") return state.stakeholders;
+    if (table === "audit_logs") return state.auditLogs;
+    if (table === "stakeholder_notes") return state.stakeholderNotes;
     return undefined;
   },
 }));
@@ -31,14 +35,14 @@ vi.mock("../ai/router/aiRouter", () => ({
   routeAiRequest: (...args: unknown[]) => routeAiRequestMock(...args),
 }));
 
-import { agentToolRegistry, getAgentTool } from "./toolRegistry";
+import { agentToolRegistry, getAgentTool, validateAgentToolArguments } from "./toolRegistry";
 import type { AgentScope } from "../../security/agentScope";
 
 const scope: AgentScope = {
   organizationId: "org-1",
   agentConnectionId: "conn-1",
   provider: "anthropic",
-  capabilities: ["create_task", "query_knowledge_hub", "list_projects", "create_meeting", "create_project", "list_stakeholders", "create_stakeholder", "query_external_model"],
+  capabilities: ["create_task", "query_knowledge_hub", "list_projects", "create_meeting", "create_project", "list_stakeholders", "create_stakeholder", "query_external_model", "list_tasks", "list_meetings", "list_documents", "get_dashboard_snapshot", "update_task_status", "add_stakeholder_note", "search_audit_logs"],
   issuedByUserId: "user-1",
   issuedByRole: "Organization Admin",
 };
@@ -56,26 +60,37 @@ describe("agentToolRegistry", () => {
     state.projects = [];
     state.meetings = [];
     state.stakeholders = [];
+    state.auditLogs = [];
+    state.stakeholderNotes = [];
     state.calls = [];
     routeAiRequestMock.mockReset();
     vi.clearAllMocks();
   });
 
-  it("registers exactly the 3 Phase 1 tools (auto) plus the 5 Phase 2 tools (critical, except list_stakeholders)", () => {
+  it("registers MCP1 tools plus MCP2's bounded tool expansion", () => {
     expect(agentToolRegistry.map((tool) => tool.name).sort()).toEqual([
-      "create_meeting", "create_project", "create_stakeholder", "create_task",
-      "list_projects", "list_stakeholders", "query_external_model", "query_knowledge_hub",
+      "add_stakeholder_note", "create_meeting", "create_project", "create_stakeholder", "create_task",
+      "get_dashboard_snapshot", "list_documents", "list_meetings", "list_projects", "list_stakeholders",
+      "list_tasks", "query_external_model", "query_knowledge_hub", "search_audit_logs", "update_task_status",
     ]);
     expect(getAgentTool("nonexistent")).toBeUndefined();
 
-    const autoTools = ["create_task", "query_knowledge_hub", "list_projects", "list_stakeholders"];
-    const criticalTools = ["create_meeting", "create_project", "create_stakeholder", "query_external_model"];
+    const autoTools = ["create_task", "query_knowledge_hub", "list_projects", "list_stakeholders", "list_tasks", "list_meetings", "list_documents", "get_dashboard_snapshot"];
+    const criticalTools = ["create_meeting", "create_project", "create_stakeholder", "query_external_model", "update_task_status", "add_stakeholder_note", "search_audit_logs"];
     for (const name of autoTools) expect(getAgentTool(name)?.criticality).toBe("auto");
     for (const name of criticalTools) expect(getAgentTool(name)?.criticality).toBe("critical");
 
     for (const tool of agentToolRegistry) {
       expect(tool.requiredCapability).toBe(tool.name);
     }
+  });
+
+  it("validates tool arguments before repository calls can run", () => {
+    const tool = getAgentTool("create_task")!;
+
+    expect(validateAgentToolArguments(tool, { title: "x", priority: "high" })).toEqual({ ok: true, args: { title: "x", priority: "high" } });
+    expect(validateAgentToolArguments(tool, { title: "x", priority: "severe" })).toEqual({ ok: false, message: "priority must be one of: low, medium, high, urgent." });
+    expect(validateAgentToolArguments(tool, { title: "x", tenantId: "org-2" })).toEqual({ ok: false, message: "Unsupported argument: tenantId." });
   });
 
   it("create_task rejects a missing title without hitting Supabase", async () => {
@@ -139,6 +154,39 @@ describe("agentToolRegistry", () => {
     expect(projects[0].progress).toBe(40);
   });
 
+  it("list_tasks reads only the caller's organization and clamps limits", async () => {
+    state.taskInsertResponse = [{
+      id: "task-1", organization_id: "org-1", program_id: null, project_id: null,
+      title: "Follow up", description: null, assignee_id: null, priority: "medium",
+      status: "pending", due_date: null, tags: [],
+    }];
+
+    const result = await getAgentTool("list_tasks")!.handler(scope, { limit: 500, status: "pending" });
+
+    const query = state.calls[0].options.query as URLSearchParams;
+    expect(query.get("organization_id")).toBe("eq.org-1");
+    expect(query.get("limit")).toBe("100");
+    expect(query.get("status")).toBe("eq.pending");
+    expect((resultJson(result) as unknown as Array<{ title: string }>)[0].title).toBe("Follow up");
+  });
+
+  it("update_task_status patches only a task in the caller's organization", async () => {
+    state.taskInsertResponse = [{
+      id: "task-1", organization_id: "org-1", program_id: null, project_id: null,
+      title: "Follow up", description: null, assignee_id: null, priority: "medium",
+      status: "completed", due_date: null, tags: [],
+    }];
+
+    const result = await getAgentTool("update_task_status")!.handler(scope, { taskId: "task-1", status: "completed" });
+
+    const query = state.calls[0].options.query as URLSearchParams;
+    expect(state.calls[0].table).toBe("tasks");
+    expect(query.get("id")).toBe("eq.task-1");
+    expect(query.get("organization_id")).toBe("eq.org-1");
+    expect((state.calls[0].options.body as Record<string, unknown>).status).toBe("completed");
+    expect(resultJson(result).status).toBe("completed");
+  });
+
   it("query_knowledge_hub rejects a missing question without hitting Supabase", async () => {
     const result = await getAgentTool("query_knowledge_hub")!.handler(scope, {});
     expect(result.isError).toBe(true);
@@ -199,6 +247,55 @@ describe("agentToolRegistry", () => {
     expect(resultJson(result).id).toBe("meeting-1");
   });
 
+  it("list_meetings reads only the caller's organization", async () => {
+    state.meetings = [{
+      id: "meeting-1", organization_id: "org-1", project_id: null, program_id: null,
+      stakeholder_id: null, title: "Pilot kickoff", starts_at: "2026-08-01T10:00:00.000Z",
+      ends_at: null, attendee_ids: [], agenda: null, notes: null, decisions: [],
+      action_items: [], status: "scheduled",
+    }];
+
+    const result = await getAgentTool("list_meetings")!.handler(scope, {});
+
+    const query = state.calls[0].options.query as URLSearchParams;
+    expect(query.get("organization_id")).toBe("eq.org-1");
+    expect((resultJson(result) as unknown as Array<{ title: string }>)[0].title).toBe("Pilot kickoff");
+  });
+
+  it("list_documents returns document metadata only, not file bytes", async () => {
+    state.documents = [{
+      id: "doc-1", organization_id: "org-1", project_id: null, category_id: null,
+      name: "policy.pdf", title: "Policy", description: "Body", storage_path: "private/path",
+      file_name: "policy.pdf", file_size: 100, mime_type: "application/pdf", document_type: "pdf",
+      status: "active", visibility: "organization", classification: "internal", owner_user_id: null,
+      created_by_user_id: null, updated_by_user_id: null, current_version: 1, tags: ["policy"],
+      created_at: "2026-08-01T00:00:00.000Z", updated_at: "2026-08-02T00:00:00.000Z",
+      archived_at: null, deleted_at: null, category: null,
+    }];
+
+    const result = await getAgentTool("list_documents")!.handler(scope, { tag: "policy" });
+
+    const query = state.calls[0].options.query as URLSearchParams;
+    const docs = resultJson(result) as unknown as Array<Record<string, unknown>>;
+    expect(query.get("organization_id")).toBe("eq.org-1");
+    expect(query.get("tags")).toBe("cs.{policy}");
+    expect(docs[0].name).toBe("policy.pdf");
+    expect(docs[0].storagePath).toBeUndefined();
+  });
+
+  it("get_dashboard_snapshot returns tenant-scoped counts from bounded reads", async () => {
+    state.taskInsertResponse = [{ id: "task-1", status: "pending" }, { id: "task-2", status: "completed" }];
+    state.projects = [{ id: "project-1", status: "active" }];
+    state.documents = [{ id: "doc-1", status: "active" }];
+    state.meetings = [{ id: "meeting-1", status: "scheduled" }];
+
+    const result = await getAgentTool("get_dashboard_snapshot")!.handler(scope, {});
+
+    expect(state.calls.map((call) => call.table)).toEqual(["tasks", "projects", "documents", "meetings", "approval_requests", "audit_logs"]);
+    for (const call of state.calls) expect((call.options.query as URLSearchParams).get("organization_id")).toBe("eq.org-1");
+    expect((resultJson(result) as { counts: { openTasks: number } }).counts.openTasks).toBe(1);
+  });
+
   it("create_project rejects a missing name without hitting Supabase", async () => {
     const result = await getAgentTool("create_project")!.handler(scope, {});
     expect(result.isError).toBe(true);
@@ -247,6 +344,40 @@ describe("agentToolRegistry", () => {
     const body = state.calls[0].options.body as Record<string, unknown>;
     expect(body.influence_score).toBe(0);
     expect(body.engagement_level).toBe("unrated");
+  });
+
+  it("add_stakeholder_note creates a tenant-scoped stakeholder note with agent metadata", async () => {
+    state.stakeholderNotes = [{
+      id: "note-1", organization_id: "org-1", stakeholder_id: "sh-1", created_by_user_id: "conn-1",
+      source_ai_review_id: null, source_audit_log_id: null, title: "Meeting insight",
+      body: "Follow up next week", sentiment: "neutral", visibility: "organization", tags: [],
+      metadata: { source: "agentic_mcp" }, created_at: "2026-08-01T00:00:00.000Z",
+      updated_at: "2026-08-01T00:00:00.000Z",
+    }];
+
+    const result = await getAgentTool("add_stakeholder_note")!.handler(scope, { title: "Meeting insight", body: "Follow up next week", stakeholderId: "sh-1" });
+
+    expect(state.calls[0].table).toBe("stakeholder_notes");
+    const body = state.calls[0].options.body as Record<string, unknown>;
+    expect(body.organization_id).toBe("org-1");
+    expect(body.metadata).toMatchObject({ source: "agentic_mcp", agentConnectionId: "conn-1" });
+    expect(resultJson(result).id).toBe("note-1");
+  });
+
+  it("search_audit_logs reads only the caller's organization's audit events", async () => {
+    state.auditLogs = [{
+      id: "audit-1", organization_id: "org-1", actor_user_id: "user-1", actor_role: "Organization Admin",
+      action: "approval.approved", resource_type: "approval_request", resource_id: "approval-1",
+      category: "ai-governance", request_id: null, metadata: {}, created_at: "2026-08-01T00:00:00.000Z",
+    }];
+
+    const result = await getAgentTool("search_audit_logs")!.handler(scope, { action: "approval", limit: 250 });
+
+    const query = state.calls[0].options.query as URLSearchParams;
+    expect(query.get("organization_id")).toBe("eq.org-1");
+    expect(query.get("limit")).toBe("100");
+    expect(query.get("action")).toBe("ilike.*approval*");
+    expect((resultJson(result) as unknown as Array<{ action: string }>)[0].action).toBe("approval.approved");
   });
 
   it("query_external_model rejects a missing prompt without calling routeAiRequest", async () => {
