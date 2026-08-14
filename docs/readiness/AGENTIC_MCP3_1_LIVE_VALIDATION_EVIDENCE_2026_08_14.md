@@ -7,37 +7,35 @@ capability toggles, grant visibility, and end-to-end MCP validation.
 
 ## Current Status
 
-Status: **Code-complete / pending production deploy and HITL live validation**
+Status: **Deployed / pending HITL live MCP validation**
 
 MCP3-1 adds production-testable admin controls, but live certification is not claimed here because
-the production deploy and real tenant key walkthrough have not been completed in this pass.
+the real tenant key walkthrough has not been completed in this pass.
 
 ## Deployment Status
 
-Not deployed in this pass.
-
-Reason: the working tree already contained unrelated modified files before MCP3-1 work began:
-
-- `package.json`
-- `src/features/admin/OrganizationAdminSection.tsx`
-- `src/features/beta-readiness/BetaReadinessSection.tsx`
-- `src/features/beta-readiness/betaReadinessSnapshot.ts`
-- `src/services/analytics/config.ts`
-- `.claude/settings.local.json`
-
-Deploying from this dirty workspace would risk shipping unrelated changes under the MCP3-1 release
-label. The exact production deploy command, once the workspace is intentionally clean or the
-unrelated changes are explicitly approved for release, is:
+Deployed by HITL/operator after local closeout.
 
 ```bash
 node scripts/deploy-vercel.mjs --target=production --skip-checks
 ```
 
+Deployment record:
+
+- Project: `triaxis-www-frontend-import`
+- Production alias: `https://landing.triaxisventures.com`
+- Deployment URL: `https://triaxis-www-frontend-import-akc36rz48.vercel.app`
+- Inspect URL: `https://vercel.com/axxess-tri-axis-powered-by-triaxis-ventures/triaxis-www-frontend-import/FxhgpgLKwQUgmAnue4L2gHbwi42R`
+- Status: `Ready in 2m`
+- Note: deploy script ended with a false failure because the optional Vercel CLI upgrade prompt
+  attempted to run `pnpm` and failed with `spawn pnpm ENOENT`; the production deployment itself
+  succeeded and was aliased to `landing.triaxisventures.com`.
+
 ## Live Validation Checklist
 
 | Step | Status | Evidence / Notes |
 |---|---|---|
-| Production deployment live | Pending | Blocked by dirty-worktree release governance above. |
+| Production deployment live | Done | `landing.triaxisventures.com` aliased to deployment `triaxis-www-frontend-import-akc36rz48.vercel.app`; Vercel CLI reported `Ready in 2m`. |
 | Tenant admin generates real key | Pending | Requires live deployment and authenticated tenant admin session. |
 | Raw key shown once | Code-complete | Existing `/api/agents/connections` behavior preserved; UI copy reinforced. |
 | `initialize` succeeds live | Pending | Requires generated key and production call. |
@@ -75,20 +73,13 @@ Partial:
 
 ## Exact HITL Actions Required
 
-1. Resolve or explicitly approve the unrelated dirty files for release.
-2. Deploy production with:
-
-   ```bash
-   node scripts/deploy-vercel.mjs --target=production --skip-checks
-   ```
-
-3. Open Settings / Integrations / Agent Connections as an Organization Admin.
-4. Generate a key and copy it once.
-5. Call `POST https://landing.triaxisventures.com/api/agents/mcp` with `initialize`.
-6. Call `tools/list`.
-7. Disable one tool and confirm it returns a denial.
-8. Call one auto tool and confirm success.
-9. Call one critical tool and confirm pending approval.
-10. Approve it in Approvals & Governance.
-11. Confirm the action executes exactly once.
-12. Confirm Agent Activity and Audit logs show the full chain.
+1. Open Settings / Integrations / Agent Connections as an Organization Admin.
+2. Generate a key and copy it once.
+3. Call `POST https://landing.triaxisventures.com/api/agents/mcp` with `initialize`.
+4. Call `tools/list`.
+5. Disable one tool and confirm it returns a denial.
+6. Call one auto tool and confirm success.
+7. Call one critical tool and confirm pending approval.
+8. Approve it in Approvals & Governance.
+9. Confirm the action executes exactly once.
+10. Confirm Agent Activity and Audit logs show the full chain.

@@ -70,16 +70,22 @@ the initial enterprise schema.
 
 ## Deployment Status
 
-Not deployed in this pass.
-
-Reason: unrelated dirty files existed before MCP3-1 started. Deploying from this workspace would
-risk shipping unrelated changes under an MCP3-1 release label.
-
-Exact deploy command once release scope is clean or explicitly approved:
+Deployed by HITL/operator after local closeout:
 
 ```bash
 node scripts/deploy-vercel.mjs --target=production --skip-checks
 ```
+
+Deployment record:
+
+- Project: `triaxis-www-frontend-import`
+- Production alias: `https://landing.triaxisventures.com`
+- Deployment URL: `https://triaxis-www-frontend-import-akc36rz48.vercel.app`
+- Inspect URL: `https://vercel.com/axxess-tri-axis-powered-by-triaxis-ventures/triaxis-www-frontend-import/FxhgpgLKwQUgmAnue4L2gHbwi42R`
+- Status: `Ready in 2m`
+- Note: deploy script ended with a false failure because the optional Vercel CLI upgrade prompt
+  attempted to run `pnpm` and failed with `spawn pnpm ENOENT`; the production deployment itself
+  succeeded and was aliased to `landing.triaxisventures.com`.
 
 ## Live Validation Status
 
