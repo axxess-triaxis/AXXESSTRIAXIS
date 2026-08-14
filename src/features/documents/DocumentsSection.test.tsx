@@ -62,11 +62,13 @@ vi.mock("../../repositories/supabaseEnterpriseRepositories", () => ({
   tenantScopeFromUser: (user: { id: string; organizationId: string; role: string }) => ({ userId: user.id, organizationId: user.organizationId, role: user.role }),
 }));
 
+const listIndexableDocuments = vi.fn(async () => state.documents);
+
 vi.mock("../../providers/serviceProvider", () => ({
   applicationServices: {
     institutionalRepository: { getDocuments: () => [] },
     documentsRepository: {
-      list: async () => state.documents,
+      list: (...args: unknown[]) => listIndexableDocuments(...args),
     },
   },
 }));
@@ -79,6 +81,7 @@ describe("DocumentsSection (RAG Remediation Sprint 1)", () => {
     window.localStorage.clear();
     state.documents = [];
     state.ingestRequests = [];
+    listIndexableDocuments.mockClear();
   });
 
   function renderDocumentsSection() {
@@ -103,6 +106,24 @@ describe("DocumentsSection (RAG Remediation Sprint 1)", () => {
       return new Response(JSON.stringify({}), { status: 404 });
     }));
   }
+
+  // 2026-08-14: DocumentsSection.tsx was the one call site of tenantScopeFromUser() in the whole
+  // codebase not wrapped in useMemo -- scope was a fresh object reference every render, so the
+  // useCallback/useEffect pair fetching indexable documents (loadIndexableDocuments) re-fired on
+  // every render caused by its own setState, an unbounded loop that froze the live page ("This page
+  // isn't responding") the instant the Upload modal was opened. This guards the fix: opening the
+  // modal and letting effects settle must produce exactly one repository call, not a runaway series.
+  it("fetches indexable documents exactly once per Upload modal open, not in an unbounded loop", async () => {
+    stubFetch();
+    state.documents = [buildDocument({ id: "doc-kh-1", title: "District SOP" })];
+    renderDocumentsSection();
+
+    fireEvent.click(screen.getByText("Upload"));
+    await waitFor(() => expect(screen.getByText("District SOP")).toBeInTheDocument());
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    expect(listIndexableDocuments).toHaveBeenCalledTimes(1);
+  });
 
   it("shows an uploaded Knowledge Hub document in the indexing selector, tenant-scoped by the repository call", async () => {
     stubFetch();

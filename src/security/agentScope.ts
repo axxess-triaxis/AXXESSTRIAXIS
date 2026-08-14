@@ -27,12 +27,10 @@ export type AgentCapability =
   | "add_stakeholder_note"
   | "search_audit_logs";
 
-// Every connection is granted every registered tool -- no per-tenant capability toggle UI yet
-// (explicitly deferred in the approved plan). Kept as an array on the row/scope now so a future
-// toggle UI only needs to change what's written here, not the shape callers read. Capability is
-// distinct from criticality (McpToolDefinition.criticality, toolRegistry.ts): capability answers
-// "can this connection call this tool at all," criticality answers "does calling it right now
-// need a fresh or existing approval."
+// Capability is distinct from criticality (McpToolDefinition.criticality, toolRegistry.ts):
+// capability answers "can this connection call this tool at all," criticality answers "does
+// calling it right now need a fresh or existing approval." MCP2 tools remain opt-in so older
+// keys do not silently gain a broader surface when the registry grows.
 export const mcp1AgentCapabilities: AgentCapability[] = [
   "create_task",
   "query_knowledge_hub",
