@@ -17,6 +17,7 @@ import type { NotionPageSummary } from "../../services/integrations/notionPages"
 import { getIntegrationHealth, getInfrastructureOnlyIntegrations, getPilotIntegrations } from "../../services/integrations/pluginRegistry";
 import { useFacebookLoginStatus, facebookLoginStatusCopy } from "../../hooks/useFacebookLoginStatus";
 import { WhatsAppPhoneNumberField } from "./WhatsAppPhoneNumberField";
+import { allAgentCapabilities, mcp2AgentCapabilities, type AgentCapability } from "../../security/agentScope";
 import { Layers } from "lucide-react";
 
 // Illustrative connector gallery for the investor-demo experience only -- real connector status
@@ -805,8 +806,13 @@ type AgentConnectionSummary = {
   provider: "openai" | "anthropic" | "microsoft_copilot";
   label: string;
   apiKeyPrefix: string;
+  capabilities: AgentCapability[];
   status: "active" | "revoked";
+  issuedByUserId?: string;
+  issuedByRole?: string;
+  lastUsedAt?: string;
   createdAt: string;
+  revokedAt?: string;
 };
 
 // Agentic Infrastructure Phase 1 (2026-07-30): lets a tenant admin issue an AXXESS API key for an
@@ -821,6 +827,46 @@ type AgentActionGrant = {
   grantedAt: string;
 };
 
+type AgentActivityEvent = {
+  id: string;
+  provider: string;
+  toolName: string;
+  status: "success" | "failure" | "pending" | "denied";
+  errorMessage?: string;
+  agentConnectionId?: string;
+  createdAt: string;
+};
+
+type AgentActivitySummary = {
+  callsByProvider: Record<string, number>;
+  callsByTool: Record<string, number>;
+  failures: number;
+  denials: number;
+  pendingApprovals: number;
+  approvalCount: number;
+  activeGrants: number;
+  grantCount: number;
+};
+
+const criticalAgentCapabilities = new Set<AgentCapability>([
+  "create_meeting",
+  "create_project",
+  "create_stakeholder",
+  "query_external_model",
+  "update_task_status",
+  "add_stakeholder_note",
+  "search_audit_logs",
+]);
+
+function capabilityLabel(capability: string) {
+  return capability.split("_").map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join(" ");
+}
+
+function formatDateTime(value: string | undefined) {
+  if (!value) return "Never";
+  return new Date(value).toLocaleString();
+}
+
 function AgentConnectionsPanel() {
   const { session } = useAuth();
   const [connections, setConnections] = useState<AgentConnectionSummary[]>([]);
@@ -831,7 +877,22 @@ function AgentConnectionsPanel() {
   const [toast, setToast] = useState<{ tone: "success" | "error" | "info"; message: string } | null>(null);
   const [expandedConnectionId, setExpandedConnectionId] = useState<string | null>(null);
   const [grantsByConnection, setGrantsByConnection] = useState<Record<string, AgentActionGrant[]>>({});
+  const [activity, setActivity] = useState<AgentActivityEvent[]>([]);
+  const [activitySummary, setActivitySummary] = useState<AgentActivitySummary | null>(null);
   const canManage = Boolean(session.user && ["Super Admin", "Organization Admin"].includes(session.user.role));
+
+  async function loadAgentActivity() {
+    try {
+      const response = await fetch("/api/agents/activity", { credentials: "include", cache: "no-store" });
+      const result = await response.json().catch(() => ({} as { activity?: AgentActivityEvent[]; summary?: AgentActivitySummary }));
+      if (!response.ok) return;
+      setActivity(result.activity ?? []);
+      setActivitySummary(result.summary ?? null);
+    } catch {
+      setActivity([]);
+      setActivitySummary(null);
+    }
+  }
 
   // Agentic Infrastructure Phase 2 (2026-07-30): surfaces "Always Allow" grants (created from
   // Approvals & Governance when a critical tool call is approved with that option) so they're
@@ -863,6 +924,30 @@ function AgentConnectionsPanel() {
     }
   }
 
+  async function toggleCapability(connection: AgentConnectionSummary, capability: AgentCapability) {
+    const nextCapabilities = connection.capabilities.includes(capability)
+      ? connection.capabilities.filter((item) => item !== capability)
+      : [...connection.capabilities, capability];
+    setSaving(true);
+    setToast(null);
+    try {
+      const response = await fetch("/api/agents/connections", {
+        method: "PATCH",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: connection.id, capabilities: nextCapabilities }),
+      });
+      const result = await response.json().catch(() => ({} as { connection?: AgentConnectionSummary; error?: string }));
+      if (!response.ok || !result.connection) throw new Error(result.error ?? "Updating agent capabilities failed.");
+      setConnections((current) => current.map((item) => (item.id === connection.id ? result.connection as AgentConnectionSummary : item)));
+      setToast({ tone: "success", message: `${capabilityLabel(capability)} ${nextCapabilities.includes(capability) ? "enabled" : "disabled"} for ${connection.label}.` });
+    } catch (error) {
+      setToast({ tone: "error", message: error instanceof Error ? error.message : "Updating agent capabilities failed." });
+    } finally {
+      setSaving(false);
+    }
+  }
+
   useEffect(() => {
     if (!canManage) return;
     let isMounted = true;
@@ -872,6 +957,7 @@ function AgentConnectionsPanel() {
         if (isMounted) setConnections(result.connections ?? []);
       })
       .catch(() => undefined);
+    void loadAgentActivity();
     return () => {
       isMounted = false;
     };
@@ -909,6 +995,7 @@ function AgentConnectionsPanel() {
       if (!response.ok) throw new Error("Revoking the agent connection failed.");
       setConnections((current) => current.map((item) => (item.id === connection.id ? { ...item, status: "revoked" } : item)));
       setToast({ tone: "success", message: `${connection.label} revoked.` });
+      void loadAgentActivity();
     } catch (error) {
       setToast({ tone: "error", message: error instanceof Error ? error.message : "Revoking the agent connection failed." });
     } finally {
@@ -923,9 +1010,25 @@ function AgentConnectionsPanel() {
       <div className="mb-4">
         <h3 className="text-sm font-semibold text-[#0F1117]">Agent Connections</h3>
         <p className="mt-1 max-w-2xl text-xs leading-relaxed text-[#5F6B73]">
-          Issue an API key so a connected OpenAI, Anthropic, or Microsoft Copilot agent can call this workspace&apos;s real MCP server directly. Reading data and creating tasks execute immediately (elevated access, since you already vetted the agent provider when you generated its key). Real-world-visible actions -- scheduling a meeting, creating a project or stakeholder, querying an external model -- need your approval the first time, in Approvals &amp; Governance; approve with &quot;always allow&quot; to skip that step for future calls from this connection. The key is shown once below and never stored -- copy it now.
+          Issue an API key so a connected OpenAI, Anthropic, or Microsoft Copilot agent can call this workspace&apos;s real MCP server directly. Raw keys are shown once only. MCP2 tools are opt-in per connection. Critical tools require Approvals &amp; Governance unless an Always-Allow grant exists. Copilot remains approved at the policy layer, but its dedicated adapter is still pending.
         </p>
       </div>
+      {activitySummary && (
+        <div className="mb-4 grid grid-cols-2 gap-2 lg:grid-cols-5">
+          {[
+            ["Recent calls", activity.length],
+            ["Failures", activitySummary.failures],
+            ["Denials", activitySummary.denials],
+            ["Pending approvals", activitySummary.pendingApprovals],
+            ["Active grants", activitySummary.activeGrants],
+          ].map(([metric, value]) => (
+            <div key={metric} className="rounded-lg bg-[#F8F9FA] p-3">
+              <div className="text-[10px] font-semibold uppercase text-[#5F6B73]">{metric}</div>
+              <div className="mt-1 font-mono text-lg font-semibold text-[#0F1117]">{value}</div>
+            </div>
+          ))}
+        </div>
+      )}
       {toast && <div className="mb-3"><InlineToast tone={toast.tone} message={toast.message} /></div>}
       {issuedKey && (
         <div className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 p-3">
@@ -970,6 +1073,13 @@ function AgentConnectionsPanel() {
         >
           Generate key
         </button>
+        <button
+          type="button"
+          onClick={() => void loadAgentActivity()}
+          className="rounded-lg border border-[rgba(0,0,0,0.12)] px-3 py-2 text-xs font-semibold text-[#0F1117] hover:bg-[#F2F3F5]"
+        >
+          Refresh activity
+        </button>
       </div>
       {connections.length > 0 && (
         <div className="mt-4 grid gap-2">
@@ -984,7 +1094,8 @@ function AgentConnectionsPanel() {
                   </div>
                   <div>
                     <div className="text-xs font-semibold text-[#0F1117]">{connection.label} <span className="font-normal text-[#5F6B73]">({agentProviderOptions.find((option) => option.id === connection.provider)?.label})</span></div>
-                    <div className="mt-0.5 font-mono text-[11px] text-[#5F6B73]">{connection.apiKeyPrefix}&hellip;</div>
+                    <div className="mt-0.5 font-mono text-[11px] text-[#5F6B73]">Key {connection.apiKeyPrefix}&hellip; - issued {formatDateTime(connection.createdAt)} - last used {formatDateTime(connection.lastUsedAt)}</div>
+                    <div className="mt-0.5 text-[11px] text-[#5F6B73]">Issued by {connection.issuedByRole ?? "admin"}{connection.issuedByUserId ? ` (${connection.issuedByUserId.slice(0, 8)}...)` : ""}</div>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -995,7 +1106,7 @@ function AgentConnectionsPanel() {
                       onClick={() => void toggleGrants(connection.id)}
                       className="rounded-lg border border-[rgba(0,0,0,0.12)] px-2.5 py-1 text-[11px] font-semibold text-[#0F1117] hover:bg-[#F2F3F5]"
                     >
-                      {expandedConnectionId === connection.id ? "Hide always-allowed tools" : "Always-allowed tools"}
+                      {expandedConnectionId === connection.id ? "Hide controls" : "Controls"}
                     </button>
                   )}
                   {connection.status === "active" && (
@@ -1011,19 +1122,47 @@ function AgentConnectionsPanel() {
                 </div>
               </div>
               {expandedConnectionId === connection.id && (
-                <div className="mt-2 rounded-lg bg-white p-2">
-                  {(grantsByConnection[connection.id] ?? []).length === 0 ? (
-                    <p className="text-[11px] text-[#5F6B73]">No tools are always-allowed for this connection yet -- approve a critical tool call with &quot;always allow&quot; in Approvals &amp; Governance to add one here.</p>
-                  ) : (
-                    <ul className="grid gap-1.5">
-                      {(grantsByConnection[connection.id] ?? []).map((grant) => (
-                        <li key={grant.id} className="flex items-center justify-between text-[11px]">
-                          <span className="font-mono text-[#0F1117]">{grant.toolName}</span>
-                          <button type="button" onClick={() => void revokeToolGrant(connection.id, grant.id)} className="font-semibold text-[#8B1E2D] hover:underline">Revoke</button>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
+                <div className="mt-2 grid gap-3 rounded-lg bg-white p-3">
+                  <div>
+                    <div className="mb-2 text-[10px] font-semibold uppercase text-[#5F6B73]">Enabled tools</div>
+                    <div className="grid gap-1.5 md:grid-cols-2">
+                      {allAgentCapabilities.map((capability) => {
+                        const enabled = connection.capabilities.includes(capability);
+                        const critical = criticalAgentCapabilities.has(capability);
+                        const mcp2 = mcp2AgentCapabilities.includes(capability);
+                        return (
+                          <label key={capability} className={`flex items-center justify-between rounded-lg border px-2.5 py-2 text-[11px] ${enabled ? "border-emerald-100 bg-emerald-50" : "border-[rgba(0,0,0,0.08)] bg-white"}`}>
+                            <span>
+                              <span className="block font-mono font-semibold text-[#0F1117]">{capability}</span>
+                              <span className="text-[#5F6B73]">{critical ? "Critical approval" : "Auto"}{mcp2 ? " - MCP2 opt-in" : ""}</span>
+                            </span>
+                            <input
+                              type="checkbox"
+                              checked={enabled}
+                              disabled={saving || connection.status !== "active"}
+                              onChange={() => void toggleCapability(connection, capability)}
+                              aria-label={`${enabled ? "Disable" : "Enable"} ${capabilityLabel(capability)}`}
+                            />
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="mb-2 text-[10px] font-semibold uppercase text-[#5F6B73]">Always-Allow grants</div>
+                    {(grantsByConnection[connection.id] ?? []).length === 0 ? (
+                      <p className="text-[11px] text-[#5F6B73]">No tools are always-allowed for this connection yet. Approve a critical tool call with &quot;always allow&quot; in Approvals &amp; Governance to add one here.</p>
+                    ) : (
+                      <ul className="grid gap-1.5">
+                        {(grantsByConnection[connection.id] ?? []).map((grant) => (
+                          <li key={grant.id} className="flex items-center justify-between rounded-lg bg-[#F8F9FA] px-2.5 py-2 text-[11px]">
+                            <span><span className="font-mono text-[#0F1117]">{grant.toolName}</span> <span className="text-[#5F6B73]">granted {formatDateTime(grant.grantedAt)}</span></span>
+                            <button type="button" onClick={() => void revokeToolGrant(connection.id, grant.id)} className="font-semibold text-[#8B1E2D] hover:underline">Revoke grant</button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
@@ -1031,6 +1170,28 @@ function AgentConnectionsPanel() {
           })}
         </div>
       )}
+      <div className="mt-4 rounded-lg bg-[#F8F9FA] p-3">
+        <div className="mb-2 flex items-center justify-between">
+          <div>
+            <div className="text-[10px] font-semibold uppercase text-[#5F6B73]">Agent Activity</div>
+            <p className="mt-0.5 text-[11px] text-[#5F6B73]">Recent MCP calls, failures, denials and pending approvals from tenant audit logs.</p>
+          </div>
+        </div>
+        {activity.length === 0 ? (
+          <p className="text-[11px] text-[#5F6B73]">No agent activity recorded yet. Generate a key and run the live validation checklist.</p>
+        ) : (
+          <div className="grid gap-1.5">
+            {activity.slice(0, 8).map((event) => (
+              <div key={event.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-white px-2.5 py-2 text-[11px]">
+                <span><span className="font-mono font-semibold text-[#0F1117]">{event.toolName}</span> <span className="text-[#5F6B73]">via {event.provider}</span></span>
+                <span className={`rounded-full px-2 py-0.5 font-semibold ${event.status === "success" ? "bg-emerald-50 text-emerald-700" : event.status === "pending" ? "bg-amber-50 text-amber-700" : event.status === "denied" ? "bg-blue-50 text-blue-700" : "bg-red-50 text-red-700"}`}>{event.status}</span>
+                <span className="font-mono text-[#5F6B73]">{formatDateTime(event.createdAt)}</span>
+                {event.errorMessage && <span className="basis-full text-[10px] text-[#5F6B73]">{event.errorMessage}</span>}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </Card>
   );
 }
