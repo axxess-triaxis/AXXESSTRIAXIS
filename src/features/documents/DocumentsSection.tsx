@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "../../auth/AuthProvider";
 import { SectionHeader } from "../../components/layout/SectionHeader";
 import { WorkflowTimelinePanel } from "../../components/enterprise/WorkflowTimelinePanel";
@@ -30,7 +30,13 @@ export const DocumentsSection = () => {
   const { session } = useAuth();
   const user = session.user;
   const analytics = useAnalytics();
-  const scope = user ? tenantScopeFromUser(user) : undefined;
+  // tenantScopeFromUser() returns a new object literal on every call -- unmemoized here, this was the
+  // one call site in the codebase without useMemo, and caused loadIndexableDocuments (useCallback,
+  // keyed on scope) to get a new identity every render, re-firing the effect below in an unbounded
+  // fetch/setState/re-render loop once the Upload modal opened (root cause of the live "page isn't
+  // responding" hang on /documents). Matches the memoization pattern used everywhere else, e.g.
+  // BetaReadinessSection.tsx, MeetingsSection.tsx.
+  const scope = useMemo(() => (user ? tenantScopeFromUser(user) : undefined), [user]);
   const [showIngest, setShowIngest] = useState(false);
   const [ingesting, setIngesting] = useState(false);
   const [message, setMessage] = useState<{ tone: "success" | "error" | "info"; text: string } | null>(null);

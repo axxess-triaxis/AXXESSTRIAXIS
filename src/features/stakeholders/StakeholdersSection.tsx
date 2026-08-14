@@ -23,6 +23,32 @@ const engagementOptions: { value: Stakeholder["engagementLevel"]; label: string 
   { value: "high", label: "High" },
 ];
 
+// Relationship Network org-chart labels: SVG <text> has no native word-wrap or ellipsis, so long
+// org names (e.g. "State Health Directorate") are greedily wrapped onto up to 2 short lines here,
+// truncating the last line if it still doesn't fit -- keeps every label legible instead of letting
+// it overflow or compress into the illegible cluster the previous radial layout produced.
+function wrapLabel(text: string, maxCharsPerLine = 13, maxLines = 2): string[] {
+  const words = text.split(" ");
+  const lines: string[] = [];
+  let current = "";
+  for (const word of words) {
+    const candidate = current ? `${current} ${word}` : word;
+    if (candidate.length > maxCharsPerLine && current) {
+      lines.push(current);
+      current = word;
+    } else {
+      current = candidate;
+    }
+  }
+  if (current) lines.push(current);
+  if (lines.length > maxLines) {
+    const kept = lines.slice(0, maxLines);
+    kept[maxLines - 1] = `${kept[maxLines - 1].slice(0, maxCharsPerLine - 1)}…`;
+    return kept;
+  }
+  return lines;
+}
+
 function engagementBadgeClass(level: Stakeholder["engagementLevel"]) {
   if (level === "high") return "bg-emerald-50 text-emerald-700";
   if (level === "medium") return "bg-amber-50 text-amber-700";
@@ -102,6 +128,35 @@ export const StakeholdersSection = () => {
       : [];
     return [...rows, ...demoAddedStakeholders];
   }, [demoMode, demoAddedStakeholders]);
+
+  // Relationship Network: a 2-level org chart (AXXESS -> organization -> contact), replacing the
+  // previous radial hub-and-spoke wheel, which crammed every stakeholder onto a fixed-radius ring in
+  // a fixed-size viewBox and became an unreadable cluster once there were more than a handful of
+  // contacts. Branch width grows with each org's member count (or a legibility floor for orgs with
+  // few members), so the chart's total width -- not its label size -- grows with the data.
+  const networkLayout = useMemo(() => {
+    const leafSlotWidth = 46;
+    const orgMinWidth = 78;
+    const orgs: string[] = [];
+    const byOrg = new Map<string, DemoStakeholderRow[]>();
+    stakeholders.forEach((s) => {
+      if (!byOrg.has(s.org)) {
+        byOrg.set(s.org, []);
+        orgs.push(s.org);
+      }
+      byOrg.get(s.org)!.push(s);
+    });
+    let cursor = 0;
+    const orgBranches = orgs.map((org) => {
+      const members = byOrg.get(org)!;
+      const branchWidth = Math.max(members.length * leafSlotWidth, orgMinWidth);
+      const startX = cursor;
+      cursor += branchWidth;
+      const leaves = members.map((s, i) => ({ stakeholder: s, x: startX + (i + 0.5) * (branchWidth / members.length) }));
+      return { org, orgX: startX + branchWidth / 2, leaves };
+    });
+    return { orgBranches, width: Math.max(cursor, 220) };
+  }, [stakeholders]);
 
   // A-79: "Save stakeholder mapping" from the AI Workspace actionables pop-up lands here -- a
   // mapping isn't a new Contact, so it offers a "Save as note" card instead of pre-filling the
@@ -571,26 +626,37 @@ export const StakeholdersSection = () => {
       <div className="space-y-4">
         <Card className="p-4">
           <h3 className="text-xs font-semibold text-[#0F1117] uppercase tracking-wider mb-3">Relationship Network</h3>
-          <svg viewBox="0 0 200 160" className="w-full">
-            <circle cx="100" cy="80" r="18" fill="#8B1E2D" opacity="0.9" />
-            <text x="100" y="84" textAnchor="middle" fill="white" fontSize="8" fontWeight="bold">AXXESS</text>
-            {stakeholders.map((s, i) => {
-              const angle = (i / stakeholders.length) * 2 * Math.PI - Math.PI / 2;
-              const r = 60;
-              const x = 100 + r * Math.cos(angle);
-              const y = 80 + r * Math.sin(angle);
-              const strokeW = s.influence > 85 ? 2 : 1;
-              const isSelected = selectedContactId === s.id;
-              return (
-                <g key={s.id} onClick={() => setSelectedContactId(s.id)} className="cursor-pointer">
-                  <line x1="100" y1="80" x2={x} y2={y} stroke="#C9A227" strokeWidth={strokeW} strokeOpacity={isSelected ? 0.9 : 0.4} />
-                  <circle cx={x} cy={y} r={isSelected ? 14 : 12} fill={isSelected ? "#8B1E2D" : "#2C4A7C"} opacity="0.9" stroke={isSelected ? "#8B1E2D" : "none"} strokeWidth={isSelected ? 2 : 0} />
-                  <text x={x} y={y + 3} textAnchor="middle" fill="white" fontSize="7" fontWeight="bold">{s.avatar}</text>
+          <div className="overflow-x-auto">
+            <svg width={networkLayout.width} height={148} viewBox={`0 0 ${networkLayout.width} 148`} className="block">
+              <circle cx={networkLayout.width / 2} cy={20} r={16} fill="#8B1E2D" opacity="0.92" />
+              <text x={networkLayout.width / 2} y={23} textAnchor="middle" fill="white" fontSize="8" fontWeight="bold">AXXESS</text>
+              {networkLayout.orgBranches.map(({ org, orgX, leaves }) => (
+                <g key={org}>
+                  <line x1={networkLayout.width / 2} y1={36} x2={orgX} y2={47} stroke="#C9A227" strokeWidth={1.25} strokeOpacity={0.5} />
+                  <rect x={orgX - 34} y={47} width={68} height={18} rx={4} fill="#F2F3F5" stroke="#C9A227" strokeOpacity={0.35} />
+                  {wrapLabel(org).map((line, i, arr) => (
+                    <text key={line} x={orgX} y={47 + 9 + i * 7.5 - ((arr.length - 1) * 3.75)} textAnchor="middle" fill="#5F6B73" fontSize="6.5" fontWeight="600">
+                      {line}
+                    </text>
+                  ))}
+                  {leaves.map(({ stakeholder: s, x }) => {
+                    const isSelected = selectedContactId === s.id;
+                    return (
+                      <g key={s.id} onClick={() => setSelectedContactId(s.id)} className="cursor-pointer">
+                        <line x1={orgX} y1={65} x2={x} y2={92} stroke="#C9A227" strokeWidth={isSelected ? 1.75 : 1} strokeOpacity={isSelected ? 0.9 : 0.4} />
+                        <circle cx={x} cy={104} r={isSelected ? 13 : 11} fill={isSelected ? "#8B1E2D" : "#2C4A7C"} stroke={isSelected ? "#8B1E2D" : "none"} strokeWidth={isSelected ? 2 : 0} />
+                        <text x={x} y={107} textAnchor="middle" fill="white" fontSize="7" fontWeight="bold">{s.avatar}</text>
+                        <text x={x} y={126} textAnchor="middle" fill="#0F1117" fontSize="6.5" fontWeight={isSelected ? "700" : "500"}>
+                          {s.name.length > 12 ? `${s.name.slice(0, 11)}…` : s.name}
+                        </text>
+                      </g>
+                    );
+                  })}
                 </g>
-              );
-            })}
-          </svg>
-          <p className="mt-2 text-[10px] leading-relaxed text-[#5F6B73]">Line thickness reflects relationship influence. Click a node or a table row to open that contact&apos;s profile above.</p>
+              ))}
+            </svg>
+          </div>
+          <p className="mt-2 text-[10px] leading-relaxed text-[#5F6B73]">Organizations branch from AXXESS; click a contact to open their profile above.</p>
         </Card>
         <Card className="p-4">
           <h3 className="text-xs font-semibold text-[#0F1117] uppercase tracking-wider mb-3">Engagement Timeline</h3>

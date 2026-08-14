@@ -5,13 +5,11 @@ import { PostHogAnalyticsProvider } from "./PostHogAnalyticsProvider";
 import { normalizeAnalyticsProvider } from "./providers";
 import type { AnalyticsProvider, AnalyticsRuntime } from "./types";
 
-// 2026-08-14: was hardcoded to "0.7.0"/"0.7.0-beta", directly contradicting package.json's real
-// "0.6.0-beta" -- surfaced as two different version numbers on the same Beta Readiness page (this
-// value in "Release Status" vs. the Traction Snapshot's package.json-sourced figure). No release
-// train or build process in this repo has ever produced an actual 0.7.0 -- this was stale/incorrect
-// data, not an intentional distinction from the app version. Synced to match package.json.
-export const releaseVersion = "0.6.0-beta";
-export const appVersion = process.env.NEXT_PUBLIC_AXXESS_APP_VERSION ?? "0.6.0-beta";
+// 2026-08-14: founder corrected in live review -- the real current beta line is 0.7.0-beta, not
+// 0.6.0-beta. package.json's "version" field had not been bumped since an earlier milestone and was
+// itself the stale value; this and package.json are now both synced to the founder-confirmed 0.7.0-beta.
+export const releaseVersion = "0.7.0-beta";
+export const appVersion = process.env.NEXT_PUBLIC_AXXESS_APP_VERSION ?? "0.7.0";
 
 export function getAnalyticsEnvironment() {
   return process.env.NEXT_PUBLIC_VERCEL_ENV ?? process.env.NODE_ENV ?? "development";
