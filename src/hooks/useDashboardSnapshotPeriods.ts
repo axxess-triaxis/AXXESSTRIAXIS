@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import type { TenantScope } from "../repositories/interfaces";
-import type { SnapshotPeriodResult } from "../services/dashboard/dashboardSnapshotPeriods";
+import { buildDemoSnapshotPeriod, demoYoyEarliestActivityDate, type SnapshotPeriodResult } from "../services/dashboard/dashboardSnapshotPeriods";
 
 export type DashboardSnapshotPeriods = {
   daily?: SnapshotPeriodResult;
@@ -14,10 +14,25 @@ export type DashboardSnapshotPeriods = {
 // A-110 (2026-08-09): same shape as useAuditLogCount.ts -- undefined until the first successful
 // fetch, so the UI can distinguish "not loaded yet" from "genuinely zero." Fetches all 3 real
 // periods plus the yoy earliest-activity-date lookup in parallel.
-export function useDashboardSnapshotPeriods(scope?: TenantScope, refreshToken = 0): DashboardSnapshotPeriods {
+// demoMode (2026-08-14): the investor-demo persona has no real Supabase auth session, so the
+// underlying /api/dashboard/snapshot-periods route (gated on getServerAuthSession) always
+// returned 401 and this bar was stuck on "Loading..." forever -- see dashboardSnapshotPeriods.ts's
+// buildDemoSnapshotPeriod for the fallback. Real-tenant behavior (the fetch path below) is
+// unchanged when false.
+export function useDashboardSnapshotPeriods(scope?: TenantScope, refreshToken = 0, demoMode = false): DashboardSnapshotPeriods {
   const [periods, setPeriods] = useState<DashboardSnapshotPeriods>({});
 
   useEffect(() => {
+    if (demoMode) {
+      setPeriods({
+        daily: buildDemoSnapshotPeriod("daily"),
+        weekly: buildDemoSnapshotPeriod("weekly"),
+        monthly: buildDemoSnapshotPeriod("monthly"),
+        yoyEarliestActivityDate: demoYoyEarliestActivityDate,
+      });
+      return;
+    }
+
     if (!scope?.organizationId) return;
     const controller = new AbortController();
 
@@ -40,7 +55,7 @@ export function useDashboardSnapshotPeriods(scope?: TenantScope, refreshToken = 
       .catch(() => undefined);
 
     return () => controller.abort();
-  }, [scope?.organizationId, refreshToken]);
+  }, [scope?.organizationId, refreshToken, demoMode]);
 
   return periods;
 }

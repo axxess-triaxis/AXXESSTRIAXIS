@@ -22,6 +22,7 @@ import { useAnalytics } from "../../services/analytics";
 import { demoAuditTimeline } from "../../lib/demo/demoActivity";
 import { useWorkflowTimeline } from "../../hooks/useWorkflowTimeline";
 import { readAndClearAgenticDraft } from "../../services/agentic/agenticDraftHandoff";
+import { readAndClearStakeholderNoteDraft } from "../../services/agentic/stakeholderActionHandoff";
 
 type TaskFormState = {
   title: string;
@@ -91,8 +92,10 @@ export const TasksSection = () => {
   const [agenticDraftBanner, setAgenticDraftBanner] = useState<string | null>(null);
   // A-103 (2026-08-09): a real, dedicated Reminders view inside this same workspace, not a
   // separate top-level section -- see RemindersPanel below.
-  const [view, setView] = useState<"tasks" | "reminders">("tasks");
+  // A-116 (2026-08-14): extended with "notes" -- see NotesPanel below.
+  const [view, setView] = useState<"tasks" | "reminders" | "notes">("tasks");
   const [reminderDraft, setReminderDraft] = useState<{ title: string; description: string } | null>(null);
+  const [noteDraft, setNoteDraft] = useState<{ stakeholderName: string; presetBody?: string } | null>(null);
   const completionCelebration = useWorkflowCompletionCelebration();
   const taskTimeline = useWorkflowTimeline(scope, { limit: 5, resourceType: selectedTask ? "task" : undefined, resourceId: selectedTask?.id });
 
@@ -155,6 +158,16 @@ export const TasksSection = () => {
       title: draft.summary.length > 80 ? `${draft.summary.slice(0, 77)}...` : draft.summary,
       description: draft.summary,
     });
+  }, []);
+
+  // A-116 (2026-08-14): Stakeholders & CRM's "Add note" button writes this handoff (see
+  // stakeholderActionHandoff.ts) instead of an inline composer, per the founder's explicit
+  // direction that notes belong in a dedicated Notes surface here, not scattered per-page.
+  useEffect(() => {
+    const draft = readAndClearStakeholderNoteDraft();
+    if (!draft) return;
+    setView("notes");
+    setNoteDraft({ stakeholderName: draft.stakeholderName, presetBody: draft.presetBody });
   }, []);
 
   const openForm = (task?: Task) => {
@@ -329,20 +342,22 @@ export const TasksSection = () => {
       )}
 
       <div className="flex gap-1 border-b border-[rgba(0,0,0,0.08)]">
-        {(["tasks", "reminders"] as const).map((tab) => (
+        {(["tasks", "reminders", "notes"] as const).map((tab) => (
           <button
             key={tab}
             type="button"
             onClick={() => setView(tab)}
             className={`text-xs px-3 py-2 font-semibold border-b-2 -mb-px transition-colors ${view === tab ? "border-[#8B1E2D] text-[#8B1E2D]" : "border-transparent text-[#5F6B73] hover:text-[#0F1117]"}`}
           >
-            {tab === "tasks" ? "Tasks" : "Reminders"}
+            {tab === "tasks" ? "Tasks" : tab === "reminders" ? "Reminders" : "Notes"}
           </button>
         ))}
       </div>
 
       {view === "reminders" ? (
         <RemindersPanel scope={scope} users={users} draft={reminderDraft} onDraftConsumed={() => setReminderDraft(null)} />
+      ) : view === "notes" ? (
+        <NotesPanel scope={scope} demoMode={demoMode} draft={noteDraft} onDraftConsumed={() => setNoteDraft(null)} />
       ) : (
       <div className="grid min-h-[520px] grid-cols-1 gap-4 xl:grid-cols-[1fr_360px]">
         <div className="min-w-0">
@@ -749,6 +764,154 @@ function RemindersPanel({
             </div>
           </div>
         )}
+      </Card>
+    </div>
+  );
+}
+
+type StakeholderNoteRow = { id: string; title: string; body: string; createdAt: string };
+
+// A-116 (2026-08-14): a real "Notes" surface inside Tasks & Workflow, per the founder's explicit
+// direction ("Add Note - Opens in 'Notes' section (new) in 'Tasks & Workflow'. Notepad needs
+// adding in 'Tasks & Workflow' apart from 'Reminders'"). Mirrors RemindersPanel's list+compose
+// shape (sibling function, same file, sharing scope/users with the parent). Live mode reuses the
+// already-real GET/POST /api/stakeholders/notes routes exactly as StakeholdersSection.tsx's own
+// "AI-escalated notes" card already does -- not plumbed through applicationServices/
+// demoRepositories.ts, since no demo equivalent exists there and the fetch-based approach is
+// already the established, working pattern for this exact data in this exact codebase. Demo mode
+// uses local session-only state instead, matching every other demo-interactivity fix this session.
+function NotesPanel({
+  scope,
+  demoMode,
+  draft,
+  onDraftConsumed,
+}: {
+  scope?: ReturnType<typeof tenantScopeFromUser>;
+  demoMode: boolean;
+  draft: { stakeholderName: string; presetBody?: string } | null;
+  onDraftConsumed: () => void;
+}) {
+  const [notes, setNotes] = useState<StakeholderNoteRow[]>([]);
+  const [loading, setLoading] = useState(!demoMode);
+  const [saving, setSaving] = useState(false);
+  const [title, setTitle] = useState("");
+  const [body, setBody] = useState("");
+  const [toast, setToast] = useState<{ tone: "success" | "error" | "info"; message: string } | null>(null);
+  const [draftBanner, setDraftBanner] = useState<string | null>(null);
+
+  const loadNotes = useCallback(async () => {
+    if (demoMode || !scope) {
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    try {
+      const response = await fetch("/api/stakeholders/notes", { credentials: "include" });
+      const data = response.ok ? await response.json().catch(() => ({} as { notes?: Array<{ id: string; title: string; body: string; createdAt: string }> })) : {};
+      setNotes((data.notes ?? []).map((note: { id: string; title: string; body: string; createdAt: string }) => ({ id: note.id, title: note.title, body: note.body, createdAt: note.createdAt })));
+    } catch {
+      setNotes([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [demoMode, scope]);
+
+  useEffect(() => {
+    void loadNotes();
+  }, [loadNotes]);
+
+  useEffect(() => {
+    if (!draft) return;
+    setTitle(`Note: ${draft.stakeholderName}`);
+    setBody(draft.presetBody ?? "");
+    setDraftBanner(`From Stakeholders & CRM -- review and Save Note to record it for ${draft.stakeholderName}.`);
+    onDraftConsumed();
+    // onDraftConsumed is a fresh function reference from the parent each render -- excluding it is
+    // deliberate, matching RemindersPanel's identical pattern for the same reason.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draft]);
+
+  async function saveNote() {
+    if (!title.trim() || !body.trim()) {
+      setToast({ tone: "error", message: "Title and body are required." });
+      return;
+    }
+    setSaving(true);
+    setToast(null);
+    if (demoMode) {
+      setNotes((current) => [{ id: `demo-note-${Date.now()}`, title: title.trim(), body: body.trim(), createdAt: new Date().toISOString() }, ...current]);
+      setTitle("");
+      setBody("");
+      setDraftBanner(null);
+      setToast({ tone: "success", message: "Note saved (session only)." });
+      setSaving(false);
+      return;
+    }
+    try {
+      const response = await fetch("/api/stakeholders/notes", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: title.trim(), body: body.trim() }),
+      });
+      if (!response.ok) throw new Error("request failed");
+      const payload = await response.json().catch(() => ({} as { note?: { id: string; title: string; body: string; createdAt: string } }));
+      if (payload.note) setNotes((current) => [{ id: payload.note!.id, title: payload.note!.title, body: payload.note!.body, createdAt: payload.note!.createdAt }, ...current]);
+      setTitle("");
+      setBody("");
+      setDraftBanner(null);
+      setToast({ tone: "success", message: "Note saved." });
+    } catch {
+      setToast({ tone: "error", message: "Could not save this note. Try again." });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (loading) return <LoadingState label="Notes" />;
+
+  return (
+    <div className="grid min-h-[520px] grid-cols-1 gap-4 xl:grid-cols-[1fr_360px]">
+      <div className="min-w-0">
+        {toast && <div className="mb-3"><InlineToast tone={toast.tone} message={toast.message} /></div>}
+        <Card className="overflow-hidden">
+          <div className="flex items-center gap-4 border-b border-[rgba(0,0,0,0.06)] bg-[#F8F9FA] px-4 py-2.5">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-[#5F6B73]">Note</span>
+          </div>
+          {notes.length === 0 && (
+            <div className="p-8">
+              <EmptyState title="No notes yet" message="Save a note here, or send one from a contact in Stakeholders & CRM." />
+            </div>
+          )}
+          {notes.map((note) => (
+            <div key={note.id} className="border-b border-[rgba(0,0,0,0.04)] px-4 py-3">
+              <span className="block text-sm font-medium text-[#0F1117]">{note.title}</span>
+              <p className="mt-1 whitespace-pre-line text-xs leading-relaxed text-[#5F6B73]">{note.body}</p>
+              <span className="mt-1 block font-mono text-[10px] text-[#5F6B73]">{new Date(note.createdAt).toLocaleString()}</span>
+            </div>
+          ))}
+        </Card>
+      </div>
+
+      <Card className="h-full overflow-y-auto p-4">
+        <div className="space-y-4">
+          <h3 className="text-sm font-semibold text-[#0F1117]">New Note</h3>
+          {draftBanner && (
+            <div className="flex items-start justify-between gap-2 rounded-lg border border-[#8B1E2D]/20 bg-[#FFF8F8] p-2.5 text-[11px] leading-relaxed text-[#8B1E2D]">
+              <span>{draftBanner}</span>
+              <button type="button" onClick={() => setDraftBanner(null)} aria-label="Dismiss" className="text-[#8B1E2D] hover:opacity-70"><X size={12} /></button>
+            </div>
+          )}
+          <TextField label="Title" value={title} onChange={(event) => setTitle(event.target.value)} disabled={saving} />
+          <TextAreaField label="Body" value={body} onChange={(event) => setBody(event.target.value)} disabled={saving} />
+          <button
+            onClick={() => void saveNote()}
+            disabled={saving}
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#8B1E2D] px-3 py-2 text-xs font-semibold text-white hover:bg-[#7a1a27] disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <Save size={13} /> {saving ? "Saving..." : "Save Note"}
+          </button>
+        </div>
       </Card>
     </div>
   );
