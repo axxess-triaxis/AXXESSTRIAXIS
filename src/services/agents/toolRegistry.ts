@@ -4,6 +4,7 @@ import type { Document, DocumentPermission, KnowledgeArticle, Meeting, Project, 
 import { answerWithGovernedRag } from "../rag/governedRag";
 import { routeAiRequest } from "../ai/router/aiRouter";
 import type { AgentCapability, AgentScope } from "../../security/agentScope";
+import { stakeholderNotesRepository } from "../../repositories/workflowActionRepositories";
 
 export type McpToolContent = { type: "text"; text: string };
 export type McpToolResult = { content: McpToolContent[]; isError?: boolean };
@@ -20,7 +21,12 @@ export type McpToolDefinition = {
   criticality: "auto" | "critical";
   inputSchema: {
     type: "object";
-    properties: Record<string, unknown>;
+    properties: Record<string, {
+      type: "string" | "number" | "array" | "boolean" | "object";
+      description?: string;
+      enum?: string[];
+      items?: { type: "string" | "number" | "boolean" | "object" };
+    }>;
     required?: string[];
   };
   handler: (scope: AgentScope, args: Record<string, unknown>) => Promise<McpToolResult>;
@@ -32,6 +38,33 @@ function textResult(payload: unknown): McpToolResult {
 
 function notImplemented(method: string): never {
   throw new Error(`${method} is not supported by the read-only agent knowledge adapter.`);
+}
+
+export function validateAgentToolArguments(tool: McpToolDefinition, args: unknown): { ok: true; args: Record<string, unknown> } | { ok: false; message: string } {
+  if (!args || typeof args !== "object" || Array.isArray(args)) return { ok: false, message: "Tool arguments must be an object." };
+  const candidate = args as Record<string, unknown>;
+  for (const required of tool.inputSchema.required ?? []) {
+    if (candidate[required] === undefined || candidate[required] === null || candidate[required] === "") {
+      return { ok: false, message: `${required} is required.` };
+    }
+  }
+  for (const [key, value] of Object.entries(candidate)) {
+    const schema = tool.inputSchema.properties[key];
+    if (!schema) return { ok: false, message: `Unsupported argument: ${key}.` };
+    if (value === undefined || value === null) continue;
+    if (schema.type === "array") {
+      if (!Array.isArray(value)) return { ok: false, message: `${key} must be an array.` };
+      if (schema.items?.type && value.some((item) => typeof item !== schema.items?.type)) return { ok: false, message: `${key} contains an invalid item type.` };
+      continue;
+    }
+    if (typeof value !== schema.type) return { ok: false, message: `${key} must be a ${schema.type}.` };
+    if (schema.enum && typeof value === "string" && !schema.enum.includes(value)) return { ok: false, message: `${key} must be one of: ${schema.enum.join(", ")}.` };
+  }
+  return { ok: true, args: candidate };
+}
+
+function boundedLimit(value: unknown, defaultValue = 50, max = 100) {
+  return Math.min(Math.max(typeof value === "number" ? Math.floor(value) : defaultValue, 1), max);
 }
 
 // query_knowledge_hub reuses answerWithGovernedRag's real retrieval/scoring/confidence logic
@@ -294,6 +327,61 @@ const createTaskTool: McpToolDefinition = {
   },
 };
 
+const listTasksTool: McpToolDefinition = {
+  name: "list_tasks",
+  description: "List this tenant's tasks, scoped to the agent connection's organization.",
+  requiredCapability: "list_tasks",
+  criticality: "auto",
+  inputSchema: {
+    type: "object",
+    properties: {
+      limit: { type: "number", description: "Max tasks to return (default 50, max 100)." },
+      status: { type: "string", enum: ["pending", "in-progress", "completed", "blocked"] },
+      projectId: { type: "string" },
+    },
+  },
+  async handler(scope, args) {
+    const params = new URLSearchParams({
+      select: "id,organization_id,program_id,project_id,title,description,assignee_id,priority,status,due_date,tags",
+      organization_id: `eq.${scope.organizationId}`,
+      order: "due_date.asc",
+      limit: String(boundedLimit(args.limit)),
+    });
+    if (typeof args.status === "string") params.set("status", `eq.${args.status}`);
+    if (typeof args.projectId === "string") params.set("project_id", `eq.${args.projectId}`);
+    const rows = await supabaseAdminRest<TaskRow[]>("tasks", { query: params });
+    return textResult((rows ?? []).map(mapTaskRow));
+  },
+};
+
+const updateTaskStatusTool: McpToolDefinition = {
+  name: "update_task_status",
+  description: "Update the status of an existing task in this tenant. Requires human approval unless this connection has Always Allow for this tool.",
+  requiredCapability: "update_task_status",
+  criticality: "critical",
+  inputSchema: {
+    type: "object",
+    properties: {
+      taskId: { type: "string" },
+      status: { type: "string", enum: ["pending", "in-progress", "completed", "blocked"] },
+    },
+    required: ["taskId", "status"],
+  },
+  async handler(scope, args) {
+    const rows = await supabaseAdminRest<TaskRow[]>("tasks", {
+      method: "PATCH",
+      query: new URLSearchParams({
+        id: `eq.${args.taskId as string}`,
+        organization_id: `eq.${scope.organizationId}`,
+      }),
+      body: { status: args.status as string },
+    });
+    const row = rows?.[0];
+    if (!row) return { content: [{ type: "text", text: "Task was not found for this organization." }], isError: true };
+    return textResult(mapTaskRow(row));
+  },
+};
+
 type ProjectRow = {
   id: string; organization_id: string; program_id: string | null; name: string;
   description: string | null; owner_id: string | null; progress: number; risk_level: string;
@@ -331,7 +419,7 @@ const listProjectsTool: McpToolDefinition = {
     },
   },
   async handler(scope, args) {
-    const limit = Math.min(Math.max(typeof args.limit === "number" ? args.limit : 50, 1), 100);
+    const limit = boundedLimit(args.limit);
     const rows = await supabaseAdminRest<ProjectRow[]>("projects", {
       query: new URLSearchParams({
         select: "id,organization_id,program_id,name,description,owner_id,progress,risk_level,priority,status,start_date,due_date,tags",
@@ -341,6 +429,38 @@ const listProjectsTool: McpToolDefinition = {
       }),
     });
     return textResult((rows ?? []).map(mapProjectRow));
+  },
+};
+
+const getDashboardSnapshotTool: McpToolDefinition = {
+  name: "get_dashboard_snapshot",
+  description: "Return a compact tenant-scoped dashboard snapshot with counts for projects, tasks, documents, meetings, approvals and recent audit events.",
+  requiredCapability: "get_dashboard_snapshot",
+  criticality: "auto",
+  inputSchema: { type: "object", properties: {} },
+  async handler(scope) {
+    const organizationFilter = { organization_id: `eq.${scope.organizationId}`, limit: "1000" };
+    const [tasks, projects, documents, meetings, approvals, audits] = await Promise.all([
+      supabaseAdminRest<Array<{ id: string; status: string }>>("tasks", { query: new URLSearchParams({ select: "id,status", ...organizationFilter }) }),
+      supabaseAdminRest<Array<{ id: string; status: string }>>("projects", { query: new URLSearchParams({ select: "id,status", ...organizationFilter }) }),
+      supabaseAdminRest<Array<{ id: string; status: string | null }>>("documents", { query: new URLSearchParams({ select: "id,status", ...organizationFilter }) }),
+      supabaseAdminRest<Array<{ id: string; status: string }>>("meetings", { query: new URLSearchParams({ select: "id,status", ...organizationFilter }) }),
+      supabaseAdminRest<Array<{ id: string; status: string }>>("approval_requests", { query: new URLSearchParams({ select: "id,status", ...organizationFilter }) }),
+      supabaseAdminRest<Array<{ id: string }>>("audit_logs", { query: new URLSearchParams({ select: "id", organization_id: `eq.${scope.organizationId}`, limit: "25", order: "created_at.desc" }) }),
+    ]);
+    return textResult({
+      organizationId: scope.organizationId,
+      counts: {
+        tasks: tasks?.length ?? 0,
+        openTasks: (tasks ?? []).filter((task) => task.status !== "completed").length,
+        projects: projects?.length ?? 0,
+        documents: documents?.length ?? 0,
+        meetings: meetings?.length ?? 0,
+        approvals: approvals?.length ?? 0,
+        pendingApprovals: (approvals ?? []).filter((approval) => approval.status === "pending").length,
+        recentAuditEvents: audits?.length ?? 0,
+      },
+    });
   },
 };
 
@@ -418,6 +538,74 @@ const createMeetingTool: McpToolDefinition = {
     const row = rows?.[0];
     if (!row) return { content: [{ type: "text", text: "Meeting was not returned by Supabase." }], isError: true };
     return textResult(mapMeetingRow(row));
+  },
+};
+
+const listMeetingsTool: McpToolDefinition = {
+  name: "list_meetings",
+  description: "List this tenant's meetings, scoped to the agent connection's organization.",
+  requiredCapability: "list_meetings",
+  criticality: "auto",
+  inputSchema: {
+    type: "object",
+    properties: {
+      limit: { type: "number", description: "Max meetings to return (default 50, max 100)." },
+      status: { type: "string" },
+      projectId: { type: "string" },
+    },
+  },
+  async handler(scope, args) {
+    const params = new URLSearchParams({
+      select: "id,organization_id,project_id,program_id,stakeholder_id,title,starts_at,ends_at,attendee_ids,agenda,notes,decisions,action_items,status",
+      organization_id: `eq.${scope.organizationId}`,
+      order: "starts_at.desc",
+      limit: String(boundedLimit(args.limit)),
+    });
+    if (typeof args.status === "string") params.set("status", `eq.${args.status}`);
+    if (typeof args.projectId === "string") params.set("project_id", `eq.${args.projectId}`);
+    const rows = await supabaseAdminRest<MeetingRow[]>("meetings", { query: params });
+    return textResult((rows ?? []).map(mapMeetingRow));
+  },
+};
+
+const listDocumentsTool: McpToolDefinition = {
+  name: "list_documents",
+  description: "List this tenant's Knowledge Hub documents without exposing file bytes.",
+  requiredCapability: "list_documents",
+  criticality: "auto",
+  inputSchema: {
+    type: "object",
+    properties: {
+      limit: { type: "number", description: "Max documents to return (default 50, max 100)." },
+      status: { type: "string" },
+      tag: { type: "string" },
+    },
+  },
+  async handler(scope, args) {
+    const params = new URLSearchParams({
+      select: "id,organization_id,project_id,category_id,name,title,description,storage_path,file_name,file_size,mime_type,document_type,status,visibility,classification,owner_user_id,created_by_user_id,updated_by_user_id,current_version,tags,created_at,updated_at,archived_at,deleted_at,category:document_categories(name)",
+      organization_id: `eq.${scope.organizationId}`,
+      order: "updated_at.desc",
+      limit: String(boundedLimit(args.limit)),
+    });
+    if (typeof args.status === "string") params.set("status", `eq.${args.status}`);
+    if (typeof args.tag === "string") params.set("tags", `cs.{${args.tag}}`);
+    const rows = await supabaseAdminRest<DocumentRow[]>("documents", { query: params });
+    return textResult((rows ?? []).map((row) => {
+      const document = mapDocumentRow(row);
+      return {
+        id: document.id,
+        name: document.name,
+        title: document.title,
+        status: document.status,
+        visibility: document.visibility,
+        classification: document.classification,
+        fileName: document.fileName,
+        mimeType: document.mimeType,
+        tags: document.tags,
+        updatedAt: document.updatedAt,
+      };
+    }));
   },
 };
 
@@ -545,6 +733,80 @@ const createStakeholderTool: McpToolDefinition = {
   },
 };
 
+const addStakeholderNoteTool: McpToolDefinition = {
+  name: "add_stakeholder_note",
+  description: "Add a real note to the tenant's stakeholder workspace. Requires human approval unless this connection has Always Allow for this tool.",
+  requiredCapability: "add_stakeholder_note",
+  criticality: "critical",
+  inputSchema: {
+    type: "object",
+    properties: {
+      title: { type: "string" },
+      body: { type: "string" },
+      stakeholderId: { type: "string" },
+      sentiment: { type: "string", enum: ["positive", "neutral", "risk", "urgent"] },
+      visibility: { type: "string", enum: ["private", "team", "department", "organization"] },
+    },
+    required: ["title", "body"],
+  },
+  async handler(scope, args) {
+    const note = await stakeholderNotesRepository.create(syntheticRagScope(scope), {
+      title: args.title as string,
+      body: args.body as string,
+      stakeholderId: typeof args.stakeholderId === "string" ? args.stakeholderId : undefined,
+      sentiment: typeof args.sentiment === "string" ? args.sentiment as "positive" | "neutral" | "risk" | "urgent" : "neutral",
+      visibility: typeof args.visibility === "string" ? args.visibility as "private" | "team" | "department" | "organization" : "organization",
+      metadata: { source: "agentic_mcp", agentConnectionId: scope.agentConnectionId, provider: scope.provider },
+    });
+    return textResult(note);
+  },
+};
+
+type AuditLogAgentRow = {
+  id: string; organization_id: string; actor_user_id: string | null; actor_role: string | null;
+  action: string; resource_type: string; resource_id: string | null; category: string | null;
+  request_id: string | null; metadata: Record<string, unknown> | null; created_at: string;
+};
+
+const searchAuditLogsTool: McpToolDefinition = {
+  name: "search_audit_logs",
+  description: "Search recent tenant audit events. Sensitive governance read; requires approval unless Always Allow is active.",
+  requiredCapability: "search_audit_logs",
+  criticality: "critical",
+  inputSchema: {
+    type: "object",
+    properties: {
+      limit: { type: "number", description: "Max audit rows to return (default 25, max 100)." },
+      action: { type: "string" },
+      resourceType: { type: "string" },
+      category: { type: "string" },
+    },
+  },
+  async handler(scope, args) {
+    const params = new URLSearchParams({
+      select: "id,organization_id,actor_user_id,actor_role,action,resource_type,resource_id,category,request_id,metadata,created_at",
+      organization_id: `eq.${scope.organizationId}`,
+      order: "created_at.desc",
+      limit: String(boundedLimit(args.limit, 25)),
+    });
+    if (typeof args.action === "string") params.set("action", `ilike.*${args.action.replace(/[(),]/g, " ")}*`);
+    if (typeof args.resourceType === "string") params.set("resource_type", `eq.${args.resourceType}`);
+    if (typeof args.category === "string") params.set("category", `eq.${args.category}`);
+    const rows = await supabaseAdminRest<AuditLogAgentRow[]>("audit_logs", { query: params });
+    return textResult((rows ?? []).map((row) => ({
+      id: row.id,
+      actorUserId: row.actor_user_id,
+      actorRole: row.actor_role,
+      action: row.action,
+      resourceType: row.resource_type,
+      resourceId: row.resource_id,
+      category: row.category,
+      metadata: row.metadata ?? {},
+      createdAt: row.created_at,
+    })));
+  },
+};
+
 const queryExternalModelTool: McpToolDefinition = {
   name: "query_external_model",
   description: "Route an open-ended prompt through AXXESS's own governed OpenRouter-backed AI router (same path /api/ai uses). Requires human approval unless this connection has been granted Always Allow for this tool.",
@@ -577,10 +839,17 @@ export const agentToolRegistry: McpToolDefinition[] = [
   createTaskTool,
   queryKnowledgeHubTool,
   listProjectsTool,
+  listTasksTool,
+  listMeetingsTool,
+  listDocumentsTool,
+  getDashboardSnapshotTool,
   createMeetingTool,
   createProjectTool,
+  updateTaskStatusTool,
   listStakeholdersTool,
   createStakeholderTool,
+  addStakeholderNoteTool,
+  searchAuditLogsTool,
   queryExternalModelTool,
 ];
 

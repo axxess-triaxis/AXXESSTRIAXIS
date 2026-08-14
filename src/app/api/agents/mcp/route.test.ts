@@ -54,6 +54,17 @@ vi.mock("../../../../services/agents/toolRegistry", () => {
   return {
     agentToolRegistry: tools,
     getAgentTool: (name: string) => tools.find((tool) => tool.name === name),
+    validateAgentToolArguments: (tool: { inputSchema: { required?: string[]; properties: Record<string, unknown> } }, args: unknown) => {
+      if (!args || typeof args !== "object" || Array.isArray(args)) return { ok: false, message: "Tool arguments must be an object." };
+      const candidate = args as Record<string, unknown>;
+      for (const required of tool.inputSchema.required ?? []) {
+        if (!candidate[required]) return { ok: false, message: `${required} is required.` };
+      }
+      for (const key of Object.keys(candidate)) {
+        if (!tool.inputSchema.properties[key]) return { ok: false, message: `Unsupported argument: ${key}.` };
+      }
+      return { ok: true, args: candidate };
+    },
   };
 });
 
@@ -133,6 +144,28 @@ describe("POST /api/agents/mcp (MCP JSON-RPC server)", () => {
     expect(body.error.message).toContain("create_task");
     expect(state.auditEvents).toHaveLength(1);
     expect(state.auditEvents[0].input.success).toBe(false);
+  });
+
+  it("tools/call rejects malformed arguments before handler execution or approval creation", async () => {
+    state.scope = activeScope;
+    const response = await POST(rpcRequest({ jsonrpc: "2.0", id: 1, method: "tools/call", params: { name: "create_meeting", arguments: { tenantId: "org-2" } } }));
+    const body = await response.json() as { error: { code: number; message: string } };
+
+    expect(body.error.code).toBe(-32602);
+    expect(body.error.message).toContain("title is required");
+    expect(state.approvalCreateCalls).toHaveLength(0);
+    expect(state.auditEvents[0].input.success).toBe(false);
+  });
+
+  it("rejects oversized MCP payloads before parsing", async () => {
+    state.scope = activeScope;
+    const response = await POST(new Request("https://example.com/api/agents/mcp", {
+      method: "POST",
+      headers: { Authorization: "Bearer axa_live_valid", "content-length": String(65 * 1024) },
+      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "initialize" }),
+    }));
+
+    expect(response.status).toBe(413);
   });
 
   it("tools/call executes a real tool and audit-logs success", async () => {
