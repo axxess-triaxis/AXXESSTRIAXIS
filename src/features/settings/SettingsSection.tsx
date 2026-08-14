@@ -528,13 +528,21 @@ function DemoModePanel() {
                 {demoDatasetSummary.organizationName} loads as a coherent institutional workspace with populated governance, portfolio, knowledge, activity, and audit records.
               </p>
             </div>
+            {/* A-116 (2026-08-14): was HTML `disabled={forcedByEnv}` -- on investor.triaxisventures.com,
+                demo mode is intentionally forced on by environment config (this is the dedicated demo
+                domain), so the toggle is correctly locked. But a native `disabled` button never fires
+                onClick, so switchDemoMode's existing "Demo Mode is enabled by environment configuration"
+                explanation (below) was unreachable -- clicking it did nothing at all, reading as a dead
+                placeholder rather than an intentionally-locked control. Kept the locked *look*
+                (opacity/cursor via aria-disabled + className) but let the click through so the real
+                explanation renders. */}
             <button
               type="button"
               role="switch"
               aria-checked={enabled}
-              disabled={forcedByEnv}
+              aria-disabled={forcedByEnv}
               onClick={() => switchDemoMode(!enabled)}
-              className={`relative h-7 w-14 rounded-full transition-colors ${enabled ? "bg-[#8B1E2D]" : "bg-[#D1D5DB]"} disabled:cursor-not-allowed disabled:opacity-70`}
+              className={`relative h-7 w-14 rounded-full transition-colors ${enabled ? "bg-[#8B1E2D]" : "bg-[#D1D5DB]"} ${forcedByEnv ? "cursor-not-allowed opacity-70" : ""}`}
             >
               <span className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition-transform ${enabled ? "translate-x-7" : "translate-x-1"}`} />
             </button>

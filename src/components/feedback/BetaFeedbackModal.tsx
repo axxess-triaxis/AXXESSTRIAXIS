@@ -1,12 +1,8 @@
 "use client";
 
-import { ExternalLink, Send, X } from "lucide-react";
-import { useState } from "react";
+import { Building2, ExternalLink, Rocket, TerminalSquare, X } from "lucide-react";
 import { useAnalytics } from "../../services/analytics";
-import type { BetaFeedbackType } from "../../domain";
 import type { UserContext } from "../../security/rbac";
-import { InlineToast } from "../forms/InlineToast";
-import { SelectField, TextAreaField } from "../forms/FormField";
 
 type BetaFeedbackModalProps = {
   user: UserContext;
@@ -15,174 +11,86 @@ type BetaFeedbackModalProps = {
   onClose: () => void;
 };
 
-const feedbackTypes: { value: BetaFeedbackType; label: string }[] = [
-  { value: "Bug", label: "Bug" },
-  { value: "Feature Request", label: "Feature Request" },
-  { value: "Confusing Workflow", label: "Confusing Workflow" },
-  { value: "General Feedback", label: "General Feedback" },
-];
-
-const modules = [
-  "Dashboard",
-  "Projects",
-  "Tasks",
-  "Meetings",
-  "Notifications",
-  "Administration",
-  "Onboarding",
-  "Other",
-].map((value) => ({ value, label: value }));
-
-const ratings = ["1", "2", "3", "4", "5"].map((value) => ({ value, label: value }));
+// A-116 (2026-08-14): replaced the inline rating/message form (POST /api/beta-feedback -- kept
+// as a real, working route, just no longer the entry point here) with direct links to the
+// founder's real external surveys, per explicit instruction: "should have 3 links not this
+// unempirical placeholder form." Each survey targets a different respondent -- routing people to
+// the one meant for them beats one generic form asking everyone the same questions.
+const surveys = [
+  {
+    key: "product",
+    title: "Product Survey",
+    description: "For anyone using AXXESS day to day -- what's working, what's confusing, what's missing.",
+    url: "https://ap.surveymars.com/q/dWD9AHFnT",
+    icon: Rocket,
+  },
+  {
+    key: "enterprise",
+    title: "Enterprise Survey",
+    description: "For decision-makers evaluating AXXESS for a team or organization. We would love this from you.",
+    url: "https://ap.surveymars.com/q/NAgaQ43fM",
+    icon: Building2,
+  },
+  {
+    key: "technical",
+    title: "For Technical Surveyors",
+    description: "For engineers and technical evaluators -- architecture, integrations, security, and governance depth.",
+    url: "https://ap.surveymars.com/q/NnfK3fMgo",
+    icon: TerminalSquare,
+  },
+] as const;
 
 export function BetaFeedbackModal({ user, moduleName, route, onClose }: BetaFeedbackModalProps) {
   const analytics = useAnalytics();
-  const [feedbackType, setFeedbackType] = useState<BetaFeedbackType>("General Feedback");
-  const [selectedModule, setSelectedModule] = useState(moduleName || "Dashboard");
-  const [rating, setRating] = useState("4");
-  const [message, setMessage] = useState("");
-  const [permissionToContact, setPermissionToContact] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [toast, setToast] = useState<{ tone: "success" | "error" | "info"; message: string } | null>(null);
-  const fallbackUrl = process.env.NEXT_PUBLIC_BETA_FEEDBACK_FORM_URL;
 
-  async function submitFeedback(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setToast(null);
-
-    if (message.trim().length < 3) {
-      analytics.trackEvent("form_validation_failed", { form_name: "beta_feedback", field: "message" }, {
-        organization_id: user.organizationId,
-        user_id: user.id,
-        user_role: user.role,
-        module_name: selectedModule,
-        route,
-      });
-      setToast({ tone: "error", message: "Add a short note before submitting." });
-      return;
-    }
-
-    setSubmitting(true);
-    try {
-      // A-65 fix (2026-07-27): this used to write directly to betaFeedbackRepository.create(),
-      // which persists the row but never sends the "flows to triaxisgrp@gmail.com" notification
-      // email -- that only happens in POST /api/beta-feedback's sendFeedbackNotificationEmail()
-      // call. Going through the route is what actually delivers the email.
-      const response = await fetch("/api/beta-feedback", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          feedbackType,
-          module: selectedModule,
-          rating: Number(rating),
-          message: message.trim(),
-          permissionToContact,
-          metadata: {
-            route,
-            release_version: analytics.releaseVersion,
-            event_source: "client",
-          },
-        }),
-      });
-
-      if (!response.ok) {
-        const payload = await response.json().catch(() => ({})) as { error?: string };
-        throw new Error(payload.error ?? "Feedback could not be saved right now.");
-      }
-
-      analytics.trackEvent("feedback_submitted", {
-        feedback_type: feedbackType,
-        module: selectedModule,
-        rating: Number(rating),
-        permission_to_contact: permissionToContact,
-      }, {
-        organization_id: user.organizationId,
-        user_id: user.id,
-        user_role: user.role,
-        module_name: selectedModule,
-        route,
-      });
-
-      setMessage("");
-      setToast({ tone: "success", message: "Feedback submitted. Thank you." });
-    } catch (error) {
-      setToast({ tone: "error", message: error instanceof Error ? error.message : "Feedback could not be saved right now." });
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
-  function trackFallbackClick() {
-    analytics.trackEvent("beta_feedback_link_clicked", {
-      module: selectedModule,
-    }, {
+  function trackSurveyClick(surveyKey: string) {
+    analytics.trackEvent("beta_feedback_link_clicked", { module: moduleName, survey: surveyKey }, {
       organization_id: user.organizationId,
       user_id: user.id,
       user_role: user.role,
-      module_name: selectedModule,
+      module_name: moduleName,
       route,
     });
   }
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/30 px-4">
-      <div className="w-full max-w-lg overflow-hidden rounded-xl border border-[rgba(0,0,0,0.08)] bg-white shadow-2xl">
-        <div className="flex items-start justify-between border-b border-[rgba(0,0,0,0.06)] px-5 py-4">
+    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/40 px-4" role="dialog" aria-modal="true" aria-labelledby="beta-feedback-title">
+      <div className="w-full max-w-lg overflow-hidden rounded-2xl border border-[rgba(0,0,0,0.06)] bg-white shadow-2xl">
+        <div className="flex items-start justify-between bg-gradient-to-br from-[#8B1E2D] to-[#6b1622] px-6 py-5">
           <div>
-            <h2 className="text-sm font-semibold text-[#0F1117]">Send Feedback</h2>
-            <p className="mt-1 text-xs text-[#5F6B73]">Beta feedback is reviewed by the AXXESS team.</p>
+            <h2 id="beta-feedback-title" className="text-base font-semibold text-white">Help shape AXXESS</h2>
+            <p className="mt-1 text-xs leading-relaxed text-white/75">Pick the survey that matches how you use AXXESS -- two minutes, reviewed directly by the founding team.</p>
           </div>
-          <button onClick={onClose} className="rounded-lg p-1.5 text-[#5F6B73] hover:bg-[#F2F3F5]" aria-label="Close feedback">
-            <X size={15} />
+          <button onClick={onClose} className="rounded-lg p-1.5 text-white/70 transition-colors hover:bg-white/10 hover:text-white" aria-label="Close">
+            <X size={16} />
           </button>
         </div>
 
-        <form onSubmit={submitFeedback} className="space-y-4 px-5 py-4">
-          {toast && <InlineToast tone={toast.tone} message={toast.message} />}
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <SelectField label="Type" value={feedbackType} options={feedbackTypes} onChange={(event) => setFeedbackType(event.target.value as BetaFeedbackType)} />
-            <SelectField label="Module" value={selectedModule} options={modules} onChange={(event) => setSelectedModule(event.target.value)} />
-            <SelectField label="Rating" value={rating} options={ratings} onChange={(event) => setRating(event.target.value)} />
-          </div>
-          <TextAreaField
-            label="Message"
-            value={message}
-            onChange={(event) => setMessage(event.target.value)}
-            maxLength={4000}
-            placeholder="Share what happened or what would help."
-          />
-          <label className="flex items-start gap-2 text-xs text-[#5F6B73]">
-            <input
-              type="checkbox"
-              checked={permissionToContact}
-              onChange={(event) => setPermissionToContact(event.target.checked)}
-              className="mt-0.5 h-4 w-4 rounded border-[rgba(0,0,0,0.2)] text-[#8B1E2D]"
-            />
-            <span>Permission to contact me about this feedback.</span>
-          </label>
-
-          <div className="flex flex-col gap-2 border-t border-[rgba(0,0,0,0.06)] pt-4 sm:flex-row sm:items-center sm:justify-between">
-            {fallbackUrl ? (
-              <a
-                href={fallbackUrl}
-                target="_blank"
-                rel="noreferrer"
-                onClick={trackFallbackClick}
-                className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#8B1E2D] hover:underline"
-              >
-                External feedback form <ExternalLink size={12} />
-              </a>
-            ) : <span className="text-xs text-[#5F6B73]">Release {analytics.releaseVersion}</span>}
-            <button
-              type="submit"
-              disabled={submitting}
-              className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#8B1E2D] px-4 py-2 text-xs font-semibold text-white hover:bg-[#7a1a27] disabled:cursor-not-allowed disabled:opacity-60"
+        <div className="space-y-2.5 p-5">
+          {surveys.map((survey) => (
+            <a
+              key={survey.key}
+              href={survey.url}
+              target="_blank"
+              rel="noreferrer"
+              onClick={() => trackSurveyClick(survey.key)}
+              className="group flex items-center gap-3.5 rounded-xl border border-[rgba(0,0,0,0.07)] p-4 transition-all hover:border-[#8B1E2D]/30 hover:bg-[#FFF8F8] hover:shadow-sm"
             >
-              <Send size={13} /> {submitting ? "Submitting..." : "Submit Feedback"}
-            </button>
-          </div>
-        </form>
+              <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-[#8B1E2D]/8 text-[#8B1E2D] transition-colors group-hover:bg-[#8B1E2D] group-hover:text-white">
+                <survey.icon size={18} />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm font-semibold text-[#0F1117]">{survey.title}</span>
+                <span className="mt-0.5 block text-xs leading-relaxed text-[#5F6B73]">{survey.description}</span>
+              </span>
+              <ExternalLink size={14} className="flex-shrink-0 text-[#5F6B73] transition-colors group-hover:text-[#8B1E2D]" />
+            </a>
+          ))}
+        </div>
+
+        <div className="border-t border-[rgba(0,0,0,0.06)] px-6 py-3">
+          <p className="text-[11px] text-[#5F6B73]">Release {analytics.releaseVersion}</p>
+        </div>
       </div>
     </div>
   );

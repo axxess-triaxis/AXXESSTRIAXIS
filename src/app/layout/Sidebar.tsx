@@ -48,8 +48,13 @@ export function Sidebar({ active, sidebarOpen, onSelectSection, onToggleSidebar 
         </button>
       </div>
 
+      {/* A-116 (2026-08-14): overscroll-contain stops a pull-down past this list's own scroll
+          boundary from chaining into the page/browser's own overscroll (mobile "Back to Top"
+          bounce) -- the sidebar should hold firm at its own top/bottom, not visually yield to a
+          gesture that was meant for the nav list, not the whole app shell. Applies on both demo
+          and live, since Sidebar.tsx has no demoMode branch for its own scroll container. */}
       <nav
-        className="flex-1 overflow-y-auto py-3 [scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.18)_transparent] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[rgba(255,255,255,0.18)] hover:[&::-webkit-scrollbar-thumb]:bg-[rgba(255,255,255,0.32)]"
+        className="flex-1 overflow-y-auto overscroll-contain py-3 [scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.18)_transparent] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[rgba(255,255,255,0.18)] hover:[&::-webkit-scrollbar-thumb]:bg-[rgba(255,255,255,0.32)]"
       >
         {visibleNavGroups.map((group) => (
           <div key={group.label} className="mb-1">
