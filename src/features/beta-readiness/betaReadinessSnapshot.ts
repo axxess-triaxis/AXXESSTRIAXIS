@@ -34,13 +34,13 @@ export type ReadinessKanban = {
 };
 
 export const betaReadinessSnapshotMeta = {
-  asOf: "2026-08-13",
-  clearedBy: "Founder (HITL), in conversation -- \"Refer to Git, all data available\"",
+  asOf: "2026-08-14",
+  clearedBy: "Founder (HITL), in conversation -- corrected the beta version to 0.7.0-beta during live review",
   sourceDoc: "docs/readiness/BETA_READINESS_METRICS_REFRESH_2026_08_13.md",
 };
 
 export const tractionMetrics: SnapshotMetric[] = [
-  { label: "Beta version", value: "0.6.0-beta", detail: "package.json", provenance: "computed" },
+  { label: "Beta version", value: "0.7.0-beta", detail: "package.json -- founder-corrected 2026-08-14", provenance: "founder-stated" },
   { label: "Tenants provisioned", value: "2", detail: "Imprints Production, Ekora Hive -- both onboarded and live; 4 more (3 Mahanta-group firms, Elevate Group FZE) have LOI/interest on file, not yet provisioned", provenance: "computed" },
   { label: "Signed LOIs", value: "5", detail: "Imprints, Ekora, Mahanta-group (3 firms, 1 letter); plus 1 signed referral engagement (Sakura) and 1 expression of interest (Elevate Group FZE, 2026-08-12)", provenance: "computed" },
   { label: "Landing (live beta) traffic", value: "41 visitors", detail: "106 sessions, 551 page views -- PostHog, landing.triaxisventures.com, 2026-07-27 to 2026-08-13", provenance: "computed" },
@@ -52,9 +52,9 @@ export const tractionMetrics: SnapshotMetric[] = [
 ];
 
 export const engineeringMetrics: SnapshotMetric[] = [
-  { label: "LOC (app source)", value: "53,150", detail: "src + migrations + shared + mobile, excl. tests", provenance: "computed" },
-  { label: "LOC (incl. tests)", value: "73,677", detail: "same scope, tests included", provenance: "computed" },
-  { label: "Commits", value: "834", detail: "git rev-list --count origin/main", provenance: "computed" },
+  { label: "LOC (app source)", value: "54,271", detail: "src + migrations + shared + mobile, excl. tests -- re-pulled 2026-08-14", provenance: "computed" },
+  { label: "LOC (incl. tests)", value: "75,169", detail: "same scope, tests included -- re-pulled 2026-08-14", provenance: "computed" },
+  { label: "Commits", value: "844", detail: "git rev-list --count origin/main -- re-pulled 2026-08-14", provenance: "computed" },
   { label: "Tests", value: "1,136", detail: "231 files, 1,132 passing, 0 failures (2026-08-04 pull; not re-run this refresh)", provenance: "computed" },
   { label: "Vercel Experience Score", value: "~89.5%", detail: "deploy success rate, axxesstriaxis, as of 2026-08-04 pull -- not re-verified this refresh (requires live Vercel console)", provenance: "computed" },
   { label: "Engineering/product sprints", value: "70+", detail: "across Sprint N, A-N, ED-RN, MC-N execution units", provenance: "founder-stated" },

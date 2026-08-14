@@ -231,21 +231,26 @@ export function OrganizationAdminSection() {
         <div className="grid gap-3 md:grid-cols-3">
           {(demoMode
             ? [
-                { title: "Create a project", detail: "Start with one team, department, or client workflow.", icon: ClipboardCheck },
-                { title: "Add your documents", detail: "Upload policy, SOP, budget, and meeting documents.", icon: FileText },
-                { title: "Run your first approval", detail: "See human-in-the-loop governance and auditability in action.", icon: ShieldCheck },
+                { title: "Create a project", detail: "Start with one team, department, or client workflow.", icon: ClipboardCheck, href: "/projects" },
+                { title: "Add your documents", detail: "Upload policy, SOP, budget, and meeting documents.", icon: FileText, href: "/documents" },
+                { title: "Run your first approval", detail: "See human-in-the-loop governance and auditability in action.", icon: ShieldCheck, href: "/approvals" },
               ]
             : [
-                { title: "Create pilot project", detail: "Start with one district, department, or client workflow.", icon: ClipboardCheck },
-                { title: "Upload evidence pack", detail: "Add policy, SOP, budget, and meeting documents.", icon: FileText },
-                { title: "Run first approval", detail: "Prove human-in-the-loop governance and auditability.", icon: ShieldCheck },
+                { title: "Create pilot project", detail: "Start with one district, department, or client workflow.", icon: ClipboardCheck, href: "/projects" },
+                { title: "Upload evidence pack", detail: "Add policy, SOP, budget, and meeting documents.", icon: FileText, href: "/documents" },
+                { title: "Run first approval", detail: "Prove human-in-the-loop governance and auditability.", icon: ShieldCheck, href: "/approvals" },
               ]
           ).map((item) => (
-            <div key={item.title} className="rounded-lg border border-[rgba(15,17,23,0.08)] bg-white p-4">
+            <button
+              key={item.title}
+              type="button"
+              onClick={() => window.location.assign(item.href)}
+              className="rounded-lg border border-[rgba(15,17,23,0.08)] bg-white p-4 text-left transition-colors hover:border-[#8B1E2D]/30 hover:bg-[#8B1E2D]/5"
+            >
               <item.icon className="text-[#8B1E2D]" size={18} />
               <h3 className="mt-3 text-sm font-semibold text-[#0F1117]">{item.title}</h3>
               <p className="mt-1 text-xs leading-relaxed text-[#5F6B73]">{item.detail}</p>
-            </div>
+            </button>
           ))}
         </div>
       </SectionCard>

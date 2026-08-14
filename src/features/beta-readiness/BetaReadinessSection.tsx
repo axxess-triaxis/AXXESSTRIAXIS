@@ -127,7 +127,7 @@ export function BetaReadinessSection() {
     <div className="space-y-6">
       <SectionHeader
         title="Beta Readiness"
-        subtitle={`Founder readiness snapshot, cleared ${betaReadinessSnapshotMeta.asOf} -- Product Release 0.6`}
+        subtitle={`Founder readiness snapshot, cleared ${betaReadinessSnapshotMeta.asOf} -- Product Release 0.7`}
         action={<StatusPill ready={metrics.supabaseReady && metrics.feedbackReady} label={metrics.supabaseReady && metrics.feedbackReady ? "Ready" : "Needs Review"} />}
       />
 
