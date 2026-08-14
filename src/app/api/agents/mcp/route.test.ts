@@ -6,6 +6,7 @@ const state = {
   auditEvents: [] as Array<{ scope: AgentScope; input: Record<string, unknown> }>,
   granted: false,
   approvalCreateCalls: [] as Array<Record<string, unknown>>,
+  pendingToolCallCreateCalls: [] as Array<Record<string, unknown>>,
 };
 
 vi.mock("../../../../services/agents/agentConnectionRepository", () => ({
@@ -28,10 +29,21 @@ vi.mock("../../../../repositories/workflowActionRepositories", () => ({
   },
 }));
 
+// MCP3-2: the pending-execution counterpart to the approval_requests row above -- created in the
+// same critical-tool-no-grant branch, this is what PATCH /api/approvals/[id] later reserves and
+// executes exactly once.
+vi.mock("../../../../services/agents/agentPendingToolCallRepository", () => ({
+  createPendingToolCall: async (input: Record<string, unknown>) => {
+    state.pendingToolCallCreateCalls.push(input);
+    return { id: "pending-call-1", ...input, status: "pending" };
+  },
+}));
+
 vi.mock("../../../../services/agents/toolRegistry", () => {
   const tools = [
     {
       name: "create_task",
+      version: "1",
       description: "Create a task.",
       requiredCapability: "create_task",
       criticality: "auto",
@@ -44,6 +56,7 @@ vi.mock("../../../../services/agents/toolRegistry", () => {
     },
     {
       name: "create_meeting",
+      version: "1",
       description: "Create a meeting.",
       requiredCapability: "create_meeting",
       criticality: "critical",
@@ -93,6 +106,7 @@ describe("POST /api/agents/mcp (MCP JSON-RPC server)", () => {
     state.auditEvents = [];
     state.granted = false;
     state.approvalCreateCalls = [];
+    state.pendingToolCallCreateCalls = [];
     vi.clearAllMocks();
   });
 
@@ -206,6 +220,39 @@ describe("POST /api/agents/mcp (MCP JSON-RPC server)", () => {
     expect(state.approvalCreateCalls[0].metadata).toMatchObject({ agentConnectionId: "conn-1", toolName: "create_meeting" });
     expect(state.auditEvents[0].input.success).toBe(false);
     expect(state.auditEvents[0].input.errorMessage).toBe("pending_approval");
+  });
+
+  // MCP3-2 (2026-08-14): "approval resume" needs a real machine-execution record to reserve and
+  // run when a human later approves -- this proves the MCP route creates it in the same request
+  // that creates the approval_requests row, carrying the tool name/version/arguments/connection it
+  // will need to actually execute the call later, with an idempotency key and pending status.
+  it("MCP3-2: a critical tool with no grant also persists a pending tool call linked to the approval", async () => {
+    state.scope = activeScope;
+    state.granted = false;
+    const response = await POST(rpcRequest({ jsonrpc: "2.0", id: 1, method: "tools/call", params: { name: "create_meeting", arguments: { title: "Kickoff" } } }));
+    const body = await response.json() as { result: { content: Array<{ text: string }> } };
+    const payload = JSON.parse(body.result.content[0].text) as { pendingToolCallId: string };
+
+    expect(payload.pendingToolCallId).toBe("pending-call-1");
+    expect(state.pendingToolCallCreateCalls).toHaveLength(1);
+    expect(state.pendingToolCallCreateCalls[0]).toMatchObject({
+      organizationId: "org-1",
+      agentConnectionId: "conn-1",
+      approvalRequestId: "approval-1",
+      toolName: "create_meeting",
+      toolVersion: "1",
+      provider: "anthropic",
+      arguments: { title: "Kickoff" },
+    });
+    expect(typeof state.pendingToolCallCreateCalls[0].idempotencyKey).toBe("string");
+    expect((state.pendingToolCallCreateCalls[0].idempotencyKey as string).length).toBeGreaterThan(0);
+  });
+
+  it("MCP3-2: tools/list includes each tool's version", async () => {
+    state.scope = activeScope;
+    const response = await POST(rpcRequest({ jsonrpc: "2.0", id: 1, method: "tools/list" }));
+    const body = await response.json() as { result: { tools: Array<{ name: string; version: string }> } };
+    expect(body.result.tools.every((tool) => tool.version === "1")).toBe(true);
   });
 
   it("a critical tool WITH an active grant executes immediately, same as an auto tool", async () => {

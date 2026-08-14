@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { resolveAgentScopeFromApiKey, recordAgentToolAuditEvent } from "../../../../services/agents/agentConnectionRepository";
 import { hasGrant } from "../../../../services/agents/agentGrantsRepository";
+import { createPendingToolCall } from "../../../../services/agents/agentPendingToolCallRepository";
 import { approvalRequestsRepository } from "../../../../repositories/workflowActionRepositories";
 import { agentScopeHasCapability, type AgentScope } from "../../../../security/agentScope";
 import { agentToolRegistry, getAgentTool, validateAgentToolArguments } from "../../../../services/agents/toolRegistry";
@@ -77,7 +78,7 @@ export async function POST(request: Request) {
     return rpcResult(body.id, {
       tools: agentToolRegistry
         .filter((tool) => agentScopeHasCapability(scope, tool.requiredCapability))
-        .map((tool) => ({ name: tool.name, description: tool.description, inputSchema: tool.inputSchema })),
+        .map((tool) => ({ name: tool.name, version: tool.version, description: tool.description, inputSchema: tool.inputSchema })),
     });
   }
 
@@ -111,11 +112,26 @@ export async function POST(request: Request) {
           title: `Agent (${scope.provider}) wants to call ${tool.name}`,
           description: `Connection ${scope.agentConnectionId} requested ${tool.name} with arguments: ${JSON.stringify(toolArgs)}`,
           priority: "high",
-          metadata: { agentConnectionId: scope.agentConnectionId, toolName: tool.name, provider: scope.provider, args: toolArgs },
+          metadata: { agentConnectionId: scope.agentConnectionId, toolName: tool.name, toolVersion: tool.version, provider: scope.provider, args: toolArgs },
+        });
+        // MCP3-2: the machine-execution counterpart to the approval_requests row above -- this is
+        // what PATCH /api/approvals/[id] atomically reserves and executes exactly once when a
+        // human approves. idempotencyKey is a fresh id per call attempt (not a content hash), so
+        // two distinct MCP tools/call requests with identical arguments still get their own
+        // separate pending row rather than being silently merged.
+        const pendingCall = await createPendingToolCall({
+          organizationId: scope.organizationId,
+          agentConnectionId: scope.agentConnectionId,
+          approvalRequestId: approval.id,
+          toolName: tool.name,
+          toolVersion: tool.version,
+          provider: scope.provider,
+          arguments: toolArgs,
+          idempotencyKey: crypto.randomUUID(),
         });
         await recordAgentToolAuditEvent(scope, { toolName, success: false, argsSummary: toolArgs, errorMessage: "pending_approval" });
         return rpcResult(body.id, {
-          content: [{ type: "text", text: JSON.stringify({ status: "pending_approval", approvalRequestId: approval.id }) }],
+          content: [{ type: "text", text: JSON.stringify({ status: "pending_approval", approvalRequestId: approval.id, pendingToolCallId: pendingCall.id }) }],
         });
       }
     }

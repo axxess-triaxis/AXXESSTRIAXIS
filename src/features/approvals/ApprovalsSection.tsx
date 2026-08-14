@@ -44,6 +44,11 @@ export const ApprovalsSection = () => {
   const [decisionError, setDecisionError] = useState<string | null>(null);
   const [exportMessage, setExportMessage] = useState<string | null>(null);
   const canDecide = Boolean(session.user && decisionRoles.includes(session.user.role));
+  // MCP3-2: reject now requires a reason (matching PATCH /api/approvals/[id]'s own 400-if-missing
+  // rule), and a decided agent-originated approval can carry a real execution outcome (the tool
+  // actually ran, failed, or was rejected) instead of just a status flip -- both tracked per row.
+  const [rejectReasons, setRejectReasons] = useState<Record<string, string>>({});
+  const [executionOutcomes, setExecutionOutcomes] = useState<Record<string, { status: string; error?: string }>>({});
 
   // Agentic Infrastructure Phase 2 (2026-07-30): the live approvals table previously had no
   // action buttons at all -- only the demo-mode illustrative cards below had Approve/Reject, and
@@ -58,11 +63,16 @@ export const ApprovalsSection = () => {
         method: "PATCH",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status, alwaysAllow }),
+        body: JSON.stringify({ status, alwaysAllow, decisionReason: rejectReasons[id]?.trim() || undefined }),
       });
-      if (!response.ok) throw new Error("Deciding this approval failed.");
-      const result = await response.json() as { approval: ApprovalRequest };
-      setLiveApprovals((current) => current.map((approval) => (approval.id === id ? result.approval : approval)));
+      const payload = await response.json().catch(() => ({})) as { approval?: ApprovalRequest; execution?: { status: string; error?: string }; error?: string };
+      if (!response.ok) throw new Error(payload.error ?? "Deciding this approval failed.");
+      if (payload.approval) {
+        setLiveApprovals((current) => current.map((approval) => (approval.id === id ? payload.approval as ApprovalRequest : approval)));
+      }
+      if (payload.execution) {
+        setExecutionOutcomes((current) => ({ ...current, [id]: payload.execution as { status: string; error?: string } }));
+      }
     } catch (error) {
       setDecisionError(error instanceof Error ? error.message : "Deciding this approval failed.");
     } finally {
@@ -179,35 +189,54 @@ export const ApprovalsSection = () => {
                   <td className="px-4 py-3 text-[11px] font-mono text-[#5F6B73]">{new Date(approval.createdAt).toLocaleDateString()}</td>
                   <td className="px-4 py-3">
                     {approval.status !== "pending" ? (
-                      <span className="text-[11px] text-[#5F6B73]">{approval.decidedAt ? new Date(approval.decidedAt).toLocaleDateString() : "--"}</span>
+                      <div>
+                        <span className="text-[11px] text-[#5F6B73]">{approval.decidedAt ? new Date(approval.decidedAt).toLocaleDateString() : "--"}</span>
+                        {executionOutcomes[approval.id] && (
+                          <p className={`mt-1 text-[11px] font-medium ${executionOutcomes[approval.id].status === "failed" ? "text-red-700" : executionOutcomes[approval.id].status === "rejected" ? "text-[#5F6B73]" : "text-emerald-700"}`}>
+                            {executionOutcomes[approval.id].status === "executed" && "Executed"}
+                            {executionOutcomes[approval.id].status === "failed" && `Execution failed: ${executionOutcomes[approval.id].error ?? "unknown error"}`}
+                            {executionOutcomes[approval.id].status === "rejected" && "Rejected -- not executed"}
+                          </p>
+                        )}
+                      </div>
                     ) : canDecide ? (
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        <button
-                          type="button"
-                          disabled={decidingId === approval.id}
-                          onClick={() => void decideApproval(approval.id, "approved")}
-                          className="rounded-lg bg-emerald-600 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
-                        >
-                          Approve
-                        </button>
-                        {isAgentOriginated && (
+                      <div className="flex flex-col items-start gap-1.5">
+                        <div className="flex flex-wrap items-center gap-1.5">
                           <button
                             type="button"
                             disabled={decidingId === approval.id}
-                            onClick={() => void decideApproval(approval.id, "approved", true)}
-                            className="rounded-lg border border-emerald-200 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 hover:bg-emerald-50 disabled:opacity-60"
+                            onClick={() => void decideApproval(approval.id, "approved")}
+                            className="rounded-lg bg-emerald-600 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
                           >
-                            Approve + always allow
+                            Approve
                           </button>
-                        )}
-                        <button
-                          type="button"
-                          disabled={decidingId === approval.id}
-                          onClick={() => void decideApproval(approval.id, "rejected")}
-                          className="rounded-lg border border-red-200 px-2.5 py-1 text-[11px] font-semibold text-red-700 hover:bg-red-50 disabled:opacity-60"
-                        >
-                          Reject
-                        </button>
+                          {isAgentOriginated && (
+                            <button
+                              type="button"
+                              disabled={decidingId === approval.id}
+                              onClick={() => void decideApproval(approval.id, "approved", true)}
+                              className="rounded-lg border border-emerald-200 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 hover:bg-emerald-50 disabled:opacity-60"
+                            >
+                              Approve + always allow
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            disabled={decidingId === approval.id || !rejectReasons[approval.id]?.trim()}
+                            onClick={() => void decideApproval(approval.id, "rejected")}
+                            title={!rejectReasons[approval.id]?.trim() ? "Enter a reason before rejecting" : undefined}
+                            className="rounded-lg border border-red-200 px-2.5 py-1 text-[11px] font-semibold text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40"
+                          >
+                            Reject
+                          </button>
+                        </div>
+                        <input
+                          type="text"
+                          value={rejectReasons[approval.id] ?? ""}
+                          onChange={(event) => setRejectReasons((current) => ({ ...current, [approval.id]: event.target.value }))}
+                          placeholder="Reason (required to reject)"
+                          className="w-56 rounded-lg border border-[rgba(0,0,0,0.12)] px-2 py-1 text-[11px] outline-none focus:border-[#8B1E2D]"
+                        />
                       </div>
                     ) : (
                       <span className="text-[11px] text-[#5F6B73]">Requires Manager or above</span>
