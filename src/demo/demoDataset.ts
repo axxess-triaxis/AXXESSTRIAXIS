@@ -521,7 +521,11 @@ export function createDemoDataset(): DemoDataset {
       body: `${pick(["Approval needed", "Risk changed", "New briefing ready", "Meeting notes published"], index)} for ${project.name}.`,
       resourceType: "project",
       resourceId: project.id,
-      readAt: index % 3 === 0 ? dayOffset(-(index % 10)) : undefined,
+      // Read-marking uses a modulus (5) coprime with users.length (36) -- index % 3 previously
+      // meant every notification landing on user index 0 (Ananya Rao, the investor-preview
+      // persona, since 36 is a multiple of 3) was always marked read, leaving her default
+      // "Unread" tab permanently empty regardless of total notification count.
+      readAt: index % 5 === 0 ? dayOffset(-(index % 10)) : undefined,
       createdAt: dayOffset(-(index % 21)),
     };
   });

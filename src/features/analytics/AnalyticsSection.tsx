@@ -1,6 +1,6 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { BarChart3, Clock3, Download, ShieldCheck, TrendingUp } from "lucide-react";
-import { Bar, BarChart, CartesianGrid, Cell, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { DataStateBadge, DemoDataNotice, MetricCard, ModuleHeader, PageShell, TenantScopeBadge } from "../../components/enterprise";
 import { EmptyState } from "../../components/feedback/EmptyState";
 import { Card } from "../../components/ui/Card";
@@ -9,6 +9,7 @@ import { analyticsDemoInsights } from "../../lib/demo/demoMetrics";
 import { staggerDelay } from "../../lib/ui/staggerDelay";
 import { applicationServices } from "../../providers/serviceProvider";
 import { aggregateProjectRisk } from "../dashboard/DashboardSection";
+import { ExportReportModal } from "./ExportReportModal";
 
 // A-96 (2026-08-04, corrected same day): Executive Dashboard owns the live Tier 1/2/3 scored
 // operational tile stack (mail, social alerts, HITL review, audit trail, etc.) -- that content
@@ -34,9 +35,55 @@ const approvalCycleTrend = [
 
 const riskChartColors: Record<string, string> = { "High risk projects": "#B4232F", "Medium risk projects": "#C9A227", "Low risk projects": "#2E9E6D" };
 
+const velocityTrend = [
+  { sprint: "Spr 18", planned: 34, completed: 29 },
+  { sprint: "Spr 19", planned: 38, completed: 35 },
+  { sprint: "Spr 20", planned: 41, completed: 33 },
+  { sprint: "Spr 21", planned: 36, completed: 34 },
+  { sprint: "Spr 22", planned: 44, completed: 40 },
+  { sprint: "Spr 23", planned: 42, completed: 39 },
+];
+
+const approvedSpendTrend = [
+  { month: "Feb", cumulative: 1.2 },
+  { month: "Mar", cumulative: 2.1 },
+  { month: "Apr", cumulative: 3.4 },
+  { month: "May", cumulative: 4.6 },
+  { month: "Jun", cumulative: 5.9 },
+  { month: "Jul", cumulative: 7.3 },
+];
+
 export const AnalyticsSection = () => {
   const demoMode = isDemoModeEnabled();
   const riskDistribution = useMemo(() => aggregateProjectRisk(projects), []);
+  const [exportModalOpen, setExportModalOpen] = useState(false);
+
+  // Real, minimal export -- same pattern as DashboardSection.tsx's handleExportBriefing(): a
+  // client-side JSON snapshot of what's already on this page, no fabricated backend export
+  // service. The instructions text is recorded alongside the data, not sent anywhere or acted on
+  // by an AI pass in this cut -- shaping the export from free text is a later-sprint decision.
+  function handleGenerateExport(instructions: string) {
+    const payload = {
+      exportedAt: new Date().toISOString(),
+      instructions: instructions || null,
+      okrData,
+      performanceData,
+      riskDistribution,
+      approvalCycleTrend,
+      velocityTrend,
+      approvedSpendTrend,
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `axxess-analytics-report-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    setExportModalOpen(false);
+  }
 
   return (
     <PageShell>
@@ -50,10 +97,16 @@ export const AnalyticsSection = () => {
           <DataStateBadge key="provider" state="Provider-gated" />,
         ]}
         actions={
-          <button className="text-xs bg-[#8B1E2D] text-white px-3 py-2 rounded-lg flex items-center gap-1.5 hover:bg-[#7a1a27]">
+          <button onClick={() => setExportModalOpen(true)} className="text-xs bg-[#8B1E2D] text-white px-3 py-2 rounded-lg flex items-center gap-1.5 hover:bg-[#7a1a27]">
             <Download size={12} /> Export Report
           </button>
         }
+      />
+
+      <ExportReportModal
+        open={exportModalOpen}
+        onConfirm={handleGenerateExport}
+        onCancel={() => setExportModalOpen(false)}
       />
 
       {demoMode && (
@@ -169,6 +222,39 @@ export const AnalyticsSection = () => {
             </Card>
 
             <Card className="p-5 axxess-stagger-item" style={staggerDelay(5)}>
+              <h3 className="text-sm font-semibold text-[#0F1117] mb-4">Sprint Velocity (Planned vs. Completed)</h3>
+              <ResponsiveContainer width="100%" height={180}>
+                <BarChart data={velocityTrend}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#F2F3F5" vertical={false} />
+                  <XAxis dataKey="sprint" tick={{ fontSize: 11, fill: "#5F6B73" }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fontSize: 11, fill: "#5F6B73" }} axisLine={false} tickLine={false} />
+                  <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid rgba(0,0,0,0.08)" }} />
+                  <Bar dataKey="planned" fill="#C9A227" radius={3} />
+                  <Bar dataKey="completed" fill="#8B1E2D" radius={3} />
+                </BarChart>
+              </ResponsiveContainer>
+            </Card>
+
+            <Card className="p-5 axxess-stagger-item" style={staggerDelay(6)}>
+              <h3 className="text-sm font-semibold text-[#0F1117] mb-4">Cumulative Approved Spend</h3>
+              <ResponsiveContainer width="100%" height={180}>
+                <AreaChart data={approvedSpendTrend}>
+                  <defs>
+                    <linearGradient id="approvedSpendFill" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#8B1E2D" stopOpacity={0.25} />
+                      <stop offset="100%" stopColor="#8B1E2D" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#F2F3F5" vertical={false} />
+                  <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#5F6B73" }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fontSize: 11, fill: "#5F6B73" }} axisLine={false} tickLine={false} unit="M" />
+                  <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid rgba(0,0,0,0.08)" }} formatter={(value) => [`$${value}M`, "Cumulative spend"]} />
+                  <Area type="monotone" dataKey="cumulative" stroke="#8B1E2D" strokeWidth={2.5} fill="url(#approvedSpendFill)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </Card>
+
+            <Card className="p-5 axxess-stagger-item" style={staggerDelay(7)}>
               <h3 className="text-sm font-semibold text-[#0F1117] mb-4">AI-Generated Insights</h3>
               <div className="space-y-3">
                 {analyticsDemoInsights.map((insight, index) => (

@@ -374,7 +374,7 @@ export function DashboardSection() {
           />
         </div>
       )}
-      <TenantHealthCommandCenter snapshot={enterpriseJourney} metrics={liveMetrics} pendingAiReviewsCount={pendingAiReviewCount} auditLogCount={auditLogCount} />
+      <TenantHealthCommandCenter snapshot={enterpriseJourney} metrics={liveMetrics} pendingAiReviewsCount={pendingAiReviewCount} auditLogCount={auditLogCount} demoMode={demoMode} />
 
       {/* Executive Dashboard Redesign Sprint ED-R1: replaces the former demo-only KPI grid, the
           AI Router/Live Ops/External Signals card row, and the demo-only governance-alerts row
