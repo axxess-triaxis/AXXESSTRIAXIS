@@ -23,7 +23,11 @@ const dispatchSites: Array<{ category: string; eventName: string; file: string }
   { category: "Task/work item created from AI answer", eventName: "workflow_completion_celebrated", file: "src/features/ai-workspace/AIReviewInboxPage.tsx" },
   { category: "Dashboard viewed", eventName: "dashboard_viewed", file: "src/app/App.tsx" },
   { category: "Invite created or attempted", eventName: "user_invited", file: "src/features/settings/SettingsSection.tsx" },
-  { category: "Feedback submitted", eventName: "feedback_submitted", file: "src/components/feedback/BetaFeedbackModal.tsx" },
+  // A-116 (2026-08-14): BetaFeedbackModal.tsx no longer submits an inline form (feedback_submitted
+  // is gone) -- it links out to 3 real external surveys instead, per the founder's explicit
+  // "should have 3 links not this unempirical placeholder form." beta_feedback_link_clicked is the
+  // real, remaining dispatch site for feedback engagement in this file.
+  { category: "Feedback survey opened", eventName: "beta_feedback_link_clicked", file: "src/components/feedback/BetaFeedbackModal.tsx" },
   { category: "Error/fallback surfaced safely", eventName: "error_boundary_triggered", file: "src/components/feedback/ErrorBoundary.tsx" },
   { category: "Investor preview entered", eventName: "user_login", file: "src/app/auth/page.tsx" },
 ];

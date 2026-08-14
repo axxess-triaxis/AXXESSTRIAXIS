@@ -1,13 +1,13 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { fireEvent, render, screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
 import { AnalyticsProviderShell } from "../../services/analytics";
 import { MockAnalyticsProvider } from "../../services/analytics/MockAnalyticsProvider";
 import { BetaFeedbackModal } from "./BetaFeedbackModal";
 
-// A-65 fix (2026-07-27): submitFeedback() used to write straight to
-// betaFeedbackRepository.create(), which persists the row but never sends the "flows to
-// triaxisgrp@gmail.com" email -- that only happens inside POST /api/beta-feedback. This proves
-// the form now actually calls that route (the one real, tested email-sending path).
+// A-116 (2026-08-14): replaced the inline rating/message form (which POSTed to
+// /api/beta-feedback) with direct links to 3 real external surveys, per the founder's explicit
+// instruction ("should have 3 links not this unempirical placeholder form"). These tests prove
+// the real survey URLs render as real, trackable, new-tab links -- not a form to fill out here.
 const testUser = { id: "user-1", organizationId: "org-1", role: "Employee" as const };
 
 function renderModal(onClose = vi.fn()) {
@@ -19,38 +19,26 @@ function renderModal(onClose = vi.fn()) {
 }
 
 describe("BetaFeedbackModal", () => {
-  afterEach(() => {
-    vi.unstubAllGlobals();
+  it("renders all three real survey links, each opening in a new tab", () => {
+    renderModal();
+
+    const product = screen.getByRole("link", { name: /Product Survey/i });
+    expect(product).toHaveAttribute("href", "https://ap.surveymars.com/q/dWD9AHFnT");
+    expect(product).toHaveAttribute("target", "_blank");
+
+    const enterprise = screen.getByRole("link", { name: /Enterprise Survey/i });
+    expect(enterprise).toHaveAttribute("href", "https://ap.surveymars.com/q/NAgaQ43fM");
+
+    const technical = screen.getByRole("link", { name: /For Technical Surveyors/i });
+    expect(technical).toHaveAttribute("href", "https://ap.surveymars.com/q/NnfK3fMgo");
   });
 
-  it("submits to POST /api/beta-feedback (the route that sends email), not the repository directly", async () => {
-    const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({ id: "fb-1", emailDeliveryStatus: "sent" }), { status: 201 }));
-    vi.stubGlobal("fetch", fetchMock);
+  it("closes when the close button is clicked", () => {
+    const onClose = vi.fn();
+    renderModal(onClose);
 
-    renderModal();
-    fireEvent.change(screen.getByLabelText("Message"), { target: { value: "The upload button did nothing." } });
-    fireEvent.click(screen.getByRole("button", { name: /Submit Feedback/i }));
+    fireEvent.click(screen.getByRole("button", { name: /close/i }));
 
-    await waitFor(() => {
-      expect(fetchMock).toHaveBeenCalledWith("/api/beta-feedback", expect.objectContaining({
-        method: "POST",
-        credentials: "include",
-      }));
-    });
-    const body = JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body));
-    expect(body).toMatchObject({ message: "The upload button did nothing." });
-    expect(screen.getByText("Feedback submitted. Thank you.")).toBeInTheDocument();
-  });
-
-  it("shows the real server error instead of a generic message when the route rejects the request", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({ error: "Feedback message is required." }), { status: 400 })));
-
-    renderModal();
-    fireEvent.change(screen.getByLabelText("Message"), { target: { value: "ok message" } });
-    fireEvent.click(screen.getByRole("button", { name: /Submit Feedback/i }));
-
-    await waitFor(() => {
-      expect(screen.getByText("Feedback message is required.")).toBeInTheDocument();
-    });
+    expect(onClose).toHaveBeenCalled();
   });
 });
