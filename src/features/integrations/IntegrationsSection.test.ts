@@ -49,7 +49,7 @@ describe("IntegrationsSection (Sprint 3 -- does not hang, no raw backend error t
     expect(source).toContain("<AgentConnectionsPanel />");
     expect(source).toContain('fetch("/api/agents/connections"');
     expect(source).toContain('["Super Admin", "Organization Admin"].includes(session.user.role)');
-    expect(source).toContain("shown once below and never stored");
+    expect(source).toContain("Raw keys are shown once only");
   });
 
   it("uses real brand logos (simple-icons) on the pilot/infrastructure connector cards and agent connection rows, not text-only tiles (2026-07-30)", () => {
@@ -62,9 +62,22 @@ describe("IntegrationsSection (Sprint 3 -- does not hang, no raw backend error t
 
   it("Agentic Infrastructure Phase 2 (2026-07-30): Agent Connections panel surfaces and can revoke Always Allow grants, and is honest that critical actions need approval", () => {
     expect(source).toContain('fetch(`/api/agents/connections/${connectionId}/grants`');
-    expect(source).toContain("Always-allowed tools");
-    expect(source).toContain("need your approval the first time");
+    expect(source).toContain("Always-Allow grants");
+    expect(source).toContain("Critical tools require Approvals");
     expect(source).toContain("void revokeToolGrant(connection.id, grant.id)");
+  });
+
+  it("MCP3-1 (2026-08-14): Agent Connections is an admin control plane with capability toggles, activity, and observability summary", () => {
+    expect(source).toContain('fetch("/api/agents/activity"');
+    expect(source).toContain('fetch("/api/agents/connections", {');
+    expect(source).toContain('method: "PATCH"');
+    expect(source).toContain("allAgentCapabilities.map");
+    expect(source).toContain("MCP2 opt-in");
+    expect(source).toContain("Critical approval");
+    expect(source).toContain("Agent Activity");
+    expect(source).toContain("Recent MCP calls, failures, denials and pending approvals");
+    expect(source).toContain("Raw keys are shown once only");
+    expect(source).toContain("Copilot remains approved at the policy layer");
   });
 
   it("A-97 (2026-08-06): reads the OAuth callback's provider/status/reason query params and surfaces a real toast instead of leaving the page looking unchanged after a successful connect", () => {
