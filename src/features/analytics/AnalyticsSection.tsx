@@ -4,6 +4,7 @@ import { Area, AreaChart, Bar, BarChart, CartesianGrid, Cell, Line, LineChart, P
 import { DataStateBadge, DemoDataNotice, MetricCard, ModuleHeader, PageShell, TenantScopeBadge } from "../../components/enterprise";
 import { EmptyState } from "../../components/feedback/EmptyState";
 import { Card } from "../../components/ui/Card";
+import { RiskBadge } from "../../components/ui/RiskBadge";
 import { isDemoModeEnabled } from "../../demo/demoMode";
 import { analyticsDemoInsights } from "../../lib/demo/demoMetrics";
 import { staggerDelay } from "../../lib/ui/staggerDelay";
@@ -53,10 +54,16 @@ const approvedSpendTrend = [
   { month: "Jul", cumulative: 7.3 },
 ];
 
+const projectRiskColor: Record<string, string> = { urgent: "#8B1E2D", high: "#B4232F", medium: "#C9A227", low: "#2E9E6D" };
+
 export const AnalyticsSection = () => {
   const demoMode = isDemoModeEnabled();
   const riskDistribution = useMemo(() => aggregateProjectRisk(projects), []);
   const [exportModalOpen, setExportModalOpen] = useState(false);
+  // A-116 (2026-08-14): shared selection for the Program Dependency Network diagram below --
+  // clicking a node highlights it, matching the same clickable-node pattern built for
+  // Stakeholders & CRM's Relationship Network in this same round of fixes.
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
 
   // Real, minimal export -- same pattern as DashboardSection.tsx's handleExportBriefing(): a
   // client-side JSON snapshot of what's already on this page, no fabricated backend export
@@ -267,6 +274,73 @@ export const AnalyticsSection = () => {
                   </div>
                 ))}
               </div>
+            </Card>
+
+            <Card className="overflow-hidden lg:col-span-2 axxess-stagger-item" style={staggerDelay(8)}>
+              <div className="border-b border-[rgba(0,0,0,0.06)] px-5 py-3.5">
+                <h3 className="text-sm font-semibold text-[#0F1117]">Program Operations</h3>
+                <p className="text-[11px] text-[#5F6B73]">Every tracked program in one scannable table -- risk, progress, and budget together, not spread across separate cards.</p>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="border-b border-[rgba(0,0,0,0.06)] bg-[#F8F9FA]">
+                      {["Program", "Risk", "Progress", "Spent / Budget"].map((h) => (
+                        <th key={h} className="px-4 py-2.5 text-left text-[10px] font-semibold uppercase tracking-wider text-[#5F6B73]">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {projects.slice(0, 8).map((project) => {
+                      const spent = parseFloat(project.spent.replace("$", "").replace("M", ""));
+                      const budget = parseFloat(project.budget.replace("$", "").replace("M", ""));
+                      const util = Math.round((spent / budget) * 100);
+                      return (
+                        <tr
+                          key={project.id}
+                          onClick={() => setSelectedProjectId(String(project.id))}
+                          className={`cursor-pointer border-b border-[rgba(0,0,0,0.04)] transition-colors hover:bg-[#F8F9FA] ${selectedProjectId === String(project.id) ? "bg-[#F8F9FA]" : ""}`}
+                        >
+                          <td className="max-w-[220px] truncate px-4 py-2.5 font-medium text-[#0F1117]">{project.name.split("-")[0].trim()}</td>
+                          <td className="px-4 py-2.5"><RiskBadge level={project.risk} /></td>
+                          <td className="px-4 py-2.5">
+                            <div className="flex items-center gap-2">
+                              <div className="h-1.5 w-16 overflow-hidden rounded-full bg-[#F2F3F5]">
+                                <div className="h-full rounded-full bg-[#8B1E2D]" style={{ width: `${project.progress}%` }} />
+                              </div>
+                              <span className="font-mono text-[10px] text-[#5F6B73]">{project.progress}%</span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-2.5 font-mono text-[10px] text-[#5F6B73]">{project.spent} / {project.budget} <span className={util > 90 ? "text-[#8B1E2D]" : ""}>({util}%)</span></td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
+
+            <Card className="p-5 axxess-stagger-item" style={staggerDelay(9)}>
+              <h3 className="text-sm font-semibold text-[#0F1117] mb-4">Program Dependency Network</h3>
+              <svg viewBox="0 0 200 160" className="w-full">
+                <circle cx="100" cy="80" r="16" fill="#0F1117" opacity="0.9" />
+                <text x="100" y="84" textAnchor="middle" fill="white" fontSize="7" fontWeight="bold">Portfolio</text>
+                {projects.slice(0, 8).map((project, i, arr) => {
+                  const angle = (i / arr.length) * 2 * Math.PI - Math.PI / 2;
+                  const r = 62;
+                  const x = 100 + r * Math.cos(angle);
+                  const y = 80 + r * Math.sin(angle);
+                  const isSelected = selectedProjectId === String(project.id);
+                  const color = projectRiskColor[project.risk] ?? "#2C4A7C";
+                  return (
+                    <g key={project.id} onClick={() => setSelectedProjectId(String(project.id))} className="cursor-pointer">
+                      <line x1="100" y1="80" x2={x} y2={y} stroke={color} strokeWidth={isSelected ? 2 : 1} strokeOpacity={isSelected ? 0.9 : 0.35} />
+                      <circle cx={x} cy={y} r={isSelected ? 10 : 8} fill={color} opacity="0.9" stroke={isSelected ? "#0F1117" : "none"} strokeWidth={isSelected ? 1.5 : 0} />
+                    </g>
+                  );
+                })}
+              </svg>
+              <p className="mt-2 text-[10px] leading-relaxed text-[#5F6B73]">Node color reflects program risk (red = urgent/high, amber = medium, green = low). Click a node or a Program Operations row to highlight it here.</p>
             </Card>
           </div>
         </>
