@@ -83,14 +83,24 @@ describe("StakeholdersSection (Sprint 3 F-011 non-hanging guarantee, Sprint 5 li
     expect(screen.queryByText("Dr. Purnima Bora")).not.toBeInTheDocument();
   });
 
-  it("shows the demo storyline only in Demo Mode, with Add Contact disabled", () => {
+  // A-116 (2026-08-14): Add Contact was previously fully disabled in demo mode -- the investor
+  // demo's own headline CRM action was dead by design. Now enabled, appending a session-only local
+  // row (never a real repository call) so the demo experience is genuinely interactive.
+  it("shows the demo storyline in Demo Mode, with Add Contact enabled and adding a session-only contact", () => {
     window.localStorage.setItem("axxess.demoMode.enabled", "true");
     render(<StakeholdersSection />);
 
     expect(screen.getAllByText("Dr. Purnima Bora").length).toBeGreaterThan(0);
     expect(screen.queryByText(/No stakeholders yet/i)).not.toBeInTheDocument();
     const addButton = screen.getByRole("button", { name: /Add Contact/i });
-    expect(addButton).toBeDisabled();
+    expect(addButton).not.toBeDisabled();
+
+    fireEvent.click(addButton);
+    fireEvent.change(screen.getByLabelText("Contact name"), { target: { value: "Demo Session Contact" } });
+    fireEvent.click(screen.getByRole("button", { name: /Save contact/i }));
+
+    expect(screen.getByText("Demo Session Contact")).toBeInTheDocument();
+    expect(state.created).toHaveLength(0);
   });
 
   it("Add Contact opens a real form and saving creates a real stakeholder via the repository", async () => {
