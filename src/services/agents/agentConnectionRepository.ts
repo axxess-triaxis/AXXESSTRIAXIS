@@ -1,6 +1,6 @@
 import { isSupabaseAdminConfigured, supabaseAdminRest } from "../../repositories/supabaseAdmin";
 import { agentApiKeyHashMatches, generateAgentApiKey, hashAgentApiKey } from "./agentConnectionVault";
-import { allAgentCapabilities, type AgentCapability, type AgentProviderId, type AgentScope } from "../../security/agentScope";
+import { defaultAgentCapabilities, normalizeAgentCapabilities, type AgentCapability, type AgentProviderId, type AgentScope } from "../../security/agentScope";
 
 export type AgentConnectionSummary = {
   id: string;
@@ -58,6 +58,7 @@ export async function createAgentConnection(input: {
   label: string;
   issuedByUserId: string;
   issuedByRole: string;
+  capabilities?: AgentCapability[];
 }, env: NodeJS.ProcessEnv = process.env): Promise<{ connection: AgentConnectionSummary; rawApiKey: string }> {
   const { rawKey, prefix } = generateAgentApiKey();
   const rows = await supabaseAdminRest<AgentConnectionRow[]>("agent_connections", {
@@ -69,7 +70,7 @@ export async function createAgentConnection(input: {
       label: input.label,
       api_key_hash: hashAgentApiKey(rawKey, env),
       api_key_prefix: prefix,
-      capabilities: allAgentCapabilities,
+      capabilities: input.capabilities?.length ? input.capabilities : defaultAgentCapabilities,
       status: "active",
       issued_by_user_id: input.issuedByUserId,
       issued_by_role: input.issuedByRole,
@@ -78,6 +79,25 @@ export async function createAgentConnection(input: {
   const row = rows?.[0];
   if (!row) throw new Error("Agent connection was not returned by Supabase.");
   return { connection: toSummary(row), rawApiKey: rawKey };
+}
+
+export async function updateAgentConnectionCapabilities(input: {
+  organizationId: string;
+  connectionId: string;
+  capabilities: unknown;
+}): Promise<AgentConnectionSummary> {
+  const capabilities = normalizeAgentCapabilities(input.capabilities);
+  const rows = await supabaseAdminRest<AgentConnectionRow[]>("agent_connections", {
+    method: "PATCH",
+    query: new URLSearchParams({
+      id: `eq.${input.connectionId}`,
+      organization_id: `eq.${input.organizationId}`,
+    }),
+    body: { capabilities },
+  });
+  const row = rows?.[0];
+  if (!row) throw new Error("Agent connection was not found for this organization.");
+  return toSummary(row);
 }
 
 export async function listAgentConnections(organizationId: string): Promise<AgentConnectionSummary[]> {

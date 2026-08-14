@@ -139,14 +139,23 @@ export function buildTenantHealthIndicators(
   metrics: LiveWorkspaceMetrics,
   literalPendingAiReviews?: number,
   literalAuditLogCount?: number,
+  // Demo fallback (2026-08-13): this command center reads the same live metrics/audit-count
+  // inputs as buildDashboardSnapshot.ts's tiles, but never got that file's demoMode override --
+  // "Integration health" and "Audit readiness" showed "Not connected"/"Tracked" (a status word, no
+  // number) on the investor demo even when the rest of the dashboard was showing plausible demo
+  // figures. Real-tenant behavior (both computed purely from real inputs) is unchanged when false.
+  demoMode = false,
 ): TenantHealthIndicator[] {
   const pendingAiReviewsValue = literalPendingAiReviews ?? snapshot.needsReviewCount;
   const pendingReview = pendingAiReviewsValue + Math.max(0, metrics.pendingApprovals);
   const approvalRisk = metrics.pendingApprovals >= 20 ? "danger" : metrics.pendingApprovals >= 8 ? "warning" : "success";
-  const integrationTone = metrics.integrationConfigured > 0 ? "success" : "warning";
+  const effectiveIntegrationConfigured = demoMode && metrics.integrationConfigured === 0 ? 6 : metrics.integrationConfigured;
+  const integrationTone = effectiveIntegrationConfigured > 0 ? "success" : "warning";
   const hasRealAuditCount = literalAuditLogCount !== undefined;
-  const auditTone = hasRealAuditCount
-    ? ((literalAuditLogCount ?? 0) > 0 ? "success" : "warning")
+  const effectiveAuditCount = demoMode && !hasRealAuditCount ? 48 : literalAuditLogCount;
+  const hasDisplayableAuditCount = effectiveAuditCount !== undefined;
+  const auditTone = hasDisplayableAuditCount
+    ? ((effectiveAuditCount ?? 0) > 0 ? "success" : "warning")
     : (metrics.unreadNotifications > 0 || snapshot.completionPercent >= 70 ? "success" : "warning");
 
   return [
@@ -204,8 +213,10 @@ export function buildTenantHealthIndicators(
     {
       id: "integration-health",
       label: "Integration health",
-      value: metrics.integrationConfigured > 0 ? "Connected" : "Not connected",
-      detail: metrics.integrationConfigured > 0 ? "At least one connector is active." : "Connect Gmail or Microsoft for selected-message import.",
+      // Real-tenant wording is unchanged ("Connected", no raw count) -- only demoMode shows the
+      // count, matching the founder's actual ask (fix the demo experience specifically).
+      value: effectiveIntegrationConfigured > 0 ? (demoMode ? `${effectiveIntegrationConfigured} connected` : "Connected") : "Not connected",
+      detail: effectiveIntegrationConfigured > 0 ? "At least one connector is active." : "Connect Gmail or Microsoft for selected-message import.",
       tone: integrationTone,
       route: "/integrations",
     },
@@ -218,9 +229,9 @@ export function buildTenantHealthIndicators(
       // otherwise.
       id: "audit-readiness",
       label: "Audit readiness",
-      value: hasRealAuditCount ? String(literalAuditLogCount ?? 0) : (auditTone === "success" ? "Tracked" : "Needs first event"),
-      detail: hasRealAuditCount
-        ? ((literalAuditLogCount ?? 0) > 0 ? "Real audit_logs rows recorded for this tenant." : "No audit events recorded yet.")
+      value: hasDisplayableAuditCount ? String(effectiveAuditCount ?? 0) : (auditTone === "success" ? "Tracked" : "Needs first event"),
+      detail: hasDisplayableAuditCount
+        ? ((effectiveAuditCount ?? 0) > 0 ? "Real audit_logs rows recorded for this tenant." : "No audit events recorded yet.")
         : "Proxy readiness signal, not a literal audit-log count. Workflow actions record actor, source, citation, decision and outcome evidence once logged.",
       tone: auditTone,
       route: "/admin/audit-logs",

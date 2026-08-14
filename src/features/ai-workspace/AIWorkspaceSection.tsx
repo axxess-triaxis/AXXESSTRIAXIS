@@ -706,7 +706,7 @@ export const AIWorkspaceSection = () => {
                     <>
                       <div className="grid grid-cols-2 gap-2">
                         {[
-                          ["Mode", displayedRouterStatus.mode],
+                          ["Experience", displayedRouterStatus.mode],
                           ["Default", displayedRouterStatus.defaultProvider],
                           ["Remote", displayedRouterStatus.configuredCount],
                           ["Providers", displayedRouterStatus.providers.length],
