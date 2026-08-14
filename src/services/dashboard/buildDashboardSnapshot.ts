@@ -106,32 +106,42 @@ export function buildDashboardSnapshot(input: DashboardSnapshotInput): ScoredTil
 
   // --- Tier 1: performance / HITL / customer-facing work ---
 
+  // A-96-style demo fallback (2026-08-13): these two counts come from a live query against the
+  // demo tenant's real rows, which are usually empty, and unlike most other tiles in this file
+  // never got a demoMode override -- rendering "--" (still loading, or genuinely empty) on the
+  // investor demo. Same treatment as every other demoMode branch here: substitute a plausible
+  // number only for display, real-tenant behavior (an honest "--" until the count actually loads)
+  // is unchanged.
   const overdueTasksLoaded = input.overdueTaskCount !== undefined;
-  const overdueTasksPolicyResult = overdueTasksPolicy(input.overdueTaskCount ?? 0);
+  const displayedOverdueTaskCount = overdueTasksLoaded ? input.overdueTaskCount : (input.demoMode ? 2 : undefined);
+  const overdueTasksDisplayLoaded = displayedOverdueTaskCount !== undefined;
+  const overdueTasksPolicyResult = overdueTasksPolicy(displayedOverdueTaskCount ?? 0);
   tiles.push(tile({
     id: "overdue-tasks",
     tier: 1,
     title: "Overdue tasks",
-    value: overdueTasksLoaded ? String(input.overdueTaskCount) : "--",
+    value: overdueTasksDisplayLoaded ? String(displayedOverdueTaskCount) : "--",
     detail: overdueTasksPolicyResult.rationale,
     priority: overdueTasksPolicyResult.priority,
     criticality: overdueTasksPolicyResult.criticality,
-    dataState: overdueTasksLoaded ? "live" : "partial",
+    dataState: overdueTasksDisplayLoaded ? "live" : "partial",
     route: "/tasks",
     rationale: overdueTasksPolicyResult.rationale,
   }));
 
   const overdueMeetingsLoaded = input.overdueMeetingCount !== undefined;
-  const overdueMeetingsPolicyResult = overdueMeetingsPolicy(input.overdueMeetingCount ?? 0);
+  const displayedOverdueMeetingCount = overdueMeetingsLoaded ? input.overdueMeetingCount : (input.demoMode ? 1 : undefined);
+  const overdueMeetingsDisplayLoaded = displayedOverdueMeetingCount !== undefined;
+  const overdueMeetingsPolicyResult = overdueMeetingsPolicy(displayedOverdueMeetingCount ?? 0);
   tiles.push(tile({
     id: "overdue-meetings",
     tier: 1,
     title: "Missed meetings",
-    value: overdueMeetingsLoaded ? String(input.overdueMeetingCount) : "--",
+    value: overdueMeetingsDisplayLoaded ? String(displayedOverdueMeetingCount) : "--",
     detail: overdueMeetingsPolicyResult.rationale,
     priority: overdueMeetingsPolicyResult.priority,
     criticality: overdueMeetingsPolicyResult.criticality,
-    dataState: overdueMeetingsLoaded ? "live" : "partial",
+    dataState: overdueMeetingsDisplayLoaded ? "live" : "partial",
     route: "/meetings",
     rationale: overdueMeetingsPolicyResult.rationale,
   }));
@@ -179,16 +189,20 @@ export function buildDashboardSnapshot(input: DashboardSnapshotInput): ScoredTil
     rationale: projectHealthResult.rationale,
   }));
 
-  const socialGatedResult = socialAlertsProviderGatedPolicy(input.socialAlertsAnyLiveProviderConfigured);
+  // Demo fallback (2026-08-13): the sibling social tiles below (official-account-alerts,
+  // social-provider-health) already have a demoMode branch; this one was missed, so it kept
+  // showing "Not connected" on the investor demo even though real-tenant behavior is correct.
+  const effectiveSocialAlertsConfigured = input.demoMode ? true : input.socialAlertsAnyLiveProviderConfigured;
+  const socialGatedResult = socialAlertsProviderGatedPolicy(effectiveSocialAlertsConfigured);
   tiles.push(tile({
     id: "social-alerts-status",
     tier: 1,
     title: "External signals",
-    value: input.socialAlertsAnyLiveProviderConfigured ? "Connected" : "Not connected",
-    detail: socialGatedResult.rationale,
+    value: effectiveSocialAlertsConfigured ? (input.demoMode ? "2 connected" : "Connected") : "Not connected",
+    detail: input.demoMode ? "X and Facebook monitoring active." : socialGatedResult.rationale,
     priority: socialGatedResult.priority,
     criticality: socialGatedResult.criticality,
-    dataState: input.socialAlertsAnyLiveProviderConfigured ? "live" : "partial",
+    dataState: effectiveSocialAlertsConfigured ? "live" : "partial",
     route: "/integrations",
     rationale: socialGatedResult.rationale,
   }));
@@ -477,15 +491,21 @@ export function buildDashboardSnapshot(input: DashboardSnapshotInput): ScoredTil
     rationale: timelineActivityResult.rationale,
   }));
 
-  const integrationHealthResult = integrationHealthPolicy(input.liveMetrics.integrationConfigured);
+  // A-96 (2026-08-04) + fix (2026-08-13): the prior version only reformatted the value when the
+  // real count was already > 0 -- on this tenant's genuinely empty live integrationConfigured
+  // count, it still fell through to "Not connected" even in demo mode. Compute one effective count
+  // and feed it into both the policy call and the display, so the tone pill and the text never
+  // disagree (matches getFallbackLiveWorkspaceMetrics()'s own integrationConfigured: 6 for demo).
+  const effectiveIntegrationConfigured = input.demoMode && input.liveMetrics.integrationConfigured === 0 ? 6 : input.liveMetrics.integrationConfigured;
+  const integrationHealthResult = integrationHealthPolicy(effectiveIntegrationConfigured);
   tiles.push(tile({
     id: "integration-health",
     tier: 2,
     title: "Integration health",
-    // A-96 (2026-08-04): demo shows the real count like every other tile instead of a status word.
-    value: input.demoMode && input.liveMetrics.integrationConfigured > 0
-      ? `${input.liveMetrics.integrationConfigured} connected`
-      : (input.liveMetrics.integrationConfigured > 0 ? "Connected" : "Not connected"),
+    // Real-tenant wording is unchanged from before this fix ("Connected", no raw count) -- only
+    // demoMode shows the count, matching the founder's actual ask (fix the demo experience
+    // specifically, not change how a real tenant's own integration count is worded).
+    value: effectiveIntegrationConfigured > 0 ? (input.demoMode ? `${effectiveIntegrationConfigured} connected` : "Connected") : "Not connected",
     detail: integrationHealthResult.rationale,
     priority: integrationHealthResult.priority,
     criticality: integrationHealthResult.criticality,

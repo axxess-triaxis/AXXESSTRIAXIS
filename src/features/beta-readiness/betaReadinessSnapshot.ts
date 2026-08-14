@@ -34,17 +34,17 @@ export type ReadinessKanban = {
 };
 
 export const betaReadinessSnapshotMeta = {
-  asOf: "2026-08-04",
-  clearedBy: "Founder (HITL), in conversation",
-  sourceDoc: "docs/readiness/BETA_READINESS_METRICS_DRAFT_FOR_REVIEW_2026_08_04.md",
+  asOf: "2026-08-13",
+  clearedBy: "Founder (HITL), in conversation -- \"Refer to Git, all data available\"",
+  sourceDoc: "docs/readiness/BETA_READINESS_METRICS_REFRESH_2026_08_13.md",
 };
 
 export const tractionMetrics: SnapshotMetric[] = [
   { label: "Beta version", value: "0.6.0-beta", detail: "package.json", provenance: "computed" },
-  { label: "Tenants provisioned", value: "4", detail: "2 active pilots, 3 upcoming", provenance: "founder-stated" },
-  { label: "Signed LOIs", value: "5", detail: "3 upcoming, 1 referral agreement", provenance: "founder-stated" },
-  { label: "Beta visits (est.)", value: "1,000+", detail: "since 2026-07-05 launch", provenance: "founder-stated" },
-  { label: "Beta users (est.)", value: "200+", detail: "since 2026-07-05 launch", provenance: "founder-stated" },
+  { label: "Tenants provisioned", value: "2", detail: "Imprints Production, Ekora Hive -- both onboarded and live; 4 more (3 Mahanta-group firms, Elevate Group FZE) have LOI/interest on file, not yet provisioned", provenance: "computed" },
+  { label: "Signed LOIs", value: "5", detail: "Imprints, Ekora, Mahanta-group (3 firms, 1 letter); plus 1 signed referral engagement (Sakura) and 1 expression of interest (Elevate Group FZE, 2026-08-12)", provenance: "computed" },
+  { label: "Landing (live beta) traffic", value: "41 visitors", detail: "106 sessions, 551 page views -- PostHog, landing.triaxisventures.com, 2026-07-27 to 2026-08-13", provenance: "computed" },
+  { label: "Investor demo traffic", value: "102 visitors", detail: "Founders Club waitlist paid-social campaign -- PostHog, investor.triaxisventures.com, 2026-08-08 to 2026-08-10 pull", provenance: "computed" },
   { label: "NPS (fresh batch)", value: "90", detail: "n=10, Enterprise Beta Feedback, 2026-07-26", provenance: "computed" },
   { label: "NPS (earlier batch)", value: "82.61", detail: "n=23, Beta 0.5/0.7 combined, 2026-07-23", provenance: "computed" },
   { label: "PMF (very disappointed)", value: "70%", detail: "7 of 10, Sean Ellis-style question", provenance: "computed" },
@@ -52,11 +52,11 @@ export const tractionMetrics: SnapshotMetric[] = [
 ];
 
 export const engineeringMetrics: SnapshotMetric[] = [
-  { label: "LOC (app source)", value: "56,380", detail: "src + migrations + shared + mobile, excl. tests", provenance: "computed" },
-  { label: "LOC (incl. tests)", value: "74,484", detail: "same scope, tests included", provenance: "computed" },
-  { label: "Commits", value: "550", detail: "git rev-list --count HEAD", provenance: "computed" },
-  { label: "Tests", value: "1,136", detail: "231 files, 1,132 passing, 0 failures", provenance: "computed" },
-  { label: "Vercel Experience Score", value: "~89.5%", detail: "deploy success rate, axxesstriaxis, recent history", provenance: "computed" },
+  { label: "LOC (app source)", value: "53,150", detail: "src + migrations + shared + mobile, excl. tests", provenance: "computed" },
+  { label: "LOC (incl. tests)", value: "73,677", detail: "same scope, tests included", provenance: "computed" },
+  { label: "Commits", value: "834", detail: "git rev-list --count origin/main", provenance: "computed" },
+  { label: "Tests", value: "1,136", detail: "231 files, 1,132 passing, 0 failures (2026-08-04 pull; not re-run this refresh)", provenance: "computed" },
+  { label: "Vercel Experience Score", value: "~89.5%", detail: "deploy success rate, axxesstriaxis, as of 2026-08-04 pull -- not re-verified this refresh (requires live Vercel console)", provenance: "computed" },
   { label: "Engineering/product sprints", value: "70+", detail: "across Sprint N, A-N, ED-RN, MC-N execution units", provenance: "founder-stated" },
 ];
 
@@ -73,7 +73,7 @@ export const readinessKanbans: ReadinessKanban[] = [
     bandNote: "Strong beta product, near Enterprise Beta 1.0",
     stages: [
       { title: "Single tenancy", description: "100% complete per founder confirmation.", status: "Done" },
-      { title: "Multi-tenancy", description: "5 tenants provisioned in the source snapshot; no data leakage currently observed.", status: "Mostly done" },
+      { title: "Multi-tenancy", description: "3 real tenant accounts total (founder + Imprints Production + Ekora Hive), per direct Supabase check; no data leakage currently observed.", status: "Mostly done" },
       { title: "Knowledge Hub", description: "Upload, delete, optional indexing, and RAG retrieval working.", status: "Mostly done" },
       { title: "RAG + citations", description: "Indexed documents pulled correctly; answer/result-quality cleanup pending.", status: "Mostly done" },
       { title: "HITL AI review", description: "Fully live-tested and working.", status: "Done" },
@@ -103,10 +103,10 @@ export const readinessKanbans: ReadinessKanban[] = [
     stages: [
       { title: "Problem discovery", description: "Prior customer discovery and stakeholder validation logs.", status: "Done" },
       { title: "Beta feedback collection", description: "Enterprise and product feedback survey evidence.", status: "Done" },
-      { title: "Signed LOIs", description: "5 signed, 3 upcoming.", status: "Done" },
-      { title: "Active pilots", description: "2 active, of 4 tenants provisioned.", status: "In progress" },
+      { title: "Signed LOIs", description: "5 LOIs on file (Imprints, Ekora, 3x Mahanta-group firms); plus 1 signed referral engagement (Sakura) and 1 expression of interest (Elevate Group FZE, 2026-08-12).", status: "Done" },
+      { title: "Active pilots", description: "2 active pilots (Imprints Production, Ekora Hive), both provisioned and live.", status: "In progress" },
       { title: "Referral distribution", description: "1 referral agreement.", status: "In progress" },
-      { title: "Paying interest", description: "4 oral paying-interest indications -- not yet a closed payment.", status: "In progress" },
+      { title: "Paying interest", description: "2 advance-payment commitments confirmed ($50 each, Imprints written 2026-08-12 + Ekora oral) plus 4 more oral commitments (3 Mahanta-group firms, Elevate Group FZE) -- aggregate $220-300, all uncollected pending Triaxis's own IDFC First Bank current-account setup.", status: "In progress" },
       { title: "Paid pilot conversion", description: "No closed payment recorded yet.", status: "Next" },
       { title: "Public waitlist funnel", description: "getlaunchlist.com/pages/axxess-triaxis-founders-club-edition -- promoted on FB/Instagram/LinkedIn/WhatsApp.", status: "Live" },
     ],
@@ -120,20 +120,34 @@ export const readinessKanbans: ReadinessKanban[] = [
       { title: "Android signed beta", description: "Needs company Play Console + signing/release workflow proof.", status: "Blocked" },
       { title: "iOS build path", description: "Planned / partially scaffolded.", status: "Planned" },
       { title: "TestFlight", description: "Needs ASC credentials and Apple approval path.", status: "Blocked" },
-      { title: "D-U-N-S application", description: "Applied 2026-07-13, ~30-day TAT, expected ~2026-08-12.", status: "Pending" },
+      { title: "D-U-N-S application", description: "Applied 2026-07-13, now expected by 2026-08-25 (revised from an initial ~30-day/2026-08-12 estimate).", status: "Pending" },
     ],
   },
 ];
 
-export const pilotTestimonial = {
-  quotes: [
-    "Looks quite sophisticated and feels quite stable for your current stage.",
-    "I had expected a far less evolved product, honestly.",
-    "Your pace and vision here are correct.",
-  ],
-  attribution: "Prajnyan Ballav Goswami, Proprietor, Imprints Production (AXXESS Pilot 1)",
-  note: "Extracted from real, mixed feedback (praise and criticism both) -- full context in docs/LOIS_BETA_PILOT_INTEREST_REFERRAL_AND_STRATEGIC_PARTNERSHIPS_LOG.md, entry #2.",
+export type PilotTestimonial = {
+  quotes: string[];
+  attribution: string;
 };
+
+export const pilotTestimonials: PilotTestimonial[] = [
+  {
+    quotes: [
+      "Looks quite sophisticated and feels quite stable for your current stage.",
+      "I had expected a far less evolved product, honestly.",
+      "Your pace and vision here are correct.",
+    ],
+    attribution: "Prajnyan Ballav Goswami, Proprietor, Imprints Production (AXXESS Pilot 1)",
+  },
+  {
+    quotes: [
+      "We had not expected a full scale product, but the product actually looks polished and sophisticated.",
+      "Your vision of agentic automation with human element is quite strong and should be the differentiator.",
+      "It is good to see a startup from Assam aiming globally.",
+    ],
+    attribution: "Diksha Rajkhowa, Proprietor, Ekora Hive (AXXESS Pilot 2)",
+  },
+];
 
 export const waitlist = {
   url: "https://getlaunchlist.com/pages/axxess-triaxis-founders-club-edition",

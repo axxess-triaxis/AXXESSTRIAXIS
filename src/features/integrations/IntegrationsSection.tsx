@@ -381,6 +381,55 @@ export const IntegrationsSection = () => {
   <div className="space-y-5">
     <SectionHeader title="Integrations" subtitle={`${pluginHealth.total} plugin adapters - ${pluginHealth.webhookReady} webhook-ready - ${connectedCount} connected - ${disconnectedCount} disconnected - provider-gated for production credentials`} />
 
+    {/* Reordered (2026-08-13, applies to both landing.triaxisventures.com and
+        investor.triaxisventures.com -- this is a real information-architecture improvement, not
+        demo-only content): the catalogue leads the page now, since it's the highest-density,
+        most immediately legible view of integration status. The pilot connect-flow cards below it
+        are secondary, hands-on workflows for the few connectors with a real OAuth flow in this
+        release -- not what a first-time visitor to this page needs to see first. */}
+    <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      {[
+        ["Adapters catalogued", pluginHealth.total],
+        ["Configured", pluginHealth.configured],
+        ["Pilot-enabled", pluginHealth.pilotEnabled],
+        ["Webhook-capable", pluginHealth.webhookReady],
+      ].map(([label, value]) => (
+        <Card key={label} className="p-4">
+          <div className="text-[11px] font-semibold uppercase tracking-wide text-[#5F6B73]">{label}</div>
+          <div className="mt-2 font-mono text-2xl font-semibold text-[#0F1117]">{value}</div>
+        </Card>
+      ))}
+    </div>
+
+    <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      {!isDemoModeEnabled() && integrations.length === 0 && (
+        <EmptyState message="No demo connector gallery in this view. See connector status and OAuth setup below." />
+      )}
+      {integrations.map((int) => {
+        // A-96 (2026-08-04): real simple-icons mark where one safely exists; an original,
+        // brand-evocative-but-not-copied "likeness" icon (see LikenessIcon.tsx's registry) for
+        // providers with no safe simple-icons mark; the plain two-letter fallback otherwise.
+        const brandIcon = brandIcons[int.brandId];
+        const LikenessIcon = likenessIcons[int.brandId];
+        const likenessIcon = LikenessIcon ? <LikenessIcon size={22} /> : undefined;
+        return (
+        <Card key={int.name} className="p-4 transition-shadow hover:shadow-md">
+          <div className="mb-3 flex items-start justify-between">
+            <div className={`flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl text-xs font-bold text-white ${brandIcon || likenessIcon ? "bg-white ring-1 ring-[rgba(15,17,23,0.08)]" : int.status === "connected" ? "bg-[#2C4A7C]" : int.status === "pending" ? "bg-[#C9A227]" : "bg-[#5F6B73]"}`}>
+              {brandIcon ? <BrandIcon icon={brandIcon} size={22} /> : likenessIcon ?? int.icon}
+            </div>
+            <span className={`mt-1 h-2 w-2 rounded-full ${int.status === "connected" ? "bg-emerald-500" : int.status === "pending" ? "bg-amber-500" : "bg-gray-300"}`} />
+          </div>
+          <div className="mb-0.5 text-sm font-semibold text-[#0F1117]">{int.name}</div>
+          <div className="text-[11px] text-[#5F6B73]">{int.category}</div>
+          <div className="mt-2 font-mono text-[10px] text-[#5F6B73]">
+            {int.status === "connected" ? `Synced ${int.lastSync}` : int.status === "pending" ? "Setup required" : "Disconnected"}
+          </div>
+        </Card>
+        );
+      })}
+    </div>
+
     <Card className="p-5">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
@@ -503,49 +552,6 @@ export const IntegrationsSection = () => {
     <EnterpriseConnectorCredentialsPanel />
 
     <AgentConnectionsPanel />
-
-    <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-      {[
-        ["Adapters catalogued", pluginHealth.total],
-        ["Configured", pluginHealth.configured],
-        ["Pilot-enabled", pluginHealth.pilotEnabled],
-        ["Webhook-capable", pluginHealth.webhookReady],
-      ].map(([label, value]) => (
-        <Card key={label} className="p-4">
-          <div className="text-[11px] font-semibold uppercase tracking-wide text-[#5F6B73]">{label}</div>
-          <div className="mt-2 font-mono text-2xl font-semibold text-[#0F1117]">{value}</div>
-        </Card>
-      ))}
-    </div>
-
-    <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-      {!isDemoModeEnabled() && integrations.length === 0 && (
-        <EmptyState message="No demo connector gallery in this view. See connector status and OAuth setup below." />
-      )}
-      {integrations.map((int) => {
-        // A-96 (2026-08-04): real simple-icons mark where one safely exists; an original,
-        // brand-evocative-but-not-copied "likeness" icon (see LikenessIcon.tsx's registry) for
-        // providers with no safe simple-icons mark; the plain two-letter fallback otherwise.
-        const brandIcon = brandIcons[int.brandId];
-        const LikenessIcon = likenessIcons[int.brandId];
-        const likenessIcon = LikenessIcon ? <LikenessIcon size={22} /> : undefined;
-        return (
-        <Card key={int.name} className="p-4 transition-shadow hover:shadow-md">
-          <div className="mb-3 flex items-start justify-between">
-            <div className={`flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl text-xs font-bold text-white ${brandIcon || likenessIcon ? "bg-white ring-1 ring-[rgba(15,17,23,0.08)]" : int.status === "connected" ? "bg-[#2C4A7C]" : int.status === "pending" ? "bg-[#C9A227]" : "bg-[#5F6B73]"}`}>
-              {brandIcon ? <BrandIcon icon={brandIcon} size={22} /> : likenessIcon ?? int.icon}
-            </div>
-            <span className={`mt-1 h-2 w-2 rounded-full ${int.status === "connected" ? "bg-emerald-500" : int.status === "pending" ? "bg-amber-500" : "bg-gray-300"}`} />
-          </div>
-          <div className="mb-0.5 text-sm font-semibold text-[#0F1117]">{int.name}</div>
-          <div className="text-[11px] text-[#5F6B73]">{int.category}</div>
-          <div className="mt-2 font-mono text-[10px] text-[#5F6B73]">
-            {int.status === "connected" ? `Synced ${int.lastSync}` : int.status === "pending" ? "Setup required" : "Disconnected"}
-          </div>
-        </Card>
-        );
-      })}
-    </div>
 
     <Card className="p-5">
       <div className="mb-4 flex items-center justify-between">
