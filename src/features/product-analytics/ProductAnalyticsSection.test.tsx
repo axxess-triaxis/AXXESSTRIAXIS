@@ -97,3 +97,36 @@ describe("ProductAnalyticsSection Feedback Inbox (A-35 fix)", () => {
     });
   });
 });
+
+// Founder-reported (2026-08-15): "Most Used Modules" and "Activation Funnel" rendered fabricated
+// percentages/counts to every visitor, real tenant or demo, with no demoMode gate at all -- unlike
+// every other fabricated block on this page (Engineering & Delivery Tooling, seeded Feedback Inbox),
+// which are correctly gated. This proves the fix: outside demo mode (the only mode this test env can
+// exercise, since isDemoModeEnabled() reads window.localStorage/env, both unset in jsdom), a real
+// tenant sees an honest "not wired yet" message instead of any fabricated number.
+describe("ProductAnalyticsSection Most Used Modules / Activation Funnel (dummy-data fix)", () => {
+  afterEach(() => {
+    state.feedback = [];
+    state.users = [];
+  });
+
+  it("shows an honest not-wired-yet message for Most Used Modules for a real (non-demo) tenant, never a fabricated percentage", async () => {
+    renderSection();
+
+    await waitFor(() => {
+      expect(screen.getByText("Most Used Modules")).toBeInTheDocument();
+    });
+    expect(screen.getByText(/Per-module usage tracking requires product analytics instrumentation/)).toBeInTheDocument();
+    expect(screen.queryByText("92%")).not.toBeInTheDocument();
+  });
+
+  it("shows an honest not-wired-yet message for Activation Funnel for a real (non-demo) tenant, never a fabricated step count", async () => {
+    renderSection();
+
+    await waitFor(() => {
+      expect(screen.getByText("Activation Funnel")).toBeInTheDocument();
+    });
+    expect(screen.getByText(/Activation-funnel tracking requires product analytics instrumentation/)).toBeInTheDocument();
+    expect(screen.queryByText("Signed in")).not.toBeInTheDocument();
+  });
+});
