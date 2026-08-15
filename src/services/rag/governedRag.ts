@@ -102,6 +102,12 @@ export function canRetrieveDocument(scope: TenantScope, document: Document, perm
   // (already a real, existing UI action) now genuinely removes a document from governed retrieval.
   if (document.status === "deleted" || document.status === "archived") return false;
   if (scope.role === "Super Admin") return true;
+  // A-14 (2026-08-15): this role gate is absolute for restricted documents -- it short-circuits
+  // before any DocumentPermission grant below is even consulted, so a permission row cannot
+  // currently grant a non-elevated user access to a restricted document despite
+  // DocumentPermission.principalType/.accessLevel appearing to support finer-grained grants.
+  // Deliberate, not an oversight: it fails safe (less access than the type surface implies, never
+  // more), and no grant-based override policy has been specified for restricted content.
   if (document.classification === "restricted" && !elevatedRoles.includes(scope.role)) return false;
   if (document.visibility === "private") {
     return document.ownerId === scope.userId || permissions.some((permission) => (
