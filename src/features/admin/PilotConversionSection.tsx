@@ -3,6 +3,7 @@
 import { Activity, CheckCircle2, ClipboardCheck, TrendingUp, Users } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "../../auth/AuthProvider";
+import { isDemoModeEnabled } from "../../demo/demoMode";
 import {
   ActivityFeed,
   DataStateBadge,
@@ -85,17 +86,32 @@ export function PilotConversionSection() {
   const loadPilotEvents = useCallback(async () => {
     setState((current) => ({ ...current, loading: true }));
     const response = await fetch("/api/pilot-readiness-events?pageSize=100", { credentials: "include", cache: "no-store" }).catch(() => undefined);
+    // Founder-reported (2026-08-15): a genuinely empty real tenant (zero pilot_readiness_events, not
+    // a demo session) was silently shown fabricated demo events instead of its own honest empty
+    // state. Same fix already applied to listWorkflowTimeline (see that file's own comment) --
+    // isDemoModeEnabled() (env-forced or the explicit localStorage demo toggle) is the real signal,
+    // not "the response happened to be empty."
+    const demoMode = isDemoModeEnabled();
+
     if (response?.ok) {
       const events = await response.json() as PilotReadinessEvent[];
+      if (events.length) {
+        setState({ events, loading: false, source: "Live" });
+        return;
+      }
       setState({
-        events: events.length ? events : createDemoPilotReadinessEvents(user?.organizationId),
+        events: demoMode ? createDemoPilotReadinessEvents(user?.organizationId) : [],
         loading: false,
-        source: events.length ? "Live" : "Demo",
+        source: demoMode ? "Demo" : "Live",
       });
       return;
     }
 
-    setState({ events: createDemoPilotReadinessEvents(user?.organizationId), loading: false, source: "Demo" });
+    setState({
+      events: demoMode ? createDemoPilotReadinessEvents(user?.organizationId) : [],
+      loading: false,
+      source: demoMode ? "Demo" : "Provider-gated",
+    });
   }, [user?.organizationId]);
 
   useEffect(() => {
