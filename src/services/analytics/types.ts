@@ -87,7 +87,13 @@ export type AnalyticsEventName =
   | "agentic_route_chosen"
   | "agentic_disabled_action_attempted"
   | "agentic_dismissed_via_gate_override"
-  | "agentic_gate_toggle_changed";
+  | "agentic_gate_toggle_changed"
+  | "chatbot_opened"
+  | "chatbot_message_sent"
+  | "chatbot_command_executed"
+  | "chatbot_command_denied"
+  | "chatbot_command_failed"
+  | "chatbot_fallback_triggered";
 
 export type AnalyticsEventSource = "client" | "server" | "test";
 export type SafeAnalyticsPrimitive = string | number | boolean | null;
