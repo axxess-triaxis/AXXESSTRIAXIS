@@ -25,6 +25,7 @@ import { useEnterpriseGoldenPath } from "../../hooks/useEnterpriseGoldenPath";
 import { useGoldenPathDisplayMode } from "../../hooks/useGoldenPathDisplayMode";
 import { useGuidedDemo } from "../../hooks/useGuidedDemo";
 import { invalidateLiveWorkspaceMetricsCache } from "../../hooks/liveWorkspaceMetricsCache";
+import { invalidateMeetingsListCache } from "../../hooks/meetingsListCache";
 import { demoRecentActivity } from "../../lib/demo/demoActivity";
 import { demoInstitution } from "../../lib/demo/seedData";
 import { BetaOnboardingChecklist } from "../onboarding/BetaOnboardingChecklist";
@@ -39,6 +40,7 @@ import {
   demoObjectives,
   dashboardScopeForUser,
   type DashboardStrategicObjective,
+  fetchDashboardProjectsAndPrograms,
   getDashboardFallbackProjects,
   getDashboardProjects,
   getDashboardStrategicObjectives,
@@ -222,7 +224,10 @@ export function DashboardSection() {
   // refreshToken so every hook above (which all key off it) re-runs. workflowTimeline.loading is
   // reused as the visible "is refreshing" signal rather than adding a second, redundant loading state.
   function handleRefresh() {
-    if (tenantScope) invalidateLiveWorkspaceMetricsCache(tenantScope);
+    if (tenantScope) {
+      invalidateLiveWorkspaceMetricsCache(tenantScope);
+      invalidateMeetingsListCache(tenantScope);
+    }
     setRefreshToken((token) => token + 1);
   }
 
@@ -254,14 +259,24 @@ export function DashboardSection() {
     URL.revokeObjectURL(url);
   }
 
+  // A-20 (2026-08-15): getDashboardProjects and getDashboardStrategicObjectives both independently
+  // re-fetched projects+programs for the same tenant -- fetched once here via
+  // fetchDashboardProjectsAndPrograms and passed to both, preserving each effect's own original
+  // trigger cadence below (projects only re-fetches on tenantScope change; objectives also
+  // re-fetches on manual Refresh) and both functions' own error-fallback behavior unchanged.
   useEffect(() => {
     if (!tenantScope) return;
 
     let isMounted = true;
-    getDashboardProjects(tenantScope)
-      .then((projectRows) => {
+    fetchDashboardProjectsAndPrograms(tenantScope)
+      .then((prefetched) => {
         if (!isMounted) return;
-        setProjects(projectRows);
+        getDashboardProjects(tenantScope, prefetched).then((projectRows) => {
+          if (isMounted) setProjects(projectRows);
+        });
+        getDashboardStrategicObjectives(tenantScope, prefetched).then((objectiveRows) => {
+          if (isMounted) setObjectives(objectiveRows);
+        });
       })
       .catch(() => {
         if (!isMounted) return;
@@ -270,6 +285,7 @@ export function DashboardSection() {
         // records), so it must stay behind the same isDemoModeEnabled() gate as the initial state
         // above, not fall back unconditionally.
         setProjects(isDemoModeEnabled() ? getDashboardFallbackProjects() : []);
+        setObjectives([]);
       });
 
     return () => {
@@ -279,8 +295,12 @@ export function DashboardSection() {
 
   // Executive Dashboard Sprint ED-3: Strategic Objectives, derived from real programs -- a genuine
   // fetch failure must leave a real tenant with an honest empty list, never demo content.
+  // Refresh-only reload (A-20, 2026-08-15): the effect above already loads objectives once per
+  // tenantScope/mount, so this skips its own first run (refreshToken === 0) to avoid duplicating
+  // that initial fetch -- it only re-fires on a later manual Refresh click, matching this effect's
+  // cadence from before the A-20 merge above.
   useEffect(() => {
-    if (!tenantScope) return;
+    if (!tenantScope || refreshToken === 0) return;
 
     let isMounted = true;
     getDashboardStrategicObjectives(tenantScope)

@@ -157,24 +157,30 @@ describe("governed RAG retrieval", () => {
     }));
   });
 
-  it("excludes restricted documents from retrieval for a non-elevated role (Sprint 3 permission-aware RAG proof)", async () => {
-    const restricted = document({
-      id: "doc_restricted",
-      organizationId: "org_1",
-      title: "Restricted Audit Observation",
-      description: "Audit observation for oxygen procurement variance and management response.",
-      classification: "restricted",
-    });
+  // A-14 (2026-08-15): originally only proved this for "Employee" -- widened to all 3 non-elevated
+  // roles (elevatedRoles in governedRag.ts is Super Admin/Organization Admin/Executive/Manager) so
+  // the claim is "no non-elevated role," not just "not this one specific role."
+  it.each(["Employee", "Consultant", "Guest"] as const)(
+    "excludes restricted documents from retrieval for a non-elevated role: %s (Sprint 3 permission-aware RAG proof)",
+    async (role) => {
+      const restricted = document({
+        id: "doc_restricted",
+        organizationId: "org_1",
+        title: "Restricted Audit Observation",
+        description: "Audit observation for oxygen procurement variance and management response.",
+        classification: "restricted",
+      });
 
-    const chunks = await retrieveInstitutionalContext(repositories({ documents: [restricted] }), {
-      ...scope,
-      role: "Employee",
-    }, {
-      question: "oxygen procurement audit observation variance",
-    });
+      const chunks = await retrieveInstitutionalContext(repositories({ documents: [restricted] }), {
+        ...scope,
+        role,
+      }, {
+        question: "oxygen procurement audit observation variance",
+      });
 
-    expect(chunks.map((chunk) => chunk.sourceId)).not.toContain("doc_restricted");
-  });
+      expect(chunks.map((chunk) => chunk.sourceId)).not.toContain("doc_restricted");
+    },
+  );
 
   it("excludes archived documents from retrieval (RAG Remediation Sprint 1, RAG1-02/09)", async () => {
     const archived = document({
