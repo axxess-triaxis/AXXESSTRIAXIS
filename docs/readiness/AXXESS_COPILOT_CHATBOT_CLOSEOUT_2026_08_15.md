@@ -52,11 +52,37 @@ Verification: typecheck 0 errors, lint 0 warnings, mobile typecheck 0 errors, ta
   session check never resolves past "Checking session" on localhost, unrelated to this feature and
   present before this session started). See Residual Risks.
 Outcome: Code-complete and verified at typecheck/lint/mobile-typecheck/build/supabase-verify/targeted-
-  test levels. Not committed, not pushed, not deployed -- awaiting explicit founder confirmation per
-  this repo's standing Git and Deployment Discipline rule.
-Follow-up: Live browser verification (ideally against a deployed preview or the founder's own local
-  env with real Supabase credentials), then commit/PR/deploy on separate explicit confirmation.
+  test levels. Committed (`bbd3e4f`), PR #243 opened and merged to `main` (`c4733b1`), and deployed to
+  production on both domains after the founder's separate explicit confirmations ("Commit and open
+  PR", then "Merge this PR and deploy") -- see Deployment section below.
+Follow-up: Founder's own in-app click-through on either live domain, confirming the greeting/trigger
+  render as intended -- the one remaining unverified item, since a coding session cannot browser-test
+  against a real authenticated production session itself.
 ```
+
+## Deployment (2026-08-15)
+
+- Committed `bbd3e4f` ("feat(chatbot): add global pop-up AXXESS Copilot chatbot"), pushed, PR
+  [#243](https://github.com/axxess-triaxis/AXXESSTRIAXIS/pull/243) opened against `main`.
+- 3 CI checks were red on the PR (`Build, Lint, Type Check`, `validate` -- both a
+  `Worker exited unexpectedly` Vitest crash inside the full `pnpm run test` run in CI, the same
+  pre-existing infra flakiness flagged in every MCP3-x closeout this session; `Sprint 27/29 Pilot
+  Acceptance Gate` -- a Playwright timeout on the unrelated Integrations email-import-preview e2e
+  flow). Before merging, confirmed these were identical on the immediately-prior merged PR #242
+  (unrelated code) via `gh pr checks 242`, and confirmed every one of this PR's own new test files
+  passed cleanly inside the same CI log before the crash. `mergeStateStatus` was `UNSTABLE`, not
+  `BLOCKED` -- none of the three are required/blocking checks in this repo's branch protection, so no
+  admin override was used.
+- Merged via `gh pr merge 243 --merge` on the founder's explicit "Merge this PR and deploy"
+  instruction, producing merge commit `c4733b1` on `main`.
+- `deploy-production.yml` run `31868955994` triggered automatically, both jobs succeeded:
+  `Deploy landing.triaxisventures.com` (06:14:38-06:19:52 UTC), `Deploy investor.triaxisventures.com`
+  (06:19:54-06:21:51 UTC).
+- Live-verified post-deploy via unauthenticated `curl`: `investor.triaxisventures.com` (forced demo
+  mode) returns `200` on `/dashboard`, `/integrations`, `/tasks`; `landing.triaxisventures.com` (real
+  auth-gated product, not forced-demo) correctly `307`s `/dashboard` to `/auth?next=%2Fdashboard`
+  (`200`) for an unauthenticated caller -- expected behavior for that domain given no session cookie,
+  not a regression.
 
 ## Files Added
 
@@ -161,14 +187,17 @@ Attempted, honest result:
   model to emit JSON via instruction text, the same class of reliability risk as any prompt-based
   structured-output approach; a provider that doesn't follow the instruction falls back to a plain
   chat reply (`parseChatResponse`'s tested fallback), never a crash or a fabricated command.
-- **Not deployed as of this closeout** -- push/PR/merge/deploy require separate explicit confirmation
-  per this repo's standing Git and Deployment Discipline rule, matching every prior round this session.
+- **Founder's own live click-through remains outstanding** -- deployed and route-reachable per the
+  curl checks above, but no one has yet opened the widget on a real authenticated session in
+  production to confirm the greeting/trigger render and a command executes end-to-end as intended.
 
 ## Closeout Position
 
-Code-complete and verified at typecheck, lint, mobile-typecheck, build, and supabase-migration levels,
+Code-complete, verified at typecheck, lint, mobile-typecheck, build, and supabase-migration levels,
 plus 26 passing targeted unit/component tests covering the RBAC-gating decision, the 6-command
 registry's exact repository call sites, the intent-parsing fallback behavior, and the floating-widget
-positioning/mounting. Not production-certified: a real in-browser click-through is blocked by this
-local environment's missing Supabase/PostHog credentials (pre-existing, unrelated to this feature) and
-remains outstanding, requiring either the founder's own environment or a deployed preview to complete.
+positioning/mounting -- and now deployed to production on both domains (PR #243, merge `c4733b1`,
+`deploy-production.yml` run `31868955994`, both jobs green, live route checks passing on both
+domains). Not yet fully production-certified: the founder's own in-app click-through, confirming the
+real-session greeting and a real command executing end-to-end, is the one item this session could not
+close itself.
