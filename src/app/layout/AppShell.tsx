@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import type { UserContext } from "../../security/rbac";
 import { BetaFeedbackButton } from "../../components/feedback/BetaFeedbackButton";
+import { ChatbotLauncher } from "../../components/chatbot/ChatbotLauncher";
 import type { NavSection } from "../navigation";
 import { Sidebar } from "./Sidebar";
 import { TopBar } from "./TopBar";
@@ -59,6 +60,7 @@ export function AppShell({
         </main>
       </div>
       <BetaFeedbackButton user={user} moduleName={activeLabel} route={routePath} />
+      <ChatbotLauncher user={user} routePath={routePath} moduleName={activeLabel} />
     </div>
   );
 }
