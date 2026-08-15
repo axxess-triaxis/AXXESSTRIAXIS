@@ -185,20 +185,25 @@ describe("answerTenantQuestion grounding against real indexed content (RAG Remed
       .rejects.toThrow(/cross-organization access denied/i);
   });
 
-  it("never includes a chunk's content when it is restricted to a role the caller does not have", async () => {
-    const embedding = await deterministicEmbeddingProvider.embed(REAL_CHUNK_TEXT);
-    mockChunkRows = [{
-      id: "chunk-restricted", organization_id: scope.organizationId, document_id: "doc-1", chunk_index: 0,
-      chunk_text: REAL_CHUNK_TEXT, embedding_hash: embedding, visibility: "organization",
-      role_allowlist: ["Super Admin", "Organization Admin"],
-      metadata: { title: "Restricted Oxygen Note" },
-    }];
-    const repo = repositories([document({ id: "doc-1", title: "Restricted Oxygen Note" })]);
+  // A-14 (2026-08-15): originally only proved this for "Employee" -- widened to all 3 non-elevated
+  // roles (role_allowlist here only grants Super Admin/Organization Admin) so the claim is "no
+  // non-elevated role," not just "not this one specific role."
+  it.each(["Employee", "Consultant", "Guest"] as const)(
+    "never includes a chunk's content when it is restricted to a role the caller does not have: %s",
+    async (role) => {
+      const embedding = await deterministicEmbeddingProvider.embed(REAL_CHUNK_TEXT);
+      mockChunkRows = [{
+        id: "chunk-restricted", organization_id: scope.organizationId, document_id: "doc-1", chunk_index: 0,
+        chunk_text: REAL_CHUNK_TEXT, embedding_hash: embedding, visibility: "organization",
+        role_allowlist: ["Super Admin", "Organization Admin"],
+        metadata: { title: "Restricted Oxygen Note" },
+      }];
+      const repo = repositories([document({ id: "doc-1", title: "Restricted Oxygen Note" })]);
 
-    // scope.role is "Employee", not in the chunk's role_allowlist.
-    const answer = await answerTenantQuestion(repo, scope, "What is the oxygen resilience risk for Dibrugarh?");
+      const answer = await answerTenantQuestion(repo, { ...scope, role }, "What is the oxygen resilience risk for Dibrugarh?");
 
-    expect(answer.sources.every((source) => source.excerpt !== REAL_CHUNK_TEXT)).toBe(true);
-    expect(answer.answer).not.toContain("adjoining referral corridors");
-  });
+      expect(answer.sources.every((source) => source.excerpt !== REAL_CHUNK_TEXT)).toBe(true);
+      expect(answer.answer).not.toContain("adjoining referral corridors");
+    },
+  );
 });

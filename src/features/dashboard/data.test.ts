@@ -69,6 +69,35 @@ describe("getDashboardProjects (Executive Dashboard Sprint ED-2 -- no fabricated
       expect(project).not.toHaveProperty("spent");
     }
   });
+
+  // A-20 (2026-08-15): proves getDashboardProjects reuses a prefetched {projectRecords,
+  // programRecords} pair instead of calling projectsRepository.list/programsRepository.list itself
+  // -- the fix for the duplicate fetch this function shared with getDashboardStrategicObjectives.
+  it("reuses prefetched project/program records instead of calling projectsRepository.list/programsRepository.list itself", async () => {
+    vi.resetModules();
+    const projectsListMock = vi.fn().mockRejectedValue(new Error("should not be called -- prefetched data was supplied"));
+    const programsListMock = vi.fn().mockRejectedValue(new Error("should not be called -- prefetched data was supplied"));
+    vi.doMock("../../providers/serviceProvider", () => ({
+      applicationServices: {
+        projectsRepository: { list: projectsListMock },
+        programsRepository: { list: programsListMock },
+        usersRepository: { listByOrganization: vi.fn().mockResolvedValue([]) },
+      },
+    }));
+
+    const { getDashboardProjects: getDashboardProjectsWithMock } = await import("./data");
+    const prefetched = {
+      projectRecords: [{ name: "Prefetched Project", progress: 25, riskLevel: "low", status: "active", dueDate: "2026-12-01T00:00:00.000Z" }],
+      programRecords: [],
+    } as never;
+
+    const projects = await getDashboardProjectsWithMock(cleanScope, prefetched);
+
+    expect(projectsListMock).not.toHaveBeenCalled();
+    expect(programsListMock).not.toHaveBeenCalled();
+    expect(projects.length).toBe(1);
+    expect(projects[0].name).toBe("Prefetched Project");
+  });
 });
 
 describe("getDashboardStrategicObjectives (Executive Dashboard Sprint ED-3 -- derived MVP)", () => {
@@ -122,5 +151,33 @@ describe("getDashboardStrategicObjectives (Executive Dashboard Sprint ED-3 -- de
     const objectives = await getObjectivesWithMock(cleanScope);
 
     expect(objectives).toEqual([]);
+  });
+
+  // A-20 (2026-08-15): mirrors the getDashboardProjects test above -- proves
+  // getDashboardStrategicObjectives reuses prefetched records instead of re-fetching them itself.
+  it("reuses prefetched project/program records instead of re-fetching them itself", async () => {
+    vi.resetModules();
+    const programsListMock = vi.fn().mockRejectedValue(new Error("should not be called -- prefetched data was supplied"));
+    const projectsListMock = vi.fn().mockRejectedValue(new Error("should not be called -- prefetched data was supplied"));
+    vi.doMock("../../providers/serviceProvider", () => ({
+      applicationServices: {
+        programsRepository: { list: programsListMock },
+        projectsRepository: { list: projectsListMock },
+      },
+    }));
+
+    const { getDashboardStrategicObjectives: getObjectivesWithMock } = await import("./data");
+    const prefetched = {
+      programRecords: [{ id: "prog-1", name: "Prefetched Program", status: "active" }],
+      projectRecords: [{ programId: "prog-1", progress: 80 }],
+    } as never;
+
+    const objectives = await getObjectivesWithMock(cleanScope, prefetched);
+
+    expect(programsListMock).not.toHaveBeenCalled();
+    expect(projectsListMock).not.toHaveBeenCalled();
+    expect(objectives).toHaveLength(1);
+    expect(objectives[0].name).toBe("Prefetched Program");
+    expect(objectives[0].averageProgress).toBe(80);
   });
 });
