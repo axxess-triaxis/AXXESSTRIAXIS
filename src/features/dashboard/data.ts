@@ -68,11 +68,24 @@ function getZeroDashboardKpis(documentCount = 0): DashboardKpi[] {
   ];
 }
 
-export async function getDashboardProjects(scope: TenantScope) {
+// A-20 (2026-08-15): getDashboardProjects and getDashboardStrategicObjectives each independently
+// re-fetched projects+programs for the same tenant on every dashboard mount. Shared fetcher lets
+// a caller (DashboardSection.tsx) fetch once and pass the result to both, while each function keeps
+// working standalone (fetching its own copy) when called without a prefetched pair.
+export async function fetchDashboardProjectsAndPrograms(scope: TenantScope) {
+  const [projectRecords, programRecords] = await Promise.all([
+    applicationServices.projectsRepository.list(scope),
+    applicationServices.programsRepository.list(scope),
+  ]);
+  return { projectRecords, programRecords };
+}
+
+type PrefetchedProjectsAndPrograms = Awaited<ReturnType<typeof fetchDashboardProjectsAndPrograms>>;
+
+export async function getDashboardProjects(scope: TenantScope, prefetched?: PrefetchedProjectsAndPrograms) {
   try {
-    const [projectRecords, programRecords, userRecords] = await Promise.all([
-      applicationServices.projectsRepository.list(scope),
-      applicationServices.programsRepository.list(scope),
+    const [{ projectRecords, programRecords }, userRecords] = await Promise.all([
+      prefetched ? Promise.resolve(prefetched) : fetchDashboardProjectsAndPrograms(scope),
       applicationServices.usersRepository.listByOrganization(scope),
     ]);
 
@@ -147,12 +160,12 @@ export type DashboardStrategicObjective = {
 // persistence, since no dedicated objectives schema exists and a full OKR model is explicitly out
 // of this sprint's scope). Each real program becomes one objective card; a program's "progress" is
 // the average progress of its own linked projects, not a fabricated target ratio.
-export async function getDashboardStrategicObjectives(scope: TenantScope): Promise<DashboardStrategicObjective[]> {
+export async function getDashboardStrategicObjectives(
+  scope: TenantScope,
+  prefetched?: PrefetchedProjectsAndPrograms,
+): Promise<DashboardStrategicObjective[]> {
   try {
-    const [programs, projects] = await Promise.all([
-      applicationServices.programsRepository.list(scope),
-      applicationServices.projectsRepository.list(scope),
-    ]);
+    const { projectRecords: projects, programRecords: programs } = prefetched ?? await fetchDashboardProjectsAndPrograms(scope);
 
     return programs.map((program, index) => {
       const linkedProjects = projects.filter((project) => project.programId === program.id);
