@@ -213,35 +213,43 @@ export function ProductAnalyticsSection() {
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Card className="p-5">
           <h3 className="text-sm font-semibold text-[#0F1117]">Most Used Modules</h3>
-          <div className="mt-4 space-y-3">
-            {activeModules.map((module, index) => (
-              <div key={module} className="flex items-center gap-3">
-                <span className="w-28 text-xs font-medium text-[#0F1117]">{module}</span>
-                <div className="h-2 flex-1 overflow-hidden rounded-full bg-[#F2F3F5]">
-                  <div className="h-full rounded-full bg-[#8B1E2D]" style={{ width: `${Math.max(24, 92 - index * 10)}%` }} />
+          {demoMode ? (
+            <div className="mt-4 space-y-3">
+              {activeModules.map((module, index) => (
+                <div key={module} className="flex items-center gap-3">
+                  <span className="w-28 text-xs font-medium text-[#0F1117]">{module}</span>
+                  <div className="h-2 flex-1 overflow-hidden rounded-full bg-[#F2F3F5]">
+                    <div className="h-full rounded-full bg-[#8B1E2D]" style={{ width: `${Math.max(24, 92 - index * 10)}%` }} />
+                  </div>
+                  <span className="w-16 text-right font-mono text-[10px] text-[#5F6B73]">{Math.max(24, 92 - index * 10)}%</span>
                 </div>
-                <span className="w-16 text-right font-mono text-[10px] text-[#5F6B73]">{Math.max(24, 92 - index * 10)}%</span>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <p className="mt-4 text-xs leading-relaxed text-[#5F6B73]">Per-module usage tracking requires product analytics instrumentation that isn&apos;t wired to this workspace yet.</p>
+          )}
         </Card>
 
         <Card className="p-5">
           <h3 className="text-sm font-semibold text-[#0F1117]">Activation Funnel</h3>
-          <div className="mt-4 space-y-3">
-            {[
-              { step: "Signed in", ratio: 1 },
-              { step: "Viewed dashboard", ratio: 0.86 },
-              { step: "Opened project module", ratio: 0.64 },
-              { step: "Created workflow item", ratio: 0.47 },
-              { step: "Submitted feedback", ratio: 0.31 },
-            ].map(({ step, ratio }) => (
-              <div key={step} className="flex items-center justify-between rounded-lg bg-[#F8F9FA] px-3 py-2">
-                <span className="text-xs font-medium text-[#0F1117]">{step}</span>
-                <span className="font-mono text-[11px] text-[#5F6B73]">{Math.round(metrics.users * ratio)}</span>
-              </div>
-            ))}
-          </div>
+          {demoMode ? (
+            <div className="mt-4 space-y-3">
+              {[
+                { step: "Signed in", ratio: 1 },
+                { step: "Viewed dashboard", ratio: 0.86 },
+                { step: "Opened project module", ratio: 0.64 },
+                { step: "Created workflow item", ratio: 0.47 },
+                { step: "Submitted feedback", ratio: 0.31 },
+              ].map(({ step, ratio }) => (
+                <div key={step} className="flex items-center justify-between rounded-lg bg-[#F8F9FA] px-3 py-2">
+                  <span className="text-xs font-medium text-[#0F1117]">{step}</span>
+                  <span className="font-mono text-[11px] text-[#5F6B73]">{Math.round(metrics.users * ratio)}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="mt-4 text-xs leading-relaxed text-[#5F6B73]">Activation-funnel tracking requires product analytics instrumentation that isn&apos;t wired to this workspace yet.</p>
+          )}
         </Card>
       </div>
 
