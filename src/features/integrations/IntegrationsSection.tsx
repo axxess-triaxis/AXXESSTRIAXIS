@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../../auth/AuthProvider";
 import { SectionHeader } from "../../components/layout/SectionHeader";
 import { InlineToast } from "../../components/forms/InlineToast";
@@ -869,8 +869,32 @@ type AgentActivitySummary = {
   denials: number;
   pendingApprovals: number;
   approvalCount: number;
+  approvals?: { approved: number; rejected: number; pending: number };
   activeGrants: number;
   grantCount: number;
+  activeAgents?: number;
+  activeProviders?: number;
+};
+
+// MCP3-3: the governance-dashboard roster row -- one per connection, extending
+// GET /api/agents/activity's response alongside the pre-existing activity/summary fields above.
+type AgentRosterRow = {
+  connectionId: string;
+  label: string;
+  provider: string;
+  status: "active" | "revoked";
+  riskTier: string;
+  lastUsedAt?: string;
+  agentProfileId?: string;
+};
+
+type AgentActionFeedback = {
+  id: string;
+  auditLogId: string;
+  rating?: number;
+  flagged: boolean;
+  flagReason?: string;
+  createdAt: string;
 };
 
 const criticalAgentCapabilities = new Set<AgentCapability>([
@@ -910,17 +934,44 @@ function AgentConnectionsPanel() {
   const [grantsByConnection, setGrantsByConnection] = useState<Record<string, AgentActionGrant[]>>({});
   const [activity, setActivity] = useState<AgentActivityEvent[]>([]);
   const [activitySummary, setActivitySummary] = useState<AgentActivitySummary | null>(null);
+  // MCP3-3: governance-dashboard roster, export, and per-action feedback (rate / flag).
+  const [roster, setRoster] = useState<AgentRosterRow[]>([]);
+  const [exporting, setExporting] = useState(false);
+  const [allFeedback, setAllFeedback] = useState<AgentActionFeedback[]>([]);
+  const [flaggingAuditLogId, setFlaggingAuditLogId] = useState<string | null>(null);
+  const [flagReason, setFlagReason] = useState("");
+  const [submittingFeedbackId, setSubmittingFeedbackId] = useState<string | null>(null);
   const canManage = Boolean(session.user && ["Super Admin", "Organization Admin"].includes(session.user.role));
+  const feedbackByAuditLogId = useMemo(() => {
+    const map: Record<string, AgentActionFeedback[]> = {};
+    for (const item of allFeedback) {
+      (map[item.auditLogId] ??= []).push(item);
+    }
+    return map;
+  }, [allFeedback]);
+  const flaggedFeedback = useMemo(() => allFeedback.filter((item) => item.flagged), [allFeedback]);
+
+  async function loadAgentFeedback() {
+    try {
+      const response = await fetch("/api/agents/feedback", { credentials: "include", cache: "no-store" });
+      const result = await response.json().catch(() => ({} as { feedback?: AgentActionFeedback[] }));
+      if (response.ok) setAllFeedback(result.feedback ?? []);
+    } catch {
+      setAllFeedback([]);
+    }
+  }
 
   async function loadAgentActivity() {
     try {
       const response = await fetch("/api/agents/activity", { credentials: "include", cache: "no-store" });
-      const result = await response.json().catch(() => ({} as { activity?: AgentActivityEvent[]; summary?: AgentActivitySummary }));
+      const result = await response.json().catch(() => ({} as { activity?: AgentActivityEvent[]; summary?: AgentActivitySummary; roster?: AgentRosterRow[] }));
       if (!response.ok) return;
       setActivity(result.activity ?? []);
       setActivitySummary(result.summary ?? null);
+      setRoster(result.roster ?? []);
     } catch {
       setActivity([]);
+      setRoster([]);
       setActivitySummary(null);
     }
   }
@@ -995,10 +1046,67 @@ function AgentConnectionsPanel() {
       })
       .catch(() => undefined);
     void loadAgentActivity();
+    void loadAgentFeedback();
     return () => {
       isMounted = false;
     };
   }, [canManage]);
+
+  async function submitFeedback(event: AgentActivityEvent, input: { rating?: number; flagged?: boolean; flagReason?: string }) {
+    setSubmittingFeedbackId(event.id);
+    setToast(null);
+    try {
+      const response = await fetch("/api/agents/feedback", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          auditLogId: event.id,
+          agentConnectionId: event.agentConnectionId,
+          toolName: event.toolName,
+          provider: event.provider,
+          ...input,
+        }),
+      });
+      const result = await response.json().catch(() => ({} as { feedback?: AgentActionFeedback; error?: string }));
+      if (!response.ok || !result.feedback) throw new Error(result.error ?? "Recording this feedback failed.");
+      setAllFeedback((current) => [result.feedback as AgentActionFeedback, ...current]);
+      setFlaggingAuditLogId(null);
+      setFlagReason("");
+      setToast({ tone: "success", message: input.flagged ? `Flagged ${event.toolName} for review.` : `Rated ${event.toolName}.` });
+    } catch (error) {
+      setToast({ tone: "error", message: error instanceof Error ? error.message : "Recording this feedback failed." });
+    } finally {
+      setSubmittingFeedbackId(null);
+    }
+  }
+
+  async function exportGovernanceReport(format: "json" | "csv") {
+    setExporting(true);
+    setToast(null);
+    try {
+      const response = await fetch("/api/agents/export", { method: "POST", credentials: "include" });
+      const result = await response.json().catch(() => ({} as { json?: unknown; csv?: string; fileNamePrefix?: string; error?: string }));
+      if (!response.ok) throw new Error(result.error ?? "Exporting the governance report failed.");
+      const prefix = result.fileNamePrefix ?? "axxess-agent-governance";
+      const datestamp = new Date().toISOString().slice(0, 10);
+      const content = format === "csv" ? (result.csv ?? "") : JSON.stringify(result.json ?? {}, null, 2);
+      const blob = new Blob([content], { type: format === "csv" ? "text/csv;charset=utf-8" : "application/json" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${prefix}-${datestamp}.${format}`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      setToast({ tone: "success", message: `Governance report exported as ${format.toUpperCase()}.` });
+    } catch (error) {
+      setToast({ tone: "error", message: error instanceof Error ? error.message : "Exporting the governance report failed." });
+    } finally {
+      setExporting(false);
+    }
+  }
 
   async function createProfile() {
     if (!newProfile.displayName.trim()) {
@@ -1077,19 +1185,43 @@ function AgentConnectionsPanel() {
 
   return (
     <Card className="p-5">
-      <div className="mb-4">
-        <h3 className="text-sm font-semibold text-[#0F1117]">Agent Connections</h3>
-        <p className="mt-1 max-w-2xl text-xs leading-relaxed text-[#5F6B73]">
-          Issue an API key so a connected OpenAI, Anthropic, or Microsoft Copilot agent can call this workspace&apos;s real MCP server directly. Raw keys are shown once only. MCP2 tools are opt-in per connection. Critical tools require Approvals &amp; Governance unless an Always-Allow grant exists. Copilot remains approved at the policy layer, but its dedicated adapter is still pending.
-        </p>
+      <div className="mb-4 flex items-start justify-between gap-3">
+        <div>
+          <h3 className="text-sm font-semibold text-[#0F1117]">Agent Connections &amp; Governance</h3>
+          <p className="mt-1 max-w-2xl text-xs leading-relaxed text-[#5F6B73]">
+            Issue an API key so a connected OpenAI, Anthropic, or Microsoft Copilot agent can call this workspace&apos;s real MCP server directly. Raw keys are shown once only. MCP2 tools are opt-in per connection. Critical tools require Approvals &amp; Governance unless an Always-Allow grant exists. Copilot remains approved at the policy layer, but its dedicated adapter is still pending.
+          </p>
+        </div>
+        <div className="flex flex-shrink-0 items-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => void exportGovernanceReport("csv")}
+            disabled={exporting}
+            className="rounded-lg border border-[rgba(0,0,0,0.12)] px-2.5 py-1.5 text-[11px] font-semibold text-[#0F1117] hover:bg-[#F2F3F5] disabled:opacity-60"
+          >
+            Export CSV
+          </button>
+          <button
+            type="button"
+            onClick={() => void exportGovernanceReport("json")}
+            disabled={exporting}
+            className="rounded-lg border border-[rgba(0,0,0,0.12)] px-2.5 py-1.5 text-[11px] font-semibold text-[#0F1117] hover:bg-[#F2F3F5] disabled:opacity-60"
+          >
+            Export JSON
+          </button>
+        </div>
       </div>
       {activitySummary && (
-        <div className="mb-4 grid grid-cols-2 gap-2 lg:grid-cols-5">
+        <div className="mb-4 grid grid-cols-2 gap-2 lg:grid-cols-4">
           {[
+            ["Active agents", activitySummary.activeAgents ?? 0],
+            ["Active providers", activitySummary.activeProviders ?? 0],
             ["Recent calls", activity.length],
+            ["Pending approvals", activitySummary.pendingApprovals],
+            ["Approved", activitySummary.approvals?.approved ?? 0],
+            ["Rejected", activitySummary.approvals?.rejected ?? 0],
             ["Failures", activitySummary.failures],
             ["Denials", activitySummary.denials],
-            ["Pending approvals", activitySummary.pendingApprovals],
             ["Active grants", activitySummary.activeGrants],
           ].map(([metric, value]) => (
             <div key={metric} className="rounded-lg bg-[#F8F9FA] p-3">
@@ -1097,6 +1229,48 @@ function AgentConnectionsPanel() {
               <div className="mt-1 font-mono text-lg font-semibold text-[#0F1117]">{value}</div>
             </div>
           ))}
+        </div>
+      )}
+      {roster.length > 0 && (
+        <div className="mb-4">
+          <h4 className="mb-2 text-[10px] font-semibold uppercase text-[#5F6B73]">Agent Roster</h4>
+          <div className="overflow-x-auto rounded-lg border border-[rgba(0,0,0,0.06)]">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="border-b border-[rgba(0,0,0,0.06)] bg-[#F8F9FA]">
+                  {["Agent", "Provider", "Status", "Risk tier", "Last used"].map((header) => (
+                    <th key={header} className="px-3 py-2 text-left text-[10px] font-semibold uppercase tracking-wide text-[#5F6B73]">{header}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {roster.map((row) => (
+                  <tr key={row.connectionId} className="border-b border-[rgba(0,0,0,0.04)] last:border-0">
+                    <td className="px-3 py-2 font-semibold text-[#0F1117]">{row.label}</td>
+                    <td className="px-3 py-2 text-[#5F6B73]">{agentProviderOptions.find((option) => option.id === row.provider)?.label ?? row.provider}</td>
+                    <td className="px-3 py-2">
+                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${row.status === "active" ? "bg-emerald-50 text-emerald-700" : "bg-gray-100 text-gray-600"}`}>{row.status}</span>
+                    </td>
+                    <td className="px-3 py-2 capitalize text-[#5F6B73]">{row.riskTier}</td>
+                    <td className="px-3 py-2 font-mono text-[11px] text-[#5F6B73]">{formatDateTime(row.lastUsedAt)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+      {flaggedFeedback.length > 0 && (
+        <div className="mb-4">
+          <h4 className="mb-2 text-[10px] font-semibold uppercase text-[#5F6B73]">Flagged Agent Actions -- Review Queue</h4>
+          <div className="grid gap-1.5">
+            {flaggedFeedback.map((item) => (
+              <div key={item.id} className="rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-[11px]">
+                <span className="font-semibold text-red-800">{item.flagReason}</span>
+                <span className="ml-2 text-red-700">-- flagged {formatDateTime(item.createdAt)}</span>
+              </div>
+            ))}
+          </div>
         </div>
       )}
       {toast && <div className="mb-3"><InlineToast tone={toast.tone} message={toast.message} /></div>}
@@ -1345,14 +1519,65 @@ function AgentConnectionsPanel() {
           <p className="text-[11px] text-[#5F6B73]">No agent activity recorded yet. Generate a key and run the live validation checklist.</p>
         ) : (
           <div className="grid gap-1.5">
-            {activity.slice(0, 8).map((event) => (
-              <div key={event.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-white px-2.5 py-2 text-[11px]">
-                <span><span className="font-mono font-semibold text-[#0F1117]">{event.toolName}</span> <span className="text-[#5F6B73]">via {event.provider}</span></span>
-                <span className={`rounded-full px-2 py-0.5 font-semibold ${event.status === "success" ? "bg-emerald-50 text-emerald-700" : event.status === "pending" ? "bg-amber-50 text-amber-700" : event.status === "denied" ? "bg-blue-50 text-blue-700" : "bg-red-50 text-red-700"}`}>{event.status}</span>
-                <span className="font-mono text-[#5F6B73]">{formatDateTime(event.createdAt)}</span>
-                {event.errorMessage && <span className="basis-full text-[10px] text-[#5F6B73]">{event.errorMessage}</span>}
+            {activity.slice(0, 8).map((event) => {
+              const existingFeedback = feedbackByAuditLogId[event.id] ?? [];
+              const isFlagging = flaggingAuditLogId === event.id;
+              const isSubmitting = submittingFeedbackId === event.id;
+              return (
+              <div key={event.id} className="rounded-lg bg-white px-2.5 py-2 text-[11px]">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span><span className="font-mono font-semibold text-[#0F1117]">{event.toolName}</span> <span className="text-[#5F6B73]">via {event.provider}</span></span>
+                  <span className={`rounded-full px-2 py-0.5 font-semibold ${event.status === "success" ? "bg-emerald-50 text-emerald-700" : event.status === "pending" ? "bg-amber-50 text-amber-700" : event.status === "denied" ? "bg-blue-50 text-blue-700" : "bg-red-50 text-red-700"}`}>{event.status}</span>
+                  <span className="font-mono text-[#5F6B73]">{formatDateTime(event.createdAt)}</span>
+                </div>
+                {event.errorMessage && <p className="mt-1 text-[10px] text-[#5F6B73]">{event.errorMessage}</p>}
+                <div className="mt-1.5 flex flex-wrap items-center gap-1">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      disabled={isSubmitting}
+                      onClick={() => void submitFeedback(event, { rating: star })}
+                      title={`Rate ${star}/5`}
+                      className={`h-5 w-5 rounded text-[10px] font-semibold disabled:opacity-40 ${existingFeedback.some((item) => item.rating === star) ? "bg-[#8B1E2D] text-white" : "bg-[#F2F3F5] text-[#5F6B73] hover:bg-[#e8e9eb]"}`}
+                    >
+                      {star}
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    disabled={isSubmitting}
+                    onClick={() => { setFlaggingAuditLogId(isFlagging ? null : event.id); setFlagReason(""); }}
+                    className="ml-1 rounded-lg border border-red-200 px-2 py-0.5 text-[10px] font-semibold text-red-700 hover:bg-red-50 disabled:opacity-40"
+                  >
+                    Flag
+                  </button>
+                  {existingFeedback.some((item) => item.flagged) && (
+                    <span className="text-[10px] font-semibold text-red-700">Flagged</span>
+                  )}
+                </div>
+                {isFlagging && (
+                  <div className="mt-1.5 flex items-center gap-1.5">
+                    <input
+                      type="text"
+                      value={flagReason}
+                      onChange={(e) => setFlagReason(e.target.value)}
+                      placeholder="Why is this action unsafe or wrong?"
+                      className="flex-1 rounded-lg border border-[rgba(0,0,0,0.12)] px-2 py-1 text-[11px] outline-none focus:border-[#8B1E2D]"
+                    />
+                    <button
+                      type="button"
+                      disabled={!flagReason.trim() || isSubmitting}
+                      onClick={() => void submitFeedback(event, { flagged: true, flagReason: flagReason.trim() })}
+                      className="rounded-lg bg-red-600 px-2.5 py-1 text-[10px] font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      Submit
+                    </button>
+                  </div>
+                )}
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
