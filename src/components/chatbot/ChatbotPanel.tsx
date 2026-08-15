@@ -110,9 +110,24 @@ export function ChatbotPanel({ user, routePath, moduleName, onClose }: ChatbotPa
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ prompt: buildChatPrompt(text, chatCommandCatalogue), task: "general_chat" }),
       });
-      const payload = await response.json().catch(() => ({} as { answer?: string; error?: string }));
+      const payload = await response.json().catch(() => ({} as { answer?: string; error?: string; confidence?: number }));
       if (!response.ok || typeof payload.answer !== "string") {
-        appendAssistant(payload.error ?? "Something went wrong reaching AXXESS Intelligence. Try again.");
+        // Never surface the raw backend error string (same F-016 convention AIWorkspaceSection's
+        // askGovernedQuestion already follows) -- this route 401s for the investor-demo persona too
+        // (a client-side-only mock session, no real Supabase cookies), so a plain "sign in" message
+        // is the safe, honest default rather than assuming why the session check failed.
+        console.error("Chatbot /api/ai call failed.", response.status, payload.error);
+        appendAssistant(response.status === 401 ? "Sign in to chat with AXXESS Copilot." : "AXXESS Copilot couldn't complete that. Try again in a moment.");
+        return;
+      }
+
+      // aiRouter's provider adapters use confidence: 0.3 as their own deliberate "not a live model
+      // call" sentinel (e.g. a missing API key, budget guard skip, or a non-200 provider response --
+      // see openAiProvider.ts) vs. ~0.78 for a genuine completion; humanReviewRequired's own threshold
+      // (aiRouter.ts) is the same 0.62 split. Below it, payload.answer is technical fallback prose,
+      // not a real answer -- show a clean message instead of parsing/displaying it as a chat reply.
+      if (typeof payload.confidence === "number" && payload.confidence < 0.62) {
+        appendAssistant("AXXESS Copilot's AI provider is temporarily unavailable. Try again shortly.");
         return;
       }
 
