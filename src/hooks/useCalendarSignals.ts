@@ -1,15 +1,17 @@
 import { useEffect, useState } from "react";
-import type { Meeting } from "../domain";
 import { demoCalendarSignals } from "../demo/demoDashboardSignals";
 import { isDemoModeEnabled } from "../demo/demoMode";
 import type { TenantScope } from "../repositories/interfaces";
 import { computeCalendarDashboardSignals, type CalendarDashboardSignals } from "../services/dashboard/calendarDashboardSignals";
+import { getSharedMeetingsList } from "./meetingsListCache";
 
-// Executive Dashboard Redesign Sprint ED-R3. Same generic, authenticated, tenant-scoped
-// GET /api/repositories/meetings endpoint used by useOverdueMeetingCount.ts, fetched separately
-// here (a second call to the same endpoint) rather than refactoring that already-shipped ED-R1
-// hook -- a deliberate, documented tradeoff to avoid destabilizing verified, deployed code for a
-// minor efficiency gain. undefined until the first successful fetch.
+// Executive Dashboard Redesign Sprint ED-R3, shared-fetch fix A-20 (2026-08-15). Same generic,
+// authenticated, tenant-scoped GET /api/repositories/meetings endpoint used by
+// useOverdueMeetingCount.ts -- previously fetched separately here (a documented, deliberate
+// duplicate). Now shares one in-flight/cached fetch via meetingsListCache.ts instead, matching
+// useLiveWorkspaceMetrics.ts's own consumer pattern for its shared cache -- no AbortController
+// (a shared fetch can't be cancelled per-consumer), just a `mounted` flag guarding the state
+// update. undefined until the first successful fetch.
 export function useCalendarSignals(scope?: TenantScope, refreshToken = 0) {
   const [signals, setSignals] = useState<CalendarDashboardSignals | undefined>(undefined);
 
@@ -20,16 +22,12 @@ export function useCalendarSignals(scope?: TenantScope, refreshToken = 0) {
       return;
     }
     if (!scope?.organizationId) return;
-    const controller = new AbortController();
-    fetch("/api/repositories/meetings?pageSize=500", { credentials: "include", cache: "no-store", signal: controller.signal })
-      .then(async (response) => {
-        if (!response.ok) return;
-        const rows = await response.json().catch(() => undefined) as Meeting[] | undefined;
-        if (Array.isArray(rows)) setSignals(computeCalendarDashboardSignals(rows));
-      })
+    let mounted = true;
+    getSharedMeetingsList(scope)
+      .then((rows) => { if (mounted) setSignals(computeCalendarDashboardSignals(rows)); })
       .catch(() => undefined);
-    return () => controller.abort();
-  }, [scope?.organizationId, refreshToken]);
+    return () => { mounted = false; };
+  }, [scope, refreshToken]);
 
   return signals;
 }
