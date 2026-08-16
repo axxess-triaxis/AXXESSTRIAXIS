@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { routeForPath } from "../app/routing/routes";
-import { assertOrganizationAccess, canAccessRoute, canAccessSection, canManageOrganization, isRoleName, mockCurrentUserContext, type UserContext } from "./rbac";
+import { assertOrganizationAccess, canAccessRoute, canAccessSection, canManageOrganization, canViewCrossTenantPilotPortfolio, isRoleName, mockCurrentUserContext, type UserContext } from "./rbac";
 
 describe("mock RBAC route guards", () => {
   it("allows organization admin access to admin routes", () => {
@@ -136,6 +136,32 @@ describe("mock RBAC route guards", () => {
     it("assertOrganizationAccess throws for any cross-organization id, regardless of role", () => {
       expect(() => assertOrganizationAccess(superAdminOrgA, "org_b")).toThrow("Cross-organization access denied.");
       expect(() => assertOrganizationAccess(superAdminOrgA, "org_a")).not.toThrow();
+    });
+  });
+
+  // Sprint 1 pilot portfolio (2026-08-15): the one deliberate exception to the tenant-isolation
+  // rule above -- only the platform operator's own Super Admin may see a cross-tenant rollup.
+  describe("canViewCrossTenantPilotPortfolio (Sprint 1 pilot portfolio)", () => {
+    const operatorSuperAdmin: UserContext = { id: "user_operator", organizationId: "org_operator", role: "Super Admin" };
+    const operatorOrgAdmin: UserContext = { id: "user_operator_admin", organizationId: "org_operator", role: "Organization Admin" };
+    const tenantSuperAdmin: UserContext = { id: "user_tenant", organizationId: "org_tenant", role: "Super Admin" };
+    const configuredEnv = { AXXESS_PLATFORM_OPERATOR_ORGANIZATION_ID: "org_operator" } as unknown as NodeJS.ProcessEnv;
+    const unconfiguredEnv = {} as unknown as NodeJS.ProcessEnv;
+
+    it("allows the platform operator's own Super Admin", () => {
+      expect(canViewCrossTenantPilotPortfolio(operatorSuperAdmin, configuredEnv)).toBe(true);
+    });
+
+    it("blocks the platform operator's own Organization Admin -- Super Admin only", () => {
+      expect(canViewCrossTenantPilotPortfolio(operatorOrgAdmin, configuredEnv)).toBe(false);
+    });
+
+    it("blocks a Super Admin from any other tenant, even by naming the operator's org id", () => {
+      expect(canViewCrossTenantPilotPortfolio(tenantSuperAdmin, configuredEnv)).toBe(false);
+    });
+
+    it("fails closed when the platform operator org id is not configured", () => {
+      expect(canViewCrossTenantPilotPortfolio(operatorSuperAdmin, unconfiguredEnv)).toBe(false);
     });
   });
 });
