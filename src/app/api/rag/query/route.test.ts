@@ -18,9 +18,9 @@ describe("POST /api/rag/query (tenant-scoped RAG retrieval)", () => {
 
   it("derives tenant scope from the authenticated session, not from the request body", () => {
     expect(source).toContain("tenantScopeFromUser(session.user, session.accessToken)");
-    // The only fields read from the request body are the question text and an optional result
-    // limit -- never an organization/tenant id.
-    expect(source).toContain("{ question?: string; limit?: number }");
+    // The request body carries the question text, an optional result limit, and (Sprint 4)
+    // conversation-memory/context-scoping fields -- never an organization/tenant id.
+    expect(source).toContain("{ question?: string; limit?: number; conversationId?: string; documentIds?: string[] }");
     expect(source).not.toMatch(/organizationId\s*[:=]\s*body\./);
   });
 
