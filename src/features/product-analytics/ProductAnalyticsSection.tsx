@@ -2,80 +2,44 @@
 
 import { BarChart3, CheckCircle2, FolderKanban, GitPullRequest, MessageSquareText, Users } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { siAsana, siGithub, siJira, siLinear, siVercel } from "simple-icons";
 import { useAuth } from "../../auth/AuthProvider";
 import { LoadingState } from "../../components/feedback/LoadingState";
 import { SectionHeader } from "../../components/layout/SectionHeader";
 import { Card } from "../../components/ui/Card";
-import { BrandIcon } from "../../components/ui/BrandIcon";
 import { isDemoModeEnabled } from "../../demo/demoMode";
 import { DemoDataNotice } from "../../components/enterprise";
 import type { BetaFeedback, User } from "../../domain";
 import { applicationServices } from "../../providers/serviceProvider";
 import { tenantScopeFromUser } from "../../repositories/supabaseEnterpriseRepositories";
+import type { AsanaPortfolioHealthResult } from "../../services/integrations/asanaPortfolioHealth";
+import type { MixpanelQueryHealthResult } from "../../services/integrations/mixpanelQueryHealth";
+import type { PostHogQueryHealthResult } from "../../services/integrations/postHogQueryHealth";
+import type { SentryProjectHealthResult } from "../../services/integrations/sentryProjectHealth";
 import { useAnalytics } from "../../services/analytics";
 
-// A-96 (2026-08-04): investor-demo-only real-looking placeholder entries for engineering-tool
-// dashboards -- NOT a live GitHub/Linear/Vercel/Asana/Jira API integration (none exists in this
-// codebase). Gated behind isDemoModeEnabled(), same pattern as every other demo-only fixture in
-// this file's sibling sections. Real tenants never see this block.
-const devToolDashboards = [
-  {
-    id: "github",
-    name: "GitHub",
-    icon: siGithub,
-    stats: [
-      { label: "Commits (7d)", value: "142" },
-      { label: "Open PRs", value: "8" },
-      { label: "Merged PRs (7d)", value: "23" },
-      { label: "Contributors", value: "6" },
-    ],
-  },
-  {
-    id: "linear",
-    name: "Linear",
-    icon: siLinear,
-    stats: [
-      { label: "Issues in progress", value: "14" },
-      { label: "Cycle time", value: "3.2d" },
-      { label: "Velocity", value: "38 pts/wk" },
-      { label: "Backlog", value: "61" },
-    ],
-  },
-  {
-    id: "vercel",
-    name: "Vercel",
-    icon: siVercel,
-    stats: [
-      { label: "Deployments (7d)", value: "19" },
-      { label: "Build success rate", value: "96%" },
-      { label: "P95 build time", value: "48s" },
-      { label: "Preview URLs (7d)", value: "27" },
-    ],
-  },
-  {
-    id: "asana",
-    name: "Asana",
-    icon: siAsana,
-    stats: [
-      { label: "Tasks completed (7d)", value: "61" },
-      { label: "On-time rate", value: "88%" },
-      { label: "Overdue tasks", value: "4" },
-      { label: "Active projects", value: "9" },
-    ],
-  },
-  {
-    id: "jira",
-    name: "Jira",
-    icon: siJira,
-    stats: [
-      { label: "Sprint progress", value: "68%" },
-      { label: "Story points remaining", value: "24" },
-      { label: "Open bugs", value: "5" },
-      { label: "Sprint days left", value: "4" },
-    ],
-  },
-];
+// Sprint 1 pilot portfolio (2026-08-15): the old A-96 devToolDashboards fixture (GitHub/Linear/
+// Vercel/Asana/Jira hardcoded stats) is removed -- it was explicitly self-documented as never a
+// live integration. Demo mode is untouched below (investor.triaxisventures.com's standing rule is
+// to stay rich/aspirational -- see feedback_investor_vs_landing_domain_standing_rule memory); for
+// real tenants, this section now fetches the same /api/admin/pilot-portfolio route
+// PilotConversionSection.tsx uses. That route restricts its `integrations` field to the platform
+// operator's own Super Admin (canViewCrossTenantPilotPortfolio) -- these are Triaxis-operator-only
+// infra signals (Sentry error tracking, a PostHog/Mixpanel query pull, Asana portfolio health),
+// not tenant-facing data, so a regular tenant admin correctly keeps today's honest "not wired yet"
+// card via the 403 fallback below, unchanged from before this sprint.
+type IntegrationsHealth = {
+  sentry: SentryProjectHealthResult;
+  postHogQuery: PostHogQueryHealthResult;
+  mixpanelQuery: MixpanelQueryHealthResult;
+  asana: AsanaPortfolioHealthResult;
+};
+
+const integrationDisplayNames: Record<keyof IntegrationsHealth, string> = {
+  sentry: "Sentry",
+  postHogQuery: "PostHog (query)",
+  mixpanelQuery: "Mixpanel (query)",
+  asana: "Asana",
+};
 
 type ProductMetrics = {
   users: number;
@@ -140,6 +104,7 @@ export function ProductAnalyticsSection() {
   const [feedbackItems, setFeedbackItems] = useState<BetaFeedback[]>([]);
   const [feedbackUsers, setFeedbackUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+  const [integrations, setIntegrations] = useState<IntegrationsHealth | undefined>(undefined);
 
   const loadMetrics = useCallback(async () => {
     if (!scope) return;
@@ -173,6 +138,20 @@ export function ProductAnalyticsSection() {
   useEffect(() => {
     void loadMetrics();
   }, [loadMetrics]);
+
+  useEffect(() => {
+    // Same cross-tenant route PilotConversionSection.tsx uses -- only its `integrations` field is
+    // consumed here. A regular tenant admin gets a 403 and simply keeps the honest "not wired yet"
+    // fallback below, fail-closed with no error UI.
+    let cancelled = false;
+    fetch("/api/admin/pilot-portfolio", { credentials: "include", cache: "no-store" })
+      .then((response) => (response.ok ? response.json() : undefined))
+      .then((payload: { integrations: IntegrationsHealth } | undefined) => {
+        if (!cancelled && payload) setIntegrations(payload.integrations);
+      })
+      .catch(() => undefined);
+    return () => { cancelled = true; };
+  }, []);
 
   useEffect(() => {
     if (!user) return;
@@ -259,32 +238,35 @@ export function ProductAnalyticsSection() {
           <h2 className="text-xs font-semibold uppercase tracking-wide text-[#5F6B73]">Engineering &amp; Delivery Tooling</h2>
         </div>
         {demoMode ? (
-          <>
-            <DemoDataNotice label="These engineering-tool dashboards are seeded to show what live GitHub, Linear, Vercel, Asana, and Jira integrations would surface -- not a live API connection." />
-            <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-              {devToolDashboards.map((tool) => (
-                <Card key={tool.id} className="p-4">
-                  <div className="mb-3 flex items-center gap-2">
-                    <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-white ring-1 ring-[rgba(15,17,23,0.08)]">
-                      <BrandIcon icon={tool.icon} size={16} />
+          <Card className="p-5">
+            <DemoDataNotice label="Live engineering-tool dashboards (Sentry, PostHog, Mixpanel, Asana) are a platform-operator-only view, not part of the investor preview." />
+          </Card>
+        ) : integrations ? (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            {(Object.keys(integrationDisplayNames) as Array<keyof IntegrationsHealth>).map((key) => {
+              const result = integrations[key];
+              return (
+                <Card key={key} className="p-4">
+                  <div className="flex items-center justify-between gap-2">
+                    <h3 className="text-sm font-semibold text-[#0F1117]">{integrationDisplayNames[key]}</h3>
+                    <span className={`rounded-full px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide ${result.status === "ok" ? "bg-emerald-50 text-emerald-700" : "bg-[#F2F3F5] text-[#5F6B73]"}`}>
+                      {result.status === "ok" ? "Live" : "Not connected"}
                     </span>
-                    <h3 className="text-sm font-semibold text-[#0F1117]">{tool.name}</h3>
                   </div>
-                  <div className="grid grid-cols-2 gap-2.5">
-                    {tool.stats.map((stat) => (
-                      <div key={stat.label}>
-                        <div className="font-mono text-sm font-semibold text-[#0F1117]">{stat.value}</div>
-                        <div className="mt-0.5 text-[10px] leading-tight text-[#5F6B73]">{stat.label}</div>
-                      </div>
-                    ))}
-                  </div>
+                  <p className="mt-3 text-xs leading-relaxed text-[#5F6B73]">
+                    {result.status === "ok"
+                      ? Object.entries(result).filter(([field]) => field !== "status" && field !== "provider").map(([field, value]) => `${field}: ${value}`).join(", ")
+                      : result.status === "error"
+                        ? `Connected, but the last request failed: ${result.error}`
+                        : "No credentials configured for this integration yet."}
+                  </p>
                 </Card>
-              ))}
-            </div>
-          </>
+              );
+            })}
+          </div>
         ) : (
           <Card className="p-5">
-            <p className="text-xs leading-relaxed text-[#5F6B73]">GitHub, Linear, Vercel, Asana, and Jira dashboards require live API integrations that aren&apos;t wired to this workspace yet. This section will populate as those connectors are built.</p>
+            <p className="text-xs leading-relaxed text-[#5F6B73]">Sentry, PostHog, Mixpanel, and Asana dashboards require live API integrations that aren&apos;t wired to this workspace yet. This section will populate as those connectors are built.</p>
           </Card>
         )}
       </div>

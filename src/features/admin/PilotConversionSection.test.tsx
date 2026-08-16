@@ -103,3 +103,72 @@ describe("PilotConversionSection real-vs-demo data (dummy-data fix)", () => {
     expect(screen.queryByText(/Pilot Conversion uses live pilot readiness events/)).not.toBeInTheDocument();
   });
 });
+
+// Sprint 1 pilot portfolio (2026-08-15): the new cross-tenant Kanban section, restricted server-side
+// to the platform operator's own Super Admin. These tests fake the /api/admin/pilot-portfolio route
+// itself (a 403 for a regular tenant admin, a real snapshot for the operator) to prove the client
+// renders (or fails closed) correctly in each case -- the actual authorization logic is covered by
+// rbac.test.ts and route.test.ts, not re-tested here.
+describe("PilotConversionSection Pilot Portfolio (cross-tenant Kanban)", () => {
+  afterEach(() => {
+    state.demoMode = false;
+    state.fetchOk = true;
+    state.events = [];
+    vi.unstubAllGlobals();
+  });
+
+  function stubFetchByUrl(portfolioResponse: { ok: boolean; json?: () => Promise<unknown> }) {
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/api/admin/pilot-portfolio")) {
+        return portfolioResponse;
+      }
+      return { ok: true, json: async () => state.events };
+    }));
+  }
+
+  it("renders the Kanban board with a real cross-tenant snapshot for the platform operator", async () => {
+    stubFetchByUrl({
+      ok: true,
+      json: async () => ({
+        snapshot: {
+          generatedAt: "2026-08-15T00:00:00.000Z",
+          dataState: "live",
+          tenants: [{
+            organizationId: "org_pilot_a",
+            organizationName: "Pilot Org A",
+            pilotUserCount: 6,
+            onboarding: { score: 90, status: "Pilot-ready", completedSteps: 9, totalSteps: 10, completionPercent: 90, completedStepIds: [], missingStepIds: [], recommendations: [] },
+            workflowStepsComplete: 7,
+            workflowStepsTotal: 8,
+          }],
+        },
+        integrations: {
+          sentry: { status: "not-configured", provider: "none" },
+          postHogQuery: { status: "not-configured", provider: "none" },
+          mixpanelQuery: { status: "not-configured", provider: "none" },
+          asana: { status: "not-configured", provider: "none" },
+        },
+      }),
+    });
+
+    renderSection();
+
+    await waitFor(() => {
+      expect(screen.getByText("Pilot Portfolio")).toBeInTheDocument();
+    });
+    expect(screen.getByText("Pilot Org A")).toBeInTheDocument();
+    expect(screen.getAllByText("Not connected").length).toBeGreaterThan(0);
+  });
+
+  it("renders no Pilot Portfolio section at all for a regular tenant admin (403, fail-closed)", async () => {
+    stubFetchByUrl({ ok: false });
+
+    renderSection();
+
+    await waitFor(() => {
+      expect(screen.getByText("No pilot events yet")).toBeInTheDocument();
+    });
+    expect(screen.queryByText("Pilot Portfolio")).not.toBeInTheDocument();
+  });
+});
