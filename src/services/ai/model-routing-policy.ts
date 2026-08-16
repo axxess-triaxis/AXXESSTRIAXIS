@@ -9,6 +9,9 @@ const providerCapabilities: Record<AiProviderName, Omit<AiProviderConfig, "confi
     languages: ["english", "hindi", "bengali", "assamese", "french"],
     costTier: "medium",
     latencyTier: "low",
+    // Sprint 1 agentic chatbot: the only provider whose adapter (openAiProvider.ts) actually sends
+    // tools/tool_choice and parses tool_calls today.
+    supportsToolCalling: true,
   },
   anthropic: {
     name: "anthropic",
@@ -18,6 +21,7 @@ const providerCapabilities: Record<AiProviderName, Omit<AiProviderConfig, "confi
     languages: ["english", "hindi", "bengali", "french"],
     costTier: "high",
     latencyTier: "medium",
+    supportsToolCalling: false,
   },
   google: {
     name: "google",
@@ -27,6 +31,7 @@ const providerCapabilities: Record<AiProviderName, Omit<AiProviderConfig, "confi
     languages: ["english", "hindi", "bengali", "assamese", "french", "arabic"],
     costTier: "medium",
     latencyTier: "low",
+    supportsToolCalling: false,
   },
   xai: {
     name: "xai",
@@ -36,6 +41,7 @@ const providerCapabilities: Record<AiProviderName, Omit<AiProviderConfig, "confi
     languages: ["english"],
     costTier: "medium",
     latencyTier: "low",
+    supportsToolCalling: false,
   },
   falcon: {
     name: "falcon",
@@ -45,6 +51,7 @@ const providerCapabilities: Record<AiProviderName, Omit<AiProviderConfig, "confi
     languages: ["english", "arabic", "french"],
     costTier: "low",
     latencyTier: "medium",
+    supportsToolCalling: false,
   },
   jais: {
     name: "jais",
@@ -54,6 +61,7 @@ const providerCapabilities: Record<AiProviderName, Omit<AiProviderConfig, "confi
     languages: ["english", "arabic"],
     costTier: "low",
     latencyTier: "medium",
+    supportsToolCalling: false,
   },
   kimi: {
     name: "kimi",
@@ -63,6 +71,7 @@ const providerCapabilities: Record<AiProviderName, Omit<AiProviderConfig, "confi
     languages: ["english", "hindi", "chinese"],
     costTier: "low",
     latencyTier: "medium",
+    supportsToolCalling: false,
   },
   deepseek: {
     name: "deepseek",
@@ -72,6 +81,7 @@ const providerCapabilities: Record<AiProviderName, Omit<AiProviderConfig, "confi
     languages: ["english", "hindi", "chinese"],
     costTier: "low",
     latencyTier: "medium",
+    supportsToolCalling: false,
   },
   local: {
     name: "local",
@@ -81,6 +91,7 @@ const providerCapabilities: Record<AiProviderName, Omit<AiProviderConfig, "confi
     languages: ["english", "hindi", "assamese", "bengali", "mixed"],
     costTier: "low",
     latencyTier: "low",
+    supportsToolCalling: false,
   },
 };
 
