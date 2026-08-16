@@ -72,6 +72,7 @@ from local `.env.local`. Required for the deployed app to function at all:
 | `POSTHOG_PERSONAL_API_KEY`, `POSTHOG_PROJECT_ID` | Optional. A separate, *query-capable* PostHog credential pair -- distinct from `NEXT_PUBLIC_POSTHOG_KEY` above, which only ever sends events, never reads them back (`src/services/integrations/postHogQueryHealth.ts`). |
 | `MIXPANEL_SERVICE_ACCOUNT_USERNAME`, `MIXPANEL_SERVICE_ACCOUNT_SECRET`, `MIXPANEL_PROJECT_ID` | Optional. Same query-capable distinction as PostHog above, for Mixpanel (`src/services/integrations/mixpanelQueryHealth.ts`) -- distinct from the event-send-only `NEXT_PUBLIC_MIXPANEL_TOKEN`. |
 | `ASANA_ACCESS_TOKEN`, `ASANA_WORKSPACE_GID` | Optional. An admin-owned Personal Access Token read (`src/services/integrations/asanaPortfolioHealth.ts`) -- deliberately separate from `ASANA_CLIENT_ID` above, which is a per-tenant OAuth connector, the wrong shape for this company-wide admin pull. |
+| `BRAND24_API_KEY`, `BRAND24_PROJECT_ID` (Sprint 1 real Social Alerts, 2026-08-17) | Optional. Powers the daily `GET /api/cron/brand24-alert-sync` job (`src/services/alerts/brand24Ingestion.ts`): fetches real Brand24 mentions, matches them against every tenant's own `social_alert_rules`, writes real `social_alert_events` rows read by `/alerts`. Absent -> the cron returns `{status:"not-configured"}`, never a fabricated mention. |
 
 ## 3. Supabase (the project itself, and this repo's CLI link to it)
 

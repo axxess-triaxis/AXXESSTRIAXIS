@@ -68,6 +68,22 @@ export async function createSocialAlertRule(scope: TenantScope, input: CreateSoc
   return fromRow(rows[0]);
 }
 
+// Sprint 1 real Social Alerts (2026-08-17): deliberately an all-tenants read, no TenantScope --
+// used only by the Brand24 sync cron. Brand24 is one global mention stream (a single admin-level
+// API key, not per-tenant OAuth) that must be matched against every tenant's own rules, unlike the
+// per-connection Meta Business/Threads sync this repo already has -- there is no tenant-owned
+// token to iterate over here, so iteration happens over rules instead.
+export async function listSocialAlertRulesForProvider(provider: SocialAlertRuleProvider): Promise<SocialAlertRule[]> {
+  if (!isSupabaseAdminConfigured()) return [];
+  const query = new URLSearchParams({
+    provider: `eq.${provider}`,
+    select: "id,organization_id,provider,keyword,topic,urgency,created_by,created_at",
+    order: "created_at.desc",
+  });
+  const rows = await supabaseAdminRest<SocialAlertRuleRow[]>("social_alert_rules", { query }).catch(() => []);
+  return rows.map(fromRow);
+}
+
 export async function deleteSocialAlertRule(scope: TenantScope, ruleId: EntityId): Promise<void> {
   if (!isSupabaseAdminConfigured()) throw new Error("Social alert rules repository is not configured (Supabase admin credentials missing).");
   const query = new URLSearchParams({

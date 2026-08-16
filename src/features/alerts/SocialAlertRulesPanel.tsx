@@ -17,6 +17,10 @@ const ruleProviderOptions: Array<{ id: SocialAlertRuleProvider; label: string }>
   { id: "linkedin", label: "LinkedIn" },
   { id: "threads", label: "Threads" },
   { id: "rss", label: "Circulars, Substack & Medium" },
+  // Sprint 1 real Social Alerts (2026-08-17): real, ingested end to end (see
+  // src/services/alerts/brand24Ingestion.ts) -- without this option, a tenant could never create
+  // the "brand24" rule the daily cron's matching engine looks for.
+  { id: "brand24", label: "Brand24" },
 ];
 
 const urgencyOptions: SocialAlertRuleUrgency[] = ["low", "medium", "high"];
