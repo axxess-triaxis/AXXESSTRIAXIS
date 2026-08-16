@@ -119,4 +119,10 @@ describe("POST /api/social-alert-rules", () => {
     await POST(postRequest({ provider: "facebook", keyword: "x", topic: "y" }));
     expect(state.createCalls[0].urgency).toBeUndefined();
   });
+
+  it("accepts brand24 as a valid provider (Sprint 1 real Social Alerts, 2026-08-17)", async () => {
+    state.session = { user: user("user-1", "Manager") };
+    const response = await POST(postRequest({ provider: "brand24", keyword: "oxygen", topic: "healthcare funding" }));
+    expect(response.status).toBe(201);
+  });
 });
