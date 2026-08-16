@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Activity, BellRing, Newspaper, ShieldCheck, X } from "lucide-react";
 import { siFacebook, siInstagram, siThreads, siX } from "simple-icons";
 import { Area, AreaChart, Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
@@ -9,10 +9,29 @@ import { BrandIcon } from "../../components/ui/BrandIcon";
 import { LinkedInLikenessIcon } from "../../components/ui/LikenessIcon";
 import { useAuth } from "../../auth/AuthProvider";
 import { isDemoModeEnabled } from "../../demo/demoMode";
+import type { SocialAlertEvent } from "../../domain";
 import { applicationServices } from "../../providers/serviceProvider";
 import { tenantScopeFromUser } from "../../repositories/supabaseEnterpriseRepositories";
 import { getDemoSocialAlerts, getSocialAlertProviderStatus, type SocialAlert, type SocialAlertProvider } from "../../services/alerts/socialAlerts";
 import { SocialAlertRulesPanel } from "./SocialAlertRulesPanel";
+
+// Sprint 1 real Social Alerts (2026-08-17): a real social_alert_events row (matched by
+// socialAlertMatching.ts, populated by the daily Brand24 cron) mapped into the same SocialAlert
+// shape the demo fixture already uses -- this is what lets the existing sentiment memos and feed
+// rendering below work identically for real data, with zero change to their own logic.
+function eventToSocialAlert(event: SocialAlertEvent): SocialAlert {
+  return {
+    id: event.id,
+    provider: event.provider,
+    account: event.sourceAccount,
+    topic: typeof event.metadata.topic === "string" ? event.metadata.topic : "General",
+    title: event.title,
+    urgency: event.urgency,
+    sentiment: event.sentiment,
+    actionTargets: [],
+    receivedAt: event.receivedAt,
+  };
+}
 
 const ALERTS_PAGE_SIZE = 20;
 
@@ -32,6 +51,11 @@ const platformMeta: Record<SocialAlertProvider, { label: string; icon: React.Rea
   rss: { label: "Circulars, Substack & Medium", icon: <Newspaper size={16} className="text-[#5F6B73]" /> },
   manual: { label: "Manual Intake", icon: <Newspaper size={16} className="text-[#5F6B73]" /> },
   demo: { label: "Investor Demo", icon: <Newspaper size={16} className="text-[#5F6B73]" /> },
+  // Sprint 1 real Social Alerts (2026-08-17): not in platformOrder, so it never renders as a
+  // Signal Sources tile (that grid is deliberately left untouched this sprint) -- only present so
+  // real brand24-provider events flowing through the shared `alerts` array (ticker, ActivityFeed
+  // icons, mentionsByPlatform) have a valid lookup and never crash.
+  brand24: { label: "Brand24", icon: <Newspaper size={16} className="text-[#5F6B73]" /> },
 };
 
 // A-96 (2026-08-04): investor-demo-only realistic connection stats for the provider tiles below --
@@ -68,11 +92,32 @@ export const AlertsSection = () => {
   const demoMode = isDemoModeEnabled();
   const { session } = useAuth();
   const scope = session.user ? tenantScopeFromUser(session.user) : undefined;
-  const seedAlerts = useMemo(() => (demoMode ? getDemoSocialAlerts() : []), [demoMode]);
+  const [realEvents, setRealEvents] = useState<SocialAlertEvent[]>([]);
   const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
   const [convertedIds, setConvertedIds] = useState<Set<string>>(new Set());
   const [visibleCount, setVisibleCount] = useState(ALERTS_PAGE_SIZE);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Sprint 1 real Social Alerts (2026-08-17): demo mode is untouched by design -- this fetch
+    // never runs there. A real tenant with zero matched events (the common case until a rule is
+    // configured and a Brand24 sync has run) simply keeps realEvents empty, feeding the same
+    // honest empty state this page already had.
+    if (demoMode) return;
+    let cancelled = false;
+    fetch("/api/social-alert-events", { credentials: "include", cache: "no-store" })
+      .then((response) => (response.ok ? response.json() : undefined))
+      .then((payload: { events?: SocialAlertEvent[] } | undefined) => {
+        if (!cancelled && payload?.events) setRealEvents(payload.events);
+      })
+      .catch(() => undefined);
+    return () => { cancelled = true; };
+  }, [demoMode]);
+
+  const seedAlerts = useMemo(
+    () => (demoMode ? getDemoSocialAlerts() : realEvents.map(eventToSocialAlert)),
+    [demoMode, realEvents],
+  );
 
   const alerts = seedAlerts.filter((alert) => !dismissedIds.has(alert.id));
   const rawProviders = getSocialAlertProviderStatus();
@@ -196,16 +241,22 @@ export const AlertsSection = () => {
           <div className="mb-4 flex items-center justify-between">
             <div>
               <h3 className="text-sm font-semibold text-[#0F1117]">Institutional Signal Queue</h3>
-              <p className="mt-1 text-xs text-[#5F6B73]">Demo signals are isolated from live customer tenants and can be converted into tasks, CRM notes, briefs, or risks.</p>
+              <p className="mt-1 text-xs text-[#5F6B73]">
+                {demoMode
+                  ? "Demo signals are isolated from live customer tenants and can be converted into tasks, CRM notes, briefs, or risks."
+                  : "Real Brand24 mentions matched against your own alert rules, converted into tasks, CRM notes, briefs, or risks."}
+              </p>
             </div>
-            {demoMode && (
+            {alerts.length > 0 && (
               <span className="rounded-full bg-[#8B1E2D]/8 px-2.5 py-1 text-[11px] font-semibold text-[#8B1E2D]">{alerts.length} active</span>
             )}
           </div>
-          {!demoMode && (
-            <EmptyState message="Social alert ingestion isn't wired to a live provider or tenant-scoped repository yet. This queue will populate once a live signal source is connected." />
+          {alerts.length === 0 && (
+            <EmptyState message={demoMode
+              ? "Social alert ingestion isn't wired to a live provider or tenant-scoped repository yet. This queue will populate once a live signal source is connected."
+              : "No social alert events yet. Configure a rule above and Brand24 ingestion will populate this queue once matching mentions arrive."} />
           )}
-          {demoMode && (
+          {alerts.length > 0 && (
             <div className="space-y-3">
               {statusMessage && (
                 <p className="rounded-lg bg-[#8B1E2D]/6 px-3 py-2 text-xs font-medium text-[#8B1E2D]">{statusMessage}</p>
@@ -271,7 +322,7 @@ export const AlertsSection = () => {
 
       <SocialAlertRulesPanel />
 
-      {demoMode && (
+      {(demoMode || alerts.length > 0) && (
         <div>
           <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-[#5F6B73]">Sentiment Tracker &amp; Analytics</h2>
           <div className="grid grid-cols-1 gap-4">
