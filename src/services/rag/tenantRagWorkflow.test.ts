@@ -1,7 +1,56 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Document, DocumentVersion } from "../../domain";
 import type { TenantRagRepositories } from "./tenantRagWorkflow";
+
+// Sprint 4 (2026-08-16): vi.mock factories are hoisted above top-level variables, so anything a
+// factory closes over must come from vi.hoisted (same convention as agenticChatLoop.test.ts this
+// session). supabaseAdminState defaults to isConfigured: false, matching this file's existing
+// (unmocked) test environment behavior exactly -- the 4 pre-existing tests below never touch this
+// mock and keep exercising the real "Supabase admin not configured" honest-degradation path
+// unchanged. Only the new "conversation memory" describe block flips it to true.
+const { supabaseAdminState, mockRouteAiRequest } = vi.hoisted(() => ({
+  supabaseAdminState: { isConfigured: false, rows: {} as Record<string, unknown[]> },
+  mockRouteAiRequest: vi.fn(),
+}));
+
+vi.mock("../../repositories/supabaseAdmin", () => ({
+  isSupabaseAdminConfigured: () => supabaseAdminState.isConfigured,
+  supabaseAdminRest: async (table: string, options: { method?: string; body?: unknown; query?: URLSearchParams }) => {
+    if (table === "ai_conversations") return [{ id: "conv-1" }];
+    if (table === "ai_output_audit") return [{ id: "audit-1" }];
+    // GET reads never pass a method (matches this file's own real call sites, e.g.
+    // persistentCitationsForQuestion's `supabaseAdminRest("rag_document_chunks", { query })`).
+    if (table === "ai_conversation_messages") return options.method ? [] : (supabaseAdminState.rows.ai_conversation_messages ?? []);
+    return options.method ? [] : (supabaseAdminState.rows[table] ?? []);
+  },
+}));
+
+// Default keeps the 4 pre-existing tests below passing unchanged: providerUsed "local" is not in
+// liveModelProviders, so isLiveModelAnswer stays false and baseAnswer's own answer/sources/rationale
+// (governedRag.ts's local synthesis) pass through untouched, exactly as before this mock existed.
+vi.mock("../ai/router/aiRouter", () => ({
+  routeAiRequest: (request: unknown) => mockRouteAiRequest(request),
+}));
+
 import { answerTenantQuestion, ingestTenantDocument } from "./tenantRagWorkflow";
+import { deterministicEmbeddingProvider } from "./embeddings/embeddingProvider";
+
+mockRouteAiRequest.mockResolvedValue({
+  answer: "",
+  modelUsed: "local",
+  providerUsed: "local",
+  routingReason: "test-default",
+  fallbackChain: [],
+  confidence: 0.75,
+  humanReviewRequired: false,
+  citations: [],
+  auditId: "audit-default",
+  latencyMs: 1,
+  costTier: "low",
+  estimatedCostUsd: 0,
+  policyId: "test",
+  gatewayTags: [],
+});
 
 const scope = {
   organizationId: "00000000-0000-4000-8000-000000000001",
@@ -177,5 +226,109 @@ describe("tenant RAG workflow", () => {
     expect(answer.rationale).toContain("governed source");
     expect(answer.rationale).toContain("Cachar");
     expect(repo.auditLogsRepository?.record).toHaveBeenCalled();
+  });
+});
+
+describe("tenant RAG workflow -- Sprint 4 conversation memory (2026-08-16)", () => {
+  afterEach(() => {
+    supabaseAdminState.isConfigured = false;
+    supabaseAdminState.rows = {};
+    mockRouteAiRequest.mockClear();
+  });
+
+  it("creates a real ai_conversations row on the first turn and returns its id, writing both a user and assistant ai_conversation_messages row", async () => {
+    supabaseAdminState.isConfigured = true;
+    const repo = repositories();
+    await ingestTenantDocument(repo, scope, {
+      title: "Cachar Maternal Referral Review",
+      bodyText: "Cachar referral transfer turnaround is delayed at night because ambulance dispatch confirmation is not consistently recorded.",
+    });
+
+    const answer = await answerTenantQuestion(repo, scope, "What is the Cachar maternal referral risk?");
+
+    expect(answer.conversationId).toBe("conv-1");
+  });
+
+  it("degrades honestly to no conversation id when Supabase admin is not configured -- same one-shot behavior as before this sprint", async () => {
+    supabaseAdminState.isConfigured = false;
+    const repo = repositories();
+    await ingestTenantDocument(repo, scope, {
+      title: "Cachar Maternal Referral Review",
+      bodyText: "Cachar referral transfer turnaround is delayed at night.",
+    });
+
+    const answer = await answerTenantQuestion(repo, scope, "What is the Cachar maternal referral risk?");
+
+    expect(answer.conversationId).toBeUndefined();
+  });
+
+  it("folds prior turns into the next prompt as plain text, not through AiPromptRequest.priorMessages (see tenantRagWorkflow.ts comment for why)", async () => {
+    supabaseAdminState.isConfigured = true;
+    supabaseAdminState.rows.ai_conversation_messages = [
+      { id: "m1", conversation_id: "conv-1", role: "user", content: "What is the Cachar maternal referral risk?", ai_output_audit_id: null, citations: [], created_at: "2026-08-16T08:00:00.000Z" },
+      { id: "m2", conversation_id: "conv-1", role: "assistant", content: "Referral handoff shows a coordination gap.", ai_output_audit_id: "audit-1", citations: [], created_at: "2026-08-16T08:00:05.000Z" },
+    ];
+    const repo = repositories();
+    await ingestTenantDocument(repo, scope, {
+      title: "Cachar Maternal Referral Review",
+      bodyText: "Cachar referral transfer turnaround is delayed at night.",
+    });
+
+    await answerTenantQuestion(repo, scope, "What about the daytime handoff instead?", { conversationId: "conv-1" });
+
+    const sentPrompt = mockRouteAiRequest.mock.calls[0][0].prompt as string;
+    expect(sentPrompt).toContain("Conversation so far:");
+    expect(sentPrompt).toContain("Q: What is the Cachar maternal referral risk?");
+    expect(sentPrompt).toContain("A: Referral handoff shows a coordination gap.");
+    expect(mockRouteAiRequest.mock.calls[0][0].priorMessages).toBeUndefined();
+  });
+
+  it("passes conversationId through unchanged when the caller already has one, rather than creating a second conversation", async () => {
+    supabaseAdminState.isConfigured = true;
+    const repo = repositories();
+    await ingestTenantDocument(repo, scope, {
+      title: "Cachar Maternal Referral Review",
+      bodyText: "Cachar referral transfer turnaround is delayed at night.",
+    });
+
+    const answer = await answerTenantQuestion(repo, scope, "Follow-up question", { conversationId: "existing-conv" });
+
+    expect(answer.conversationId).toBe("existing-conv");
+  });
+
+  it("Context Window's documentIds actually scopes retrieval -- persistentCitationsForQuestion no longer just echoes it into the audit trail after the fact", async () => {
+    supabaseAdminState.isConfigured = true;
+    const repo = repositories();
+    const question = "What is the district referral risk?";
+    const vector = await deterministicEmbeddingProvider.embed(question);
+
+    const cachar = await repo.documentsRepository.create(scope, {
+      organizationId: scope.organizationId, name: "cachar.txt", title: "Cachar Referral Review",
+      storagePath: "x", fileName: "cachar.txt", fileSize: 10, mimeType: "text/plain",
+    });
+    const dibrugarh = await repo.documentsRepository.create(scope, {
+      organizationId: scope.organizationId, name: "dibrugarh.txt", title: "Dibrugarh Oxygen Note",
+      storagePath: "x", fileName: "dibrugarh.txt", fileSize: 10, mimeType: "text/plain",
+    });
+
+    function chunkRow(documentId: string, title: string) {
+      return {
+        id: `chunk-${documentId}`, organization_id: scope.organizationId, document_id: documentId,
+        chunk_index: 0, chunk_text: "relevant excerpt", embedding_hash: vector,
+        visibility: "organization", role_allowlist: [] as string[],
+        metadata: { title },
+      };
+    }
+    supabaseAdminState.rows.rag_document_chunks = [
+      chunkRow(cachar.id, "Cachar Referral Review"),
+      chunkRow(dibrugarh.id, "Dibrugarh Oxygen Note"),
+    ];
+
+    const scopedAnswer = await answerTenantQuestion(repo, scope, question, { documentIds: [cachar.id] });
+    expect(scopedAnswer.sources).toHaveLength(1);
+    expect(scopedAnswer.sources[0].title).toBe("Cachar Referral Review");
+
+    const unscopedAnswer = await answerTenantQuestion(repo, scope, question);
+    expect(unscopedAnswer.sources.map((source) => source.title).sort()).toEqual(["Cachar Referral Review", "Dibrugarh Oxygen Note"]);
   });
 });
