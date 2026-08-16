@@ -91,6 +91,18 @@ export function assertOrganizationAccess(user: UserContext, organizationId: stri
   }
 }
 
+// Sprint 1 pilot portfolio (2026-08-15): the one deliberate, narrow exception to
+// canManageOrganization's "always same-tenant" rule above. Founder requirement: only Triaxis
+// Ventures' own operating org's own Super Admin may see a cross-tenant rollup of pilot customer
+// orgs -- never "any tenant's Super Admin sees all tenants." Both the acting user's role AND their
+// organizationId matching the platform operator's real org id (env-configured, never hardcoded,
+// never NEXT_PUBLIC_) are required. Fails closed if the env var is unset.
+export function canViewCrossTenantPilotPortfolio(user: UserContext, env: NodeJS.ProcessEnv = process.env): boolean {
+  const operatorOrgId = env.AXXESS_PLATFORM_OPERATOR_ORGANIZATION_ID;
+  if (!operatorOrgId) return false;
+  return user.role === "Super Admin" && user.organizationId === operatorOrgId;
+}
+
 export function getVisibleNavGroups(groups: NavGroup[], user: UserContext): NavGroup[] {
   return groups
     .map((group) => ({

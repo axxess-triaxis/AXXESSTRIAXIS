@@ -130,3 +130,59 @@ describe("ProductAnalyticsSection Most Used Modules / Activation Funnel (dummy-d
     expect(screen.queryByText("Signed in")).not.toBeInTheDocument();
   });
 });
+
+// Sprint 1 pilot portfolio (2026-08-15): the old A-96 devToolDashboards fixture (hardcoded GitHub/
+// Linear/Vercel/Asana/Jira stats, self-documented as never a live integration) is replaced by real
+// Sentry/PostHog/Mixpanel/Asana tiles sourced from the same /api/admin/pilot-portfolio route
+// PilotConversionSection.tsx uses. That route restricts its `integrations` field to the platform
+// operator's own Super Admin -- a regular tenant admin (every case this jsdom test env can exercise
+// without mocking fetch) gets a 403/failed fetch and correctly keeps the honest "not wired yet"
+// fallback, same discipline as the Most Used Modules/Activation Funnel fix above.
+describe("ProductAnalyticsSection Engineering & Delivery Tooling (real integrations, not a fixture)", () => {
+  afterEach(() => {
+    state.feedback = [];
+    state.users = [];
+    vi.unstubAllGlobals();
+  });
+
+  it("shows an honest not-wired-yet message for a regular tenant admin, never the old fabricated GitHub/Linear/Vercel/Jira stats", async () => {
+    renderSection();
+
+    await waitFor(() => {
+      expect(screen.getByText("Engineering & Delivery Tooling")).toBeInTheDocument();
+    });
+    expect(screen.getByText(/Sentry, PostHog, Mixpanel, and Asana dashboards require live API integrations/)).toBeInTheDocument();
+    expect(screen.queryByText("142")).not.toBeInTheDocument(); // old fixture's fabricated GitHub commit count
+  });
+
+  it("renders real Sentry/PostHog/Mixpanel/Asana tiles for the platform operator, with an honest Not-connected state where a provider lacks credentials", async () => {
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
+      if (String(input).includes("/api/admin/pilot-portfolio")) {
+        return {
+          ok: true,
+          json: async () => ({
+            snapshot: { generatedAt: "2026-08-15T00:00:00.000Z", dataState: "empty", tenants: [] },
+            integrations: {
+              sentry: { status: "ok", provider: "sentry", issuesLast24h: 3, unresolvedIssues: 1 },
+              postHogQuery: { status: "not-configured", provider: "none" },
+              mixpanelQuery: { status: "not-configured", provider: "none" },
+              asana: { status: "not-configured", provider: "none" },
+            },
+          }),
+        };
+      }
+      return { ok: true, json: async () => [] };
+    }));
+
+    renderSection();
+
+    await waitFor(() => {
+      expect(screen.getByText("Sentry")).toBeInTheDocument();
+    });
+    expect(screen.getAllByText("Live").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Not connected").length).toBeGreaterThanOrEqual(3);
+    expect(screen.getByText("PostHog (query)")).toBeInTheDocument();
+    expect(screen.getByText("Mixpanel (query)")).toBeInTheDocument();
+    expect(screen.getByText("Asana")).toBeInTheDocument();
+  });
+});
