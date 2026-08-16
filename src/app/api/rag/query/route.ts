@@ -15,7 +15,7 @@ export async function POST(request: Request) {
   const session = await getServerAuthSession(true);
   if (!session) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
 
-  const body = await request.json().catch(() => ({})) as { question?: string; limit?: number };
+  const body = await request.json().catch(() => ({})) as { question?: string; limit?: number; conversationId?: string; documentIds?: string[] };
   const question = body.question?.trim();
   if (!question) return NextResponse.json({ error: "Question is required." }, { status: 400 });
 
@@ -28,7 +28,7 @@ export async function POST(request: Request) {
       knowledgeArticlesRepository,
       tasksRepository,
       auditLogsRepository,
-    }, scope, question, { limit: body.limit });
+    }, scope, question, { limit: body.limit, conversationId: body.conversationId, documentIds: body.documentIds });
     return NextResponse.json(answer);
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "RAG query failed." }, { status: 400 });

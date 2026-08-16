@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../../auth/AuthProvider";
+import type { AuditLog } from "../../domain";
 import { EnterpriseWorkflowJourney } from "../../components/enterprise/EnterpriseWorkflowJourney";
 import { AgenticActionablesPrompt } from "../../components/agentic/AgenticActionablesPrompt";
 import {
@@ -38,17 +39,15 @@ import { answerWithGovernedRag, type RagAnswer } from "../../services/rag/govern
 import { summarizeConfidenceExplanation } from "../../services/rag/confidenceExplanation";
 import {
   CalendarDays,
-  Check,
-  CheckCircle2,
   FileText,
   FolderKanban,
   Paperclip,
   Send,
-  Shield,
   ShieldCheck,
   Sparkles,
   Terminal,
   Users,
+  X,
 } from "lucide-react";
 
 type AiRouterProviderStatus = { name: string; displayName: string; configured: boolean; status: string };
@@ -163,7 +162,6 @@ export const AIWorkspaceSection = () => {
   const enterpriseJourney = useEnterpriseGoldenPath(tenantScope, session.user);
   const goldenPathDisplayMode = useGoldenPathDisplayMode();
   const [input, setInput] = useState("");
-  const [approved, setApproved] = useState(false);
   const [querying, setQuerying] = useState(false);
   const [queryError, setQueryError] = useState<string | null>(null);
   const [reviewing, setReviewing] = useState(false);
@@ -176,6 +174,27 @@ export const AIWorkspaceSection = () => {
   const isFirstAnswerRef = useRef(true);
   const knownStakeholderNamesRef = useRef<string[]>([]);
   const firstName = session.user?.displayName?.trim().split(/\s+/)[0] || "there";
+
+  // Sprint 4 (2026-08-16): real conversation memory. conversationId is undefined until the first
+  // question of this page load gets an answer -- the server creates the ai_conversations row and
+  // returns its id (tenantRagWorkflow.ts); every later question in this session sends it back so
+  // the server can fold prior turns into the next prompt. No cross-reload/cross-tab resume this
+  // pass (stated non-goal) -- a fresh page load starts a fresh conversation, same as today.
+  const [conversationId, setConversationId] = useState<string | undefined>(undefined);
+  const [priorTurns, setPriorTurns] = useState<{ question: string; answer: LiveRagAnswer }[]>([]);
+  const lastQuestionRef = useRef<string>("");
+
+  // Context Window: real document attachment, scoping the next question's retrieval to exactly
+  // these ids (persistentCitationsForQuestion now honors this -- see tenantRagWorkflow.ts).
+  const [contextItems, setContextItems] = useState<{ id: string; title: string }[]>([]);
+  const [contextPickerOpen, setContextPickerOpen] = useState(false);
+  const [availableDocuments, setAvailableDocuments] = useState<{ id: string; title: string }[]>([]);
+
+  // AI Audit Trail: real entries, same fetch pattern as AuditLogsSection.tsx. Filtered on
+  // resourceType (stable, what tenantRagWorkflow.ts's own writes stamp) rather than any of the
+  // three inconsistent category strings this codebase's RAG paths currently use ("ai-governance",
+  // "knowledge-hub", and AuditLogsSection's own "ai" filter) -- see Sprint 4 plan for why.
+  const [auditTrail, setAuditTrail] = useState<AuditLog[]>([]);
 
   // Loaded once per tenant so the gate's "new stakeholder" heuristic (actionableGate.ts) has a
   // real name list to compare against, not a guess -- fails silently to an empty list rather than
@@ -192,6 +211,32 @@ export const AIWorkspaceSection = () => {
       isMounted = false;
     };
   }, [tenantScope]);
+
+  const loadAuditTrail = useCallback(async () => {
+    if (!tenantScope) return;
+    const rows = await applicationServices.auditLogsRepository.list(tenantScope, { pageSize: 100 }).catch(() => [] as AuditLog[]);
+    setAuditTrail(rows.filter((log) => log.resourceType === "ai_output_audit"));
+  }, [tenantScope]);
+
+  useEffect(() => {
+    void loadAuditTrail();
+  }, [loadAuditTrail]);
+
+  async function openContextPicker() {
+    setContextPickerOpen((open) => !open);
+    if (!tenantScope || availableDocuments.length > 0) return;
+    const documents = await applicationServices.documentsRepository.list(tenantScope, { pageSize: 100 }).catch(() => []);
+    setAvailableDocuments(documents.map((document) => ({ id: document.id, title: document.title ?? document.name })));
+  }
+
+  function addContextItem(item: { id: string; title: string }) {
+    setContextItems((current) => (current.some((existing) => existing.id === item.id) ? current : [...current, item]));
+    setContextPickerOpen(false);
+  }
+
+  function removeContextItem(id: string) {
+    setContextItems((current) => current.filter((item) => item.id !== id));
+  }
 
   // 2026-07-30: this used to call getAiRouterStatusSnapshot() directly at module load -- a server
   // function reading process.env.OPENAI_API_KEY etc. -- but this component runs client-side, where
@@ -256,7 +301,12 @@ export const AIWorkspaceSection = () => {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question, limit: 5 }),
+        body: JSON.stringify({
+          question,
+          limit: 5,
+          conversationId,
+          documentIds: contextItems.length ? contextItems.map((item) => item.id) : undefined,
+        }),
         signal: controller.signal,
       });
       const result = await response.json().catch(() => ({} as { error?: string }));
@@ -268,9 +318,17 @@ export const AIWorkspaceSection = () => {
         if (response.status === 403) throw new Error("Your role does not have permission to ask governed questions.");
         throw new Error("AXXESS could not complete the governed question.");
       }
-      setRagAnswer(result as LiveRagAnswer);
+      // The just-superseded answer becomes real history -- only once it actually had content, so
+      // the initial empty/demo-fallback answer never gets pushed as a fake first turn.
+      if (ragAnswer.answer) {
+        setPriorTurns((current) => [...current, { question: lastQuestionRef.current, answer: ragAnswer }]);
+      }
+      lastQuestionRef.current = question;
+      const typedResult = result as LiveRagAnswer & { conversationId?: string };
+      setRagAnswer(typedResult);
+      if (typedResult.conversationId) setConversationId(typedResult.conversationId);
       setInput("");
-      setApproved(false);
+      void loadAuditTrail();
       analytics.trackEvent("rag_query_submitted", { source_count: (result as LiveRagAnswer).sources?.length ?? 0 }, {
         organization_id: session.user?.organizationId,
         user_id: session.user?.id,
@@ -449,7 +507,6 @@ export const AIWorkspaceSection = () => {
         if (response.status === 403) throw new Error("Your role does not have permission to record this decision.");
         throw new Error("Review could not be recorded.");
       }
-      setApproved(decision === "approved");
       setReviewMessage(decision === "approved" ? `Approved and audit logged${result.task?.id ? " with a follow-up task." : "."}` : "Rejected and audit logged.");
     } catch (error) {
       setReviewMessage(error instanceof Error ? error.message : "Review could not be recorded.");
@@ -459,11 +516,6 @@ export const AIWorkspaceSection = () => {
   }
 
   const demoMode = isDemoModeEnabled();
-  // Read fresh on every render rather than caching a module-level snapshot at import time --
-  // a module constant would evaluate isDemoModeEnabled() exactly once for the module's whole
-  // lifetime, which on the client (SPA navigation, no full reload) can permanently freeze the
-  // demo fixture thread in memory even after the session switches to a real, non-demo tenant.
-  const aiMessages = applicationServices.institutionalRepository.getAiMessages();
 
   return (
     <PageShell className="h-full flex flex-col">
@@ -521,67 +573,34 @@ export const AIWorkspaceSection = () => {
             </div>
 
             <div className="flex-1 overflow-y-auto p-4 space-y-4 [&::-webkit-scrollbar]:hidden">
-              {aiMessages.length === 0 && (
+              {priorTurns.length === 0 && !ragAnswer.answer && (
                 <EmptyState
                   title="No conversation history yet"
                   message="Ask a governed question below to start building this tenant's AI workspace history."
                 />
               )}
-              {aiMessages.map((msg, i) => (
-                <div key={i}>
-                  {msg.role === "user" ? (
-                    <div className="flex items-start gap-3 justify-end">
-                      <div className="bg-[#0F1117] text-white text-sm rounded-2xl rounded-tr-sm px-4 py-3 max-w-[80%] leading-relaxed">
-                        {msg.content}
-                      </div>
-                      <Avatar initials={session.user?.avatarInitials ?? "AR"} size="sm" color="bg-[#2C4A7C]" />
+              {priorTurns.map((turn, i) => (
+                <div key={i} className="space-y-2">
+                  <div className="flex items-start gap-3 justify-end">
+                    <div className="bg-[#0F1117] text-white text-sm rounded-2xl rounded-tr-sm px-4 py-3 max-w-[80%] leading-relaxed">
+                      {turn.question}
                     </div>
-                  ) : (
-                    <div className="flex items-start gap-3">
-                      <div className="w-7 h-7 bg-[#8B1E2D] rounded-full flex items-center justify-center flex-shrink-0">
-                        <Sparkles size={12} className="text-white" />
+                    <Avatar initials={session.user?.avatarInitials ?? "AR"} size="sm" color="bg-[#2C4A7C]" />
+                  </div>
+                  <div className="flex items-start gap-3">
+                    <div className="w-7 h-7 bg-[#8B1E2D] rounded-full flex items-center justify-center flex-shrink-0">
+                      <Sparkles size={12} className="text-white" />
+                    </div>
+                    <div className="flex-1 max-w-[85%]">
+                      <div className="bg-[#F8F9FA] border border-[rgba(0,0,0,0.06)] rounded-2xl rounded-tl-sm px-4 py-3 text-sm text-[#0F1117] leading-relaxed">
+                        {turn.answer.answer}
                       </div>
-                      <div className="flex-1 max-w-[85%]">
-                        {msg.toolUsed && (
-                          <div className="flex items-center gap-1.5 text-[10px] text-[#5F6B73] mb-2 font-mono">
-                            <Terminal size={10} />
-                            {msg.toolUsed}
-                          </div>
-                        )}
-                        <div className="bg-[#F8F9FA] border border-[rgba(0,0,0,0.06)] rounded-2xl rounded-tl-sm px-4 py-3 text-sm text-[#0F1117] leading-relaxed whitespace-pre-line">
-                          {msg.content}
-                        </div>
-                        {msg.requiresApproval && !approved && (
-                          <div className="mt-2 bg-amber-50 border border-amber-200 rounded-xl p-3">
-                            <div className="flex items-center gap-2 mb-2">
-                              <Shield size={13} className="text-amber-600" />
-                              <span className="text-xs font-semibold text-amber-700">Human-in-the-Loop Review Required</span>
-                            </div>
-                            <div className="bg-white border border-amber-100 rounded-lg p-2.5 mb-3 text-[11px] text-[#5F6B73] font-mono leading-relaxed">
-                              {msg.draftPreview}
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <button onClick={() => setApproved(true)} className="text-xs bg-emerald-600 text-white px-3 py-1.5 rounded-lg font-semibold hover:bg-emerald-700 transition-colors flex items-center gap-1.5">
-                                <Check size={11} /> Approve & Send
-                              </button>
-                              <button className="text-xs bg-white border border-[rgba(0,0,0,0.1)] text-[#0F1117] px-3 py-1.5 rounded-lg hover:bg-[#F2F3F5] transition-colors">
-                                Edit Draft
-                              </button>
-                              <button className="text-xs text-red-600 hover:text-red-700 px-2 py-1.5">
-                                Reject
-                              </button>
-                            </div>
-                          </div>
-                        )}
-                        {msg.requiresApproval && approved && (
-                          <div className="mt-2 bg-emerald-50 border border-emerald-200 rounded-xl p-2.5 flex items-center gap-2">
-                            <CheckCircle2 size={13} className="text-emerald-600" />
-                            <span className="text-xs text-emerald-700 font-medium">Briefing note routed to the Mission Secretariat - audit logged</span>
-                          </div>
-                        )}
+                      <div className="mt-1.5 flex flex-wrap items-center gap-2 text-[10px]">
+                        <ConfidenceBadge score={turn.answer.confidence} />
+                        {turn.answer.aiOutputAuditId && <AuditTrailBadge eventId={turn.answer.aiOutputAuditId} />}
                       </div>
                     </div>
-                  )}
+                  </div>
                 </div>
               ))}
 
@@ -756,35 +775,73 @@ export const AIWorkspaceSection = () => {
           <Card className="p-4">
             <h3 className="text-xs font-semibold text-[#0F1117] uppercase tracking-wider mb-3">Context Window</h3>
             <div className="space-y-2">
-              {(demoMode
-                ? [
-                    { type: "Project", name: "Dibrugarh Oxygen Resilience Upgrade", icon: FolderKanban },
-                    { type: "Document", name: "Cachar Maternal Referral Review Note", icon: FileText },
-                    { type: "Meeting", name: "Mission Secretariat SLA Review - Jul 4", icon: CalendarDays },
-                    { type: "Stakeholder", name: "Dr. Purnima Bora, State Health Directorate", icon: Users },
-                  ]
-                : []
-              ).map((ctx, i) => (
-                <div key={i} className="flex items-center gap-2.5 p-2 rounded-lg bg-[#F8F9FA] hover:bg-[#F2F3F5] cursor-pointer transition-colors">
-                  <ctx.icon size={13} className="text-[#8B1E2D]" />
-                  <div>
-                    <div className="text-[10px] font-mono text-[#5F6B73]">{ctx.type}</div>
-                    <div className="text-xs font-medium text-[#0F1117] leading-tight">{ctx.name}</div>
+              {demoMode ? (
+                [
+                  { type: "Project", name: "Dibrugarh Oxygen Resilience Upgrade", icon: FolderKanban },
+                  { type: "Document", name: "Cachar Maternal Referral Review Note", icon: FileText },
+                  { type: "Meeting", name: "Mission Secretariat SLA Review - Jul 4", icon: CalendarDays },
+                  { type: "Stakeholder", name: "Dr. Purnima Bora, State Health Directorate", icon: Users },
+                ].map((ctx, i) => (
+                  <div key={i} className="flex items-center gap-2.5 p-2 rounded-lg bg-[#F8F9FA] hover:bg-[#F2F3F5] cursor-pointer transition-colors">
+                    <ctx.icon size={13} className="text-[#8B1E2D]" />
+                    <div>
+                      <div className="text-[10px] font-mono text-[#5F6B73]">{ctx.type}</div>
+                      <div className="text-xs font-medium text-[#0F1117] leading-tight">{ctx.name}</div>
+                    </div>
                   </div>
-                </div>
-              ))}
-              {!demoMode && (
-                <p className="text-xs leading-relaxed text-[#5F6B73]">No context added to this session yet.</p>
+                ))
+              ) : (
+                <>
+                  {contextItems.length === 0 && (
+                    <p className="text-xs leading-relaxed text-[#5F6B73]">No context added to this session yet.</p>
+                  )}
+                  {contextItems.map((item) => (
+                    <div key={item.id} className="flex items-center gap-2.5 p-2 rounded-lg bg-[#F8F9FA]">
+                      <FileText size={13} className="text-[#8B1E2D] flex-shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <div className="text-[10px] font-mono text-[#5F6B73]">Document</div>
+                        <div className="truncate text-xs font-medium text-[#0F1117] leading-tight">{item.title}</div>
+                      </div>
+                      <button type="button" aria-label={`Remove ${item.title} from context`} onClick={() => removeContextItem(item.id)} className="flex-shrink-0 text-[#5F6B73] hover:text-[#8B1E2D]">
+                        <X size={12} />
+                      </button>
+                    </div>
+                  ))}
+                </>
               )}
             </div>
-            <button className="mt-3 w-full text-xs text-[#5F6B73] border border-dashed border-[rgba(0,0,0,0.12)] rounded-lg py-2 hover:border-[#8B1E2D] hover:text-[#8B1E2D] transition-colors">
-              Add governed context
-            </button>
+            {!demoMode && (
+              <div className="relative">
+                <button type="button" onClick={() => void openContextPicker()} className="mt-3 w-full text-xs text-[#5F6B73] border border-dashed border-[rgba(0,0,0,0.12)] rounded-lg py-2 hover:border-[#8B1E2D] hover:text-[#8B1E2D] transition-colors">
+                  Add governed context
+                </button>
+                {contextPickerOpen && (
+                  <div className="absolute left-0 right-0 top-full z-10 mt-1 max-h-48 overflow-y-auto rounded-lg border border-[rgba(0,0,0,0.08)] bg-white shadow-lg">
+                    {availableDocuments.length === 0 && (
+                      <p className="p-3 text-[11px] text-[#5F6B73]">No documents available to attach.</p>
+                    )}
+                    {availableDocuments.map((document) => (
+                      <button
+                        key={document.id}
+                        type="button"
+                        onClick={() => addContextItem(document)}
+                        className="block w-full truncate px-3 py-2 text-left text-xs text-[#0F1117] hover:bg-[#F2F3F5]"
+                      >
+                        {document.title}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </Card>
 
           <Card className="p-4">
             <h3 className="text-xs font-semibold text-[#0F1117] uppercase tracking-wider mb-3">Sources Used</h3>
             <div className="space-y-2.5">
+              {ragAnswer.sources.length === 0 && (
+                <p className="text-xs leading-relaxed text-[#5F6B73]">No sources yet -- ask a governed question to see cited sources here.</p>
+              )}
               {ragAnswer.sources.map((source) => (
                 <div key={`${source.sourceType}-${source.sourceId}`} className="rounded-lg border border-[rgba(0,0,0,0.06)] bg-[#F8F9FA] p-3">
                   <div className="flex items-center justify-between gap-2">
@@ -801,22 +858,31 @@ export const AIWorkspaceSection = () => {
           <Card className="p-4">
             <h3 className="text-xs font-semibold text-[#0F1117] uppercase tracking-wider mb-2">AI Audit Trail</h3>
             <div className="space-y-2">
-              {(demoMode
-                ? [
-                    { time: "08:43", action: "RAG answer generated", user: "Auto" },
-                    { time: "08:41", action: "Risk register queried", user: session.user?.avatarInitials ?? "AR" },
-                    { time: "07:55", action: "District brief drafted", user: "Auto" },
-                  ]
-                : []
-              ).map((log, i) => (
-                <div key={i} className="flex items-center gap-2 text-[11px] text-[#5F6B73]">
-                  <span className="font-mono">{log.time}</span>
-                  <span className="flex-1 truncate">{log.action}</span>
-                  <span className="font-medium text-[#0F1117]">{log.user}</span>
-                </div>
-              ))}
-              {!demoMode && (
-                <p className="text-xs leading-relaxed text-[#5F6B73]">No AI actions recorded yet for this tenant.</p>
+              {demoMode ? (
+                [
+                  { time: "08:43", action: "RAG answer generated", user: "Auto" },
+                  { time: "08:41", action: "Risk register queried", user: session.user?.avatarInitials ?? "AR" },
+                  { time: "07:55", action: "District brief drafted", user: "Auto" },
+                ].map((log, i) => (
+                  <div key={i} className="flex items-center gap-2 text-[11px] text-[#5F6B73]">
+                    <span className="font-mono">{log.time}</span>
+                    <span className="flex-1 truncate">{log.action}</span>
+                    <span className="font-medium text-[#0F1117]">{log.user}</span>
+                  </div>
+                ))
+              ) : (
+                <>
+                  {auditTrail.length === 0 && (
+                    <p className="text-xs leading-relaxed text-[#5F6B73]">No AI actions recorded yet for this tenant.</p>
+                  )}
+                  {auditTrail.slice(0, 8).map((log) => (
+                    <div key={log.id} className="flex items-center gap-2 text-[11px] text-[#5F6B73]">
+                      <span className="font-mono">{new Date(log.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+                      <span className="flex-1 truncate">{log.action.replace(/[._]/g, " ")}</span>
+                      <span className="font-medium text-[#0F1117]">{log.actorRole ?? "Auto"}</span>
+                    </div>
+                  ))}
+                </>
               )}
             </div>
           </Card>
