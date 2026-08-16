@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { AiPromptRequest } from "../types";
+import type { AiPromptRequest, AiToolDefinition } from "../types";
 
 const mockCheckBudget = vi.fn();
 const mockRecordSpend = vi.fn();
@@ -21,6 +21,19 @@ const kimiConfig = {
   costTier: "low" as const,
   latencyTier: "medium" as const,
   supportsToolCalling: false,
+};
+
+const deepseekConfig = {
+  name: "deepseek" as const,
+  displayName: "DeepSeek V3 (via OpenRouter)",
+  configured: true,
+  mode: "remote" as const,
+  status: "configured" as const,
+  capabilities: ["general_chat" as const],
+  languages: ["english"],
+  costTier: "low" as const,
+  latencyTier: "medium" as const,
+  supportsToolCalling: true,
 };
 
 const baseRequest: AiPromptRequest = {
@@ -137,5 +150,87 @@ describe("createOpenRouterProvider", () => {
     expect(result.confidence).toBeLessThan(0.62);
     expect(result.text).toContain("returned no content");
     expect(mockRecordSpend).not.toHaveBeenCalled();
+  });
+
+  const sampleTool: AiToolDefinition = {
+    name: "list_tasks",
+    description: "List the tenant's tasks.",
+    parameters: { type: "object", properties: { status: { type: "string", enum: ["open", "done"] } } },
+  };
+
+  it("omits tools/tool_choice from the request body entirely when no tools are offered", async () => {
+    mockCheckBudget.mockResolvedValue({ ok: true, remainingUsd: 19.5 });
+    const fetchMock = vi.fn(async (_url: string, init?: RequestInit) => {
+      const body = JSON.parse(init?.body as string) as Record<string, unknown>;
+      expect(body).not.toHaveProperty("tools");
+      expect(body).not.toHaveProperty("tool_choice");
+      return new Response(JSON.stringify({ choices: [{ message: { content: "ok" } }] }), { status: 200 });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const provider = createOpenRouterProvider(deepseekConfig, { OPENROUTER_API_KEY: "test-key" } as NodeJS.ProcessEnv);
+    await provider.complete(baseRequest, classification);
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("sends tools with tool_choice:auto when tools are offered, and parses a tool_calls-only response (content: null) without tripping the empty-content branch", async () => {
+    mockCheckBudget.mockResolvedValue({ ok: true, remainingUsd: 19.5 });
+    const fetchMock = vi.fn(async (_url: string, init?: RequestInit) => {
+      const body = JSON.parse(init?.body as string) as { tools?: unknown[]; tool_choice?: string };
+      expect(body.tools).toEqual([{ type: "function", function: { name: sampleTool.name, description: sampleTool.description, parameters: sampleTool.parameters } }]);
+      expect(body.tool_choice).toBe("auto");
+      return new Response(JSON.stringify({
+        choices: [{ message: { content: null, tool_calls: [{ id: "call_1", function: { name: "list_tasks", arguments: '{"status":"open"}' } }] } }],
+        usage: { prompt_tokens: 100, completion_tokens: 20 },
+      }), { status: 200 });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const provider = createOpenRouterProvider(deepseekConfig, { OPENROUTER_API_KEY: "test-key" } as NodeJS.ProcessEnv);
+    const result = await provider.complete({ ...baseRequest, tools: [sampleTool] }, classification);
+
+    expect(result.confidence).toBeGreaterThanOrEqual(0.62);
+    expect(result.toolCalls).toEqual([{ id: "call_1", name: "list_tasks", arguments: { status: "open" } }]);
+    expect(mockRecordSpend).toHaveBeenCalled();
+  });
+
+  it("feeds a tool call with malformed JSON arguments back as a parse-error payload instead of throwing", async () => {
+    mockCheckBudget.mockResolvedValue({ ok: true, remainingUsd: 19.5 });
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({
+      choices: [{ message: { content: null, tool_calls: [{ id: "call_1", function: { name: "list_tasks", arguments: "{not json" } }] } }],
+    }), { status: 200 })));
+
+    const provider = createOpenRouterProvider(deepseekConfig, { OPENROUTER_API_KEY: "test-key" } as NodeJS.ProcessEnv);
+    const result = await provider.complete({ ...baseRequest, tools: [sampleTool] }, classification);
+
+    expect(result.toolCalls).toHaveLength(1);
+    expect(result.toolCalls?.[0].arguments).toHaveProperty("__parseError");
+  });
+
+  it("serializes priorMessages (assistant tool-calls and tool results) into the OpenRouter message array after the user prompt", async () => {
+    mockCheckBudget.mockResolvedValue({ ok: true, remainingUsd: 19.5 });
+    const fetchMock = vi.fn(async (_url: string, init?: RequestInit) => {
+      const body = JSON.parse(init?.body as string) as { messages: unknown[] };
+      expect(body.messages).toEqual([
+        { role: "user", content: baseRequest.prompt },
+        { role: "assistant", content: null, tool_calls: [{ id: "call_1", type: "function", function: { name: "list_tasks", arguments: '{"status":"open"}' } }] },
+        { role: "tool", tool_call_id: "call_1", content: "3 open tasks found." },
+      ]);
+      return new Response(JSON.stringify({ choices: [{ message: { content: "Here are your tasks." } }] }), { status: 200 });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const provider = createOpenRouterProvider(deepseekConfig, { OPENROUTER_API_KEY: "test-key" } as NodeJS.ProcessEnv);
+    await provider.complete({
+      ...baseRequest,
+      tools: [sampleTool],
+      priorMessages: [
+        { role: "assistant", content: null, toolCalls: [{ id: "call_1", name: "list_tasks", arguments: { status: "open" } }] },
+        { role: "tool", toolCallId: "call_1", name: "list_tasks", content: "3 open tasks found." },
+      ],
+    }, classification);
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });

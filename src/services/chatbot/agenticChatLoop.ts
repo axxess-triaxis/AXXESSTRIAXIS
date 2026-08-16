@@ -11,7 +11,8 @@ import { classifyAiPrompt } from "../ai/prompt-classifier";
 import { buildTenantModelPolicy } from "../ai/tenantModelPolicy";
 import { getAiProviderConfigurations } from "../ai/model-routing-policy";
 import { createOpenAiProvider } from "../ai/providers/openAiProvider";
-import type { AiConversationMessage, AiProviderAdapter, AiRoutingContext, AiToolDefinition } from "../ai/types";
+import { createOpenRouterProvider } from "../ai/providers/openRouterProvider";
+import type { AiConversationMessage, AiPromptClassification, AiPromptRequest, AiProviderAdapter, AiProviderCompletion, AiRoutingContext, AiToolDefinition } from "../ai/types";
 import { agentToolRegistry, getAgentTool, validateAgentToolArguments } from "../agents/toolRegistry";
 import { recordAgentToolAuditEvent } from "../agents/agentConnectionRepository";
 import { synthesizeChatbotAgentScope } from "../../security/chatbotAgentScope";
@@ -25,6 +26,14 @@ import type { RoleName } from "../../domain";
 // aiSpendGuard's checkProviderBudgetHeadroom, so a loop naturally halts on real budget exhaustion
 // rather than silently overspending mid-turn.
 export const MAX_AGENTIC_LOOP_ITERATIONS = 5;
+
+// Same 0.62 confidence split, same reasoning, as ChatbotPanel.tsx's legacy-path filter (aiRouter's
+// provider adapters use confidence: 0.3 as their own deliberate "not a live model call" sentinel --
+// a missing API key, budget guard skip, or a non-200 provider response; see openAiProvider.ts). Below
+// it, completion.text is internal diagnostic prose (e.g. "OpenAI / ChatGPT request failed (429)...")
+// never meant to reach an end user verbatim -- the "final" wire response has no confidence field for
+// the client to filter on, so this substitution has to happen here, at the source.
+const PROVIDER_UNAVAILABLE_MESSAGE = "AXXESS Copilot's AI provider is temporarily unavailable. Try again shortly.";
 
 export type AgenticChatStep = { toolName: string; summary: string };
 
@@ -54,7 +63,31 @@ export type AgenticChatLoopResult =
 export type AgenticChatLoopDeps = {
   env?: NodeJS.ProcessEnv;
   openAiAdapter?: AiProviderAdapter;
+  openRouterAdapter?: AiProviderAdapter;
 };
+
+// Sprint 2 agentic fallback (2026-08-16): OpenAI stays primary (its tool-calling is the
+// better-verified of the two); DeepSeek via OpenRouter is a same-turn fallback for when OpenAI's own
+// response is a non-live-call (confidence < 0.62 -- missing key, budget skip, non-200, empty
+// content -- see openAiProvider.ts), not an alternate default. Fixes the exact failure mode observed
+// live: an OpenAI 429 previously dead-ended the whole turn.
+type AdapterPair = { primary: AiProviderAdapter; fallback?: AiProviderAdapter };
+
+async function completeWithFallback(
+  pair: AdapterPair,
+  request: AiPromptRequest,
+  classification: AiPromptClassification,
+): Promise<AiProviderCompletion> {
+  const primaryResult = await pair.primary.complete(request, classification);
+  if (primaryResult.confidence >= 0.62) return primaryResult;
+  if (!pair.fallback?.config.configured) return primaryResult;
+
+  const fallbackResult = await pair.fallback.complete(request, classification);
+  return {
+    ...fallbackResult,
+    actualCostUsd: (primaryResult.actualCostUsd ?? 0) + (fallbackResult.actualCostUsd ?? 0),
+  };
+}
 
 // End-user-facing copy only -- deliberately short, plain-language, no internal tool/schema jargon.
 const toolStepSummaries: Record<string, string> = {
@@ -116,7 +149,7 @@ async function stepLoop(
   userMessage: string,
   state: LoopState,
   scope: AgentScope,
-  adapter: AiProviderAdapter,
+  pair: AdapterPair,
   tools: AiToolDefinition[],
   context: AiRoutingContext,
 ): Promise<AgenticChatLoopResult> {
@@ -124,14 +157,15 @@ async function stepLoop(
 
   while (state.iterationsUsed < MAX_AGENTIC_LOOP_ITERATIONS) {
     state.iterationsUsed += 1;
-    const completion = await adapter.complete(
+    const completion = await completeWithFallback(
+      pair,
       { prompt: userMessage, context, tools, priorMessages: state.transcript },
       classification,
     );
     state.costUsd += completion.actualCostUsd ?? 0;
 
     if (completion.confidence < 0.62) {
-      return { status: "final", reply: completion.text, steps: state.steps, costUsd: state.costUsd };
+      return { status: "final", reply: PROVIDER_UNAVAILABLE_MESSAGE, steps: state.steps, costUsd: state.costUsd };
     }
 
     const call = completion.toolCalls?.[0];
@@ -230,6 +264,12 @@ function resolveOpenAiAdapter(env: NodeJS.ProcessEnv): AiProviderAdapter {
   return createOpenAiProvider(config, env);
 }
 
+function resolveDeepSeekAdapter(env: NodeJS.ProcessEnv): AiProviderAdapter {
+  const config = getAiProviderConfigurations(env).find((candidate) => candidate.name === "deepseek");
+  if (!config) throw new Error("DeepSeek provider configuration is missing from getAiProviderConfigurations.");
+  return createOpenRouterProvider(config, env);
+}
+
 // The eligibility gate reuses buildTenantModelPolicy() unmodified -- the loop bypasses normal
 // tenant-policy provider *selection* (selectTenantModelRoute) for its own reasoning calls and always
 // uses OpenAI directly when eligible, but still refuses to start at all if this tenant's policy
@@ -253,13 +293,21 @@ export async function runAgenticChatTurn(input: AgenticChatLoopInput, deps: Agen
 
   const scope = synthesizeChatbotAgentScope(tenantScope, role);
   const tools = buildToolDefinitions(scope);
-  const adapter = deps.openAiAdapter ?? resolveOpenAiAdapter(env);
+  const primary = deps.openAiAdapter ?? resolveOpenAiAdapter(env);
+
+  // Fallback is only ever constructed if the tenant's own policy actually allows deepseek -- a
+  // policy-restricted tenant must never get silently routed to a provider its policy disallows,
+  // even as a failure-mode fallback. The default policy (tenantModelPolicy.ts) already includes
+  // "deepseek" in allowedProviders, so this is a no-op for tenants on the default policy.
+  const deepSeekAllowed = policy.allowedProviders.includes("deepseek") && !policy.blockedProviders.includes("deepseek");
+  const fallback = deepSeekAllowed ? (deps.openRouterAdapter ?? resolveDeepSeekAdapter(env)) : undefined;
+  const pair: AdapterPair = { primary, fallback };
 
   if (input.resume) {
     if (!input.resume.confirmed) return { status: "cancelled" };
     const state = await executeConfirmedPendingTool(input.resume, scope);
-    return stepLoop(input.resume.userMessage, state, scope, adapter, tools, context);
+    return stepLoop(input.resume.userMessage, state, scope, pair, tools, context);
   }
 
-  return stepLoop(input.userMessage, { transcript: [], iterationsUsed: 0, steps: [], costUsd: 0 }, scope, adapter, tools, context);
+  return stepLoop(input.userMessage, { transcript: [], iterationsUsed: 0, steps: [], costUsd: 0 }, scope, pair, tools, context);
 }

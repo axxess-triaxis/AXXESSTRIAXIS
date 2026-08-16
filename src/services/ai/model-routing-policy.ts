@@ -71,6 +71,14 @@ const providerCapabilities: Record<AiProviderName, Omit<AiProviderConfig, "confi
     languages: ["english", "hindi", "chinese"],
     costTier: "low",
     latencyTier: "medium",
+    // Sprint 2 agentic fallback (2026-08-16): stays false. OpenRouter advertises tool support for
+    // Kimi K2 but tool calls don't reliably fire in practice -- a real, reported issue
+    // (https://github.com/zed-industries/zed/issues/34761,
+    // https://gist.github.com/ben-vargas/c7c9633e6f482ea99041dd7bd90fbe09), not a guess. Re-verify
+    // against those sources (or Moonshot/OpenRouter's own changelog) before ever flipping this --
+    // a silently-ignored tools param here would be exactly the capability lie this flag exists to
+    // prevent. Kimi K3 (a different, not-yet-configured model) reportedly fixes this, but that's a
+    // separate future decision, not this one.
     supportsToolCalling: false,
   },
   deepseek: {
@@ -81,7 +89,13 @@ const providerCapabilities: Record<AiProviderName, Omit<AiProviderConfig, "confi
     languages: ["english", "hindi", "chinese"],
     costTier: "low",
     latencyTier: "medium",
-    supportsToolCalling: false,
+    // Sprint 2 agentic fallback (2026-08-16): true, unlike kimi above. DeepSeek's own API docs
+    // (https://api-docs.deepseek.com/guides/tool_calls/) document native tool calling, and DeepSeek
+    // is independently one of OpenRouter's most-used tool-calling models in production -- real
+    // evidence, not an assumption from "OpenAI-compatible" alone. Used only as agenticChatLoop.ts's
+    // fallback when OpenAI's own response is a non-live-call (confidence < 0.62), never as the
+    // primary provider.
+    supportsToolCalling: true,
   },
   local: {
     name: "local",
