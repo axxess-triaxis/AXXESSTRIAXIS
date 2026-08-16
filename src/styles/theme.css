@@ -127,10 +127,16 @@
   body {
     @apply bg-background text-foreground;
     font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    /* Sprint 3 (2026-08-16): blocks the browser's own page-level rubber-band/pull-to-refresh bounce
+       on mobile. Sidebar.tsx's own overscroll-contain (A-116) only stops the nav list's internal
+       scroll from chaining outward -- it never addressed the page-level bounce itself, which is
+       what the founder's "sidebar not holding on pulldown" report was actually showing. */
+    overscroll-behavior-y: none;
   }
 
   html {
     font-size: var(--font-size);
+    overscroll-behavior-y: none;
   }
 
   h1 {
