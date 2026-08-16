@@ -9,6 +9,7 @@ import type {
   TenantScope,
 } from "../../repositories/interfaces";
 import { isSupabaseAdminConfigured, supabaseAdminRest } from "../../repositories/supabaseAdmin";
+import { appendConversationMessage, createConversation, listConversationMessages } from "../../repositories/aiConversationsRepository";
 import { routeAiRequest } from "../ai/router/aiRouter";
 import { liveModelProviders } from "../ai/providers";
 import { extractKeywords, summarizeText } from "../nlp/localNlp";
@@ -333,6 +334,7 @@ async function persistentCitationsForQuestion(
   scope: TenantScope,
   question: string,
   limit: number,
+  documentIds?: string[],
 ) {
   if (!isSupabaseAdminConfigured()) return [];
 
@@ -340,7 +342,14 @@ async function persistentCitationsForQuestion(
     repositories.documentsRepository.list(scope, { pageSize: 2500 }),
     repositories.documentPermissionsRepository.list(scope, { pageSize: 1000 }).catch(() => [] as DocumentPermission[]),
   ]);
-  const authorizedDocuments = documents.filter((document) => canRetrieveDocument(scope, document, permissions));
+  // Sprint 4 (2026-08-16): "Context Window" lets a user explicitly attach specific documents to a
+  // question -- when documentIds is set, retrieval is scoped to exactly those (still re-checked
+  // against canRetrieveDocument below, so an attached id the user isn't actually authorized for is
+  // silently excluded, not silently bypassed). Absent, behavior is unchanged: every authorized
+  // document is a retrieval candidate, same as before this field existed.
+  const documentIdFilter = documentIds?.length ? new Set(documentIds) : undefined;
+  const authorizedDocuments = documents.filter((document) =>
+    canRetrieveDocument(scope, document, permissions) && (!documentIdFilter || documentIdFilter.has(document.id)));
   if (authorizedDocuments.length === 0) return [];
 
   const ids = authorizedDocuments.map((document) => document.id);
@@ -389,10 +398,31 @@ export async function answerTenantQuestion(
   repositories: TenantRagRepositories,
   scope: TenantScope,
   question: string,
-  options: { limit?: number } = {},
-): Promise<RagAnswer & { aiOutputAuditId?: string; modelUsed?: string; providerUsed?: string; latencyMs?: number; costTier?: string }> {
+  options: { limit?: number; conversationId?: string; documentIds?: string[] } = {},
+): Promise<RagAnswer & { aiOutputAuditId?: string; modelUsed?: string; providerUsed?: string; latencyMs?: number; costTier?: string; conversationId?: string }> {
   const limit = options.limit ?? 5;
-  const citations = await persistentCitationsForQuestion(repositories, scope, question, limit);
+
+  // Sprint 4 (2026-08-16): activates the ai_conversations/ai_conversation_messages tables that have
+  // existed since Sprint 19 with real RLS but were never written to -- every prior turn was a
+  // one-shot exchange with nothing carried forward. A missing/unresolvable conversationId (e.g.
+  // Supabase admin not configured) degrades to today's exact one-shot behavior rather than failing
+  // the whole question, matching this file's existing honest-degradation convention.
+  const conversationId = options.conversationId ?? await createConversation(scope, question);
+  const priorMessages = conversationId ? await listConversationMessages(scope, conversationId) : [];
+
+  // Folded into the plain prompt string, not threaded through AiPromptRequest.priorMessages: that
+  // field's AiConversationMessage type (src/services/ai/types.ts) only models "assistant"/"tool"
+  // roles for the agentic tool-calling transcript (agenticChatLoop.ts) -- openAiProvider.ts/
+  // openRouterProvider.ts's own request-serialization maps every non-"assistant" role to
+  // `{role:"tool", tool_call_id: ...}`, so a "user" role sent through that path would come out
+  // wrong on the wire. A RAG conversation's prior turns are a simpler user/assistant Q&A history,
+  // not a tool-call transcript, so they're folded as plain text instead -- correct today without
+  // widening a type built for a different, unrelated caller.
+  const conversationTranscript = priorMessages.length
+    ? `Conversation so far:\n${priorMessages.map((message) => `${message.role === "user" ? "Q" : "A"}: ${message.content}`).join("\n")}\n\n`
+    : "";
+
+  const citations = await persistentCitationsForQuestion(repositories, scope, question, limit, options.documentIds);
   let baseAnswer: RagAnswer;
   if (citations.length) {
     const rawConfidence = Math.min(0.96, Math.max(0.42, citations.reduce((sum, citation) => sum + citation.score, 0) / citations.length + 0.28));
@@ -419,7 +449,7 @@ export async function answerTenantQuestion(
   }
 
   const routeResult = await routeAiRequest({
-    prompt: `${question}\n\nAuthorized source summary:\n${baseAnswer.sources.map((source) => `${source.title}: ${source.excerpt}`).join("\n")}`,
+    prompt: `${conversationTranscript}${question}\n\nAuthorized source summary:\n${baseAnswer.sources.map((source) => `${source.title}: ${source.excerpt}`).join("\n")}`,
     task: "rag_answer",
     context: {
       organizationId: scope.organizationId,
@@ -561,9 +591,25 @@ export async function answerTenantQuestion(
     },
   }).catch(() => undefined);
 
+  // Additive to the ai_output_audit/ai_operation_reviews/audit_logs writes above, not a
+  // replacement -- this is the one write this sprint actually adds: two ai_conversation_messages
+  // rows per turn, so the next call to this function (with the same conversationId) has real prior
+  // turns to fold into conversationTranscript above.
+  if (conversationId) {
+    await appendConversationMessage(scope, { conversationId, role: "user", content: question });
+    await appendConversationMessage(scope, {
+      conversationId,
+      role: "assistant",
+      content: answer.answer,
+      aiOutputAuditId,
+      citations: answer.sources,
+    });
+  }
+
   return {
     ...answer,
     aiOutputAuditId,
+    conversationId,
     modelUsed: routeResult.modelUsed,
     providerUsed: routeResult.providerUsed,
     latencyMs: routeResult.latencyMs,

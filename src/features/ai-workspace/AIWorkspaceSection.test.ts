@@ -58,3 +58,39 @@ describe("AIWorkspaceSection (Sprint 3 -- does not hang, no raw backend error te
     expect(handlerBlock).toContain("void askGovernedQuestion()");
   });
 });
+
+describe("AIWorkspaceSection (Sprint 4 -- real conversation memory + Context Window + AI Audit Trail)", () => {
+  it("removes the dead getAiMessages() call -- institutionalRepository is hardwired to always-empty for real tenants", () => {
+    expect(source).not.toContain("getAiMessages()");
+    expect(source).not.toContain('"No conversation history yet"\n                  message="Ask a governed question below');
+  });
+
+  it("threads conversationId through the request body and captures it back from the response", () => {
+    expect(source).toMatch(/body:\s*JSON\.stringify\(\{[\s\S]{0,120}conversationId,/);
+    expect(source).toContain("if (typedResult.conversationId) setConversationId(typedResult.conversationId);");
+  });
+
+  it("sends Context Window selections as documentIds, scoping the next question's retrieval", () => {
+    expect(source).toContain("documentIds: contextItems.length ? contextItems.map((item) => item.id) : undefined");
+  });
+
+  it("pushes the just-superseded answer into real conversation history, never the initial empty/demo answer", () => {
+    expect(source).toContain("if (ragAnswer.answer) {");
+    expect(source).toContain("setPriorTurns((current) => [...current, { question: lastQuestionRef.current, answer: ragAnswer }]);");
+  });
+
+  it("Context Window's Add button actually fetches real documents and is no longer a dead <button> with no handler", () => {
+    expect(source).toContain("async function openContextPicker()");
+    expect(source).toContain("applicationServices.documentsRepository.list(tenantScope, { pageSize: 100 })");
+    expect(source).toContain('onClick={() => void openContextPicker()}');
+  });
+
+  it("AI Audit Trail loads real entries via the same auditLogsRepository.list pattern as AuditLogsSection.tsx, filtered on resourceType", () => {
+    expect(source).toContain("applicationServices.auditLogsRepository.list(tenantScope, { pageSize: 100 })");
+    expect(source).toContain('log.resourceType === "ai_output_audit"');
+  });
+
+  it("Sources Used shows an honest empty state instead of silently rendering nothing", () => {
+    expect(source).toContain("No sources yet -- ask a governed question to see cited sources here.");
+  });
+});
