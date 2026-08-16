@@ -14,7 +14,7 @@ vi.mock("./supabaseAdmin", () => ({
   },
 }));
 
-import { createSocialAlertRule, deleteSocialAlertRule, listSocialAlertRules } from "./socialAlertRulesRepository";
+import { createSocialAlertRule, deleteSocialAlertRule, listSocialAlertRules, listSocialAlertRulesForProvider } from "./socialAlertRulesRepository";
 
 const scope = { organizationId: "org-1", userId: "user-1", role: "Manager" as const };
 
@@ -85,5 +85,21 @@ describe("socialAlertRulesRepository", () => {
     const query = call.options.query as URLSearchParams;
     expect(query.get("id")).toBe("eq.rule-1");
     expect(query.get("organization_id")).toBe("eq.org-1");
+  });
+
+  it("listSocialAlertRulesForProvider queries across all tenants for the given provider only, for the Brand24 cron", async () => {
+    state.responses = [[ruleRow({ provider: "brand24", organization_id: "org-a" }), ruleRow({ provider: "brand24", organization_id: "org-b" })]];
+    const rules = await listSocialAlertRulesForProvider("brand24");
+    expect(rules).toHaveLength(2);
+    const query = state.calls[0].options.query as URLSearchParams;
+    expect(query.get("provider")).toBe("eq.brand24");
+    expect(query.has("organization_id")).toBe(false);
+  });
+
+  it("listSocialAlertRulesForProvider returns an empty list (not a throw) when Supabase admin isn't configured", async () => {
+    state.isConfigured = false;
+    const rules = await listSocialAlertRulesForProvider("brand24");
+    expect(rules).toEqual([]);
+    expect(state.calls.length).toBe(0);
   });
 });

@@ -376,7 +376,7 @@ export interface FinancialWatchItem {
 // widened by 20260804120000_social_alert_rules_providers.sql). Not demo-only -- this is a real
 // capability for real tenants, matching the SocialAlertProvider union in
 // src/services/alerts/socialAlerts.ts.
-export type SocialAlertRuleProvider = "x" | "facebook" | "instagram" | "linkedin" | "threads" | "rss" | "manual" | "demo";
+export type SocialAlertRuleProvider = "x" | "facebook" | "instagram" | "linkedin" | "threads" | "rss" | "manual" | "demo" | "brand24";
 export type SocialAlertRuleUrgency = "low" | "medium" | "high";
 
 export interface SocialAlertRule {
@@ -388,6 +388,29 @@ export interface SocialAlertRule {
   urgency: SocialAlertRuleUrgency;
   createdBy?: EntityId;
   createdAt: ISODateTime;
+}
+
+// Sprint 1 real Social Alerts (2026-08-17): social_alert_events has real schema and RLS
+// (supabase/migrations/202607100001_sprint14_rag_integrations_alerts.sql) but no application code
+// wrote to it before this change -- see src/services/alerts/socialAlertMatching.ts and
+// brand24Ingestion.ts for the rule-matching engine that now populates it.
+export type SocialAlertEventSentiment = "positive" | "neutral" | "negative";
+
+export interface SocialAlertEvent {
+  id: EntityId;
+  organizationId: EntityId;
+  ruleId?: EntityId;
+  provider: SocialAlertRuleProvider;
+  title: string;
+  sourceAccount: string;
+  sentiment: SocialAlertEventSentiment;
+  urgency: SocialAlertRuleUrgency;
+  actionTargets: string[];
+  receivedAt: ISODateTime;
+  reviewedAt?: ISODateTime;
+  reviewedBy?: EntityId;
+  externalId?: string;
+  metadata: Record<string, unknown>;
 }
 
 // MC-2 (2026-08-02): Meta Business Suite + Threads + WhatsApp Live Ops. See
