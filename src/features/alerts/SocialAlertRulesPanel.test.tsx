@@ -82,4 +82,12 @@ describe("SocialAlertRulesPanel", () => {
     const deleteCall = fetchMock.mock.calls.find(([, init]) => (init as RequestInit | undefined)?.method === "DELETE");
     expect(deleteCall?.[0]).toBe("/api/social-alert-rules/rule-1");
   });
+
+  it("offers Brand24 as a selectable provider (Sprint 1 real Social Alerts, 2026-08-17)", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => jsonResponse({ rules: [] })));
+    render(<SocialAlertRulesPanel />);
+
+    await waitFor(() => expect(screen.getByText(/No alert rules configured yet/i)).toBeInTheDocument());
+    expect(screen.getByRole("option", { name: "Brand24" })).toBeInTheDocument();
+  });
 });

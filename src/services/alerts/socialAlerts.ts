@@ -1,4 +1,4 @@
-export type SocialAlertProvider = "x" | "facebook" | "instagram" | "linkedin" | "threads" | "rss" | "manual" | "demo";
+export type SocialAlertProvider = "x" | "facebook" | "instagram" | "linkedin" | "threads" | "rss" | "manual" | "demo" | "brand24";
 
 export type SocialAlert = {
   id: string;
