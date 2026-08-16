@@ -93,7 +93,9 @@ export type AnalyticsEventName =
   | "chatbot_command_executed"
   | "chatbot_command_denied"
   | "chatbot_command_failed"
-  | "chatbot_fallback_triggered";
+  | "chatbot_fallback_triggered"
+  | "chatbot_agentic_turn_completed"
+  | "chatbot_agentic_turn_paused";
 
 export type AnalyticsEventSource = "client" | "server" | "test";
 export type SafeAnalyticsPrimitive = string | number | boolean | null;

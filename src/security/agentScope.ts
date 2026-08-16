@@ -4,9 +4,14 @@
 // throughout the codebase for a caller type that isn't a human at all. AgentScope is used only by
 // the inbound agent code path (src/app/api/agents/mcp/route.ts and src/services/agents/*).
 
-export type AgentProviderId = "openai" | "anthropic" | "microsoft_copilot";
+// "axxess_copilot_inapp" (Sprint 1 agentic chatbot, 2026-08-16) identifies scopes synthesized by
+// src/security/chatbotAgentScope.ts for the in-app chatbot's own agentic loop -- never a real
+// agent_connections row, never persisted anywhere. Safe/additive: no migration or CHECK constraint
+// touches this value since synthesized scopes are never written to agent_connections/
+// agent_action_grants/agent_pending_tool_calls.
+export type AgentProviderId = "openai" | "anthropic" | "microsoft_copilot" | "axxess_copilot_inapp";
 
-export const agentProviderIds: AgentProviderId[] = ["openai", "anthropic", "microsoft_copilot"];
+export const agentProviderIds: AgentProviderId[] = ["openai", "anthropic", "microsoft_copilot", "axxess_copilot_inapp"];
 
 export type AgentCapability =
   | "create_task"

@@ -20,6 +20,7 @@ const kimiConfig = {
   languages: ["english"],
   costTier: "low" as const,
   latencyTier: "medium" as const,
+  supportsToolCalling: false,
 };
 
 const baseRequest: AiPromptRequest = {
