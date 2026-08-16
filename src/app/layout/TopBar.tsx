@@ -4,10 +4,22 @@ import type { Route } from "next";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Avatar } from "../../components/ui/Avatar";
 import type { Notification } from "../../domain";
+import type { NavSection } from "../navigation";
 import { applicationServices } from "../../providers/serviceProvider";
 import { tenantScopeFromUser } from "../../repositories/supabaseEnterpriseRepositories";
+import { useWorkspaceRouting } from "../../hooks/useWorkspaceRouting";
 import type { UserContext } from "../../security/rbac";
 import { useAnalytics } from "../../services/analytics";
+
+// Sprint (2026-08-16): notification.type -> the section that actually holds the corresponding
+// item. "system" has no single owning section, so it's deliberately absent -- those notifications
+// stay non-navigating (same as before) rather than guessing a destination.
+const SECTION_FOR_NOTIFICATION_TYPE: Partial<Record<Notification["type"], NavSection>> = {
+  project: "projects",
+  task: "tasks",
+  meeting: "meetings",
+  admin: "organization-admin",
+};
 
 type TopBarProps = {
   activeLabel: string;
@@ -45,6 +57,7 @@ function relativeTime(value: string) {
 
 export function TopBar({ activeLabel, notifOpen, user, onToggleNotifications, onLogout }: TopBarProps) {
   const analytics = useAnalytics();
+  const { navigateToSection } = useWorkspaceRouting();
   const scope = useMemo(() => tenantScopeFromUser(user), [user]);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [filter, setFilter] = useState<NotificationFilter>("unread");
@@ -167,6 +180,11 @@ export function TopBar({ activeLabel, notifOpen, user, onToggleNotifications, on
                         route: "/notifications",
                       });
                       void markRead(notification);
+                      const destination = SECTION_FOR_NOTIFICATION_TYPE[notification.type];
+                      if (destination) {
+                        navigateToSection(destination);
+                        onToggleNotifications();
+                      }
                     }} className="flex w-full items-start gap-3 border-b border-[rgba(0,0,0,0.04)] px-4 py-3 text-left transition-colors hover:bg-[#F8F9FA]">
                       <Icon size={14} className={`${notificationColor(notification.type)} mt-0.5 flex-shrink-0`} />
                       <div className="min-w-0 flex-1">
