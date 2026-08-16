@@ -11,12 +11,28 @@ import { useAnalytics } from "../../services/analytics";
 import { writeAgenticDraft } from "../../services/agentic/agenticDraftHandoff";
 import { chatCommandCatalogue, findChatCommand } from "../../services/chatbot/chatCommandRegistry";
 import { buildChatPrompt, parseChatResponse } from "../../services/chatbot/chatIntentPrompt";
+// Type-only imports: agenticChatLoop.ts itself is server-only (it pulls in toolRegistry.ts's
+// service-role Supabase client), but its result/resume shapes are the wire contract this panel
+// speaks to /api/ai/agentic-chat. `import type` is erased at build time, so none of that server
+// code enters the client bundle.
+import type { AgenticChatResumeInput, AgenticChatStep, PendingAgenticTool } from "../../services/chatbot/agenticChatLoop";
+import type { AiConversationMessage } from "../../services/ai/types";
 import { ChatbotConfirmCard } from "./ChatbotConfirmCard";
+
+type AgenticResumeState = Omit<AgenticChatResumeInput, "confirmed">;
+
+type AgenticChatWireResponse =
+  | { status: "final"; reply: string; steps: AgenticChatStep[]; costUsd: number }
+  | { status: "paused"; transcript: AiConversationMessage[]; pendingTool: PendingAgenticTool; userMessage: string; iterationsUsed: number; summary: string; steps: AgenticChatStep[]; costUsd: number }
+  | { status: "cancelled" }
+  | { status: "agentic_unavailable"; reason: string };
 
 type ThreadMessage =
   | { id: string; kind: "user"; text: string }
   | { id: string; kind: "assistant"; text: string }
-  | { id: string; kind: "confirm"; summary: string; action: string; args: Record<string, unknown>; resolved?: "confirmed" | "cancelled" };
+  | { id: string; kind: "tool_step"; toolName: string; summary: string }
+  | { id: string; kind: "confirm"; mode: "command"; summary: string; action: string; args: Record<string, unknown>; resolved?: "confirmed" | "cancelled" }
+  | { id: string; kind: "confirm"; mode: "agentic"; summary: string; resumeState: AgenticResumeState; resolved?: "confirmed" | "cancelled" };
 
 type ChatbotPanelProps = {
   user: UserContext;
@@ -60,6 +76,8 @@ export function ChatbotPanel({ user, routePath, moduleName, onClose }: ChatbotPa
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const threadRef = useRef<HTMLDivElement>(null);
+  // Fires once per panel open, not once per fallback -- repeating it on every message would be noise.
+  const limitedModeNotedRef = useRef(false);
 
   useEffect(() => {
     analytics.trackEvent("chatbot_opened", {}, analyticsContext);
@@ -96,6 +114,107 @@ export function ChatbotPanel({ user, routePath, moduleName, onClose }: ChatbotPa
     navigateToSection(destination);
   }
 
+  // Every non-terminal branch here (network failure, non-200, missing status) falls through to the
+  // legacy /api/ai path rather than surfacing a raw error -- the founder's chatbot must never go
+  // silent just because the newer agentic route had a problem.
+  async function postAgenticChat(body: { userMessage?: string; resume?: AgenticChatResumeInput }): Promise<AgenticChatWireResponse | undefined> {
+    try {
+      const response = await fetch("/api/ai/agentic-chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const payload = await response.json().catch(() => undefined) as Partial<AgenticChatWireResponse> | undefined;
+      if (!response.ok || !payload?.status) return undefined;
+      return payload as AgenticChatWireResponse;
+    } catch {
+      return undefined;
+    }
+  }
+
+  function noteLimitedModeOnce() {
+    if (limitedModeNotedRef.current) return;
+    limitedModeNotedRef.current = true;
+    appendAssistant("Running in limited mode -- some multi-step automation isn't available right now, but I can still help directly.");
+  }
+
+  function applyAgenticResult(payload: Exclude<AgenticChatWireResponse, { status: "agentic_unavailable" }>) {
+    if (payload.status === "cancelled") return;
+
+    const stepMessages: ThreadMessage[] = payload.steps.map((step) => ({ id: nextMessageId(), kind: "tool_step", toolName: step.toolName, summary: step.summary }));
+
+    if (payload.status === "final") {
+      analytics.trackEvent("chatbot_agentic_turn_completed", { toolsInvoked: payload.steps.length }, analyticsContext);
+      setMessages((prev) => [...prev, ...stepMessages, { id: nextMessageId(), kind: "assistant", text: payload.reply }]);
+      return;
+    }
+
+    analytics.trackEvent("chatbot_agentic_turn_paused", { pendingTool: payload.pendingTool.name }, analyticsContext);
+    setMessages((prev) => [
+      ...prev,
+      ...stepMessages,
+      {
+        id: nextMessageId(),
+        kind: "confirm",
+        mode: "agentic",
+        summary: payload.summary,
+        resumeState: { transcript: payload.transcript, pendingTool: payload.pendingTool, userMessage: payload.userMessage, iterationsUsed: payload.iterationsUsed },
+      },
+    ]);
+  }
+
+  async function sendLegacyTurn(text: string) {
+    const response = await fetch("/api/ai", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt: buildChatPrompt(text, chatCommandCatalogue), task: "general_chat" }),
+    });
+    const payload = await response.json().catch(() => ({} as { answer?: string; error?: string; confidence?: number }));
+    if (!response.ok || typeof payload.answer !== "string") {
+      // Never surface the raw backend error string (same F-016 convention AIWorkspaceSection's
+      // askGovernedQuestion already follows) -- this route 401s for the investor-demo persona too
+      // (a client-side-only mock session, no real Supabase cookies), so a plain "sign in" message
+      // is the safe, honest default rather than assuming why the session check failed.
+      console.error("Chatbot /api/ai call failed.", response.status, payload.error);
+      appendAssistant(response.status === 401 ? "Sign in to chat with AXXESS Copilot." : "AXXESS Copilot couldn't complete that. Try again in a moment.");
+      return;
+    }
+
+    // aiRouter's provider adapters use confidence: 0.3 as their own deliberate "not a live model
+    // call" sentinel (e.g. a missing API key, budget guard skip, or a non-200 provider response --
+    // see openAiProvider.ts) vs. ~0.78 for a genuine completion; humanReviewRequired's own threshold
+    // (aiRouter.ts) is the same 0.62 split. Below it, payload.answer is technical fallback prose,
+    // not a real answer -- show a clean message instead of parsing/displaying it as a chat reply.
+    if (typeof payload.confidence === "number" && payload.confidence < 0.62) {
+      appendAssistant("AXXESS Copilot's AI provider is temporarily unavailable. Try again shortly.");
+      return;
+    }
+
+    const intent = parseChatResponse(payload.answer);
+    if (intent.type === "chat") {
+      appendAssistant(intent.reply);
+      return;
+    }
+
+    const definition = findChatCommand(intent.action);
+    if (!definition) {
+      handleFallback(intent.action, intent.reply);
+      return;
+    }
+
+    if (!canAccessSection(user, definition.section)) {
+      analytics.trackEvent("chatbot_command_denied", { action: intent.action }, analyticsContext);
+      appendAssistant(`Your role doesn't have access to ${definition.section}, so I can't do that.`);
+      return;
+    }
+
+    setMessages((prev) => [
+      ...prev,
+      { id: nextMessageId(), kind: "assistant", text: intent.reply },
+      { id: nextMessageId(), kind: "confirm", mode: "command", summary: definition.summarize(intent.args), action: intent.action, args: intent.args },
+    ]);
+  }
+
   async function handleSend() {
     const text = input.trim();
     if (!text || sending) return;
@@ -105,61 +224,19 @@ export function ChatbotPanel({ user, routePath, moduleName, onClose }: ChatbotPa
     analytics.trackEvent("chatbot_message_sent", {}, analyticsContext);
 
     try {
-      const response = await fetch("/api/ai", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: buildChatPrompt(text, chatCommandCatalogue), task: "general_chat" }),
-      });
-      const payload = await response.json().catch(() => ({} as { answer?: string; error?: string; confidence?: number }));
-      if (!response.ok || typeof payload.answer !== "string") {
-        // Never surface the raw backend error string (same F-016 convention AIWorkspaceSection's
-        // askGovernedQuestion already follows) -- this route 401s for the investor-demo persona too
-        // (a client-side-only mock session, no real Supabase cookies), so a plain "sign in" message
-        // is the safe, honest default rather than assuming why the session check failed.
-        console.error("Chatbot /api/ai call failed.", response.status, payload.error);
-        appendAssistant(response.status === 401 ? "Sign in to chat with AXXESS Copilot." : "AXXESS Copilot couldn't complete that. Try again in a moment.");
+      const agenticPayload = await postAgenticChat({ userMessage: text });
+      if (agenticPayload && agenticPayload.status !== "agentic_unavailable") {
+        applyAgenticResult(agenticPayload);
         return;
       }
-
-      // aiRouter's provider adapters use confidence: 0.3 as their own deliberate "not a live model
-      // call" sentinel (e.g. a missing API key, budget guard skip, or a non-200 provider response --
-      // see openAiProvider.ts) vs. ~0.78 for a genuine completion; humanReviewRequired's own threshold
-      // (aiRouter.ts) is the same 0.62 split. Below it, payload.answer is technical fallback prose,
-      // not a real answer -- show a clean message instead of parsing/displaying it as a chat reply.
-      if (typeof payload.confidence === "number" && payload.confidence < 0.62) {
-        appendAssistant("AXXESS Copilot's AI provider is temporarily unavailable. Try again shortly.");
-        return;
-      }
-
-      const intent = parseChatResponse(payload.answer);
-      if (intent.type === "chat") {
-        appendAssistant(intent.reply);
-        return;
-      }
-
-      const definition = findChatCommand(intent.action);
-      if (!definition) {
-        handleFallback(intent.action, intent.reply);
-        return;
-      }
-
-      if (!canAccessSection(user, definition.section)) {
-        analytics.trackEvent("chatbot_command_denied", { action: intent.action }, analyticsContext);
-        appendAssistant(`Your role doesn't have access to ${definition.section}, so I can't do that.`);
-        return;
-      }
-
-      setMessages((prev) => [
-        ...prev,
-        { id: nextMessageId(), kind: "assistant", text: intent.reply },
-        { id: nextMessageId(), kind: "confirm", summary: definition.summarize(intent.args), action: intent.action, args: intent.args },
-      ]);
+      if (agenticPayload?.status === "agentic_unavailable") noteLimitedModeOnce();
+      await sendLegacyTurn(text);
     } finally {
       setSending(false);
     }
   }
 
-  async function resolveConfirm(messageId: string, action: string, args: Record<string, unknown>, confirmed: boolean) {
+  async function resolveConfirmCommand(messageId: string, action: string, args: Record<string, unknown>, confirmed: boolean) {
     setMessages((prev) => prev.map((message) =>
       message.id === messageId && message.kind === "confirm"
         ? { ...message, resolved: confirmed ? "confirmed" : "cancelled" }
@@ -185,6 +262,30 @@ export function ChatbotPanel({ user, routePath, moduleName, onClose }: ChatbotPa
       analytics.trackEvent("chatbot_command_failed", { action }, analyticsContext);
       appendAssistant(result.error);
     }
+  }
+
+  async function resolveConfirmAgentic(messageId: string, resumeState: AgenticResumeState, confirmed: boolean) {
+    setMessages((prev) => prev.map((message) =>
+      message.id === messageId && message.kind === "confirm"
+        ? { ...message, resolved: confirmed ? "confirmed" : "cancelled" }
+        : message
+    ));
+
+    const payload = await postAgenticChat({ resume: { ...resumeState, confirmed } });
+    if (!payload) {
+      appendAssistant("AXXESS Copilot couldn't complete that. Try again in a moment.");
+      return;
+    }
+    if (payload.status === "cancelled") {
+      appendAssistant("Cancelled -- nothing was changed.");
+      return;
+    }
+    if (payload.status === "agentic_unavailable") {
+      noteLimitedModeOnce();
+      appendAssistant("I couldn't finish that step. Try asking again.");
+      return;
+    }
+    applyAgenticResult(payload);
   }
 
   return (
@@ -222,13 +323,32 @@ export function ChatbotPanel({ user, routePath, moduleName, onClose }: ChatbotPa
               </div>
             );
           }
+          if (message.kind === "tool_step") {
+            return (
+              <div key={message.id} className="ml-10 flex items-center gap-1.5 text-xs text-[#5F6B73]">
+                <span className="text-[#3E8E5A]">✓</span>
+                <span>{message.summary}</span>
+              </div>
+            );
+          }
+          if (message.mode === "agentic") {
+            return (
+              <ChatbotConfirmCard
+                key={message.id}
+                summary={message.summary}
+                disabled={Boolean(message.resolved)}
+                onConfirm={() => void resolveConfirmAgentic(message.id, message.resumeState, true)}
+                onCancel={() => void resolveConfirmAgentic(message.id, message.resumeState, false)}
+              />
+            );
+          }
           return (
             <ChatbotConfirmCard
               key={message.id}
               summary={message.summary}
               disabled={Boolean(message.resolved)}
-              onConfirm={() => void resolveConfirm(message.id, message.action, message.args, true)}
-              onCancel={() => void resolveConfirm(message.id, message.action, message.args, false)}
+              onConfirm={() => void resolveConfirmCommand(message.id, message.action, message.args, true)}
+              onCancel={() => void resolveConfirmCommand(message.id, message.action, message.args, false)}
             />
           );
         })}

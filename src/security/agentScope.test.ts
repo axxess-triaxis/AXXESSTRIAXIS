@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import { agentProviderIds, agentScopeHasCapability, allAgentCapabilities, defaultAgentCapabilities, mcp2AgentCapabilities, type AgentScope } from "./agentScope";
 
 describe("agentScope", () => {
-  it("lists exactly the 3 providers the founder scoped for Phase 1 (OpenAI, Anthropic, Microsoft Copilot)", () => {
-    expect(agentProviderIds).toEqual(["openai", "anthropic", "microsoft_copilot"]);
+  it("lists exactly the 3 providers the founder scoped for Phase 1 (OpenAI, Anthropic, Microsoft Copilot), plus the Sprint 1 in-app chatbot's own synthesized provider id", () => {
+    expect(agentProviderIds).toEqual(["openai", "anthropic", "microsoft_copilot", "axxess_copilot_inapp"]);
   });
 
   it("lists exactly the 3 tools Phase 1 ships as capabilities", () => {

@@ -12,6 +12,7 @@ export const localAiProvider: AiProviderAdapter = {
     languages: ["english", "hindi", "assamese", "bengali", "mixed"],
     costTier: "low",
     latencyTier: "low",
+    supportsToolCalling: false,
   },
   async complete(request, classification) {
     const keywords = extractKeywords(request.prompt, 6);
