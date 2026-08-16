@@ -17,6 +17,7 @@ import {
   TenantScopeBadge,
   WorkflowStepCard,
 } from "../../components/enterprise";
+import { KanbanBoard } from "../../features/kanban/KanbanBoard";
 import { staggerDelay } from "../../lib/ui/staggerDelay";
 import {
   computePilotHealth,
@@ -24,7 +25,20 @@ import {
   pilotReadinessSteps,
   type PilotReadinessEvent,
 } from "../../services/pilot/pilotHealth";
+import type { PilotPortfolioSnapshot } from "../../services/pilot/pilotPortfolio";
+import { buildPilotPortfolioColumns } from "../../services/pilot/pilotPortfolioBoard";
 import { useAnalytics } from "../../services/analytics";
+
+// Sprint 1 pilot portfolio (2026-08-15): session time, bounce rate, and Core Web Vitals are not
+// captured anywhere in this codebase yet (no analytics query API, no web-vitals instrumentation) --
+// honest "Not connected" tiles rather than fabricated numbers, per this codebase's standing rule
+// against placeholder data on landing.triaxisventures.com. Real support is Sprint 2 scope.
+const deferredPortfolioMetrics = [
+  { label: "Avg. session time", detail: "Requires session-duration instrumentation not yet built." },
+  { label: "Bounce rate", detail: "Requires page-sequence analysis not yet built." },
+  { label: "LCP (Core Web Vital)", detail: "Vercel Speed Insights reports only to Vercel's own dashboard -- no app-side read-back yet." },
+  { label: "FCP (Core Web Vital)", detail: "Same -- needs the web-vitals package and a new ingest endpoint." },
+] as const;
 
 type PilotConversionState = {
   events: PilotReadinessEvent[];
@@ -82,6 +96,7 @@ export function PilotConversionSection() {
   const analytics = useAnalytics();
   const user = session.user;
   const [state, setState] = useState<PilotConversionState>({ events: [], loading: true, source: "Provider-gated" });
+  const [portfolio, setPortfolio] = useState<PilotPortfolioSnapshot | undefined>(undefined);
 
   const loadPilotEvents = useCallback(async () => {
     setState((current) => ({ ...current, loading: true }));
@@ -117,6 +132,21 @@ export function PilotConversionSection() {
   useEffect(() => {
     void loadPilotEvents();
   }, [loadPilotEvents]);
+
+  useEffect(() => {
+    // Sprint 1 pilot portfolio (2026-08-15): a cross-tenant view, restricted server-side to the
+    // platform operator's own Super Admin (canViewCrossTenantPilotPortfolio in rbac.ts). A regular
+    // tenant admin gets a 403 here and simply never sees this section -- fail-closed, no error UI,
+    // and the client never needs or sees which organization id is the platform operator's.
+    let cancelled = false;
+    fetch("/api/admin/pilot-portfolio", { credentials: "include", cache: "no-store" })
+      .then((response) => (response.ok ? response.json() : undefined))
+      .then((payload: { snapshot: PilotPortfolioSnapshot } | undefined) => {
+        if (!cancelled && payload) setPortfolio(payload.snapshot);
+      })
+      .catch(() => undefined);
+    return () => { cancelled = true; };
+  }, []);
 
   useEffect(() => {
     if (!user) return;
@@ -161,6 +191,23 @@ export function PilotConversionSection() {
         <MetricCard label="Readiness events" value={state.events.length} detail="tenant-scoped records" state={state.source} icon={Activity} />
         <MetricCard label="Sponsor review" value={health.score >= 85 ? "Ready" : "Pending"} detail="conversion checkpoint" state={state.source} icon={Users} />
       </div>
+
+      {portfolio && portfolio.dataState === "live" && (
+        <SectionCard title="Pilot Portfolio" description="Every pilot customer organization, positioned by its own real onboarding status -- for the platform operator only, never visible to a tenant admin.">
+          <KanbanBoard columns={buildPilotPortfolioColumns(portfolio.tenants)} />
+          <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            {deferredPortfolioMetrics.map((metric) => (
+              <div key={metric.label} className="rounded-lg border border-[rgba(15,17,23,0.08)] bg-white p-3">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[11px] font-semibold uppercase tracking-wide text-[#5F6B73]">{metric.label}</span>
+                  <span className="rounded-full bg-[#F2F3F5] px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-[#5F6B73]">Not connected</span>
+                </div>
+                <p className="mt-2 text-xs leading-relaxed text-[#5F6B73]">{metric.detail}</p>
+              </div>
+            ))}
+          </div>
+        </SectionCard>
+      )}
 
       <div className="grid gap-4 xl:grid-cols-[1.3fr_0.7fr]">
         <SectionCard title="Conversion checklist" description="Weighted signals used to calculate pilot health.">
