@@ -6,7 +6,7 @@ import { createSocialAlertRule, listSocialAlertRules, type CreateSocialAlertRule
 
 // A-96 (2026-08-04). organization_id/userId are derived from the authenticated server session --
 // never accepted from the client.
-const validProviders: SocialAlertRuleProvider[] = ["x", "facebook", "instagram", "linkedin", "threads", "rss", "manual", "demo"];
+const validProviders: SocialAlertRuleProvider[] = ["x", "facebook", "instagram", "linkedin", "threads", "rss", "manual", "demo", "brand24"];
 const validUrgencies: SocialAlertRuleUrgency[] = ["low", "medium", "high"];
 
 export async function GET() {

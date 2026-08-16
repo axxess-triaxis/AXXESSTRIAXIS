@@ -54,7 +54,10 @@ describe("AlertsSection (Sprint 5 -- formal Social Alerts audit, closing the Spr
   it("shows an honest empty state outside Demo Mode instead of fabricated demo alerts", () => {
     render(<AlertsSection />);
 
-    expect(screen.getByText(/isn't wired to a live provider or tenant-scoped repository yet/i)).toBeInTheDocument();
+    // Sprint 1 real Social Alerts (2026-08-17): real tenants now get the "configure a rule"
+    // empty-state copy instead of the old "not wired yet" text, since a real Brand24 ingestion
+    // path now exists -- the honest-empty-state discipline itself is unchanged.
+    expect(screen.getByText(/No social alert events yet\. Configure a rule above/i)).toBeInTheDocument();
     expect(screen.queryByText("State budget note references district oxygen resilience grants")).not.toBeInTheDocument();
     expect(screen.queryByText(/active$/)).not.toBeInTheDocument();
   });
@@ -100,5 +103,71 @@ describe("AlertsSection (Sprint 5 -- formal Social Alerts audit, closing the Spr
     await waitFor(() => expect(state.createdTasks).toHaveLength(1));
     expect(state.createdTasks[0].title).toContain("State budget note");
     expect(await screen.findByText("Task created")).toBeInTheDocument();
+  });
+});
+
+// Sprint 1 real Social Alerts (2026-08-17): a real, Brand24-sourced social_alert_events row,
+// mapped through eventToSocialAlert, must drive the same feed list and Sentiment Tracker section
+// the demo fixture already exercises above -- these tests prove the real-tenant wiring end to end,
+// distinct from demo mode which stays fully untouched (asserted throughout this file already).
+describe("AlertsSection real-tenant events (Sprint 1)", () => {
+  afterEach(() => {
+    window.localStorage.clear();
+    vi.unstubAllGlobals();
+  });
+
+  it("renders a real matched event in the feed and shows the real active count, no demo fixture involved", async () => {
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/api/social-alert-events")) {
+        return new Response(JSON.stringify({
+          events: [{
+            id: "event-1", organizationId: "org-1", ruleId: "rule-1", provider: "brand24",
+            title: "District hospital reports oxygen shortage", sourceAccount: "@localnews",
+            sentiment: "negative", urgency: "high", actionTargets: [],
+            receivedAt: "2026-08-17T08:00:00.000Z", metadata: { topic: "healthcare funding" },
+          }],
+        }), { status: 200 });
+      }
+      return new Response(JSON.stringify({ rules: [] }), { status: 200 });
+    }));
+
+    render(<AlertsSection />);
+
+    expect(await screen.findByText("District hospital reports oxygen shortage")).toBeInTheDocument();
+    expect(screen.getByText("1 active")).toBeInTheDocument();
+    expect(screen.queryByText(/No social alert events yet/i)).not.toBeInTheDocument();
+  });
+
+  it("shows the Sentiment Tracker section for a real tenant once real events exist", async () => {
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/api/social-alert-events")) {
+        return new Response(JSON.stringify({
+          events: [{
+            id: "event-1", organizationId: "org-1", ruleId: "rule-1", provider: "brand24",
+            title: "District hospital reports oxygen shortage", sourceAccount: "@localnews",
+            sentiment: "negative", urgency: "high", actionTargets: [],
+            receivedAt: "2026-08-17T08:00:00.000Z", metadata: {},
+          }],
+        }), { status: 200 });
+      }
+      return new Response(JSON.stringify({ rules: [] }), { status: 200 });
+    }));
+
+    render(<AlertsSection />);
+
+    expect(await screen.findByText("Sentiment Tracker & Analytics")).toBeInTheDocument();
+  });
+
+  it("keeps the honest empty state and no Sentiment Tracker section when the real tenant has zero matched events", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ events: [], rules: [] }), { status: 200 })));
+
+    render(<AlertsSection />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/No social alert events yet/i)).toBeInTheDocument();
+    });
+    expect(screen.queryByText("Sentiment Tracker & Analytics")).not.toBeInTheDocument();
   });
 });
