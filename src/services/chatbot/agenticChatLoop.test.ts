@@ -12,24 +12,29 @@ type MockTool = {
   handler: (scope: AgentScope, args: Record<string, unknown>) => Promise<{ content: Array<{ type: "text"; text: string }>; isError?: boolean }>;
 };
 
-vi.mock("../agents/toolRegistry", () => {
-  const state: { tools: MockTool[] } = { tools: [] };
-  return {
-    __state: state,
-    get agentToolRegistry() {
-      return state.tools;
-    },
-    getAgentTool: (name: string) => state.tools.find((tool) => tool.name === name),
-    validateAgentToolArguments: (tool: MockTool, args: unknown) => {
-      if (!args || typeof args !== "object" || Array.isArray(args)) return { ok: false, message: "Tool arguments must be an object." };
-      const candidate = args as Record<string, unknown>;
-      for (const required of tool.inputSchema.required ?? []) {
-        if (candidate[required] === undefined) return { ok: false, message: `${required} is required.` };
-      }
-      return { ok: true, args: candidate };
-    },
-  };
-});
+// vi.mock factories are hoisted above top-level variables, so the mutable tool list must come
+// from vi.hoisted rather than a plain top-level const -- same convention as ChatbotPanel.test.tsx.
+// A prior version of this file exported a `__state` escape hatch from inside the mock factory and
+// imported it back from the real "../agents/toolRegistry" path; CodeQL flagged every access on it
+// as "always undefined" because the real module has no such export -- its static analysis doesn't
+// evaluate vi.mock substitution. vi.hoisted avoids that entirely: toolState is a real module-scope
+// binding, not something imported from a path whose real implementation lacks the property.
+const toolState = vi.hoisted(() => ({ tools: [] as MockTool[] }));
+
+vi.mock("../agents/toolRegistry", () => ({
+  get agentToolRegistry() {
+    return toolState.tools;
+  },
+  getAgentTool: (name: string) => toolState.tools.find((tool) => tool.name === name),
+  validateAgentToolArguments: (tool: MockTool, args: unknown) => {
+    if (!args || typeof args !== "object" || Array.isArray(args)) return { ok: false, message: "Tool arguments must be an object." };
+    const candidate = args as Record<string, unknown>;
+    for (const required of tool.inputSchema.required ?? []) {
+      if (candidate[required] === undefined) return { ok: false, message: `${required} is required.` };
+    }
+    return { ok: true, args: candidate };
+  },
+}));
 
 const mockRecordAudit = vi.fn();
 vi.mock("../agents/agentConnectionRepository", () => ({
@@ -50,8 +55,6 @@ vi.mock("../ai/tenantModelPolicy", async (importOriginal) => {
 });
 
 import { runAgenticChatTurn } from "./agenticChatLoop";
-// @ts-expect-error -- __state is a test-only escape hatch exported by the mock factory above, not part of the real module's type.
-import { __state as toolState } from "../agents/toolRegistry";
 
 const tenantScope: TenantScope = { organizationId: "org-1", userId: "user-1" as string, role: "Super Admin" };
 
@@ -77,7 +80,7 @@ function makeTool(overrides: Partial<MockTool>): MockTool {
 
 describe("runAgenticChatTurn", () => {
   afterEach(() => {
-    (toolState as { tools: MockTool[] }).tools = [];
+    toolState.tools = [];
     policyState.blockOpenAi = false;
     mockRecordAudit.mockReset();
     vi.clearAllMocks();
@@ -109,7 +112,7 @@ describe("runAgenticChatTurn", () => {
   it("completes a 2-step auto-tool plan, dispatching each handler with the synthesized scope (not the raw TenantScope)", async () => {
     const listHandler = vi.fn(async () => ({ content: [{ type: "text" as const, text: JSON.stringify([{ id: "t1" }]) }] }));
     const createHandler = vi.fn(async () => ({ content: [{ type: "text" as const, text: JSON.stringify({ id: "t2" }) }] }));
-    (toolState as { tools: MockTool[] }).tools = [
+    toolState.tools = [
       makeTool({ name: "list_tasks", requiredCapability: "list_tasks", handler: listHandler }),
       makeTool({ name: "create_task", requiredCapability: "create_task", handler: createHandler }),
     ];
@@ -141,7 +144,7 @@ describe("runAgenticChatTurn", () => {
 
   it("pauses on a critical tool without executing it", async () => {
     const handler = vi.fn(async () => ({ content: [{ type: "text" as const, text: "{}" }] }));
-    (toolState as { tools: MockTool[] }).tools = [
+    toolState.tools = [
       makeTool({ name: "create_stakeholder", requiredCapability: "create_stakeholder", criticality: "critical", handler }),
     ];
 
@@ -162,7 +165,7 @@ describe("runAgenticChatTurn", () => {
 
   it("on confirmed resume, executes exactly the one pending tool then continues the loop", async () => {
     const handler = vi.fn(async () => ({ content: [{ type: "text" as const, text: JSON.stringify({ id: "sh-1" }) }] }));
-    (toolState as { tools: MockTool[] }).tools = [
+    toolState.tools = [
       makeTool({ name: "create_stakeholder", requiredCapability: "create_stakeholder", criticality: "critical", handler }),
     ];
 
@@ -195,7 +198,7 @@ describe("runAgenticChatTurn", () => {
 
   it("on cancelled resume, stops immediately with zero handler calls and zero model calls", async () => {
     const handler = vi.fn(async () => ({ content: [{ type: "text" as const, text: "{}" }] }));
-    (toolState as { tools: MockTool[] }).tools = [
+    toolState.tools = [
       makeTool({ name: "create_stakeholder", requiredCapability: "create_stakeholder", criticality: "critical", handler }),
     ];
     const adapter = mockAdapter({ text: "should never be reached" });
@@ -223,7 +226,7 @@ describe("runAgenticChatTurn", () => {
 
   it("stops at the iteration cap with an honest exhaustion message rather than looping forever", async () => {
     const handler = vi.fn(async () => ({ content: [{ type: "text" as const, text: "{}" }] }));
-    (toolState as { tools: MockTool[] }).tools = [makeTool({ name: "list_tasks", requiredCapability: "list_tasks", handler })];
+    toolState.tools = [makeTool({ name: "list_tasks", requiredCapability: "list_tasks", handler })];
 
     const adapter = mockAdapter(
       { toolCalls: [{ id: "c1", name: "list_tasks", arguments: {} }] },
@@ -248,7 +251,7 @@ describe("runAgenticChatTurn", () => {
 
   it("feeds a thrown handler error back into the transcript instead of crashing the turn", async () => {
     const handler = vi.fn(async () => { throw new Error("simulated failure"); });
-    (toolState as { tools: MockTool[] }).tools = [makeTool({ name: "list_tasks", requiredCapability: "list_tasks", handler })];
+    toolState.tools = [makeTool({ name: "list_tasks", requiredCapability: "list_tasks", handler })];
 
     const adapter = mockAdapter(
       { toolCalls: [{ id: "c1", name: "list_tasks", arguments: {} }] },
@@ -272,7 +275,7 @@ describe("runAgenticChatTurn", () => {
 
   it("feeds an isError tool result back into the transcript without recording it as a completed step", async () => {
     const handler = vi.fn(async () => ({ content: [{ type: "text" as const, text: "Task not found." }], isError: true }));
-    (toolState as { tools: MockTool[] }).tools = [makeTool({ name: "list_tasks", requiredCapability: "list_tasks", handler })];
+    toolState.tools = [makeTool({ name: "list_tasks", requiredCapability: "list_tasks", handler })];
 
     const adapter = mockAdapter(
       { toolCalls: [{ id: "c1", name: "list_tasks", arguments: {} }] },
