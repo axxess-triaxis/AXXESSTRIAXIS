@@ -26,6 +26,14 @@ import type { RoleName } from "../../domain";
 // rather than silently overspending mid-turn.
 export const MAX_AGENTIC_LOOP_ITERATIONS = 5;
 
+// Same 0.62 confidence split, same reasoning, as ChatbotPanel.tsx's legacy-path filter (aiRouter's
+// provider adapters use confidence: 0.3 as their own deliberate "not a live model call" sentinel --
+// a missing API key, budget guard skip, or a non-200 provider response; see openAiProvider.ts). Below
+// it, completion.text is internal diagnostic prose (e.g. "OpenAI / ChatGPT request failed (429)...")
+// never meant to reach an end user verbatim -- the "final" wire response has no confidence field for
+// the client to filter on, so this substitution has to happen here, at the source.
+const PROVIDER_UNAVAILABLE_MESSAGE = "AXXESS Copilot's AI provider is temporarily unavailable. Try again shortly.";
+
 export type AgenticChatStep = { toolName: string; summary: string };
 
 export type PendingAgenticTool = { id: string; name: string; arguments: Record<string, unknown> };
@@ -131,7 +139,7 @@ async function stepLoop(
     state.costUsd += completion.actualCostUsd ?? 0;
 
     if (completion.confidence < 0.62) {
-      return { status: "final", reply: completion.text, steps: state.steps, costUsd: state.costUsd };
+      return { status: "final", reply: PROVIDER_UNAVAILABLE_MESSAGE, steps: state.steps, costUsd: state.costUsd };
     }
 
     const call = completion.toolCalls?.[0];
