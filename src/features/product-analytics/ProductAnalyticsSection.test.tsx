@@ -101,33 +101,90 @@ describe("ProductAnalyticsSection Feedback Inbox (A-35 fix)", () => {
 // Founder-reported (2026-08-15): "Most Used Modules" and "Activation Funnel" rendered fabricated
 // percentages/counts to every visitor, real tenant or demo, with no demoMode gate at all -- unlike
 // every other fabricated block on this page (Engineering & Delivery Tooling, seeded Feedback Inbox),
-// which are correctly gated. This proves the fix: outside demo mode (the only mode this test env can
-// exercise, since isDemoModeEnabled() reads window.localStorage/env, both unset in jsdom), a real
-// tenant sees an honest "not wired yet" message instead of any fabricated number.
-describe("ProductAnalyticsSection Most Used Modules / Activation Funnel (dummy-data fix)", () => {
+// which are correctly gated. First fix (2026-08-15) made both sections honestly say "not wired yet"
+// outside demo mode. Sprint (2026-08-17) replaced that placeholder with real data: Most Used Modules
+// now reads /api/module-usage-events (written by App.tsx's module_opened effect on every real
+// navigation), Activation Funnel now reads the same /api/pilot-readiness-events
+// PilotConversionSection.tsx already uses. With no fetch stub (the default, unmocked jsdom fetch
+// resolves to a failure caught by the route's own `.catch(() => undefined)`), both stay at their
+// honest empty state -- a real tenant with genuinely zero events, not a fabricated number.
+describe("ProductAnalyticsSection Most Used Modules / Activation Funnel (real data, not a fixture)", () => {
   afterEach(() => {
     state.feedback = [];
     state.users = [];
+    vi.unstubAllGlobals();
   });
 
-  it("shows an honest not-wired-yet message for Most Used Modules for a real (non-demo) tenant, never a fabricated percentage", async () => {
+  it("shows an honest empty state for Most Used Modules when no module usage events exist yet, never a fabricated percentage", async () => {
     renderSection();
 
     await waitFor(() => {
       expect(screen.getByText("Most Used Modules")).toBeInTheDocument();
     });
-    expect(screen.getByText(/Per-module usage tracking requires product analytics instrumentation/)).toBeInTheDocument();
+    expect(screen.getByText("No module activity recorded yet.")).toBeInTheDocument();
     expect(screen.queryByText("92%")).not.toBeInTheDocument();
   });
 
-  it("shows an honest not-wired-yet message for Activation Funnel for a real (non-demo) tenant, never a fabricated step count", async () => {
+  it("shows an honest empty state for Activation Funnel when no pilot readiness events exist yet, never a fabricated step count", async () => {
     renderSection();
 
     await waitFor(() => {
       expect(screen.getByText("Activation Funnel")).toBeInTheDocument();
     });
-    expect(screen.getByText(/Activation-funnel tracking requires product analytics instrumentation/)).toBeInTheDocument();
+    expect(screen.getByText("No activation events recorded yet.")).toBeInTheDocument();
     expect(screen.queryByText("Signed in")).not.toBeInTheDocument();
+  });
+
+  it("renders real per-module counts from /api/module-usage-events, sorted by usage", async () => {
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
+      if (String(input).includes("/api/module-usage-events")) {
+        return {
+          ok: true,
+          json: async () => [
+            { module: "dashboard" }, { module: "dashboard" }, { module: "dashboard" },
+            { module: "projects" },
+          ],
+        };
+      }
+      return { ok: true, json: async () => [] };
+    }));
+
+    renderSection();
+
+    await waitFor(() => {
+      expect(screen.getByText("dashboard")).toBeInTheDocument();
+    });
+    expect(screen.getByText("3")).toBeInTheDocument();
+    expect(screen.getByText("projects")).toBeInTheDocument();
+    expect(screen.getByText("1")).toBeInTheDocument();
+    expect(screen.queryByText("No module activity recorded yet.")).not.toBeInTheDocument();
+  });
+
+  it("renders real per-step counts from /api/pilot-readiness-events, counting distinct users per step", async () => {
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => {
+      if (String(input).includes("/api/pilot-readiness-events")) {
+        return {
+          ok: true,
+          json: async () => [
+            { userId: "user-1", stepId: "organization", eventType: "step_completed" },
+            { userId: "user-2", stepId: "organization", eventType: "step_completed" },
+            { userId: "user-1", stepId: "first_project", eventType: "step_completed" },
+            { userId: "user-1", stepId: "first_project", eventType: "step_reopened" },
+          ],
+        };
+      }
+      return { ok: true, json: async () => [] };
+    }));
+
+    renderSection();
+
+    await waitFor(() => {
+      expect(screen.getByText("Confirm organization")).toBeInTheDocument();
+    });
+    expect(screen.getByText("2")).toBeInTheDocument();
+    expect(screen.getByText("Create first project")).toBeInTheDocument();
+    expect(screen.getByText("1")).toBeInTheDocument();
+    expect(screen.queryByText("No activation events recorded yet.")).not.toBeInTheDocument();
   });
 });
 

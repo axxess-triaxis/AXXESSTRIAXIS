@@ -15,6 +15,7 @@ import type { AsanaPortfolioHealthResult } from "../../services/integrations/asa
 import type { MixpanelQueryHealthResult } from "../../services/integrations/mixpanelQueryHealth";
 import type { PostHogQueryHealthResult } from "../../services/integrations/postHogQueryHealth";
 import type { SentryProjectHealthResult } from "../../services/integrations/sentryProjectHealth";
+import { pilotReadinessSteps } from "../../services/pilot/pilotHealth";
 import { useAnalytics } from "../../services/analytics";
 
 // Sprint 1 pilot portfolio (2026-08-15): the old A-96 devToolDashboards fixture (GitHub/Linear/
@@ -39,6 +40,16 @@ const integrationDisplayNames: Record<keyof IntegrationsHealth, string> = {
   postHogQuery: "PostHog (query)",
   mixpanelQuery: "Mixpanel (query)",
   asana: "Asana",
+};
+
+type PilotReadinessEventRow = {
+  userId?: string;
+  stepId: string;
+  eventType: string;
+};
+
+type ModuleUsageEventRow = {
+  module: string;
 };
 
 type ProductMetrics = {
@@ -105,6 +116,8 @@ export function ProductAnalyticsSection() {
   const [feedbackUsers, setFeedbackUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [integrations, setIntegrations] = useState<IntegrationsHealth | undefined>(undefined);
+  const [readinessEvents, setReadinessEvents] = useState<PilotReadinessEventRow[]>([]);
+  const [moduleUsageEvents, setModuleUsageEvents] = useState<ModuleUsageEventRow[]>([]);
 
   const loadMetrics = useCallback(async () => {
     if (!scope) return;
@@ -154,6 +167,34 @@ export function ProductAnalyticsSection() {
   }, []);
 
   useEffect(() => {
+    // Real Activation Funnel data: the same tenant-scoped pilot_readiness_events
+    // PilotConversionSection.tsx already reads, restricted to Super Admin/Organization Admin (this
+    // page's own route guard). No demo fallback needed here -- the honest empty state below already
+    // covers a real tenant with zero events, and demo mode keeps its own fabricated branch.
+    let cancelled = false;
+    fetch("/api/pilot-readiness-events?pageSize=200", { credentials: "include", cache: "no-store" })
+      .then((response) => (response.ok ? response.json() : undefined))
+      .then((payload: PilotReadinessEventRow[] | undefined) => {
+        if (!cancelled && payload) setReadinessEvents(payload);
+      })
+      .catch(() => undefined);
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    // Real Most Used Modules data: every real navigation writes here via App.tsx's module_opened
+    // effect. Restricted to Super Admin/Organization Admin, matching this page's own route guard.
+    let cancelled = false;
+    fetch("/api/module-usage-events?pageSize=500", { credentials: "include", cache: "no-store" })
+      .then((response) => (response.ok ? response.json() : undefined))
+      .then((payload: ModuleUsageEventRow[] | undefined) => {
+        if (!cancelled && payload) setModuleUsageEvents(payload);
+      })
+      .catch(() => undefined);
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
     if (!user) return;
     analytics.trackEvent("user_admin_viewed", { admin_page: "product_analytics" }, {
       organization_id: user.organizationId,
@@ -168,6 +209,25 @@ export function ProductAnalyticsSection() {
 
   const demoMode = isDemoModeEnabled();
   const activeModules = ["Dashboard", "Projects", "Tasks", "Meetings", "Feedback", "Administration"];
+
+  const moduleCounts = Object.entries(
+    moduleUsageEvents.reduce<Record<string, number>>((counts, event) => {
+      counts[event.module] = (counts[event.module] ?? 0) + 1;
+      return counts;
+    }, {}),
+  ).sort((a, b) => b[1] - a[1]);
+  const maxModuleCount = moduleCounts[0]?.[1] ?? 0;
+
+  const funnelCounts = pilotReadinessSteps.map((step) => ({
+    step: step.label,
+    count: new Set(
+      readinessEvents
+        .filter((event) => event.stepId === step.id && event.eventType === "step_completed" && event.userId)
+        .map((event) => event.userId),
+    ).size,
+  }));
+  const hasFunnelActivity = funnelCounts.some((row) => row.count > 0);
+
   const displayedFeedbackItems = demoMode ? demoBetaFeedback : feedbackItems;
   const displayedFeedbackUsers = demoMode ? demoFeedbackUsers : feedbackUsers;
   const displayedFeedbackCount = demoMode ? demoBetaFeedback.length : metrics.feedback;
@@ -204,8 +264,23 @@ export function ProductAnalyticsSection() {
                 </div>
               ))}
             </div>
+          ) : moduleCounts.length === 0 ? (
+            <p className="mt-4 text-xs leading-relaxed text-[#5F6B73]">No module activity recorded yet.</p>
           ) : (
-            <p className="mt-4 text-xs leading-relaxed text-[#5F6B73]">Per-module usage tracking requires product analytics instrumentation that isn&apos;t wired to this workspace yet.</p>
+            <div className="mt-4 space-y-3">
+              {moduleCounts.map(([module, count]) => {
+                const percent = maxModuleCount > 0 ? Math.round((count / maxModuleCount) * 100) : 0;
+                return (
+                  <div key={module} className="flex items-center gap-3">
+                    <span className="w-28 truncate text-xs font-medium text-[#0F1117]">{module}</span>
+                    <div className="h-2 flex-1 overflow-hidden rounded-full bg-[#F2F3F5]">
+                      <div className="h-full rounded-full bg-[#8B1E2D]" style={{ width: `${Math.max(4, percent)}%` }} />
+                    </div>
+                    <span className="w-16 text-right font-mono text-[10px] text-[#5F6B73]">{count}</span>
+                  </div>
+                );
+              })}
+            </div>
           )}
         </Card>
 
@@ -226,8 +301,17 @@ export function ProductAnalyticsSection() {
                 </div>
               ))}
             </div>
+          ) : !hasFunnelActivity ? (
+            <p className="mt-4 text-xs leading-relaxed text-[#5F6B73]">No activation events recorded yet.</p>
           ) : (
-            <p className="mt-4 text-xs leading-relaxed text-[#5F6B73]">Activation-funnel tracking requires product analytics instrumentation that isn&apos;t wired to this workspace yet.</p>
+            <div className="mt-4 space-y-3">
+              {funnelCounts.map(({ step, count }) => (
+                <div key={step} className="flex items-center justify-between rounded-lg bg-[#F8F9FA] px-3 py-2">
+                  <span className="text-xs font-medium text-[#0F1117]">{step}</span>
+                  <span className="font-mono text-[11px] text-[#5F6B73]">{count}</span>
+                </div>
+              ))}
+            </div>
           )}
         </Card>
       </div>
