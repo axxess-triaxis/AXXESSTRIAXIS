@@ -64,6 +64,43 @@ exclusions. **This is corroborating evidence for the same event, not a new relat
 outcome** -- the founder's prior non-response decision (above) is not stated to have changed by this
 new artifact; recorded as received, not as a reason to revisit that decision.
 
+**Update, 2026-08-17:** a post-event wrap-up email arrived from ceo@pitchkaroindia.com, 2026-08-17,
+11:55 AM, subject "Thank you for pitching. Three days, done." -- addressed personally ("Sudipta, thank
+you") and closing "Thank you for trusting us with your pitch."
+- **Genuine new scale data, quoted directly:** "The Pitch Karo India x BISE Pitching Arena ran across
+  three days at Bharat Mandapam, inside Bharatiya Vyapar Mahotsav 2026, and you were part of it. Out of
+  more than **7,000 applications**, **500 startups** made it onto that stage." This corroborates the
+  founder's own framing (2026-08-17, in-session) that AXXESS reached the **Top 500 of 7,000+
+  applications** for this event's pitching arena, and that the underlying application (per the
+  original entry above) was submitted at idea stage in May 2026, before the final-round selection.
+  A third organizer name is also confirmed here for the first time, per the founder's own framing:
+  **ThinkStartup**, alongside IIT Delhi and BISE already named in this entry's title.
+- **Direct inconsistency with this entry's own already-logged decision, flagged rather than silently
+  resolved, in the same spirit as this log's other source-document inconsistencies (see iCreate, entry
+  #25; Peachscore's IST/PST discrepancy, entry #34):** this email's language ("you were part of it,"
+  "you did it," standing up in a full hall and pitching to investors) and its offer of a completion
+  certificate ("Your certificate appears in your dashboard once processing is complete") both read as
+  if the founder physically attended and pitched at one of the three event days. This is the opposite
+  of the non-attendance, non-response outcome already recorded above and reconfirmed by the founder
+  in-session on 2026-08-17 ("we declined due to cost... self funded travel, stay, food at Delhi"). The
+  most likely explanation, consistent with this event's own registered-founder-wide "share your
+  feedback" ask elsewhere in the same email, is that this is a templated wrap-up sent to every
+  registered/shortlisted founder regardless of actual attendance, not a personalized confirmation of
+  physical presence -- but this session has no independent evidence to confirm that read, so it is
+  recorded as an inconsistency, not resolved as fact. **Founder's own explanation (2026-08-17,
+  in-session), read here as his own general characterization, not a claim independently verified by
+  this session:** Indian startup-event ecosystem communications of this kind are "mostly optics," and
+  this specific email is read by the founder as a zero-diligence mass blast rather than an
+  attendance-verified message.
+- **This entry's decline decision is unchanged.** The founder's 2026-08-17 in-session statement
+  reconfirms the original reasoning (self-funded travel/stay/food to Delhi, cost-based decline) and
+  adds no new information suggesting attendance actually occurred.
+**Outcome (updated, not changed):** Selection to the Top 500 (of 7,000+ applications) is now
+independently corroborated by the organizer's own post-event numbers -- a genuine credential from the
+idea-stage May 2026 application. Physical attendance/pitching did not occur, per the founder's
+reconfirmed cost-based decline; the post-event email's "you did it" framing is recorded as a likely
+mass-send inconsistency, not evidence of attendance.
+
 ### 34. Peachscore Accelerator -- Startup Elevator Pitch Competition
 
 **Status:** Invited. **New, 2026-08-12.** No evidence of attendance or a result in this pass --
@@ -83,6 +120,32 @@ Competition"), sent 2026-08-11, 10:44 PM IST.
 - Prize: Peachscore will select the strongest elevator pitch and award "a full scholarship for free
   enrollment into the Equity-Free, Global Peachscore Data-driven Accelerator."
 **Outcome:** Invitation received; attendance and any result are not evidenced in this pass.
+
+### 43. SLINGSHOT 2026 -- Deep Tech Startup Pitching Competition (Agorize)
+
+**Status:** Rejected. **New, 2026-08-17.** Numbered out of the main entry sequence (added after #41)
+to avoid renumbering every cross-referenced entry in this log -- grouped here under Competitions and
+Panels by content, not position.
+Source: "[SLINGSHOT 2026] Results Announcement" email, notification@agorize.com, 2026-08-13, 5:15 PM,
+forwarding a message from Timothy Sim of the SLINGSHOT 2026/Agorize team.
+- Quoted in full: "Dear SLINGSHOT 2026 Startups, The SLINGSHOT 2026 and Agorize team would like to
+  thank you for your participation in SLINGSHOT 2026. After careful consideration by our judges, we
+  regret to inform you that your startup hasn't been chosen to proceed to the next step. Nonetheless,
+  we sincerely hope that you enjoyed taking part in this challenge and we would be happy to see you
+  compete in future competitions!"
+- No judge-specific feedback or reasoning given -- a generic result notification, not a
+  reasoned pass like #19 (David Orban) or #36/#37 (Hub71). Explicit door left open ("happy to see you
+  compete in future competitions"), same pattern as most entries in this log's founder-framing note
+  above (no hard, no-path-back rejection language used).
+- **Founder's own read of the probable reason (2026-08-17): applied at idea stage without traction
+  evidence, and AXXESS is not genuinely a "deep tech" company** -- a category mismatch against a
+  competition explicitly framed as a "Deep tech startup pitching competition" (per the source email's
+  own subject line), on top of a stage mismatch. Neither Agorize/SLINGSHOT's result email nor this
+  session's evidence confirms this as the actual judging reason -- founder's own interpretation only.
+**Outcome:** Not selected to proceed to the next step, with a generic competition-result message and
+an implicit reapplication invitation -- not a reasoned or stage-specific rejection. Founder's own
+probable-cause read: category mismatch (not genuinely deep tech) compounded by a pre-traction
+application, not independently confirmed by the result email itself.
 
 ## Incubation Programs
 
@@ -352,6 +415,33 @@ founder describes as the better-fitting, actively-progressing SWG relationship. 
 or Dealum thread becomes available, this entry should be updated with the real, written outcome
 rather than left on this placeholder.**
 
+### 42. Surge -- Peak XV Partners (formerly Sequoia India & Southeast Asia) Accelerator
+
+**Status:** Rejected. **New, 2026-08-17.** Numbered out of the main entry sequence (added after #41)
+to avoid renumbering every cross-referenced entry in this log -- grouped here under Accelerator /
+Pre-Accelerator Programs by content, not position.
+Source: "Your application to" email, apply@surgeahead.com, 2026-08-17, 8:58 AM, footer confirming
+sender as Peak XV Partners, 38 Beach Road, #26-12, South Beach Tower, Singapore 189767.
+- Quoted: "Thank you for applying to Surge and for your time and effort... We have received a large
+  number of applications and have been through each one in detail. We are very impressed with the
+  overall quality of the applicant pool. Unfortunately, we can only work with a limited number of
+  start-ups at a given point, so we are unable to take your application forward for Surge."
+- Attached a generic explainer video/copy ("Why Was My Startup Not Chosen For Surge?") listing Surge's
+  general evaluation criteria -- founding team background/founder-market fit, market size and
+  go-to-market, traction (month-on-month growth, unit economics, App Store ratings/NPS if launched, or
+  external evidence of an underserved pain point if pre-launch), and customer proposition. This is
+  Surge's standard rejection boilerplate, not application-specific feedback -- no reasoning particular
+  to AXXESS is given, same evidentiary weight as entry #4's "capacity-limited" framing.
+- **Founder's own read of the probable reason (2026-08-17): Surge's acceptance rate is below 1%, and
+  the application was submitted without traction evidence.** Peak XV's own rejection email does not
+  state a stage or selectivity threshold as the reason -- this is the founder's own understanding of
+  the program's competitiveness and the application's timing, not a quote from Surge/Peak XV.
+**Outcome:** Not selected, with generic capacity-constrained framing ("we can only work with a limited
+number of start-ups") rather than application-specific reasoning. Explicit reapplication invitation
+("We encourage you to re-apply in the future"). Founder's own probable-cause read: sub-1% acceptance
+rate combined with a pre-traction application, not independently confirmed by the rejection email
+itself.
+
 ## Startup Visa / Relocation Programs
 
 Two government-run "startup visa" schemes, evaluated by their respective national startup
@@ -498,6 +588,38 @@ should be read as evidence for the other.
 - **Second response (Piyush Sharma, 3one4 Capital, 2026-08-03):** a distinct pass, on different grounds than the first -- **"the business model is still quite service-led and doesn't align with our venture scale aspirations at this stage. We prefer to invest in opportunities that have more established revenue models and a clearer pathway to scaling sustainably."** Recorded verbatim per this log's standing practice; not softened.
 - **Founder's reply, same day:** stated the company is "moving towards AI B2B and B2G Enterprise SaaS model and have pivoted from 'Services-as-a-wedge' model," and attributed the "service-led" read to the current founder-led sales motion looking service-like from the outside -- founder's own characterization, not independently verified against 3one4's actual reasoning.
 - Net effect: two passes from the same firm, on two different grounds ("too early" in June, "still service-led, doesn't fit venture-scale thesis" in August) -- a genuinely harder signal than a single early-stage pass, and recorded as such rather than reframed as unchanged.
+
+### 44. Daniel Darling -- Managing Partner, Focal (self-described "your pre-seed lead")
+
+**Status:** Passed. **New, 2026-08-17.** Numbered out of the main entry sequence (added after #41)
+to avoid renumbering every cross-referenced entry in this log -- grouped here under VC Outreach by
+content, not position.
+Source: two-message email thread, subject "Pitching - AXXESS -- The governed AI execution layer for
+organizations" -- founder's own outreach to hello@focal.vc, cc Ritashree Mahanta, 2026-08-15, 3:44 PM;
+reply from Daniel Darling, 2026-08-17, 8:14 AM.
+- **Founder's own outreach (2026-08-15) contains a traction snapshot two days fresher than this log's
+  other most-recent figures** -- recorded here as the founder's own outbound claim to a third party,
+  same evidentiary treatment as entry #10's 2026-08-01 email to Plug and Play UAE, **not
+  independently reconciled against this repo's own LOI/pilot tracking doc in this pass**: "6 signed
+  LOIs, 2 advance-payment commitments, 2 external test pilots, 9 additional users expressing pilot
+  intent and 30+ people on our waitlist... 80+ customer conversations and four rapid product
+  iterations driven by customer feedback." This is one signed LOI higher than entry #41's 2026-08-13
+  figure (6 signed/1 committed) and matches entry #41's "6 signed" count -- recorded as-is, not
+  reconciled further here.
+- Daniel Darling's reply, quoted in full: "Thank you for including us in your outreach Sudipta.
+  Unfortunately this opportunity isn't a good fit for our fund and I'll respectfully pass. What you
+  may find useful for your fundraise is our open sourced list of early stage investors: findfunding.vc
+  ... Wishing you success." Email signature confirms Focal's own positioning: "your pre-seed lead."
+- **Founder's own read of the probable reason (2026-08-17): Focal currently only invests in US- and
+  Canada-based startups**, not a stage or product judgment. Focal's own reply does not state a
+  geographic mandate as the reason for the pass -- "isn't a good fit for our fund" is generic --
+  so this is the founder's own understanding of Focal's actual investment mandate, not a quote from
+  Focal itself. If accurate, this would be a pure geographic-mandate mismatch (AXXESS being
+  India-headquartered), distinct from every other VC/angel pass already logged in this section (#19
+  David Orban, #22 3one4 Capital), which cite stage/traction/business-model reasons instead.
+**Outcome:** Passed, with a generic "not a good fit" framing and a resource redirect (a curated
+early-stage-investor list) rather than application-specific reasoning. Founder's own probable-cause
+read: geographic mandate mismatch (US/Canada-only), not independently confirmed by the reply itself.
 
 ## Mentor / Ecosystem Recognition Roles (New, 2026-08-03)
 

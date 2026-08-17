@@ -85,6 +85,14 @@ export default function App() {
       module_name: activeRoute.module,
       route: routePath,
     });
+    // Sprint (2026-08-17): fire-and-forget persistence for the real "Most Used Modules" view on
+    // Product Analytics -- additive to the client-analytics event above, not a replacement.
+    void fetch("/api/module-usage-events", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ module: activeRoute.module }),
+    }).catch(() => undefined);
     if (active === "dashboard") {
       analytics.trackEvent("dashboard_viewed", { module: "dashboard" }, {
         organization_id: currentUser.organizationId,
