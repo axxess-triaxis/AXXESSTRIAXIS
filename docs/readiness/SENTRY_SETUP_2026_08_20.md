@@ -71,10 +71,11 @@ claims:
 4. **No execution context at the point of failure.** This session's invitation-email root cause was only
    found because a temporary diagnostic `console.error` line was hand-written, deployed, and read back
    from `vercel logs` after a live retry -- three separate PRs (#266, #269) just to get one runtime value
-   safely surfaced. `sentry.server.config.ts`'s `includeLocalVariables: true` (set in this pass) attaches
-   actual local variable values to a server stack trace automatically, for every unhandled exception, with
-   no hand-written diagnostic required. This is not a hypothetical improvement -- it is the exact gap this
-   session's own debugging process ran into and worked around manually.
+   safely surfaced. `sentry.server.config.ts`'s `includeLocalVariables: true` (set in this pass) is
+   *designed* to attach actual local variable values to a server stack trace automatically, for every
+   unhandled exception, with no hand-written diagnostic required -- this is the intended improvement, not
+   yet a confirmed one; see "Known gap" below, which found that server-side capture itself is not
+   currently reaching Sentry in production, so this specific benefit is not yet realized.
 5. **No release or deploy correlation.** Sentry ties issues to a release/commit and can show "this error
    started in deploy X" -- directly relevant given how much of this session's own CI/deploy discipline
    (`docs/readiness/CI_DEPLOYMENT_LEDGER.md`, `docs/readiness/PRODUCTION_DEPLOY_EXCEPTION_POLICY.md`) is
@@ -91,21 +92,60 @@ covering the server-side and issue-lifecycle gap PostHog was never built to fill
 - `pnpm run typecheck` -- see `docs/readiness/VERIFICATION_LEDGER.md` for the result of this pass.
 - No Sentry MCP server is connected in this Claude Code session, so the skill's own automated
   "poll the MCP until the event appears" verification step could not run. Founder supplied an existing
-  project DSN directly instead. **Verification is therefore manual**: a real error needs to be triggered
-  through the app's actual code path and confirmed in the Sentry dashboard directly, not just asserted
-  from the code being in place.
+  project DSN directly instead. Verification was done manually via a temporary
+  `src/app/api/sentry-test-error/route.ts` (removed once the finding below was confirmed), triggered
+  both locally and against the live production deployment, with results read back from the Sentry
+  dashboard (founder-checked, screenshotted) and from `vercel logs`.
+- **Client-side and tracing: confirmed working.** A local dev-server test (`environment: development`,
+  `server_name` = founder's own machine) landed as a real Issue in Sentry, confirmed via a Gmail
+  notification screenshot the founder shared, OCR'd to extract the exact event detail (issue ID
+  `8f580cca...`, project `javascript-nextjs`, full stack trace with local-variable capture visible).
+  Performance tracing spans (`GET /api/sentry-test-error`) also appeared in Sentry's Explore/Traces view.
+
+## Known gap: server-side error capture does not currently reach Sentry from production
+
+**Confirmed, not hypothesized.** Two full production redeploys (PRs #272, #273) and a manual diagnostic
+(PR #274, mirroring the exact `console.error`-based technique that found the invitation-email root
+cause) established:
+
+- Every production hit on the test route returned the expected `500` and logged the thrown error via
+  `vercel logs`, with `environment: "production"` correctly tagged -- the route itself, and Vercel's own
+  request logging, work as expected.
+- `debug: true` (Sentry's own first documented troubleshooting step) produced **zero** visible SDK output
+  in `vercel logs`, at any log level. This session's own broader pattern -- every log line surfaced all
+  session, across two separate investigations, has been `level: "error"` -- suggests `console.log`-based
+  SDK debug output may simply not reach Vercel's log stream at all, making this specific troubleshooting
+  step a dead end for this deployment target rather than proof of anything about Sentry itself.
+- A manual `Sentry.getClient()` / `captureException()` / `await Sentry.flush()` diagnostic, reported via
+  `console.error` (which reliably does show up), gave a definitive, unambiguous answer:
+  **`client initialized: false`**, despite `SENTRY_DSN` confirmed present in the Vercel Production
+  environment (`vercel env ls production`). `captureException` still returned a locally-generated event
+  ID (expected SDK behavior even with no client -- not evidence of a successful send), and `flush()`
+  explicitly returned `false`.
+- **Working hypothesis, not yet confirmed:** this app builds production with **Turbopack** (visible in
+  both the local dev server output and this session's own reading of `@sentry/nextjs`'s own troubleshooting
+  table, which flags Turbopack-only limitations for at least one other feature -- tree-shaking). A gap
+  between `instrumentation.ts`'s `register()` hook and the actual Route Handler's execution context on a
+  Turbopack production build, on Next.js 16.2.12 with `@sentry/nextjs@10.70.0` (both very recent releases),
+  is plausible but not confirmed as the specific mechanism. No GitHub issue or Sentry changelog entry was
+  checked to corroborate this against other reported cases.
+- **Explicitly parked, per founder decision (2026-08-20):** further investigation was deliberately stopped
+  here rather than continued indefinitely -- this is a real, named, unresolved gap, not a silently
+  abandoned one. See `docs/readiness/DECISION_OUTCOME_LEDGER.md` for the parking decision itself.
 
 ## Remaining risk / not yet done
 
+- **Server-side error capture does not reach Sentry in production** -- see "Known gap" above. This is the
+  primary blocker to this setup delivering its stated purpose (server-side visibility PostHog can't
+  provide); client-side capture and tracing work, server-side error capture does not, as of this pass.
 - **Source-map upload is not active.** `withSentryConfig()` is wired, but `SENTRY_AUTH_TOKEN`,
-  `SENTRY_ORG`, and `SENTRY_PROJECT` are not set anywhere (local or Vercel). Production stack traces will
-  show minified/unreadable frames until these are added -- this is the single most important follow-up,
-  since an unreadable production stack trace defeats much of the point of adding this at all.
+  `SENTRY_ORG`, and `SENTRY_PROJECT` are not set anywhere (local or Vercel). Secondary to the gap above --
+  moot for server errors until that's resolved, but still relevant to client-side stack-trace readability.
 - **No release/environment tagging configured** beyond the SDK's own auto-detection defaults.
 - **DSN is currently set directly as a literal value** in `.env.local` (gitignored, not committed) and
   via `vercel env add` (Vercel-encrypted). Sentry DSNs are designed to be public/embeddable in a client
   bundle (this is why the client half is `NEXT_PUBLIC_SENTRY_DSN`), so this is not a secret-handling
   violation -- noted here only so a future reader doesn't mistake it for one.
-- **Not yet verified end-to-end.** Per the Verification section above -- code is in place; a real
-  triggered error confirmed in the Sentry dashboard is the remaining step before this can be marked
-  `Live verified` per `docs/readiness/STATUS_TAXONOMY.md`.
+- **Overall status: partially Live verified, not fully.** Per `docs/readiness/STATUS_TAXONOMY.md`: client
+  capture and tracing are Live verified; server-side error capture is Deployed but not Live verified, and
+  is a known, tracked gap rather than an assumed success.
