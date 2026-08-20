@@ -1,6 +1,6 @@
 # Test Suite Inventory
 
-Governed by: `docs/readiness/TEST_GOVERNANCE.md`. Created 2026-08-17, to turn "291 test files exist"
+Governed by: `docs/readiness/TEST_GOVERNANCE.md`. Created 2026-08-20, to turn "291 test files exist"
 into a discoverable structure rather than an undifferentiated count.
 
 | Suite | Path | Covers | When required |

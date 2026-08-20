@@ -1,8 +1,8 @@
 # Bug/Fix Traceability
 
 Governed by: `docs/readiness/EVIDENCE_INDEX.md` (this file is the bug-specific slice of that index).
-Created 2026-08-17. This repo has **143** commits matching a `fix` conventional-commit prefix on `main`
-(verified via `git log origin/main --oneline --grep="^fix" -E | wc -l`, 2026-08-17 -- Paxel's message
+Created 2026-08-20. This repo has **143** commits matching a `fix` conventional-commit prefix on `main`
+(verified via `git log origin/main --oneline --grep="^fix" -E | wc -l`, 2026-08-20 -- Paxel's message
 cited "126 fix commits"; the verified count is 143, and this document uses the verified figure).
 
 ## Row schema
@@ -10,7 +10,7 @@ cited "126 fix commits"; the verified count is 143, and this document uses the v
 | Bug | Source report | A-number | Fix commit | Test proof | Live proof | Closeout |
 |---|---|---|---|---|---|---|
 
-## Seeded entries (verified this session, 2026-08-17)
+## Seeded entries (verified this session, 2026-08-20)
 
 | Bug | Source report | A-number | Fix commit | Test proof | Live proof | Closeout |
 |---|---|---|---|---|---|---|

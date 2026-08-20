@@ -1,7 +1,7 @@
 # Environment Verification
 
 Governed by: `docs/readiness/DEPENDENCY_POLICY.md`, `docs/readiness/FAILED_OR_TIMED_OUT_CHECKS.md`.
-Created 2026-08-17. When a failure might be environment-specific (lockfile mismatch, Turbopack, platform
+Created 2026-08-20. When a failure might be environment-specific (lockfile mismatch, Turbopack, platform
 difference), compare local vs. CI using this table rather than guessing.
 
 | Tool | Local (this session's environment) | CI (GitHub Actions runner, per job logs this session) |

@@ -1,7 +1,7 @@
 # Claim Evidence Ledger
 
 Governed by: `CLAUDE.md` (The Evidence Chain -- Standing Rule, esp. hard rule #4: tag founder-stated
-claims explicitly). Created 2026-08-17. This is the ledger version of a discipline this program already
+claims explicitly). Created 2026-08-20. This is the ledger version of a discipline this program already
 applies ad hoc (e.g. survey-reported pricing willingness never treated as a signed commitment) --
 collected here so "what wording is this claim allowed to use" is answerable in one place.
 

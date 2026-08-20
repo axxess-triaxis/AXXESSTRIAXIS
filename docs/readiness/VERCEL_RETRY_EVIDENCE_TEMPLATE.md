@@ -1,7 +1,7 @@
 # Vercel Retry Cycle Evidence Template
 
 Governed by: `docs/readiness/PRODUCTION_DEPLOY_EXCEPTION_POLICY.md`,
-`docs/readiness/DECISION_OUTCOME_LEDGER.md` row `DEPLOY-RETRY-POLICY`. Created 2026-08-17.
+`docs/readiness/DECISION_OUTCOME_LEDGER.md` row `DEPLOY-RETRY-POLICY`. Created 2026-08-20.
 
 ## Template
 
