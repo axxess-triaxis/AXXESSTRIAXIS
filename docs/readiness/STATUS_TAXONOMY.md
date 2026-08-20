@@ -1,6 +1,6 @@
 # Status Taxonomy
 
-Governed by: `CLAUDE.md` (The Evidence Chain -- Standing Rule). Created 2026-08-17 per Paxel's
+Governed by: `CLAUDE.md` (The Evidence Chain -- Standing Rule). Created 2026-08-20 per Paxel's
 recommendation that this program's reporting was flattening "planned," "code complete," "deployed," and
 "live" into one vague "done." Every status field in `docs/readiness/EVIDENCE_INDEX.md`,
 `docs/readiness/DECISION_OUTCOME_LEDGER.md`, and closeout documents should use exactly one of these

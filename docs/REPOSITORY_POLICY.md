@@ -1,6 +1,6 @@
 # Repository Policy
 
-Governed by: `CLAUDE.md` (Operating Model, Git and Deployment Discipline). Created 2026-08-17, formalizing
+Governed by: `CLAUDE.md` (Operating Model, Git and Deployment Discipline). Created 2026-08-20, formalizing
 existing practice already recorded in memory (`project_github_source_of_truth.md`) into a repo-committed
 document per Paxel's recommendation.
 

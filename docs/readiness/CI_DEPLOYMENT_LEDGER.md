@@ -1,6 +1,6 @@
 # CI and Deployment Ledger
 
-Governed by: `CLAUDE.md` (Git and Deployment Discipline, Production Gate Bypass). Created 2026-08-17.
+Governed by: `CLAUDE.md` (Git and Deployment Discipline, Production Gate Bypass). Created 2026-08-20.
 Cumulative record of CI runs and deployments where the outcome mattered enough to need a citable trail --
 not every green run, but every one that involved a bypass, a genuine failure investigation, or a
 production-facing deploy.
