@@ -1,6 +1,6 @@
 # Per-Issue Closeout Template
 
-Governed by: `CLAUDE.md` (Required evidence chain in every material change). Created 2026-08-17. Every
+Governed by: `CLAUDE.md` (Required evidence chain in every material change). Created 2026-08-20. Every
 closeout document (`docs/readiness/*_CLOSEOUT_*.md`) should include this block, filled in completely --
 not paraphrased, not summarized as "tests pass."
 

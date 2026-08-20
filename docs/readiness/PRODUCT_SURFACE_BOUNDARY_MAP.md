@@ -1,7 +1,7 @@
 # Product Surface Boundary Map
 
 Governed by: `CLAUDE.md` (Operating Model), memory `project_ux_information_architecture.md`. Created
-2026-08-17.
+2026-08-20.
 
 **Important scoping note**: the cell contents below (routes, key files, guard tests) were not
 independently re-audited against current code in this pass -- populating exact route lists and guard
