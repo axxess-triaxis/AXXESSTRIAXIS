@@ -1,7 +1,7 @@
 # Failed or Timed-Out Checks Log
 
 Governed by: `docs/readiness/TEST_GOVERNANCE.md`, `docs/readiness/PRODUCTION_DEPLOY_EXCEPTION_POLICY.md`.
-Created 2026-08-17. Records genuine, individually-investigated CI/test failures and timeouts so a
+Created 2026-08-20. Records genuine, individually-investigated CI/test failures and timeouts so a
 full-suite timeout is never misread as "the underlying work is untested" -- each entry states explicitly
 whether the failure reflects a real code defect or an infra condition.
 

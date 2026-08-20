@@ -1,6 +1,6 @@
 # Cumulative Verification Ledger
 
-Governed by: `CLAUDE.md` (Verification Discipline). Created 2026-08-17. Where
+Governed by: `CLAUDE.md` (Verification Discipline). Created 2026-08-20. Where
 `docs/readiness/CI_DEPLOYMENT_LEDGER.md` tracks CI/deploy runs, this file tracks actual test-suite
 executions and their exact results, so a claim like "N tests passed" is always traceable to a specific
 command and run.
@@ -12,7 +12,7 @@ command and run.
 
 ## Cumulative totals (verified, not estimated)
 
-As of 2026-08-17:
+As of 2026-08-20:
 
 - **291** Vitest test files tracked in git (`git ls-files | grep -E '\.test\.(ts\|tsx)$' | wc -l`)
 - **14** Playwright spec files tracked in git (`git ls-files | grep -E 'tests/e2e/.*\.spec\.ts$' | wc -l`)

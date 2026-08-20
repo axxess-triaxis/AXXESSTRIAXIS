@@ -1,6 +1,6 @@
 # Test Governance
 
-Governed by: `CLAUDE.md` (Verification Discipline). Created 2026-08-17 per Paxel's recommendation to
+Governed by: `CLAUDE.md` (Verification Discipline). Created 2026-08-20 per Paxel's recommendation to
 make required gates explicit by change type, rather than implicit in the standard verification suite.
 
 ## Required Gates by Change Type
@@ -21,7 +21,7 @@ change type when running the full suite isn't practical (e.g. a fast-turnaround 
 and names the additional checks (Playwright, RLS) that the standard suite's summary doesn't call out by
 name.
 
-## Repository size, verified 2026-08-17
+## Repository size, verified 2026-08-20
 
 These are the actual counts, computed directly from repo state -- not estimates:
 
@@ -33,7 +33,7 @@ These are the actual counts, computed directly from repo state -- not estimates:
 - Playwright spec files tracked in git: **14** (`git ls-files | grep -E 'tests/e2e/.*\.spec\.ts$' | wc -l`)
 - Existing `docs/readiness/` documents at time of writing: **171**
 
-**A note on Paxel's own cited figures**: Paxel's recommendation message (2026-08-17) suggested claiming
+**A note on Paxel's own cited figures**: Paxel's recommendation message (2026-08-20) suggested claiming
 "around 880 commits" and "1,450+ tests passed and documented." The commit count is close (891 actual vs.
 "around 880" -- within the stated approximation). The "1,450+ tests" figure is **not verified here** --
 291 test *files* is a real, checkable number; the number of individual test *cases* across those files

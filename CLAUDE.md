@@ -13,7 +13,7 @@ This file is read automatically at the start of any Claude Code session in this 
 
 ### Standing Agent Governance Rules -- Quick Reference
 
-Added 2026-08-17 per Paxel's recommendation to make these rules unmissable rather than requiring a scroll
+Added 2026-08-20 per Paxel's recommendation to make these rules unmissable rather than requiring a scroll
 through the full file. Every rule below is a full standing rule elsewhere in this document -- this block
 is a pointer, not a replacement.
 
