@@ -69,12 +69,6 @@ export async function sendInvitationEmail(input: InvitationEmailInput): Promise<
     return { status: "not-configured", provider: "none", invitationUrl: rendered.invitationUrl };
   }
 
-  // TEMPORARY diagnostic (2026-08-17): the deployed "from" address does not match any known env
-  // var value across multiple fresh-build verifications. Logging the exact resolved value (not a
-  // secret -- a display name + email address, same shape already sent to Resend in the request
-  // body) to settle where it actually comes from before removing this line.
-  console.error("[invitationEmail] DIAGNOSTIC resolved from-address:", JSON.stringify(getInvitationEmailFrom()));
-
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
