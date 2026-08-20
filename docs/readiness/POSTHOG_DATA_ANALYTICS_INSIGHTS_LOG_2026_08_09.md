@@ -418,6 +418,68 @@ Consistent in shape with both domains' individually-recorded geography above (la
 
 **Not independently re-verified by this Claude Code session:** every figure in this section came from the founder-shared Codex output, not from a live pull against the PostHog UI or CLI performed directly in this session (unlike §1.8/§2.4/§1.3b/§1.3c above, which were). Treated as founder-relayed product evidence per `CLAUDE.md`'s evidence-chain rule, not as independently confirmed.
 
+## 2026-08-20 -- Auth-intent funnel beyond the two confirmed pilot signups (founder-relayed external tool analysis, not independently pulled by this session)
+
+**Source and labeling:** the founder pasted a multi-turn analysis exchange with an external LLM tool
+(footer references `claudepluginhub.com`'s PostHog "exploring-live-traffic" skill, plus two founder-
+supplied PDFs -- `Paxel 17.pdf`, `YC new 6.pdf` -- and two images as inputs; the specific tool is not
+named in the paste itself). Per this document's own established convention for Codex-relayed content
+above ("Not independently re-verified by this Claude Code session"), the same discipline applies here:
+every number below is **founder-relayed from that external analysis**, not pulled live against
+PostHog's UI/API by this session. Distinguished explicitly from this document's own live-pulled
+entries (§1.8, §2.4, §1.3b/§1.3c).
+
+**Core claim:** beyond the two already-confirmed completed pilot signups, PostHog shows **28 distinct
+non-founder users** (27 India, 1 United States) making "deliberate" authentication-intent clicks since
+Jul 27 -- specifically: "Continue with Google," "Continue with Microsoft," "Create account," "Sign up,"
+"Send code," "Verify," "Sign in," "Forgot password?", "Send reset link." Some progressed as far as
+"Send code"/"Verify" (a materially stronger intent signal than opening the signup page); others only
+reached OAuth-provider clicks or password-reset exploration with no completed `sign_up_completed`.
+
+**Explicit caveat already present in the source material itself, preserved rather than dropped:**
+PostHog has no dedicated `signup_started` or `signup_failed` event in this app's current instrumentation
+-- the external analysis is explicit that it can count observed deliberate auth actions, but "shouldn't
+label every Google/Microsoft click as a failed signup," since some could be abandonment, an OAuth error,
+an existing user, or evaluation browsing. The founder-exclusion filter is based on the Super Admin role
+marker on a single PostHog person ID (confirmed single-ID, per the exchange) -- so the 28-user figure is
+not further discounted for hypothetical anonymous founder devices.
+
+**The Aug 2 cluster:** 3 distinct US human-classified visitors within ~49 seconds reached `/auth`,
+`/auth/sign-up`, and `/auth/forgot-password` respectively; 1 of the 3 has a captured "Continue with
+Google" click. The external analysis's own correction, preserved here: the accurate statement is "3 US
+users simultaneously explored authentication/account-access flows; at least 1 explicitly attempted
+authentication" -- not that all 3 attempted sign-in, since only 1 has a corresponding click/submission
+event.
+
+**YC-evaluator hypothesis -- explicitly labeled a hypothesis, not a finding, in the source material
+itself, and kept that way here:** the founder framed the Aug 2 cluster plus later Aug 11-13 US
+Investor-domain activity as "probably YC alumni review" (interview invites expected the week of
+2026-08-20 per the founder). The external tool's own repeated qualifier, preserved verbatim in
+substance: PostHog can establish timing, human-classification, device/viewport pattern, and page-path
+sequence, but **cannot establish organizational identity** -- "consistent with multi-stage evaluator
+activity" is the defensible internal read; "probably YC" remains an unverified hypothesis. This document
+follows that same distinction rather than upgrading the hypothesis to a claim.
+
+**A factual correction inside the source exchange, cross-checked against this document's own
+already-recorded facts:** the founder's working assumption in the exchange was that `investor.
+triaxisventures.com` was wired into PostHog "8th July"; the external tool corrected this to **August 8**.
+This document's own intro table (top of file) already independently records the same date --
+`investor`'s `NEXT_PUBLIC_POSTHOG_KEY` was "missing from this Vercel project's own env vars until the
+A-108 fix, 2026-08-08." The two sources agree, which is a genuine internal consistency check this
+session can perform (unlike the underlying visitor-count claims, which this session cannot independently
+verify). Consequence, also preserved from the source material: any "35+ total unique US users" estimate
+built by summing pre- and post-instrumentation periods is **not derivable from PostHog** for the pre-Aug-8
+`investor` window, since that traffic is simply unobserved, not zero -- the external analysis itself
+declines to assert a specific combined total for this reason, and this document does not assert one
+either.
+
+**What this entry does not claim:** no completed signup beyond the two already-confirmed pilots; no
+organizational identity for any visitor; no confirmed causal link between the Aug 2/Aug 11-13 clusters
+and any specific external evaluation process. The prospective test the source material itself proposes --
+whether a comparable US review cluster reappears immediately before an application-status change, rather
+than retrofitting every past US visit to one hypothesis -- is recorded here as the stated next check, not
+performed by this session.
+
 ## Evidence index
 
 | Claim group | Primary source |
