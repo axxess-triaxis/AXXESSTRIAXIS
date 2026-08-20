@@ -37,6 +37,23 @@ Linked issue: `AXX-___` or `N/A`
 - [ ] `pnpm run test`
 - [ ] `pnpm run build`
 
+## Evidence
+
+See `docs/readiness/EVIDENCE_INDEX.md`, `docs/readiness/CLOSEOUT_TEMPLATE.md`.
+
+- Issue ID:
+- Plan:
+- Research:
+- Closeout:
+- Readiness matrix row:
+- Test commands and results (raw, not "tests pass"):
+- Playwright result (if UI/routing/auth/onboarding/dashboard change):
+- Lint:
+- Typecheck:
+- Build:
+- Deploy/live proof (if deploy-facing):
+- Remaining risk:
+
 ## Screenshots
 
 Add screenshots or recordings for UI-visible changes.
