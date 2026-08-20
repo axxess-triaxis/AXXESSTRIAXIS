@@ -68,7 +68,7 @@ messages would rewrite history on a shared, public, protected-`main` repository,
 kind of destructive/hard-to-reverse operation this program's own git-safety rules exist to prevent. Apply
 it going forward on new commits tied to a real, tracked issue.
 
-## This governance scaffold (2026-08-17)
+## This governance scaffold (2026-08-20)
 
 Added per the founder's direct request, itself based on Paxel's recommendation list: an evidence
 join-table system (`docs/readiness/EVIDENCE_INDEX.md`), a controlled status vocabulary
