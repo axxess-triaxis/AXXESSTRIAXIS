@@ -11,6 +11,22 @@ This file is read automatically at the start of any Claude Code session in this 
 - **Sudipta Koushik Sarmah**, Founder and Managing Director, is the HITL (human-in-the-loop) authority.
 - Work happens inside this canonical repository only. Do not create a second app, a duplicate project structure, or a parallel repo to satisfy a request -- extend what exists here.
 
+### Standing Agent Governance Rules -- Quick Reference
+
+Added 2026-08-17 per Paxel's recommendation to make these rules unmissable rather than requiring a scroll
+through the full file. Every rule below is a full standing rule elsewhere in this document -- this block
+is a pointer, not a replacement.
+
+Every issue must start with one of: read-only research, an implementation plan, or a scoped sprint
+prompt. Every implementation must end with: tests, lint, typecheck, build (when deploy-facing),
+Playwright (when UI, routing, auth, onboarding, or dashboard behavior changes), a closeout report, and a
+readiness matrix update where applicable. **Claude and Codex may not commit or deploy without the
+required verification gates** -- see `docs/readiness/TEST_GOVERNANCE.md` for gates by change type and
+`docs/readiness/PRODUCTION_DEPLOY_EXCEPTION_POLICY.md` for the only sanctioned exception path. A short,
+one-page version of this whole section lives at `docs/readiness/GOVERNANCE_RULES.md`; the join tables
+that connect an issue to its plan/commits/PR/tests/deploy/closeout live at
+`docs/readiness/EVIDENCE_INDEX.md` and `docs/readiness/DECISION_OUTCOME_LEDGER.md`.
+
 ### Mandatory Plan-First Sessions -- Standing Rule
 
 Every session in this repository must start in Plan Mode automatically -- no separate prompt or slash command from the founder should be required to trigger it. This is enforced at the harness level via `.claude/settings.json` (`permissions.defaultMode: "plan"`), not left to a memory/instruction that could be forgotten or skipped under time pressure: a session opening in this repo starts gated behind an approved plan before any file edit or command executes.
