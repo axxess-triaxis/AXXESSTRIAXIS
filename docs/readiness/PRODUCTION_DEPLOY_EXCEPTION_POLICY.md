@@ -1,6 +1,6 @@
 # Production Deploy Exception Policy
 
-Governed by: `CLAUDE.md` (Production Gate Bypass -- Standing Rule). Created 2026-08-17 as the fixed
+Governed by: `CLAUDE.md` (Production Gate Bypass -- Standing Rule). Created 2026-08-20 as the fixed
 template version of that existing rule, per Paxel's identification of this as the report's strongest
 real concern.
 
