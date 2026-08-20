@@ -12,6 +12,7 @@ import { EmptyState } from "../../components/feedback/EmptyState";
 import { isDemoModeEnabled } from "../../demo/demoMode";
 import { applicationServices } from "../../providers/serviceProvider";
 import { previewSelectedEmailImport, type ConnectorProviderId, type EmailImportPreview } from "../../services/integrations/connectorContract";
+import type { GmailMailboxMessageSummary } from "../../services/integrations/gmailMailbox";
 import type { MicrosoftGraphMailboxMessageSummary } from "../../services/integrations/microsoftGraphMailbox";
 import type { NotionPageSummary } from "../../services/integrations/notionPages";
 import { getIntegrationHealth, getInfrastructureOnlyIntegrations, getPilotIntegrations } from "../../services/integrations/pluginRegistry";
@@ -220,6 +221,43 @@ export const IntegrationsSection = () => {
     });
     setPreview(null);
     setToast({ tone: "info", message: "Selected mailbox message loaded. Preview extraction before creating tenant records." });
+  }
+
+  async function loadGmailMailbox() {
+    setLoadingMailbox(true);
+    setToast(null);
+    try {
+      const response = await fetch("/api/connectors/gmail/messages/list?limit=8", {
+        credentials: "include",
+        cache: "no-store",
+      });
+      const result = await response.json().catch(() => ({})) as { providerGated?: boolean; message?: string; messages?: GmailMailboxMessageSummary[] };
+      if (!response.ok) {
+        console.error("Gmail mailbox listing failed.", response.status, result.message);
+        if (response.status === 401) throw new Error("Sign in to list Gmail mailbox messages.");
+        if (response.status === 403) throw new Error("Your role does not have permission to list Gmail mailbox messages.");
+        throw new Error("Gmail mailbox listing failed.");
+      }
+      const messages = (result.messages ?? []).map((message) => ({
+        id: message.messageId ?? message.sourceLink ?? message.subject,
+        providerId: "gmail" as ConnectorProviderId,
+        from: message.from,
+        subject: message.subject,
+        sourceLink: message.sourceLink ?? "https://mail.google.com/mail/u/0/",
+        receivedAt: message.receivedAt ?? new Date().toISOString(),
+        bodyText: message.bodyText || message.bodyPreview,
+      }));
+      if (!messages.length) {
+        setToast({ tone: "info", message: result.message ?? "Gmail mailbox listing is provider-gated until OAuth and token vault credentials are connected." });
+        return;
+      }
+      setLiveMailboxMessages(messages);
+      setToast({ tone: "success", message: `Loaded ${messages.length} Gmail mailbox message(s) for selected-message import.` });
+    } catch (error) {
+      setToast({ tone: "error", message: error instanceof Error ? error.message : "Gmail mailbox listing failed." });
+    } finally {
+      setLoadingMailbox(false);
+    }
   }
 
   async function loadMicrosoftMailbox() {
@@ -440,6 +478,7 @@ export const IntegrationsSection = () => {
           <div className="mt-3 flex flex-wrap gap-2">
             {"gmail" in connectedProviders ? <ConnectedBadge connectedAt={connectedProviders.gmail} /> : null}
             <a href="/api/connectors/oauth/start?provider=gmail" className="rounded-lg border border-[rgba(139,30,45,0.22)] bg-white px-3 py-2 text-xs font-semibold text-[#8B1E2D] hover:bg-[#8B1E2D]/5">{"gmail" in connectedProviders ? "Reconnect Gmail" : "Connect Gmail"}</a>
+            <button type="button" onClick={() => void loadGmailMailbox()} disabled={loadingMailbox} className="rounded-lg bg-[#8B1E2D] px-3 py-2 text-xs font-semibold text-white hover:bg-[#7a1a27] disabled:opacity-60">Load Gmail inbox</button>
             {"microsoft" in connectedProviders ? <ConnectedBadge connectedAt={connectedProviders.microsoft} /> : null}
             <a href="/api/connectors/oauth/start?provider=microsoft" className="rounded-lg border border-[rgba(139,30,45,0.22)] bg-white px-3 py-2 text-xs font-semibold text-[#8B1E2D] hover:bg-[#8B1E2D]/5">{"microsoft" in connectedProviders ? "Reconnect Microsoft" : "Connect Microsoft"}</a>
             <button type="button" onClick={() => void loadMicrosoftMailbox()} disabled={loadingMailbox} className="rounded-lg bg-[#8B1E2D] px-3 py-2 text-xs font-semibold text-white hover:bg-[#7a1a27] disabled:opacity-60">Load Microsoft inbox</button>
@@ -449,7 +488,9 @@ export const IntegrationsSection = () => {
           <div className="rounded-lg border border-[rgba(15,17,23,0.08)] bg-[#F8F9FA] p-2">
             <div className="mb-2 text-[10px] font-semibold uppercase text-[#5F6B73]">
               {liveMailboxMessages.length
-                ? "Live Microsoft mailbox messages"
+                ? liveMailboxMessages[0].providerId === "gmail"
+                  ? "Live Gmail mailbox messages"
+                  : "Live Microsoft mailbox messages"
                 : isDemoModeEnabled()
                   ? "Selected mailbox messages (illustrative)"
                   : "Selected mailbox messages"}
