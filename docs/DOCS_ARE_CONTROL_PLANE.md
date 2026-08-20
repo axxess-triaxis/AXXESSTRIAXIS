@@ -1,6 +1,6 @@
 # Docs Are the Control Plane
 
-Created 2026-08-17, per Paxel's finding that docs-heavy work in this repository risks being misread as
+Created 2026-08-20, per Paxel's finding that docs-heavy work in this repository risks being misread as
 low-signal. It is not.
 
 In this repository, documentation is not passive record-keeping written after the fact. It defines:
@@ -26,7 +26,7 @@ evidence gap is doing real governance work, not filling space.
   for every blocked item
 - `docs/readiness/FOUNDER_BUG_CLOSURE_LEDGER_2026_07_31.md` -- per-fix closure record
 - `docs/readiness/STALE_ACTIONABLES_MATRIX_CLOSURE_2026_08_07.md` -- stale-item closure audit
-- `docs/readiness/EVIDENCE_INDEX.md` -- the issue-lifecycle join table (this pass, 2026-08-17)
+- `docs/readiness/EVIDENCE_INDEX.md` -- the issue-lifecycle join table (this pass, 2026-08-20)
 - `docs/readiness/DECISION_OUTCOME_LEDGER.md` -- the decision/scope-call join table (this pass)
 - `docs/readiness/STATUS_TAXONOMY.md` -- the controlled status vocabulary all of the above must use
   (this pass)

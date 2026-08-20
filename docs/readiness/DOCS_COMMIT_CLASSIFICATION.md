@@ -1,8 +1,8 @@
 # Docs Commit Classification
 
-Governed by: `docs/DOCS_ARE_CONTROL_PLANE.md`. Created 2026-08-17. This repo has **368** commits
+Governed by: `docs/DOCS_ARE_CONTROL_PLANE.md`. Created 2026-08-20. This repo has **368** commits
 matching a `docs` conventional-commit prefix (verified via
-`git log origin/main --oneline --grep="^docs" -E | wc -l`, 2026-08-17). This table classifies the
+`git log origin/main --oneline --grep="^docs" -E | wc -l`, 2026-08-20). This table classifies the
 *pattern*, not every individual commit -- retroactively classifying all 368 by hand was judged not worth
 the effort versus applying the classification going forward via commit message prefix discipline.
 
