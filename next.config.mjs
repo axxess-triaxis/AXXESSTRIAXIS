@@ -1,3 +1,5 @@
+import { withSentryConfig } from "@sentry/nextjs";
+
 const contentSecurityPolicy = [
   "default-src 'self'",
   // https://connect.facebook.net: the Facebook JS SDK script itself (layout.tsx's
@@ -12,7 +14,10 @@ const contentSecurityPolicy = [
   "font-src 'self' data:",
   // https://graph.facebook.com / https://www.facebook.com: FB.init()/FB.api() calls the SDK
   // itself makes once loaded (login status, XFBML rendering) -- same reasoning as script-src above.
-  "connect-src 'self' https://*.supabase.co https://api.mixpanel.com https://*.mixpanel.com https://us.i.posthog.com https://us-assets.i.posthog.com https://app.posthog.com https://*.posthog.com https://graph.facebook.com https://www.facebook.com",
+  // https://*.ingest.us.sentry.io: the Sentry browser SDK's error/tracing beacon (instrumentation-client.ts).
+  // Same failure mode as the Facebook SDK note above -- without this in connect-src, Sentry.init()
+  // runs fine but every captureException/transaction POST is silently blocked by the browser.
+  "connect-src 'self' https://*.supabase.co https://api.mixpanel.com https://*.mixpanel.com https://us.i.posthog.com https://us-assets.i.posthog.com https://app.posthog.com https://*.posthog.com https://graph.facebook.com https://www.facebook.com https://*.ingest.us.sentry.io",
   // Facebook Login/social plugins render inside Meta-hosted iframes -- with no frame-src directive
   // this falls back to default-src 'self' and silently blocks them, same failure mode as above.
   "frame-src https://www.facebook.com https://staticxx.facebook.com",
@@ -78,4 +83,10 @@ const nextConfig = {
   },
 };
 
-export default nextConfig;
+export default withSentryConfig(nextConfig, {
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+  authToken: process.env.SENTRY_AUTH_TOKEN,
+  widenClientFileUpload: true,
+  silent: !process.env.CI,
+});
