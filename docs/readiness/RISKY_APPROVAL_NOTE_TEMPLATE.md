@@ -1,7 +1,7 @@
 # Risky Approval Note Template
 
 Governed by: `CLAUDE.md` (Executing actions with care -- see the system-level action-category rules this
-program's agents operate under). Created 2026-08-17.
+program's agents operate under). Created 2026-08-20.
 
 Before approving or executing any of the following, write the note below first:
 

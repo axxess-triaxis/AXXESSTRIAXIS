@@ -1,7 +1,7 @@
 # Dependency and Supply-Chain Policy
 
 Governed by: `CLAUDE.md` (Production Gate Bypass -- Standing Rule), `docs/readiness/DECISION_OUTCOME_LEDGER.md`
-row `DEPENDENCY-RETRY-POLICY`. Created 2026-08-17.
+row `DEPENDENCY-RETRY-POLICY`. Created 2026-08-20.
 
 ## Policy
 
