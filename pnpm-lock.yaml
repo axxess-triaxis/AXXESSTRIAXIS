@@ -361,46 +361,46 @@ importers:
     dependencies:
       '@capacitor/android':
         specifier: 7.6.7
-        version: 7.6.7(@capacitor/core@7.6.7)
+        version: 7.6.7(@capacitor/core@8.5.0)
       '@capacitor/app':
         specifier: 8.1.1
-        version: 8.1.1(@capacitor/core@7.6.7)
+        version: 8.1.1(@capacitor/core@8.5.0)
       '@capacitor/browser':
         specifier: 8.0.4
-        version: 8.0.4(@capacitor/core@7.6.7)
+        version: 8.0.4(@capacitor/core@8.5.0)
       '@capacitor/core':
-        specifier: 7.6.7
-        version: 7.6.7
+        specifier: 8.5.0
+        version: 8.5.0
       '@capacitor/device':
         specifier: 7.0.5
-        version: 7.0.5(@capacitor/core@7.6.7)
+        version: 7.0.5(@capacitor/core@8.5.0)
       '@capacitor/filesystem':
         specifier: 8.1.2
-        version: 8.1.2(@capacitor/core@7.6.7)
+        version: 8.1.2(@capacitor/core@8.5.0)
       '@capacitor/haptics':
         specifier: 8.0.2
-        version: 8.0.2(@capacitor/core@7.6.7)
+        version: 8.0.2(@capacitor/core@8.5.0)
       '@capacitor/ios':
         specifier: 7.6.7
-        version: 7.6.7(@capacitor/core@7.6.7)
+        version: 7.6.7(@capacitor/core@8.5.0)
       '@capacitor/keyboard':
         specifier: 8.0.5
-        version: 8.0.5(@capacitor/core@7.6.7)
+        version: 8.0.5(@capacitor/core@8.5.0)
       '@capacitor/network':
         specifier: 7.0.4
-        version: 7.0.4(@capacitor/core@7.6.7)
+        version: 7.0.4(@capacitor/core@8.5.0)
       '@capacitor/preferences':
         specifier: 8.0.1
-        version: 8.0.1(@capacitor/core@7.6.7)
+        version: 8.0.1(@capacitor/core@8.5.0)
       '@capacitor/share':
         specifier: 7.0.4
-        version: 7.0.4(@capacitor/core@7.6.7)
+        version: 7.0.4(@capacitor/core@8.5.0)
       '@capacitor/splash-screen':
         specifier: 8.0.2
-        version: 8.0.2(@capacitor/core@7.6.7)
+        version: 8.0.2(@capacitor/core@8.5.0)
       '@capacitor/status-bar':
         specifier: 8.0.3
-        version: 8.0.3(@capacitor/core@7.6.7)
+        version: 8.0.3(@capacitor/core@8.5.0)
     devDependencies:
       '@capacitor/cli':
         specifier: 8.5.0
@@ -410,46 +410,46 @@ importers:
     dependencies:
       '@capacitor/android':
         specifier: 7.6.7
-        version: 7.6.7(@capacitor/core@7.6.7)
+        version: 7.6.7(@capacitor/core@8.5.0)
       '@capacitor/app':
         specifier: 7.1.2
-        version: 7.1.2(@capacitor/core@7.6.7)
+        version: 7.1.2(@capacitor/core@8.5.0)
       '@capacitor/browser':
         specifier: 8.0.4
-        version: 8.0.4(@capacitor/core@7.6.7)
+        version: 8.0.4(@capacitor/core@8.5.0)
       '@capacitor/core':
-        specifier: 7.6.7
-        version: 7.6.7
+        specifier: 8.5.0
+        version: 8.5.0
       '@capacitor/device':
         specifier: 7.0.5
-        version: 7.0.5(@capacitor/core@7.6.7)
+        version: 7.0.5(@capacitor/core@8.5.0)
       '@capacitor/filesystem':
         specifier: 8.1.2
-        version: 8.1.2(@capacitor/core@7.6.7)
+        version: 8.1.2(@capacitor/core@8.5.0)
       '@capacitor/haptics':
         specifier: 8.0.2
-        version: 8.0.2(@capacitor/core@7.6.7)
+        version: 8.0.2(@capacitor/core@8.5.0)
       '@capacitor/ios':
         specifier: 7.6.7
-        version: 7.6.7(@capacitor/core@7.6.7)
+        version: 7.6.7(@capacitor/core@8.5.0)
       '@capacitor/keyboard':
         specifier: 8.0.5
-        version: 8.0.5(@capacitor/core@7.6.7)
+        version: 8.0.5(@capacitor/core@8.5.0)
       '@capacitor/network':
         specifier: 7.0.4
-        version: 7.0.4(@capacitor/core@7.6.7)
+        version: 7.0.4(@capacitor/core@8.5.0)
       '@capacitor/preferences':
         specifier: 8.0.1
-        version: 8.0.1(@capacitor/core@7.6.7)
+        version: 8.0.1(@capacitor/core@8.5.0)
       '@capacitor/share':
         specifier: 7.0.4
-        version: 7.0.4(@capacitor/core@7.6.7)
+        version: 7.0.4(@capacitor/core@8.5.0)
       '@capacitor/splash-screen':
         specifier: 7.0.5
-        version: 7.0.5(@capacitor/core@7.6.7)
+        version: 7.0.5(@capacitor/core@8.5.0)
       '@capacitor/status-bar':
         specifier: 8.0.3
-        version: 8.0.3(@capacitor/core@7.6.7)
+        version: 8.0.3(@capacitor/core@8.5.0)
     devDependencies:
       '@capacitor/cli':
         specifier: 8.5.0
@@ -961,8 +961,8 @@ packages:
     engines: {node: '>=22.0.0'}
     hasBin: true
 
-  '@capacitor/core@7.6.7':
-    resolution: {integrity: sha512-DR0kqfcsDzWhvskz+sJWy41cdv+P1ITjmOYYG5WSV88EO6tx5Tf82M61vp4NjV7rfQDUAQjBAypgaTiB2/2oEg==}
+  '@capacitor/core@8.5.0':
+    resolution: {integrity: sha512-Ca4krtqH1hothjtBIwf2J2TW7IhYq1ujp8QeItTiJohNsqij8ja2DYYH3DU0l8RmxCWaBAFTGA2TgOgOMCSNsQ==}
 
   '@capacitor/device@7.0.5':
     resolution: {integrity: sha512-tf6BYeQMBARNLKELQq2RGsvG3z03oM/ga+aqVhvE8M4IM8+h/516eeSz07Eqm4+yySGaQFT+2rIkpJrvA7gaAA==}
@@ -9675,21 +9675,21 @@ snapshots:
 
   '@bytecodealliance/preview2-shim@0.17.6': {}
 
-  '@capacitor/android@7.6.7(@capacitor/core@7.6.7)':
+  '@capacitor/android@7.6.7(@capacitor/core@8.5.0)':
     dependencies:
-      '@capacitor/core': 7.6.7
+      '@capacitor/core': 8.5.0
 
-  '@capacitor/app@7.1.2(@capacitor/core@7.6.7)':
+  '@capacitor/app@7.1.2(@capacitor/core@8.5.0)':
     dependencies:
-      '@capacitor/core': 7.6.7
+      '@capacitor/core': 8.5.0
 
-  '@capacitor/app@8.1.1(@capacitor/core@7.6.7)':
+  '@capacitor/app@8.1.1(@capacitor/core@8.5.0)':
     dependencies:
-      '@capacitor/core': 7.6.7
+      '@capacitor/core': 8.5.0
 
-  '@capacitor/browser@8.0.4(@capacitor/core@7.6.7)':
+  '@capacitor/browser@8.0.4(@capacitor/core@8.5.0)':
     dependencies:
-      '@capacitor/core': 7.6.7
+      '@capacitor/core': 8.5.0
 
   '@capacitor/cli@8.5.0':
     dependencies:
@@ -9714,54 +9714,54 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@capacitor/core@7.6.7':
+  '@capacitor/core@8.5.0':
     dependencies:
       tslib: 2.8.1
 
-  '@capacitor/device@7.0.5(@capacitor/core@7.6.7)':
+  '@capacitor/device@7.0.5(@capacitor/core@8.5.0)':
     dependencies:
-      '@capacitor/core': 7.6.7
+      '@capacitor/core': 8.5.0
 
-  '@capacitor/filesystem@8.1.2(@capacitor/core@7.6.7)':
+  '@capacitor/filesystem@8.1.2(@capacitor/core@8.5.0)':
     dependencies:
-      '@capacitor/core': 7.6.7
+      '@capacitor/core': 8.5.0
       '@capacitor/synapse': 1.0.4
 
-  '@capacitor/haptics@8.0.2(@capacitor/core@7.6.7)':
+  '@capacitor/haptics@8.0.2(@capacitor/core@8.5.0)':
     dependencies:
-      '@capacitor/core': 7.6.7
+      '@capacitor/core': 8.5.0
 
-  '@capacitor/ios@7.6.7(@capacitor/core@7.6.7)':
+  '@capacitor/ios@7.6.7(@capacitor/core@8.5.0)':
     dependencies:
-      '@capacitor/core': 7.6.7
+      '@capacitor/core': 8.5.0
 
-  '@capacitor/keyboard@8.0.5(@capacitor/core@7.6.7)':
+  '@capacitor/keyboard@8.0.5(@capacitor/core@8.5.0)':
     dependencies:
-      '@capacitor/core': 7.6.7
+      '@capacitor/core': 8.5.0
 
-  '@capacitor/network@7.0.4(@capacitor/core@7.6.7)':
+  '@capacitor/network@7.0.4(@capacitor/core@8.5.0)':
     dependencies:
-      '@capacitor/core': 7.6.7
+      '@capacitor/core': 8.5.0
 
-  '@capacitor/preferences@8.0.1(@capacitor/core@7.6.7)':
+  '@capacitor/preferences@8.0.1(@capacitor/core@8.5.0)':
     dependencies:
-      '@capacitor/core': 7.6.7
+      '@capacitor/core': 8.5.0
 
-  '@capacitor/share@7.0.4(@capacitor/core@7.6.7)':
+  '@capacitor/share@7.0.4(@capacitor/core@8.5.0)':
     dependencies:
-      '@capacitor/core': 7.6.7
+      '@capacitor/core': 8.5.0
 
-  '@capacitor/splash-screen@7.0.5(@capacitor/core@7.6.7)':
+  '@capacitor/splash-screen@7.0.5(@capacitor/core@8.5.0)':
     dependencies:
-      '@capacitor/core': 7.6.7
+      '@capacitor/core': 8.5.0
 
-  '@capacitor/splash-screen@8.0.2(@capacitor/core@7.6.7)':
+  '@capacitor/splash-screen@8.0.2(@capacitor/core@8.5.0)':
     dependencies:
-      '@capacitor/core': 7.6.7
+      '@capacitor/core': 8.5.0
 
-  '@capacitor/status-bar@8.0.3(@capacitor/core@7.6.7)':
+  '@capacitor/status-bar@8.0.3(@capacitor/core@8.5.0)':
     dependencies:
-      '@capacitor/core': 7.6.7
+      '@capacitor/core': 8.5.0
 
   '@capacitor/synapse@1.0.4': {}
 
