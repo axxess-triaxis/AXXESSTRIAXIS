@@ -19,6 +19,25 @@ function isPositiveInteger(value) {
   return /^\d+$/.test(value) && Number.parseInt(value, 10) > 0;
 }
 
+function normalizeAppVersion(value) {
+  if (/^\d+\.\d+$/.test(value)) {
+    return `${value}.0`;
+  }
+  return value;
+}
+
+function normalizeBuildNumber(value) {
+  if (isPositiveInteger(value)) {
+    return value;
+  }
+  const shorthandMatch = /^0\.(\d+)$/.exec(value);
+  if (!shorthandMatch) {
+    return value;
+  }
+  const parsed = Number.parseInt(shorthandMatch[1], 10);
+  return parsed > 0 ? String(parsed) : value;
+}
+
 function readPackageVersion() {
   const packageJsonPath = path.join(root, "package.json");
   const pkg = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
@@ -47,9 +66,9 @@ let iosBuildNumber;
 let androidVersionCode;
 
 if (eventName === "workflow_dispatch") {
-  appVersion = inputAppVersion || coerceStoreVersion(readPackageVersion());
-  iosBuildNumber = inputIosBuildNumber;
-  androidVersionCode = inputAndroidVersionCode;
+  appVersion = normalizeAppVersion(inputAppVersion || coerceStoreVersion(readPackageVersion()));
+  iosBuildNumber = normalizeBuildNumber(inputIosBuildNumber);
+  androidVersionCode = normalizeBuildNumber(inputAndroidVersionCode);
 
   if (!iosBuildNumber || !androidVersionCode) {
     fail("workflow_dispatch requires ios_build_number and android_version_code inputs.");
