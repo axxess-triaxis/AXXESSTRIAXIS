@@ -168,7 +168,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.5",
     "@playwright/test": "^1.51.1",
-    "@rollup/rollup-win32-x64-msvc": "4.62.2",
+    "@rollup/rollup-win32-x64-msvc": "4.62.4",
     "@tailwindcss/postcss": "^4.1.12",
     "@tailwindcss/vite": "4.1.12",
     "@testing-library/jest-dom": "^7.0.0",
