@@ -36,6 +36,9 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     images: ["/triaxis-cover.png"],
   },
+  verification: {
+    google: "Zqn8M8yJDQzHZzalntOFyDt0n1-corgCIO-4bwqESaM",
+  },
 };
 
 // Facebook JS SDK: appId must be exposed to the browser, so it needs its own NEXT_PUBLIC_ var --
