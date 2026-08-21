@@ -33,6 +33,7 @@ function normalizeBuildNumber(value) {
   if (isPositiveInteger(value)) {
     return value;
   }
+  // For dotted shorthand inputs (X.Y), use Y as the build number.
   const shorthandMatch = /^\d+\.(\d+)$/.exec(value);
   if (!shorthandMatch) {
     return value;
