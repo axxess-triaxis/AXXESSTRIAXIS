@@ -621,6 +621,26 @@ reply from Daniel Darling, 2026-08-17, 8:14 AM.
 early-stage-investor list) rather than application-specific reasoning. Founder's own probable-cause
 read: geographic mandate mismatch (US/Canada-only), not independently confirmed by the reply itself.
 
+### 45. Amy Lin & Andy Chen -- Outcast Ventures, Catalyst 02
+
+**Status:** Rejected. **New, 2026-08-21.** Numbered out of the main entry sequence (added after #44)
+to avoid renumbering every cross-referenced entry in this log -- grouped here under Accelerator /
+Pre-Accelerator Programs by content, not position.
+Source: "Your Catalyst 02 application" email, Amy Lin <amy@outcastventures.com>, 2026-08-18, 11:26 PM.
+- Catalyst is a co-founder-matching cohort program, not a standard funding accelerator -- distinct in
+  kind from every other entry in this section (Surge/Peak XV #42, etc.), which evaluate a company for
+  investment. Catalyst instead evaluates whether an applicant is likely to find a strong co-founder
+  match within a given cohort's pool of other applicants.
+- Outcast's own stated reason: the program did not have "high confidence" of a strong co-founder match
+  for this specific applicant within this specific cohort -- explicitly framed as a cohort-composition
+  fit question, not a judgment on the applicant or on AXXESS as a company. No traction, product, or
+  business-model critique of any kind is present in the reply.
+- Explicit reapplication invitation for the Spring cohort, with the framing that cohort composition
+  ("founders shift every cycle") is the variable, not a fixed disqualification.
+**Outcome:** Rejected for this cohort specifically on co-founder-match confidence, with an explicit,
+named invitation to reapply for the next (Spring) cohort. No product/traction/business-model reasoning
+given, consistent with this being a co-founder-matching decision rather than an investment decision.
+
 ## Mentor / Ecosystem Recognition Roles (New, 2026-08-03)
 
 These two entries are different in kind from #1-22 above: they are roles where the founder is the one being selected to *give* mentorship/expertise, not roles where Triaxis is being pitched, evaluated, or funded. Recorded here for completeness, in the same evidence-chain discipline as the rest of this log, in a separate section so they are not mistaken for investor or accelerator traction.
