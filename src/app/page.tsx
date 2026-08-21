@@ -4,17 +4,17 @@ const productLinks = [
   {
     label: "Welcome Aboard",
     href: "https://landing.triaxisventures.com",
-    style: "bg-[#8b1e2d] text-white hover:bg-[#741927]",
+    style: "bg-[#00c2ff] text-[#02050a] hover:bg-[#6dff6a]",
   },
   {
     label: "Experience AXXESS",
     href: "https://investor.triaxisventures.com",
-    style: "border border-[#b8c3d1] bg-white text-[#1d2a38] hover:bg-[#eef2f6]",
+    style: "border border-[#00c2ff]/45 bg-[#07111d]/85 text-[#e6f7ff] hover:border-[#6dff6a]/70 hover:text-[#6dff6a]",
   },
   {
     label: "Stay Lite (for now)",
     href: "https://lite.triaxisventures.com",
-    style: "border border-[#b8c3d1] bg-white text-[#1d2a38] hover:bg-[#eef2f6]",
+    style: "border border-[#00c2ff]/45 bg-[#07111d]/85 text-[#e6f7ff] hover:border-[#6dff6a]/70 hover:text-[#6dff6a]",
   },
 ];
 
@@ -35,7 +35,7 @@ const promoVideos = [
 
 export default function HomePage() {
   return (
-    <main className="min-h-screen bg-[#f4f6f8] text-[#0f1720]">
+    <main className="triaxis-site-shell">
       <section className="mx-auto grid max-w-7xl gap-10 px-6 py-10 md:grid-cols-[1.05fr_0.95fr] md:px-10 md:py-16">
         <div className="flex flex-col gap-8">
           <nav className="flex flex-wrap items-center gap-3" aria-label="Company pages">
