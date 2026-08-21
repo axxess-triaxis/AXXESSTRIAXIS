@@ -27,6 +27,9 @@ function normalizeAppVersion(value) {
 }
 
 function normalizeBuildNumber(value) {
+  if (!value) {
+    return value;
+  }
   if (isPositiveInteger(value)) {
     return value;
   }
