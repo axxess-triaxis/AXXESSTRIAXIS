@@ -35,7 +35,7 @@ function normalizeBuildNumber(value) {
     return value;
   }
   const parsed = Number.parseInt(shorthandMatch[1], 10);
-  return parsed > 0 ? String(parsed) : value;
+  return String(parsed);
 }
 
 function readPackageVersion() {
