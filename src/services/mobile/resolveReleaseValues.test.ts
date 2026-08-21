@@ -97,6 +97,27 @@ describe("resolve-release-values workflow dispatch parsing", () => {
     });
 
     expect(result.status).toBe(1);
-    expect(result.stderr).toContain("invalid iOS build number '0'");
+    expect(result.stderr).toContain("invalid iOS build number '1.0'");
+  });
+
+  it("fails Android dotted build shorthand when minor segment resolves to zero", () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "resolve-release-values-"));
+    const githubEnvPath = path.join(tmpDir, "github.env");
+
+    const result = spawnSync(process.execPath, [scriptPath], {
+      cwd: root,
+      encoding: "utf8",
+      env: {
+        ...process.env,
+        GITHUB_EVENT_NAME: "workflow_dispatch",
+        INPUT_APP_VERSION: "1.0",
+        INPUT_IOS_BUILD_NUMBER: "2.5",
+        INPUT_ANDROID_VERSION_CODE: "2.0",
+        GITHUB_ENV: githubEnvPath,
+      },
+    });
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain("invalid Android version code '2.0'");
   });
 });
