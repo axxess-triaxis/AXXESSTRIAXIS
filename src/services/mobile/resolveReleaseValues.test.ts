@@ -91,7 +91,7 @@ describe("resolve-release-values workflow dispatch parsing", () => {
         GITHUB_EVENT_NAME: "workflow_dispatch",
         INPUT_APP_VERSION: "1.0",
         INPUT_IOS_BUILD_NUMBER: "1.0",
-        INPUT_ANDROID_VERSION_CODE: "2.5",
+        INPUT_ANDROID_VERSION_CODE: "5",
         GITHUB_ENV: githubEnvPath,
       },
     });
