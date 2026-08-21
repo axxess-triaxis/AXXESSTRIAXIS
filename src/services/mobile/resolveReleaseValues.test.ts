@@ -1,0 +1,35 @@
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import { spawnSync } from "node:child_process";
+import { describe, expect, it } from "vitest";
+
+const root = process.cwd();
+const scriptPath = path.join(root, "scripts", "resolve-release-values.mjs");
+
+describe("resolve-release-values workflow dispatch parsing", () => {
+  it("normalizes shorthand manual release inputs used by release-checklist", () => {
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "resolve-release-values-"));
+    const githubEnvPath = path.join(tmpDir, "github.env");
+
+    const result = spawnSync(process.execPath, [scriptPath], {
+      cwd: root,
+      encoding: "utf8",
+      env: {
+        ...process.env,
+        GITHUB_EVENT_NAME: "workflow_dispatch",
+        INPUT_APP_VERSION: "0.80",
+        INPUT_IOS_BUILD_NUMBER: "0.80",
+        INPUT_ANDROID_VERSION_CODE: "0.80",
+        GITHUB_ENV: githubEnvPath,
+      },
+    });
+
+    expect(result.status).toBe(0);
+
+    const githubEnv = fs.readFileSync(githubEnvPath, "utf8");
+    expect(githubEnv).toContain("RELEASE_APP_VERSION=0.80.0");
+    expect(githubEnv).toContain("IOS_BUILD_NUMBER=80");
+    expect(githubEnv).toContain("ANDROID_VERSION_CODE=80");
+  });
+});
