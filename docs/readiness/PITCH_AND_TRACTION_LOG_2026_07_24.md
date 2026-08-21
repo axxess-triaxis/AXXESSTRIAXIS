@@ -641,6 +641,25 @@ Source: "Your Catalyst 02 application" email, Amy Lin <amy@outcastventures.com>,
 named invitation to reapply for the next (Spring) cohort. No product/traction/business-model reasoning
 given, consistent with this being a co-founder-matching decision rather than an investment decision.
 
+### 46. Yuvraj A. Arya -- Residency Bangalore, Founders Track
+
+**Status:** In progress -- advanced to Round 2. **New, 2026-08-21.** Numbered out of the main entry
+sequence (added after #45) to avoid renumbering every cross-referenced entry in this log -- grouped here
+under Accelerator / Pre-Accelerator Programs by content, not position.
+Source: "Congrats! You're through to Round 2 - Residency Bangalore Founders Track" email, Residency
+Bangalore <noreply@residencybllr.com>, reply-to yuvraj@residencybllr.com, 2026-08-21, 3:34 PM IST.
+- Founder-reported per this email: "top 10 percentile of all applications this cohort."
+  Founder-stated, source artifact needed for the underlying application content itself (what traction/
+  product claims were actually submitted) -- this log only has the acceptance-to-R2 notification, not
+  the original application.
+- **R2 form requirements, per the email:** a one-minute YC-style intro video, fundraise readiness, team
+  commitment, entity status, and traction. Detailed video instructions are inside the form itself.
+- **Deadline: 23 Aug 2026, 11:59 PM IST.**
+**Outcome:** Advanced to Round 2 of a cohort-based Founders Track; final outcome not yet known and
+depends on the R2 form submission ahead of the 2026-08-23 deadline. Update this entry once R2 is
+submitted and/or a Round 3 or final decision is received -- do not mark this "Passed" or "Advanced" as a
+final status until that happens.
+
 ## Mentor / Ecosystem Recognition Roles (New, 2026-08-03)
 
 These two entries are different in kind from #1-22 above: they are roles where the founder is the one being selected to *give* mentorship/expertise, not roles where Triaxis is being pitched, evaluated, or funded. Recorded here for completeness, in the same evidence-chain discipline as the rest of this log, in a separate section so they are not mistaken for investor or accelerator traction.
