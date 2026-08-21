@@ -30,7 +30,7 @@ function normalizeBuildNumber(value) {
   if (isPositiveInteger(value)) {
     return value;
   }
-  const shorthandMatch = /^0\.(\d+)$/.exec(value);
+  const shorthandMatch = /^\d+\.(\d+)$/.exec(value);
   if (!shorthandMatch) {
     return value;
   }
