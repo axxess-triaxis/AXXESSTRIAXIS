@@ -366,8 +366,8 @@ importers:
         specifier: 8.1.1
         version: 8.1.1(@capacitor/core@7.6.7)
       '@capacitor/browser':
-        specifier: 7.0.5
-        version: 7.0.5(@capacitor/core@7.6.7)
+        specifier: 8.0.4
+        version: 8.0.4(@capacitor/core@7.6.7)
       '@capacitor/core':
         specifier: 7.6.7
         version: 7.6.7
@@ -415,8 +415,8 @@ importers:
         specifier: 7.1.2
         version: 7.1.2(@capacitor/core@7.6.7)
       '@capacitor/browser':
-        specifier: 7.0.5
-        version: 7.0.5(@capacitor/core@7.6.7)
+        specifier: 8.0.4
+        version: 8.0.4(@capacitor/core@7.6.7)
       '@capacitor/core':
         specifier: 7.6.7
         version: 7.6.7
@@ -958,10 +958,10 @@ packages:
     peerDependencies:
       '@capacitor/core': '>=8.0.0'
 
-  '@capacitor/browser@7.0.5':
-    resolution: {integrity: sha512-YF/kC1m1e6c81X/agtAnYItVlqiQ/nXLG+Q3QXNDuiMoRynqa3Guu8ZaV9kWvqQcHoE2w18xz7WGpPOuh+R1fA==}
+  '@capacitor/browser@8.0.4':
+    resolution: {integrity: sha512-ORZ4u/y+7aMuu6yVuk6SP529fUZyqcbnuHB1q5McpA3o2SYfVoi28iB8rsQjI2ad1qlKJd29ZUuGtspXLBDlWg==}
     peerDependencies:
-      '@capacitor/core': '>=7.0.0'
+      '@capacitor/core': '>=8.0.0'
 
   '@capacitor/cli@7.6.7':
     resolution: {integrity: sha512-nV9j1+431/rsiabGs1UK0SbETrl2JfAf3SSlsM9RbMMjAL7WmruxnlJcbB9IXPoa6L99GljSO5q/9UCNvYz6Ag==}
@@ -5246,8 +5246,8 @@ packages:
     engines: {node: '>=6.0.0'}
     hasBin: true
 
-  baseline-browser-mapping@2.11.13:
-    resolution: {integrity: sha512-k9HNuUVMlqVjQ9UHzfPjIqiDbWw7WqT1AoT7GL8VwvF3r0ZfArtgiSPAlmupyNquNgOJHTuH4CKYf8ttMTWBTQ==}
+  baseline-browser-mapping@2.11.14:
+    resolution: {integrity: sha512-JyJ954WzuIR8/FFzX0o5krdSTrBAkcCSRfWSleRsIHSWV+cZe2FI1PKggVkFke1hBldRs+LRxUczzE9iPmgZww==}
     engines: {node: '>=6.0.0'}
     hasBin: true
 
@@ -5994,6 +5994,7 @@ packages:
   eslint@9.39.5:
     resolution: {integrity: sha512-DgZS62aPLXKlnxILS/AYCoRvHaZeXceIzlXPkkGGzJWSow1aEk0lbTlxUSlyjC8jcaKxAdOnTDz+o1JFSBsyjw==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
+    deprecated: This version is no longer supported. Please see https://eslint.org/version-support for other options.
     hasBin: true
     peerDependencies:
       jiti: '*'
@@ -10025,7 +10026,7 @@ snapshots:
     dependencies:
       '@capacitor/core': 7.6.7
 
-  '@capacitor/browser@7.0.5(@capacitor/core@7.6.7)':
+  '@capacitor/browser@8.0.4(@capacitor/core@7.6.7)':
     dependencies:
       '@capacitor/core': 7.6.7
 
@@ -14285,7 +14286,7 @@ snapshots:
 
   baseline-browser-mapping@2.11.12: {}
 
-  baseline-browser-mapping@2.11.13: {}
+  baseline-browser-mapping@2.11.14: {}
 
   basic-ftp@5.3.1: {}
 
@@ -14334,7 +14335,7 @@ snapshots:
 
   browserslist@4.28.7:
     dependencies:
-      baseline-browser-mapping: 2.11.13
+      baseline-browser-mapping: 2.11.14
       caniuse-lite: 1.0.30001806
       electron-to-chromium: 1.5.396
       node-releases: 2.0.51
