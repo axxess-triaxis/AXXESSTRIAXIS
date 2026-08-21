@@ -35,7 +35,7 @@ function normalizeBuildNumber(value) {
     return value;
   }
   const parsed = Number.parseInt(shorthandMatch[1], 10);
-  return String(parsed);
+  return parsed > 0 ? String(parsed) : value;
 }
 
 function readPackageVersion() {
@@ -66,7 +66,7 @@ let iosBuildNumber;
 let androidVersionCode;
 
 if (eventName === "workflow_dispatch") {
-  appVersion = normalizeAppVersion(inputAppVersion || coerceStoreVersion(readPackageVersion()));
+  appVersion = inputAppVersion ? normalizeAppVersion(inputAppVersion) : coerceStoreVersion(readPackageVersion());
   iosBuildNumber = normalizeBuildNumber(inputIosBuildNumber);
   androidVersionCode = normalizeBuildNumber(inputAndroidVersionCode);
 
