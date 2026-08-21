@@ -1,3 +1,88 @@
 @import './fonts.css';
 @import './tailwind.css';
 @import './theme.css';
+
+.triaxis-site-shell {
+  position: relative;
+  min-height: 100vh;
+  overflow: hidden;
+  background:
+    linear-gradient(135deg, rgba(0, 194, 255, 0.16), transparent 30%),
+    linear-gradient(315deg, rgba(109, 255, 106, 0.13), transparent 34%),
+    #02050a;
+  color: #f8fafc;
+}
+
+.triaxis-site-shell::before,
+.triaxis-site-shell::after {
+  content: "";
+  position: fixed;
+  inset: -18%;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.triaxis-site-shell::before {
+  background:
+    linear-gradient(118deg, transparent 0 21%, rgba(0, 194, 255, 0.62) 21.25%, transparent 22%),
+    linear-gradient(124deg, transparent 0 53%, rgba(0, 108, 255, 0.44) 53.2%, transparent 54%),
+    linear-gradient(132deg, transparent 0 77%, rgba(0, 194, 255, 0.34) 77.18%, transparent 78%);
+  opacity: 0.56;
+}
+
+.triaxis-site-shell::after {
+  background:
+    linear-gradient(62deg, transparent 0 31%, rgba(109, 255, 106, 0.44) 31.2%, transparent 32%),
+    linear-gradient(70deg, transparent 0 68%, rgba(64, 255, 167, 0.34) 68.2%, transparent 69%),
+    linear-gradient(74deg, transparent 0 84%, rgba(109, 255, 106, 0.24) 84.15%, transparent 85%);
+  opacity: 0.54;
+}
+
+.triaxis-site-shell > * {
+  position: relative;
+  z-index: 1;
+}
+
+.triaxis-site-shell .bg-white,
+.triaxis-site-shell .bg-\[\#f8fafc\],
+.triaxis-site-shell .bg-\[\#fbfcfd\],
+.triaxis-site-shell .bg-\[\#f7fbf3\],
+.triaxis-site-shell .bg-\[\#eef2f6\] {
+  background-color: rgba(7, 17, 29, 0.88) !important;
+  backdrop-filter: blur(16px);
+}
+
+.triaxis-site-shell .border-\[\#d6dee8\],
+.triaxis-site-shell .border-\[\#cdd5df\],
+.triaxis-site-shell .border-\[\#b8c3d1\],
+.triaxis-site-shell .border-\[\#e2e8f0\],
+.triaxis-site-shell .border-\[\#d8e2d2\] {
+  border-color: rgba(0, 194, 255, 0.34) !important;
+}
+
+.triaxis-site-shell .text-\[\#111827\],
+.triaxis-site-shell .text-\[\#172231\],
+.triaxis-site-shell .text-\[\#1d2a38\],
+.triaxis-site-shell .text-\[\#243244\],
+.triaxis-site-shell .text-\[\#0f1720\] {
+  color: #f8fafc !important;
+}
+
+.triaxis-site-shell .text-\[\#35506b\],
+.triaxis-site-shell .text-\[\#3f5165\],
+.triaxis-site-shell .text-\[\#426531\],
+.triaxis-site-shell .text-\[\#4a5a6a\],
+.triaxis-site-shell .text-\[\#526273\],
+.triaxis-site-shell .text-\[\#6c7a89\] {
+  color: #b6c7d6 !important;
+}
+
+.triaxis-site-shell a:not([class*="bg-"]):not([class*="text-white"]) {
+  color: #7dff6a;
+}
+
+.triaxis-site-shell .shadow-sm,
+.triaxis-site-shell .shadow-lg,
+.triaxis-site-shell .shadow-xl {
+  box-shadow: 0 24px 80px rgba(0, 194, 255, 0.12) !important;
+}

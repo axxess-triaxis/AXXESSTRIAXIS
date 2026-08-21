@@ -39,7 +39,7 @@ const plans = [
 
 export default function PricingPlansPage() {
   return (
-    <main className="min-h-screen bg-[#f4f6f8] text-[#0f1720]">
+    <main className="triaxis-site-shell">
       <section className="mx-auto max-w-7xl px-6 py-10 md:px-10 md:py-16">
         <a href="/" className="text-sm font-semibold text-[#8b1e2d] hover:underline">
           Back to Triaxis Ventures
