@@ -70,20 +70,23 @@ function applyAndroid() {
   );
 
   replaceOrWarn(buildGradle, [
-    [/namespace\s+['"][^'"]+['"]/, "namespace resolvedApplicationId"],
-    [/compileSdk(?:Version)?\s+(?:rootProject\.ext\.)?\w+/, "compileSdk 36"],
-    [/applicationId\s+['"][^'"]+['"]/, "applicationId resolvedApplicationId"],
-    [/targetSdk(?:Version)?\s+(?:rootProject\.ext\.)?\w+/, "targetSdk 36"],
-    [/versionCode\s+\d+/, "versionCode resolvedVersionCode"],
-    [/versionName\s+['"][^'"]+['"]/, "versionName resolvedVersionName"],
+    [/namespace\s*=?\s*['"][^'"]+['"]/, "namespace resolvedApplicationId"],
+    [/compileSdk(?:Version)?\s*=?\s*(?:rootProject\.ext\.\w+|\d+)/, "compileSdk 36"],
+    [/applicationId\s*=?\s*['"][^'"]+['"]/, "applicationId resolvedApplicationId"],
+    [/targetSdk(?:Version)?\s*=?\s*(?:rootProject\.ext\.\w+|\d+)/, "targetSdk 36"],
+    [/versionCode\s*=?\s*\d+/, "versionCode resolvedVersionCode"],
+    [/versionName\s*=?\s*['"][^'"]+['"]/, "versionName resolvedVersionName"],
   ]);
 
   const buildGradleSource = readOptional(buildGradle);
   if (buildGradleSource !== null) {
     let source = buildGradleSource;
     if (!source.includes("def resolvedApplicationId")) {
+      const applyPluginAnchor = /apply\s+plugin:\s*['"]com\.android\.application['"]\s*\n?/;
+      const pluginsBlockAnchor = /plugins\s*\{[\s\S]*?\}\s*\n?/;
+      const anchor = applyPluginAnchor.test(source) ? applyPluginAnchor : pluginsBlockAnchor;
       source = source.replace(
-        /plugins\s*\{[\s\S]*?\}\s*/,
+        anchor,
         (match) =>
           [
             match.trimEnd(),
@@ -115,7 +118,7 @@ function applyAndroid() {
     }
 
     if (!source.includes("signingConfig signingConfigs.release")) {
-      source = source.replace(/release\s*\{\s*/, "release {\n            signingConfig signingConfigs.release\n");
+      source = source.replace(/(buildTypes\s*\{\s*release\s*\{)/, "$1\n            signingConfig signingConfigs.release");
     }
 
     fs.writeFileSync(buildGradle, source);
