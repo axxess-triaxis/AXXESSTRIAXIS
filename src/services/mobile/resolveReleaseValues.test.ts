@@ -79,7 +79,7 @@ describe("resolve-release-values workflow dispatch parsing", () => {
     expect(result.stderr).toContain("invalid iOS build number 'abc'");
   });
 
-  it("fails dotted build shorthand when minor segment resolves to zero", () => {
+  it("fails iOS dotted build shorthand when minor segment resolves to zero", () => {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "resolve-release-values-"));
     const githubEnvPath = path.join(tmpDir, "github.env");
 
