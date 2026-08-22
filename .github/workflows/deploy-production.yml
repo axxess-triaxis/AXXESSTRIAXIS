@@ -1,4 +1,4 @@
-name: Deploy Production (landing + investor demo)
+name: Deploy Production (landing + investor demo + lite)
 
 # A-88 (2026-08-03): landing.triaxisventures.com and investor.triaxisventures.com are two
 # separate Vercel projects (triaxis-www-frontend-import / triaxis-product-investor-demo) built
@@ -11,11 +11,19 @@ name: Deploy Production (landing + investor demo)
 # founder's explicit choice: a PR is required first, both as a review gate and because "PR
 # creation... [is] not ornamental," it's the audit trail this compliance-focused program expects.
 #
+# 2026-08-22: added a third job for lite.triaxisventures.com (triaxis-product-lite-web), also
+# built from this same repo. Automated deploy for Lite was deliberately deferred when its Vercel
+# project was created (docs/readiness/AXXESS_LITE_VERCEL_PROJECT_SETUP_2026_08_05.md, "Do not mark
+# Lite ready for users yet") -- the founder explicitly approved adding it now, reversing that
+# non-negotiable. See that doc for the dated follow-up note and this repo's decision-ledger
+# discipline (CLAUDE.md) for the full context of this reversal.
+#
 # Required repo secrets (Settings > Secrets and variables > Actions):
-#   VERCEL_TOKEN                     - a Vercel account/team token with deploy access to both projects
+#   VERCEL_TOKEN                     - a Vercel account/team token with deploy access to all three projects
 #   VERCEL_ORG_ID                    - team_dODwKUnt7TOneVcLbI5E8aIq
 #   VERCEL_PROJECT_ID_LANDING        - prj_TKNsiB2hMIHUy8bqEmJVpAq4EiTT (triaxis-www-frontend-import)
 #   VERCEL_PROJECT_ID_INVESTOR_DEMO  - prj_DmQEa8CtZss0eTnZgGL4aZA6Y8gP (triaxis-product-investor-demo)
+#   VERCEL_PROJECT_ID_LITE           - (triaxis-product-lite-web; founder to add)
 
 on:
   push:
@@ -103,4 +111,36 @@ jobs:
         # `--archive=tgz` bundles the deployment into one compressed tarball instead, which is
         # Vercel's own suggested fix in that exact error message and drastically cuts the
         # per-deploy file-upload count against the same quota.
+        run: npx vercel deploy --prebuilt --prod --archive=tgz --token=${{ secrets.VERCEL_TOKEN }}
+
+  deploy-lite:
+    name: Deploy lite.triaxisventures.com
+    runs-on: ubuntu-latest
+    needs: deploy-investor-demo
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_LITE }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 11.7.0
+          run_install: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Pull Vercel environment
+        run: npx vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Build
+        run: npx vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Deploy
         run: npx vercel deploy --prebuilt --prod --archive=tgz --token=${{ secrets.VERCEL_TOKEN }}
