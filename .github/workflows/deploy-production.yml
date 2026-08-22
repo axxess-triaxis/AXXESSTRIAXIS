@@ -23,7 +23,7 @@ name: Deploy Production (landing + investor demo + lite)
 #   VERCEL_ORG_ID                    - team_dODwKUnt7TOneVcLbI5E8aIq
 #   VERCEL_PROJECT_ID_LANDING        - prj_TKNsiB2hMIHUy8bqEmJVpAq4EiTT (triaxis-www-frontend-import)
 #   VERCEL_PROJECT_ID_INVESTOR_DEMO  - prj_DmQEa8CtZss0eTnZgGL4aZA6Y8gP (triaxis-product-investor-demo)
-#   VERCEL_PROJECT_ID_LITE           - (triaxis-product-lite-web; founder to add)
+#   VERCEL_PROJECT_ID_LITE           - prj_NQOBzuj4wpO5UnlRB6L0xdO1nT6f (triaxis-product-lite-web)
 
 on:
   push:
