@@ -232,13 +232,20 @@ jobs:
         run: pnpm run mobile:capacitor:release:android
 
       - name: Upload Android bundle to Google Play internal testing
-        if: ${{ env.ANDROID_UPLOAD_TO_PLAY == 'true' && env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON != '' }}
+        # Gate on ANDROID_PLAY_LISTING_EXISTS so this step is only attempted once
+        # the app has been manually created in Play Console.  This prevents the
+        # "Package not found" 404 from failing the job before the first manual
+        # listing is in place, while still surfacing real upload failures (bad
+        # credentials, invalid AAB, quota) once the listing exists.
+        # Set the `ANDROID_PLAY_LISTING_EXISTS` Actions variable to `true` after
+        # the app listing has been created in Play Console.
+        if: ${{ env.ANDROID_UPLOAD_TO_PLAY == 'true' && env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON != '' && vars.ANDROID_PLAY_LISTING_EXISTS == 'true' }}
         uses: r0adkll/upload-google-play@v1
         with:
           serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
           packageName: ${{ vars.ANDROID_APPLICATION_ID }}
           releaseFiles: apps/mobile-capacitor/android/app/build/outputs/bundle/release/app-release.aab
-          track: internal
+          tracks: internal
           status: draft
 
       - name: Generate Android release checklist
