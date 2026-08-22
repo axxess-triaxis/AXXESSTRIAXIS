@@ -6,7 +6,7 @@ Company: Triaxis Ventures Private Limited
 Recorded by: Claude Code, from the founder's own account
 Purpose: a running, factual record of who AXXESS has been pitched to, what response each conversation produced, and what (if anything) was offered or declined. This is a founder-reported log, not independently verified evidence -- entries here are recorded as stated, in the same spirit as this program's existing "Honest Limitations" discipline (see `MONOREPO_ARCHITECTURE_AND_BUSINESS_MODEL.md` S7). Where a number or quote is given, it is recorded as given; nothing here should be read as claiming independent verification of pricing intent, promoter scores, or outcomes beyond what the founder reported.
 
-**Total documented calls across this program's logs, verified 2026-08-04:** the founder referenced "63 documented calls pre-existing in GitHub" -- this figure was checked, not just repeated: it is the exact sum of this file's 22 original entries (as of commit `bdac7e1`, before this session's additions) + `docs/readiness/CLIENT_SCOPING_CALLS_LOG_2026_07_25.md`'s 16 market-discovery conversations + `docs/readiness/STAKEHOLDER_IDEA_VALIDATION_CALLS_LOG_2026_07_25.md`'s 25 stakeholder idea-validation conversations (22+16+25 = 63). This file now has 30 numbered entries (8 added or updated on 2026-08-04, both new relationships and follow-ups on existing ones -- see entries #16-18, #26-30), making the current cross-log total 71, not 63; the "63" figure describes the state before today's additions, not the current state.
+**Total documented calls across this program's logs, verified 2026-08-22:** the founder's earlier "63 documented calls pre-existing in GitHub" figure described the pre-2026-08-04 state. This file now has **46 numbered entries** after later additions. Combined with `docs/readiness/CLIENT_SCOPING_CALLS_LOG_2026_07_25.md`'s 16 market-discovery conversations and `docs/readiness/STAKEHOLDER_IDEA_VALIDATION_CALLS_LOG_2026_07_25.md`'s 24 named stakeholder idea-validation conversations after dedupe, the current named/documented cross-log total is **86** (46 + 16 + 24), not 63. This remains a mixed relationship/conversation count, not a sales-lead or revenue count.
 
 ## How To Read This Log
 
@@ -197,6 +197,21 @@ Source: "Congratulations | IIMV FIELD | Shortlisted for Phase 2 NFHP Cohort 2" e
   still to come ("We'll be in touch shortly").
 **Outcome:** Passed Phase 1, shortlisted for Phase 2 -- program's next-step communication not yet
 received as of this evidence.
+
+**Update, 2026-08-22 (source PDF reviewed, image-only email export rendered visually):** a new
+email dated 2026-08-21, subject "Next Steps | NFHP Phase 2 | IIMV FIELD," confirms the next-step
+communication has now arrived. The message welcomes the recipient to **Phase 2 of the Naaripreneur
+for Her Program** and requests completion of a need-assessment survey by **2026-08-27, 23:59:59**.
+The Phase 2 detail is stronger and more specific than the original shortlist email: Phase 1 is now
+complete, **Triaxis Ventures (powered by AXXESS TRIaxis) is one of 226 startups shortlisted into
+Phase 2**, and Phase 2 is explicitly a **Pre-Incubation** stage running for the next **1-2 months**.
+The program states Phase 2 includes approximately **10 capacity-building sessions**, approximately
+**15 total hours**, access to resources/collaborators, and potential access to **1:1 mentoring,
+funding and markets in Phase 3**. The same email also makes clear that Phase 3 incubation is not yet
+won: shortlisted Phase 2 applicants must later submit interest to be considered for Phase 3.
+Personal email/phone details present in the PDF are deliberately not reproduced here.
+**Outcome (updated):** Phase 1 passed; Phase 2/pre-incubation next steps received; Phase 3
+incubation/funding/market access remains future consideration, not a current acceptance.
 
 ## Accelerator / Pre-Accelerator Programs
 
@@ -441,6 +456,25 @@ number of start-ups") rather than application-specific reasoning. Explicit reapp
 ("We encourage you to re-apply in the future"). Founder's own probable-cause read: sub-1% acceptance
 rate combined with a pre-traction application, not independently confirmed by the rejection email
 itself.
+
+### 46. Residency Bangalore -- Founders Track
+
+**Status:** Advanced to Round 2. **New, 2026-08-22.** Recorded from a founder-supplied PDF email
+export, image-only and visually reviewed.
+Source: "Congrats! You're through to Round 2 - Residency Bangalore Founders Track" email from
+Residency Bangalore, dated 2026-08-21, 3:34 PM. Personal email addresses in the export are not
+reproduced here.
+- The message states the founder is through to **Round 2** of the **Residency Bangalore Founders
+  Track**.
+- The message states the application is in the **top 10 percentile** of applications for the cohort
+  and that the application stood out. This is recorded as the program's own phrasing, not independently
+  benchmarked.
+- Next step requested: an **R2 form** covering a one-minute intro video in a YC-style format,
+  fundraise readiness, team commitment, entity status, and traction.
+- Deadline stated in the source: **2026-08-23, 11:59 PM**.
+**Outcome:** Round 2 progression confirmed; no acceptance, investment, residency place, funding, or
+final cohort selection is evidenced yet. Treat as investor/accelerator pipeline progress, not closed
+funding traction.
 
 ## Startup Visa / Relocation Programs
 
@@ -731,16 +765,17 @@ itself was Government of Gujarat-funded) not worth spending on a stage-mismatche
 are recorded as a distinct category from the institutional "no"s discussed above -- AXXESS's own
 capital-efficiency and stage-fit decisions, not signals about how AXXESS was received.
 
-**Update, 2026-08-12 -- overall ecosystem-reach scale, checked, not just asserted:** this log alone
-now names **40 numbered entries across 12 distinct categories** (Enterprise/Institutional Prospects,
+**Update, 2026-08-22 -- overall ecosystem-reach scale, checked, not just asserted:** this log alone
+now names **46 numbered entries across 12 distinct categories** (Enterprise/Institutional Prospects,
 Competitions and Panels, Incubation Programs, Accelerator/Pre-Accelerator Programs, Startup Visa/
 Relocation Programs, Recognition/Nomination Processes, Mentorship, Angel Investor Conversations,
 Ecosystem/Connector Relationships, VC Outreach, and Mentor/Ecosystem Recognition Roles). Combined
 with the two sibling logs this document's own intro cites (`CLIENT_SCOPING_CALLS_LOG_2026_07_25.md`,
-16 conversations; `STAKEHOLDER_IDEA_VALIDATION_CALLS_LOG_2026_07_25.md`, 25 conversations), that is
-**81 total documented conversations** across this program's own logs -- against a repository
-independently confirmed 39-43 days old in `docs/audit/FOUNDER_QUESTIONS.md` Q-002. Recorded here as a
-genuine, countable scale-of-reach fact for a company this young, not an inflated or rounded claim.
+16 conversations; `STAKEHOLDER_IDEA_VALIDATION_CALLS_LOG_2026_07_25.md`, 24 named conversations
+after dedupe), that is **86 total named/documented relationships or conversations** across this
+program's own logs. Recorded here as a genuine, countable scale-of-reach fact for a company this
+young, not an inflated or rounded claim -- and still not a revenue, sales-lead, or closed-funding
+count.
 
 ## Status Update, 2026-07-26 (Founder-Reported)
 
