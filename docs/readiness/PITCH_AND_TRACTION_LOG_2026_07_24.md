@@ -572,6 +572,12 @@ actually applied. Real evidence of meaningful progress exists alongside the reje
 Startup Committee's final voting stage -- which the founder reads as most consistent with reason 4
 (economic-benefit articulation) being the actual gap, not reasons 1-3 or 5.
 
+**Founder clarification, 2026-08-22:** shorthand investor-facing phrasing should be: **Estonia
+Startup Visa proceeded very rapidly to the government Startup Committee voting stage; the committee
+ultimately rejected the application through generic boilerplate and invited reapplication once
+programme requirements are met.** This is not a successful visa outcome, but it is materially stronger
+than a first-screen rejection.
+
 ### 40. Startup Visa Lithuania
 
 **Status:** Rejected -- "decided not to proceed with the application at this time." **New,
