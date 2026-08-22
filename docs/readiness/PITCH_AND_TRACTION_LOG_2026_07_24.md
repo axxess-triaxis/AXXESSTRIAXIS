@@ -43,6 +43,10 @@ Source: result email from Ananya, Innopreneurs India (Lemon Ideas), 2026-07-08: 
 - This is a genuine pass, consistent with this log's practice of recording investor/evaluator-side rejections without softening (see #9, #12, #19, #22). The founder's own later description to 3one4 Capital ("Presented in the Top 500 round of Innopreneurs Season 13") is accurate as far as it goes but did not mention this outcome -- recorded here to close that gap, not to imply the earlier statement was false.
 **Outcome:** Not selected for the current cohort, with named constructive jury feedback (above). Reached the Top 500 round before the pass.
 
+**Founder clarification, 2026-08-22:** shorthand investor-facing phrasing should be:
+**Innopreneurs Season 13 by Lemon Ideas -- reached Top 500, then got ejected at idea stage before
+Top 100.** Do not claim Top 100 selection for this program.
+
 ### 33. Pitch Karo India -- competition organized by IIT Delhi, BISE, ThinkStartup, and other named organizers (final round invitation)
 
 **Status:** Invited to the final round. **Founder decision: not responding, not attending, not formally declining.** Numbered out of the main entry sequence (added after #32), same reasoning as entries #26-32 above -- grouped here under Competitions and Panels by content, not position.
