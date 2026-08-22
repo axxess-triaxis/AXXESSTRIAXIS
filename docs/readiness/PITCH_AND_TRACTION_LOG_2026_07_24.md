@@ -181,8 +181,8 @@ Source: rejection email from SINE IIT Bombay, 2026-06-08, Application No. SINE/I
 
 ### 35. IIMV FIELD -- Naaripreneur for Her Program (NFHP), Cohort 2
 
-**Status:** Shortlisted for Phase 2. **New, 2026-08-12.** Next steps for Phase 2 not yet
-communicated -- recorded as open, not assumed imminent.
+**Status:** In progress -- Phase 2 (Pre-Incubation), need-assessment survey due 2026-08-27. **New,
+2026-08-12; updated 2026-08-21.**
 Source: "Congratulations | IIMV FIELD | Shortlisted for Phase 2 NFHP Cohort 2" email, 2026-08-11,
 7:24 PM.
 - IIMV FIELD is the incubation and startup hub of IIM Visakhapatnam. This application/evaluation was
@@ -195,8 +195,16 @@ Source: "Congratulations | IIMV FIELD | Shortlisted for Phase 2 NFHP Cohort 2" e
   of NFHP Cohort 2 at IIMV FIELD." The email also notes a bulk-send/spam-folder caveat ("many of these
   bulk emails are unfortunately landing in spam folders") and states Phase 2 next-step details are
   still to come ("We'll be in touch shortly").
-**Outcome:** Passed Phase 1, shortlisted for Phase 2 -- program's next-step communication not yet
-received as of this evidence.
+**Outcome, updated 2026-08-21:** Phase 2 next steps received. Source: "Next Steps | NFHP Phase 2 |
+IIMV FIELD" email, `information@iimvfield.com`, 2026-08-21, 8:34 PM, again addressed to cofounder
+Ritashree Mahanta. Program structure: Phase 1 (Call for Applications) is complete -- **one of 226
+startups shortlisted into Phase 2 (Pre-Incubation)**, which runs 1-2 months with ~10 capacity-building
+sessions (~15 hours total), resource/collaborator access, then 1-1 mentoring plus funding and market
+access in Phase 3 (Incubation) for those who advance. All Phase 2 participants must submit interest at
+the end of Phase 2 to be considered for Phase 3 -- full selection criteria in the program's own
+brochure, not reproduced here. Immediate action required: a need-assessment survey (5-8 minutes),
+**deadline 27 Aug 2026 (Thursday), 23:59:59.** Passed Phase 1, now actively in Phase 2 -- advancement
+to Phase 3 remains a separate, later, not-yet-known outcome.
 
 ## Accelerator / Pre-Accelerator Programs
 
