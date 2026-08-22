@@ -25,6 +25,7 @@ const companyLinks = [
   { label: "Who We Build For", href: "/who-we-build-for" },
   { label: "Why It Disrupts", href: "/why-axxess-is-disruptive" },
   { label: "Global South", href: "/global-south" },
+  { label: "Privacy", href: "/privacy" },
 ];
 
 const promoVideos = [
