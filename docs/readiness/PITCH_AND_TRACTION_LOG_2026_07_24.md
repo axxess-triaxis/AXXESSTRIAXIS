@@ -562,6 +562,14 @@ founder to apply to **The Foundry**, its accelerator. Founder reports that the F
 has now been submitted. Recorded as a rejection-plus-redirect into a related accelerator path, not as
 an acceptance, investment offer, or accelerator admission.
 
+### 49. South Park Commons Bangalore
+
+**Status:** Rejected. **New, 2026-08-22. Founder-stated; source artifact not yet linked.**
+**Outcome:** Application/process did not advance. Founder reports the likely reason is mandate fit:
+AXXESS may not match South Park Commons Bangalore's current program mandate. This is recorded as
+probable founder interpretation, not a program-stated rejection reason unless/until the rejection
+message is added.
+
 ## Startup Visa / Relocation Programs
 
 Two government-run "startup visa" schemes, evaluated by their respective national startup
@@ -867,13 +875,13 @@ are recorded as a distinct category from the institutional "no"s discussed above
 capital-efficiency and stage-fit decisions, not signals about how AXXESS was received.
 
 **Update, 2026-08-22 -- overall ecosystem-reach scale, checked, not just asserted:** this log alone
-now names **48 numbered entries across 12 distinct categories** (Enterprise/Institutional Prospects,
+now names **49 numbered entries across 12 distinct categories** (Enterprise/Institutional Prospects,
 Competitions and Panels, Incubation Programs, Accelerator/Pre-Accelerator Programs, Startup Visa/
 Relocation Programs, Recognition/Nomination Processes, Mentorship, Angel Investor Conversations,
 Ecosystem/Connector Relationships, VC Outreach, and Mentor/Ecosystem Recognition Roles). Combined
 with the two sibling logs this document's own intro cites (`CLIENT_SCOPING_CALLS_LOG_2026_07_25.md`,
 16 conversations; `STAKEHOLDER_IDEA_VALIDATION_CALLS_LOG_2026_07_25.md`, 24 named conversations
-after dedupe), that is **88 total named/documented relationships or conversations** across this
+after dedupe), that is **89 total named/documented relationships or conversations** across this
 program's own logs. Recorded here as a genuine, countable scale-of-reach fact for a company this
 young, not an inflated or rounded claim -- and still not a revenue, sales-lead, or closed-funding
 count.
