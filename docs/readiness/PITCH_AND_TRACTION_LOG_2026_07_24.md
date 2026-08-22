@@ -377,6 +377,10 @@ follow-on investment of up to approximately €250,000 based on progress and fut
 No change to status -- this is corroboration of an already-logged in-progress evaluation, not a new
 outcome.
 
+**Founder update, 2026-08-22:** latest status is that the Ignition Fund process has moved into a
+**Partner round with direct partner access**. This is recorded as founder-stated latest status, not a
+final selection, investment offer, or term sheet unless/until written program evidence is added.
+
 ### 36. Hub71 Access -- main program, Abu Dhabi
 
 **Status:** Rejected/not shortlisted. **New, 2026-08-12.**
@@ -475,9 +479,18 @@ the full underlying message.
 **Outcome:** Application submitted; a response arrived 2026-08-11 but its actual written
 content/decision is not evidenced in this pass. Founder-stated context suggests a likely stage
 mismatch (EUR 10,000 MRR bar vs. AXXESS's pre-revenue status) distinct from Ignition Fund, which the
-founder describes as the better-fitting, actively-progressing SWG relationship. **If the full email
-or Dealum thread becomes available, this entry should be updated with the real, written outcome
-rather than left on this placeholder.**
+founder describes as the better-fitting, actively-progressing SWG relationship.
+
+**Founder clarification, 2026-08-22:** latest investor-facing phrasing should be: **Startup Wise Guys
+Flagship Accelerator -- GP/partner guidance was that the Flagship track generally needs EUR 10,000
+MRR; AXXESS was rejected and asked to reapply after reaching that traction level.** This updates the
+prior "response content not confirmed" placeholder with founder-stated outcome; if the full Dealum
+thread becomes available, replace this with source-backed text.
+
+**Cross-entry note, 2026-08-22:** Startup Wise Guys is now tracked as three separate interactions:
+#9 Founders Club (50% discounted induction offered; AXXESS declined), #31 Ignition Fund (Partner
+round/direct partner access; open), and #38 Flagship Accelerator (rejected/reapply after EUR 10,000
+MRR).
 
 ### 42. Surge -- Peak XV Partners (formerly Sequoia India & Southeast Asia) Accelerator
 
