@@ -43,7 +43,7 @@ Source: result email from Ananya, Innopreneurs India (Lemon Ideas), 2026-07-08: 
 - This is a genuine pass, consistent with this log's practice of recording investor/evaluator-side rejections without softening (see #9, #12, #19, #22). The founder's own later description to 3one4 Capital ("Presented in the Top 500 round of Innopreneurs Season 13") is accurate as far as it goes but did not mention this outcome -- recorded here to close that gap, not to imply the earlier statement was false.
 **Outcome:** Not selected for the current cohort, with named constructive jury feedback (above). Reached the Top 500 round before the pass.
 
-### 33. Pitch Karo India -- competition organized by IIT Delhi, BISE, and other named organizers (final round invitation)
+### 33. Pitch Karo India -- competition organized by IIT Delhi, BISE, ThinkStartup, and other named organizers (final round invitation)
 
 **Status:** Invited to the final round. **Founder decision: not responding, not attending, not formally declining.** Numbered out of the main entry sequence (added after #32), same reasoning as entries #26-32 above -- grouped here under Competitions and Panels by content, not position.
 **Source:** invitation PDF supplied by the founder, 2026-08-08 (filename `Pitch Karo India.pdf`; this session's initial attempt to extract its text via `pdftotext` returned nothing -- an image-only PDF, and no PDF-rendering/OCR tooling was available in this environment to view it directly). **The founder subsequently pasted the underlying invitation email's full text in-session, superseding the PDF-extraction gap above** -- the details below are drawn directly from that pasted text, not reconstructed or extracted by this session.
@@ -101,6 +101,11 @@ idea-stage May 2026 application. Physical attendance/pitching did not occur, per
 reconfirmed cost-based decline; the post-event email's "you did it" framing is recorded as a likely
 mass-send inconsistency, not evidence of attendance.
 
+**Founder clarification, 2026-08-22:** shorthand investor-facing phrasing should be: **Pitch Karo
+India (IIT Delhi, BISE & ThinkStartup) -- invited for final pitch at Bharat Mandapam; ignored / not
+attended.** This is not a new outcome, just the concise version of the already-documented
+non-response/non-attendance decision above.
+
 ### 34. Peachscore Accelerator -- Startup Elevator Pitch Competition
 
 **Status:** Invited. **New, 2026-08-12.** No evidence of attendance or a result in this pass --
@@ -154,6 +159,10 @@ application, not independently confirmed by the result email itself.
 **Status:** Round 2 signed off; proceeding to Round 3 with the Domain Head. **Update, 2026-07-26 (founder-reported): Round 3 has now appeared; awaiting incubation confirmation.**
 **Outcome:** Approved progression to the next round of the incubation process.
 
+**Founder clarification, 2026-08-22:** the relevant investor-facing status is that **SIIC IIT
+Kanpur's final round was taken by the Domain Head - AI & ML**. This clarifies the process stage and
+the evaluator role; it does not by itself evidence an incubation acceptance.
+
 ### 6. Gopal Krishna Dixit -- Domain Head (AI & ML), SIIC, IIT Kanpur
 
 **Status:** Call completed. **Update, 2026-08-03 (email-thread-verified): a real, calendared meeting is now evidenced, but its duration does not match the "45-minute" figure already recorded below -- flagged, not silently reconciled.**
@@ -161,6 +170,10 @@ Source: Google Calendar invite ("Startup Evaluation Meeting," organizer Nandini 
 - This invite names both SIIC contacts already logged separately in this document (#5 Nandini Singh, #6 Gopal Krishna Dixit) as guests on the **same single meeting** -- raising the possibility that #5 and #6 substantially overlap rather than being two fully independent interactions, though this log continues to record them as separate entries per the founder's original reporting.
 - **Reconciliation flag:** this calendared meeting is 15 minutes, not the 45 minutes already recorded in the Outcome line below. This may be a different, unlogged call (SIIC's process spans Round 1 through Round 3 per entry #5, so multiple calls are plausible), or the "45-minute" figure may not be precise. Not resolved in this pass -- recorded as a discrepancy rather than silently overwritten.
 **Outcome:** 45-minute call including Q&A and a live demo walkthrough (founder-reported; see reconciliation flag above for a separately-evidenced 15-minute calendared meeting with the same two SIIC contacts).
+
+**Founder clarification, 2026-08-22:** this is the Domain Head - AI & ML final-round interaction
+referenced in entry #5's latest status note. The older calendar-duration discrepancy above remains
+flagged rather than overwritten.
 
 ### 7. Sudhanshu Mittal -- Director, NASSCOM; Centre Head, NASSCOM Centre of Excellence Gurugram (AI & IoT)
 
@@ -170,6 +183,11 @@ Source: Google Calendar invite ("Startup Evaluation Meeting," organizer Nandini 
 - 2026-07-24 (same day): founder supplied Incorporation Certificate and PAN; DPIIT and GSTIN noted as not yet obtained, with an offer to complete them within a month if required.
 - 2026-07-22: founder asked NASSCOM how to make the required onboarding payment -- **this thread does not show a payment confirmation or a completed-onboarding confirmation**, so "formalized" is not yet supportable; "approved, documentation in progress, payment step pending" is the accurate status as of this evidence.
 **Outcome:** 30-minute presentation; walkthrough of the demo link provided in advance. Incubation offered, now in active (unfinished) onboarding.
+
+**Founder clarification, 2026-08-22:** shorthand investor-facing phrasing should be:
+**NASSCOM Centre of Excellence, Gurugram (AI & IoT) offered incubation.** This matches the
+already-documented offer/onboarding evidence above; the remaining open point is formal completion of
+onboarding/payment/documentation, not whether the offer was made.
 
 ### 8. SINE -- Society for Innovation and Entrepreneurship, IIT Bombay
 
@@ -213,6 +231,9 @@ Personal email/phone details present in the PDF are deliberately not reproduced 
 **Outcome (updated):** Phase 1 passed; Phase 2/pre-incubation next steps received; Phase 3
 incubation/funding/market access remains future consideration, not a current acceptance.
 
+**Founder update, 2026-08-22:** the Phase 2 / need-assessment submission has now been made. No
+Phase 3 incubation decision is evidenced yet.
+
 ## Accelerator / Pre-Accelerator Programs
 
 ### 9. Davide Coppola -- Managing Director, Startup Wise Guys
@@ -225,6 +246,11 @@ Source: two email threads, 2026-07-16 through 2026-07-17 -- "Sudipta Koushik we 
 - 2026-07-17, 9:23 AM: founder's own pre-call email states the program's **inscription fee as EUR 1,500 + VAT**, and explicitly flags it as "quite difficult to pay upfront, especially from India" given current runway -- this is the founder's own contemporaneous cost concern, not a reconstruction, and lines up with the previously-logged "declined, to preserve runway" outcome. (This thread does not separately show a 50% discount as previously recorded here; that detail may have come up on the call itself, which is not captured in this evidence.)
 - 2026-07-17, 3:34 PM: founder sent a revised pitch deck ahead of the 4 PM call -- last message in the thread; **the call itself, and the actual decline, are not captured in this email evidence** and remain founder-reported only.
 **Outcome:** 20-minute call including live demo, pitch, and GitHub repo review (per founder's original report). Offered entry into the Founders Club (pre-accelerator track). **Declined, to preserve runway** -- now corroborated by a contemporaneous, email-documented cost concern (EUR 1,500+VAT, hard to pay upfront from India), though the decline message itself is not in the evidence reviewed.
+
+**Founder clarification, 2026-08-22:** the practical investor-facing version is: **Startup Wise Guys
+offered induction to the Founders Club at a 50% discount; AXXESS declined to preserve runway.** The
+50% discount is founder-stated from the call/off-thread path, while the existence of the Founders
+Club process and the runway/cost concern are already supported by the email thread above.
 
 ### 10. Polina Stavrovski, O. Disi, K. Jaoudi, K. Jatania -- Plug and Play UAE
 
@@ -254,6 +280,11 @@ Source: acceptance email "YOU'RE IN! Welcome to the Forge AI Residency," 2026-07
 - **This email evidences the offer and its real cost, not the decline itself** -- there is no decline/withdrawal message in this thread; the "declined, to preserve runway" outcome remains founder-reported, though the Rs. 15,000-within-24-hours confirmation-payment structure is a plausible, concrete trigger for a fast runway-driven decision.
 **Outcome:** Selected after two rounds of interviews described as very difficult. **Declined, to preserve runway** -- now corroborated by a real, time-boxed payment obligation (Rs. 15,000 within 24 hours, Rs. 1,10,000-1,20,000 total), though the decline message itself is not in the evidence reviewed.
 
+**Founder clarification, 2026-08-22:** shorthand investor-facing phrasing should be: **Forge AI by
+LevelUp offered AXXESS a place in the Top 20 Builder/Founder Residency cohort; AXXESS declined to
+preserve runway.** This restates the already-logged acceptance/cost evidence and founder-side
+decline, not a new financing outcome.
+
 ### 13. Down Town Venture Labs
 
 **Status:** Application/pitch presented. **Update, 2026-07-26 (founder-reported): status is "Ongoing" -- grant conversations now specifically named as NRL Ideation, in addition to the NIDHI PoC grant below.**
@@ -278,6 +309,10 @@ Source: 11-message email thread "Forbes India presents DGEMS 2026| Stage 2: Prel
 - 2026-06-12 through 2026-06-17: founder proactively asked to submit an updated pitch deck ahead of the Founders Call (originally set for 2026-06-15) "since we have made major milestones since our original submission"; deck delivered 2026-06-17.
 - **This thread ends 2026-06-18 with D Globalist acknowledging receipt of the updated deck and looking forward to the call -- it does not contain a call-outcome message or a Select 200 final-selection decision.** "Founders' Call attended" (the existing status line) is plausible given the scheduling shown here but is not itself confirmed in this evidence; recorded as founder-reported pending further evidence.
 **Outcome:** Attended the Founders' Call as part of the nomination process for Forbes India's Select 200 (founder-reported; the call's content and any selection outcome are not in the evidence reviewed). **Update, 2026-08-04 (email-verified, resolves the open call-outcome question above): advanced to Stage 3 (Select 200 Nomination Form), then explicitly declined by the founder.** Kirtika Aggarwal (D Globalist) emailed that the application "progressed to the Nomination Stage," requiring a completed Nomination Form and a **Nomination Fee acknowledgment**, due 2026-08-14 -- the first evidence that this stage of Select 200 is paid, not free. **Founder's reply, same day:** "Thank you so much for the Stage 3 clearance. I do not think a paid-for nomination is on our priority list right now. We will pass for now." **Declined, cost-based, same pattern as #9 (Startup Wise Guys) and #12 (Forge AI) above** -- a real, paid next stage the founder chose not to proceed with, not a rejection from the program's side.
+
+**Founder clarification, 2026-08-22:** shorthand investor-facing phrasing should be: **DGEMS Select
+200 by Forbes India -- cleared for nomination; declined to preserve runway.** This is consistent
+with the already-logged Stage 3 / paid nomination evidence above.
 
 ### 15. Jose Sarmento -- Web Summit (Lisbon, November 2026)
 
@@ -475,6 +510,9 @@ reproduced here.
 **Outcome:** Round 2 progression confirmed; no acceptance, investment, residency place, funding, or
 final cohort selection is evidenced yet. Treat as investor/accelerator pipeline progress, not closed
 funding traction.
+
+**Founder update, 2026-08-22:** the Round 2 submission has now been made. No final Residency
+Bangalore selection, investment, or cohort seat is evidenced yet.
 
 ## Startup Visa / Relocation Programs
 
@@ -716,6 +754,10 @@ grounds (already past idea stage; airfare not justified once enrolled), not an i
 rejection. Sixth entry in the founder-side-decline category (see Summary Pattern), alongside #9,
 #12, #14, #15, #33 -- though distinct from all five of those in sequence (enroll-then-withdraw,
 not decline-before-enrolling or pure non-response).
+
+**Founder clarification, 2026-08-22:** shorthand investor-facing phrasing should be: **iCreate Idea
+Catalyst -- invited; declined to preserve runway.** This is a concise version of the
+shortlist/enroll-then-withdraw history above.
 
 ## Summary Pattern (As Reported)
 
