@@ -601,6 +601,11 @@ by other evaluators in this log (compare David Orban, entry #19; 3one4 Capital's
 other -- but unlike Estonia's generic multi-reason checklist, this rejection names one specific,
 actionable gap and an explicit reapplication path once it's closed.
 
+**Founder clarification, 2026-08-22:** shorthand investor-facing phrasing should be: **Lithuania
+Startup Visa said AXXESS was too early and should reapply after more traction.** The source message
+specifically names paying customers, completed pilots, and measurable user adoption as the milestones
+that would strengthen a future application.
+
 ### 41. Pitch Protocol (AI-native fundraising application platform)
 
 **Status:** Applied -- submitted, awaiting fund response. **2026-08-13.**
