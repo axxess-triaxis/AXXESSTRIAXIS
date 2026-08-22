@@ -264,6 +264,10 @@ Club process and the runway/cost concern are already supported by the email thre
 
 **Status:** Round 2 call completed. **Update, 2026-07-26 (founder-reported): Round 2 has now appeared/concluded; awaiting further communication.** **Update, 2026-08-03 (email-thread-verified): founder sent an unsolicited traction update, 2026-08-01, containing a large set of commercial and technical figures. Recorded here as an outbound founder claim to a third party -- NOT as independently reconciled against this repo's own tracking docs, per the flag below.**
 **Outcome:** 45-minute call with the investor team, as part of Round 2 for the Dubai Founders HQ Accelerator, Cohort 2. On 2026-07-23, founder also requested the panel add cofounder Ritashree Mahanta to the pitch call and sent an updated deck ahead of a "DFHQ Cohort 2 Interview."
+- **Founder clarification, 2026-08-22:** Plug and Play UAE was representing / operating through its
+  partner **Dubai Founders HQ**, a Dubai government-linked accelerator context. Investor-facing
+  wording should therefore distinguish **Plug and Play UAE / Dubai Founders HQ** from a standalone
+  Plug and Play corporate accelerator process.
 - **2026-08-01 email ("Triaxis Ventures -- Product & Traction Update"), founder-stated figures, sent directly to the Plug and Play UAE team:** live multi-tenant Enterprise Beta 0.5 (launched 2026-07-05) hosting **4 enterprise tenants**; **2 active commercial pilots**, **3 additional pilots commencing shortly**, **5 signed LOIs**, **2 additional committed LOIs**, **1 signed referral partnership**, **3 strategic partnerships under negotiation**, enterprise POC discussions with NASSCOM India; 40+ integration surface (first set operational: Google Workspace, Microsoft Azure, Microsoft Entra, Meta Business, Zoom, Twilio, OpenAI, OpenRouter, SMTP, document indexing, RAG); bootstrapped on ~US$1,000 total (~US$220 on AI dev tools); **132k+ lines of code, 465+ GitHub commits, 130+ merged pull requests, 800+ passing tests**; 64 discovery conversations; enterprise survey showing 8/9 respondents interested in pilots (6 indicating budgets above US$1,000/year, 4 above US$5,000/year); NPS above 85.
 - **Reconciliation flag (not independently verified in this pass):** this repo's own pilot/LOI tracking doc, `docs/LOIS_BETA_PILOT_INTEREST_REFERRAL_AND_STRATEGIC_PARTNERSHIPS_LOG.md`, currently names 6 entities total (Sakura Law Chambers, Imprints Production, Ekora Hive, and the 3-company Mahanta group) -- not the "5 signed + 2 committed = 7 LOIs," "2 active commercial pilots + 3 commencing shortly," "1 signed referral partnership," or "3 strategic partnerships under negotiation" cited in this email. This may reflect real progress not yet logged internally, rounding/grouping differences, or overstatement in an investor-facing email -- this pass does not have enough information to say which, so it is flagged rather than silently reconciled either way. The 132k+ LOC figure is notable separately: it matches the founder's own recollection from earlier in this program's history, which a prior session's inconsistent labeling had made hard to confirm -- this outbound email is founder-stated corroboration of that number, not a fresh independent repo measurement taken in this pass.
 
@@ -540,6 +544,23 @@ funding traction.
 
 **Founder update, 2026-08-22:** the Round 2 submission has now been made. No final Residency
 Bangalore selection, investment, or cohort seat is evidenced yet.
+
+### 47. Antler Saudi Arabia
+
+**Status:** Rejected. **New, 2026-08-22. Founder-stated; source artifact not yet linked.**
+**Outcome:** Application/process did not advance. Recorded here as **Antler Saudi Arabia rejected
+AXXESS**, correcting the broader top-level readiness wording that had previously grouped "Antler" as
+an application still in line. No detailed rejection reason, reapply path, or partner feedback is
+evidenced in this repository yet; add the source email/screenshot if available.
+
+### 48. Forum Ventures / The Foundry Accelerator
+
+**Status:** Forum Ventures rejected; The Foundry accelerator application submitted. **New,
+2026-08-22. Founder-stated; source artifact not yet linked.**
+**Outcome:** Forum Ventures did not advance AXXESS through its main process, but directed / asked the
+founder to apply to **The Foundry**, its accelerator. Founder reports that the Foundry application
+has now been submitted. Recorded as a rejection-plus-redirect into a related accelerator path, not as
+an acceptance, investment offer, or accelerator admission.
 
 ## Startup Visa / Relocation Programs
 
@@ -846,13 +867,13 @@ are recorded as a distinct category from the institutional "no"s discussed above
 capital-efficiency and stage-fit decisions, not signals about how AXXESS was received.
 
 **Update, 2026-08-22 -- overall ecosystem-reach scale, checked, not just asserted:** this log alone
-now names **46 numbered entries across 12 distinct categories** (Enterprise/Institutional Prospects,
+now names **48 numbered entries across 12 distinct categories** (Enterprise/Institutional Prospects,
 Competitions and Panels, Incubation Programs, Accelerator/Pre-Accelerator Programs, Startup Visa/
 Relocation Programs, Recognition/Nomination Processes, Mentorship, Angel Investor Conversations,
 Ecosystem/Connector Relationships, VC Outreach, and Mentor/Ecosystem Recognition Roles). Combined
 with the two sibling logs this document's own intro cites (`CLIENT_SCOPING_CALLS_LOG_2026_07_25.md`,
 16 conversations; `STAKEHOLDER_IDEA_VALIDATION_CALLS_LOG_2026_07_25.md`, 24 named conversations
-after dedupe), that is **86 total named/documented relationships or conversations** across this
+after dedupe), that is **88 total named/documented relationships or conversations** across this
 program's own logs. Recorded here as a genuine, countable scale-of-reach fact for a company this
 young, not an inflated or rounded claim -- and still not a revenue, sales-lead, or closed-funding
 count.
