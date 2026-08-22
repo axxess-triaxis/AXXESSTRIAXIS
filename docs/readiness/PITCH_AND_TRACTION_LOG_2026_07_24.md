@@ -152,6 +152,10 @@ an implicit reapplication invitation -- not a reasoned or stage-specific rejecti
 probable-cause read: category mismatch (not genuinely deep tech) compounded by a pre-traction
 application, not independently confirmed by the result email itself.
 
+**Founder clarification, 2026-08-22:** shorthand investor-facing phrasing should be:
+**Singapore SLINGSHOT 2026 / Deep Tech Startup Pitching Competition -- rejected.** This should be
+treated as a competition/category-fit rejection, not a product or revenue diligence outcome.
+
 ## Incubation Programs
 
 ### 5. Nandini Singh -- SIIC, IIT Kanpur
