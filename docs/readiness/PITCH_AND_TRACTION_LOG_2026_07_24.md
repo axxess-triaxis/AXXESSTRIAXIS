@@ -523,6 +523,12 @@ number of start-ups") rather than application-specific reasoning. Explicit reapp
 rate combined with a pre-traction application, not independently confirmed by the rejection email
 itself.
 
+**Founder clarification, 2026-08-22:** investor-facing phrasing should treat this as **positive but
+too early**, not a hard quality rejection: Peak XV Surge liked the application but asked AXXESS to
+reapply with more progress. The source email supports the reapply path and generic capacity framing;
+the "liked the application" interpretation is founder-stated unless a more specific written note is
+added.
+
 ### 46. Residency Bangalore -- Founders Track
 
 **Status:** Advanced to Round 2. **New, 2026-08-22.** Recorded from a founder-supplied PDF email
@@ -569,6 +575,15 @@ an acceptance, investment offer, or accelerator admission.
 AXXESS may not match South Park Commons Bangalore's current program mandate. This is recorded as
 probable founder interpretation, not a program-stated rejection reason unless/until the rejection
 message is added.
+
+### 50. a16z Speedrun
+
+**Status:** Not selected; reapply with progress. **New, 2026-08-22. Founder-stated; source artifact
+not yet linked.**
+**Outcome:** Founder reports that a16z Speedrun liked the application but asked AXXESS to reapply
+with more progress. Recorded as a **positive-but-too-early / reapply-later** outcome, not as an
+acceptance, investment offer, or accelerator admission. Add the source email/screenshot if available
+to move this from founder-stated to source-backed.
 
 ## Startup Visa / Relocation Programs
 
@@ -830,7 +845,7 @@ shortlist/enroll-then-withdraw history above.
 
 Reading across all twenty-two named entries: the recurring pattern is strong qualitative reception (multiple uses of "impressed," "remarkable," "AI native") combined with a deliberate, repeated founder decision to **decline three separate accelerator/pre-accelerator offers** (Startup Wise Guys' Founders Club, Forge AI's Founder Residency, Web Summit Alpha) explicitly to preserve runway, while continuing to advance further in incubation-style programs that do not carry the same cost/dilution/time trade-off (SIIC IIT Kanpur, NASSCOM CoE Gurugram). This is consistent with the capital-efficiency framing already documented in `MONOREPO_ARCHITECTURE_AND_BUSINESS_MODEL.md` S1.4 (total spend to date approximately $800, current run-rate sustainable on Tier 1 self-serve pricing alone) -- these are recorded here as the same discipline applied to fundraising/accelerator decisions, not just product spend.
 
-Three entries stand apart from the "impressed" pattern, recorded here just as plainly: **SINE IIT Bombay deferred incubation until post-MVP**, **3one4 Capital passed twice** on an analyst-track relationship (first "too early for us" in June, then "still service-led, doesn't fit our venture-scale thesis" in August, after a documented traction update -- see entry #22), and **David Orban passed** on an angel round, citing prospective-only traction metrics, no disclosed compliance posture (SOC 2, data isolation) for a government/healthcare/NGO target market, and target-market breadth exceeding what the current stage supports -- the most detailed, specific investor-side feedback recorded in this log to date, including five named due-diligence questions for future conversations. All three are genuine, unreframed signals that AXXESS is still viewed by some evaluators as pre-incubation/pre-investment stage -- consistent with, not contradicting, the honest-limitations framing already established across this program's documentation. 3one4's second pass is notable specifically because it came *after* a real traction update, and moved from a stage objection to a business-model objection -- a harder, more specific signal, not a repeat of the same one.
+Three entries stand apart from the "impressed" pattern, recorded here just as plainly: **SINE IIT Bombay said the application was at a very early stage**, **3one4 Capital passed twice** on an analyst-track relationship (first "too early for us" in June, then "still service-led, doesn't fit our venture-scale thesis" in August, after a documented traction update -- see entry #22), and **David Orban passed** on an angel round, citing prospective-only traction metrics, no disclosed compliance posture (SOC 2, data isolation) for a government/healthcare/NGO target market, and target-market breadth exceeding what the current stage supports -- the most detailed, specific investor-side feedback recorded in this log to date, including five named due-diligence questions for future conversations. All three are genuine, unreframed signals that AXXESS is still viewed by some evaluators as pre-incubation/pre-investment stage -- consistent with, not contradicting, the honest-limitations framing already established across this program's documentation. 3one4's second pass is notable specifically because it came *after* a real traction update, and moved from a stage objection to a business-model objection -- a harder, more specific signal, not a repeat of the same one.
 
 The angel/VC outreach entries (16-22) add a second, distinct pattern: active, in-progress fundraising conversations across mentorship (Bezbora), direct angel pitches (Kashyap, Verma, Orban), ecosystem/connector relationships (Purshan, Sufiyan), and formal VC outreach (3one4 Capital). Unlike the accelerator entries, none of these has yet produced a firm offer; two (3one4 Capital, David Orban) have produced a decisive pass rather than an open outcome -- both recorded here as real, unsoftened signals, not as claimed traction.
 
@@ -875,13 +890,13 @@ are recorded as a distinct category from the institutional "no"s discussed above
 capital-efficiency and stage-fit decisions, not signals about how AXXESS was received.
 
 **Update, 2026-08-22 -- overall ecosystem-reach scale, checked, not just asserted:** this log alone
-now names **49 numbered entries across 12 distinct categories** (Enterprise/Institutional Prospects,
+now names **50 numbered entries across 12 distinct categories** (Enterprise/Institutional Prospects,
 Competitions and Panels, Incubation Programs, Accelerator/Pre-Accelerator Programs, Startup Visa/
 Relocation Programs, Recognition/Nomination Processes, Mentorship, Angel Investor Conversations,
 Ecosystem/Connector Relationships, VC Outreach, and Mentor/Ecosystem Recognition Roles). Combined
 with the two sibling logs this document's own intro cites (`CLIENT_SCOPING_CALLS_LOG_2026_07_25.md`,
 16 conversations; `STAKEHOLDER_IDEA_VALIDATION_CALLS_LOG_2026_07_25.md`, 24 named conversations
-after dedupe), that is **89 total named/documented relationships or conversations** across this
+after dedupe), that is **90 total named/documented relationships or conversations** across this
 program's own logs. Recorded here as a genuine, countable scale-of-reach fact for a company this
 young, not an inflated or rounded claim -- and still not a revenue, sales-lead, or closed-funding
 count.
@@ -895,7 +910,7 @@ affected entry above; summarized here for a single point of reference:
 |---|---|
 | #5/#6 SIIC, IIT Kanpur | Genuine progress: Round 2 -> Round 3 has now appeared, awaiting incubation confirmation |
 | #7 NASSCOM CoE Gurugram | Incubation offer stands, now awaiting documentation to formalize |
-| #8 SINE, IIT Bombay | Founder is now actively reapplying, per the original "revisit post-MVP" deferral |
+| #8 SINE, IIT Bombay | Corrected 2026-08-04: SINE's written reason was "At a very early stage"; founder later reported active reapplication intent |
 | #9 Startup Wise Guys | No change (reconfirmed) |
 | #10 Plug and Play UAE | Round 2 has appeared/concluded, awaiting further communication |
 | #11 Founder Institute | Corrected 2026-08-03: confirmed finalist is for Hyderabad, not Dubai; MENA/Dubai transfer requested but not confirmed (target cohort not yet launched) |
