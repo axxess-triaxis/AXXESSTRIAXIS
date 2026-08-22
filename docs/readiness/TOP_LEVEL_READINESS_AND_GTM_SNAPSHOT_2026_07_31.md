@@ -228,7 +228,7 @@ Why it is not yet 90%+:
 | Cohort confirmation pending | Awaiting outcome | Founder Institute Core Dubai. |
 | Final round / final call pending | Awaiting outcome | SIIC IIT Kanpur final round call pending; Plug and Play UAE / Dubai Founders HQ pending. |
 | Rejected as too early | Closed, useful signal | 3one4 Capital; SINE IIT Bombay. |
-| Rejected / redirected | In progress via adjacent path | Antler Saudi Arabia rejected; Forum Ventures rejected and redirected AXXESS to The Foundry accelerator, where the founder reports the application has been submitted. |
+| Rejected / redirected | In progress via adjacent path | Antler Saudi Arabia rejected; South Park Commons Bangalore rejected, probably mandate-fit related per founder interpretation; Forum Ventures rejected and redirected AXXESS to The Foundry accelerator, where the founder reports the application has been submitted. |
 | Declined by AXXESS / Triaxis | Founder declined | Startup Wise Guys Founders Club; Forge AI by Levelup. |
 | Grants | In line | Multiple strong applications in line. |
 | Major accelerator applications | In line | YC; The Foundry application submitted after Forum Ventures redirect. |
