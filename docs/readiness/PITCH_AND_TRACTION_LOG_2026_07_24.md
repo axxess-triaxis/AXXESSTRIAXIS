@@ -431,6 +431,12 @@ Hub71's broader community activities and a future reapplication. Founder's own p
 stage mismatch (already past the co-build stage this program serves), not independently confirmed by
 the rejection email itself.
 
+**Founder clarification, 2026-08-22:** shorthand investor-facing phrasing should be: **Hub71 Access
+and Hub71 Initiate were both rejected due to lack of stage fit.** More precisely, the founder reads
+Access as too late-stage for AXXESS's current pre-seed/pre-revenue state and Initiate as too
+co-build/venture-builder oriented for where AXXESS already was. The source emails confirm rejection
+and program-fit language; the exact "stage fit" synthesis remains founder interpretation.
+
 ### 38. Kristjan Nork -- Startup Wise Guys, Flagship Accelerator
 
 **Status:** Applied; a response was received but its content is not confirmed in this pass. **New,
