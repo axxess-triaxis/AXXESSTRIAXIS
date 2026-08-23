@@ -10,6 +10,8 @@ import { MobileActionButton } from "../MobileActionButton";
 import { useMobileTenantScope } from "../useMobileTenantScope";
 import { useMobileTabletLayout } from "../useMobileTabletLayout";
 import { readAndClearAgenticDraft } from "../../../services/agentic/agenticDraftHandoff";
+import { useRegisterMobileBackHandler } from "../MobileBackHandlerContext";
+import { triggerMobileHaptic } from "../triggerMobileHaptic";
 
 type TabId = "tasks" | "reminders";
 
@@ -30,6 +32,21 @@ export function MobileTasksScreen() {
   const [newTitle, setNewTitle] = useState("");
   const [newDueDate, setNewDueDate] = useState("");
   const [saving, setSaving] = useState(false);
+
+  // MN-4 (2026-08-23): Android back button -- closes the New task form first if open, else pops
+  // the phone-layout detail view back to the list. On tablet there's no separate detail "screen"
+  // to leave (list and detail render side by side), so the detail branch is skipped there.
+  useRegisterMobileBackHandler(() => {
+    if (showCreate) {
+      setShowCreate(false);
+      return true;
+    }
+    if (!isTablet && selectedTaskId) {
+      setSelectedTaskId(null);
+      return true;
+    }
+    return false;
+  });
 
   // MN-2 (2026-08-23): consumes the same sessionStorage handoff desktop TasksSection.tsx already
   // reads (src/services/agentic/agenticDraftHandoff.ts) -- lets "Create task from this answer" in
@@ -98,6 +115,7 @@ export function MobileTasksScreen() {
     const nextStatus = task.status === "completed" ? "pending" : "completed";
     const updated = await applicationServices.tasksRepository.update(scope, task.id, { status: nextStatus });
     setTasks((prev) => prev.map((t) => (t.id === task.id ? updated : t)));
+    if (nextStatus === "completed") triggerMobileHaptic();
   }
 
   async function handleToggleReminder(reminder: Reminder) {

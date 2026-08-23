@@ -31,6 +31,7 @@ vi.mock("../../../providers/serviceProvider", () => ({
   },
 }));
 
+import { MobileBackHandlerProvider } from "../MobileBackHandlerContext";
 import { MobileKnowledgeScreen } from "./MobileKnowledgeScreen";
 
 describe("MobileKnowledgeScreen (MN-2)", () => {
@@ -47,21 +48,21 @@ describe("MobileKnowledgeScreen (MN-2)", () => {
   });
 
   it("shows an honest empty state when there are no documents or articles", async () => {
-    render(<MobileKnowledgeScreen />);
+    render(<MobileBackHandlerProvider><MobileKnowledgeScreen /></MobileBackHandlerProvider>);
     await waitFor(() => expect(screen.getByText("Nothing here yet")).toBeInTheDocument());
   });
 
   it("lists real documents and articles fetched from their repositories", async () => {
     state.documents = [{ id: "d1", organizationId: "org-1", name: "MOU draft.pdf", mimeType: "application/pdf", storagePath: "org-1/mou.pdf", createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }];
     state.articles = [{ id: "a1", organizationId: "org-1", title: "Onboarding playbook", bodyMarkdown: "Steps...", tags: [], authorUserId: "user-1", status: "published", createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }];
-    render(<MobileKnowledgeScreen />);
+    render(<MobileBackHandlerProvider><MobileKnowledgeScreen /></MobileBackHandlerProvider>);
     await waitFor(() => expect(screen.getByText("MOU draft.pdf")).toBeInTheDocument());
     expect(screen.getByText("Onboarding playbook")).toBeInTheDocument();
   });
 
   it("searches via knowledgeSearchRepository.search with the real query text, and reports a real match count", async () => {
     search.mockResolvedValueOnce([{ type: "document", item: { id: "d1", organizationId: "org-1", name: "MOU draft.pdf", mimeType: "application/pdf", storagePath: "org-1/mou.pdf", createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() } }]);
-    render(<MobileKnowledgeScreen />);
+    render(<MobileBackHandlerProvider><MobileKnowledgeScreen /></MobileBackHandlerProvider>);
     await waitFor(() => expect(screen.getByText("Nothing here yet")).toBeInTheDocument());
 
     fireEvent.change(screen.getByPlaceholderText("Search documents and articles…"), { target: { value: "MOU" } });
@@ -74,7 +75,7 @@ describe("MobileKnowledgeScreen (MN-2)", () => {
   it("opens a document via a real signed download URL, not a fabricated link", async () => {
     state.documents = [{ id: "d1", organizationId: "org-1", name: "MOU draft.pdf", mimeType: "application/pdf", storagePath: "org-1/mou.pdf", createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }];
     const openSpy = vi.spyOn(window, "open").mockImplementation(() => null);
-    render(<MobileKnowledgeScreen />);
+    render(<MobileBackHandlerProvider><MobileKnowledgeScreen /></MobileBackHandlerProvider>);
     await waitFor(() => expect(screen.getByText("MOU draft.pdf")).toBeInTheDocument());
 
     fireEvent.click(screen.getByText("MOU draft.pdf"));

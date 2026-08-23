@@ -36,6 +36,7 @@ vi.mock("../../../providers/serviceProvider", () => ({
   },
 }));
 
+import { MobileBackHandlerProvider } from "../MobileBackHandlerContext";
 import { MobileProjectsScreen } from "./MobileProjectsScreen";
 
 describe("MobileProjectsScreen (MN-2)", () => {
@@ -46,13 +47,13 @@ describe("MobileProjectsScreen (MN-2)", () => {
   });
 
   it("shows an honest empty state when there are no projects", async () => {
-    render(<MobileProjectsScreen />);
+    render(<MobileBackHandlerProvider><MobileProjectsScreen /></MobileBackHandlerProvider>);
     await waitFor(() => expect(screen.getByText("No projects yet")).toBeInTheDocument());
   });
 
   it("shows the project's real risk and status badges, and never a fabricated budget/spend figure", async () => {
     state.projects = [{ id: "p1", organizationId: "org-1", name: "Referral SLA rollout", progress: 40, riskLevel: "high", priority: "high", status: "in-progress", tags: [] }];
-    render(<MobileProjectsScreen />);
+    render(<MobileBackHandlerProvider><MobileProjectsScreen /></MobileBackHandlerProvider>);
     await waitFor(() => expect(screen.getByText("Referral SLA rollout")).toBeInTheDocument());
     expect(screen.getByText("high risk")).toBeInTheDocument();
     expect(screen.queryByText(/budget|spend/i)).not.toBeInTheDocument();
@@ -61,14 +62,14 @@ describe("MobileProjectsScreen (MN-2)", () => {
   it("only shows a program association when the project has a real programId that resolves to a real program", async () => {
     state.programs = [{ id: "prog-1", organizationId: "org-1", name: "NE Health Access Program" }];
     state.projects = [{ id: "p1", organizationId: "org-1", name: "Referral SLA rollout", progress: 40, riskLevel: "medium", priority: "medium", status: "in-progress", tags: [] }];
-    render(<MobileProjectsScreen />);
+    render(<MobileBackHandlerProvider><MobileProjectsScreen /></MobileBackHandlerProvider>);
     await waitFor(() => expect(screen.getByText("Referral SLA rollout")).toBeInTheDocument());
     fireEvent.click(screen.getByText("Referral SLA rollout"));
     expect(screen.queryByText("NE Health Access Program")).not.toBeInTheDocument();
   });
 
   it("creates a real project via projectsRepository.create when the New project form is submitted", async () => {
-    render(<MobileProjectsScreen />);
+    render(<MobileBackHandlerProvider><MobileProjectsScreen /></MobileBackHandlerProvider>);
     await waitFor(() => expect(screen.getByText("No projects yet")).toBeInTheDocument());
 
     fireEvent.click(screen.getByText("New project"));

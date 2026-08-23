@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { MobileBackHandlerProvider } from "../MobileBackHandlerContext";
 import { MobileApprovalsScreen } from "./MobileApprovalsScreen";
 
 // MN-2 (2026-08-23): approvalRequestsRepository is service-role-key-gated -- confirmed during MN-2
@@ -23,7 +24,7 @@ describe("MobileApprovalsScreen (MN-2)", () => {
 
   it("shows an honest empty state when there are no approvals", async () => {
     fetchMock.mockResolvedValueOnce({ ok: true, json: async () => ({ approvals: [] }) });
-    render(<MobileApprovalsScreen />);
+    render(<MobileBackHandlerProvider><MobileApprovalsScreen /></MobileBackHandlerProvider>);
     await waitFor(() => expect(screen.getByText("No approvals")).toBeInTheDocument());
   });
 
@@ -32,7 +33,7 @@ describe("MobileApprovalsScreen (MN-2)", () => {
       ok: true,
       json: async () => ({ approvals: [{ id: "a1", title: "Approve pilot MOU spend", priority: "high", status: "pending", createdAt: new Date().toISOString() }] }),
     });
-    render(<MobileApprovalsScreen />);
+    render(<MobileBackHandlerProvider><MobileApprovalsScreen /></MobileBackHandlerProvider>);
     await waitFor(() => expect(screen.getByText("Approve pilot MOU spend")).toBeInTheDocument());
     expect(fetchMock).toHaveBeenCalledWith("/api/approvals", { credentials: "include" });
   });
@@ -42,7 +43,7 @@ describe("MobileApprovalsScreen (MN-2)", () => {
       ok: true,
       json: async () => ({ approvals: [{ id: "a1", title: "Approve pilot MOU spend", priority: "high", status: "pending", createdAt: new Date().toISOString() }] }),
     });
-    render(<MobileApprovalsScreen />);
+    render(<MobileBackHandlerProvider><MobileApprovalsScreen /></MobileBackHandlerProvider>);
     await waitFor(() => expect(screen.getByText("Approve pilot MOU spend")).toBeInTheDocument());
 
     fireEvent.click(screen.getByText("Approve pilot MOU spend"));
@@ -57,7 +58,7 @@ describe("MobileApprovalsScreen (MN-2)", () => {
       .mockResolvedValueOnce({ ok: true, json: async () => ({ approvals: [{ id: "a1", title: "Approve pilot MOU spend", priority: "high", status: "pending", createdAt: new Date().toISOString() }] }) })
       .mockResolvedValueOnce({ ok: true, json: async () => ({ approval: { id: "a1", status: "approved" } }) });
 
-    render(<MobileApprovalsScreen />);
+    render(<MobileBackHandlerProvider><MobileApprovalsScreen /></MobileBackHandlerProvider>);
     await waitFor(() => expect(screen.getByText("Approve pilot MOU spend")).toBeInTheDocument());
 
     fireEvent.click(screen.getByText("Approve pilot MOU spend"));
