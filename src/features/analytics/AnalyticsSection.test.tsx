@@ -35,10 +35,15 @@ describe("AnalyticsSection (Sprint 3 -- does not hang, F-012)", () => {
     await renderAnalytics();
   });
 
-  it("shows the honest not-yet-connected empty state for deeper trend analytics outside Demo Mode, not a spinner", async () => {
+  it("shows precise, per-section honest empty states outside Demo Mode, not a spinner", async () => {
+    // Analytics Sprint 1: the old single blanket "Deeper OKR, budget-trend..." callout was
+    // replaced with distinct empty states per section, since Projects and Approval Cycle Time
+    // are now genuinely real for a live tenant while OKRs/budget remain honestly untracked.
     await renderAnalytics();
 
-    expect(screen.getByText(/Deeper OKR, budget-trend, and approval-cycle analytics require computation/i)).toBeInTheDocument();
+    expect(screen.getByText(/OKRs are not tracked in this platform yet/i)).toBeInTheDocument();
+    expect(screen.getByText(/Budget\/spend is not tracked in this platform yet/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/No decided approvals yet/i).length).toBeGreaterThan(0);
   });
 
   it("never duplicates the Executive Dashboard's live Tier 1/2/3 tile stack", async () => {
