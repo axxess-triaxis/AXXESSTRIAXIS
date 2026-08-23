@@ -127,17 +127,26 @@ shipped" summary.
   step in Play Console is always required regardless of how the bundle got there — the founder
   completed that manual publish step (adding/confirming release notes and tester list, then
   starting the rollout) and **confirmed: "Published."**
-- This is recorded as **founder-stated, direct read of the Play Console UI, not independently
-  screenshotted or API-verified by this session** — the same evidentiary standing the 2026-08-22
-  closeout gave the equivalent claim for version code 2. It is not weaker evidence than that
-  precedent; it is the same kind, and this document is explicit about it rather than silently
-  upgrading it to "verified."
+- **Directly confirmed via a Play Console screenshot the founder shared in this conversation**
+  (upgrading the evidentiary standing beyond the initial verbal "Published" — this is a real
+  screenshot of the Play Console "Latest releases and bundles" page, not a recollection). Exact
+  state shown, Play Console's own timestamps:
+  - **Internal testing** — Release 3 (0.9.0), status **"Available to internal testers," Full
+    rollout**, last updated Aug 23, 2026, 10:19 PM.
+  - **Open testing** — Release 3 (0.9.0), status **"In review," Full rollout**, last updated
+    Aug 23, 2026, 10:13 PM — meaning it *was* also resubmitted for Google's review, resolving the
+    one open question this document had after the previous update, without needing to ask.
+  - **App bundle**: version code 3, version name 0.9.0, uploaded Aug 23, 2026, 4:04 PM, release
+    status "Active."
+  - Install base reads 0.00% on both tracks as of the screenshot — expected, since testers have not
+    yet updated to this build.
 
 **Net position on Android release specifically:** version code 3 — the first Android build carrying
 the full MN-1 through MN-5 mobile-native shell, core workflows, UX hardening, and security hardening
-— is founder-confirmed published to Google Play internal testing as of 2026-08-23. Whether it has
-also been resubmitted for Open testing review (as version code 2 was) is not yet stated and should
-be confirmed separately if that matters for pilot-tester reach.
+— is confirmed (via screenshot, Play Console's own UI) live in Internal testing and submitted for
+Open testing review, matching the exact same two-track pattern version code 2 followed on
+2026-08-22. This is now the strongest evidentiary standing this document reaches for the release
+side of the arc.
 
 ## What remains open, across the whole arc
 
@@ -149,9 +158,10 @@ be confirmed separately if that matters for pilot-tester reach.
   happened.
 - **OAuth-in-Capacitor redirect behavior**: genuinely untested, no code path found or exercised
   (MN-5 baseline doc).
-- **Whether version code 3 was also resubmitted for Open testing review** (matching version code
-  2's process on 2026-08-22): not yet stated by the founder, worth confirming if broader pilot
-  access depends on it.
+- **Open testing review outcome**: version code 3 is confirmed submitted (status "In review" per
+  the Play Console screenshot above) but Google's review has not yet resolved either way — the
+  same "genuinely open, not yet resolved" state the 2026-08-22 closeout left version code 2's Open
+  testing submission in.
 - **Vercel deploy quota**: self-resolves in ~24h from 2026-08-23; no action needed beyond waiting,
   or upgrading the tier.
 
@@ -176,8 +186,9 @@ CI-vs-Play-Console discrepancy on version code 3 was surfaced rather than assume
 resolved by the founder's own direct check of Play Console.
 **Outcome:** code shipped and merged to `main`; web deploy partially rolled out (landing only,
 MN-1-level, blocked on Vercel's daily quota for the rest); Android version code 3 (the full MN-1
-through MN-5 hardened build) founder-confirmed published to Google Play internal testing.
-**Follow-up:** confirm whether version code 3 was also resubmitted for Open testing review; wait out
-the Vercel quota or redeploy manually once reset (to bring investor-demo and lite current); schedule
+through MN-5 hardened build) confirmed live in Internal testing and submitted for Open testing
+review, via a Play Console screenshot.
+**Follow-up:** watch for Google's Open testing review outcome on version code 3; wait out the
+Vercel quota or redeploy manually once reset (to bring investor-demo and lite current); schedule
 the still-pending real device walkthrough before making any Beta 0.9 readiness claim beyond
-"code-complete, published to internal testing."
+"code-complete, live in internal testing, pending Open testing review."
