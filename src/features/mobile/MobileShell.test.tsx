@@ -1,10 +1,24 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { UserContext } from "../../security/rbac";
-import { MobileShell } from "./MobileShell";
 import { mobilePrimaryTabs } from "./mobileFeatureRegistry";
 
 const user: UserContext = { id: "user-1", organizationId: "org-1", role: "Employee", displayName: "Ananya Rao", avatarInitials: "AR" };
+
+// MN-2 (2026-08-23): MobileShell's own tests exercise routing/composition only -- which top-level
+// screen renders for a given `active` value -- not each screen's real data-fetching behavior (every
+// screen below has its own dedicated test file for that). Mocking them here keeps this file free of
+// the AuthProvider/applicationServices wiring those screens need.
+vi.mock("./MobileCommandHome", () => ({ MobileCommandHome: () => <div>Ask AXXESS a question</div> }));
+vi.mock("./screens/MobileTasksScreen", () => ({ MobileTasksScreen: () => <div>native tasks screen</div> }));
+vi.mock("./screens/MobileMeetingsScreen", () => ({ MobileMeetingsScreen: () => <div>native meetings screen</div> }));
+vi.mock("./screens/MobileProjectsScreen", () => ({ MobileProjectsScreen: () => <div>native projects screen</div> }));
+vi.mock("./screens/MobileApprovalsScreen", () => ({ MobileApprovalsScreen: () => <div>native approvals screen</div> }));
+vi.mock("./screens/MobileKnowledgeScreen", () => ({ MobileKnowledgeScreen: () => <div>native knowledge screen</div> }));
+vi.mock("./screens/MobileAskAiScreen", () => ({ MobileAskAiScreen: () => <div>native ask ai screen</div> }));
+vi.mock("./screens/MobileStakeholdersScreen", () => ({ MobileStakeholdersScreen: () => <div>native stakeholders screen</div> }));
+
+import { MobileShell } from "./MobileShell";
 
 function tabBar() {
   return screen.getByRole("navigation", { name: "Primary navigation" });
@@ -14,7 +28,7 @@ describe("MobileShell", () => {
   it("renders the bottom tab bar with every primary tab plus More", () => {
     render(
       <MobileShell active="tasks" user={user} onSelectSection={vi.fn()}>
-        <div>tasks content</div>
+        <div>desktop settings content</div>
       </MobileShell>,
     );
 
@@ -28,7 +42,7 @@ describe("MobileShell", () => {
   it("does not render X0's desktop shell chrome (Sidebar/TopBar) anywhere", () => {
     render(
       <MobileShell active="tasks" user={user} onSelectSection={vi.fn()}>
-        <div>tasks content</div>
+        <div>desktop settings content</div>
       </MobileShell>,
     );
 
@@ -40,14 +54,25 @@ describe("MobileShell", () => {
     expect(screen.queryByLabelText("Expand sidebar")).not.toBeInTheDocument();
   });
 
-  it("renders the real routed content (children) when `active` maps to an allowed mobile registry section", () => {
+  it("renders a real native MN-2 screen (not the reused desktop ActiveSection) for a registry entry that has one, e.g. Tasks", () => {
     render(
       <MobileShell active="tasks" user={user} onSelectSection={vi.fn()}>
-        <div>real tasks section content</div>
+        <div>desktop settings content</div>
       </MobileShell>,
     );
 
-    expect(screen.getByText("real tasks section content")).toBeInTheDocument();
+    expect(screen.getByText("native tasks screen")).toBeInTheDocument();
+    expect(screen.queryByText("desktop settings content")).not.toBeInTheDocument();
+  });
+
+  it("still falls back to the reused desktop `children` for the one registry entry with no native MN-2 screen (Settings)", () => {
+    render(
+      <MobileShell active="settings" user={user} onSelectSection={vi.fn()}>
+        <div>desktop settings content</div>
+      </MobileShell>,
+    );
+
+    expect(screen.getByText("desktop settings content")).toBeInTheDocument();
   });
 
   it("falls back to the local Home panel instead of rendering children when `active` has no mobile mapping (e.g. the forbidden Full Executive Dashboard)", () => {
