@@ -311,6 +311,18 @@ and session depth are telling the same story.
 
 ---
 
+## Ad spend (founder-stated, source artifact needed)
+
+Founder-stated: total social-media channel acquisition spend across both platforms (Facebook +
+Instagram) to date is **$7–8 total**, not per-day or per-acquisition. Not independently verified
+against an ads-platform billing export this session. Set against the Paid Social channel numbers
+logged above (1,341 sessions, 86.7% of all sessions, ~643 Facebook-referred users), this implies an
+extremely low observed cost-per-session/cost-per-visitor if the figure holds — but as a founder-
+recalled number rather than a billing-platform export, it should be confirmed against the actual ad
+account spend before being used in any external-facing CAC claim.
+
+---
+
 ## What this log is not claiming
 
 - None of the figures above were re-pulled from PostHog by this session — they are recorded exactly
