@@ -14,6 +14,48 @@ Individual sprint closeouts, kept as the detailed record (not superseded, only s
 - `docs/readiness/ANDROID_BETA_0_9_HARDENING_CLOSEOUT_2026_08_23.md` (MN-4)
 - `docs/readiness/ANDROID_BETA_0_9_SECURITY_HARDENING_CLOSEOUT_2026_08_23.md` (MN-5)
 
+## Origin: the real device walkthrough this whole arc traces back to
+
+**Correction against an earlier draft of this document**: an earlier version of this closeout stated
+"no live Android device/emulator walkthrough has been performed at any point across all five
+sprints." That was wrong, and is corrected here rather than left standing. A real device walkthrough
+already happened, on the pre-MN-1 Android build — it is in fact the actual origin of this entire
+sprint arc, not something separate from it.
+
+**What is independently documented in this repository** (`docs/readiness/ANDROID_BETA_0_9_TESTER_
+FEEDBACK_RITASHREE_2026_08_23.md`, written earlier in this same session, before MN-1 began): a real
+internal tester, Ritashree Mahanta (co-founder, `ritashreebsc@gmail.com`, one of the 7 addresses on
+the Internal testing tester list), installed the Android beta on a real device and produced 17
+screenshots covering a methodical walkthrough of essentially every top-level navigation item. The
+account used was real, tenant-scoped, non-demo data — **The North Eastern Policy, Development and
+Strategic Initiatives Collective (NEPDSI-C)**, Super Admin role. That document's own finding: no
+crashes, no broken pages, no error states anywhere across all 17 screenshots; the one reproducible
+bug found was the desktop sidebar never collapsing on mobile (roughly 45% of screen width, causing
+overlapping page titles, clipped form fields, a truncated search box) — root-caused and fixed as
+this session's sidebar-responsiveness work, shipped ahead of MN-1.
+
+**Founder-stated, not independently verified by this session** (added in this conversation, after
+the walkthrough document above was already written): the founder characterizes the tester's overall
+verdict as the app feeling **"too much webwrappy"** — i.e., beyond the one concrete sidebar bug the
+screenshots documented, the broader impression was of a website wrapped in an app shell rather than
+a native one — and states this characterization, not only the sidebar bug, is what the MN-1 through
+MN-5 sprint sequence (drafted by Codex, executed in this session) was written to address. This is
+consistent with the roadmap document MN-1 itself was built against
+(`docs/readiness/MOBILE_NATIVE_CAPACITOR_RESEARCH_AND_ROADMAP_2026_08_23.md`), which already listed
+a "Native Feel" checklist (status bar, splash, keyboard, back button, haptics, "app does not feel
+like a desktop iframe") as unaddressed at the time — but the specific causal link from "Ritashree's
+17-screenshot walkthrough" to "this exact five-sprint arc" is the founder's own characterization,
+recorded here as such rather than re-derived independently. The founder also confirmed the tenant
+used matches the existing document's own identification (NEPDSI-C).
+
+**What this corrects, precisely:** the *external signal → product decision* half of this arc's
+evidence chain is real and already documented (walkthrough happened, screenshots exist, one bug
+found and fixed, broader "webwrappy" feedback founder-stated as the fuller motivation). What
+genuinely has **not** yet happened, and is accurately still open, is a **second** walkthrough — of
+the *post*-MN-1-through-MN-5 build (version code 3, now live in Internal testing) — to confirm the
+back-button/keyboard/offline/haptics/session-replay hardening actually resolved the "webwrappy"
+feeling for the same tester who first flagged it.
+
 ## What shipped, sprint by sprint
 
 **MN-1 — Native Shell** ([PR #305](https://github.com/axxess-triaxis/AXXESSTRIAXIS/pull/305)): a
@@ -150,12 +192,14 @@ side of the arc.
 
 ## What remains open, across the whole arc
 
-- **No live Android device/emulator walkthrough has been performed at any point across all five
-  sprints.** This is the single most-repeated named risk in this session's own documentation — MN-1,
-  MN-2, MN-4, and MN-5 each name it independently. It remains the true gating item for calling
-  Android Beta 0.9 done — version code 3 being published to internal testing makes this walkthrough
-  possible for the first time on the actual hardened build, but does not substitute for it having
-  happened.
+- **No walkthrough of the post-hardening build has happened yet** — corrected from an earlier,
+  inaccurate draft of this section (see "Origin," above). A real device walkthrough of the
+  *pre*-MN-1 build already happened and is what motivated this arc; each individual sprint closeout
+  (MN-1, MN-2, MN-4, MN-5) named "no live walkthrough of *this sprint's own* build" as an open risk
+  at the time it was written, which was accurate for each of those builds individually. What remains
+  genuinely open now is a fresh walkthrough — ideally by the same tester — of version code 3, the
+  first build to carry all five sprints' hardening, to confirm the "webwrappy" feedback that started
+  this arc is actually resolved.
 - **OAuth-in-Capacitor redirect behavior**: genuinely untested, no code path found or exercised
   (MN-5 baseline doc).
 - **Open testing review outcome**: version code 3 is confirmed submitted (status "In review" per
