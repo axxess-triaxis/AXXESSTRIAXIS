@@ -35,6 +35,7 @@ vi.mock("../../../providers/serviceProvider", () => ({
   },
 }));
 
+import { MobileBackHandlerProvider } from "../MobileBackHandlerContext";
 import { MobileTasksScreen } from "./MobileTasksScreen";
 
 describe("MobileTasksScreen (MN-2)", () => {
@@ -50,18 +51,18 @@ describe("MobileTasksScreen (MN-2)", () => {
   });
 
   it("shows an honest empty state when the organization has no tasks or reminders", async () => {
-    render(<MobileTasksScreen />);
+    render(<MobileBackHandlerProvider><MobileTasksScreen /></MobileBackHandlerProvider>);
     await waitFor(() => expect(screen.getByText("No tasks yet")).toBeInTheDocument());
   });
 
   it("lists real tasks fetched from tasksRepository", async () => {
     state.tasks = [{ id: "t1", organizationId: "org-1", title: "Follow up with pilot NGO", status: "pending", priority: "high", tags: [] }];
-    render(<MobileTasksScreen />);
+    render(<MobileBackHandlerProvider><MobileTasksScreen /></MobileBackHandlerProvider>);
     await waitFor(() => expect(screen.getByText("Follow up with pilot NGO")).toBeInTheDocument());
   });
 
   it("creates a real task via tasksRepository.create when the New task form is submitted", async () => {
-    render(<MobileTasksScreen />);
+    render(<MobileBackHandlerProvider><MobileTasksScreen /></MobileBackHandlerProvider>);
     await waitFor(() => expect(screen.getByText("No tasks yet")).toBeInTheDocument());
 
     fireEvent.click(screen.getByText("New task"));
@@ -76,7 +77,7 @@ describe("MobileTasksScreen (MN-2)", () => {
 
   it("marks a task complete via tasksRepository.update, not a client-only toggle", async () => {
     state.tasks = [{ id: "t1", organizationId: "org-1", title: "Send pitch deck", status: "pending", priority: "medium", tags: [] }];
-    render(<MobileTasksScreen />);
+    render(<MobileBackHandlerProvider><MobileTasksScreen /></MobileBackHandlerProvider>);
     await waitFor(() => expect(screen.getByText("Send pitch deck")).toBeInTheDocument());
 
     fireEvent.click(screen.getByLabelText("Mark task complete"));

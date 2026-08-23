@@ -18,6 +18,7 @@ vi.mock("../../../providers/serviceProvider", () => ({
   },
 }));
 
+import { MobileBackHandlerProvider } from "../MobileBackHandlerContext";
 import { MobileStakeholdersScreen } from "./MobileStakeholdersScreen";
 
 describe("MobileStakeholdersScreen (MN-2)", () => {
@@ -39,7 +40,7 @@ describe("MobileStakeholdersScreen (MN-2)", () => {
 
   it("shows the real, honest engagementLevel default ('Not yet rated') and never a fabricated influence score", async () => {
     state.stakeholders = [{ id: "s1", organizationId: "org-1", name: "Dr. Priya Sharma", affiliation: "NE Health Mission", influenceScore: 0, engagementLevel: "unrated" }];
-    render(<MobileStakeholdersScreen />);
+    render(<MobileBackHandlerProvider><MobileStakeholdersScreen /></MobileBackHandlerProvider>);
     await waitFor(() => expect(screen.getByText("Dr. Priya Sharma")).toBeInTheDocument());
     expect(screen.getByText(/Not yet rated/)).toBeInTheDocument();
     expect(screen.queryByText(/influence score/i)).not.toBeInTheDocument();
@@ -49,7 +50,7 @@ describe("MobileStakeholdersScreen (MN-2)", () => {
     fetchMock.mockResolvedValueOnce({ ok: true, json: async () => ({ notes: [] }) });
     fetchMock.mockResolvedValueOnce({ ok: true, json: async () => ({ note: { id: "n1", title: "Follow-up call", body: "Discussed renewal timeline.", createdAt: new Date().toISOString() } }) });
 
-    render(<MobileStakeholdersScreen />);
+    render(<MobileBackHandlerProvider><MobileStakeholdersScreen /></MobileBackHandlerProvider>);
     await waitFor(() => expect(screen.getByText("New quick note")).toBeInTheDocument());
 
     fireEvent.click(screen.getByText("New quick note"));
