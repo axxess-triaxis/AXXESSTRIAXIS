@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import Script from "next/script";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
@@ -39,6 +39,16 @@ export const metadata: Metadata = {
   verification: {
     google: "Zqn8M8yJDQzHZzalntOFyDt0n1-corgCIO-4bwqESaM",
   },
+};
+
+// MN-1 (2026-08-23): viewportFit "cover" is required for env(safe-area-inset-*) to report real,
+// non-zero values inside the Capacitor WebView (notches/home-indicator/status-bar) -- without it,
+// the whole screen is treated as "safe" and MobileSafeArea's padding silently degrades to 0. A
+// no-op for regular desktop/mobile browsers, which simply ignore an inset they don't have.
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 // Facebook JS SDK: appId must be exposed to the browser, so it needs its own NEXT_PUBLIC_ var --
