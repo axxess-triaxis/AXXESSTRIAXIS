@@ -62,6 +62,32 @@ export function TopBar({ activeLabel, notifOpen, user, onToggleNotifications, on
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [filter, setFilter] = useState<NotificationFilter>("unread");
   const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null);
+  // Analytics Sprint 2: this search box previously had no value/onChange at all -- a genuinely
+  // working search over real, tenant-scoped projects, matching DashboardSection.tsx's
+  // DashboardCommandSearch pattern (fetch once, filter client-side, link to /projects -- no
+  // per-project detail route exists to deep-link to).
+  const [portfolioProjects, setPortfolioProjects] = useState<{ id: string; name: string }[]>([]);
+  const [portfolioQuery, setPortfolioQuery] = useState("");
+
+  useEffect(() => {
+    let isMounted = true;
+    (async () => {
+      try {
+        const rows = await applicationServices.projectsRepository.list(scope);
+        if (isMounted) setPortfolioProjects(rows.map((row) => ({ id: row.id, name: row.name })));
+      } catch {
+        if (isMounted) setPortfolioProjects([]);
+      }
+    })();
+    return () => {
+      isMounted = false;
+    };
+  }, [scope]);
+
+  const trimmedPortfolioQuery = portfolioQuery.trim().toLowerCase();
+  const matchingPortfolioProjects = trimmedPortfolioQuery
+    ? portfolioProjects.filter((project) => project.name.toLowerCase().includes(trimmedPortfolioQuery)).slice(0, 8)
+    : [];
 
   const loadNotifications = useCallback(async () => {
     try {
@@ -128,12 +154,36 @@ export function TopBar({ activeLabel, notifOpen, user, onToggleNotifications, on
         <span className="font-medium text-[#0F1117]">{activeLabel}</span>
       </div>
 
-      <div className="ml-4 max-w-md flex-1">
+      <div className="relative ml-4 max-w-md flex-1">
         <div className="flex items-center gap-2 rounded-lg border border-transparent bg-[#F2F3F5] px-3 py-1.5 transition-all focus-within:border-[#8B1E2D]/30 focus-within:bg-white">
           <Search size={13} className="text-[#5F6B73]" />
-          <input placeholder="Search portfolio..." className="flex-1 bg-transparent text-xs text-[#0F1117] outline-none placeholder:text-[#5F6B73]" />
-          <span className="rounded border border-[rgba(0,0,0,0.1)] bg-white px-1.5 py-0.5 font-mono text-[10px] text-[#5F6B73]">Ctrl K</span>
+          <input
+            value={portfolioQuery}
+            onChange={(event) => setPortfolioQuery(event.target.value)}
+            placeholder="Search portfolio..."
+            aria-label="Search portfolio"
+            className="flex-1 bg-transparent text-xs text-[#0F1117] outline-none placeholder:text-[#5F6B73]"
+          />
+          {portfolioQuery ? (
+            <button type="button" onClick={() => setPortfolioQuery("")} className="text-[10px] font-semibold text-[#5F6B73] hover:text-[#0F1117]">
+              Clear
+            </button>
+          ) : (
+            <span className="rounded border border-[rgba(0,0,0,0.1)] bg-white px-1.5 py-0.5 font-mono text-[10px] text-[#5F6B73]">Ctrl K</span>
+          )}
         </div>
+        {trimmedPortfolioQuery && (
+          <div className="absolute z-50 mt-1 w-full rounded-lg border border-[rgba(15,17,23,0.08)] bg-white p-2 shadow-lg">
+            {matchingPortfolioProjects.length === 0 && (
+              <p className="px-2 py-1 text-xs text-[#5F6B73]">No projects match &ldquo;{portfolioQuery}&rdquo;.</p>
+            )}
+            {matchingPortfolioProjects.map((project) => (
+              <a key={project.id} href="/projects" className="block rounded px-2 py-1 text-xs text-[#0F1117] hover:bg-[#F2F3F5]">
+                {project.name}
+              </a>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="ml-auto flex items-center gap-3">

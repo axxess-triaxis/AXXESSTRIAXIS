@@ -53,4 +53,17 @@ describe("AnalyticsSection (Sprint 3 -- does not hang, F-012)", () => {
     expect(screen.queryByText("Tier 2 · AI operating infrastructure & business intelligence")).not.toBeInTheDocument();
     expect(screen.queryByText("Tier 3 · Compliance, audit, governance & policy")).not.toBeInTheDocument();
   });
+
+  it("shows real, interactive filter controls outside Demo Mode instead of the static demo buttons", async () => {
+    // Analytics Sprint 2: outside Demo Mode, the filter row is now real <select> elements over
+    // live project/approval data, not the decorative buttons Demo Mode keeps (different data
+    // shape -- demo projects have no live `dept` field, so Demo Mode's row is left as-is).
+    await renderAnalytics();
+
+    expect(screen.getByLabelText("Filter by project")).toBeInTheDocument();
+    expect(screen.getByLabelText("Filter approval cycle time by time period")).toBeInTheDocument();
+    expect(screen.getByLabelText("Filter by risk level")).toBeInTheDocument();
+    expect(screen.getByLabelText("Filter by department")).toBeInTheDocument();
+    expect(screen.getByText("Organization: this org")).toBeInTheDocument();
+  });
 });

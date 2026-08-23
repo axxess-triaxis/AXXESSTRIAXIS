@@ -62,6 +62,8 @@ const demoApprovedSpendTrend = [
 
 const projectRiskColor: Record<string, string> = { urgent: "#8B1E2D", high: "#B4232F", medium: "#C9A227", low: "#2E9E6D" };
 
+const TIME_PERIOD_MONTHS: Record<string, number | null> = { all: null, "3m": 3, "6m": 6, "12m": 12 };
+
 export const AnalyticsSection = () => {
   const { session } = useAuth();
   const demoMode = useDemoModeEnabled();
@@ -70,6 +72,14 @@ export const AnalyticsSection = () => {
   const [liveProjects, setLiveProjects] = useState<LiveProject[]>([]);
   const [liveApprovalCycleTrend, setLiveApprovalCycleTrend] = useState<ApprovalCycleTimePoint[]>([]);
   const [exportModalOpen, setExportModalOpen] = useState(false);
+  // Analytics Sprint 2: real client-side filtering over the now-real project/approval data.
+  // Demo mode keeps its original, non-interactive filter row (illustrative data has a different
+  // shape -- no live `dept` field -- so wiring it there would be a different, riskier change for
+  // no real benefit); these filters only affect the live-tenant branch below.
+  const [projectFilter, setProjectFilter] = useState("all");
+  const [riskFilter, setRiskFilter] = useState("all");
+  const [deptFilter, setDeptFilter] = useState("all");
+  const [timePeriodFilter, setTimePeriodFilter] = useState("all");
   // A-116 (2026-08-14): shared selection for the Program Dependency Network diagram below --
   // clicking a node highlights it, matching the same clickable-node pattern built for
   // Stakeholders & CRM's Relationship Network in this same round of fixes.
@@ -111,6 +121,38 @@ export const AnalyticsSection = () => {
   const approvedSpendTrend = demoMode ? demoApprovedSpendTrend : [];
   const riskDistribution = useMemo(() => aggregateProjectRisk(projects), [projects]);
   const latestCycleTime = liveApprovalCycleTrend.length > 0 ? liveApprovalCycleTrend[liveApprovalCycleTrend.length - 1] : null;
+
+  // Sprint 2 filtering: Project + Department narrow the pie/table/network together; Risk narrows
+  // only the table + network (the pie's whole purpose is showing the risk breakdown, so filtering
+  // it by risk would be circular). Demo mode's filter state never changes (no UI to change it), so
+  // this is a no-op there -- demoProjects flows through unfiltered, matching pre-Sprint-2 behavior.
+  const departmentOptions = useMemo(
+    () => Array.from(new Set(liveProjects.map((project) => project.dept))).sort(),
+    [liveProjects],
+  );
+  const projectOptions = useMemo(
+    () => liveProjects.map((project) => ({ id: String(project.id), name: project.name })),
+    [liveProjects],
+  );
+  const filteredProjects = useMemo(() => {
+    if (demoMode) return projects;
+    return liveProjects.filter((project) => {
+      if (projectFilter !== "all" && String(project.id) !== projectFilter) return false;
+      if (deptFilter !== "all" && project.dept !== deptFilter) return false;
+      return true;
+    });
+  }, [demoMode, projects, liveProjects, projectFilter, deptFilter]);
+  const tableAndNetworkProjects = useMemo(() => {
+    if (demoMode) return filteredProjects;
+    return filteredProjects.filter((project) => riskFilter === "all" || project.risk === riskFilter);
+  }, [demoMode, filteredProjects, riskFilter]);
+  const filteredRiskDistribution = useMemo(() => aggregateProjectRisk(filteredProjects), [filteredProjects]);
+
+  const filteredApprovalCycleTrend = useMemo(() => {
+    if (demoMode) return approvalCycleTrend;
+    const months = TIME_PERIOD_MONTHS[timePeriodFilter];
+    return months === null || months === undefined ? liveApprovalCycleTrend : liveApprovalCycleTrend.slice(-months);
+  }, [demoMode, approvalCycleTrend, liveApprovalCycleTrend, timePeriodFilter]);
 
   // Real, minimal export -- same pattern as DashboardSection.tsx's handleExportBriefing(): a
   // client-side JSON snapshot of what's already on this page, no fabricated backend export
@@ -168,11 +210,67 @@ export const AnalyticsSection = () => {
         <DemoDataNotice label="OKR, budget, risk, and approval-cycle trend analytics below are seeded to show investor-ready reporting insight while live tenant metrics remain isolated behind repository and provider configuration." />
       )}
 
-      <div className="flex flex-wrap gap-2">
-        {["Organization", "Project", "Time period", "Risk level", "Department"].map((filter) => (
-          <button key={filter} className="rounded-lg border border-[rgba(15,17,23,0.1)] bg-white px-3 py-1.5 text-xs font-semibold text-[#5F6B73] hover:bg-[#F2F3F5]">{filter}</button>
-        ))}
-      </div>
+      {demoMode ? (
+        <div className="flex flex-wrap gap-2">
+          {["Organization", "Project", "Time period", "Risk level", "Department"].map((filter) => (
+            <button key={filter} className="rounded-lg border border-[rgba(15,17,23,0.1)] bg-white px-3 py-1.5 text-xs font-semibold text-[#5F6B73] hover:bg-[#F2F3F5]">{filter}</button>
+          ))}
+        </div>
+      ) : (
+        <div className="flex flex-wrap items-center gap-2">
+          <span
+            title="This view is already scoped to your organization -- there is nothing else to select."
+            className="cursor-default rounded-lg border border-[rgba(15,17,23,0.1)] bg-[#F8F9FA] px-3 py-1.5 text-xs font-semibold text-[#5F6B73]"
+          >
+            Organization: this org
+          </span>
+          <select
+            aria-label="Filter by project"
+            value={projectFilter}
+            onChange={(event) => setProjectFilter(event.target.value)}
+            className="rounded-lg border border-[rgba(15,17,23,0.1)] bg-white px-3 py-1.5 text-xs font-semibold text-[#5F6B73] hover:bg-[#F2F3F5]"
+          >
+            <option value="all">All projects</option>
+            {projectOptions.map((project) => (
+              <option key={project.id} value={project.id}>{project.name.split("-")[0].trim()}</option>
+            ))}
+          </select>
+          <select
+            aria-label="Filter approval cycle time by time period"
+            value={timePeriodFilter}
+            onChange={(event) => setTimePeriodFilter(event.target.value)}
+            className="rounded-lg border border-[rgba(15,17,23,0.1)] bg-white px-3 py-1.5 text-xs font-semibold text-[#5F6B73] hover:bg-[#F2F3F5]"
+          >
+            <option value="all">All time (cycle time)</option>
+            <option value="3m">Last 3 months (cycle time)</option>
+            <option value="6m">Last 6 months (cycle time)</option>
+            <option value="12m">Last 12 months (cycle time)</option>
+          </select>
+          <select
+            aria-label="Filter by risk level"
+            value={riskFilter}
+            onChange={(event) => setRiskFilter(event.target.value)}
+            className="rounded-lg border border-[rgba(15,17,23,0.1)] bg-white px-3 py-1.5 text-xs font-semibold text-[#5F6B73] hover:bg-[#F2F3F5]"
+          >
+            <option value="all">All risk levels</option>
+            <option value="urgent">Urgent</option>
+            <option value="high">High</option>
+            <option value="medium">Medium</option>
+            <option value="low">Low</option>
+          </select>
+          <select
+            aria-label="Filter by department"
+            value={deptFilter}
+            onChange={(event) => setDeptFilter(event.target.value)}
+            className="rounded-lg border border-[rgba(15,17,23,0.1)] bg-white px-3 py-1.5 text-xs font-semibold text-[#5F6B73] hover:bg-[#F2F3F5]"
+          >
+            <option value="all">All departments</option>
+            {departmentOptions.map((dept) => (
+              <option key={dept} value={dept}>{dept}</option>
+            ))}
+          </select>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {demoMode ? (
@@ -233,14 +331,14 @@ export const AnalyticsSection = () => {
 
         <Card className="p-5 axxess-stagger-item" style={staggerDelay(2)}>
           <h3 className="text-sm font-semibold text-[#0F1117] mb-4">Risk Distribution</h3>
-          {projects.length === 0 ? (
-            <EmptyState message="No projects yet -- risk distribution will populate as soon as this organization has tracked projects." />
+          {filteredProjects.length === 0 ? (
+            <EmptyState message={projects.length === 0 ? "No projects yet -- risk distribution will populate as soon as this organization has tracked projects." : "No projects match the current Project/Department filters."} />
           ) : (
             <div className="flex items-center gap-4">
               <ResponsiveContainer width="55%" height={180}>
                 <PieChart>
-                  <Pie data={riskDistribution} dataKey="count" nameKey="label" innerRadius={45} outerRadius={75} paddingAngle={2}>
-                    {riskDistribution.map((entry) => (
+                  <Pie data={filteredRiskDistribution} dataKey="count" nameKey="label" innerRadius={45} outerRadius={75} paddingAngle={2}>
+                    {filteredRiskDistribution.map((entry) => (
                       <Cell key={entry.label} fill={riskChartColors[entry.label]} />
                     ))}
                   </Pie>
@@ -248,7 +346,7 @@ export const AnalyticsSection = () => {
                 </PieChart>
               </ResponsiveContainer>
               <div className="flex-1 space-y-2">
-                {riskDistribution.map((entry) => (
+                {filteredRiskDistribution.map((entry) => (
                   <div key={entry.label} className="flex items-center justify-between text-xs">
                     <span className="flex items-center gap-1.5 text-[#5F6B73]">
                       <span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: riskChartColors[entry.label] }} />
@@ -264,11 +362,11 @@ export const AnalyticsSection = () => {
 
         <Card className="p-5 axxess-stagger-item" style={staggerDelay(3)}>
           <h3 className="text-sm font-semibold text-[#0F1117] mb-4">Approval Cycle Time Trend</h3>
-          {approvalCycleTrend.length === 0 ? (
-            <EmptyState message="No decided approvals yet -- cycle time is computed from real approval_requests once approvals start being reviewed." />
+          {filteredApprovalCycleTrend.length === 0 ? (
+            <EmptyState message={approvalCycleTrend.length === 0 ? "No decided approvals yet -- cycle time is computed from real approval_requests once approvals start being reviewed." : "No decided approvals in the selected time period."} />
           ) : (
             <ResponsiveContainer width="100%" height={180}>
-              <LineChart data={approvalCycleTrend.map((point) => ("days" in point ? point : { month: point.month, days: point.avgDays }))}>
+              <LineChart data={filteredApprovalCycleTrend.map((point) => ("days" in point ? point : { month: point.month, days: point.avgDays }))}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#F2F3F5" vertical={false} />
                 <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#5F6B73" }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fontSize: 11, fill: "#5F6B73" }} axisLine={false} tickLine={false} unit="d" />
@@ -370,9 +468,9 @@ export const AnalyticsSection = () => {
             <h3 className="text-sm font-semibold text-[#0F1117]">Program Operations</h3>
             <p className="text-[11px] text-[#5F6B73]">Every tracked program in one scannable table -- risk and progress together, not spread across separate cards.</p>
           </div>
-          {projects.length === 0 ? (
+          {tableAndNetworkProjects.length === 0 ? (
             <div className="p-5">
-              <EmptyState message="No projects yet for this organization." />
+              <EmptyState message={projects.length === 0 ? "No projects yet for this organization." : "No projects match the current filters."} />
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -385,7 +483,7 @@ export const AnalyticsSection = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {projects.slice(0, 8).map((project) => (
+                  {tableAndNetworkProjects.slice(0, 8).map((project) => (
                     <tr
                       key={project.id}
                       onClick={() => setSelectedProjectId(String(project.id))}
@@ -424,14 +522,14 @@ export const AnalyticsSection = () => {
 
         <Card className="p-5 axxess-stagger-item" style={staggerDelay(9)}>
           <h3 className="text-sm font-semibold text-[#0F1117] mb-4">Program Dependency Network</h3>
-          {projects.length === 0 ? (
-            <EmptyState message="No projects yet -- the dependency network will populate once this organization has tracked projects." />
+          {tableAndNetworkProjects.length === 0 ? (
+            <EmptyState message={projects.length === 0 ? "No projects yet -- the dependency network will populate once this organization has tracked projects." : "No projects match the current filters."} />
           ) : (
             <>
               <svg viewBox="0 0 200 160" className="w-full">
                 <circle cx="100" cy="80" r="16" fill="#0F1117" opacity="0.9" />
                 <text x="100" y="84" textAnchor="middle" fill="white" fontSize="7" fontWeight="bold">Portfolio</text>
-                {projects.slice(0, 8).map((project, i, arr) => {
+                {tableAndNetworkProjects.slice(0, 8).map((project, i, arr) => {
                   const angle = (i / arr.length) * 2 * Math.PI - Math.PI / 2;
                   const r = 62;
                   const x = 100 + r * Math.cos(angle);
