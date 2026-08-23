@@ -49,3 +49,11 @@ export function readAndClearAgenticDraft(expectedActionType: AgenticFirstAction)
   window.sessionStorage.removeItem(AGENTIC_DRAFT_STORAGE_KEY);
   return draft;
 }
+
+// MN-5 (2026-08-23): a real AI-answer summary + document/knowledge-article citations can sit in
+// this key for up to DRAFT_STALE_AFTER_MS -- called from AuthProvider.logout() so a shared or
+// re-used device never carries a signed-out user's draft into the next session.
+export function clearAgenticDraft(): void {
+  if (typeof window === "undefined") return;
+  window.sessionStorage.removeItem(AGENTIC_DRAFT_STORAGE_KEY);
+}
