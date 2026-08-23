@@ -323,6 +323,72 @@ account spend before being used in any external-facing CAC claim.
 
 ---
 
+## Is a slice of traffic evaluative (investor/partner/technical diligence)? Founder-requested analysis
+
+**Question posed:** whether traffic shows signs of being highly evaluative — investor, partner, or
+technical due-diligence behavior — with supporting stats. Answer below is carried over verbatim in
+substance from the founder's source analysis (same ChatGPT/PostHog-integration origin as the rest of
+this log); not independently re-derived or re-queried by this session.
+
+**Top-line conclusion:** strong evidence that a *distinct slice* of traffic is evaluative — not that
+the entire traffic base is. Two populations: a broad, shallow paid-social acquisition layer, and a
+much smaller, much deeper direct/desktop layer whose behavior matches investor/partner/technical
+review far more than casual browsing.
+
+**Direct + Desktop cohort (highest-volume single account excluded to remove founder-activity
+distortion):** 49 users, 19 of whom returned more than once — **38.8% repeat-user rate**, averaging
+**2.14 sessions/user** and **12.29 pageviews/user**. The remaining traffic: **6.4%** repeat-user rate,
+**1.19** pageviews/user.
+
+**Session depth:**
+
+| Segment | Sessions | Avg. session | >2min | >5min | >10min |
+|---|---|---|---|---|---|
+| Landing — Direct | 105 | 707.5s (11m48s) | 63 | 51 | 36 |
+| Investor — Direct | 31 | 387.6s (6m28s) | 10 | 9 | 8 |
+| Investor — Paid Social | 1,341 | 27.4s | 12 | 6 | 3 |
+
+**Page-depth contrast:** Direct traffic across both properties accounts for ~750 pageviews from 58
+observed users; mobile Facebook accounts for 1,000+ pageviews from hundreds of users — Facebook
+behaves like normal shallow acquisition, Direct behaves like deliberate inspection of material someone
+was given a link to.
+
+**Desktop-skew reinforcement:** carried over from the device/OS tables already logged above — Windows
+(42 users, 715 pageviews) generated roughly an order of magnitude more page depth per user than
+Android (664 users, 1,203 pageviews).
+
+**Retention reinforcement:** Landing's ~22% D1 (small denominator) and Investor's strongest cohort
+(Aug 9: 6.8% D1 / 5.3% D2, individual returners through D10–D13) both read as materially different
+from the paid-social cohorts' near-zero D1 — consistent with everything already logged in the
+retention section above.
+
+**Temporal pattern:** of 22 US-observed users, 13 arrived via Direct on Desktop (15 pageviews) and 3
+more via Bing on desktop; most later US activity disappears after Aug 13 except isolated visits on
+Aug 20–21 — read as more consistent with a discrete review window than sustained market acquisition.
+
+**Hypothesis strength assignment (as given):**
+
+| Hypothesis | Strength | Why |
+|---|---|---|
+| Some traffic is deliberate evaluation | High | Long direct sessions, desktop usage, repeated visits, deep page consumption |
+| Investor/accelerator review | Moderate–High | Investor portal usage, direct access, concentrated review windows, long sessions |
+| Partner/enterprise diligence | Moderate | Same behavioral signature fits partner/customer evaluation equally well |
+| Technical evaluation | Moderate | Long desktop sessions support it, but browsing telemetry alone can't prove code/product technical diligence |
+| Specific YC review | Circumstantial only | Timing/US/direct patterns can align, but PostHog can't identify employer or institution |
+| Entire traffic base is high-intent | No | Paid social dominates volume and is shallow |
+
+**Explicit limit stated in the source analysis:** behavior can indicate evaluation is *likely*; it
+cannot identify *who* the evaluator works for (not specifically confirmable as YC partners, VCs, or
+named enterprise evaluators from PostHog data alone).
+
+**Suggested public/investor framing (as given):** "Alongside broad acquisition traffic, AXXESS is
+seeing a distinct high-intent cohort: direct desktop visitors show ~39% repeat visitation, ~12
+pageviews per user, and 6–12 minute average sessions across the investor and product surfaces —
+materially above social-acquisition traffic." This framing has not yet been used publicly; recorded
+here as a drafted option, not a published claim.
+
+---
+
 ## What this log is not claiming
 
 - None of the figures above were re-pulled from PostHog by this session — they are recorded exactly
