@@ -154,22 +154,42 @@ export const AnalyticsSection = () => {
     return months === null || months === undefined ? liveApprovalCycleTrend : liveApprovalCycleTrend.slice(-months);
   }, [demoMode, approvalCycleTrend, liveApprovalCycleTrend, timePeriodFilter]);
 
-  // Real, minimal export -- same pattern as DashboardSection.tsx's handleExportBriefing(): a
-  // client-side JSON snapshot of what's already on this page, no fabricated backend export
-  // service. The instructions text is recorded alongside the data, not sent anywhere or acted on
-  // by an AI pass in this cut -- shaping the export from free text is a later-sprint decision.
-  function handleGenerateExport(instructions: string) {
+  // Analytics Sprint 3: the export file itself is still a real, client-side JSON snapshot -- same
+  // pattern as DashboardSection.tsx's handleExportBriefing() and /api/approvals/export's own
+  // comment ("the actual export mirrors the existing Export Briefing pattern rather than
+  // duplicating a second server-generated file endpoint"). What Sprint 3 adds: the export now
+  // reflects whatever Project/Department/Risk/Time-period filters are currently applied (not the
+  // full unfiltered dataset), and a real, tenant-scoped audit event is recorded via
+  // /api/analytics/export -- the one part a client-side download can't do safely itself. A
+  // network/audit failure must never block the actual export the user asked for, hence the
+  // try/catch around the fetch alone.
+  async function handleGenerateExport(instructions: string) {
+    const filters = demoMode ? undefined : { project: projectFilter, department: deptFilter, risk: riskFilter, timePeriod: timePeriodFilter };
+    const exportProjects = demoMode ? undefined : tableAndNetworkProjects;
+
+    try {
+      await fetch("/api/analytics/export", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ projectCount: exportProjects?.length, dataMode: demoMode ? "demo" : "live", filters }),
+      });
+    } catch {
+      // Audit-write failure must not block the export itself.
+    }
+
     const payload = {
       exportedAt: new Date().toISOString(),
       instructions: instructions || null,
       dataMode: demoMode ? "demo" : "live",
+      filters,
       okrData,
       performanceData,
-      riskDistribution,
-      approvalCycleTrend,
+      riskDistribution: demoMode ? riskDistribution : filteredRiskDistribution,
+      approvalCycleTrend: demoMode ? approvalCycleTrend : filteredApprovalCycleTrend,
       velocityTrend,
       approvedSpendTrend,
-      projects: demoMode ? undefined : projects,
+      projects: exportProjects,
     };
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
