@@ -8,6 +8,7 @@ import { LoadingState } from "../../../components/feedback/LoadingState";
 import { EmptyState } from "../../../components/feedback/EmptyState";
 import { MobileActionButton } from "../MobileActionButton";
 import { useMobileTenantScope } from "../useMobileTenantScope";
+import { useRegisterMobileBackHandler } from "../MobileBackHandlerContext";
 
 // MN-2 (2026-08-23): real Meetings workflow -- list/next-meeting/create-draft/detail against
 // meetingsRepository (same MutableTenantRepository<Meeting> desktop MeetingsSection.tsx uses).
@@ -33,6 +34,20 @@ export function MobileMeetingsScreen() {
   useEffect(() => {
     setNowMs(Date.now());
   }, []);
+
+  // MN-4 (2026-08-23): Android back button -- closes the New meeting draft form first if open,
+  // else pops the detail view back to the list.
+  useRegisterMobileBackHandler(() => {
+    if (showCreate) {
+      setShowCreate(false);
+      return true;
+    }
+    if (selectedId) {
+      setSelectedId(null);
+      return true;
+    }
+    return false;
+  });
 
   useEffect(() => {
     if (!scope) return;

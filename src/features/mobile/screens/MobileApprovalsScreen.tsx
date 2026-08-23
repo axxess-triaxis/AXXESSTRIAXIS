@@ -5,6 +5,8 @@ import { LoadingState } from "../../../components/feedback/LoadingState";
 import { EmptyState } from "../../../components/feedback/EmptyState";
 import { MobileActionButton } from "../MobileActionButton";
 import { useMobileTabletLayout } from "../useMobileTabletLayout";
+import { useRegisterMobileBackHandler } from "../MobileBackHandlerContext";
+import { triggerMobileHaptic } from "../triggerMobileHaptic";
 
 type ApprovalRequest = {
   id: string;
@@ -31,6 +33,16 @@ export function MobileApprovalsScreen() {
   const [decisionReason, setDecisionReason] = useState("");
   const [deciding, setDeciding] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // MN-4 (2026-08-23): Android back button -- pops the phone-layout detail view back to the list.
+  // On tablet there's no separate detail "screen" to leave (list and detail render side by side).
+  useRegisterMobileBackHandler(() => {
+    if (!isTablet && selectedId) {
+      setSelectedId(null);
+      return true;
+    }
+    return false;
+  });
 
   function load() {
     setLoading(true);
@@ -68,6 +80,7 @@ export function MobileApprovalsScreen() {
         return;
       }
       setApprovals((prev) => prev.map((a) => (a.id === selected.id ? data.approval : a)));
+      triggerMobileHaptic();
       setDecisionReason("");
       setSelectedId(null);
     } finally {

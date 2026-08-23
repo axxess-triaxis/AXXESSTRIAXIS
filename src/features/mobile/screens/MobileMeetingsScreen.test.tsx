@@ -26,6 +26,7 @@ vi.mock("../../../providers/serviceProvider", () => ({
   },
 }));
 
+import { MobileBackHandlerProvider } from "../MobileBackHandlerContext";
 import { MobileMeetingsScreen } from "./MobileMeetingsScreen";
 
 describe("MobileMeetingsScreen (MN-2)", () => {
@@ -35,7 +36,7 @@ describe("MobileMeetingsScreen (MN-2)", () => {
   });
 
   it("shows an honest empty state when there are no meetings", async () => {
-    render(<MobileMeetingsScreen />);
+    render(<MobileBackHandlerProvider><MobileMeetingsScreen /></MobileBackHandlerProvider>);
     await waitFor(() => expect(screen.getByText("No meetings yet")).toBeInTheDocument());
   });
 
@@ -44,7 +45,7 @@ describe("MobileMeetingsScreen (MN-2)", () => {
       { id: "m1", organizationId: "org-1", title: "Future planning sync", startsAt: new Date(Date.now() + 86400000).toISOString(), attendeeIds: [], decisions: [], actionItems: [] },
       { id: "m2", organizationId: "org-1", title: "Last week retro", startsAt: new Date(Date.now() - 86400000).toISOString(), attendeeIds: [], decisions: [], actionItems: [] },
     ];
-    render(<MobileMeetingsScreen />);
+    render(<MobileBackHandlerProvider><MobileMeetingsScreen /></MobileBackHandlerProvider>);
     await waitFor(() => expect(screen.getByText("Future planning sync")).toBeInTheDocument());
     expect(screen.getByText("Upcoming")).toBeInTheDocument();
     expect(screen.getByText("Past")).toBeInTheDocument();
@@ -53,7 +54,7 @@ describe("MobileMeetingsScreen (MN-2)", () => {
 
   it("appends a real decision to Meeting.decisions via meetingsRepository.update, not a local-only note", async () => {
     state.meetings = [{ id: "m1", organizationId: "org-1", title: "Board sync", startsAt: new Date(Date.now() + 3600000).toISOString(), attendeeIds: [], decisions: [], actionItems: [] }];
-    render(<MobileMeetingsScreen />);
+    render(<MobileBackHandlerProvider><MobileMeetingsScreen /></MobileBackHandlerProvider>);
     await waitFor(() => expect(screen.getByText("Board sync")).toBeInTheDocument());
 
     fireEvent.click(screen.getByText("Board sync"));
