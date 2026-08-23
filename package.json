@@ -24,6 +24,8 @@
     "mobile:native:guard": "node scripts/mobile-boundary-guard.mjs",
     "mobile:native:test": "vitest run --config vitest.config.mjs src/features/mobile",
     "mobile:native:ci": "pnpm run mobile:native:guard && pnpm run mobile:native:test",
+    "mobile:security:secrets": "node scripts/mobile-secret-exposure-audit.mjs",
+    "mobile:security:ci": "pnpm run mobile:security:secrets && pnpm run mobile:native:guard && vitest run --config vitest.config.mjs apps/mobile-capacitor/capacitor.config.test.ts \"src/app/api/tenants/route.test.ts\" \"src/app/api/approvals/route.test.ts\" \"src/app/api/approvals/[id]/route.test.ts\" \"src/app/api/stakeholders/notes/route.test.ts\"",
     "mobile:android:preview": "pnpm --dir apps/mobile run android:preview",
     "mobile:lite:capacitor:install": "pnpm --dir apps/mobile-lite-capacitor install",
     "mobile:lite:capacitor:sync": "pnpm --dir apps/mobile-lite-capacitor run sync",

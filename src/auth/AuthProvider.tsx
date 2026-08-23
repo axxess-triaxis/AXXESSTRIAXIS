@@ -15,6 +15,8 @@ import {
   setDemoModeEnabled,
 } from "../demo/demoMode";
 import { clearLiveWorkspaceMetricsCache } from "../hooks/liveWorkspaceMetricsCache";
+import { clearAgenticDraft } from "../services/agentic/agenticDraftHandoff";
+import { clearStakeholderNoteDraft } from "../services/agentic/stakeholderActionHandoff";
 import type { UserContext } from "../security/rbac";
 import { createUserProfile, loadStoredUserProfile, mergeUserProfile, saveStoredUserProfile, type LocalUserProfile } from "./localProfile";
 import {
@@ -153,6 +155,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // means a different user signing in on the same browser immediately after never has any chance
     // of seeing a cached entry, even a same-tenant one, within the TTL window (F-021 dedup cache).
     clearLiveWorkspaceMetricsCache();
+    // MN-5 (2026-08-23): these two sessionStorage keys can hold real institutional text (an
+    // AI-answer summary + citations, a stakeholder note draft) for up to 10 minutes after being
+    // written -- cleared unconditionally on every logout, demo or real, so a shared/re-used device
+    // never carries a signed-out user's draft into the next session.
+    clearAgenticDraft();
+    clearStakeholderNoteDraft();
     if (isDemoModeEnabled()) {
       setDemoModeEnabled(false);
       setSession(isDemoModeForcedByEnv()
