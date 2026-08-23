@@ -277,6 +277,40 @@ volume grows.
 
 ---
 
+## Daily first-time → return retention (test accounts excluded), through Aug 21/22
+
+**Landing:** 50 first-time visitors in completed cohorts produced 11 next-day (D1) returners overall
+(~22% D1 retention). The earliest cohort (Jul 27) was the stickiest: 4 users, 2 D1, 3 D2, at least 1
+still returning through roughly D12. Jul 28 was 2/2 D1; Jul 31 was 1/1 D1; Aug 4 was 2/5 D1; Aug 19's
+single first-time visitor returned the next day. Small denominators, but consistently repeat-heavy.
+
+**Investor:** a very different population. Across completed cohorts through Aug 21, 671 first-time
+visitors produced 19 D1 returners overall (~2.8% weighted D1 retention):
+
+| Investor cohort | First-time users | D1 | D2 | Later returns |
+|---|---|---|---|---|
+| Aug 9 | 132 | 9 (6.8%) | 7 (5.3%) | 4 D3; individual returners visible through D13 |
+| Aug 10 | 207 | 7 (3.4%) | 7 (3.4%) | none thereafter in this window |
+| Aug 11 | 180 | 3 (1.7%) | 0 | none thereafter |
+| Aug 12 | 69 | 0 | 0 | — |
+| Aug 19 | 21 | 0 | 0 | — |
+| Aug 20 | 26 | 0 | 0 | — |
+| Aug 21 | 24 | 0 | 0 | — |
+
+The Aug 9 cohort is the strongest Investor repeat cohort — beyond its 9 D1 returners, at least one
+member was still returning 10–13 days later.
+
+**Founder-level read (carried over from the source analysis):** the useful interpretation isn't a
+single "retention is 2.8%" figure — it's that Landing and Investor are two fundamentally different
+populations. Landing shows ~22% D1 retention in a tiny, high-intent population; Investor's much larger
+paid-social population drags aggregate retention down. Even within Investor, the original Aug 9–11
+wave (6.8%/5.3% D1/D2 at its strongest) behaved nothing like the Aug 19–21 paid-social wave, which has
+so far produced effectively zero same-property D1 retention. This is consistent with the session-depth
+split already logged above: Direct ~10m35s average session vs. Paid Social ~27s — repeat visitation
+and session depth are telling the same story.
+
+---
+
 ## What this log is not claiming
 
 - None of the figures above were re-pulled from PostHog by this session — they are recorded exactly
