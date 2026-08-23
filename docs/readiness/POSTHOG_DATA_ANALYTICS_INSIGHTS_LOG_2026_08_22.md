@@ -92,6 +92,31 @@ recent to judge.
 **Geography:** unchanged at 13 countries / 51 regions combined (Investor 12/50, Landing 3/11 — these
 overlap and should not be summed).
 
+**Country-wise breakdown (combined Landing + Investor through Aug 22, each property counted from its
+own instrumentation start date):**
+
+| Country | Unique users | Sessions | Pageviews |
+|---|---|---|---|
+| India | 705 | 1,242 | 1,936 |
+| United States | 22 | 24 | 26 |
+| Bangladesh | 2 | 2 | 3 |
+| Nepal | 1 | 1 | 18 |
+| Malawi | 1 | 1 | 2 |
+| Singapore | 1 | 1 | 2 |
+| Malaysia | 1 | 1 | 1 |
+| Romania | 1 | 1 | 1 |
+| Ireland | 1 | 1 | 1 |
+| Mexico | 1 | 1 | 1 |
+| Oman | 1 | 1 | 1 |
+| Germany | 1 | 1 | 1 |
+| Indonesia | 1 | 1 | 1 |
+
+13 countries total, matching the geography figure above. The US is the largest non-India cohort (22
+unique users / 26 pageviews), split 22 Investor / 4 Landing pageviews. Nepal's single user is
+unusually engaged at 18 pageviews; every other one-user country is a brief single-page visit.
+Consistent with the caveat already noted elsewhere in this log: these are **GeoIP-observed**
+countries, not verified physical locations — VPN/secure routing means country ≠ location.
+
 **AI/LLM telemetry:** still a gap — no native LLM observability events in 30 days; custom telemetry
 now shows 3 `ai_query_submitted` events since Jul 30 and 4 `ai_agentic_chat_turn_completed` on Aug 16.
 
@@ -104,6 +129,151 @@ not a claim that traffic quality changed.
 (Aug 22). Aug 22 is a small re-worsening vs. Aug 21 but still well below the Aug 20 peak — read as a
 persistent unresolved regression, not an accelerating outage. Landing shows no exception cluster in
 this window.
+
+---
+
+## Full infrastructure/traffic breakup through Aug 22 (Landing from Jul 27, Investor from Aug 8)
+
+### Region-wise (largest observed regions by unique users)
+
+| Region | Users | Sessions | Pageviews |
+|---|---|---|---|
+| Kerala | 74 | 132 | 133 |
+| West Bengal | 64 | 116 | 120 |
+| Assam | 61 | 155 | 784 |
+| Gujarat | 58 | 76 | 77 |
+| Tamil Nadu | 56 | 99 | 99 |
+| Maharashtra | 48 | 75 | 77 |
+| Uttar Pradesh | 39 | 75 | 98 |
+| Rajasthan | 36 | 53 | 54 |
+| Karnataka | 33 | 48 | 53 |
+| Telangana | 31 | 41 | 44 |
+| Madhya Pradesh | 27 | 33 | 34 |
+| Delhi NCT | 23 | 32 | 34 |
+| Punjab | 23 | 27 | 27 |
+| Bihar | 20 | 38 | 39 |
+| Nagaland | 16 | 31 | 45 |
+| Haryana | 16 | 31 | 33 |
+| Odisha | 13 | 22 | 22 |
+| Uttarakhand | 13 | 18 | 18 |
+| Jammu & Kashmir | 11 | 16 | 17 |
+| Virginia, US | 9 | 9 | 11 |
+| Arunachal Pradesh | 8 | 8 | 11 |
+| Chhattisgarh | 8 | 9 | 9 |
+| Sikkim | 7 | 24 | 24 |
+| Andhra Pradesh | 7 | 10 | 10 |
+| Himachal Pradesh | 6 | 8 | 8 |
+| Jharkhand | 6 | 6 | 6 |
+| Chandigarh | 4 | 8 | 8 |
+| Oregon, US | 3 | 3 | 3 |
+| Iowa, US | 3 | 3 | 3 |
+| Colorado, US | 3 | 3 | 3 |
+| Goa | 2 | 2 | 2 |
+| Texas, US | 1 | 2 | 2 |
+| Florida, US | 1 | 1 | 1 |
+| Georgia, US | 1 | 1 | 1 |
+| Berlin, Germany | 1 | 1 | 1 |
+| Nuevo León, Mexico | 1 | 1 | 1 |
+| Bucharest, Romania | 1 | 1 | 1 |
+| Selangor, Malaysia | 1 | 1 | 1 |
+| Puducherry | 1 | 1 | 1 |
+| Muscat, Oman | 1 | 1 | 1 |
+| East Java, Indonesia | 1 | 1 | 1 |
+| Leinster, Ireland | 1 | 1 | 1 |
+| Rangpur, Bangladesh | 1 | 1 | 2 |
+| Manipur | 1 | 1 | 1 |
+| Mizoram | 1 | 1 | 1 |
+
+Plus GeoIP records with no usable subdivision: 31 Indian users, 2 US users, and individual users from
+Nepal, Malawi, Singapore, and Bangladesh.
+
+**Standout: Assam** — only 61 users but 784 pageviews, far beyond a simple large-acquisition-cohort
+read; this is extraordinarily high repeat/depth activity relative to the Facebook-heavy regions.
+
+### Device breakup
+
+| Device | Unique users | Sessions | Pageviews | PV share |
+|---|---|---|---|---|
+| Mobile | 676 | 1,140 | 1,233 | 61.8% |
+| Desktop | 59 | 138 | 760 | 38.1% |
+| Tablet | 1 | 1 | 1 | ~0.1% |
+
+The cumulative dataset is no longer ~85% desktop (as the earlier direct/evaluative cohort alone was)
+— the Facebook acquisition wave has flipped the aggregate mix heavily toward mobile now that hundreds
+of Facebook-mobile visitors are in the denominator.
+
+### OS breakup
+
+| OS | Users | Sessions | Pageviews | PV share |
+|---|---|---|---|---|
+| Android | 664 | 1,119 | 1,203 | 60.3% |
+| Windows | 42 | 113 | 715 | 35.9% |
+| iOS | 13 | 22 | 31 | 1.6% |
+| Mac OS X | 10 | 12 | 30 | 1.5% |
+| Linux | 9 | 13 | 15 | 0.8% |
+
+Two visible traffic regimes: Facebook/social wave → Android/mobile; high-depth/direct traffic →
+disproportionately Windows/desktop. Only 42 observed Windows users generated 715 pageviews — far
+deeper per-user than the Android population.
+
+### Traffic-source breakup
+
+| Referring source | Users | Sessions | Pageviews |
+|---|---|---|---|
+| m.facebook.com | 643 | 1,081 | 1,096 |
+| Direct | 58 | 124 | 750 |
+| triaxisventures.com | 13 | 22 | 51 |
+| landing.triaxisventures.com | 5 | 10 | 29 |
+| www.linkedin.com | 5 | 11 | 15 |
+| LinkedIn Android app | 5 | 6 | 11 |
+| Instagram | 5 | 13 | 13 |
+| Facebook.com | 3 | 7 | 8 |
+| l.facebook.com | 3 | 4 | 4 |
+| www.facebook.com | 3 | 3 | 3 |
+| lm.facebook.com | 1 | 1 | 5 |
+| Bing | 4 | 4 | 4 |
+| Vercel | 2 | 2 | 2 |
+| Zoom Marketplace | 1 | 1 | 2 |
+
+Grouped broadly: Facebook surfaces generate ~1,116 of 1,994 pageviews (~56%), Direct alone generates
+750 (~38%), and identifiable LinkedIn surfaces contribute ~26 PV (~1.3%). Facebook dominates reach;
+Direct contributes disproportionate depth.
+
+### Acquisition-channel breakup (PostHog session-level classifier)
+
+| Channel | Sessions | Share | Avg session |
+|---|---|---|---|
+| Paid Social | 1,341 | 86.7% | 27.4 sec |
+| Direct | 136 | 8.8% | 634.6 sec / 10m 35s |
+| Organic Social | 37 | 2.4% | 142.5 sec / 2m 23s |
+| Referral | 29 | 1.9% | 206 sec / 3m 26s |
+| Organic Search | 4 | 0.3% | 4.8 sec |
+
+Paid Social drives the bulk of sessions at ~27 seconds average; Direct is only 8.8% of sessions but
+averages 10m 35s. The high-intent/evaluative population is effectively hidden inside the aggregate
+average once Paid Social's volume dominates the denominator.
+
+### Viewport-width breakup
+
+| Viewport | Users | Sessions | Pageviews | PV share |
+|---|---|---|---|---|
+| <480 px | 672 | 1,134 | 1,223 | 61.3% |
+| 1024–1439 px | 38 | 111 | 690 | 34.6% |
+| 1440–1919 px | 6 | 8 | 45 | 2.3% |
+| 768–1023 px | 14 | 19 | 23 | 1.2% |
+| 1920+ px | 5 | 5 | 5 | 0.3% |
+| 480–767 px | 2 | 2 | 5 | 0.3% |
+| Unknown | 2 | 2 | 3 | 0.2% |
+
+Just 38 users in the 1024–1439px desktop-width bracket generated 690 pageviews (~18 PV/user), versus
+672 sub-480px users generating 1,223 (~1.8 PV/user) — roughly a 10x depth difference per observed
+user between the two populations.
+
+**Recommended framing carried over from the source analysis:** for investor/YC interpretation, split
+the dashboard into "Reach Traffic" (paid-social/mobile, high volume, low depth) and "High-Intent
+Traffic" (direct/desktop, low volume, order-of-magnitude-higher engagement depth) rather than reading
+blended aggregates, which increasingly understate the smaller high-intent cohort as the paid-social
+volume grows.
 
 ---
 
