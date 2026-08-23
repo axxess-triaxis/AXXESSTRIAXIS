@@ -34,3 +34,11 @@ export function readAndClearStakeholderNoteDraft(): StakeholderNoteDraft | null 
   if (!Number.isFinite(age) || age > DRAFT_STALE_AFTER_MS) return null;
   return draft;
 }
+
+// MN-5 (2026-08-23): a real stakeholder name/note body can sit in this key for up to
+// DRAFT_STALE_AFTER_MS after being written -- called from AuthProvider.logout() so a shared or
+// re-used device never carries a signed-out user's draft note text into the next session.
+export function clearStakeholderNoteDraft(): void {
+  if (typeof window === "undefined") return;
+  window.sessionStorage.removeItem(STAKEHOLDER_NOTE_DRAFT_KEY);
+}
