@@ -1,4 +1,4 @@
-import { AlertTriangle, Bell, CheckCircle2, FolderKanban, LogOut, Search, ShieldCheck } from "lucide-react";
+import { AlertTriangle, Bell, CheckCircle2, FolderKanban, LogOut, Menu, Search, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import type { Route } from "next";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -24,7 +24,9 @@ const SECTION_FOR_NOTIFICATION_TYPE: Partial<Record<Notification["type"], NavSec
 type TopBarProps = {
   activeLabel: string;
   notifOpen: boolean;
+  isMobile: boolean;
   user: UserContext;
+  onToggleSidebar: () => void;
   onToggleNotifications: () => void;
   onLogout: () => void;
 };
@@ -55,7 +57,7 @@ function relativeTime(value: string) {
   return `${Math.round(hours / 24)}d`;
 }
 
-export function TopBar({ activeLabel, notifOpen, user, onToggleNotifications, onLogout }: TopBarProps) {
+export function TopBar({ activeLabel, notifOpen, isMobile, user, onToggleSidebar, onToggleNotifications, onLogout }: TopBarProps) {
   const analytics = useAnalytics();
   const { navigateToSection } = useWorkspaceRouting();
   const scope = useMemo(() => tenantScopeFromUser(user), [user]);
@@ -150,6 +152,15 @@ export function TopBar({ activeLabel, notifOpen, user, onToggleNotifications, on
 
   return (
     <header className="flex flex-shrink-0 items-center gap-4 border-b border-[rgba(0,0,0,0.07)] bg-white px-5 py-3">
+      {isMobile && (
+        <button
+          onClick={onToggleSidebar}
+          className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg text-[#5F6B73] transition-colors hover:bg-[#F2F3F5] hover:text-[#0F1117]"
+          aria-label="Open navigation menu"
+        >
+          <Menu size={18} />
+        </button>
+      )}
       <div className="flex items-center gap-2 text-xs text-[#5F6B73]">
         <span className="font-medium text-[#0F1117]">{activeLabel}</span>
       </div>
