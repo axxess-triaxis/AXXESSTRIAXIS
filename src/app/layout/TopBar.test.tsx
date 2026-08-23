@@ -13,14 +13,17 @@ vi.mock("../../repositories/supabaseEnterpriseRepositories", () => ({
   tenantScopeFromUser: (user: { id: string; organizationId: string; role: string }) => ({ userId: user.id, organizationId: user.organizationId, role: user.role }),
 }));
 
-const { mockNotificationsList, mockNotificationsUpdate } = vi.hoisted(() => ({
+const { mockNotificationsList, mockNotificationsUpdate, mockProjectsList } = vi.hoisted(() => ({
   mockNotificationsList: vi.fn(async () => [] as Notification[]),
   mockNotificationsUpdate: vi.fn(async (_scope: unknown, id: string, patch: Partial<Notification>) => ({ id, ...patch }) as Notification),
+  // Analytics Sprint 2: TopBar's "Search portfolio..." box now fetches real projects.
+  mockProjectsList: vi.fn(async () => [] as { id: string; name: string }[]),
 }));
 
 vi.mock("../../providers/serviceProvider", () => ({
   applicationServices: {
     notificationsRepository: { list: mockNotificationsList, update: mockNotificationsUpdate },
+    projectsRepository: { list: mockProjectsList },
   },
 }));
 
