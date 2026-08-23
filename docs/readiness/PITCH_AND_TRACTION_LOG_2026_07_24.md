@@ -668,6 +668,28 @@ depends on the R2 form submission ahead of the 2026-08-23 deadline. Update this 
 submitted and/or a Round 3 or final decision is received -- do not mark this "Passed" or "Advanced" as a
 final status until that happens.
 
+### 47. Accelerating Asia -- Flagship Program, Cohort 14
+
+**Status:** Invited to book a phone-screen intro call. **New, 2026-08-23.** Recorded from a
+founder-supplied PDF email export, image-only and OCR-extracted (this session, `pdfjs-dist` +
+`tesseract.js`); OCR text is generally reliable but not manually cross-checked character-by-character.
+Source: "[AAV] Cohort 14_Invitation for Phone Screen" email from Team Accelerating Asia
+(`team@acceleratingasia.com`), dated 2026-08-23, 2:14 PM. Personal email addresses in the export are
+not reproduced here.
+- The message states AXXESS's application to Accelerating Asia's **Flagship Program** has been
+  reviewed and invites a **10-minute phone-screen call** with one of the program's evaluators, as the
+  next required step in their process.
+- The message's own stated pipeline beyond this stage: a 15-20 minute call with the Ventures team,
+  a virtual Selection Week with angel investors/VCs/mentors, a final call-back, an offer, and
+  accelerator start/investment paperwork -- none of these later stages have been reached.
+- Booking window stated in the source: **2026-08-05 through 2026-09-05**; failure to book within this
+  window is stated to forfeit the application.
+- The message states a decision on whether to advance follows **2-3 weeks** after the intro call is
+  completed.
+**Outcome:** Phone-screen invitation only; no call has been evidenced as booked or completed in this
+repository, and no selection, investment, or program admission has occurred. Recorded as
+investor/accelerator pipeline progress at its earliest stage, not as funding traction.
+
 ## Mentor / Ecosystem Recognition Roles (New, 2026-08-03)
 
 These two entries are different in kind from #1-22 above: they are roles where the founder is the one being selected to *give* mentorship/expertise, not roles where Triaxis is being pitched, evaluated, or funded. Recorded here for completeness, in the same evidence-chain discipline as the rest of this log, in a separate section so they are not mistaken for investor or accelerator traction.
