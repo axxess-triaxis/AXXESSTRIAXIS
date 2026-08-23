@@ -13,6 +13,10 @@ import { MobileApprovalsScreen } from "./screens/MobileApprovalsScreen";
 import { MobileKnowledgeScreen } from "./screens/MobileKnowledgeScreen";
 import { MobileAskAiScreen } from "./screens/MobileAskAiScreen";
 import { MobileStakeholdersScreen } from "./screens/MobileStakeholdersScreen";
+import { MobileBackHandlerProvider } from "./MobileBackHandlerContext";
+import { useMobileBackButton } from "./useMobileBackButton";
+import { useMobileNetworkStatus } from "./useMobileNetworkStatus";
+import { MobileOfflineBanner } from "./MobileOfflineBanner";
 
 type MobileShellProps = {
   active: NavSection;
@@ -39,7 +43,19 @@ type MobileShellProps = {
 // no mobile mapping) it falls back to the local Home panel instead of ever rendering forbidden
 // content -- this is a real safety boundary, not just a UX default, since App.tsx's own
 // defaultSectionForRole effect routes non-Employee roles to "dashboard" on first load.
-export function MobileShell({ active, user, onSelectSection, children }: MobileShellProps) {
+export function MobileShell(props: MobileShellProps) {
+  // MN-4 (2026-08-23): MobileBackHandlerProvider must wrap MobileShellContent, not sit alongside it
+  // -- useMobileBackButton (called inside MobileShellContent) and every screen's own
+  // useRegisterMobileBackHandler call both consume this context, so they must render as its
+  // descendants, not as siblings of the component that creates it.
+  return (
+    <MobileBackHandlerProvider>
+      <MobileShellContent {...props} />
+    </MobileBackHandlerProvider>
+  );
+}
+
+function MobileShellContent({ active, user, onSelectSection, children }: MobileShellProps) {
   // Cold launch: default to Home unless `active` already resolves to an allowed section (e.g. a
   // direct link into /tasks or /approvals) -- in that case respect it instead of overriding.
   const [localOverride, setLocalOverride] = useState<"home" | "more" | null>(() => (mobileFeatureForSection(active) ? null : "home"));
@@ -59,6 +75,12 @@ export function MobileShell({ active, user, onSelectSection, children }: MobileS
       onSelectSection(target);
     }
   }
+
+  // MN-4 (2026-08-23): real Android hardware back-button handling -- see useMobileBackButton.ts
+  // for the full precedence order (registered screen handler, then tab-level "go to Home", then
+  // App.minimizeApp() at the true root). A no-op outside the real Capacitor app.
+  useMobileBackButton(activeTabId === "home", () => handleSelect("home"));
+  const isOnline = useMobileNetworkStatus();
 
   const title = activeTabId === "home" ? "Today" : activeTabId === "more" ? "More" : matchedEntry?.label ?? "AXXESS";
 
@@ -83,6 +105,7 @@ export function MobileShell({ active, user, onSelectSection, children }: MobileS
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-[#F8F9FA]" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
       <MobileHeader title={title} avatarInitials={user.avatarInitials} onAvatarPress={() => handleSelect("settings")} />
+      {!isOnline && <MobileOfflineBanner />}
 
       <main className="flex-1 overflow-y-auto">
         {activeTabId === "home" && <MobileCommandHome displayName={user.displayName} onNavigate={handleSelect} />}

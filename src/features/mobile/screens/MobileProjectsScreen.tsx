@@ -9,6 +9,7 @@ import { EmptyState } from "../../../components/feedback/EmptyState";
 import { MobileActionButton } from "../MobileActionButton";
 import { useAuth } from "../../../auth/AuthProvider";
 import { useMobileTenantScope } from "../useMobileTenantScope";
+import { useRegisterMobileBackHandler } from "../MobileBackHandlerContext";
 
 const riskColor: Record<Project["riskLevel"], string> = {
   low: "bg-[#E6F4EA] text-[#2E7D32]",
@@ -32,6 +33,20 @@ export function MobileProjectsScreen() {
   const [showCreate, setShowCreate] = useState(false);
   const [newName, setNewName] = useState("");
   const [saving, setSaving] = useState(false);
+
+  // MN-4 (2026-08-23): Android back button -- closes the New project form first if open, else
+  // pops the detail view back to the list.
+  useRegisterMobileBackHandler(() => {
+    if (showCreate) {
+      setShowCreate(false);
+      return true;
+    }
+    if (selectedId) {
+      setSelectedId(null);
+      return true;
+    }
+    return false;
+  });
 
   useEffect(() => {
     if (!scope) return;

@@ -10,11 +10,35 @@
 // shell inside the actual native wrapper, not just because a browser window happens to be narrow --
 // the responsive sidebar fix (docs/readiness/ANDROID_BETA_0_9_TESTER_FEEDBACK_RITASHREE_2026_08_23.md)
 // already handles narrow desktop-web browsers correctly; this is a distinct, stricter signal.
+// MN-4 (2026-08-23): `Plugins` is the same native-bridge-injected registry, keyed by plugin name --
+// every Capacitor plugin (App, Keyboard, Network, Haptics, ...) is reachable at
+// `window.Capacitor.Plugins.<PluginName>` without importing its JS wrapper package, the same
+// dependency-free pattern as `isNativePlatform` above. Kept minimal: only the exact methods this
+// codebase actually calls (useMobileBackButton.ts, useMobileNetworkStatus.ts) are typed here.
 declare global {
   interface Window {
     Capacitor?: {
       isNativePlatform?: () => boolean;
       getPlatform?: () => string;
+      Plugins?: {
+        App?: {
+          addListener?: (
+            eventName: "backButton",
+            listenerFunc: (event: { canGoBack: boolean }) => void,
+          ) => Promise<{ remove: () => void }>;
+          minimizeApp?: () => Promise<void>;
+        };
+        Network?: {
+          getStatus?: () => Promise<{ connected: boolean }>;
+          addListener?: (
+            eventName: "networkStatusChange",
+            listenerFunc: (status: { connected: boolean }) => void,
+          ) => Promise<{ remove: () => void }>;
+        };
+        Haptics?: {
+          impact?: (options: { style: "LIGHT" | "MEDIUM" | "HEAVY" }) => Promise<void>;
+        };
+      };
     };
   }
 }
