@@ -389,6 +389,47 @@ here as a drafted option, not a published claim.
 
 ---
 
+## Acquisition cost efficiency against the $8 total social spend (founder-stated spend, source artifact needed)
+
+Blended efficiency measures using the $8 total social spend figure logged above against observed
+PostHog acquisition numbers. Attribution basis: the Paid Social session cohort, not every site
+visitor — per the source analysis's own caveat, these are blended efficiency measures, not strict
+Meta Ads attribution, since the $8 is total social spend while PostHog's referrer data includes
+Facebook traffic that may not all be paid.
+
+| Metric | Result |
+|---|---|
+| Total social spend | $8.00 |
+| Paid Social sessions | 1,341 |
+| Cost / paid-social session | $0.0060 |
+| Cost / 100 sessions | $0.60 |
+| Main Facebook unique visitors | 643 |
+| Approx. cost / Facebook visitor* | $0.0124 |
+| Approx. cost / 100 visitors* | $1.24 |
+| Facebook-attributed pageviews | ~1,116 |
+| Cost / Facebook pageview* | $0.0072 |
+| Cost / 1,000 Facebook PV* | $7.17 |
+
+*Blended efficiency measures, not strict Meta Ads attribution — see caveat above.
+
+Alternate framing (as given): $1 of spend corresponded to ~168 Paid Social sessions, ~80 main-Facebook
+visitors, and ~140 Facebook-referrer pageviews.
+
+**Explicit caution carried over from the source analysis:** this efficiency figure must not be mixed
+with the high-intent cohort analysis above to imply the evaluative traffic was "bought" for $8 — the
+data shows close to the opposite. The $8 generated the broad awareness (Paid Social) layer; the
+strongest evaluation signals occur disproportionately in the separate Direct/Desktop cohort (~39%
+repeat visitation, ~12.3 pageviews/user, 6–12 minute average sessions), not the 27-second Paid Social
+population. Funnel shape as stated: *$8 social spend → 1,341 paid-social sessions → broad awareness →
+separate high-intent direct/repeat evaluation layer* (the two are not the same population).
+
+**Suggested public-facing statistic (as given, not yet published):** "$8 total social spend. 1,300+
+paid-social sessions at <1¢ per session, alongside a distinct high-intent direct cohort showing ~39%
+repeat visitation and 6–12 minute average sessions." Chosen specifically to preserve the acquisition-
+economics claim without misattributing the diligence/evaluation cohort to advertising.
+
+---
+
 ## What this log is not claiming
 
 - None of the figures above were re-pulled from PostHog by this session — they are recorded exactly
