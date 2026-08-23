@@ -34,13 +34,15 @@ vi.mock("../../hooks/useWorkspaceRouting", () => ({
 
 const testUser: UserContext = { id: "user-1", organizationId: "org-1", role: "Organization Admin", avatarInitials: "SK" };
 
-function renderTopBar(overrides: { onLogout?: () => void; notifOpen?: boolean; onToggleNotifications?: () => void } = {}) {
+function renderTopBar(overrides: { onLogout?: () => void; notifOpen?: boolean; onToggleNotifications?: () => void; isMobile?: boolean; onToggleSidebar?: () => void } = {}) {
   return render(
     <AnalyticsProviderShell provider={new MockAnalyticsProvider()}>
       <TopBar
         activeLabel="Executive Dashboard"
         notifOpen={overrides.notifOpen ?? false}
+        isMobile={overrides.isMobile ?? false}
         user={testUser}
+        onToggleSidebar={overrides.onToggleSidebar ?? (() => {})}
         onToggleNotifications={overrides.onToggleNotifications ?? (() => {})}
         onLogout={overrides.onLogout ?? vi.fn()}
       />
@@ -123,7 +125,7 @@ describe("TopBar notification click-through", () => {
       mockNotificationsUpdate.mockResolvedValue(makeNotification({ id: `notif-${type}`, type, readAt: new Date().toISOString() }));
       const { unmount } = render(
         <AnalyticsProviderShell provider={new MockAnalyticsProvider()}>
-          <TopBar activeLabel="Executive Dashboard" notifOpen user={testUser} onToggleNotifications={() => {}} onLogout={vi.fn()} />
+          <TopBar activeLabel="Executive Dashboard" notifOpen isMobile={false} user={testUser} onToggleSidebar={() => {}} onToggleNotifications={() => {}} onLogout={vi.fn()} />
         </AnalyticsProviderShell>,
       );
 
@@ -145,5 +147,24 @@ describe("TopBar notification click-through", () => {
 
     await waitFor(() => expect(mockNotificationsUpdate).toHaveBeenCalled());
     expect(mockNavigateToSection).not.toHaveBeenCalled();
+  });
+});
+
+// Beta tester feedback (2026-08-23, Android): the sidebar previously had no way to reopen once
+// hidden on a narrow viewport since its own toggle chevron lives inside the (now off-canvas)
+// sidebar itself -- this hamburger button is the mobile-only entry point that replaces it.
+describe("TopBar mobile navigation trigger", () => {
+  it("shows a menu button on mobile that calls onToggleSidebar", () => {
+    const onToggleSidebar = vi.fn();
+    renderTopBar({ isMobile: true, onToggleSidebar });
+
+    fireEvent.click(screen.getByLabelText("Open navigation menu"));
+    expect(onToggleSidebar).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not show a menu button on desktop", () => {
+    renderTopBar({ isMobile: false });
+
+    expect(screen.queryByLabelText("Open navigation menu")).not.toBeInTheDocument();
   });
 });
