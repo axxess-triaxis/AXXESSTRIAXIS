@@ -9,6 +9,7 @@ import { EmptyState } from "../../../components/feedback/EmptyState";
 import { MobileActionButton } from "../MobileActionButton";
 import { useMobileTenantScope } from "../useMobileTenantScope";
 import { useMobileTabletLayout } from "../useMobileTabletLayout";
+import { useRegisterMobileBackHandler } from "../MobileBackHandlerContext";
 
 type StakeholderNote = { id: string; title: string; body: string; createdAt: string };
 
@@ -36,6 +37,21 @@ export function MobileStakeholdersScreen() {
   const [noteBody, setNoteBody] = useState("");
   const [saving, setSaving] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  // MN-4 (2026-08-23): Android back button -- closes the New quick note form first if open, else
+  // pops the phone-layout detail view back to the list (tablet's two-pane view has no separate
+  // detail "screen" to leave).
+  useRegisterMobileBackHandler(() => {
+    if (showCreate) {
+      setShowCreate(false);
+      return true;
+    }
+    if (!isTablet && selectedId) {
+      setSelectedId(null);
+      return true;
+    }
+    return false;
+  });
 
   useEffect(() => {
     if (!scope) return;
