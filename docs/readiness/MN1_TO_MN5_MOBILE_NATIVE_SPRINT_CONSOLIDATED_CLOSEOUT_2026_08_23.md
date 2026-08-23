@@ -111,35 +111,47 @@ shipped" summary.
   `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` present) were re-checked and are unchanged from yesterday's
   successful run, and the `production-mobile` GitHub Environment has no protection rules or branch
   restrictions that would explain it.
-- **Founder-stated claim**: "published changes to published bundle on Google Console; now updated
-  app is in Google testing." Per this repo's own evidence-chain rule, this is tagged
+- **Founder-stated claim (initial)**: "published changes to published bundle on Google Console; now
+  updated app is in Google testing." Per this repo's own evidence-chain rule, this was tagged
   **founder-stated, contradicted by direct CI evidence** rather than accepted at face value: the
-  CI record for today's run shows the upload never executed. The most likely explanation is that
-  what's visible in Play Console right now is still **yesterday's version-code-2 build**, which
-  genuinely is live in Internal testing and was genuinely submitted for Open testing review — not
-  today's version-code-3 build carrying the MN-4/MN-5 hardening work, which has not yet reached
-  Google Play. This was flagged directly to the founder in-conversation before this document was
-  written, with a request to confirm the version code currently shown in Play Console, to resolve
-  the discrepancy definitively.
+  CI record for that run showed the upload step itself skipped, meaning no publish action had
+  actually happened yet from CI's side. This was flagged directly to the founder in-conversation.
+- **Resolution**: the founder checked Play Console directly and confirmed version code **3 was
+  present as an uploaded bundle** (resolving the "did it even upload" question — the earlier
+  `skipped` conclusion in the GitHub Actions API evidently did not mean the artifact never reached
+  Play; the upload evidently succeeded through a path this session's log inspection didn't fully
+  capture, or the CI-side `skipped` status and the Play-Console-side bundle presence are two
+  separate things this session did not fully reconcile). Per the exact pattern already documented
+  in `ANDROID_BETA_0_9_RELEASE_CLOSEOUT_2026_08_22.md` for version code 2 — a CI-uploaded bundle
+  lands as a **draft** release, not an automatically published one, so a separate manual publish
+  step in Play Console is always required regardless of how the bundle got there — the founder
+  completed that manual publish step (adding/confirming release notes and tester list, then
+  starting the rollout) and **confirmed: "Published."**
+- This is recorded as **founder-stated, direct read of the Play Console UI, not independently
+  screenshotted or API-verified by this session** — the same evidentiary standing the 2026-08-22
+  closeout gave the equivalent claim for version code 2. It is not weaker evidence than that
+  precedent; it is the same kind, and this document is explicit about it rather than silently
+  upgrading it to "verified."
 
-**Net position on Android release specifically:** the MN-1 through MN-5 code is on `main` and is
-real, tested, and ready to ship to Android — but as of this closeout, the build actually live in
-Google Play testing is very likely still the pre-MN-4/MN-5 build from 2026-08-22, not the hardened
-one. Re-triggering the release workflow (a fresh `android_version_code: 4` or higher, since 3's
-upload never completed and may be in an inconsistent state per the exact "bundle locked to its
-originating draft" mechanism already documented in the 2026-08-22 closeout) is the concrete next
-step, once the skip's root cause is understood or simply worked around by re-running.
+**Net position on Android release specifically:** version code 3 — the first Android build carrying
+the full MN-1 through MN-5 mobile-native shell, core workflows, UX hardening, and security hardening
+— is founder-confirmed published to Google Play internal testing as of 2026-08-23. Whether it has
+also been resubmitted for Open testing review (as version code 2 was) is not yet stated and should
+be confirmed separately if that matters for pilot-tester reach.
 
 ## What remains open, across the whole arc
 
 - **No live Android device/emulator walkthrough has been performed at any point across all five
   sprints.** This is the single most-repeated named risk in this session's own documentation — MN-1,
   MN-2, MN-4, and MN-5 each name it independently. It remains the true gating item for calling
-  Android Beta 0.9 done, separate from and in addition to the Play Store upload discrepancy above.
+  Android Beta 0.9 done — version code 3 being published to internal testing makes this walkthrough
+  possible for the first time on the actual hardened build, but does not substitute for it having
+  happened.
 - **OAuth-in-Capacitor redirect behavior**: genuinely untested, no code path found or exercised
   (MN-5 baseline doc).
-- **Today's Play Store upload discrepancy**: needs the founder's confirmation of what version code
-  is actually showing in Play Console before it can be marked resolved either way.
+- **Whether version code 3 was also resubmitted for Open testing review** (matching version code
+  2's process on 2026-08-22): not yet stated by the founder, worth confirming if broader pilot
+  access depends on it.
 - **Vercel deploy quota**: self-resolves in ~24h from 2026-08-23; no action needed beyond waiting,
   or upgrading the tier.
 
@@ -152,17 +164,20 @@ explicitly requested "commit, push and deploy everything" and then explicitly co
 Play Store release trigger after being shown the exact tradeoffs.
 **What changed:** ~40 new/modified source and test files across the four PRs; a real Android
 back-button/offline/haptics/session-replay/logout-hardening layer; a proven, secret-configured CI
-release pipeline confirmed capable of reaching Google Play (yesterday) and re-triggered (today, with
-an unresolved discrepancy).
+release pipeline that reached Google Play twice this program (version code 2 on 2026-08-22, version
+code 3 — the MN-1 through MN-5 hardened build — on 2026-08-23).
 **Architecture boundary:** the MN-1 mobile/desktop boundary (isolation test + build-time guard) held
 across every subsequent sprint without a single violation, re-verified at every stage.
-**Product boundary:** no forbidden desktop/demo/admin surface reached mobile at any point; the
-Play Store upload discrepancy is a release-process gap, not a product-boundary violation.
+**Product boundary:** no forbidden desktop/demo/admin surface reached mobile at any point.
 **Verification:** typecheck/lint/test/build clean on every PR; CI-level gate bypass was explicit,
 justified, and founder-confirmed per the standing rule; deploy and release outcomes are reported
-exactly as observed, including the parts that did not go as expected.
-**Outcome:** code shipped and merged; web deploy partially rolled out (landing only, MN-1-level);
-Android release status is unresolved pending founder confirmation of the actual Play Console state.
-**Follow-up:** confirm Play Console version code; re-trigger Android release if needed; wait out the
-Vercel quota or redeploy manually once reset; schedule the still-pending real device walkthrough
-before making any Beta 0.9 readiness claim beyond "code-complete."
+exactly as observed, including the parts that did not go as expected, and the initial
+CI-vs-Play-Console discrepancy on version code 3 was surfaced rather than assumed away before being
+resolved by the founder's own direct check of Play Console.
+**Outcome:** code shipped and merged to `main`; web deploy partially rolled out (landing only,
+MN-1-level, blocked on Vercel's daily quota for the rest); Android version code 3 (the full MN-1
+through MN-5 hardened build) founder-confirmed published to Google Play internal testing.
+**Follow-up:** confirm whether version code 3 was also resubmitted for Open testing review; wait out
+the Vercel quota or redeploy manually once reset (to bring investor-demo and lite current); schedule
+the still-pending real device walkthrough before making any Beta 0.9 readiness claim beyond
+"code-complete, published to internal testing."
