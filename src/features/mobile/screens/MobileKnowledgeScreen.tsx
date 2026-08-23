@@ -9,6 +9,7 @@ import { LoadingState } from "../../../components/feedback/LoadingState";
 import { EmptyState } from "../../../components/feedback/EmptyState";
 import { useMobileTenantScope } from "../useMobileTenantScope";
 import { useMobileTabletLayout } from "../useMobileTabletLayout";
+import { useRegisterMobileBackHandler } from "../MobileBackHandlerContext";
 
 type SelectedItem = { type: "document"; item: Document } | { type: "article"; item: KnowledgeArticle };
 
@@ -28,6 +29,16 @@ export function MobileKnowledgeScreen() {
   const [searchResults, setSearchResults] = useState<KnowledgeSearchResult[] | null>(null);
   const [searching, setSearching] = useState(false);
   const [selected, setSelected] = useState<SelectedItem | null>(null);
+
+  // MN-4 (2026-08-23): Android back button -- pops the phone-layout detail view back to the list.
+  // On tablet there's no separate detail "screen" to leave (list and detail render side by side).
+  useRegisterMobileBackHandler(() => {
+    if (!isTablet && selected) {
+      setSelected(null);
+      return true;
+    }
+    return false;
+  });
 
   useEffect(() => {
     if (!scope) return;
