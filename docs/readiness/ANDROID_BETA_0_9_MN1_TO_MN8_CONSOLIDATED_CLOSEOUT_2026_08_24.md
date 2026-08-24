@@ -238,19 +238,42 @@ above, iOS readiness, complete performance resolution, or a completed device wal
 post-MN-6-through-MN-8 build. Every sprint's own closeout states its verification status precisely;
 this consolidation does not upgrade any of them.
 
+## Version 4 — confirmed live on Google Play (2026-08-24, after MN-8 merged)
+
+**Update, same day as this document's original writing:** PR #325 (MN-8) merged to `main` at
+`d7dc8fc` (2026-08-24T14:30:08Z), and the founder triggered the Capacitor Release Workflow the same
+day. **Directly confirmed via a Play Console screenshot the founder shared** (upgrading this from a
+verbal claim to the same evidentiary standard the MN-1–5 closeout used for version code 3):
+
+- **Internal testing** — Release 4 (0.9.0), status **"Available to internal testers," Full
+  rollout**, last updated Aug 24, 2026, 8:36 PM.
+- **Open testing** — Release 4 (0.9.0), status **"In review," Full rollout**, last updated
+  Aug 24, 2026, 8:38 PM.
+- Install base reads 0.00% on both tracks — expected, testers have not yet updated.
+
+This is version code 4, the first Android build carrying the full MN-1 through MN-8 arc (native
+shell, core workflows, UX/security hardening, sign-out, AI-answer guard, native Settings rebuild,
+Home cleanup, org logo upload, user DP + availability) — matching the exact same two-track release
+pattern version codes 2 and 3 both followed.
+
+**Web deploy, same merge:** `axxesstriaxis` (the main app, `landing.triaxisventures.com`) deployed
+successfully. `triaxis-product-investor-demo` (`investor.triaxisventures.com`) and
+`triaxis-www-frontend-import` both failed with Vercel's free-tier daily deploy-quota rate limit —
+the same known, pre-existing infra constraint already on record from the MN-1–5 merge, self-
+resolving in ~24h or via a manual redeploy once the quota resets. No code was lost; `main` has
+everything.
+
 ## What remains open, across the whole arc
 
-- **No walkthrough of the post-MN-6-through-MN-8 build has happened yet.** The Version 3
-  walkthrough (19 screenshots) is what drove MN-6 through MN-8; a fresh walkthrough of whatever
-  build eventually ships MN-6/7/8 (a future "Version 4") is the real closing evidence for this
-  entire arc, more so than for any single sprint in isolation, since items 5/6/9/11/13/14 are all
-  layout/IA/feature changes a screenshot-based re-test would catch issues in that code review alone
-  cannot.
-- **MN-8 has not been built into a new Capacitor Android bundle or uploaded to Google Play** — this
-  exists in its branch/PR only until a version-code bump and CI release run happen, matching the
-  same open item every prior sprint in this arc has carried.
+- **No walkthrough of the Version 4 build has happened yet.** This is now the real closing
+  evidence for the entire eight-sprint arc — ideally by the same tester (Ritashree Mahanta), to
+  confirm items 5/6/9/11/13/14 actually resolve as intended on a real device, the same way the
+  Version 3 walkthrough is what found them in the first place.
 - **Triage doc items 3, 4, 7, 8, 12 remain unaddressed** — not part of MN-6/7/8's scope, no founder
   sequencing decision made on them yet.
+- **`investor.triaxisventures.com` and the www frontend need a manual redeploy** once Vercel's
+  daily quota resets (~24h from 2026-08-24 14:30 UTC), to bring them current with everything through
+  MN-8 — `landing.triaxisventures.com` is already current.
 - **The MN-1–5 closeout's PII leak** (Ritashree's personal email, flagged above) needs a follow-up
   redaction commit — not fixed here since it's out of scope for this PR.
 - **OAuth-in-Capacitor redirect behavior**: still genuinely untested (carried over from the MN-1–5
@@ -281,8 +304,13 @@ roadmap's own Mobile Surface Contract.
 not "should work" — including the one item genuinely not run this pass (`apps/mobile` typecheck)
 and why.
 **Outcome:** MN-1–5 released to Google Play as version code 3 (documented in the earlier closeout,
-unchanged here); MN-6–7 merged to `main`; MN-8 verified and ready for PR, not yet merged as of this
-document's writing.
-**Follow-up:** a fresh device walkthrough of the eventual "Version 4" build (once MN-6–8 reach a
-Capacitor release); redact the PII leak in the MN-1–5 closeout; found sequencing decisions on
-triage items 3/4/7/8/12; watch Google's Open testing review outcome for version code 3.
+unchanged here); MN-6, MN-7, and MN-8 all merged to `main` (PRs #312, #313, #325); the founder
+triggered the Capacitor Release Workflow the same day MN-8 merged, and version code 4 — the full
+MN-1 through MN-8 arc — is confirmed live on Google Play (Internal testing full rollout, Open
+testing submitted for review), per a Play Console screenshot. Web: `landing.triaxisventures.com`
+redeployed successfully; `investor.triaxisventures.com` and the www frontend blocked by Vercel's
+daily quota, pending a manual redeploy once it resets.
+**Follow-up:** a fresh device walkthrough of version code 4 (the real closing evidence for this
+whole arc); redact the PII leak in the MN-1–5 closeout; founder sequencing decisions on triage
+items 3/4/7/8/12; watch Google's Open testing review outcome for version code 4; manually redeploy
+`investor.triaxisventures.com`/www once Vercel's quota resets.
