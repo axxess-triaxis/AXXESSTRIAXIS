@@ -15,7 +15,7 @@
   },
   "dependencies": {
     "@capacitor/android": "7.6.7",
-    "@capacitor/app": "7.1.2",
+    "@capacitor/app": "8.1.1",
     "@capacitor/browser": "8.0.4",
     "@capacitor/core": "8.5.0",
     "@capacitor/device": "7.0.5",
