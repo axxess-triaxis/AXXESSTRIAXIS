@@ -23,8 +23,11 @@ export function tempChunkPath(organizationId: string, uploadId: string, chunkInd
   return `organizations/${organizationId}/_upload-chunks/${uploadId}/${chunkIndex}`;
 }
 
-export async function putStorageObject(config: SupabaseStorageConfig, path: string, body: ArrayBuffer | Buffer, accessToken: string, mimeType = "application/octet-stream") {
-  const response = await fetch(`${config.url}/storage/v1/object/${DOCUMENT_STORAGE_BUCKET}/${encodeStoragePath(path)}`, {
+// MN-8 (2026-08-24): bucket is now a parameter (defaulted to DOCUMENT_STORAGE_BUCKET so every
+// existing call site is unchanged) -- profileMediaStorage.ts reuses this same caller's-own-token
+// write pattern for the axxess-avatars bucket rather than duplicating it.
+export async function putStorageObject(config: SupabaseStorageConfig, path: string, body: ArrayBuffer | Buffer, accessToken: string, mimeType = "application/octet-stream", bucket: string = DOCUMENT_STORAGE_BUCKET) {
+  const response = await fetch(`${config.url}/storage/v1/object/${bucket}/${encodeStoragePath(path)}`, {
     method: "POST",
     headers: {
       apikey: config.anonKey,

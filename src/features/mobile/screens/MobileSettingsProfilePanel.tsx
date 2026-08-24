@@ -3,10 +3,12 @@
 import { useEffect, useState } from "react";
 import { Save, Settings, Smartphone } from "lucide-react";
 import { useAuth } from "../../../auth/AuthProvider";
+import { ImageUploadField } from "../../../components/forms/ImageUploadField";
 import { InlineToast } from "../../../components/forms/InlineToast";
 import { Avatar } from "../../../components/ui/Avatar";
 import { useAnalytics } from "../../../services/analytics";
 import { isAgenticGateEnabled, setAgenticGateEnabled } from "../../../services/agentic/agenticGateToggle";
+import { buildPublicAvatarUrl } from "../../../services/storage/profileMediaStorage";
 
 const departmentOptions = [
   "Mission Secretariat",
@@ -27,6 +29,10 @@ type Toast = { tone: "success" | "error" | "info"; message: string };
 // same /api/auth/phone/link/{start,verify} routes, same localStorage-backed agentic gate toggle --
 // presentation-layer rebuild only, no backend logic changed. LinkedPhoneSection's OTP flow is
 // ported near-verbatim (spacing/tap-targets restyled only, not redesigned) per the MN-7 plan.
+//
+// MN-8 (2026-08-24): adds display-picture upload (POST /api/profile-media/avatar, every role, no
+// RBAC gate) and the availability selector (Public/Private/Inactive -- self-reported label only,
+// no visibility/access-control logic reads it anywhere).
 export function MobileSettingsProfilePanel() {
   const { session, updateProfile } = useAuth();
   const analytics = useAnalytics();
@@ -36,6 +42,8 @@ export function MobileSettingsProfilePanel() {
     displayName: user?.displayName ?? "",
     email: user?.email ?? "",
     avatarInitials: user?.avatarInitials ?? "",
+    avatarPath: user?.avatarPath ?? "",
+    availability: user?.availability ?? "public",
     department: user?.department ?? "Mission Secretariat",
     title: user?.title ?? "",
     timezone: user?.timezone ?? "Asia/Kolkata",
@@ -47,11 +55,18 @@ export function MobileSettingsProfilePanel() {
       displayName: user.displayName ?? "",
       email: user.email ?? "",
       avatarInitials: user.avatarInitials ?? "",
+      avatarPath: user.avatarPath ?? "",
+      availability: user.availability ?? "public",
       department: user.department ?? "Mission Secretariat",
       title: user.title ?? "",
       timezone: user.timezone ?? "Asia/Kolkata",
     });
-  }, [user]);
+    // MN-8 (2026-08-24): depends on stable primitive fields, not the `user` object reference --
+    // a `[user]` dependency re-fires on every render whose caller hands back a fresh object (e.g.
+    // a simple per-call test mock), causing this unconditional setForm to loop indefinitely. See
+    // the identical fix/comment on desktop SettingsSection.tsx's ProfilePanel for the full story.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.displayName, user?.email, user?.avatarInitials, user?.avatarPath, user?.availability, user?.department, user?.title, user?.timezone]);
 
   if (!user) {
     return <div className="px-4 py-8 text-center text-sm text-[#5F6B73]">Sign in to manage your profile.</div>;
@@ -73,17 +88,46 @@ export function MobileSettingsProfilePanel() {
     }
   };
 
+  // MN-8 (2026-08-24): same uploadAvatar/onAvatarUploaded pattern as desktop's ProfilePanel --
+  // reuses saveProfile's own updateProfile call with avatarPath merged in.
+  const uploadAvatar = async (file: File) => {
+    const query = new URLSearchParams({ fileName: file.name, mimeType: file.type, sizeBytes: String(file.size) });
+    const response = await fetch(`/api/profile-media/avatar?${query.toString()}`, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": file.type || "application/octet-stream" },
+      body: file,
+    });
+    const payload = await response.json().catch(() => ({})) as { error?: string; path?: string };
+    if (!response.ok || !payload.path) throw new Error(payload.error ?? "Avatar upload failed.");
+    return { path: payload.path };
+  };
+
+  const onAvatarUploaded = (path: string) => {
+    setForm((current) => ({ ...current, avatarPath: path }));
+    void updateProfile({ ...form, avatarPath: path })
+      .then(() => setToast({ tone: "success", message: "Profile photo updated." }))
+      .catch(() => setToast({ tone: "error", message: "Profile photo could not be saved." }));
+  };
+
   return (
     <div className="flex flex-col gap-4 px-4 py-4">
       {toast && <InlineToast tone={toast.tone} message={toast.message} />}
 
       <div className="flex items-center gap-3 rounded-xl border border-[rgba(15,17,23,0.08)] bg-white px-3.5 py-3">
-        <Avatar initials={user.avatarInitials ?? "AR"} size="md" color="bg-[#8B1E2D]" />
-        <div className="min-w-0">
+        <Avatar initials={user.avatarInitials ?? "AR"} imageUrl={buildPublicAvatarUrl(form.avatarPath)} size="md" color="bg-[#8B1E2D]" />
+        <div className="min-w-0 flex-1">
           <h2 className="truncate text-sm font-semibold text-[#0F1117]">{user.displayName}</h2>
           <p className="truncate text-[11px] text-[#5F6B73]">{user.email}</p>
         </div>
       </div>
+
+      <ImageUploadField
+        label="photo"
+        fallback={<Avatar initials={user.avatarInitials ?? "AR"} imageUrl={buildPublicAvatarUrl(form.avatarPath)} size="md" color="bg-[#8B1E2D]" />}
+        onUpload={uploadAvatar}
+        onUploaded={onAvatarUploaded}
+      />
 
       <div className="flex flex-col gap-2.5 rounded-xl border border-[rgba(15,17,23,0.08)] bg-white px-3.5 py-3.5">
         <div className="mb-1 flex items-center gap-2">
@@ -117,6 +161,18 @@ export function MobileSettingsProfilePanel() {
           <select value={form.timezone} onChange={(e) => setForm({ ...form, timezone: e.target.value })} className="min-h-[44px] rounded-lg border border-[rgba(15,17,23,0.12)] px-3 text-sm">
             <option value="Asia/Kolkata">Asia/Kolkata</option>
             <option value="UTC">UTC</option>
+          </select>
+        </label>
+        <label className="flex flex-col gap-1 text-xs">
+          <span className="font-medium text-[#5F6B73]">Availability</span>
+          <select
+            value={form.availability}
+            onChange={(e) => setForm({ ...form, availability: e.target.value as typeof form.availability })}
+            className="min-h-[44px] rounded-lg border border-[rgba(15,17,23,0.12)] px-3 text-sm"
+          >
+            <option value="public">Public</option>
+            <option value="private">Private</option>
+            <option value="inactive">Inactive</option>
           </select>
         </label>
         <button onClick={() => void saveProfile()} className="mt-1 flex min-h-[44px] items-center justify-center gap-2 rounded-lg bg-[#8B1E2D] px-3 text-xs font-semibold text-white hover:bg-[#7a1a27]">

@@ -13,12 +13,15 @@ const state = {
   organization: undefined as { id: string; name: string; slug: string; sector: string; createdAt: string; updatedAt: string } | undefined,
   projects: [] as Array<{ id: string }>,
   documents: [] as Array<{ id: string }>,
+  // MN-8 (2026-08-24): mutable so the logo-upload RBAC gating tests can exercise a non-admin role
+  // without duplicating this whole mock setup in a second file.
+  role: "Organization Admin",
 };
 
 const getByIdMock = vi.fn(async () => state.organization);
 
 vi.mock("../../auth/AuthProvider", () => ({
-  useAuth: () => ({ session: { user: { id: "user-1", organizationId: "org-1", role: "Organization Admin" }, status: "authenticated" } }),
+  useAuth: () => ({ session: { user: { id: "user-1", organizationId: "org-1", role: state.role }, status: "authenticated" } }),
 }));
 
 vi.mock("../../repositories/supabaseEnterpriseRepositories", () => ({
@@ -45,6 +48,7 @@ describe("Settings Organization panel (TP-01 tenant/demo leakage fix)", () => {
     state.organization = undefined;
     state.projects = [];
     state.documents = [];
+    state.role = "Organization Admin";
     getByIdMock.mockClear();
   });
 
@@ -102,5 +106,42 @@ describe("Settings Organization panel (TP-01 tenant/demo leakage fix)", () => {
       expect(screen.getByText("Real Org")).toBeInTheDocument();
     });
     expect(getByIdMock).toHaveBeenCalledWith(expect.objectContaining({ organizationId: "org-1" }), "org-1");
+  });
+
+  // MN-8 (2026-08-24): logo upload gated to Super Admin/Organization Admin via
+  // canManageOrganization -- these lock in that a non-admin sees a disabled control with the
+  // reason, and never renders the logo control at all in demo mode.
+  it("enables the logo upload control for an Organization Admin", async () => {
+    setDemoModeEnabled(false);
+    state.organization = { id: "org-1", name: "Real Org", slug: "real-org", sector: "enterprise", createdAt: "2026-07-24T00:00:00.000Z", updatedAt: "2026-07-24T00:00:00.000Z" };
+    setOrganizationTab();
+
+    render(<SettingsSection />);
+
+    await waitFor(() => expect(screen.getByText("Change logo")).toBeInTheDocument());
+    expect(screen.getByText("Change logo").closest("button")).not.toBeDisabled();
+  });
+
+  it("disables the logo upload control, with the reason shown, for a non-admin role", async () => {
+    setDemoModeEnabled(false);
+    state.role = "Employee";
+    state.organization = { id: "org-1", name: "Real Org", slug: "real-org", sector: "enterprise", createdAt: "2026-07-24T00:00:00.000Z", updatedAt: "2026-07-24T00:00:00.000Z" };
+    setOrganizationTab();
+
+    render(<SettingsSection />);
+
+    await waitFor(() => expect(screen.getByText("Change logo")).toBeInTheDocument());
+    expect(screen.getByText("Change logo").closest("button")).toBeDisabled();
+    expect(screen.getByText("Only Super Admin and Organization Admin can update the organization logo.")).toBeInTheDocument();
+  });
+
+  it("does not render the logo upload control in demo/Investor Preview mode", async () => {
+    setDemoModeEnabled(true);
+    setOrganizationTab();
+
+    render(<SettingsSection />);
+
+    await waitFor(() => expect(screen.getByText("North East Health Mission")).toBeInTheDocument());
+    expect(screen.queryByText("Change logo")).not.toBeInTheDocument();
   });
 });
