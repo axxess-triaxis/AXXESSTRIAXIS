@@ -47,8 +47,16 @@ export function MobileAskAiScreen({ onCreateTaskFromAnswer }: MobileAskAiScreenP
     }
   }
 
+  // MN-6 (2026-08-24): guard against firing on a genuine no-match RAG response -- confirmed by
+  // real-device screenshot evidence (docs/readiness/ANDROID_BETA_0_9_V3_WALKTHROUGH_TRIAGE_
+  // 2026_08_24.md, item 2) that asking "Hi" produced a 0%-confidence, zero-source non-answer, and
+  // tapping "Create task from this answer" on it opened the New Task form pre-filled with the
+  // rejection text itself as the task title. Zero confidence and zero sources together mean the RAG
+  // pipeline found nothing to act on -- there is no real answer content worth turning into a task.
+  const isNoMatchAnswer = Boolean(answer) && answer!.confidence === 0 && answer!.sources.length === 0;
+
   function handleCreateTask() {
-    if (!answer) return;
+    if (!answer || isNoMatchAnswer) return;
     writeAgenticDraft({
       actionType: "task",
       secondStep: "create",
@@ -114,9 +122,13 @@ export function MobileAskAiScreen({ onCreateTaskFromAnswer }: MobileAskAiScreenP
             </div>
           )}
 
-          <MobileActionButton variant="secondary" onClick={handleCreateTask} className="w-full justify-center">
-            Create task from this answer
-          </MobileActionButton>
+          {isNoMatchAnswer ? (
+            <p className="text-xs text-[#5F6B73]">No matching source was found, so there&apos;s no answer content to turn into a task. Try rephrasing your question.</p>
+          ) : (
+            <MobileActionButton variant="secondary" onClick={handleCreateTask} className="w-full justify-center">
+              Create task from this answer
+            </MobileActionButton>
+          )}
         </div>
       )}
     </div>
