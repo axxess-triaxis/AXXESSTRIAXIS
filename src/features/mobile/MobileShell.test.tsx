@@ -17,6 +17,7 @@ vi.mock("./screens/MobileApprovalsScreen", () => ({ MobileApprovalsScreen: () =>
 vi.mock("./screens/MobileKnowledgeScreen", () => ({ MobileKnowledgeScreen: () => <div>native knowledge screen</div> }));
 vi.mock("./screens/MobileAskAiScreen", () => ({ MobileAskAiScreen: () => <div>native ask ai screen</div> }));
 vi.mock("./screens/MobileStakeholdersScreen", () => ({ MobileStakeholdersScreen: () => <div>native stakeholders screen</div> }));
+vi.mock("./screens/MobileSettingsScreen", () => ({ MobileSettingsScreen: () => <div>native settings screen</div> }));
 
 import { MobileShell } from "./MobileShell";
 
@@ -65,14 +66,19 @@ describe("MobileShell", () => {
     expect(screen.queryByText("desktop settings content")).not.toBeInTheDocument();
   });
 
-  it("still falls back to the reused desktop `children` for the one registry entry with no native MN-2 screen (Settings)", () => {
+  // MN-7 (2026-08-24): Settings used to be the sole registry entry with no native screen, falling
+  // back to the reused desktop `children`. MobileSettingsScreen replaced that fallback -- this test
+  // now asserts the opposite of what it asserted before MN-7, matching every other MN-2 screen's
+  // own "renders native, not children" test above.
+  it("renders the real native Settings screen (not the reused desktop children) now that MN-7 has replaced the fallback", () => {
     render(
       <MobileShell active="settings" user={user} onSelectSection={vi.fn()} onLogout={vi.fn()}>
         <div>desktop settings content</div>
       </MobileShell>,
     );
 
-    expect(screen.getByText("desktop settings content")).toBeInTheDocument();
+    expect(screen.getByText("native settings screen")).toBeInTheDocument();
+    expect(screen.queryByText("desktop settings content")).not.toBeInTheDocument();
   });
 
   it("falls back to the local Home panel instead of rendering children when `active` has no mobile mapping (e.g. the forbidden Full Executive Dashboard)", () => {

@@ -5,7 +5,7 @@ import { ClipboardCheck, FileText, CalendarDays, CheckSquare } from "lucide-reac
 import type { Document, Meeting, Task } from "../../domain";
 import { applicationServices } from "../../providers/serviceProvider";
 import { LoadingState } from "../../components/feedback/LoadingState";
-import { mobileFeatureRegistry, type MobileFeatureId } from "./mobileFeatureRegistry";
+import type { MobileFeatureId } from "./mobileFeatureRegistry";
 import { MobileActionButton } from "./MobileActionButton";
 import { useMobileTenantScope } from "./useMobileTenantScope";
 
@@ -21,9 +21,14 @@ type ApprovalRequestSummary = { status: string };
 // the promised follow-up: today's open tasks, pending approvals, the next meeting, and the most
 // recently updated document, each fetched from the same tenant-scoped repositories/routes every
 // other mobile screen uses -- no fabricated counts, no demo leakage.
+//
+// MN-7 (2026-08-24): the "Quick links" grid that used to render below summaryCards has been
+// removed -- it was a second navigation menu duplicating 100% of the bottom tab bar and More
+// panel (docs/readiness/ANDROID_BETA_0_9_V3_WALKTHROUGH_TRIAGE_2026_08_24.md, item 6). The
+// summaryCards above already are the real "what needs my attention today" content that finding
+// asked for; no new data was needed, only removing the redundant grid.
 export function MobileCommandHome({ displayName, onNavigate }: MobileCommandHomeProps) {
   const scope = useMobileTenantScope();
-  const quickLinks = mobileFeatureRegistry.filter((entry) => entry.id !== "home");
 
   const [loading, setLoading] = useState(true);
   const [todaysTasks, setTodaysTasks] = useState<Task[]>([]);
@@ -105,22 +110,6 @@ export function MobileCommandHome({ displayName, onNavigate }: MobileCommandHome
           ))}
         </div>
       )}
-
-      <div>
-        <h2 className="mb-2 px-1 text-xs font-semibold uppercase tracking-wide text-[#5F6B73]">Quick links</h2>
-        <div className="grid grid-cols-2 gap-2.5">
-          {quickLinks.map((entry) => (
-            <button
-              key={entry.id}
-              onClick={() => onNavigate(entry.id)}
-              className="flex min-h-[44px] flex-col items-start gap-1.5 rounded-xl border border-[rgba(15,17,23,0.08)] bg-white px-3.5 py-3 text-left transition-colors hover:bg-[#F8F9FA]"
-            >
-              <entry.icon size={18} className="text-[#8B1E2D]" />
-              <span className="text-xs font-semibold text-[#0F1117]">{entry.label}</span>
-            </button>
-          ))}
-        </div>
-      </div>
 
       <MobileActionButton variant="secondary" onClick={() => onNavigate("ai-workspace")} className="w-full">
         Ask AXXESS a question
