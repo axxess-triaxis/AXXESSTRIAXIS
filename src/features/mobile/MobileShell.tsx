@@ -22,6 +22,14 @@ type MobileShellProps = {
   active: NavSection;
   user: UserContext;
   onSelectSection: (section: NavSection) => void;
+  // MN-6 (2026-08-24): the real sign-out action, threaded down to MobileMorePanel. Before this,
+  // MobileShell had no way to sign out at all -- MN-1 replaced AppShell/Sidebar/TopBar entirely,
+  // and the only sign-out control in this codebase lived inside TopBar.tsx, so removing that chrome
+  // silently removed the only reachable logout path from the native app too. Confirmed via the
+  // founder-relayed real-device walkthrough (docs/readiness/ANDROID_BETA_0_9_V3_WALKTHROUGH_
+  // TRIAGE_2026_08_24.md, item 1) and by grepping this codebase for sign-out controls outside
+  // TopBar.tsx (none exist).
+  onLogout: () => void;
   // MN-2 (2026-08-23): only used as a fallback for registry entries with no dedicated native
   // screen below (currently just "settings") -- every other primaryTab/more-tab entry now renders
   // its own real MN-2 screen instead of the reused desktop ActiveSection. See the roadmap's own
@@ -55,7 +63,7 @@ export function MobileShell(props: MobileShellProps) {
   );
 }
 
-function MobileShellContent({ active, user, onSelectSection, children }: MobileShellProps) {
+function MobileShellContent({ active, user, onSelectSection, onLogout, children }: MobileShellProps) {
   // Cold launch: default to Home unless `active` already resolves to an allowed section (e.g. a
   // direct link into /tasks or /approvals) -- in that case respect it instead of overriding.
   const [localOverride, setLocalOverride] = useState<"home" | "more" | null>(() => (mobileFeatureForSection(active) ? null : "home"));
@@ -109,7 +117,7 @@ function MobileShellContent({ active, user, onSelectSection, children }: MobileS
 
       <main className="flex-1 overflow-y-auto">
         {activeTabId === "home" && <MobileCommandHome displayName={user.displayName} onNavigate={handleSelect} />}
-        {activeTabId === "more" && <MobileMorePanel onNavigate={handleSelect} />}
+        {activeTabId === "more" && <MobileMorePanel onNavigate={handleSelect} onLogout={onLogout} />}
         {isAskAi && <MobileAskAiScreen onCreateTaskFromAnswer={() => handleSelect("tasks")} />}
         {showRoutedContent && !isAskAi && NativeScreen && <NativeScreen />}
         {showRoutedContent && !isAskAi && !NativeScreen && children}
