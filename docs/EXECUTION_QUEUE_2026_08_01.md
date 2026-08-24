@@ -68,7 +68,7 @@ No validated, production-tested SMTP delivery pipeline exists. The provider was 
 | A-05 | Password reset email never arrives | Code-only, 65% confidence |
 | A-08 | Invitation emails arrive ~50% of the time | ~50% resolved; SMTP trigger/delivery chain remains |
 | A-35 | "Submit Feedback" has no destination inbox | Still not routing to mail |
-| A-65 | Feedback-to-inbox (`triaxisgrp@gmail.com`) delivery unconfirmed | Unconfirmed |
+| A-65 | Feedback-to-inbox delivery unconfirmed | Unconfirmed |
 | A-74 | Password recovery broken post-provider-switch | Blocked by provider switch |
 
 ### Acceptance Criteria for This Epic
