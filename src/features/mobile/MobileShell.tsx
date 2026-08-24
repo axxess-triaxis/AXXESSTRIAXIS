@@ -13,6 +13,7 @@ import { MobileApprovalsScreen } from "./screens/MobileApprovalsScreen";
 import { MobileKnowledgeScreen } from "./screens/MobileKnowledgeScreen";
 import { MobileAskAiScreen } from "./screens/MobileAskAiScreen";
 import { MobileStakeholdersScreen } from "./screens/MobileStakeholdersScreen";
+import { MobileSettingsScreen } from "./screens/MobileSettingsScreen";
 import { MobileBackHandlerProvider } from "./MobileBackHandlerContext";
 import { useMobileBackButton } from "./useMobileBackButton";
 import { useMobileNetworkStatus } from "./useMobileNetworkStatus";
@@ -30,11 +31,11 @@ type MobileShellProps = {
   // TRIAGE_2026_08_24.md, item 1) and by grepping this codebase for sign-out controls outside
   // TopBar.tsx (none exist).
   onLogout: () => void;
-  // MN-2 (2026-08-23): only used as a fallback for registry entries with no dedicated native
-  // screen below (currently just "settings") -- every other primaryTab/more-tab entry now renders
-  // its own real MN-2 screen instead of the reused desktop ActiveSection. See the roadmap's own
-  // "MN-2 -- Core Mobile Workflows" section: this is the planned replacement of MN-1's transitional
-  // reuse, not a parallel path.
+  // MN-2 (2026-08-23) / MN-7 (2026-08-24): only used as a fallback for a registry entry with no
+  // dedicated native screen -- as of MN-7, every entry has one (the last remaining fallback,
+  // "settings", was replaced by MobileSettingsScreen), so this prop is currently unreachable in
+  // practice but kept as the established seam for any future registry entry added without its own
+  // native screen yet, matching this shell's original MN-1/MN-2 migration pattern.
   children: ReactNode;
 };
 
@@ -92,11 +93,12 @@ function MobileShellContent({ active, user, onSelectSection, onLogout, children 
 
   const title = activeTabId === "home" ? "Today" : activeTabId === "more" ? "More" : matchedEntry?.label ?? "AXXESS";
 
-  // MN-2 (2026-08-23): every registry entry maps to its own real native screen now (not the reused
-  // desktop ActiveSection) -- "settings" is the sole remaining exception, since it was never in
-  // MN-2's explicit scope and its desktop content (account/security preferences) has no native-only
-  // requirement that would justify a rebuild this sprint. "ai-workspace" needs a prop (the
-  // create-task-from-answer handoff), so it renders via its own branch rather than the generic
+  // MN-2 (2026-08-23) / MN-7 (2026-08-24): every registry entry now maps to its own real native
+  // screen -- "settings" was the sole remaining exception (reused the desktop SettingsSection via
+  // `children`) until MN-7 replaced it with MobileSettingsScreen, closing the founder-flagged
+  // "reads as ported-web" / "wastes vertical space" findings (docs/readiness/
+  // ANDROID_BETA_0_9_V3_WALKTHROUGH_TRIAGE_2026_08_24.md, items 5/9). "ai-workspace" needs a prop
+  // (the create-task-from-answer handoff), so it renders via its own branch rather than the generic
   // no-props component map the rest share.
   const nativeScreens: Partial<Record<MobileFeatureId, ComponentType>> = {
     tasks: MobileTasksScreen,
@@ -106,6 +108,7 @@ function MobileShellContent({ active, user, onSelectSection, onLogout, children 
     approvals: MobileApprovalsScreen,
     knowledge: MobileKnowledgeScreen,
     stakeholders: MobileStakeholdersScreen,
+    settings: MobileSettingsScreen,
   };
   const NativeScreen = matchedEntry ? nativeScreens[matchedEntry.id] : undefined;
   const isAskAi = showRoutedContent && matchedEntry?.id === "ai-workspace";
