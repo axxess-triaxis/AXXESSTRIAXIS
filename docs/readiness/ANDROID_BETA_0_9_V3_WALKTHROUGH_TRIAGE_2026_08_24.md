@@ -135,9 +135,12 @@ not a cosmetic one — this would need real schema work (a presence/availability
 storage path on the user record), not just a UI addition.
 **RBAC scope, founder-specified**: unlike the logo (item 13), the user display picture itself
 should be available to **every role** — every user sets their own DP regardless of Super Admin /
-Org Admin / Executive / Manager / Employee / Guest standing. Status/availability was raised
-alongside DP but the founder's RBAC note addressed DP specifically; whether status/availability
-carries the same all-roles scope is assumed but not yet explicitly confirmed.
+Org Admin / Executive / Manager / Employee / Guest standing.
+**Status/availability values, founder-specified**: three states — **Public**, **Private**,
+**Inactive**. Not yet defined by the founder: the exact semantics of each (e.g. whether "Private"
+hides the user from CRM/stakeholder-facing views versus just hiding a status indicator, whether
+"Inactive" is user-set or system-inferred from session activity) — needs that clarification before
+this can be scoped as real schema/enum work, but the three-value shape itself is now settled.
 
 ## Sequencing recommendation
 
