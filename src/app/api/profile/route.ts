@@ -9,6 +9,8 @@ async function profileInput(request: Request) {
     displayName: body.displayName,
     email: body.email,
     avatarInitials: body.avatarInitials,
+    avatarPath: body.avatarPath,
+    availability: body.availability,
     department: body.department,
     title: body.title,
     timezone: body.timezone,
@@ -36,7 +38,7 @@ export async function PATCH(request: Request) {
       resourceType: "user",
       resourceId: user.id,
       category: "user-management",
-      metadata: { fields: ["displayName", "email", "avatarInitials", "department", "title", "timezone"] },
+      metadata: { fields: ["displayName", "email", "avatarInitials", "avatarPath", "availability", "department", "title", "timezone"] },
     }).catch(() => undefined);
     return NextResponse.json({ user });
   } catch (error) {

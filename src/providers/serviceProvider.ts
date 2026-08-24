@@ -221,6 +221,10 @@ const resilientRepositories: RepositoryServices = {
       () => liveRepositories.organizationsRepository.getById(scope, id),
       () => emptyRepositories.organizationsRepository.getById(scope, id),
     ),
+    update: (scope, id, input) => withResilientFallback(
+      () => liveRepositories.organizationsRepository.update(scope, id, input),
+      () => emptyRepositories.organizationsRepository.update(scope, id, input),
+    ),
   },
   usersRepository: {
     listByOrganization: (scope, query) => withResilientFallback(
