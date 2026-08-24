@@ -66,4 +66,33 @@ describe("MobileAskAiScreen (MN-2)", () => {
     expect(onCreateTaskFromAnswer).toHaveBeenCalled();
     expect(readAndClearAgenticDraft("task")?.summary).toBe("Escalate the referral SLA variance.");
   });
+
+  // MN-6 (2026-08-24): real-device evidence (docs/readiness/ANDROID_BETA_0_9_V3_WALKTHROUGH_
+  // TRIAGE_2026_08_24.md, item 2) showed asking "Hi" returns a 0%-confidence, zero-source
+  // non-answer, and tapping "Create task from this answer" on it opened the New Task form
+  // pre-filled with the rejection text as the task title. This proves that path is now blocked.
+  it("hides 'Create task from this answer' and does not write a draft for a genuine no-match (0% confidence, no sources)", async () => {
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        answer: "No authorized institutional source matched this question.",
+        confidence: 0,
+        humanReviewRequired: true,
+        sources: [],
+        keywords: [],
+        rationale: "No source matched.",
+      }),
+    });
+    const onCreateTaskFromAnswer = vi.fn();
+
+    render(<MobileAskAiScreen onCreateTaskFromAnswer={onCreateTaskFromAnswer} />);
+    fireEvent.change(screen.getByPlaceholderText("Ask AXXESS a question…"), { target: { value: "Hi" } });
+    fireEvent.click(screen.getByLabelText("Send question"));
+
+    await waitFor(() => expect(screen.getByText("No authorized institutional source matched this question.")).toBeInTheDocument());
+
+    expect(screen.queryByText("Create task from this answer")).not.toBeInTheDocument();
+    expect(onCreateTaskFromAnswer).not.toHaveBeenCalled();
+    expect(readAndClearAgenticDraft("task")).toBeNull();
+  });
 });

@@ -185,7 +185,7 @@ export default function App() {
   // RBAC/access check is unchanged and still applies, since that boundary must never weaken.
   if (isNativeMobile) {
     return (
-      <MobileShell active={active} user={currentUser} onSelectSection={handleSelectSection}>
+      <MobileShell active={active} user={currentUser} onSelectSection={handleSelectSection} onLogout={handleLogout}>
         <RouteBoundary route={activeRoute} hasAccess={hasRouteAccess}>
           <ActiveSection />
         </RouteBoundary>
