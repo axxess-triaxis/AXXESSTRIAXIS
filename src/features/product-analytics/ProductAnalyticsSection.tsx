@@ -82,9 +82,9 @@ const feedbackTypeTone: Record<BetaFeedback["feedbackType"], string> = {
 // in front of investors. Gated behind isDemoModeEnabled(); real tenants always see their true
 // live count and list, including an honest zero.
 const demoFeedbackUsers: User[] = [
-  { id: "demo-fb-user-1", organizationId: "demo-org", email: "priya.menon@example.com", displayName: "Priya Menon", avatarInitials: "PM", role: "Organization Admin", roleIds: [], status: "active", createdAt: "2026-07-18T09:00:00Z", updatedAt: "2026-07-18T09:00:00Z" },
-  { id: "demo-fb-user-2", organizationId: "demo-org", email: "arjun.desai@example.com", displayName: "Arjun Desai", avatarInitials: "AD", role: "Employee", roleIds: [], status: "active", createdAt: "2026-07-20T09:00:00Z", updatedAt: "2026-07-20T09:00:00Z" },
-  { id: "demo-fb-user-3", organizationId: "demo-org", email: "leela.narayan@example.com", displayName: "Leela Narayan", avatarInitials: "LN", role: "Employee", roleIds: [], status: "active", createdAt: "2026-07-22T09:00:00Z", updatedAt: "2026-07-22T09:00:00Z" },
+  { id: "demo-fb-user-1", organizationId: "demo-org", email: "priya.menon@example.com", displayName: "Priya Menon", avatarInitials: "PM", availability: "public", role: "Organization Admin", roleIds: [], status: "active", createdAt: "2026-07-18T09:00:00Z", updatedAt: "2026-07-18T09:00:00Z" },
+  { id: "demo-fb-user-2", organizationId: "demo-org", email: "arjun.desai@example.com", displayName: "Arjun Desai", avatarInitials: "AD", availability: "public", role: "Employee", roleIds: [], status: "active", createdAt: "2026-07-20T09:00:00Z", updatedAt: "2026-07-20T09:00:00Z" },
+  { id: "demo-fb-user-3", organizationId: "demo-org", email: "leela.narayan@example.com", displayName: "Leela Narayan", avatarInitials: "LN", availability: "public", role: "Employee", roleIds: [], status: "active", createdAt: "2026-07-22T09:00:00Z", updatedAt: "2026-07-22T09:00:00Z" },
 ];
 
 const demoBetaFeedback: BetaFeedback[] = [

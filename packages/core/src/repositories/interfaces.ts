@@ -72,6 +72,11 @@ export interface MutableTenantRepository<TResource extends { id: EntityId; organ
 export interface OrganizationsRepository {
   list(scope: TenantScope, query?: RepositoryQuery): Promise<Organization[]>;
   getById(scope: TenantScope, id: EntityId): Promise<Organization | undefined>;
+  // MN-8 (2026-08-24): a narrow, dedicated input type rather than TenantUpdateInput<Organization> --
+  // Organization has no organizationId field (its own `id` IS the tenant id), so it cannot satisfy
+  // TenantUpdateInput's generic bound (TResource extends { id, organizationId }). Callers must
+  // verify id === scope.organizationId themselves (e.g. via canManageOrganization) before calling.
+  update(scope: TenantScope, id: EntityId, input: Partial<Pick<Organization, "logoPath">>): Promise<Organization>;
 }
 
 export interface UsersRepository {

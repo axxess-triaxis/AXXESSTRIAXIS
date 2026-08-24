@@ -2,8 +2,8 @@ import { render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 const state = {
-  user: { id: "user-1", organizationId: "org-1", role: "Employee" as const },
-  organization: undefined as { id: string; name: string } | undefined,
+  user: { id: "user-1", organizationId: "org-1", role: "Employee" as string },
+  organization: undefined as { id: string; name: string; logoPath?: string } | undefined,
   projects: [] as { id: string }[],
   documents: [] as { id: string }[],
 };
@@ -34,6 +34,7 @@ describe("MobileSettingsOrganizationPanel (MN-7)", () => {
     state.organization = undefined;
     state.projects = [];
     state.documents = [];
+    state.user = { id: "user-1", organizationId: "org-1", role: "Employee" };
   });
 
   it("shows an honest loading/zero state before real org data resolves", async () => {
@@ -61,5 +62,23 @@ describe("MobileSettingsOrganizationPanel (MN-7)", () => {
     await waitFor(() => expect(screen.getByText("Live Tenant")).toBeInTheDocument());
     expect(screen.getByText("Production")).toBeInTheDocument();
     expect(screen.queryByText("Investor Preview")).not.toBeInTheDocument();
+  });
+
+  // MN-8 (2026-08-24): logo upload gated to Super Admin/Organization Admin via
+  // canManageOrganization, same as desktop OrganizationPanel.test.tsx's own equivalent tests.
+  it("disables the logo upload control, with the reason shown, for a non-admin role (default Employee)", async () => {
+    state.organization = { id: "org-1", name: "Real Org" };
+    render(<MobileSettingsOrganizationPanel />);
+    await waitFor(() => expect(screen.getByText("Change logo")).toBeInTheDocument());
+    expect(screen.getByText("Change logo").closest("button")).toBeDisabled();
+    expect(screen.getByText("Only Super Admin and Organization Admin can update the organization logo.")).toBeInTheDocument();
+  });
+
+  it("enables the logo upload control for an Organization Admin", async () => {
+    state.user = { id: "user-1", organizationId: "org-1", role: "Organization Admin" };
+    state.organization = { id: "org-1", name: "Real Org" };
+    render(<MobileSettingsOrganizationPanel />);
+    await waitFor(() => expect(screen.getByText("Change logo")).toBeInTheDocument());
+    expect(screen.getByText("Change logo").closest("button")).not.toBeDisabled();
   });
 });

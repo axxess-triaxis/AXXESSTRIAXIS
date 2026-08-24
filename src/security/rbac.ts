@@ -9,6 +9,13 @@ export type UserContext = {
   email?: string;
   displayName?: string;
   avatarInitials?: string;
+  // MN-8 (2026-08-24): Supabase Storage path in axxess-avatars, not a public URL. avatarInitials
+  // remains the fallback everywhere no DP is set.
+  avatarPath?: string;
+  // MN-8 (2026-08-24): self-reported label only -- no visibility/access-control logic anywhere
+  // reads this field, user-set manually, never inferred. Optional here (unlike the domain User
+  // type, where it's required) since not every code path constructing a UserContext has it yet.
+  availability?: "public" | "private" | "inactive";
   department?: string;
   title?: string;
   timezone?: string;

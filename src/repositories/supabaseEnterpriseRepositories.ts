@@ -89,6 +89,7 @@ type OrganizationRow = {
   name: string;
   slug: string;
   sector: Organization["sector"];
+  logo_path: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -99,6 +100,8 @@ type UserRow = {
   email: string;
   display_name: string;
   avatar_initials: string;
+  avatar_path: string | null;
+  availability: User["availability"];
   role: string;
   status: User["status"];
   department_name: string | null;
@@ -988,12 +991,44 @@ function userUpdateMutation(_scope: TenantScope, input: Record<string, unknown>)
   return compactMutation({
     display_name: input.displayName === undefined ? undefined : nullableString(input.displayName),
     avatar_initials: input.avatarInitials === undefined ? undefined : nullableString(input.avatarInitials),
+    avatar_path: input.avatarPath === undefined ? undefined : nullableString(input.avatarPath),
+    availability: input.availability,
     department_name: input.department === undefined ? undefined : nullableString(input.department),
     title: input.title === undefined ? undefined : nullableString(input.title),
     timezone: input.timezone === undefined ? undefined : nullableString(input.timezone),
     role: input.role,
     status: input.status,
   });
+}
+
+// MN-8 (2026-08-24): organizations has no organization_id column -- its own `id` IS the tenant id,
+// so it cannot satisfy updateResource's generic bound (TResource extends {id, organizationId}),
+// unlike every other resource updated through that helper. A small dedicated function, mirroring
+// updateResource's own body, avoids loosening that shared generic constraint for every other
+// resource just to accommodate this one outlier. The caller (the new logo route) MUST verify
+// id === scope.organizationId via canManageOrganization (src/security/rbac.ts) before ever calling
+// this -- the id=eq.<id> filter alone does not stop a cross-tenant write.
+function organizationUpdateMutation(_scope: TenantScope, input: Record<string, unknown>) {
+  return compactMutation({
+    logo_path: input.logoPath === undefined ? undefined : nullableString(input.logoPath),
+  });
+}
+
+async function updateOrganization(scope: TenantScope, id: EntityId, input: Record<string, unknown>): Promise<Organization> {
+  if (!scope.accessToken) return gatewayMutation<Organization>("organizations", "PATCH", input, id);
+
+  const params = new URLSearchParams();
+  params.set("id", `eq.${id}`);
+
+  const rows = await supabaseRest<OrganizationRow[]>("organizations", {
+    method: "PATCH",
+    accessToken: scope.accessToken,
+    query: params,
+    body: organizationUpdateMutation(scope, input),
+  });
+
+  if (!rows[0]) throw new Error("Updated organization record was not returned by Supabase.");
+  return organizationConfig.map(rows[0]);
 }
 
 function betaFeedbackMutation(scope: TenantScope, input: CreateBetaFeedbackInput) {
@@ -1012,7 +1047,7 @@ function betaFeedbackMutation(scope: TenantScope, input: CreateBetaFeedbackInput
 
 const organizationConfig: ResourceConfig<OrganizationRow, Organization> = {
   table: "organizations",
-  select: "id,name,slug,sector,created_at,updated_at",
+  select: "id,name,slug,sector,logo_path,created_at,updated_at",
   searchColumns: ["name", "slug"],
   defaultOrder: "name.asc",
   map: (row) => ({
@@ -1020,6 +1055,7 @@ const organizationConfig: ResourceConfig<OrganizationRow, Organization> = {
     name: row.name,
     slug: row.slug,
     sector: row.sector,
+    logoPath: row.logo_path ?? undefined,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   }),
@@ -1027,7 +1063,7 @@ const organizationConfig: ResourceConfig<OrganizationRow, Organization> = {
 
 const userConfig: ResourceConfig<UserRow, User> = {
   table: "users",
-  select: "id,organization_id,email,display_name,avatar_initials,role,status,department_name,title,timezone,created_at,updated_at",
+  select: "id,organization_id,email,display_name,avatar_initials,avatar_path,availability,role,status,department_name,title,timezone,created_at,updated_at",
   searchColumns: ["email", "display_name"],
   defaultOrder: "display_name.asc",
   map: (row) => ({
@@ -1036,6 +1072,8 @@ const userConfig: ResourceConfig<UserRow, User> = {
     email: row.email,
     displayName: row.display_name,
     avatarInitials: row.avatar_initials,
+    avatarPath: row.avatar_path ?? undefined,
+    availability: row.availability,
     role: normalizeRole(row.role),
     roleIds: [],
     department: row.department_name ?? undefined,
@@ -1455,6 +1493,7 @@ function createMutableTenantRepository<TRow, TResource extends { id: EntityId; o
 export const organizationsRepository: OrganizationsRepository = {
   list: (scope, query) => listResource("organizations", organizationConfig, scope, query),
   getById: (scope, id) => getResourceById("organizations", organizationConfig, scope, id),
+  update: (scope, id, input) => updateOrganization(scope, id, input as Record<string, unknown>),
 };
 
 export const usersRepository: UsersRepository = {

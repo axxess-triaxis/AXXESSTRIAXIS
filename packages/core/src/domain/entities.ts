@@ -30,6 +30,10 @@ export interface Organization {
   name: string;
   slug: string;
   sector: "government" | "enterprise" | "healthcare" | "ngo" | "consulting" | "other";
+  // MN-8 (2026-08-24): Supabase Storage path in the axxess-avatars bucket, not a public URL --
+  // mirrors Document.storagePath below. Write gated to Super Admin/Organization Admin via
+  // canManageOrganization (src/security/rbac.ts).
+  logoPath?: string;
   createdAt: ISODateTime;
   updatedAt: ISODateTime;
 }
@@ -54,6 +58,14 @@ export interface User {
   email: string;
   displayName: string;
   avatarInitials: string;
+  // MN-8 (2026-08-24): Supabase Storage path in the axxess-avatars bucket, not a public URL --
+  // mirrors Document.storagePath below. avatarInitials remains the fallback everywhere no DP is set.
+  avatarPath?: string;
+  // MN-8 (2026-08-24): self-reported label only -- no visibility/access-control logic anywhere in
+  // this app reads this field, and it is user-set manually, never inferred from activity/session
+  // data (both founder-confirmed scope decisions). Deliberately a distinct field from `status`
+  // below, which already means account lifecycle (active/invited/suspended), not presence.
+  availability: "public" | "private" | "inactive";
   department?: string;
   title?: string;
   timezone?: string;

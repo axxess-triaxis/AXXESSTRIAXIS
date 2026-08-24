@@ -182,6 +182,18 @@ export const demoOrganizationsRepository: OrganizationsRepository = {
   async getById(scope, id) {
     return clone(store.organizations.find((row) => row.id === scope.organizationId && row.id === id));
   },
+  // MN-8 (2026-08-24): unreachable from the real UI today (the logo-upload control is never
+  // rendered in demo/Investor Preview mode -- see MobileSettingsOrganizationPanel.tsx/
+  // OrganizationPanel's demoActive branch), but implemented for real rather than throwing, matching
+  // this file's own demoUsersRepository.update pattern and keeping this repository's contract
+  // honest for any future demo-mode caller.
+  async update(scope, id, input) {
+    const existing = store.organizations.find((row) => row.id === scope.organizationId && row.id === id);
+    if (!existing) throw new Error(`Demo organization not found: ${id}`);
+    const updated = { ...existing, ...input, id, updatedAt: now() };
+    store = { ...store, organizations: store.organizations.map((row) => row.id === id ? updated : row) };
+    return clone(updated);
+  },
 };
 
 export const demoUsersRepository: UsersRepository = {
