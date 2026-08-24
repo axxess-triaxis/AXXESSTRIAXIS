@@ -1,11 +1,11 @@
 # Android Beta 0.9 — First Internal Tester Feedback (Ritashree Mahanta)
 
 **Date:** 2026-08-23. **Source:** 17 screenshots (`attachments (2).zip`, founder-forwarded),
-sent by Ritashree Mahanta (`ritashreebsc@gmail.com`) after installing AXXESS TRIaxis Android Beta
-0.9 as an internal tester — the first real device walkthrough of the Android release documented in
-`ANDROID_BETA_0_9_RELEASE_CLOSEOUT_2026_08_22.md`. Screenshots visually reviewed directly (not OCR
-— image content, not text). Personal identifying details beyond the tester's name/email already
-shared by the founder are not reproduced here.
+sent by Ritashree Mahanta (Co-Founder, Vertical Head & COO, Triaxis Ventures/AXXESS TRIaxis) after
+installing AXXESS TRIaxis Android Beta 0.9 as an internal tester — the first real device walkthrough
+of the Android release documented in `ANDROID_BETA_0_9_RELEASE_CLOSEOUT_2026_08_22.md`. Screenshots
+visually reviewed directly (not OCR — image content, not text). Personal identifying details beyond
+the tester's name/role are not reproduced here — this repo is public.
 
 ## What the screenshots show
 
