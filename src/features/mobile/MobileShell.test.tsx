@@ -27,7 +27,7 @@ function tabBar() {
 describe("MobileShell", () => {
   it("renders the bottom tab bar with every primary tab plus More", () => {
     render(
-      <MobileShell active="tasks" user={user} onSelectSection={vi.fn()}>
+      <MobileShell active="tasks" user={user} onSelectSection={vi.fn()} onLogout={vi.fn()}>
         <div>desktop settings content</div>
       </MobileShell>,
     );
@@ -41,7 +41,7 @@ describe("MobileShell", () => {
 
   it("does not render X0's desktop shell chrome (Sidebar/TopBar) anywhere", () => {
     render(
-      <MobileShell active="tasks" user={user} onSelectSection={vi.fn()}>
+      <MobileShell active="tasks" user={user} onSelectSection={vi.fn()} onLogout={vi.fn()}>
         <div>desktop settings content</div>
       </MobileShell>,
     );
@@ -56,7 +56,7 @@ describe("MobileShell", () => {
 
   it("renders a real native MN-2 screen (not the reused desktop ActiveSection) for a registry entry that has one, e.g. Tasks", () => {
     render(
-      <MobileShell active="tasks" user={user} onSelectSection={vi.fn()}>
+      <MobileShell active="tasks" user={user} onSelectSection={vi.fn()} onLogout={vi.fn()}>
         <div>desktop settings content</div>
       </MobileShell>,
     );
@@ -67,7 +67,7 @@ describe("MobileShell", () => {
 
   it("still falls back to the reused desktop `children` for the one registry entry with no native MN-2 screen (Settings)", () => {
     render(
-      <MobileShell active="settings" user={user} onSelectSection={vi.fn()}>
+      <MobileShell active="settings" user={user} onSelectSection={vi.fn()} onLogout={vi.fn()}>
         <div>desktop settings content</div>
       </MobileShell>,
     );
@@ -77,7 +77,7 @@ describe("MobileShell", () => {
 
   it("falls back to the local Home panel instead of rendering children when `active` has no mobile mapping (e.g. the forbidden Full Executive Dashboard)", () => {
     render(
-      <MobileShell active="dashboard" user={user} onSelectSection={vi.fn()}>
+      <MobileShell active="dashboard" user={user} onSelectSection={vi.fn()} onLogout={vi.fn()}>
         <div>forbidden dashboard content</div>
       </MobileShell>,
     );
@@ -89,7 +89,7 @@ describe("MobileShell", () => {
   it("navigates via onSelectSection when a primary tab is tapped", () => {
     const onSelectSection = vi.fn();
     render(
-      <MobileShell active="dashboard" user={user} onSelectSection={onSelectSection}>
+      <MobileShell active="dashboard" user={user} onSelectSection={onSelectSection} onLogout={vi.fn()}>
         <div>content</div>
       </MobileShell>,
     );
@@ -100,7 +100,7 @@ describe("MobileShell", () => {
 
   it("shows the More panel, listing the non-primary registry entries, when the More tab is tapped", () => {
     render(
-      <MobileShell active="dashboard" user={user} onSelectSection={vi.fn()}>
+      <MobileShell active="dashboard" user={user} onSelectSection={vi.fn()} onLogout={vi.fn()}>
         <div>content</div>
       </MobileShell>,
     );
@@ -108,5 +108,22 @@ describe("MobileShell", () => {
     fireEvent.click(within(tabBar()).getByText("More"));
     expect(screen.getByText("Meetings")).toBeInTheDocument();
     expect(screen.getByText("Settings")).toBeInTheDocument();
+  });
+
+  // MN-6 (2026-08-24): before this fix, there was no reachable sign-out control anywhere in the
+  // native shell -- MN-1 replaced TopBar.tsx (the only prior home of sign-out) and never carried
+  // the control forward. See docs/readiness/ANDROID_BETA_0_9_V3_WALKTHROUGH_TRIAGE_2026_08_24.md,
+  // item 1.
+  it("renders a real, callable Sign out control in the More panel", () => {
+    const onLogout = vi.fn();
+    render(
+      <MobileShell active="dashboard" user={user} onSelectSection={vi.fn()} onLogout={onLogout}>
+        <div>content</div>
+      </MobileShell>,
+    );
+
+    fireEvent.click(within(tabBar()).getByText("More"));
+    fireEvent.click(screen.getByLabelText("Sign out"));
+    expect(onLogout).toHaveBeenCalledTimes(1);
   });
 });
