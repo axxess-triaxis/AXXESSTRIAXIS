@@ -156,7 +156,7 @@
     "react-dnd": "16.0.1",
     "react-dnd-html5-backend": "16.0.1",
     "react-dom": "19.2.8",
-    "react-hook-form": "7.55.0",
+    "react-hook-form": "7.85.0",
     "react-popper": "2.3.0",
     "react-resizable-panels": "4.12.2",
     "react-responsive-masonry": "2.7.2",
