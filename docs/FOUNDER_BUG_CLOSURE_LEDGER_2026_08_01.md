@@ -30,7 +30,7 @@ Founder's own observation on review: "SMTP setup can resolve almost 7-8 standing
 | A-05 | Password reset email never arrives |
 | A-08 | Invitation emails arrive ~50% of the time |
 | A-35 | Feedback form submission has no destination inbox |
-| A-65 | Feedback-to-inbox (`triaxisgrp@gmail.com`) delivery unconfirmed |
+| A-65 | Feedback-to-inbox delivery unconfirmed |
 | A-74 | Password recovery broken post-provider-switch |
 
 Closing this once (a working, tested SMTP/Resend/Elastic Mail delivery path in production) is likely to close all five at once, rather than treating them as five separate investigations.
@@ -183,7 +183,7 @@ Format: **[ID] Description** — Root cause → Resolution → **Founder disposi
 
 56. **[A-64] / #64 Stale-session auto-continue security bug** — Third and final recurrence of Family 1. **Founder: CLOSED** (see Family 1 disposition).
 
-57. **[A-65] Feedback-to-inbox (`triaxisgrp@gmail.com`) delivery unconfirmed** — Part of SMTP cluster. **Founder: Blocked — SMTP dependency** (see callout above).
+57. **[A-65] Feedback-to-inbox delivery unconfirmed** — Part of SMTP cluster. **Founder: Blocked — SMTP dependency** (see callout above).
 
 58. **[A-66] Demo data leakage in Settings → Members tab** — Part of Family 2. **Founder: Resolved** (see Family 2 — 90–95%).
 
