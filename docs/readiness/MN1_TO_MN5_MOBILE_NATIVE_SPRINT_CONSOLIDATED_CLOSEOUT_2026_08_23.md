@@ -24,8 +24,8 @@ sprint arc, not something separate from it.
 
 **What is independently documented in this repository** (`docs/readiness/ANDROID_BETA_0_9_TESTER_
 FEEDBACK_RITASHREE_2026_08_23.md`, written earlier in this same session, before MN-1 began): a real
-internal tester, Ritashree Mahanta (co-founder, `ritashreebsc@gmail.com`, one of the 7 addresses on
-the Internal testing tester list), installed the Android beta on a real device and produced 17
+internal tester, Ritashree Mahanta (co-founder, one of the 7 people on the Internal testing tester
+list), installed the Android beta on a real device and produced 17
 screenshots covering a methodical walkthrough of essentially every top-level navigation item. The
 account used was real, tenant-scoped, non-demo data — **The North Eastern Policy, Development and
 Strategic Initiatives Collective (NEPDSI-C)**, Super Admin role. That document's own finding: no
