@@ -2,16 +2,19 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "../../auth/AuthProvider";
 import { ConfirmDialog } from "../../components/forms/ConfirmDialog";
 import { SelectField, TextField } from "../../components/forms/FormField";
+import { ImageUploadField } from "../../components/forms/ImageUploadField";
 import { InlineToast } from "../../components/forms/InlineToast";
 import { EmptyState } from "../../components/feedback/EmptyState";
 import { SectionHeader } from "../../components/layout/SectionHeader";
 import { Avatar } from "../../components/ui/Avatar";
 import { Card } from "../../components/ui/Card";
+import { buildPublicAvatarUrl } from "../../services/storage/profileMediaStorage";
 import { demoDatasetSummary } from "../../demo/demoDataset";
 import { getRuntimeMode, isDemoModeEnabled, isDemoModeForcedByEnv, resetDemoEnvironment, setDemoModeEnabled } from "../../demo/demoMode";
 import type { Invitation, RoleName, User } from "../../domain";
 import { applicationServices } from "../../providers/serviceProvider";
 import { tenantScopeFromUser } from "../../repositories/supabaseEnterpriseRepositories";
+import { canManageOrganization } from "../../security/rbac";
 import { markPostDemoSatisfactionPromptPending } from "../../hooks/usePostDemoSatisfactionPrompt";
 import { useAnalytics } from "../../services/analytics";
 import { isAgenticGateEnabled, setAgenticGateEnabled } from "../../services/agentic/agenticGateToggle";
@@ -225,6 +228,8 @@ function ProfilePanel() {
     displayName: user?.displayName ?? "",
     email: user?.email ?? "",
     avatarInitials: user?.avatarInitials ?? "",
+    avatarPath: user?.avatarPath ?? "",
+    availability: user?.availability ?? "public",
     department: user?.department ?? "Mission Secretariat",
     title: user?.title ?? "",
     timezone: user?.timezone ?? "Asia/Kolkata",
@@ -236,11 +241,23 @@ function ProfilePanel() {
       displayName: user.displayName ?? "",
       email: user.email ?? "",
       avatarInitials: user.avatarInitials ?? "",
+      avatarPath: user.avatarPath ?? "",
+      availability: user.availability ?? "public",
       department: user.department ?? "Mission Secretariat",
       title: user.title ?? "",
       timezone: user.timezone ?? "Asia/Kolkata",
     });
-  }, [user]);
+    // MN-8 (2026-08-24): depends on stable primitive fields, not the `user` object reference
+    // itself -- OrganizationPanel below already does this correctly (`user?.organizationId`).
+    // A `[user]` dependency re-fires this effect (and its unconditional setForm) on every render
+    // whose caller doesn't memoize the object it hands back as `session.user` -- AuthProvider's
+    // real context value happens to stay stable, but nothing guarantees every future caller will,
+    // and this was a real, reproducible infinite-render loop against a plain per-call
+    // `useAuth: () => ({ session: { user: {...} } })` test mock (the exact shape multiple existing
+    // test files already use), OOMing the test runner once this panel's render got heavier.
+    // See comment above -- intentionally depends on primitive fields, not the `user` object itself.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.displayName, user?.email, user?.avatarInitials, user?.avatarPath, user?.availability, user?.department, user?.title, user?.timezone]);
 
   if (!user) {
     return (
@@ -266,6 +283,29 @@ function ProfilePanel() {
     }
   };
 
+  // MN-8 (2026-08-24): reuses saveProfile's own updateProfile call (and its error/toast handling)
+  // with avatarPath merged in, rather than a second save path -- the file itself is already
+  // durably written to storage by the time this fires; this call just persists the pointer.
+  const uploadAvatar = async (file: File) => {
+    const query = new URLSearchParams({ fileName: file.name, mimeType: file.type, sizeBytes: String(file.size) });
+    const response = await fetch(`/api/profile-media/avatar?${query.toString()}`, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": file.type || "application/octet-stream" },
+      body: file,
+    });
+    const payload = await response.json().catch(() => ({})) as { error?: string; path?: string };
+    if (!response.ok || !payload.path) throw new Error(payload.error ?? "Avatar upload failed.");
+    return { path: payload.path };
+  };
+
+  const onAvatarUploaded = (path: string) => {
+    setForm((current) => ({ ...current, avatarPath: path }));
+    void updateProfile({ ...form, avatarPath: path })
+      .then(() => setToast({ tone: "success", message: "Profile photo updated." }))
+      .catch(() => setToast({ tone: "error", message: "Profile photo could not be saved." }));
+  };
+
   return (
     <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1fr_340px]">
       <div className="space-y-4">
@@ -282,6 +322,12 @@ function ProfilePanel() {
             <TextField label="Avatar Initials" value={form.avatarInitials} onChange={(event) => setForm({ ...form, avatarInitials: event.target.value })} />
             <SelectField label="Department" value={form.department} options={departmentOptions.map((department) => ({ value: department, label: department }))} onChange={(event) => setForm({ ...form, department: event.target.value })} />
             <SelectField label="Timezone" value={form.timezone} options={[{ value: "Asia/Kolkata", label: "Asia/Kolkata" }, { value: "UTC", label: "UTC" }]} onChange={(event) => setForm({ ...form, timezone: event.target.value })} />
+            <SelectField
+              label="Availability"
+              value={form.availability}
+              options={[{ value: "public", label: "Public" }, { value: "private", label: "Private" }, { value: "inactive", label: "Inactive" }]}
+              onChange={(event) => setForm({ ...form, availability: event.target.value as typeof form.availability })}
+            />
           </div>
           <button onClick={() => void saveProfile()} className="mt-4 flex items-center gap-2 rounded-lg bg-[#8B1E2D] px-3 py-2 text-xs font-semibold text-white hover:bg-[#7a1a27]">
             <Save size={13} /> Save Profile
@@ -292,12 +338,19 @@ function ProfilePanel() {
 
       <Card className="p-5">
         <div className="mb-4 flex items-center gap-3">
-          <Avatar initials={user.avatarInitials ?? "AR"} color="bg-[#8B1E2D]" />
+          <Avatar initials={user.avatarInitials ?? "AR"} imageUrl={buildPublicAvatarUrl(form.avatarPath)} color="bg-[#8B1E2D]" />
           <div>
             <h3 className="text-sm font-semibold text-[#0F1117]">{user.displayName}</h3>
             <p className="text-[11px] text-[#5F6B73]">{user.email}</p>
           </div>
         </div>
+        <ImageUploadField
+          label="photo"
+          fallback={<Avatar initials={user.avatarInitials ?? "AR"} imageUrl={buildPublicAvatarUrl(form.avatarPath)} size="md" color="bg-[#8B1E2D]" />}
+          onUpload={uploadAvatar}
+          onUploaded={onAvatarUploaded}
+          className="mb-4"
+        />
         <div className="space-y-2 text-xs">
           <div className="flex items-center justify-between rounded-lg bg-[#F8F9FA] p-3"><span className="text-[#5F6B73]">Role</span><span className="font-semibold text-[#0F1117]">{user.role}</span></div>
           <div className="flex items-center justify-between rounded-lg bg-[#F8F9FA] p-3"><span className="text-[#5F6B73]">Department</span><span className="font-semibold text-[#0F1117]">{user.department ?? form.department}</span></div>
@@ -315,8 +368,11 @@ function OrganizationPanel() {
   const demoActive = runtimeMode === "demo";
   const mode = demoActive ? "Investor Preview" : "Production";
   const scope = useMemo(() => user ? tenantScopeFromUser(user) : undefined, [user]);
-  const [liveOrg, setLiveOrg] = useState<{ name: string; projects: number; documents: number } | null>(null);
+  const [liveOrg, setLiveOrg] = useState<{ name: string; projects: number; documents: number; logoPath?: string } | null>(null);
   const [loading, setLoading] = useState(!demoActive);
+  // MN-8 (2026-08-24): reuses canManageOrganization -- the same already-hardened, same-tenant-only
+  // gate desktop/mobile Settings both use, not a new inline role check.
+  const canManageLogo = Boolean(user && canManageOrganization(user, user.organizationId));
 
   // TP-01 fix: this panel used to render demoDatasetSummary unconditionally, so a real tenant's
   // own Settings page showed the seeded investor-demo institution ("North East Health Mission")
@@ -337,7 +393,7 @@ function OrganizationPanel() {
     ])
       .then(([organization, projects, documents]) => {
         if (cancelled) return;
-        setLiveOrg({ name: organization?.name ?? "", projects: projects.length, documents: documents.length });
+        setLiveOrg({ name: organization?.name ?? "", projects: projects.length, documents: documents.length, logoPath: organization?.logoPath });
       })
       .catch(() => {
         if (!cancelled) setLiveOrg(null);
@@ -349,6 +405,26 @@ function OrganizationPanel() {
       cancelled = true;
     };
   }, [demoActive, scope, user?.organizationId]);
+
+  // MN-8 (2026-08-24): unlike updateProfile for users, there is no pre-existing "update
+  // organization" flow to reuse -- POST /api/organizations/logo persists logoPath server-side in
+  // the same request, so this just re-runs the effect above to pick up the fresh value.
+  const uploadLogo = async (file: File) => {
+    const query = new URLSearchParams({ fileName: file.name, mimeType: file.type, sizeBytes: String(file.size) });
+    const response = await fetch(`/api/organizations/logo?${query.toString()}`, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": file.type || "application/octet-stream" },
+      body: file,
+    });
+    const payload = await response.json().catch(() => ({})) as { error?: string; path?: string };
+    if (!response.ok || !payload.path) throw new Error(payload.error ?? "Logo upload failed.");
+    return { path: payload.path };
+  };
+
+  const onLogoUploaded = (path: string) => {
+    setLiveOrg((current) => current ? { ...current, logoPath: path } : current);
+  };
 
   const metrics = demoActive
     ? [
@@ -371,6 +447,20 @@ function OrganizationPanel() {
           <Building2 size={15} className="text-[#8B1E2D]" />
           <h3 className="text-sm font-semibold text-[#0F1117]">Organization Profile</h3>
         </div>
+        {/* MN-8 (2026-08-24): never rendered in demo/Investor Preview mode -- that branch shows the
+            seeded dataset, not a real organization, so there is nothing real to attach a logo to
+            (matches this panel's own TP-01 fix reasoning above). */}
+        {!demoActive && (
+          <ImageUploadField
+            label="logo"
+            fallback={<Avatar initials={(liveOrg?.name || "Org").slice(0, 2).toUpperCase()} imageUrl={buildPublicAvatarUrl(liveOrg?.logoPath)} size="md" />}
+            disabled={!canManageLogo}
+            disabledReason="Only Super Admin and Organization Admin can update the organization logo."
+            onUpload={uploadLogo}
+            onUploaded={onLogoUploaded}
+            className="mb-4"
+          />
+        )}
         <div className="grid grid-cols-2 gap-3">
           {metrics.map((metric) => (
             <div key={metric.label} className="rounded-lg bg-[#F8F9FA] p-3">
