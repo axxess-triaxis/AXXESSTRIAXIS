@@ -37,6 +37,8 @@ export type ProfileInput = {
   displayName?: string;
   email?: string;
   avatarInitials?: string;
+  avatarPath?: string;
+  availability?: "public" | "private" | "inactive";
   department?: string;
   title?: string;
   timezone?: string;
@@ -143,12 +145,22 @@ async function createWorkspace(organizationId: string, departmentId: string | un
   return created[0];
 }
 
+const availabilityValues = ["public", "private", "inactive"] as const;
+
 export async function updateTenantProfile(user: UserContext, input: ProfileInput) {
   ensureAdminRuntime();
   const displayName = input.displayName?.trim() || user.displayName || input.email || user.email || "AXXESS User";
   const email = input.email?.trim().toLowerCase() || user.email || "";
   const cleanedInitials = input.avatarInitials?.replace(/[^a-z]/gi, "").slice(0, 3).toUpperCase();
   const avatarInitials = (cleanedInitials && cleanedInitials.length > 0 ? cleanedInitials : undefined) ?? user.avatarInitials ?? initialsForName(displayName);
+  // MN-8 (2026-08-24): no path validation here -- already validated (mime/size) at upload time by
+  // validateAvatarUpload; this only persists the path the upload route already wrote to storage.
+  const avatarPath = input.avatarPath?.trim() || user.avatarPath;
+  // Server-side allowlist check -- never trust the client value verbatim, matching this
+  // function's existing defensive pattern for every other field.
+  const availability = input.availability && availabilityValues.includes(input.availability)
+    ? input.availability
+    : user.availability ?? "public";
 
   await supabaseAdminRest("profiles", {
     method: "POST",
@@ -159,6 +171,7 @@ export async function updateTenantProfile(user: UserContext, input: ProfileInput
       email,
       display_name: displayName,
       avatar_initials: avatarInitials,
+      avatar_path: avatarPath ?? null,
     },
   });
 
@@ -168,6 +181,8 @@ export async function updateTenantProfile(user: UserContext, input: ProfileInput
     email: string;
     display_name: string;
     avatar_initials: string;
+    avatar_path: string | null;
+    availability: "public" | "private" | "inactive";
     role: string;
     department_name?: string | null;
     title?: string | null;
@@ -179,6 +194,8 @@ export async function updateTenantProfile(user: UserContext, input: ProfileInput
       email,
       display_name: displayName,
       avatar_initials: avatarInitials,
+      avatar_path: avatarPath ?? null,
+      availability,
       department_name: input.department?.trim() || null,
       title: input.title?.trim() || null,
       timezone: input.timezone?.trim() || "Asia/Kolkata",
@@ -190,6 +207,8 @@ export async function updateTenantProfile(user: UserContext, input: ProfileInput
     email,
     displayName,
     avatarInitials,
+    avatarPath: rows[0]?.avatar_path ?? avatarPath,
+    availability: rows[0]?.availability ?? availability,
     department: rows[0]?.department_name ?? input.department ?? user.department,
     title: rows[0]?.title ?? input.title ?? user.title,
     timezone: rows[0]?.timezone ?? input.timezone ?? user.timezone,

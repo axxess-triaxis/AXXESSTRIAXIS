@@ -59,6 +59,7 @@ const cleanUser: User = {
   email: cleanTenantUserContext.email ?? "admin@new-organization.local",
   displayName: cleanTenantUserContext.displayName ?? "Organization Admin",
   avatarInitials: cleanTenantUserContext.avatarInitials ?? "OA",
+  availability: cleanTenantUserContext.availability ?? "public",
   department: cleanTenantUserContext.department,
   title: cleanTenantUserContext.title,
   timezone: cleanTenantUserContext.timezone,
@@ -112,6 +113,9 @@ const emptyOrganizationsRepository: OrganizationsRepository = {
   },
   async getById(scope, id) {
     return scope.organizationId === cleanOrganization.id && id === cleanOrganization.id ? cleanOrganization : undefined;
+  },
+  async update() {
+    throw new Error("Organization requires a connected data backend.");
   },
 };
 
