@@ -379,8 +379,8 @@ importers:
         specifier: 8.5.0
         version: 8.5.0
       '@capacitor/device':
-        specifier: 7.0.5
-        version: 7.0.5(@capacitor/core@8.5.0)
+        specifier: 8.0.3
+        version: 8.0.3(@capacitor/core@8.5.0)
       '@capacitor/filesystem':
         specifier: 8.1.2
         version: 8.1.2(@capacitor/core@8.5.0)
@@ -428,8 +428,8 @@ importers:
         specifier: 8.5.0
         version: 8.5.0
       '@capacitor/device':
-        specifier: 7.0.5
-        version: 7.0.5(@capacitor/core@8.5.0)
+        specifier: 8.0.3
+        version: 8.0.3(@capacitor/core@8.5.0)
       '@capacitor/filesystem':
         specifier: 8.1.2
         version: 8.1.2(@capacitor/core@8.5.0)
@@ -966,10 +966,10 @@ packages:
   '@capacitor/core@8.5.0':
     resolution: {integrity: sha512-Ca4krtqH1hothjtBIwf2J2TW7IhYq1ujp8QeItTiJohNsqij8ja2DYYH3DU0l8RmxCWaBAFTGA2TgOgOMCSNsQ==}
 
-  '@capacitor/device@7.0.5':
-    resolution: {integrity: sha512-tf6BYeQMBARNLKELQq2RGsvG3z03oM/ga+aqVhvE8M4IM8+h/516eeSz07Eqm4+yySGaQFT+2rIkpJrvA7gaAA==}
+  '@capacitor/device@8.0.3':
+    resolution: {integrity: sha512-rliPCCZwxtjU6200jJNDAsQhioyozV3fGgiP+NgRqtDOI7i+Jdz+DYNwEup+3MGZZ4NEmkuFaBeWLM3T01vJRg==}
     peerDependencies:
-      '@capacitor/core': '>=7.0.0'
+      '@capacitor/core': '>=8.0.0'
 
   '@capacitor/filesystem@8.1.2':
     resolution: {integrity: sha512-doaaMfGoFR2hWU6aV6u83I+5ZsGyJVq+Gz4r9lMpJzUKMm1eMu0hLnFdV1aXZlU9FlK/RndFrVD8oRZfNOqWgQ==}
@@ -9700,7 +9700,7 @@ snapshots:
     dependencies:
       tslib: 2.8.1
 
-  '@capacitor/device@7.0.5(@capacitor/core@8.5.0)':
+  '@capacitor/device@8.0.3(@capacitor/core@8.5.0)':
     dependencies:
       '@capacitor/core': 8.5.0
 
