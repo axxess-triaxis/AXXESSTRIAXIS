@@ -56,4 +56,13 @@ describe("MobileCommandHome (MN-2)", () => {
     await waitFor(() => expect(screen.getByText("Pending approvals")).toBeInTheDocument());
     expect(fetchMock).toHaveBeenCalledWith("/api/approvals", { credentials: "include" });
   });
+
+  // MN-7 (2026-08-24): "Quick links" duplicated 100% of the bottom tab bar + More panel
+  // (docs/readiness/ANDROID_BETA_0_9_V3_WALKTHROUGH_TRIAGE_2026_08_24.md, item 6) -- removed
+  // entirely, keeping only the real summaryCards data above and the Ask AXXESS CTA.
+  it("no longer renders the redundant Quick links grid", async () => {
+    render(<MobileCommandHome onNavigate={vi.fn()} />);
+    await waitFor(() => expect(screen.getByText("None scheduled")).toBeInTheDocument());
+    expect(screen.queryByText("Quick links")).not.toBeInTheDocument();
+  });
 });
