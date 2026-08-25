@@ -95,7 +95,7 @@ overrides:
   '@types/react-dom': 19.2.3
   '@vitejs/plugin-react-swc': 4.3.2
   posthog-js: 1.407.3
-  posthog-node: 5.46.1
+  posthog-node: 5.49.1
   simple-icons: 16.27.1
   # Security Hardening pass, 2026-08-22: remaining open Dependabot alerts and pnpm-audit findings
   # not already covered above.

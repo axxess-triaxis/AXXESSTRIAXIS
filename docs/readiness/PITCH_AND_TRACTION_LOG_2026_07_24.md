@@ -6,12 +6,16 @@ Company: Triaxis Ventures Private Limited
 Recorded by: Claude Code, from the founder's own account
 Purpose: a running, factual record of who AXXESS has been pitched to, what response each conversation produced, and what (if anything) was offered or declined. This is a founder-reported log, not independently verified evidence -- entries here are recorded as stated, in the same spirit as this program's existing "Honest Limitations" discipline (see `MONOREPO_ARCHITECTURE_AND_BUSINESS_MODEL.md` S7). Where a number or quote is given, it is recorded as given; nothing here should be read as claiming independent verification of pricing intent, promoter scores, or outcomes beyond what the founder reported.
 
-**Total documented calls across this program's logs, verified 2026-08-04:** the founder referenced "63 documented calls pre-existing in GitHub" -- this figure was checked, not just repeated: it is the exact sum of this file's 22 original entries (as of commit `bdac7e1`, before this session's additions) + `docs/readiness/CLIENT_SCOPING_CALLS_LOG_2026_07_25.md`'s 16 market-discovery conversations + `docs/readiness/STAKEHOLDER_IDEA_VALIDATION_CALLS_LOG_2026_07_25.md`'s 25 stakeholder idea-validation conversations (22+16+25 = 63). This file now has 30 numbered entries (8 added or updated on 2026-08-04, both new relationships and follow-ups on existing ones -- see entries #16-18, #26-30), making the current cross-log total 71, not 63; the "63" figure describes the state before today's additions, not the current state.
+**Total documented calls across this program's logs, verified 2026-08-22:** the founder's earlier "63 documented calls pre-existing in GitHub" figure described the pre-2026-08-04 state. This file now has **50 numbered entries** after later additions. Combined with `docs/readiness/CLIENT_SCOPING_CALLS_LOG_2026_07_25.md`'s 16 market-discovery conversations and `docs/readiness/STAKEHOLDER_IDEA_VALIDATION_CALLS_LOG_2026_07_25.md`'s 24 named stakeholder idea-validation conversations after dedupe, the current named/documented cross-log total is **90** (50 + 16 + 24), not 63. This remains a mixed relationship/conversation count, not a sales-lead or revenue count.
 
 ## How To Read This Log
 
 - **Status** marks whether the conversation is complete, ongoing, or awaiting a next step.
 - **Outcome** is exactly what was reported to have happened -- feedback, an offer made, an offer accepted, or an offer declined and why.
+- **Do not collapse investor/program outcomes into binary 0/1 labels.** This log must distinguish
+  hard rejection, too-early rejection, positive-but-too-early reapply path, redirected application,
+  founder-side decline, warm-but-waiting relationship, and active/open evaluation. A "not now" with
+  praise, reapplication guidance, or open communication is not the same evidence as a hard no.
 - Entries are numbered in the order reported, not necessarily chronological order of the actual conversations.
 - This log is separate from `docs/readiness/CUSTOMER_ACQUISITION_FUNNEL_2026_07_24.md` (the forward-looking acquisition funnel design) and from `Enterprise beta feedback - Batch 1 (30 responses)/` (the structured, anonymized 30-response beta survey batch already analyzed in `MONOREPO_ARCHITECTURE_AND_BUSINESS_MODEL.md` S6). This log is specifically the named, one-to-one pitch and accelerator/incubator conversation history.
 
@@ -43,7 +47,11 @@ Source: result email from Ananya, Innopreneurs India (Lemon Ideas), 2026-07-08: 
 - This is a genuine pass, consistent with this log's practice of recording investor/evaluator-side rejections without softening (see #9, #12, #19, #22). The founder's own later description to 3one4 Capital ("Presented in the Top 500 round of Innopreneurs Season 13") is accurate as far as it goes but did not mention this outcome -- recorded here to close that gap, not to imply the earlier statement was false.
 **Outcome:** Not selected for the current cohort, with named constructive jury feedback (above). Reached the Top 500 round before the pass.
 
-### 33. Pitch Karo India -- competition organized by IIT Delhi, BISE, and other named organizers (final round invitation)
+**Founder clarification, 2026-08-22:** shorthand investor-facing phrasing should be:
+**Innopreneurs Season 13 by Lemon Ideas -- reached Top 500, then got ejected at idea stage before
+Top 100.** Do not claim Top 100 selection for this program.
+
+### 33. Pitch Karo India -- competition organized by IIT Delhi, BISE, ThinkStartup, and other named organizers (final round invitation)
 
 **Status:** Invited to the final round. **Founder decision: not responding, not attending, not formally declining.** Numbered out of the main entry sequence (added after #32), same reasoning as entries #26-32 above -- grouped here under Competitions and Panels by content, not position.
 **Source:** invitation PDF supplied by the founder, 2026-08-08 (filename `Pitch Karo India.pdf`; this session's initial attempt to extract its text via `pdftotext` returned nothing -- an image-only PDF, and no PDF-rendering/OCR tooling was available in this environment to view it directly). **The founder subsequently pasted the underlying invitation email's full text in-session, superseding the PDF-extraction gap above** -- the details below are drawn directly from that pasted text, not reconstructed or extracted by this session.
@@ -101,6 +109,11 @@ idea-stage May 2026 application. Physical attendance/pitching did not occur, per
 reconfirmed cost-based decline; the post-event email's "you did it" framing is recorded as a likely
 mass-send inconsistency, not evidence of attendance.
 
+**Founder clarification, 2026-08-22:** shorthand investor-facing phrasing should be: **Pitch Karo
+India (IIT Delhi, BISE & ThinkStartup) -- invited for final pitch at Bharat Mandapam; ignored / not
+attended.** This is not a new outcome, just the concise version of the already-documented
+non-response/non-attendance decision above.
+
 ### 34. Peachscore Accelerator -- Startup Elevator Pitch Competition
 
 **Status:** Invited. **New, 2026-08-12.** No evidence of attendance or a result in this pass --
@@ -147,12 +160,20 @@ an implicit reapplication invitation -- not a reasoned or stage-specific rejecti
 probable-cause read: category mismatch (not genuinely deep tech) compounded by a pre-traction
 application, not independently confirmed by the result email itself.
 
+**Founder clarification, 2026-08-22:** shorthand investor-facing phrasing should be:
+**Singapore SLINGSHOT 2026 / Deep Tech Startup Pitching Competition -- rejected.** This should be
+treated as a competition/category-fit rejection, not a product or revenue diligence outcome.
+
 ## Incubation Programs
 
 ### 5. Nandini Singh -- SIIC, IIT Kanpur
 
 **Status:** Round 2 signed off; proceeding to Round 3 with the Domain Head. **Update, 2026-07-26 (founder-reported): Round 3 has now appeared; awaiting incubation confirmation.**
 **Outcome:** Approved progression to the next round of the incubation process.
+
+**Founder clarification, 2026-08-22:** the relevant investor-facing status is that **SIIC IIT
+Kanpur's final round was taken by the Domain Head - AI & ML**. This clarifies the process stage and
+the evaluator role; it does not by itself evidence an incubation acceptance.
 
 ### 6. Gopal Krishna Dixit -- Domain Head (AI & ML), SIIC, IIT Kanpur
 
@@ -162,6 +183,10 @@ Source: Google Calendar invite ("Startup Evaluation Meeting," organizer Nandini 
 - **Reconciliation flag:** this calendared meeting is 15 minutes, not the 45 minutes already recorded in the Outcome line below. This may be a different, unlogged call (SIIC's process spans Round 1 through Round 3 per entry #5, so multiple calls are plausible), or the "45-minute" figure may not be precise. Not resolved in this pass -- recorded as a discrepancy rather than silently overwritten.
 **Outcome:** 45-minute call including Q&A and a live demo walkthrough (founder-reported; see reconciliation flag above for a separately-evidenced 15-minute calendared meeting with the same two SIIC contacts).
 
+**Founder clarification, 2026-08-22:** this is the Domain Head - AI & ML final-round interaction
+referenced in entry #5's latest status note. The older calendar-duration discrepancy above remains
+flagged rather than overwritten.
+
 ### 7. Sudhanshu Mittal -- Director, NASSCOM; Centre Head, NASSCOM Centre of Excellence Gurugram (AI & IoT)
 
 **Status:** Offer made. **Update, 2026-07-26 (founder-reported): incubation offer stands; now awaiting documentation to formalize it.** **Update, 2026-08-03 (email-thread-verified, not just founder-reported): formalization is actively underway, not yet complete.** Source: a forwarded email thread (subject "Incubation with CoE Gurugram -- Triaxis Ventures"), spanning 2026-07-09 through 2026-07-24, between the founder and Sudhanshu Mittal, with Shalu Tyagi (NASSCOM, virtual incubation team) added 2026-07-16 to take onboarding forward.
@@ -170,6 +195,11 @@ Source: Google Calendar invite ("Startup Evaluation Meeting," organizer Nandini 
 - 2026-07-24 (same day): founder supplied Incorporation Certificate and PAN; DPIIT and GSTIN noted as not yet obtained, with an offer to complete them within a month if required.
 - 2026-07-22: founder asked NASSCOM how to make the required onboarding payment -- **this thread does not show a payment confirmation or a completed-onboarding confirmation**, so "formalized" is not yet supportable; "approved, documentation in progress, payment step pending" is the accurate status as of this evidence.
 **Outcome:** 30-minute presentation; walkthrough of the demo link provided in advance. Incubation offered, now in active (unfinished) onboarding.
+
+**Founder clarification, 2026-08-22:** shorthand investor-facing phrasing should be:
+**NASSCOM Centre of Excellence, Gurugram (AI & IoT) offered incubation.** This matches the
+already-documented offer/onboarding evidence above; the remaining open point is formal completion of
+onboarding/payment/documentation, not whether the offer was made.
 
 ### 8. SINE -- Society for Innovation and Entrepreneurship, IIT Bombay
 
@@ -206,6 +236,24 @@ brochure, not reproduced here. Immediate action required: a need-assessment surv
 **deadline 27 Aug 2026 (Thursday), 23:59:59.** Passed Phase 1, now actively in Phase 2 -- advancement
 to Phase 3 remains a separate, later, not-yet-known outcome.
 
+**Update, 2026-08-22 (source PDF reviewed, image-only email export rendered visually):** a new
+email dated 2026-08-21, subject "Next Steps | NFHP Phase 2 | IIMV FIELD," confirms the next-step
+communication has now arrived. The message welcomes the recipient to **Phase 2 of the Naaripreneur
+for Her Program** and requests completion of a need-assessment survey by **2026-08-27, 23:59:59**.
+The Phase 2 detail is stronger and more specific than the original shortlist email: Phase 1 is now
+complete, **Triaxis Ventures (powered by AXXESS TRIaxis) is one of 226 startups shortlisted into
+Phase 2**, and Phase 2 is explicitly a **Pre-Incubation** stage running for the next **1-2 months**.
+The program states Phase 2 includes approximately **10 capacity-building sessions**, approximately
+**15 total hours**, access to resources/collaborators, and potential access to **1:1 mentoring,
+funding and markets in Phase 3**. The same email also makes clear that Phase 3 incubation is not yet
+won: shortlisted Phase 2 applicants must later submit interest to be considered for Phase 3.
+Personal email/phone details present in the PDF are deliberately not reproduced here.
+**Outcome (updated):** Phase 1 passed; Phase 2/pre-incubation next steps received; Phase 3
+incubation/funding/market access remains future consideration, not a current acceptance.
+
+**Founder update, 2026-08-22:** the Phase 2 / need-assessment submission has now been made. No
+Phase 3 incubation decision is evidenced yet.
+
 ## Accelerator / Pre-Accelerator Programs
 
 ### 9. Davide Coppola -- Managing Director, Startup Wise Guys
@@ -219,10 +267,19 @@ Source: two email threads, 2026-07-16 through 2026-07-17 -- "Sudipta Koushik we 
 - 2026-07-17, 3:34 PM: founder sent a revised pitch deck ahead of the 4 PM call -- last message in the thread; **the call itself, and the actual decline, are not captured in this email evidence** and remain founder-reported only.
 **Outcome:** 20-minute call including live demo, pitch, and GitHub repo review (per founder's original report). Offered entry into the Founders Club (pre-accelerator track). **Declined, to preserve runway** -- now corroborated by a contemporaneous, email-documented cost concern (EUR 1,500+VAT, hard to pay upfront from India), though the decline message itself is not in the evidence reviewed.
 
+**Founder clarification, 2026-08-22:** the practical investor-facing version is: **Startup Wise Guys
+offered induction to the Founders Club at a 50% discount; AXXESS declined to preserve runway.** The
+50% discount is founder-stated from the call/off-thread path, while the existence of the Founders
+Club process and the runway/cost concern are already supported by the email thread above.
+
 ### 10. Polina Stavrovski, O. Disi, K. Jaoudi, K. Jatania -- Plug and Play UAE
 
 **Status:** Round 2 call completed. **Update, 2026-07-26 (founder-reported): Round 2 has now appeared/concluded; awaiting further communication.** **Update, 2026-08-03 (email-thread-verified): founder sent an unsolicited traction update, 2026-08-01, containing a large set of commercial and technical figures. Recorded here as an outbound founder claim to a third party -- NOT as independently reconciled against this repo's own tracking docs, per the flag below.**
 **Outcome:** 45-minute call with the investor team, as part of Round 2 for the Dubai Founders HQ Accelerator, Cohort 2. On 2026-07-23, founder also requested the panel add cofounder Ritashree Mahanta to the pitch call and sent an updated deck ahead of a "DFHQ Cohort 2 Interview."
+- **Founder clarification, 2026-08-22:** Plug and Play UAE was representing / operating through its
+  partner **Dubai Founders HQ**, a Dubai government-linked accelerator context. Investor-facing
+  wording should therefore distinguish **Plug and Play UAE / Dubai Founders HQ** from a standalone
+  Plug and Play corporate accelerator process.
 - **2026-08-01 email ("Triaxis Ventures -- Product & Traction Update"), founder-stated figures, sent directly to the Plug and Play UAE team:** live multi-tenant Enterprise Beta 0.5 (launched 2026-07-05) hosting **4 enterprise tenants**; **2 active commercial pilots**, **3 additional pilots commencing shortly**, **5 signed LOIs**, **2 additional committed LOIs**, **1 signed referral partnership**, **3 strategic partnerships under negotiation**, enterprise POC discussions with NASSCOM India; 40+ integration surface (first set operational: Google Workspace, Microsoft Azure, Microsoft Entra, Meta Business, Zoom, Twilio, OpenAI, OpenRouter, SMTP, document indexing, RAG); bootstrapped on ~US$1,000 total (~US$220 on AI dev tools); **132k+ lines of code, 465+ GitHub commits, 130+ merged pull requests, 800+ passing tests**; 64 discovery conversations; enterprise survey showing 8/9 respondents interested in pilots (6 indicating budgets above US$1,000/year, 4 above US$5,000/year); NPS above 85.
 - **Reconciliation flag (not independently verified in this pass):** this repo's own pilot/LOI tracking doc, `docs/LOIS_BETA_PILOT_INTEREST_REFERRAL_AND_STRATEGIC_PARTNERSHIPS_LOG.md`, currently names 6 entities total (Sakura Law Chambers, Imprints Production, Ekora Hive, and the 3-company Mahanta group) -- not the "5 signed + 2 committed = 7 LOIs," "2 active commercial pilots + 3 commencing shortly," "1 signed referral partnership," or "3 strategic partnerships under negotiation" cited in this email. This may reflect real progress not yet logged internally, rounding/grouping differences, or overstatement in an investor-facing email -- this pass does not have enough information to say which, so it is flagged rather than silently reconciled either way. The 132k+ LOC figure is notable separately: it matches the founder's own recollection from earlier in this program's history, which a prior session's inconsistent labeling had made hard to confirm -- this outbound email is founder-stated corroboration of that number, not a fresh independent repo measurement taken in this pass.
 
@@ -246,6 +303,11 @@ Source: acceptance email "YOU'RE IN! Welcome to the Forge AI Residency," 2026-07
 - **Total Program Fee: Rs. 1,20,000** (covers everything except travel to the venue); **Program Fee After Grant: Rs. 1,10,000**; **Confirmation Payment: Rs. 15,000, due within 24 hours of the offer** to hold the seat (waitlisted otherwise); balance payable within 20 days of confirmation, in full or via EMI.
 - **This email evidences the offer and its real cost, not the decline itself** -- there is no decline/withdrawal message in this thread; the "declined, to preserve runway" outcome remains founder-reported, though the Rs. 15,000-within-24-hours confirmation-payment structure is a plausible, concrete trigger for a fast runway-driven decision.
 **Outcome:** Selected after two rounds of interviews described as very difficult. **Declined, to preserve runway** -- now corroborated by a real, time-boxed payment obligation (Rs. 15,000 within 24 hours, Rs. 1,10,000-1,20,000 total), though the decline message itself is not in the evidence reviewed.
+
+**Founder clarification, 2026-08-22:** shorthand investor-facing phrasing should be: **Forge AI by
+LevelUp offered AXXESS a place in the Top 20 Builder/Founder Residency cohort; AXXESS declined to
+preserve runway.** This restates the already-logged acceptance/cost evidence and founder-side
+decline, not a new financing outcome.
 
 ### 13. Down Town Venture Labs
 
@@ -271,6 +333,10 @@ Source: 11-message email thread "Forbes India presents DGEMS 2026| Stage 2: Prel
 - 2026-06-12 through 2026-06-17: founder proactively asked to submit an updated pitch deck ahead of the Founders Call (originally set for 2026-06-15) "since we have made major milestones since our original submission"; deck delivered 2026-06-17.
 - **This thread ends 2026-06-18 with D Globalist acknowledging receipt of the updated deck and looking forward to the call -- it does not contain a call-outcome message or a Select 200 final-selection decision.** "Founders' Call attended" (the existing status line) is plausible given the scheduling shown here but is not itself confirmed in this evidence; recorded as founder-reported pending further evidence.
 **Outcome:** Attended the Founders' Call as part of the nomination process for Forbes India's Select 200 (founder-reported; the call's content and any selection outcome are not in the evidence reviewed). **Update, 2026-08-04 (email-verified, resolves the open call-outcome question above): advanced to Stage 3 (Select 200 Nomination Form), then explicitly declined by the founder.** Kirtika Aggarwal (D Globalist) emailed that the application "progressed to the Nomination Stage," requiring a completed Nomination Form and a **Nomination Fee acknowledgment**, due 2026-08-14 -- the first evidence that this stage of Select 200 is paid, not free. **Founder's reply, same day:** "Thank you so much for the Stage 3 clearance. I do not think a paid-for nomination is on our priority list right now. We will pass for now." **Declined, cost-based, same pattern as #9 (Startup Wise Guys) and #12 (Forge AI) above** -- a real, paid next stage the founder chose not to proceed with, not a rejection from the program's side.
+
+**Founder clarification, 2026-08-22:** shorthand investor-facing phrasing should be: **DGEMS Select
+200 by Forbes India -- cleared for nomination; declined to preserve runway.** This is consistent
+with the already-logged Stage 3 / paid nomination evidence above.
 
 ### 15. Jose Sarmento -- Web Summit (Lisbon, November 2026)
 
@@ -326,6 +392,10 @@ the program is free of charge," "initial investment of approximately €150,000,
 follow-on investment of up to approximately €250,000 based on progress and future funding rounds."
 No change to status -- this is corroboration of an already-logged in-progress evaluation, not a new
 outcome.
+
+**Founder update, 2026-08-22:** latest status is that the Ignition Fund process has moved into a
+**Partner round with direct partner access**. This is recorded as founder-stated latest status, not a
+final selection, investment offer, or term sheet unless/until written program evidence is added.
 
 ### 36. Hub71 Access -- main program, Abu Dhabi
 
@@ -389,6 +459,12 @@ Hub71's broader community activities and a future reapplication. Founder's own p
 stage mismatch (already past the co-build stage this program serves), not independently confirmed by
 the rejection email itself.
 
+**Founder clarification, 2026-08-22:** shorthand investor-facing phrasing should be: **Hub71 Access
+and Hub71 Initiate were both rejected due to lack of stage fit.** More precisely, the founder reads
+Access as too late-stage for AXXESS's current pre-seed/pre-revenue state and Initiate as too
+co-build/venture-builder oriented for where AXXESS already was. The source emails confirm rejection
+and program-fit language; the exact "stage fit" synthesis remains founder interpretation.
+
 ### 38. Kristjan Nork -- Startup Wise Guys, Flagship Accelerator
 
 **Status:** Applied; a response was received but its content is not confirmed in this pass. **New,
@@ -419,9 +495,18 @@ the full underlying message.
 **Outcome:** Application submitted; a response arrived 2026-08-11 but its actual written
 content/decision is not evidenced in this pass. Founder-stated context suggests a likely stage
 mismatch (EUR 10,000 MRR bar vs. AXXESS's pre-revenue status) distinct from Ignition Fund, which the
-founder describes as the better-fitting, actively-progressing SWG relationship. **If the full email
-or Dealum thread becomes available, this entry should be updated with the real, written outcome
-rather than left on this placeholder.**
+founder describes as the better-fitting, actively-progressing SWG relationship.
+
+**Founder clarification, 2026-08-22:** latest investor-facing phrasing should be: **Startup Wise Guys
+Flagship Accelerator -- GP/partner guidance was that the Flagship track generally needs EUR 10,000
+MRR; AXXESS was rejected and asked to reapply after reaching that traction level.** This updates the
+prior "response content not confirmed" placeholder with founder-stated outcome; if the full Dealum
+thread becomes available, replace this with source-backed text.
+
+**Cross-entry note, 2026-08-22:** Startup Wise Guys is now tracked as three separate interactions:
+#9 Founders Club (50% discounted induction offered; AXXESS declined), #31 Ignition Fund (Partner
+round/direct partner access; open), and #38 Flagship Accelerator (rejected/reapply after EUR 10,000
+MRR).
 
 ### 42. Surge -- Peak XV Partners (formerly Sequoia India & Southeast Asia) Accelerator
 
@@ -449,6 +534,68 @@ number of start-ups") rather than application-specific reasoning. Explicit reapp
 ("We encourage you to re-apply in the future"). Founder's own probable-cause read: sub-1% acceptance
 rate combined with a pre-traction application, not independently confirmed by the rejection email
 itself.
+
+**Founder clarification, 2026-08-22:** investor-facing phrasing should treat this as **positive but
+too early**, not a hard quality rejection: Peak XV Surge liked the application but asked AXXESS to
+reapply with more progress. The source email supports the reapply path and generic capacity framing;
+the "liked the application" interpretation is founder-stated unless a more specific written note is
+added.
+
+### 47. Antler Saudi Arabia
+
+**Status:** Rejected. **New, 2026-08-22. Founder-stated; source artifact not yet linked.**
+**Outcome:** Application/process did not advance. Recorded here as **Antler Saudi Arabia rejected
+AXXESS**, correcting the broader top-level readiness wording that had previously grouped "Antler" as
+an application still in line. No detailed rejection reason, reapply path, or partner feedback is
+evidenced in this repository yet; add the source email/screenshot if available.
+
+### 48. Forum Ventures / The Foundry Accelerator
+
+**Status:** Forum Ventures rejected; The Foundry accelerator application submitted. **New,
+2026-08-22. Founder-stated; source artifact not yet linked.**
+**Outcome:** Forum Ventures did not advance AXXESS through its main process, but directed / asked the
+founder to apply to **The Foundry**, its accelerator. Founder reports that the Foundry application
+has now been submitted. Recorded as a rejection-plus-redirect into a related accelerator path, not as
+an acceptance, investment offer, or accelerator admission.
+
+### 49. South Park Commons Bangalore
+
+**Status:** Rejected. **New, 2026-08-22. Founder-stated; source artifact not yet linked.**
+**Outcome:** Application/process did not advance. Founder reports the likely reason is mandate fit:
+AXXESS may not match South Park Commons Bangalore's current program mandate. This is recorded as
+probable founder interpretation, not a program-stated rejection reason unless/until the rejection
+message is added.
+
+### 50. a16z Speedrun
+
+**Status:** Not selected; reapply with progress. **New, 2026-08-22. Founder-stated; source artifact
+not yet linked.**
+**Outcome:** Founder reports that a16z Speedrun liked the application but asked AXXESS to reapply
+with more progress. Recorded as a **positive-but-too-early / reapply-later** outcome, not as an
+acceptance, investment offer, or accelerator admission. Add the source email/screenshot if available
+to move this from founder-stated to source-backed.
+
+### 52. Iterative -- Application Decision
+
+**Status:** Rejected -- fund-mandate mismatch, not a product or traction judgment. **New,
+2026-08-25.** Recorded from a founder-forwarded rejection email. Source: "Application to Iterative"
+email from Brian (`brianma@iterative.vc`, reply-to `brian@iterative.vc`), cc'd to
+`admissions@iterative.vc`, dated Tue, Aug 25, 2026, 6:53 AM. Personal email addresses are not
+reproduced here beyond the sender's own organizational address.
+
+- Iterative states its primary mandate is Southeast Asia, defined narrowly as either (a) a founder
+  permanently based in Southeast Asia, or (b) 50%+ of existing revenue generated from Southeast
+  Asia -- explicitly stated to exclude incorporation location alone as a qualifying definition.
+- The message states Iterative does consider startups from "Asia more broadly" but holds them to a
+  materially higher bar, since that falls outside the fund's primary mandate.
+- Explicitly framed as a fund-fit decision, not a judgment on Triaxis specifically: "it's almost a
+  certainty that there are startups we do not work with that go on to be very successful." Invited
+  to reapply for the next batch.
+
+**Outcome:** Application declined. The stated reason is a geographic-mandate mismatch, not a
+product, traction, or team assessment -- recorded here as such rather than folded into an
+undifferentiated "rejected" bucket, consistent with this log's own standing distinction between
+different rejection reasons.
 
 ## Startup Visa / Relocation Programs
 
@@ -502,6 +649,12 @@ actually applied. Real evidence of meaningful progress exists alongside the reje
 Startup Committee's final voting stage -- which the founder reads as most consistent with reason 4
 (economic-benefit articulation) being the actual gap, not reasons 1-3 or 5.
 
+**Founder clarification, 2026-08-22:** shorthand investor-facing phrasing should be: **Estonia
+Startup Visa proceeded very rapidly to the government Startup Committee voting stage; the committee
+ultimately rejected the application through generic boilerplate and invited reapplication once
+programme requirements are met.** This is not a successful visa outcome, but it is materially stronger
+than a first-screen rejection.
+
 ### 40. Startup Visa Lithuania
 
 **Status:** Rejected -- "decided not to proceed with the application at this time." **New,
@@ -520,10 +673,16 @@ Source: Dealum message from Julija Mikelske, Startup Visa Lithuania, 2026-08-12,
 **Outcome:** Not proceeding at this time, with an explicit invitation to reapply once specific,
 named progress milestones are met (paying customers, completed pilots, measurable user adoption) --
 not a closed door. The stated reason is the same "prospective, not yet converted" gap already named
-by other evaluators in this log (compare David Orban, entry #19; 3one4 Capital's second pass, entry
-#22), and is also the stated basis for entry #39's Estonia rejection, within roughly a month of each
+by other evaluators in this log (compare David Orban, entry #19; 3one4 Capital's initial
+too-early feedback, entry #22), and is also the stated basis for entry #39's Estonia rejection,
+within roughly a month of each
 other -- but unlike Estonia's generic multi-reason checklist, this rejection names one specific,
 actionable gap and an explicit reapplication path once it's closed.
+
+**Founder clarification, 2026-08-22:** shorthand investor-facing phrasing should be: **Lithuania
+Startup Visa said AXXESS was too early and should reapply after more traction.** The source message
+specifically names paying customers, completed pilots, and measurable user adoption as the milestones
+that would strengthen a future application.
 
 ### 41. Pitch Protocol (AI-native fundraising application platform)
 
@@ -590,12 +749,19 @@ should be read as evidence for the other.
 
 ### 22. 3one4 Capital -- Analyst call
 
-**Status:** Passed. **Reconfirmed 2026-07-26 (founder-reported): no change.** **Update, 2026-08-03 (email-thread-verified): a second, distinct pass, on different stated grounds.**
-**Outcome:** Pitched on an analyst call. First response (Raghav Iyer, 2026-06-09): **"too early for us."** This is the first entry in this log where the pass came from the investor's side, rather than the founder declining an offer to preserve runway -- recorded here without softening, in keeping with this log's evidence discipline.
+**Status:** Two interactions; no investment yet, communication left open. **Reconfirmed 2026-07-26
+(founder-reported): first pass remained unchanged at that point.** **Corrected, 2026-08-22
+(founder clarification): the second interaction should not be summarized as a hard second pass.**
+**Outcome:** Pitched on an analyst call. First response (Raghav Iyer, 2026-06-09): **"too early for
+us."** This is the first entry in this log where the pass came from the investor's side, rather than
+the founder declining an offer to preserve runway -- recorded here without softening, in keeping
+with this log's evidence discipline.
 - **Follow-up, 2026-07-27:** founder sent 3one4 a structured traction update (public beta launched, 8 enterprise walkthroughs + 4 live demos + 34 beta users generating 1,200+ feedback data points, 9 organizations expressing pilot interest with 6 citing a 6-month evaluation window, 7 indicating willingness to pay ₹12L+/year and 4 indicating ₹60L+/year including a self-reported senior UNDP official, plus the NASSCOM CoE Gurugram/SIIC IIT Kanpur/Founder Institute Dubai/Plug and Play UAE program activity also tracked elsewhere in this log) and asked whether Triaxis was now a fit for 3one4's thesis.
-- **Second response (Piyush Sharma, 3one4 Capital, 2026-08-03):** a distinct pass, on different grounds than the first -- **"the business model is still quite service-led and doesn't align with our venture scale aspirations at this stage. We prefer to invest in opportunities that have more established revenue models and a clearer pathway to scaling sustainably."** Recorded verbatim per this log's standing practice; not softened.
-- **Founder's reply, same day:** stated the company is "moving towards AI B2B and B2G Enterprise SaaS model and have pivoted from 'Services-as-a-wedge' model," and attributed the "service-led" read to the current founder-led sales motion looking service-like from the outside -- founder's own characterization, not independently verified against 3one4's actual reasoning.
-- Net effect: two passes from the same firm, on two different grounds ("too early" in June, "still service-led, doesn't fit venture-scale thesis" in August) -- a genuinely harder signal than a single early-stage pass, and recorded as such rather than reframed as unchanged.
+- **Second interaction / founder clarification, 2026-08-22:** investor-facing summary should be:
+  **"Good progress; let's wait a bit more; keep communication open."** This is a materially warmer
+  second interaction than the prior "second pass" summary implied. It is still not an investment
+  offer, term sheet, or active diligence process, but it should be treated as a communication-open
+  investor relationship after progress, not a closed-door rejection.
 
 ### 44. Daniel Darling -- Managing Partner, Focal (self-described "your pre-seed lead")
 
@@ -668,6 +834,9 @@ depends on the R2 form submission ahead of the 2026-08-23 deadline. Update this 
 submitted and/or a Round 3 or final decision is received -- do not mark this "Passed" or "Advanced" as a
 final status until that happens.
 
+**Founder update, 2026-08-22:** the Round 2 submission has now been made. No final Residency
+Bangalore selection, investment, or cohort seat is evidenced yet.
+
 ### 47. Accelerating Asia -- Flagship Program, Cohort 14
 
 **Status:** Invited to book a phone-screen intro call. **New, 2026-08-23.** Recorded from a
@@ -689,6 +858,18 @@ not reproduced here.
 **Outcome:** Phone-screen invitation only; no call has been evidenced as booked or completed in this
 repository, and no selection, investment, or program admission has occurred. Recorded as
 investor/accelerator pipeline progress at its earliest stage, not as funding traction.
+
+**Update, 2026-08-25 -- Founder-stated, source artifact needed.** The founder reports a "Round 2"
+meeting held today with Accelerating Asia for their **Fall accelerator** batch, with partner **Zelia
+Leong**. Per the founder, the partner indicated follow-ups and further rounds will happen -- i.e.
+the process is continuing, not concluded; no rejection, offer, or admission decision has been
+reached or stated at this point. No email, calendar record, or other source artifact has been
+provided for this update -- needed to move this from founder-stated to source-backed.
+Founder-confirmed: this Round 2 meeting is the **15-20 minute Ventures team call**, the second stage
+named in the original 2026-08-23 invitation above (10-min phone screen -> 15-20 min Ventures team
+call [this meeting] -> Selection Week -> final call-back -> offer) -- meaning AXXESS has now advanced
+past the initial phone-screen stage into this second stage, pending the further rounds/follow-ups
+the partner indicated.
 
 ## Mentor / Ecosystem Recognition Roles (New, 2026-08-03)
 
@@ -732,13 +913,17 @@ rejection. Sixth entry in the founder-side-decline category (see Summary Pattern
 #12, #14, #15, #33 -- though distinct from all five of those in sequence (enroll-then-withdraw,
 not decline-before-enrolling or pure non-response).
 
+**Founder clarification, 2026-08-22:** shorthand investor-facing phrasing should be: **iCreate Idea
+Catalyst -- invited; declined to preserve runway.** This is a concise version of the
+shortlist/enroll-then-withdraw history above.
+
 ## Summary Pattern (As Reported)
 
 Reading across all twenty-two named entries: the recurring pattern is strong qualitative reception (multiple uses of "impressed," "remarkable," "AI native") combined with a deliberate, repeated founder decision to **decline three separate accelerator/pre-accelerator offers** (Startup Wise Guys' Founders Club, Forge AI's Founder Residency, Web Summit Alpha) explicitly to preserve runway, while continuing to advance further in incubation-style programs that do not carry the same cost/dilution/time trade-off (SIIC IIT Kanpur, NASSCOM CoE Gurugram). This is consistent with the capital-efficiency framing already documented in `MONOREPO_ARCHITECTURE_AND_BUSINESS_MODEL.md` S1.4 (total spend to date approximately $800, current run-rate sustainable on Tier 1 self-serve pricing alone) -- these are recorded here as the same discipline applied to fundraising/accelerator decisions, not just product spend.
 
-Three entries stand apart from the "impressed" pattern, recorded here just as plainly: **SINE IIT Bombay deferred incubation until post-MVP**, **3one4 Capital passed twice** on an analyst-track relationship (first "too early for us" in June, then "still service-led, doesn't fit our venture-scale thesis" in August, after a documented traction update -- see entry #22), and **David Orban passed** on an angel round, citing prospective-only traction metrics, no disclosed compliance posture (SOC 2, data isolation) for a government/healthcare/NGO target market, and target-market breadth exceeding what the current stage supports -- the most detailed, specific investor-side feedback recorded in this log to date, including five named due-diligence questions for future conversations. All three are genuine, unreframed signals that AXXESS is still viewed by some evaluators as pre-incubation/pre-investment stage -- consistent with, not contradicting, the honest-limitations framing already established across this program's documentation. 3one4's second pass is notable specifically because it came *after* a real traction update, and moved from a stage objection to a business-model objection -- a harder, more specific signal, not a repeat of the same one.
+Three entries stand apart from the "impressed" pattern, recorded here just as plainly: **SINE IIT Bombay said the application was at a very early stage**, **3one4 Capital's first interaction was "too early for us" but its second interaction became "good progress; wait a bit more; keep communication open"**, and **David Orban passed** on an angel round, citing prospective-only traction metrics, no disclosed compliance posture (SOC 2, data isolation) for a government/healthcare/NGO target market, and target-market breadth exceeding what the current stage supports -- the most detailed, specific investor-side feedback recorded in this log to date, including five named due-diligence questions for future conversations. These are genuine, unreframed signals that AXXESS is still viewed by some evaluators as pre-incubation/pre-investment stage, while also showing that follow-up progress can keep investor communication open -- consistent with, not contradicting, the honest-limitations framing already established across this program's documentation.
 
-The angel/VC outreach entries (16-22) add a second, distinct pattern: active, in-progress fundraising conversations across mentorship (Bezbora), direct angel pitches (Kashyap, Verma, Orban), ecosystem/connector relationships (Purshan, Sufiyan), and formal VC outreach (3one4 Capital). Unlike the accelerator entries, none of these has yet produced a firm offer; two (3one4 Capital, David Orban) have produced a decisive pass rather than an open outcome -- both recorded here as real, unsoftened signals, not as claimed traction.
+The angel/VC outreach entries (16-22) add a second, distinct pattern: active, in-progress fundraising conversations across mentorship (Bezbora), direct angel pitches (Kashyap, Verma, Orban), ecosystem/connector relationships (Purshan, Sufiyan), and formal VC outreach (3one4 Capital). Unlike the accelerator entries, none of these has yet produced a firm offer; David Orban produced a decisive pass, while 3one4 Capital moved from an initial too-early pass to a communication-open follow-up after progress -- both recorded here as real, unsoftened signals, not as claimed traction.
 
 **Update, 2026-08-12 -- a third pattern, added with entries #36-40:** four rejections from
 international relocation-oriented programs (Hub71 Access and Initiate Programme, entries #36
@@ -747,7 +932,7 @@ roughly a four-week span (2026-07-15 through 2026-08-12). Where specific reasons
 main program, entry #36; Lithuania, entry #40), they cite some combination of early stage,
 pre-revenue status, and insufficient proven market traction -- consistent with, not contradicting,
 the pattern already established by David Orban's angel-round pass (entry #19) and 3one4 Capital's
-second pass (entry #22). **The Estonian rejection (entry #39) is a different kind of evidence, not a
+initial too-early feedback (entry #22). **The Estonian rejection (entry #39) is a different kind of evidence, not a
 harder version of the same pattern** -- its own rejection text is an explicitly generic,
 "one-or-more-of-the-following" checklist that does not state which factor(s) actually applied, and
 the application had real, favorable signal alongside it (reaching the Startup Committee's final
@@ -780,16 +965,17 @@ itself was Government of Gujarat-funded) not worth spending on a stage-mismatche
 are recorded as a distinct category from the institutional "no"s discussed above -- AXXESS's own
 capital-efficiency and stage-fit decisions, not signals about how AXXESS was received.
 
-**Update, 2026-08-12 -- overall ecosystem-reach scale, checked, not just asserted:** this log alone
-now names **40 numbered entries across 12 distinct categories** (Enterprise/Institutional Prospects,
+**Update, 2026-08-22 -- overall ecosystem-reach scale, checked, not just asserted:** this log alone
+now names **50 numbered entries across 12 distinct categories** (Enterprise/Institutional Prospects,
 Competitions and Panels, Incubation Programs, Accelerator/Pre-Accelerator Programs, Startup Visa/
 Relocation Programs, Recognition/Nomination Processes, Mentorship, Angel Investor Conversations,
 Ecosystem/Connector Relationships, VC Outreach, and Mentor/Ecosystem Recognition Roles). Combined
 with the two sibling logs this document's own intro cites (`CLIENT_SCOPING_CALLS_LOG_2026_07_25.md`,
-16 conversations; `STAKEHOLDER_IDEA_VALIDATION_CALLS_LOG_2026_07_25.md`, 25 conversations), that is
-**81 total documented conversations** across this program's own logs -- against a repository
-independently confirmed 39-43 days old in `docs/audit/FOUNDER_QUESTIONS.md` Q-002. Recorded here as a
-genuine, countable scale-of-reach fact for a company this young, not an inflated or rounded claim.
+16 conversations; `STAKEHOLDER_IDEA_VALIDATION_CALLS_LOG_2026_07_25.md`, 24 named conversations
+after dedupe), that is **90 total named/documented relationships or conversations** across this
+program's own logs. Recorded here as a genuine, countable scale-of-reach fact for a company this
+young, not an inflated or rounded claim -- and still not a revenue, sales-lead, or closed-funding
+count.
 
 ## Status Update, 2026-07-26 (Founder-Reported)
 
@@ -800,12 +986,12 @@ affected entry above; summarized here for a single point of reference:
 |---|---|
 | #5/#6 SIIC, IIT Kanpur | Genuine progress: Round 2 -> Round 3 has now appeared, awaiting incubation confirmation |
 | #7 NASSCOM CoE Gurugram | Incubation offer stands, now awaiting documentation to formalize |
-| #8 SINE, IIT Bombay | Founder is now actively reapplying, per the original "revisit post-MVP" deferral |
+| #8 SINE, IIT Bombay | Corrected 2026-08-04: SINE's written reason was "At a very early stage"; founder later reported active reapplication intent |
 | #9 Startup Wise Guys | No change (reconfirmed) |
 | #10 Plug and Play UAE | Round 2 has appeared/concluded, awaiting further communication |
 | #11 Founder Institute | Corrected 2026-08-03: confirmed finalist is for Hyderabad, not Dubai; MENA/Dubai transfer requested but not confirmed (target cohort not yet launched) |
 | #13 Down Town Venture Labs | Status updated to "Ongoing"; grant conversation specifically named as NRL Ideation alongside the existing NIDHI PoC grant |
-| #22 3one4 Capital | No change (reconfirmed) |
+| #22 3one4 Capital | Corrected 2026-08-22: two interactions -- first "too early for us"; second "good progress, wait a bit more, keep communication open" |
 
 As with every entry in this log, this update is recorded as reported, not independently verified --
 no documentation, confirmation email, or other artifact was supplied alongside the status refresh
@@ -818,4 +1004,4 @@ Consistent with this program's documentation discipline: this log does not claim
 - No accelerator or incubation offer listed above has been accepted; SIIC IIT Kanpur and NASSCOM CoE Gurugram are the only two still actively progressing.
 - No pilot, contract, purchase order, or signed letter of intent exists from any entry in this log. UNDP Malawi's $5,000+/month indicative pricing is a survey response, not a commercial commitment -- this is the same caveat already applied to the broader beta-feedback willingness-to-pay data in `MONOREPO_ARCHITECTURE_AND_BUSINESS_MODEL.md` S6.4.
 - Promoter scores, "AI native" framing, and qualitative praise quoted above are the founder's own recollection of what was said in these conversations, not captured via a formal survey instrument (unlike the 30-response beta feedback batch, which was captured via structured NPS/PMF survey tooling).
-- No angel investment, check, term sheet, or formal commitment has been made or received from any entry in the Angel Investor Conversations or Ecosystem/Connector sections -- these are recorded as pitched/ongoing relationships only. 3one4 Capital's "too early for us" is recorded as a genuine pass, not reframed as a future opportunity.
+- No angel investment, check, term sheet, or formal commitment has been made or received from any entry in the Angel Investor Conversations or Ecosystem/Connector sections -- these are recorded as pitched/ongoing relationships only. 3one4 Capital's first "too early for us" interaction is recorded as a genuine pass, while the second interaction is recorded separately as warm-but-waiting / communication open.
