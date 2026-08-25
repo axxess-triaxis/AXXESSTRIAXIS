@@ -150,7 +150,7 @@
     "pdf-parse": "^2.4.5",
     "pdfjs-dist": "^6.2.108",
     "posthog-js": "^1.404.1",
-    "posthog-node": "^5.45.2",
+    "posthog-node": "^5.49.1",
     "react": "19.2.8",
     "react-day-picker": "10.0.1",
     "react-dnd": "16.0.1",
