@@ -25,9 +25,13 @@ allowBuilds:
   tesseract.js: true
   unrs-resolver: true
 overrides:
-  # Dependabot #77 (high): path traversal in previous-sourcemap auto-loading, fixed upstream in
-  # 8.5.18. Transitive via @expo/metro-config (mobile build tooling).
-  postcss: 8.5.18
+  # Dependabot #77 (high, superseded by #85 below): path traversal in previous-sourcemap
+  # auto-loading, originally fixed upstream in 8.5.18. Transitive via @expo/metro-config
+  # (mobile build tooling).
+  # Dependabot #85 (medium), 2026-08-22: a follow-up advisory (GHSA-fxqj-rqcc-2cmp) found the
+  # 8.5.18 fix for GHSA-6g55-p6wh-862q was incomplete -- attacker-controlled sourceMappingURL can
+  # still read arbitrary .map files when `from` is unset. Fixed upstream in 8.5.23.
+  postcss: 8.5.23
   uuid: 11.1.1
   # Dependabot #38 (high): DoS via exponential-time expansion of consecutive
   # non-expanding {} groups, fixed upstream in 2.1.2. Transitive via minimatch (eslint chain).
@@ -50,6 +54,13 @@ overrides:
   # DoS via malformed certificate data, fixed upstream in 5.29.0. The 6.x/7.x resolutions already
   # in the lockfile are unaffected; only the 5.28.4 resolution needed forcing forward.
   undici@>=4.5.0 <5.29.0: '>=5.29.0'
+  # Dependabot #51/#52/#60/#62/#63/#86/#87/#88 (medium/low), 2026-08-22: the override above
+  # already forced resolution up to 5.29.0, but 5.29.0 itself turned out vulnerable to a batch of
+  # newer advisories (request smuggling, CRLF injection via `upgrade`, Set-Cookie percent-decoding
+  # and SameSite downgrade, cookie/domain attribute injection, response desync via retry
+  # interceptor). All fixed by 6.28.0. Transitive via the Vercel CLI devDependency tree
+  # (`@vercel/node` and friends), not bundled into the deployed app.
+  undici@>=5.29.0 <6.28.0: '>=6.28.0'
   # Dependabot #59 (low): arbitrary file read via the esbuild dev server on Windows, fixed
   # upstream in 0.28.1. Dev-server-only, not present in the production build output.
   esbuild@>=0.27.3 <0.28.1: '>=0.28.1'
@@ -86,3 +97,32 @@ overrides:
   posthog-js: 1.407.3
   posthog-node: 5.49.1
   simple-icons: 16.27.1
+  # Security Hardening pass, 2026-08-22: remaining open Dependabot alerts and pnpm-audit findings
+  # not already covered above.
+  # Dependabot #95 (high): custom generators can loop indefinitely when size is zero, fixed
+  # upstream in 3.3.18. Transitive via next -> postcss -> nanoid (and @sentry/nextjs,
+  # @vercel/analytics, @vercel/speed-insights, all of which depend on next).
+  nanoid: 3.3.18
+  # Dependabot #93/#94 (high): ICNS/JXL/HEIF parsers allow denial of service via infinite loops.
+  # NOT overridden -- the advisory (GHSA-w3rx-r6r6-pgpr, GHSA-5p2g-fcmc-qvqq) claims a fix in
+  # 2.0.3, but `pnpm view image-size versions`/`dist-tags` confirms 2.0.2 is the latest version
+  # actually published to npm as of 2026-08-22; 2.0.3 does not exist yet. Overriding to a
+  # nonexistent version breaks `pnpm install` outright (confirmed by testing it). Transitive via
+  # metro (Expo mobile build tooling), not part of the deployed web app's runtime -- left open,
+  # re-check when npm actually publishes the fix.
+  # Dependabot #58 (low): incorrect control flow scoping, fixed upstream in 2.0.1. Transitive via
+  # @vercel/fun (Vercel CLI devDependency tree only).
+  '@tootallnate/once': 2.0.1
+  # pnpm audit finding, no separate Dependabot alert yet (moderate): ReDoS when using the `$data`
+  # option, fixed upstream in 8.18.0. Range-qualified because a second, unrelated ajv@6.x
+  # resolution exists via eslint's own dependency chain and must not be touched.
+  ajv@>=7.0.0-alpha.0 <8.18.0: '>=8.18.0'
+  # pnpm audit finding, no separate Dependabot alert yet (high/moderate): backtracking-regex ReDoS
+  # via sequential optional groups and multiple wildcards, fixed upstream in 8.4.0 (6.x line fixed
+  # in 6.3.0). Transitive via @vercel/node (Vercel CLI devDependency tree only).
+  path-to-regexp@>=4.0.0 <6.3.0: '6.3.0'
+  path-to-regexp@>=8.0.0 <8.4.0: '8.4.2'
+  # pnpm audit finding, no separate Dependabot alert yet (moderate): denial of service via TOML
+  # documents containing thousands of consecutive commented lines, fixed upstream in 1.6.1.
+  # Transitive via @vercel/python-analysis (Vercel CLI devDependency tree only).
+  smol-toml: 1.6.1

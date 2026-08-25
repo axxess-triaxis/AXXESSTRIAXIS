@@ -18,6 +18,15 @@ on:
         description: "Android version code for Play Store submission"
         required: true
         type: string
+      release_target:
+        description: "Platform(s) to release"
+        required: false
+        type: choice
+        options:
+          - all
+          - android
+          - ios
+        default: all
 
 permissions:
   contents: read
@@ -26,6 +35,10 @@ jobs:
   release-checklist:
     runs-on: ubuntu-latest
     environment: production-mobile
+    outputs:
+      release_target: ${{ steps.target.outputs.target }}
+      run_android: ${{ steps.target.outputs.run_android }}
+      run_ios: ${{ steps.target.outputs.run_ios }}
     env:
       NEXT_TELEMETRY_DISABLED: "1"
       NEXT_PUBLIC_APP_URL: ${{ vars.NEXT_PUBLIC_APP_URL }}
@@ -70,6 +83,30 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Resolve release target
+        id: target
+        run: |
+          TARGET="${{ inputs.release_target || 'all' }}"
+          echo "target=$TARGET" >> "$GITHUB_OUTPUT"
+          case "$TARGET" in
+            all)
+              echo "run_android=true" >> "$GITHUB_OUTPUT"
+              echo "run_ios=true" >> "$GITHUB_OUTPUT"
+              ;;
+            android)
+              echo "run_android=true" >> "$GITHUB_OUTPUT"
+              echo "run_ios=false" >> "$GITHUB_OUTPUT"
+              ;;
+            ios)
+              echo "run_android=false" >> "$GITHUB_OUTPUT"
+              echo "run_ios=true" >> "$GITHUB_OUTPUT"
+              ;;
+            *)
+              echo "::error::Invalid release_target '$TARGET'. Use all|android|ios."
+              exit 1
+              ;;
+          esac
+
       - name: Resolve release values
         run: node scripts/resolve-release-values.mjs
         env:
@@ -78,28 +115,29 @@ jobs:
           INPUT_ANDROID_VERSION_CODE: ${{ inputs.android_version_code }}
 
       - name: Release preflight (strict)
-        run: pnpm run release:preflight -- --mode=release --target=all
+        run: pnpm run release:preflight -- --mode=release --target=${{ steps.target.outputs.target }}
 
       - name: Apply Capacitor store config
         run: pnpm run mobile:capacitor:store:apply
 
       - name: Capacitor store readiness (strict)
-        run: pnpm run mobile:capacitor:store:doctor -- --mode=release --target=all
+        run: pnpm run mobile:capacitor:store:doctor -- --mode=release --target=${{ steps.target.outputs.target }}
 
       - name: Generate release checklist artifact
-        run: RELEASE_PLATFORM=all node scripts/generate-release-checklist.mjs
+        run: RELEASE_PLATFORM=${{ steps.target.outputs.target }} node scripts/generate-release-checklist.mjs
 
       - name: Upload release checklist artifacts
         uses: actions/upload-artifact@v7
         with:
           name: release-checklist-${{ github.run_number }}
           path: |
-            apps/mobile-capacitor/build-metadata/release-checklist-all.json
-            apps/mobile-capacitor/build-metadata/release-checklist-all.md
+            apps/mobile-capacitor/build-metadata/release-checklist-${{ steps.target.outputs.target }}.json
+            apps/mobile-capacitor/build-metadata/release-checklist-${{ steps.target.outputs.target }}.md
           if-no-files-found: error
 
   android-production-release:
     needs: release-checklist
+    if: ${{ needs.release-checklist.outputs.run_android == 'true' }}
     runs-on: ubuntu-latest
     environment: production-mobile
     env:
@@ -194,13 +232,20 @@ jobs:
         run: pnpm run mobile:capacitor:release:android
 
       - name: Upload Android bundle to Google Play internal testing
-        if: ${{ env.ANDROID_UPLOAD_TO_PLAY == 'true' && env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON != '' }}
+        # Gate on ANDROID_PLAY_LISTING_EXISTS so this step is only attempted once
+        # the app has been manually created in Play Console.  This prevents the
+        # "Package not found" 404 from failing the job before the first manual
+        # listing is in place, while still surfacing real upload failures (bad
+        # credentials, invalid AAB, quota) once the listing exists.
+        # Set the `ANDROID_PLAY_LISTING_EXISTS` Actions variable to `true` after
+        # the app listing has been created in Play Console.
+        if: ${{ env.ANDROID_UPLOAD_TO_PLAY == 'true' && env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON != '' && vars.ANDROID_PLAY_LISTING_EXISTS == 'true' }}
         uses: r0adkll/upload-google-play@v1
         with:
           serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
           packageName: ${{ vars.ANDROID_APPLICATION_ID }}
           releaseFiles: apps/mobile-capacitor/android/app/build/outputs/bundle/release/app-release.aab
-          track: internal
+          tracks: internal
           status: draft
 
       - name: Generate Android release checklist
@@ -218,6 +263,7 @@ jobs:
 
   ios-production-release:
     needs: release-checklist
+    if: ${{ needs.release-checklist.outputs.run_ios == 'true' }}
     runs-on: macos-latest
     environment: production-mobile
     env:
@@ -328,23 +374,28 @@ jobs:
     env:
       MIN_ANDROID_BINARY_BYTES: "1000000"
       MIN_IOS_BINARY_BYTES: "2000000"
+      RELEASE_TARGET: ${{ needs.release-checklist.outputs.release_target }}
+      RUN_ANDROID: ${{ needs.release-checklist.outputs.run_android }}
+      RUN_IOS: ${{ needs.release-checklist.outputs.run_ios }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Download all-platform checklist artifact
+      - name: Download release checklist artifact
         uses: actions/download-artifact@v8
         with:
           name: release-checklist-${{ github.run_number }}
           path: artifacts/release-checklist
 
       - name: Download Android release artifact
+        if: ${{ env.RUN_ANDROID == 'true' }}
         uses: actions/download-artifact@v8
         with:
           name: capacitor-android-release-${{ github.run_number }}
           path: artifacts/android
 
       - name: Download iOS release artifact
+        if: ${{ env.RUN_IOS == 'true' }}
         uses: actions/download-artifact@v8
         with:
           name: capacitor-ios-release-${{ github.run_number }}
@@ -355,99 +406,116 @@ jobs:
         run: |
           set -euo pipefail
 
-          if [ "${{ needs.release-checklist.result }}" != "success" ] || [ "${{ needs.android-production-release.result }}" != "success" ] || [ "${{ needs.ios-production-release.result }}" != "success" ]; then
-            echo "::error::One or more prerequisite jobs failed."
+          if [ "${{ needs.release-checklist.result }}" != "success" ]; then
+            echo "::error::release-checklist job did not succeed."
             exit 1
           fi
 
-          required_files=(
-            "artifacts/release-checklist/release-checklist-all.json"
-            "artifacts/release-checklist/release-checklist-all.md"
-          )
+          if [ "$RUN_ANDROID" = "true" ] && [ "${{ needs.android-production-release.result }}" != "success" ]; then
+            echo "::error::android-production-release job did not succeed."
+            exit 1
+          fi
 
-          for file in "${required_files[@]}"; do
-            if [ ! -f "$file" ]; then
-              echo "::error::Missing required checklist artifact: $file"
+          if [ "$RUN_IOS" = "true" ] && [ "${{ needs.ios-production-release.result }}" != "success" ]; then
+            echo "::error::ios-production-release job did not succeed."
+            exit 1
+          fi
+
+          PRIMARY_JSON=$(find artifacts/release-checklist -type f -name "release-checklist-*.json" | head -n 1)
+          PRIMARY_MD=$(find artifacts/release-checklist -type f -name "release-checklist-*.md" | head -n 1)
+
+          if [ -z "$PRIMARY_JSON" ] || [ ! -f "$PRIMARY_JSON" ]; then
+            echo "::error::Missing required checklist artifact: release-checklist-${RELEASE_TARGET}.json"
+            exit 1
+          fi
+
+          if [ -z "$PRIMARY_MD" ] || [ ! -f "$PRIMARY_MD" ]; then
+            echo "::error::Missing required checklist artifact: release-checklist-${RELEASE_TARGET}.md"
+            exit 1
+          fi
+
+          if [ "$RUN_ANDROID" = "true" ]; then
+            if ! find artifacts/android -type f -name "release-checklist-android.json" | grep -q .; then
+              echo "::error::Missing Android checklist JSON artifact."
               exit 1
             fi
-          done
 
-          if ! find artifacts/android -type f -name "release-checklist-android.json" | grep -q .; then
-            echo "::error::Missing Android checklist JSON artifact."
-            exit 1
+            if ! find artifacts/android -type f -name "release-checklist-android.md" | grep -q .; then
+              echo "::error::Missing Android checklist Markdown artifact."
+              exit 1
+            fi
+
+            if ! find artifacts/android -type f | grep -q .; then
+              echo "::error::Android artifact archive is empty."
+              exit 1
+            fi
+
+            if ! find artifacts/android -type f \( -name "*.aab" -o -name "*.apk" \) | grep -q .; then
+              echo "::error::Android artifacts must include at least one .aab or .apk file."
+              exit 1
+            fi
+
+            ANDROID_BIN=$(find artifacts/android -type f \( -name "*.aab" -o -name "*.apk" \) | head -n 1)
+            ANDROID_SIZE=$(stat -c%s "$ANDROID_BIN")
+            if [ "$ANDROID_SIZE" -lt "$MIN_ANDROID_BINARY_BYTES" ]; then
+              echo "::error::Android binary size ${ANDROID_SIZE}B is below threshold ${MIN_ANDROID_BINARY_BYTES}B."
+              exit 1
+            fi
           fi
 
-          if ! find artifacts/android -type f -name "release-checklist-android.md" | grep -q .; then
-            echo "::error::Missing Android checklist Markdown artifact."
-            exit 1
+          if [ "$RUN_IOS" = "true" ]; then
+            if ! find artifacts/ios -type f -name "release-checklist-ios.json" | grep -q .; then
+              echo "::error::Missing iOS checklist JSON artifact."
+              exit 1
+            fi
+
+            if ! find artifacts/ios -type f -name "release-checklist-ios.md" | grep -q .; then
+              echo "::error::Missing iOS checklist Markdown artifact."
+              exit 1
+            fi
+
+            if ! find artifacts/ios -type f | grep -q .; then
+              echo "::error::iOS artifact archive is empty."
+              exit 1
+            fi
+
+            if ! find artifacts/ios -type f -name "*.ipa" | grep -q .; then
+              echo "::error::iOS artifacts must include an exported .ipa output."
+              exit 1
+            fi
+
+            IOS_IPA=$(find artifacts/ios -type f -name "*.ipa" | head -n 1)
+            IOS_SIZE=$(stat -c%s "$IOS_IPA")
+            if [ "$IOS_SIZE" -lt "$MIN_IOS_BINARY_BYTES" ]; then
+              echo "::error::iOS binary size ${IOS_SIZE}B is below threshold ${MIN_IOS_BINARY_BYTES}B."
+              exit 1
+            fi
           fi
 
-          if ! find artifacts/ios -type f -name "release-checklist-ios.json" | grep -q .; then
-            echo "::error::Missing iOS checklist JSON artifact."
-            exit 1
-          fi
-
-          if ! find artifacts/ios -type f -name "release-checklist-ios.md" | grep -q .; then
-            echo "::error::Missing iOS checklist Markdown artifact."
-            exit 1
-          fi
-
-          if ! find artifacts/android -type f | grep -q .; then
-            echo "::error::Android artifact archive is empty."
-            exit 1
-          fi
-
-          if ! find artifacts/ios -type f | grep -q .; then
-            echo "::error::iOS artifact archive is empty."
-            exit 1
-          fi
-
-          if ! find artifacts/android -type f \( -name "*.aab" -o -name "*.apk" \) | grep -q .; then
-            echo "::error::Android artifacts must include at least one .aab or .apk file."
-            exit 1
-          fi
-
-          if ! find artifacts/ios -type f -name "*.ipa" | grep -q .; then
-            echo "::error::iOS artifacts must include an exported .ipa output."
-            exit 1
-          fi
-
-          ANDROID_BIN=$(find artifacts/android -type f \( -name "*.aab" -o -name "*.apk" \) | head -n 1)
-          IOS_IPA=$(find artifacts/ios -type f -name "*.ipa" | head -n 1 || true)
-
-          ANDROID_SIZE=$(stat -c%s "$ANDROID_BIN")
-          if [ "$ANDROID_SIZE" -lt "$MIN_ANDROID_BINARY_BYTES" ]; then
-            echo "::error::Android binary size ${ANDROID_SIZE}B is below threshold ${MIN_ANDROID_BINARY_BYTES}B."
-            exit 1
-          fi
-
-          IOS_SIZE=$(stat -c%s "$IOS_IPA")
-
-          if [ "$IOS_SIZE" -lt "$MIN_IOS_BINARY_BYTES" ]; then
-            echo "::error::iOS binary size ${IOS_SIZE}B is below threshold ${MIN_IOS_BINARY_BYTES}B."
-            exit 1
-          fi
-
-          echo "Release sign-off gate passed: required platform artifacts and checklist files are present."
+          echo "Release sign-off gate passed for target=${RELEASE_TARGET} (android=${RUN_ANDROID}, ios=${RUN_IOS})."
 
       - name: Validate checklist content
         shell: bash
         run: |
           set -euo pipefail
 
-          ALL_JSON="artifacts/release-checklist/release-checklist-all.json"
-          ANDROID_JSON=$(find artifacts/android -type f -name "release-checklist-android.json" | head -n 1)
-          IOS_JSON=$(find artifacts/ios -type f -name "release-checklist-ios.json" | head -n 1)
+          ALL_JSON=$(find artifacts/release-checklist -type f -name "release-checklist-*.json" | head -n 1)
+          ANDROID_JSON=""
+          IOS_JSON=""
+          if [ "$RUN_ANDROID" = "true" ]; then
+            ANDROID_JSON=$(find artifacts/android -type f -name "release-checklist-android.json" | head -n 1)
+          fi
+          if [ "$RUN_IOS" = "true" ]; then
+            IOS_JSON=$(find artifacts/ios -type f -name "release-checklist-ios.json" | head -n 1)
+          fi
 
           node - "$ALL_JSON" "$ANDROID_JSON" "$IOS_JSON" <<'NODE'
           const fs = require("node:fs");
 
           const [allPath, androidPath, iosPath] = process.argv.slice(2);
-          const inputs = [
-            ["all", allPath],
-            ["android", androidPath],
-            ["ios", iosPath],
-          ];
+          const inputs = [["primary", allPath]];
+          if (androidPath) inputs.push(["android", androidPath]);
+          if (iosPath) inputs.push(["ios", iosPath]);
 
           for (const [label, filePath] of inputs) {
             if (!filePath || !fs.existsSync(filePath)) {
@@ -485,13 +553,20 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          ANDROID_JSON=$(find artifacts/android -type f -name "release-checklist-android.json" | head -n 1)
-          IOS_JSON=$(find artifacts/ios -type f -name "release-checklist-ios.json" | head -n 1)
+          ALL_JSON=$(find artifacts/release-checklist -type f -name "release-checklist-*.json" | head -n 1)
+          ANDROID_JSON=""
+          IOS_JSON=""
+          if [ "$RUN_ANDROID" = "true" ]; then
+            ANDROID_JSON=$(find artifacts/android -type f -name "release-checklist-android.json" | head -n 1)
+          fi
+          if [ "$RUN_IOS" = "true" ]; then
+            IOS_JSON=$(find artifacts/ios -type f -name "release-checklist-ios.json" | head -n 1)
+          fi
 
           node scripts/generate-release-manifest.mjs \
             --androidDir=artifacts/android \
             --iosDir=artifacts/ios \
-            --checklistAll=artifacts/release-checklist/release-checklist-all.json \
+            --checklistAll="$ALL_JSON" \
             --checklistAndroid="$ANDROID_JSON" \
             --checklistIos="$IOS_JSON" \
             --output=apps/mobile-capacitor/build-metadata/release-manifest.json
@@ -508,20 +583,37 @@ jobs:
         run: |
           set -euo pipefail
 
-          ANDROID_BIN=$(find artifacts/android -type f \( -name "*.aab" -o -name "*.apk" \) | head -n 1)
-          IOS_BIN=$(find artifacts/ios -type f -name "*.ipa" | head -n 1)
-          ANDROID_SIZE=$(stat -c%s "$ANDROID_BIN")
-          IOS_SIZE=$(stat -c%s "$IOS_BIN")
-
           {
             echo "## Release Sign-off Summary"
             echo ""
             echo "- Workflow run: ${{ github.run_number }}"
+            echo "- Release target: ${RELEASE_TARGET}"
             echo "- Release checklist: PASS"
-            echo "- Android binary detected: ${ANDROID_BIN}"
-            echo "- Android binary size: ${ANDROID_SIZE} bytes (threshold ${MIN_ANDROID_BINARY_BYTES})"
-            echo "- iOS binary detected: ${IOS_BIN}"
-            echo "- iOS binary size: ${IOS_SIZE} bytes (threshold ${MIN_IOS_BINARY_BYTES})"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [ "$RUN_ANDROID" = "true" ]; then
+            ANDROID_BIN=$(find artifacts/android -type f \( -name "*.aab" -o -name "*.apk" \) | head -n 1)
+            ANDROID_SIZE=$(stat -c%s "$ANDROID_BIN")
+            {
+              echo "- Android binary detected: ${ANDROID_BIN}"
+              echo "- Android binary size: ${ANDROID_SIZE} bytes (threshold ${MIN_ANDROID_BINARY_BYTES})"
+            } >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "- Android: SKIPPED (release target = ${RELEASE_TARGET})" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+          if [ "$RUN_IOS" = "true" ]; then
+            IOS_BIN=$(find artifacts/ios -type f -name "*.ipa" | head -n 1)
+            IOS_SIZE=$(stat -c%s "$IOS_BIN")
+            {
+              echo "- iOS binary detected: ${IOS_BIN}"
+              echo "- iOS binary size: ${IOS_SIZE} bytes (threshold ${MIN_IOS_BINARY_BYTES})"
+            } >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "- iOS: SKIPPED (release target = ${RELEASE_TARGET})" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+          {
             echo "- Release manifest artifact: release-manifest-${{ github.run_number }}"
             echo "- Final gate: PASS"
           } >> "$GITHUB_STEP_SUMMARY"

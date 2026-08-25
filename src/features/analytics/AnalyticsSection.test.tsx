@@ -35,10 +35,15 @@ describe("AnalyticsSection (Sprint 3 -- does not hang, F-012)", () => {
     await renderAnalytics();
   });
 
-  it("shows the honest not-yet-connected empty state for deeper trend analytics outside Demo Mode, not a spinner", async () => {
+  it("shows precise, per-section honest empty states outside Demo Mode, not a spinner", async () => {
+    // Analytics Sprint 1: the old single blanket "Deeper OKR, budget-trend..." callout was
+    // replaced with distinct empty states per section, since Projects and Approval Cycle Time
+    // are now genuinely real for a live tenant while OKRs/budget remain honestly untracked.
     await renderAnalytics();
 
-    expect(screen.getByText(/Deeper OKR, budget-trend, and approval-cycle analytics require computation/i)).toBeInTheDocument();
+    expect(screen.getByText(/OKRs are not tracked in this platform yet/i)).toBeInTheDocument();
+    expect(screen.getByText(/Budget\/spend is not tracked in this platform yet/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/No decided approvals yet/i).length).toBeGreaterThan(0);
   });
 
   it("never duplicates the Executive Dashboard's live Tier 1/2/3 tile stack", async () => {
@@ -47,5 +52,18 @@ describe("AnalyticsSection (Sprint 3 -- does not hang, F-012)", () => {
     expect(screen.queryByText("Tier 1 · Executive & performance")).not.toBeInTheDocument();
     expect(screen.queryByText("Tier 2 · AI operating infrastructure & business intelligence")).not.toBeInTheDocument();
     expect(screen.queryByText("Tier 3 · Compliance, audit, governance & policy")).not.toBeInTheDocument();
+  });
+
+  it("shows real, interactive filter controls outside Demo Mode instead of the static demo buttons", async () => {
+    // Analytics Sprint 2: outside Demo Mode, the filter row is now real <select> elements over
+    // live project/approval data, not the decorative buttons Demo Mode keeps (different data
+    // shape -- demo projects have no live `dept` field, so Demo Mode's row is left as-is).
+    await renderAnalytics();
+
+    expect(screen.getByLabelText("Filter by project")).toBeInTheDocument();
+    expect(screen.getByLabelText("Filter approval cycle time by time period")).toBeInTheDocument();
+    expect(screen.getByLabelText("Filter by risk level")).toBeInTheDocument();
+    expect(screen.getByLabelText("Filter by department")).toBeInTheDocument();
+    expect(screen.getByText("Organization: this org")).toBeInTheDocument();
   });
 });

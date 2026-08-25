@@ -1,6 +1,6 @@
 import type { UserContext } from "../security/rbac";
 
-export type LocalUserProfile = Partial<Pick<UserContext, "displayName" | "email" | "avatarInitials" | "department" | "title" | "timezone">>;
+export type LocalUserProfile = Partial<Pick<UserContext, "displayName" | "email" | "avatarInitials" | "avatarPath" | "availability" | "department" | "title" | "timezone">>;
 
 const profileStoragePrefix = "axxess.profile";
 
@@ -23,6 +23,8 @@ export function mergeUserProfile(user: UserContext, profile: LocalUserProfile): 
     displayName,
     email,
     avatarInitials,
+    avatarPath: profile.avatarPath ?? user.avatarPath,
+    availability: profile.availability ?? user.availability ?? "public",
     department: profile.department?.trim() || user.department,
     title: profile.title?.trim() || user.title,
     timezone: profile.timezone?.trim() || user.timezone,
