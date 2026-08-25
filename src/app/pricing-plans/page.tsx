@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 const plans = [
   {
     name: "Uno",
@@ -41,9 +43,9 @@ export default function PricingPlansPage() {
   return (
     <main className="triaxis-site-shell">
       <section className="mx-auto max-w-7xl px-6 py-10 md:px-10 md:py-16">
-        <a href="/" className="text-sm font-semibold text-[#8b1e2d] hover:underline">
+        <Link href="/" className="text-sm font-semibold text-[#8b1e2d] hover:underline">
           Back to Triaxis Ventures
-        </a>
+        </Link>
         <div className="mt-7 max-w-4xl space-y-5">
           <p className="inline-flex rounded-full border border-[#cdd5df] bg-white px-4 py-1 text-sm font-medium text-[#35506b]">
             Pricing & Plans
