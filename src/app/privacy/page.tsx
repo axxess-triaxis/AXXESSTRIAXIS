@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -110,9 +111,9 @@ export default function PrivacyPage() {
   return (
     <main className="triaxis-site-shell">
       <section className="mx-auto max-w-5xl px-6 py-10 md:px-10 md:py-16">
-        <a href="/" className="text-sm font-semibold text-[#7dff6a] hover:underline">
+        <Link href="/" className="text-sm font-semibold text-[#7dff6a] hover:underline">
           Back to Triaxis Ventures
-        </a>
+        </Link>
 
         <div className="mt-8 rounded-xl border border-[#d6dee8] bg-white p-6 shadow-sm md:p-8">
           <p className="inline-flex rounded-full border border-[#00c2ff]/35 bg-[#07111d]/85 px-4 py-1 text-sm font-medium text-[#7dff6a]">
