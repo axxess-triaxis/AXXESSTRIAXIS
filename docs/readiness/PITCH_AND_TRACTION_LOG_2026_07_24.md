@@ -589,6 +589,62 @@ with more progress. Recorded as a **positive-but-too-early / reapply-later** out
 acceptance, investment offer, or accelerator admission. Add the source email/screenshot if available
 to move this from founder-stated to source-backed.
 
+### 51. Accelerating Asia -- Flagship Program, Cohort 14
+
+**Status:** Invited to book a phone-screen intro call. **New, 2026-08-23.** Recorded from a
+founder-supplied PDF email export, image-only and OCR-extracted (this session, `pdfjs-dist` +
+`tesseract.js`); OCR text is generally reliable but not manually cross-checked character-by-character.
+Source: "[AAV] Cohort 14_Invitation for Phone Screen" email from Team Accelerating Asia
+(`team@acceleratingasia.com`), dated 2026-08-23, 2:14 PM. Personal email addresses in the export are
+not reproduced here.
+- The message states AXXESS's application to Accelerating Asia's **Flagship Program** has been
+  reviewed and invites a **10-minute phone-screen call** with one of the program's evaluators, as the
+  next required step in their process.
+- The message's own stated pipeline beyond this stage: a 15-20 minute call with the Ventures team,
+  a virtual Selection Week with angel investors/VCs/mentors, a final call-back, an offer, and
+  accelerator start/investment paperwork -- none of these later stages have been reached.
+- Booking window stated in the source: **2026-08-05 through 2026-09-05**; failure to book within this
+  window is stated to forfeit the application.
+- The message states a decision on whether to advance follows **2-3 weeks** after the intro call is
+  completed.
+**Outcome:** Phone-screen invitation only; no call has been evidenced as booked or completed in this
+repository, and no selection, investment, or program admission has occurred. Recorded as
+investor/accelerator pipeline progress at its earliest stage, not as funding traction.
+
+**Update, 2026-08-25 -- Founder-stated, source artifact needed.** The founder reports a "Round 2"
+meeting held today with Accelerating Asia for their **Fall accelerator** batch, with partner **Zelia
+Leong**. Per the founder, the partner indicated follow-ups and further rounds will happen -- i.e.
+the process is continuing, not concluded; no rejection, offer, or admission decision has been
+reached or stated at this point. No email, calendar record, or other source artifact has been
+provided for this update -- needed to move this from founder-stated to source-backed.
+Founder-confirmed: this Round 2 meeting is the **15-20 minute Ventures team call**, the second stage
+named in the original 2026-08-23 invitation above (10-min phone screen -> 15-20 min Ventures team
+call [this meeting] -> Selection Week -> final call-back -> offer) -- meaning AXXESS has now advanced
+past the initial phone-screen stage into this second stage, pending the further rounds/follow-ups
+the partner indicated.
+
+### 52. Iterative -- Application Decision
+
+**Status:** Rejected -- fund-mandate mismatch, not a product or traction judgment. **New,
+2026-08-25.** Recorded from a founder-forwarded rejection email. Source: "Application to Iterative"
+email from Brian (`brianma@iterative.vc`, reply-to `brian@iterative.vc`), cc'd to
+`admissions@iterative.vc`, dated Tue, Aug 25, 2026, 6:53 AM. Personal email addresses are not
+reproduced here beyond the sender's own organizational address.
+
+- Iterative states its primary mandate is Southeast Asia, defined narrowly as either (a) a founder
+  permanently based in Southeast Asia, or (b) 50%+ of existing revenue generated from Southeast
+  Asia -- explicitly stated to exclude incorporation location alone as a qualifying definition.
+- The message states Iterative does consider startups from "Asia more broadly" but holds them to a
+  materially higher bar, since that falls outside the fund's primary mandate.
+- Explicitly framed as a fund-fit decision, not a judgment on Triaxis specifically: "it's almost a
+  certainty that there are startups we do not work with that go on to be very successful." Invited
+  to reapply for the next batch.
+
+**Outcome:** Application declined. The stated reason is a geographic-mandate mismatch, not a
+product, traction, or team assessment -- recorded here as such rather than folded into an
+undifferentiated "rejected" bucket, consistent with this log's own standing distinction between
+different rejection reasons.
+
 ## Startup Visa / Relocation Programs
 
 Two government-run "startup visa" schemes, evaluated by their respective national startup
