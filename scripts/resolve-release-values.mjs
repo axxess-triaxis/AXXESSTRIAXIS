@@ -30,6 +30,14 @@ function coerceStoreVersion(version) {
   return match ? match[1] : version;
 }
 
+function normalizeAppVersion(version) {
+  // Accept X.Y and expand to X.Y.0 for convenience (e.g. "0.80" -> "0.80.0")
+  if (/^\d+\.\d+$/.test(version)) {
+    return `${version}.0`;
+  }
+  return version;
+}
+
 function parseFromTag(tag) {
   const match = /^v(\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?)-ios(\d+)-android(\d+)$/.exec(tag);
   if (!match) {
@@ -47,7 +55,7 @@ let iosBuildNumber;
 let androidVersionCode;
 
 if (eventName === "workflow_dispatch") {
-  appVersion = inputAppVersion || coerceStoreVersion(readPackageVersion());
+  appVersion = normalizeAppVersion(inputAppVersion || coerceStoreVersion(readPackageVersion()));
   iosBuildNumber = inputIosBuildNumber;
   androidVersionCode = inputAndroidVersionCode;
 

@@ -238,6 +238,7 @@ export function createDemoDataset(): DemoDataset {
       email: index === 0 ? "investor.preview@axxess.demo" : `${name.toLowerCase().replace(/\s+/g, ".")}@nehealth.example`,
       displayName: name,
       avatarInitials: initials(name),
+      availability: "public",
       role,
       roleIds: [],
       status: index % 17 === 0 && index !== 0 ? "suspended" : "active",
