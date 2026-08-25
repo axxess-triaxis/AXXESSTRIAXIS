@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { AGENTIC_DRAFT_STORAGE_KEY, readAndClearAgenticDraft, writeAgenticDraft } from "./agenticDraftHandoff";
+import { AGENTIC_DRAFT_STORAGE_KEY, clearAgenticDraft, readAndClearAgenticDraft, writeAgenticDraft } from "./agenticDraftHandoff";
 
 describe("agenticDraftHandoff", () => {
   afterEach(() => {
@@ -47,6 +47,24 @@ describe("agenticDraftHandoff", () => {
 
   it("returns null for malformed JSON without throwing", () => {
     window.sessionStorage.setItem(AGENTIC_DRAFT_STORAGE_KEY, "not json");
+    expect(readAndClearAgenticDraft("task")).toBeNull();
+  });
+
+  // MN-5 (2026-08-23): clearAgenticDraft() is called unconditionally from AuthProvider.logout()
+  // so a real AI-answer summary + citations never survives into the next session on a shared or
+  // re-used device -- this proves the removal itself actually works, independent of a full
+  // AuthProvider integration test.
+  it("clearAgenticDraft() removes an unread draft outright, without requiring a matching read", () => {
+    writeAgenticDraft({
+      actionType: "task",
+      summary: "Sensitive draft that should not survive logout.",
+      sourceType: "rag_answer",
+      createdAt: new Date().toISOString(),
+    });
+
+    clearAgenticDraft();
+
+    expect(window.sessionStorage.getItem(AGENTIC_DRAFT_STORAGE_KEY)).toBeNull();
     expect(readAndClearAgenticDraft("task")).toBeNull();
   });
 });

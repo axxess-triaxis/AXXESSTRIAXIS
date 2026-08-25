@@ -211,8 +211,8 @@ Source: rejection email from SINE IIT Bombay, 2026-06-08, Application No. SINE/I
 
 ### 35. IIMV FIELD -- Naaripreneur for Her Program (NFHP), Cohort 2
 
-**Status:** Shortlisted for Phase 2. **New, 2026-08-12.** Next steps for Phase 2 not yet
-communicated -- recorded as open, not assumed imminent.
+**Status:** In progress -- Phase 2 (Pre-Incubation), need-assessment survey due 2026-08-27. **New,
+2026-08-12; updated 2026-08-21.**
 Source: "Congratulations | IIMV FIELD | Shortlisted for Phase 2 NFHP Cohort 2" email, 2026-08-11,
 7:24 PM.
 - IIMV FIELD is the incubation and startup hub of IIM Visakhapatnam. This application/evaluation was
@@ -225,8 +225,16 @@ Source: "Congratulations | IIMV FIELD | Shortlisted for Phase 2 NFHP Cohort 2" e
   of NFHP Cohort 2 at IIMV FIELD." The email also notes a bulk-send/spam-folder caveat ("many of these
   bulk emails are unfortunately landing in spam folders") and states Phase 2 next-step details are
   still to come ("We'll be in touch shortly").
-**Outcome:** Passed Phase 1, shortlisted for Phase 2 -- program's next-step communication not yet
-received as of this evidence.
+**Outcome, updated 2026-08-21:** Phase 2 next steps received. Source: "Next Steps | NFHP Phase 2 |
+IIMV FIELD" email, `information@iimvfield.com`, 2026-08-21, 8:34 PM, again addressed to cofounder
+Ritashree Mahanta. Program structure: Phase 1 (Call for Applications) is complete -- **one of 226
+startups shortlisted into Phase 2 (Pre-Incubation)**, which runs 1-2 months with ~10 capacity-building
+sessions (~15 hours total), resource/collaborator access, then 1-1 mentoring plus funding and market
+access in Phase 3 (Incubation) for those who advance. All Phase 2 participants must submit interest at
+the end of Phase 2 to be considered for Phase 3 -- full selection criteria in the program's own
+brochure, not reproduced here. Immediate action required: a need-assessment survey (5-8 minutes),
+**deadline 27 Aug 2026 (Thursday), 23:59:59.** Passed Phase 1, now actively in Phase 2 -- advancement
+to Phase 3 remains a separate, later, not-yet-known outcome.
 
 **Update, 2026-08-22 (source PDF reviewed, image-only email export rendered visually):** a new
 email dated 2026-08-21, subject "Next Steps | NFHP Phase 2 | IIMV FIELD," confirms the next-step
@@ -533,28 +541,6 @@ reapply with more progress. The source email supports the reapply path and gener
 the "liked the application" interpretation is founder-stated unless a more specific written note is
 added.
 
-### 46. Residency Bangalore -- Founders Track
-
-**Status:** Advanced to Round 2. **New, 2026-08-22.** Recorded from a founder-supplied PDF email
-export, image-only and visually reviewed.
-Source: "Congrats! You're through to Round 2 - Residency Bangalore Founders Track" email from
-Residency Bangalore, dated 2026-08-21, 3:34 PM. Personal email addresses in the export are not
-reproduced here.
-- The message states the founder is through to **Round 2** of the **Residency Bangalore Founders
-  Track**.
-- The message states the application is in the **top 10 percentile** of applications for the cohort
-  and that the application stood out. This is recorded as the program's own phrasing, not independently
-  benchmarked.
-- Next step requested: an **R2 form** covering a one-minute intro video in a YC-style format,
-  fundraise readiness, team commitment, entity status, and traction.
-- Deadline stated in the source: **2026-08-23, 11:59 PM**.
-**Outcome:** Round 2 progression confirmed; no acceptance, investment, residency place, funding, or
-final cohort selection is evidenced yet. Treat as investor/accelerator pipeline progress, not closed
-funding traction.
-
-**Founder update, 2026-08-22:** the Round 2 submission has now been made. No final Residency
-Bangalore selection, investment, or cohort seat is evidenced yet.
-
 ### 47. Antler Saudi Arabia
 
 **Status:** Rejected. **New, 2026-08-22. Founder-stated; source artifact not yet linked.**
@@ -588,40 +574,6 @@ not yet linked.**
 with more progress. Recorded as a **positive-but-too-early / reapply-later** outcome, not as an
 acceptance, investment offer, or accelerator admission. Add the source email/screenshot if available
 to move this from founder-stated to source-backed.
-
-### 51. Accelerating Asia -- Flagship Program, Cohort 14
-
-**Status:** Invited to book a phone-screen intro call. **New, 2026-08-23.** Recorded from a
-founder-supplied PDF email export, image-only and OCR-extracted (this session, `pdfjs-dist` +
-`tesseract.js`); OCR text is generally reliable but not manually cross-checked character-by-character.
-Source: "[AAV] Cohort 14_Invitation for Phone Screen" email from Team Accelerating Asia
-(`team@acceleratingasia.com`), dated 2026-08-23, 2:14 PM. Personal email addresses in the export are
-not reproduced here.
-- The message states AXXESS's application to Accelerating Asia's **Flagship Program** has been
-  reviewed and invites a **10-minute phone-screen call** with one of the program's evaluators, as the
-  next required step in their process.
-- The message's own stated pipeline beyond this stage: a 15-20 minute call with the Ventures team,
-  a virtual Selection Week with angel investors/VCs/mentors, a final call-back, an offer, and
-  accelerator start/investment paperwork -- none of these later stages have been reached.
-- Booking window stated in the source: **2026-08-05 through 2026-09-05**; failure to book within this
-  window is stated to forfeit the application.
-- The message states a decision on whether to advance follows **2-3 weeks** after the intro call is
-  completed.
-**Outcome:** Phone-screen invitation only; no call has been evidenced as booked or completed in this
-repository, and no selection, investment, or program admission has occurred. Recorded as
-investor/accelerator pipeline progress at its earliest stage, not as funding traction.
-
-**Update, 2026-08-25 -- Founder-stated, source artifact needed.** The founder reports a "Round 2"
-meeting held today with Accelerating Asia for their **Fall accelerator** batch, with partner **Zelia
-Leong**. Per the founder, the partner indicated follow-ups and further rounds will happen -- i.e.
-the process is continuing, not concluded; no rejection, offer, or admission decision has been
-reached or stated at this point. No email, calendar record, or other source artifact has been
-provided for this update -- needed to move this from founder-stated to source-backed.
-Founder-confirmed: this Round 2 meeting is the **15-20 minute Ventures team call**, the second stage
-named in the original 2026-08-23 invitation above (10-min phone screen -> 15-20 min Ventures team
-call [this meeting] -> Selection Week -> final call-back -> offer) -- meaning AXXESS has now advanced
-past the initial phone-screen stage into this second stage, pending the further rounds/follow-ups
-the partner indicated.
 
 ### 52. Iterative -- Application Decision
 
@@ -862,6 +814,62 @@ Source: "Your Catalyst 02 application" email, Amy Lin <amy@outcastventures.com>,
 **Outcome:** Rejected for this cohort specifically on co-founder-match confidence, with an explicit,
 named invitation to reapply for the next (Spring) cohort. No product/traction/business-model reasoning
 given, consistent with this being a co-founder-matching decision rather than an investment decision.
+
+### 46. Yuvraj A. Arya -- Residency Bangalore, Founders Track
+
+**Status:** In progress -- advanced to Round 2. **New, 2026-08-21.** Numbered out of the main entry
+sequence (added after #45) to avoid renumbering every cross-referenced entry in this log -- grouped here
+under Accelerator / Pre-Accelerator Programs by content, not position.
+Source: "Congrats! You're through to Round 2 - Residency Bangalore Founders Track" email, Residency
+Bangalore <noreply@residencybllr.com>, reply-to yuvraj@residencybllr.com, 2026-08-21, 3:34 PM IST.
+- Founder-reported per this email: "top 10 percentile of all applications this cohort."
+  Founder-stated, source artifact needed for the underlying application content itself (what traction/
+  product claims were actually submitted) -- this log only has the acceptance-to-R2 notification, not
+  the original application.
+- **R2 form requirements, per the email:** a one-minute YC-style intro video, fundraise readiness, team
+  commitment, entity status, and traction. Detailed video instructions are inside the form itself.
+- **Deadline: 23 Aug 2026, 11:59 PM IST.**
+**Outcome:** Advanced to Round 2 of a cohort-based Founders Track; final outcome not yet known and
+depends on the R2 form submission ahead of the 2026-08-23 deadline. Update this entry once R2 is
+submitted and/or a Round 3 or final decision is received -- do not mark this "Passed" or "Advanced" as a
+final status until that happens.
+
+**Founder update, 2026-08-22:** the Round 2 submission has now been made. No final Residency
+Bangalore selection, investment, or cohort seat is evidenced yet.
+
+### 47. Accelerating Asia -- Flagship Program, Cohort 14
+
+**Status:** Invited to book a phone-screen intro call. **New, 2026-08-23.** Recorded from a
+founder-supplied PDF email export, image-only and OCR-extracted (this session, `pdfjs-dist` +
+`tesseract.js`); OCR text is generally reliable but not manually cross-checked character-by-character.
+Source: "[AAV] Cohort 14_Invitation for Phone Screen" email from Team Accelerating Asia
+(`team@acceleratingasia.com`), dated 2026-08-23, 2:14 PM. Personal email addresses in the export are
+not reproduced here.
+- The message states AXXESS's application to Accelerating Asia's **Flagship Program** has been
+  reviewed and invites a **10-minute phone-screen call** with one of the program's evaluators, as the
+  next required step in their process.
+- The message's own stated pipeline beyond this stage: a 15-20 minute call with the Ventures team,
+  a virtual Selection Week with angel investors/VCs/mentors, a final call-back, an offer, and
+  accelerator start/investment paperwork -- none of these later stages have been reached.
+- Booking window stated in the source: **2026-08-05 through 2026-09-05**; failure to book within this
+  window is stated to forfeit the application.
+- The message states a decision on whether to advance follows **2-3 weeks** after the intro call is
+  completed.
+**Outcome:** Phone-screen invitation only; no call has been evidenced as booked or completed in this
+repository, and no selection, investment, or program admission has occurred. Recorded as
+investor/accelerator pipeline progress at its earliest stage, not as funding traction.
+
+**Update, 2026-08-25 -- Founder-stated, source artifact needed.** The founder reports a "Round 2"
+meeting held today with Accelerating Asia for their **Fall accelerator** batch, with partner **Zelia
+Leong**. Per the founder, the partner indicated follow-ups and further rounds will happen -- i.e.
+the process is continuing, not concluded; no rejection, offer, or admission decision has been
+reached or stated at this point. No email, calendar record, or other source artifact has been
+provided for this update -- needed to move this from founder-stated to source-backed.
+Founder-confirmed: this Round 2 meeting is the **15-20 minute Ventures team call**, the second stage
+named in the original 2026-08-23 invitation above (10-min phone screen -> 15-20 min Ventures team
+call [this meeting] -> Selection Week -> final call-back -> offer) -- meaning AXXESS has now advanced
+past the initial phone-screen stage into this second stage, pending the further rounds/follow-ups
+the partner indicated.
 
 ## Mentor / Ecosystem Recognition Roles (New, 2026-08-03)
 

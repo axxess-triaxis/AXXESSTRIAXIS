@@ -9,6 +9,9 @@ import { WhatsNewPanel } from "../components/feedback/WhatsNewPanel";
 import { Card } from "../components/ui/Card";
 import { GuidedDemoBanner } from "../components/demo/GuidedDemoBanner";
 import { WhatsAppLiveNotificationBanner } from "../components/messaging/WhatsAppLiveNotificationBanner";
+import { useIsMobile } from "./components/ui/use-mobile";
+import { isNativeMobileSurface } from "../features/mobile/isNativeMobileSurface";
+import { MobileShell } from "../features/mobile/MobileShell";
 import { usePostDemoSatisfactionPrompt } from "../hooks/usePostDemoSatisfactionPrompt";
 import { useWhatsAppLiveEvents } from "../hooks/useWhatsAppLiveEvents";
 import { useWhatsNewPanel } from "../hooks/useWhatsNewPanel";
@@ -24,8 +27,28 @@ import type { NavSection } from "./navigation";
 
 export default function App() {
   const { active, activeRoute, navigateToSection } = useAppRouting("dashboard");
+  const isMobile = useIsMobile();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [notifOpen, setNotifOpen] = useState(false);
+  // MN-1 (2026-08-23): distinct from `isMobile` above (a viewport-width check that also covers a
+  // narrow desktop browser window) -- this is specifically "are we running inside the Capacitor
+  // native app," the trigger for replacing the shell entirely rather than just making the existing
+  // one responsive. Starts false (SSR-safe default, matching this codebase's established pattern
+  // for any window-dependent check) and corrects after mount.
+  const [isNativeMobile, setIsNativeMobile] = useState(false);
+  useEffect(() => {
+    setIsNativeMobile(isNativeMobileSurface());
+  }, []);
+
+  // Beta tester feedback (2026-08-23, Android): the sidebar rendered as a permanent ~232px rail
+  // on every screen regardless of viewport width, squeezing real page content into a cramped
+  // remainder on phones. `sidebarOpen` here now means "rail expanded" on desktop but "drawer open"
+  // on mobile (AppShell branches its rendering on isMobile) -- closing it once on the initial
+  // transition to mobile, rather than fighting the user's own later manual toggles, matches how a
+  // real mobile drawer should default (closed) without changing desktop's existing default (open).
+  useEffect(() => {
+    if (isMobile) setSidebarOpen(false);
+  }, [isMobile]);
   const { session, isAuthenticated, logout } = useAuth();
   const analytics = useAnalytics();
   const postDemoSatisfaction = usePostDemoSatisfactionPrompt();
@@ -154,11 +177,28 @@ export default function App() {
     analytics.resetAnalytics();
   };
 
+  // MN-1 (2026-08-23): the actual product-boundary switch -- inside the Capacitor native app,
+  // MobileShell replaces AppShell/Sidebar/TopBar entirely (not just a responsive variant of it).
+  // Deliberately omits GuidedDemoBanner/WhatsAppLiveNotificationBanner/PostDemoSatisfactionPrompt/
+  // WhatsNewPanel here -- these are desktop-web engagement/marketing surfaces, out of scope for a
+  // "restrained enterprise UI" per the roadmap's own Mobile Surface Contract; RouteBoundary's real
+  // RBAC/access check is unchanged and still applies, since that boundary must never weaken.
+  if (isNativeMobile) {
+    return (
+      <MobileShell active={active} user={currentUser} onSelectSection={handleSelectSection} onLogout={handleLogout}>
+        <RouteBoundary route={activeRoute} hasAccess={hasRouteAccess}>
+          <ActiveSection />
+        </RouteBoundary>
+      </MobileShell>
+    );
+  }
+
   return (
     <AppShell
       active={active}
       activeLabel={activeLabel}
       sidebarOpen={sidebarOpen}
+      isMobile={isMobile}
       notifOpen={notifOpen}
       routePath={routePath}
       onSelectSection={handleSelectSection}
