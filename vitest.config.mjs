@@ -17,6 +17,7 @@ export default defineConfig({
       "dist/**",
       ".next/**",
       ".cache/**",
+      ".claude/**",
       ".agents/**",
       ".pnpm-store/**",
       "coverage/**",
@@ -33,6 +34,19 @@ export default defineConfig({
     fileParallelism: true,
     globals: true,
     pool: "threads",
+    // 2026-08-25: capped after tracing the recurring "Worker exited unexpectedly" crash (referenced
+    // as pre-existing infra debt across multiple prior PRs' bypass justifications) to real memory
+    // exhaustion, not a code bug: this machine has 8 CPUs but as little as ~1GB free RAM under normal
+    // dev-session load, while the uncapped default spins up to 8 concurrent worker threads (one per
+    // core), each loading its own jsdom + transform pipeline. Capping concurrency trades some of the
+    // fileParallelism speedup above for not OOM-killing a worker mid-run. Revisit upward if this
+    // machine's available memory profile changes.
+    poolOptions: {
+      threads: {
+        minThreads: 2,
+        maxThreads: 4,
+      },
+    },
     // 2026-08-01: paired with re-enabling fileParallelism above. The default 5000ms testTimeout
     // is tight enough that genuine CPU contention across up to 200 concurrently-running test
     // files can push a handful of async-heavy tests (large list renders, waitFor on mocked
