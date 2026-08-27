@@ -344,6 +344,22 @@ describe("isLiteAllowedApiPath (XL-4): the Lite API allowlist", () => {
     expect(isLiteAllowedApiPath("/api/rag/review")).toBe(true);
   });
 
+  // Lite Settings real-modules pass (2026-08-27): Profile/Organization avatar+logo upload reuse
+  // the shipped MN-8 routes, and the Integrations tab reuses the OAuth connector engine as-is for
+  // a smaller, hardcoded provider list -- see LiteIntegrationsSection.tsx.
+  it("allows the profile avatar and organization logo upload routes", () => {
+    expect(isLiteAllowedApiPath("/api/profile-media/avatar")).toBe(true);
+    expect(isLiteAllowedApiPath("/api/organizations/logo")).toBe(true);
+  });
+
+  it("allows the connector OAuth prefix and status check, but not other /api/connectors/* routes", () => {
+    expect(isLiteAllowedApiPath("/api/connectors/oauth/start")).toBe(true);
+    expect(isLiteAllowedApiPath("/api/connectors/oauth/callback")).toBe(true);
+    expect(isLiteAllowedApiPath("/api/connectors/status")).toBe(true);
+    expect(isLiteAllowedApiPath("/api/connectors/gmail/messages/import")).toBe(false);
+    expect(isLiteAllowedApiPath("/api/connectors/meta-business/sync")).toBe(false);
+  });
+
   it("allows only the Lite-relevant /api/repositories/[resource] resource types", () => {
     expect(isLiteAllowedApiPath("/api/repositories/tasks")).toBe(true);
     expect(isLiteAllowedApiPath("/api/repositories/meetings")).toBe(true);
