@@ -81,19 +81,20 @@ function authArgs(keyPath) {
 
 const keyPath = writeAppStoreConnectKey();
 
-// 2026-08-27, second iteration: CODE_SIGN_STYLE=Automatic + CODE_SIGN_IDENTITY=Apple Distribution
-// (the first attempted fix) failed live in CI with "App has conflicting provisioning settings.
-// App is automatically signed for development, but a conflicting code signing identity Apple
-// Distribution has been manually specified." -- confirming `xcodebuild archive` with pure
-// Automatic signing on this account resolves to a Development-anchored provisioning state that a
-// bare identity override cannot redirect; Apple's own suggested fix is exactly this: switch to
-// manual signing with an explicit profile. `AXXESS TRIaxis` is the App Store distribution profile
-// created for `com.triaxis.axxess` in the Developer Portal (Certificates, Identifiers & Profiles ->
-// Profiles) using the Apple Distribution certificate created the same day -- override via
-// IOS_PROVISIONING_PROFILE_SPECIFIER if that profile is ever renamed or regenerated under a
-// different name.
-const provisioningProfileSpecifier = process.env.IOS_PROVISIONING_PROFILE_SPECIFIER || "AXXESS TRIaxis";
-
+// 2026-08-27, three failed manual-signing iterations, reverted: CODE_SIGN_STYLE=Manual with an
+// explicit PROVISIONING_PROFILE_SPECIFIER always failed with "No signing certificate ... found
+// ... with a private key", regardless of which identity string was tried ("Apple Distribution",
+// then "iPhone Distribution") -- the actual, root problem was never the identity string. The
+// specific named profile that manual signing pinned to ("AXXESS TRIaxis") is tied to a
+// certificate whose private key was generated locally (via OpenSSL, outside any Apple system) and
+// never existed anywhere CI could reach it -- Apple's API only ever hands back the public
+// certificate for that identity, never the private key, so no CODE_SIGN_IDENTITY value could ever
+// have worked against it. Reverted to Automatic signing: -allowProvisioningUpdates already proved
+// it can auto-create a certificate entirely within CI's own ephemeral keychain (the 2 Development
+// certificates visible in the Developer Portal, both "Created via API", are exactly that) -- the
+// real remaining blocker is the very first error this pass ever hit ("Your team has no devices
+// from which to generate a provisioning profile"), which needs a registered device, not a
+// different signing style.
 const archiveArgs = hasSigning
   ? [
       ...baseArgs,
@@ -109,18 +110,7 @@ const archiveArgs = hasSigning
       `PRODUCT_BUNDLE_IDENTIFIER=${process.env.IOS_BUNDLE_IDENTIFIER}`,
       `MARKETING_VERSION=${appVersion}`,
       `CURRENT_PROJECT_VERSION=${iosBuildNumber}`,
-      "CODE_SIGN_STYLE=Manual",
-      `PROVISIONING_PROFILE_SPECIFIER=${provisioningProfileSpecifier}`,
-      // 2026-08-27, third iteration: "Apple Distribution" (the second attempted fix) failed live
-      // in CI with "No signing certificate 'iOS Distribution' found... with a private key" --
-      // Xcode's own signing-identity matching for this project resolves against the legacy
-      // "iOS Distribution" alias, not the newer universal "Apple Distribution" name, regardless of
-      // which type label the certificate shows as in the Developer Portal. "iPhone Distribution"
-      // is the long-established, documented CODE_SIGN_IDENTITY value CI pipelines use for App
-      // Store archives for exactly this reason (Apple Developer Forums threads 690763, 713276) --
-      // Xcode matches it as a prefix/alias against any valid distribution certificate regardless
-      // of the certificate's own display type.
-      "CODE_SIGN_IDENTITY=iPhone Distribution",
+      "CODE_SIGN_STYLE=Automatic",
       "archive",
     ]
   : [
