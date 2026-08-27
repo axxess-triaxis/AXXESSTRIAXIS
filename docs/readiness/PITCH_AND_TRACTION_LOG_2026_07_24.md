@@ -597,6 +597,39 @@ product, traction, or team assessment -- recorded here as such rather than folde
 undifferentiated "rejected" bucket, consistent with this log's own standing distinction between
 different rejection reasons.
 
+### 53. NVIDIA Inception -- Program Acceptance
+
+**Status:** Accepted. **New, 2026-08-26. Founder-stated; source artifact (acceptance email/dashboard
+screenshot) not yet linked.** Content-wise this belongs with the Incubation Programs section above
+-- numbered out of sequence here to avoid renumbering existing entries, consistent with this log's
+own convention (see entries #44-47).
+
+Per the founder, Triaxis Ventures has been accepted into NVIDIA Inception, with 5 stated benefits:
+
+1. **Capital Connect** -- acceptance into the NVIDIA VC Alliance.
+2. **AWS Credits** -- stated eligibility for $25,000, credited via AWS Activate (Founders tier).
+3. **Microsoft Azure Credits** -- $5,000. Per the founder, usable for Microsoft Teams, Outlook, and
+   Entra APIs -- directly relevant to A-82 (Outlook/Teams OAuth fix), previously deferred 3-6 months
+   specifically because the prior Azure trial credit had run down to ~$90 of $200 (see
+   `project_a82_azure_deferral` memory). Founder states intent to apply this credit toward that work;
+   A-82's own deferral decision has not yet been formally revisited in this repository.
+4. **NVIDIA co-branded marketing assets.**
+5. **NVIDIA discounted events/passes.**
+
+**AWS credit stacking, per the founder:** the $25,000 from NVIDIA Inception is delivered through AWS
+Activate's Founders tier, which itself carries a separate base $5,000 credit -- a stated combined
+total of **$30,000** in AWS credits. Founder reports having already applied to NVIDIA Inception's own
+benefits and separately applied for the AWS Activate Founders tier to receive the combined $30,000.
+
+**Outcome:** Program acceptance confirmed by the founder; the specific credit amounts and AWS
+Activate Founders-tier application are stated as applied-for, not yet confirmed as disbursed/approved
+in this repository. No acceptance email, AWS Activate approval notice, or Azure credit confirmation
+has been linked yet -- needed to move this from founder-stated to source-backed. Relevant to the
+separate Vercel/Supabase infra-tier-upgrade deferral decision (see
+`project_infra_tier_upgrade_deferred` memory / A-113 in the readiness matrix): this changes the cost
+calculus specifically for AWS-hosted infrastructure, not Vercel/Supabase directly, since neither of
+those runs on AWS.
+
 ## Startup Visa / Relocation Programs
 
 Two government-run "startup visa" schemes, evaluated by their respective national startup
