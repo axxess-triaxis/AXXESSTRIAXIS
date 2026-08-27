@@ -4,48 +4,30 @@ import { describe, expect, it } from "vitest";
 
 const source = readFileSync(join(process.cwd(), "apps/mobile-capacitor/scripts/build-ios.mjs"), "utf8");
 
-// 2026-08-27, three live CI iterations on a brand-new Apple Developer account:
-// (1) CODE_SIGN_STYLE=Automatic with no explicit identity resolved to requesting an "iOS App
-//     Development" profile instead of App Store Distribution, failing with "Your team has no
-//     devices from which to generate a provisioning profile" (Development profiles require
-//     registered device UDIDs; Distribution profiles do not).
-// (2) CODE_SIGN_STYLE=Automatic + CODE_SIGN_IDENTITY=Apple Distribution failed differently: "App
-//     has conflicting provisioning settings... automatically signed for development, but a
-//     conflicting code signing identity Apple Distribution has been manually specified" --
-//     Automatic signing on this account is Development-anchored in a way a bare identity override
-//     can't redirect.
-// (3) CODE_SIGN_STYLE=Manual + PROVISIONING_PROFILE_SPECIFIER + CODE_SIGN_IDENTITY=Apple
-//     Distribution failed with "No signing certificate 'iOS Distribution' found... with a private
-//     key" -- Xcode's own signing-identity matching resolves against the legacy "iOS Distribution"
-//     alias regardless of the certificate's own display type in the portal.
-// Landed on: CODE_SIGN_IDENTITY=iPhone Distribution -- the long-established, documented value CI
-// pipelines use for App Store archives (Apple Developer Forums threads 690763, 713276); Xcode
-// matches it as a prefix/alias against any valid distribution certificate. This is a
-// source-assertion test, not a functional one, because build-ios.mjs is a top-level
-// side-effecting script (calls process.exit based on process.platform/env at import time) that
-// only runs meaningfully on a macOS runner with a real Xcode toolchain -- there is no existing
-// test harness in this repo for scripts of this shape.
+// 2026-08-27: three live-CI iterations chasing a signing-identity/manual-profile fix for "Your
+// team has no devices from which to generate a provisioning profile" all failed or made things
+// worse -- the actual root cause was never the signing style or identity string, it was that the
+// one distribution certificate in the account had its private key generated locally (via OpenSSL,
+// outside any Apple system), so no CI-reachable certificate ever existed for manual signing to
+// use. Reverted to plain Automatic signing -- -allowProvisioningUpdates already proved (via 2
+// auto-created Development certificates visible in the Developer Portal) that it can create a
+// certificate entirely within CI's own ephemeral keychain when nothing forces it toward a
+// certificate CI can't use. The real remaining blocker is a registered device (see the original
+// error), not the signing style. This is a source-assertion test, not a functional one, because
+// build-ios.mjs is a top-level side-effecting script (calls process.exit based on
+// process.platform/env at import time) that only runs meaningfully on a macOS runner with a real
+// Xcode toolchain -- there is no existing test harness in this repo for scripts of this shape.
 describe("build-ios.mjs: iOS archive signing", () => {
-  it("uses manual signing with the iPhone Distribution identity alias and a named profile for the store-release archive step", () => {
+  it("uses plain automatic signing for the store-release archive step, no forced identity or profile", () => {
     const archiveBlock = source.slice(source.indexOf("const archiveArgs"), source.indexOf("const archiveResult"));
-    expect(archiveBlock).toContain("CODE_SIGN_STYLE=Manual");
-    expect(archiveBlock).toContain("CODE_SIGN_IDENTITY=iPhone Distribution");
-    expect(archiveBlock).toContain("PROVISIONING_PROFILE_SPECIFIER=");
-    expect(archiveBlock).not.toContain("CODE_SIGN_STYLE=Automatic");
-    expect(archiveBlock).not.toContain("CODE_SIGN_IDENTITY=Apple Distribution");
-    // Must come from the signed (hasSigning) branch, before the "archive" action string, not the
-    // unsigned Debug/simulator branch below it (which has no code-signing settings at all).
-    const signedBranch = archiveBlock.slice(0, archiveBlock.indexOf('"archive",'));
-    expect(signedBranch).toContain("CODE_SIGN_IDENTITY=iPhone Distribution");
-    expect(signedBranch).toContain("PROVISIONING_PROFILE_SPECIFIER=");
+    expect(archiveBlock).toContain("CODE_SIGN_STYLE=Automatic");
+    expect(archiveBlock).not.toContain("CODE_SIGN_IDENTITY");
+    expect(archiveBlock).not.toContain("PROVISIONING_PROFILE_SPECIFIER");
   });
 
-  it("defaults the provisioning profile specifier and allows an env var override", () => {
-    expect(source).toContain('process.env.IOS_PROVISIONING_PROFILE_SPECIFIER || "AXXESS TRIaxis"');
-  });
-
-  it("does not apply any code-signing identity override to the unsigned simulator build", () => {
+  it("does not apply any code-signing override to the unsigned simulator build", () => {
     const unsignedBranch = source.slice(source.indexOf("CODE_SIGNING_ALLOWED=NO") - 200, source.indexOf("CODE_SIGNING_ALLOWED=NO") + 50);
     expect(unsignedBranch).not.toContain("CODE_SIGN_IDENTITY");
+    expect(unsignedBranch).not.toContain("PROVISIONING_PROFILE_SPECIFIER");
   });
 });
