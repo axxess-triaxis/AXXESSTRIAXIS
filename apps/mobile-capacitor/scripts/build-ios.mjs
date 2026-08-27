@@ -81,6 +81,19 @@ function authArgs(keyPath) {
 
 const keyPath = writeAppStoreConnectKey();
 
+// 2026-08-27, second iteration: CODE_SIGN_STYLE=Automatic + CODE_SIGN_IDENTITY=Apple Distribution
+// (the first attempted fix) failed live in CI with "App has conflicting provisioning settings.
+// App is automatically signed for development, but a conflicting code signing identity Apple
+// Distribution has been manually specified." -- confirming `xcodebuild archive` with pure
+// Automatic signing on this account resolves to a Development-anchored provisioning state that a
+// bare identity override cannot redirect; Apple's own suggested fix is exactly this: switch to
+// manual signing with an explicit profile. `AXXESS TRIaxis` is the App Store distribution profile
+// created for `com.triaxis.axxess` in the Developer Portal (Certificates, Identifiers & Profiles ->
+// Profiles) using the Apple Distribution certificate created the same day -- override via
+// IOS_PROVISIONING_PROFILE_SPECIFIER if that profile is ever renamed or regenerated under a
+// different name.
+const provisioningProfileSpecifier = process.env.IOS_PROVISIONING_PROFILE_SPECIFIER || "AXXESS TRIaxis";
+
 const archiveArgs = hasSigning
   ? [
       ...baseArgs,
@@ -96,16 +109,8 @@ const archiveArgs = hasSigning
       `PRODUCT_BUNDLE_IDENTIFIER=${process.env.IOS_BUNDLE_IDENTIFIER}`,
       `MARKETING_VERSION=${appVersion}`,
       `CURRENT_PROJECT_VERSION=${iosBuildNumber}`,
-      "CODE_SIGN_STYLE=Automatic",
-      // Without this, Xcode's automatic signing resolution for `xcodebuild archive` has no signal
-      // that this Release-configuration archive is destined for App Store distribution, and (seen
-      // live in CI on a brand-new Apple Developer account, 2026-08-27) can resolve to requesting an
-      // "iOS App Development" profile instead -- which then fails with "Your team has no devices
-      // from which to generate a provisioning profile" (Development profiles require registered
-      // device UDIDs; Distribution profiles do not). ExportOptions.plist's own `method: app-store`
-      // (see apply-capacitor-store-config.mjs) only governs the later, separate `-exportArchive`
-      // step -- it has no effect on this archive step at all, so the same signal must be repeated
-      // here as an explicit build-setting override.
+      "CODE_SIGN_STYLE=Manual",
+      `PROVISIONING_PROFILE_SPECIFIER=${provisioningProfileSpecifier}`,
       "CODE_SIGN_IDENTITY=Apple Distribution",
       "archive",
     ]
