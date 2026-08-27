@@ -222,15 +222,12 @@ function applyIos() {
     ].join("\n"),
   );
 
-  // 2026-08-27: signingStyle was "automatic", matching the archive step's own original
-  // CODE_SIGN_STYLE=Automatic -- both were changed to manual together after a live CI failure
-  // ("App has conflicting provisioning settings... automatically signed for development") showed
-  // `xcodebuild archive` on this account resolves Automatic signing to a Development-anchored
-  // state that a distribution identity override alone can't redirect (see build-ios.mjs's own
-  // comment on `provisioningProfileSpecifier` for the full account). Automatic and manual must not
-  // be mixed across the archive and export steps of the same release.
-  const provisioningProfileSpecifier = envValue("IOS_PROVISIONING_PROFILE_SPECIFIER") || "AXXESS TRIaxis";
-
+  // 2026-08-27: three failed manual-signing iterations, reverted back to "automatic" -- the
+  // named provisioning profile manual signing pinned to was tied to a certificate whose private
+  // key only ever existed on a local developer machine (generated via OpenSSL, outside any Apple
+  // system), never reachable by CI. See build-ios.mjs's own comment on the archive step's
+  // CODE_SIGN_STYLE for the full account. Automatic and manual must not be mixed across the
+  // archive and export steps of the same release, so this reverts alongside that change.
   writeFile(
     exportOptionsPlist,
     [
@@ -243,12 +240,7 @@ function applyIos() {
       "  <key>destination</key>",
       "  <string>export</string>",
       "  <key>signingStyle</key>",
-      "  <string>manual</string>",
-      "  <key>provisioningProfiles</key>",
-      "  <dict>",
-      `    <key>${iosBundleId}</key>`,
-      `    <string>${provisioningProfileSpecifier}</string>`,
-      "  </dict>",
+      "  <string>automatic</string>",
       "  <key>stripSwiftSymbols</key>",
       "  <true/>",
       "  <key>uploadSymbols</key>",
