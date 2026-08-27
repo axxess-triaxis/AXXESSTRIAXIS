@@ -97,6 +97,16 @@ const archiveArgs = hasSigning
       `MARKETING_VERSION=${appVersion}`,
       `CURRENT_PROJECT_VERSION=${iosBuildNumber}`,
       "CODE_SIGN_STYLE=Automatic",
+      // Without this, Xcode's automatic signing resolution for `xcodebuild archive` has no signal
+      // that this Release-configuration archive is destined for App Store distribution, and (seen
+      // live in CI on a brand-new Apple Developer account, 2026-08-27) can resolve to requesting an
+      // "iOS App Development" profile instead -- which then fails with "Your team has no devices
+      // from which to generate a provisioning profile" (Development profiles require registered
+      // device UDIDs; Distribution profiles do not). ExportOptions.plist's own `method: app-store`
+      // (see apply-capacitor-store-config.mjs) only governs the later, separate `-exportArchive`
+      // step -- it has no effect on this archive step at all, so the same signal must be repeated
+      // here as an explicit build-setting override.
+      "CODE_SIGN_IDENTITY=Apple Distribution",
       "archive",
     ]
   : [
