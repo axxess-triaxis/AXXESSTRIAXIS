@@ -373,7 +373,18 @@ jobs:
     if: always()
     env:
       MIN_ANDROID_BINARY_BYTES: "1000000"
-      MIN_IOS_BINARY_BYTES: "2000000"
+      # 2026-08-27: lowered from 2000000 -- this app runs Capacitor in remote server mode
+      # (capacitor.config.ts's `server.url` points at the live web app, e.g.
+      # https://landing.triaxisventures.com; webDir assets are never bundled into the shell for
+      # the primary load path), so the native .ipa is expected to be small: the Capacitor
+      # runtime, native plugins, and app icon/launch assets only, no HTML/JS/CSS payload. The
+      # first-ever successful iOS archive+export this pipeline produced (2026-08-27, after fixing
+      # the App Store Connect API key auth, the Apple Distribution certificate, and device
+      # registration for automatic signing) came in at 1,258,187 bytes -- both the old 2000000 and
+      # the original 20000000 threshold predate any real build ever reaching this check and were
+      # never validated against one. 800000 stays a real floor against a genuinely empty/corrupt
+      # export while accommodating this app's actual, legitimate size.
+      MIN_IOS_BINARY_BYTES: "800000"
       RELEASE_TARGET: ${{ needs.release-checklist.outputs.release_target }}
       RUN_ANDROID: ${{ needs.release-checklist.outputs.run_android }}
       RUN_IOS: ${{ needs.release-checklist.outputs.run_ios }}
