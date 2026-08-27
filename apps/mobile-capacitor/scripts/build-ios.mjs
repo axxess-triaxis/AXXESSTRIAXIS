@@ -111,7 +111,16 @@ const archiveArgs = hasSigning
       `CURRENT_PROJECT_VERSION=${iosBuildNumber}`,
       "CODE_SIGN_STYLE=Manual",
       `PROVISIONING_PROFILE_SPECIFIER=${provisioningProfileSpecifier}`,
-      "CODE_SIGN_IDENTITY=Apple Distribution",
+      // 2026-08-27, third iteration: "Apple Distribution" (the second attempted fix) failed live
+      // in CI with "No signing certificate 'iOS Distribution' found... with a private key" --
+      // Xcode's own signing-identity matching for this project resolves against the legacy
+      // "iOS Distribution" alias, not the newer universal "Apple Distribution" name, regardless of
+      // which type label the certificate shows as in the Developer Portal. "iPhone Distribution"
+      // is the long-established, documented CODE_SIGN_IDENTITY value CI pipelines use for App
+      // Store archives for exactly this reason (Apple Developer Forums threads 690763, 713276) --
+      // Xcode matches it as a prefix/alias against any valid distribution certificate regardless
+      // of the certificate's own display type.
+      "CODE_SIGN_IDENTITY=iPhone Distribution",
       "archive",
     ]
   : [
