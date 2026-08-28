@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import Link from "next/link";
+import { LogOut } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useAuth } from "../../auth/AuthProvider";
 import { liteNavItems, liteNavItemForPath } from "./liteNavigation";
@@ -13,7 +14,7 @@ import { liteNavItems, liteNavItemForPath } from "./liteNavigation";
 // docs/readiness/AXXESS_LITE_DOCTRINE_AND_SURFACE_CONSTITUTION_2026_08_05.md Section 5.
 export function LiteShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const { session } = useAuth();
+  const { session, logout } = useAuth();
   const active = liteNavItemForPath(pathname ?? "/lite");
 
   if (session.status === "loading") {
@@ -39,7 +40,24 @@ export function LiteShell({ children }: { children: ReactNode }) {
     <div className="flex min-h-screen flex-col bg-[#F8F9FA]">
       <header className="flex items-center justify-between border-b border-[rgba(0,0,0,0.06)] bg-white px-4 py-3">
         <span className="text-sm font-bold tracking-wide text-[#0F1117]">AXXESS Lite</span>
-        <span className="text-xs text-[#5F6B73]">{session.user.displayName}</span>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-[#5F6B73]">{session.user.displayName}</span>
+          {/* 2026-08-28: founder found Lite had no way to sign out at all -- the header only ever
+              showed the display name as plain text, no control anywhere in the shell or Settings.
+              Reuses AuthProvider's logout() directly (same call X0's TopBar makes), matching this
+              shell's own always-authenticated-or-sign-in-prompt render contract above: logout()
+              flips session.status to "unauthenticated" and this component re-renders the sign-in
+              screen on its own, no manual redirect needed. */}
+          <button
+            type="button"
+            onClick={() => void logout()}
+            aria-label="Sign out"
+            title="Sign out"
+            className="flex h-7 w-7 items-center justify-center rounded-lg text-[#5F6B73] transition-colors hover:bg-[#F2F3F5] hover:text-[#0F1117]"
+          >
+            <LogOut size={14} />
+          </button>
+        </div>
       </header>
 
       <main className="flex-1 overflow-y-auto px-4 py-4 pb-20 sm:pb-4">{children}</main>
