@@ -84,9 +84,22 @@ const liteAllowedApiExactPaths = new Set([
   "/api/stakeholders/notes",
   "/api/rag/query",
   "/api/rag/review",
+  // Added for the Lite Settings real-modules pass (2026-08-27): profile avatar upload and
+  // organization logo upload reuse the same shipped MN-8 routes X0 uses -- see
+  // src/app/api/profile-media/avatar/route.ts and src/app/api/organizations/logo/route.ts.
+  // /api/connectors/status is read-only ("is provider X connected") and safe to expose alongside
+  // the OAuth prefix below.
+  "/api/profile-media/avatar",
+  "/api/organizations/logo",
+  "/api/connectors/status",
 ]);
 
-const liteAllowedApiPrefixes = ["/api/auth/", "/api/onboarding/", "/api/documents/"];
+// /api/connectors/oauth/ covers oauth/start and oauth/callback -- reused as-is for Lite's own
+// scoped-down Integrations tab (12 connectors vs X0's 28). The edge gate here can't cheaply inspect
+// the `?provider=` query value, so narrowing to Lite's specific connector list happens inside those
+// route handlers themselves (resolveIsLiteSurface + a hardcoded allowed-provider set), not here --
+// this prefix only decides "is /api/connectors/oauth/* reachable on a Lite host at all."
+const liteAllowedApiPrefixes = ["/api/auth/", "/api/onboarding/", "/api/documents/", "/api/connectors/oauth/"];
 
 // /api/repositories/[resource] is one dynamic route file serving many resource types (see
 // src/app/api/repositories/[resource]/route.ts's ResourceName union) -- includes X0-only resources

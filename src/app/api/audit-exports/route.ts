@@ -1,13 +1,22 @@
 import { createHash, randomBytes } from "node:crypto";
 import { NextResponse } from "next/server";
+import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
+import JSZip from "jszip";
 import { getServerAuthSession } from "../../../auth/serverSession";
 import type { AuditLog } from "../../../domain";
 import { auditLogsRepository, tenantScopeFromUser } from "../../../repositories/supabaseEnterpriseRepositories";
 
 const adminRoles = ["Super Admin", "Organization Admin"];
 
+// Lite Settings real-modules pass (2026-08-27): "format" and the RBAC relaxation below are the
+// only two changes to this route's existing X0 behavior. `format` omitted/"csv" is byte-for-byte
+// the same request/response shape AuditLogsSection.tsx (X0's admin console) has always used --
+// its own calls never pass this field. "pdf"/"zip" are new, additive, Lite-only response shapes
+// (see LiteAuditExportSection.tsx) that skip the `csv` field entirely in favor of `contentBase64`,
+// since binary output doesn't belong as plain JSON text.
 type AuditExportRequest = {
   filter?: string;
+  format?: "csv" | "pdf" | "zip";
 };
 
 type AuditExportRow = {
@@ -65,6 +74,51 @@ function auditLogsToCsv(logs: AuditLog[]) {
     log.requestId ?? "",
   ].map(csvEscape).join(","));
   return [header.join(","), ...rows].join("\n");
+}
+
+// Lite Settings real-modules pass (2026-08-27): the "simple activity log as PDF or ZIP" per
+// docs/readiness/AXXESS_LITE_PRODUCTION_SCOPE_AND_NAVIGATION_CONTRACT_2026_08_05.md Section 13 --
+// a plain, one-row-per-line table, not a designed report. First real production use of `pdf-lib`
+// (no PDF-generation library existed anywhere in this repo before this) and of `jszip` (previously
+// only used as a test fixture).
+async function auditLogsToPdfBytes(logs: AuditLog[], title: string): Promise<Uint8Array> {
+  const doc = await PDFDocument.create();
+  const font = await doc.embedFont(StandardFonts.Helvetica);
+  const bold = await doc.embedFont(StandardFonts.HelveticaBold);
+  const pageWidth = 612;
+  const pageHeight = 792;
+  const margin = 40;
+  const lineHeight = 14;
+  let page = doc.addPage([pageWidth, pageHeight]);
+  let y = pageHeight - margin;
+
+  const drawLine = (text: string, options: { size?: number; useBold?: boolean } = {}) => {
+    if (y < margin) {
+      page = doc.addPage([pageWidth, pageHeight]);
+      y = pageHeight - margin;
+    }
+    page.drawText(text.slice(0, 110), { x: margin, y, size: options.size ?? 9, font: options.useBold ? bold : font, color: rgb(0.06, 0.07, 0.09) });
+    y -= lineHeight;
+  };
+
+  drawLine(title, { size: 14, useBold: true });
+  drawLine(`Generated ${new Date().toISOString()} -- ${logs.length} record${logs.length === 1 ? "" : "s"}`, { size: 9 });
+  y -= lineHeight / 2;
+
+  if (logs.length === 0) {
+    drawLine("No activity to export for this period.");
+  }
+  for (const log of logs) {
+    drawLine(`${log.createdAt}  ${log.category ?? "system"}  ${log.action}  ${log.resourceType}${log.resourceId ? ` (${log.resourceId})` : ""}`);
+  }
+
+  return doc.save();
+}
+
+async function auditLogsToZipBytes(csv: string, csvFileName: string): Promise<Uint8Array> {
+  const zip = new JSZip();
+  zip.file(csvFileName, csv);
+  return zip.generateAsync({ type: "uint8array" });
 }
 
 async function jsonBody(request: Request) {
@@ -160,15 +214,24 @@ async function insertAuditExportTimelineLinks(
 export async function POST(request: Request) {
   const session = await getServerAuthSession(true);
   if (!session) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
-  if (!adminRoles.includes(session.user.role)) return NextResponse.json({ error: "Forbidden." }, { status: 403 });
+
+  // Lite Settings real-modules pass (2026-08-27): relaxed from a hard 403 for every non-admin --
+  // every role may now export, but a non-admin's export is filtered to their own actions only
+  // (see the actorUserId filter below). Super Admin/Organization Admin keep today's org-wide export
+  // unchanged. This is the one real access-control change in this pass; the self-only filter is
+  // applied server-side and cannot be widened by any client-supplied parameter.
+  const isAdmin = adminRoles.includes(session.user.role);
 
   const body = await jsonBody(request);
   const filter = typeof body.filter === "string" && body.filter.trim() ? body.filter.trim().slice(0, 40) : "all";
+  const format: "csv" | "pdf" | "zip" = body.format === "pdf" || body.format === "zip" ? body.format : "csv";
   const scope = tenantScopeFromUser(session.user, session.accessToken);
-  const logs = filteredLogs(await auditLogsRepository.list(scope, { pageSize: 100 }), filter);
+  const orgLogs = filteredLogs(await auditLogsRepository.list(scope, { pageSize: 100 }), filter);
+  const logs = isAdmin ? orgLogs : orgLogs.filter((log) => log.actorUserId === scope.userId);
   const csv = auditLogsToCsv(logs);
   const token = randomBytes(24).toString("base64url");
-  const fileName = `axxess-audit-${filter}-${new Date().toISOString().slice(0, 10)}.csv`;
+  const datePart = new Date().toISOString().slice(0, 10);
+  const fileName = `axxess-audit-${filter}-${datePart}.${format}`;
   const expiresAt = new Date(Date.now() + Number(process.env.AXXESS_AUDIT_EXPORT_TTL_MINUTES ?? 60) * 60 * 1000).toISOString();
 
   const exportRecord = await insertAuditExport(session.accessToken, {
@@ -184,6 +247,8 @@ export async function POST(request: Request) {
     metadata: {
       generated_by_role: scope.role,
       export_scope: filter,
+      format,
+      self_scoped: !isAdmin,
     },
   });
 
@@ -205,14 +270,29 @@ export async function POST(request: Request) {
     timelineEvents,
   });
 
-  return NextResponse.json({
+  const responseBase = {
     exportId: exportRecord.id,
     fileName,
     token,
     expiresAt,
     recordCount: logs.length,
     timelineLinkCount: timelineLinks.length,
-    csvSha256: sha256(csv),
-    csv,
+    format,
+  };
+
+  // "csv" stays byte-for-byte the same shape X0's AuditLogsSection.tsx has always consumed.
+  // "pdf"/"zip" are new, Lite-only shapes carrying binary content as base64 instead.
+  if (format === "csv") {
+    return NextResponse.json({ ...responseBase, csvSha256: sha256(csv), csv }, { status: 201 });
+  }
+
+  const bytes = format === "pdf"
+    ? await auditLogsToPdfBytes(logs, `AXXESS Activity Log -- ${filter}`)
+    : await auditLogsToZipBytes(csv, `axxess-audit-${filter}-${datePart}.csv`);
+
+  return NextResponse.json({
+    ...responseBase,
+    sha256: sha256(Buffer.from(bytes).toString("base64")),
+    contentBase64: Buffer.from(bytes).toString("base64"),
   }, { status: 201 });
 }

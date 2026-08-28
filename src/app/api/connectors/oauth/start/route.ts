@@ -1,6 +1,8 @@
 import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { getServerAuthSession } from "../../../../../auth/serverSession";
+import { resolveIsLiteSurface } from "../../../../../config/liteSurfaceHosts";
+import { isLiteAllowedConnectorProvider } from "../../../../../features/lite/liteIntegrationsConfig";
 import { auditLogsRepository, tenantScopeFromUser } from "../../../../../repositories/supabaseEnterpriseRepositories";
 import { isSupabaseAdminConfigured, supabaseAdminRest } from "../../../../../repositories/supabaseAdmin";
 import { buildConnectorOAuthUrl, getConnectorContract } from "../../../../../services/integrations/connectorContract";
@@ -14,6 +16,15 @@ export async function GET(request: Request) {
   const provider = url.searchParams.get("provider") ?? "";
   const contract = getConnectorContract(provider);
   if (!contract) return NextResponse.json({ error: "Unsupported connector provider." }, { status: 400 });
+
+  // proxy.ts's edge gate only decides whether /api/connectors/oauth/* is reachable on a Lite host
+  // at all -- it can't cheaply inspect this ?provider= value. This is the actual narrowing: a Lite
+  // host request for a provider outside Lite's own 12-item list is rejected even if that provider
+  // is otherwise fully configured for X0.
+  const requestHost = request.headers.get("x-forwarded-host") ?? request.headers.get("host");
+  if (resolveIsLiteSurface(requestHost, process.env.AXXESS_LITE_HOSTS, process.env.AXXESS_SURFACE) && !isLiteAllowedConnectorProvider(contract.providerId)) {
+    return NextResponse.json({ error: "This connector is not available on AXXESS Lite." }, { status: 400 });
+  }
   const config = getOAuthProviderConfiguration(contract.providerId);
   if (!config.configured) {
     return NextResponse.json({
