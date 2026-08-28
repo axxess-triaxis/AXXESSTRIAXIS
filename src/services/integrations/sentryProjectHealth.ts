@@ -12,8 +12,13 @@ export type SentryProjectHealthResult =
 
 function getSentryConfig() {
   const authToken = process.env.SENTRY_AUTH_TOKEN;
-  const orgSlug = process.env.SENTRY_ORG_SLUG;
-  const projectSlug = process.env.SENTRY_PROJECT_SLUG;
+  // 2026-08-28: previously read SENTRY_ORG_SLUG/SENTRY_PROJECT_SLUG, which nothing in this
+  // program ever set -- Vercel (and Sentry's own CLI/Vercel-integration convention) sets
+  // SENTRY_ORG/SENTRY_PROJECT instead, so this always silently returned "not-configured" in
+  // production even though Sentry itself was live and capturing errors (SENTRY_AUTH_TOKEN,
+  // SENTRY_DSN, etc. all confirmed set via `vercel env ls`).
+  const orgSlug = process.env.SENTRY_ORG;
+  const projectSlug = process.env.SENTRY_PROJECT;
   if (!authToken || !orgSlug || !projectSlug) return undefined;
   return { authToken, orgSlug, projectSlug };
 }
