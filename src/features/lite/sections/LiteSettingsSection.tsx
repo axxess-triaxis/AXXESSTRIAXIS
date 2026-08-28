@@ -5,17 +5,23 @@ import { Building2, CircleHelp, Plug, ScrollText, User, Wallet, type LucideIcon 
 // ("Profile, Organization, Integrations, Billing, Audit Export" plus Help & Support, per
 // docs/readiness/AXXESS_LITE_PRODUCTION_SCOPE_AND_NAVIGATION_CONTRACT_2026_08_05.md Section 6) --
 // deliberately NOT src/features/settings/SettingsSection.tsx (X0's full admin console: deep RBAC,
-// Agent Connections/MCP admin, the 28-entry connector catalogue, demo controls). Billing and
-// Help & Support reuse the real routes already built in XL-1 rather than duplicating their
-// content; the rest are honest "coming soon" rows, not fabricated settings screens.
+// Agent Connections/MCP admin, the 28-entry connector catalogue, demo controls).
+//
+// Lite Settings real-modules pass (2026-08-27): five of these six rows are now real pages
+// (Profile, Organization, Integrations, Audit Export, Help & Support). Billing stays a "coming
+// soon" placeholder deliberately -- there is no billing/subscription data model or payment
+// provider decision anywhere in this codebase yet (docs/readiness/
+// AXXESS_LITE_PRODUCTION_SCOPE_AND_NAVIGATION_CONTRACT_2026_08_05.md Section 18's own open founder
+// decisions), so it links to the existing /lite/payments placeholder rather than claiming more
+// than actually exists.
 type SettingsRow = { label: string; description: string; icon: LucideIcon; href?: string };
 
 const rows: SettingsRow[] = [
-  { label: "Profile", description: "Your name, email, and preferences.", icon: User },
-  { label: "Organization", description: "Your business name and details.", icon: Building2 },
-  { label: "Integrations", description: "Connect the tools you already use (a short, practical list -- not the full catalogue).", icon: Plug },
+  { label: "Profile", description: "Your name, email, and preferences.", icon: User, href: "/lite/settings/profile" },
+  { label: "Organization", description: "Your business name and details.", icon: Building2, href: "/lite/settings/organization" },
+  { label: "Integrations", description: "Connect the tools you already use (a short, practical list -- not the full catalogue).", icon: Plug, href: "/lite/settings/integrations" },
   { label: "Billing", description: "Your plan and billing status.", icon: Wallet, href: "/lite/payments" },
-  { label: "Audit Export", description: "Download a simple activity log as PDF or ZIP.", icon: ScrollText },
+  { label: "Audit Export", description: "Download a simple activity log as PDF or ZIP.", icon: ScrollText, href: "/lite/settings/audit-export" },
   { label: "Help & Support", description: "Get help or send feedback.", icon: CircleHelp, href: "/lite/help" },
 ];
 
