@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { getServerAuthSession } from "../../../../../auth/serverSession";
+import { resolveIsLiteSurface } from "../../../../../config/liteSurfaceHosts";
+import { isLiteAllowedConnectorProvider } from "../../../../../features/lite/liteIntegrationsConfig";
 import { auditLogsRepository, tenantScopeFromUser } from "../../../../../repositories/supabaseEnterpriseRepositories";
 import { isSupabaseAdminConfigured, supabaseAdminRest } from "../../../../../repositories/supabaseAdmin";
 import { getConnectorContract, type ConnectorProviderId } from "../../../../../services/integrations/connectorContract";
@@ -22,13 +24,26 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const provider = providerId(url.searchParams.get("provider"));
   if (!provider || !getConnectorContract(provider)) return NextResponse.json({ error: "Unsupported connector provider." }, { status: 400 });
+
+  // See oauth/start/route.ts's identical check -- this is the return leg of the same flow, so it
+  // needs the same narrowing (a Lite user's own oauth/start already blocked X0-only providers, but
+  // this callback is reachable independently and must not trust the provider param on faith) and
+  // must redirect back to Lite's own settings page, not X0's /integrations, once we know the
+  // request came from a Lite host.
+  const requestHost = request.headers.get("x-forwarded-host") ?? request.headers.get("host");
+  const isLiteRequest = resolveIsLiteSurface(requestHost, process.env.AXXESS_LITE_HOSTS, process.env.AXXESS_SURFACE);
+  const integrationsPagePath = isLiteRequest ? "/lite/settings/integrations" : "/integrations";
+  if (isLiteRequest && !isLiteAllowedConnectorProvider(provider)) {
+    return NextResponse.json({ error: "This connector is not available on AXXESS Lite." }, { status: 400 });
+  }
+
   // A-100 (2026-08-07): providers don't agree on an error param shape -- Google/Zoom/Microsoft send
   // a plain `error`, but Meta (WhatsApp Business/meta_business) sends `error_code`/`error_message`
   // instead and never sets `error` at all. Checking only `error` let a real Meta rejection
   // ("URL Blocked: ...") fall through to the generic "OAuth code and state are required." 400 JSON
-  // below instead of redirecting to a real, readable error toast on /integrations.
+  // below instead of redirecting to a real, readable error toast.
   const error = url.searchParams.get("error") ?? url.searchParams.get("error_message") ?? url.searchParams.get("error_code");
-  if (error) return NextResponse.redirect(new URL(`/integrations?provider=${provider}&status=error&reason=${encodeURIComponent(error)}`, url.origin));
+  if (error) return NextResponse.redirect(new URL(`${integrationsPagePath}?provider=${provider}&status=error&reason=${encodeURIComponent(error)}`, url.origin));
   const code = url.searchParams.get("code");
   const state = url.searchParams.get("state");
   if (!code || !state) return NextResponse.json({ error: "OAuth code and state are required." }, { status: 400 });
@@ -131,5 +146,5 @@ export async function GET(request: Request) {
   // isSupabaseAdminConfigured() is false and the whole write block above never ran -- the OAuth
   // exchange itself succeeded, but nothing was persisted. Report the true outcome instead.
   const finalStatus = adminConfigured ? "connected" : "not_configured";
-  return NextResponse.redirect(new URL(`/integrations?provider=${provider}&status=${finalStatus}`, url.origin));
+  return NextResponse.redirect(new URL(`${integrationsPagePath}?provider=${provider}&status=${finalStatus}`, url.origin));
 }

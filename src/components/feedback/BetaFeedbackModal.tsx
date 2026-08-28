@@ -1,7 +1,8 @@
 "use client";
 
-import { Building2, ExternalLink, Rocket, TerminalSquare, X } from "lucide-react";
+import { ExternalLink, X } from "lucide-react";
 import { useAnalytics } from "../../services/analytics";
+import { surveyLinks as surveys } from "../../services/feedback/surveyLinks";
 import type { UserContext } from "../../security/rbac";
 
 type BetaFeedbackModalProps = {
@@ -16,29 +17,10 @@ type BetaFeedbackModalProps = {
 // founder's real external surveys, per explicit instruction: "should have 3 links not this
 // unempirical placeholder form." Each survey targets a different respondent -- routing people to
 // the one meant for them beats one generic form asking everyone the same questions.
-const surveys = [
-  {
-    key: "product",
-    title: "Product Survey",
-    description: "For anyone using AXXESS day to day -- what's working, what's confusing, what's missing.",
-    url: "https://ap.surveymars.com/q/dWD9AHFnT",
-    icon: Rocket,
-  },
-  {
-    key: "enterprise",
-    title: "Enterprise Survey",
-    description: "For decision-makers evaluating AXXESS for a team or organization. We would love this from you.",
-    url: "https://ap.surveymars.com/q/NAgaQ43fM",
-    icon: Building2,
-  },
-  {
-    key: "technical",
-    title: "For Technical Surveyors",
-    description: "For engineers and technical evaluators -- architecture, integrations, security, and governance depth.",
-    url: "https://ap.surveymars.com/q/NnfK3fMgo",
-    icon: TerminalSquare,
-  },
-] as const;
+//
+// 2026-08-27: the survey list itself moved to services/feedback/surveyLinks.ts so AXXESS Lite's
+// own Help & Support tab (LiteHelpSection.tsx) can reuse the identical three links instead of
+// resurrecting the deprecated inline form -- one list, not two that can drift out of sync.
 
 export function BetaFeedbackModal({ user, moduleName, route, onClose }: BetaFeedbackModalProps) {
   const analytics = useAnalytics();
