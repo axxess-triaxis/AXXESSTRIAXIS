@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { LiteShell } from "./LiteShell";
 
@@ -6,8 +6,13 @@ vi.mock("next/navigation", () => ({
   usePathname: () => "/lite",
 }));
 
+const mockLogout = vi.fn().mockResolvedValue(undefined);
+
 vi.mock("../../auth/AuthProvider", () => ({
-  useAuth: () => ({ session: { status: "authenticated", source: "supabase-auth", user: { id: "user-1", organizationId: "org-1", role: "Employee", displayName: "Asha Verma", avatarInitials: "AV", email: "asha@example.com" } } }),
+  useAuth: () => ({
+    session: { status: "authenticated", source: "supabase-auth", user: { id: "user-1", organizationId: "org-1", role: "Employee", displayName: "Asha Verma", avatarInitials: "AV", email: "asha@example.com" } },
+    logout: mockLogout,
+  }),
 }));
 
 describe("LiteShell", () => {
@@ -45,6 +50,21 @@ describe("LiteShell", () => {
     expect(screen.queryByText("Social Alerts")).not.toBeInTheDocument();
     expect(screen.queryByText("Agent Connections")).not.toBeInTheDocument();
     expect(screen.queryByText(/enterprise golden path/i)).not.toBeInTheDocument();
+  });
+
+  it("has a working sign-out control -- 2026-08-28: founder found Lite had none, anywhere", () => {
+    mockLogout.mockClear();
+    render(
+      <LiteShell>
+        <div>Lite page content</div>
+      </LiteShell>,
+    );
+
+    const signOutButton = screen.getByRole("button", { name: "Sign out" });
+    expect(signOutButton).toBeInTheDocument();
+
+    fireEvent.click(signOutButton);
+    expect(mockLogout).toHaveBeenCalledTimes(1);
   });
 
   it("shows a sign-in prompt, not the shell, when unauthenticated", async () => {
