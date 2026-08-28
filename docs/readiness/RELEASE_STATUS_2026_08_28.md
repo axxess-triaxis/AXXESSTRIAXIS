@@ -50,6 +50,14 @@ The program has moved from single-surface hardening into four release surfaces c
 
 **Owner/action:** none pending on this program's side; check back once Play's review resolves.
 
+**Separate finding, same date -- mobile-web onboarding walkthrough, not the native app:** founder reported "Android app working fine... [a tester] tried Create New Account / Onboarding and it worked very well," with a 9-screenshot zip as evidence. Reviewed directly (screenshots, not summarized) rather than accepted at face value, per this repo's evidence-chain rule:
+
+- **What the screenshots actually show:** mobile Chrome, not the installed native app -- every screenshot has Chrome's own UI visible (URL bar reading `landing.triaxisventures.com`, tab-count icon, overflow menu). The native Capacitor/Play-Store beta (currently in Open Testing review, see above) runs in a bare WebView with no browser chrome at all, so this evidences the **web app** rendering on a real Android device, not the **native app** specifically. Which one the tester actually has installed is unconfirmed.
+- **Confirmed clean:** the enterprise `/onboarding` 6-step wizard (Create organization / Join organization / Select sector and role / Create first workspace / Accept security and beta notices / Complete provisioning) rendered and navigated without crashes or layout bugs across all 9 screenshots, timestamped 4:54-4:56 the same session.
+- **Confirmed NOT completed:** organization name, sector, role, and invitation code were all left blank, and all 4 legal-notice checkboxes (Terms of Service, Privacy Policy, AI Usage Notice, Beta Disclaimer) were left unchecked at every step. The final "Complete provisioning" screen correctly caught this -- it returned **"Onboarding needs attention"** (Organization: Not set, Sector: Not set, Role: Not set, Notices: 0/4 accepted) rather than silently completing with missing data. The validation gate worked as designed; no tenant/organization was actually created in this walkthrough.
+
+**Net read:** real, positive evidence that the enterprise onboarding UI is crash-free and navigable on an actual Android device via mobile Chrome. Not evidence of a completed account creation, and not yet evidence about the native Play-Store app specifically -- both would need a follow-up run with real values entered in each field, ideally confirmed as the installed native app rather than the browser.
+
 ## 4. iOS Beta
 
 **Current state:** build **0.7.0 (1)** uploaded to TestFlight, visible in App Store Connect's External Testing group, status "Waiting for Review" as of the upload. Founder's recap this session says "sent into TestFlight Apple review yesterday" -- the actual upload (per this program's own workflow logs) completed 2026-08-27, consistent within a day of "yesterday" relative to this session.

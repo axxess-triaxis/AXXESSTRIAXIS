@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fetchSentryProjectHealth } from "./sentryProjectHealth";
 
-const ENV_KEYS = ["SENTRY_AUTH_TOKEN", "SENTRY_ORG_SLUG", "SENTRY_PROJECT_SLUG"] as const;
+const ENV_KEYS = ["SENTRY_AUTH_TOKEN", "SENTRY_ORG", "SENTRY_PROJECT"] as const;
 
 describe("fetchSentryProjectHealth", () => {
   beforeEach(() => {
@@ -25,8 +25,8 @@ describe("fetchSentryProjectHealth", () => {
 
   it("returns ok with real parsed counts on a successful configured call", async () => {
     vi.stubEnv("SENTRY_AUTH_TOKEN", "token");
-    vi.stubEnv("SENTRY_ORG_SLUG", "triaxis");
-    vi.stubEnv("SENTRY_PROJECT_SLUG", "axxess");
+    vi.stubEnv("SENTRY_ORG", "triaxis");
+    vi.stubEnv("SENTRY_PROJECT", "axxess");
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
       ok: true,
       json: async () => [{ status: "unresolved" }, { status: "resolved" }, { status: "unresolved" }],
@@ -39,8 +39,8 @@ describe("fetchSentryProjectHealth", () => {
 
   it("returns error, never a fabricated number, when the Sentry request fails", async () => {
     vi.stubEnv("SENTRY_AUTH_TOKEN", "token");
-    vi.stubEnv("SENTRY_ORG_SLUG", "triaxis");
-    vi.stubEnv("SENTRY_PROJECT_SLUG", "axxess");
+    vi.stubEnv("SENTRY_ORG", "triaxis");
+    vi.stubEnv("SENTRY_PROJECT", "axxess");
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 401, text: async () => "unauthorized" }));
 
     const result = await fetchSentryProjectHealth();
@@ -51,8 +51,8 @@ describe("fetchSentryProjectHealth", () => {
 
   it("returns error when the network call itself throws", async () => {
     vi.stubEnv("SENTRY_AUTH_TOKEN", "token");
-    vi.stubEnv("SENTRY_ORG_SLUG", "triaxis");
-    vi.stubEnv("SENTRY_PROJECT_SLUG", "axxess");
+    vi.stubEnv("SENTRY_ORG", "triaxis");
+    vi.stubEnv("SENTRY_PROJECT", "axxess");
     vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("network down")));
 
     const result = await fetchSentryProjectHealth();
