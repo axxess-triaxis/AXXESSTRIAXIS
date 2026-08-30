@@ -1,6 +1,6 @@
 # AXXESS TRIaxis -- Release Status, 2026-08-28
 
-**Date:** 2026-08-28
+**Date:** 2026-08-28 (created), updates through 2026-08-30 -- filename/original date kept per this repo's existing convention (see `TOP_LEVEL_READINESS_AND_GTM_SNAPSHOT_2026_07_31.md`'s own dated "Update," sections).
 **Workspace:** `C:\Users\Sudipta Sarmah\OneDrive - State Bank of India\Documents\AXXESS-TRIAXIS`
 **Purpose:** one dated snapshot across the program's four release surfaces (Web Enterprise, Web Lite, Android, iOS) plus the public company/product website, each ending in current state / evidence / remaining blocker / owner-action, per this repo's own evidence-chain standing rule (`CLAUDE.md`).
 **Trigger:** founder status recap given this session, partly relayed through a Paxel (YC coding-telemetry tool) ChatGPT-sandbox conversation the founder pasted in. Per that same standing rule, every claim below is marked either **Verified** (checked against repo state, a live page fetch, a workflow log, or a screenshot shown directly in this session) or **Founder-stated, source artifact needed** (no independent check performed). This document does not upgrade the second category to the first by restating it.
@@ -13,7 +13,7 @@ The program has moved from single-surface hardening into four release surfaces c
 |---|---|---|
 | Web Enterprise Beta 1.0 | Near release closure | **Verified** (see `TOP_LEVEL_READINESS_AND_GTM_SNAPSHOT_2026_07_31.md`, 86-91% band, unchanged this session) |
 | Web Lite | Late-stage; last 5 Settings modules shipped and live-confirmed this session | **Verified** |
-| Android Beta | Beta 0.9 (5) in Google Play Production + Open Testing review | **Verified** (screenshot shown in-session) |
+| Android Beta | Beta 0.9 (5) -- live in Production, full rollout (as of 2026-08-30) | **Verified** (screenshot shown in-session) |
 | iOS Beta | Build 0.7.0 (1) in TestFlight, Apple Beta App Review pending | **Verified** (workflow logs, App Store Connect state) |
 | Company/product website (`triaxisventures.com`) | Full multi-page company + product site, not a landing page | **Verified** (live fetch this session) |
 | Total infra/domain/mail spend | "$360-380" | **Founder-stated, source artifact needed** |
@@ -50,7 +50,9 @@ The program has moved from single-surface hardening into four release surfaces c
 
 **Owner/action:** none pending on this program's side; check back once Play's review resolves.
 
-**Separate finding, same date -- mobile-web onboarding walkthrough, not the native app:** founder reported "Android app working fine... [a tester] tried Create New Account / Onboarding and it worked very well," with a 9-screenshot zip as evidence. Reviewed directly (screenshots, not summarized) rather than accepted at face value, per this repo's evidence-chain rule:
+**Update, 2026-08-30:** Google Play Console screenshot (Latest releases and bundles) shows release 5 (0.9.0) now **"Available on Google Play"** under Production, Full rollout, last updated Aug 30, 2026 4:18 PM -- Google's review resolved and the Android app is live in production, not merely in review as recorded above. Open Testing shows the same release "Available to testers on Google Play," synced with production. Install base reads 0.00% of 177 countries as of this screenshot -- expected for a release minutes old, not itself a concern. **Founder-stated: none of this text -- read directly from the Play Console screenshot**, so this line is repo-evidence-grade, not founder-recollection-grade.
+
+**Separate finding, 2026-08-28 -- mobile-web onboarding walkthrough, not the native app:** founder reported "Android app working fine... [a tester] tried Create New Account / Onboarding and it worked very well," with a 9-screenshot zip as evidence. Reviewed directly (screenshots, not summarized) rather than accepted at face value, per this repo's evidence-chain rule:
 
 - **What the screenshots actually show:** mobile Chrome, not the installed native app -- every screenshot has Chrome's own UI visible (URL bar reading `landing.triaxisventures.com`, tab-count icon, overflow menu). The native Capacitor/Play-Store beta (currently in Open Testing review, see above) runs in a bare WebView with no browser chrome at all, so this evidences the **web app** rendering on a real Android device, not the **native app** specifically. Which one the tester actually has installed is unconfirmed.
 - **Confirmed clean:** the enterprise `/onboarding` 6-step wizard (Create organization / Join organization / Select sector and role / Create first workspace / Accept security and beta notices / Complete provisioning) rendered and navigated without crashes or layout bugs across all 9 screenshots, timestamped 4:54-4:56 the same session.
@@ -86,7 +88,7 @@ The program has moved from single-surface hardening into four release surfaces c
 
 - **Web Enterprise Beta 1.0:** close session-security deploy proof, RAG result-quality bugs, tenant invite proof, final founder/QA walkthrough.
 - **Web Lite:** sign-out fix shipped and visually confirmed live; remaining gap is a self-serve pricing page and dedicated acquisition channel distinct from the general waitlist.
-- **Android:** wait on Google Play review; no program-side action.
+- **Android:** live in Production as of 2026-08-30, review resolved. Remaining gap is the native-app-specifically-confirmed onboarding walkthrough noted above (the one done so far was mobile Chrome, not the installed app).
 - **iOS:** wait on Apple Beta App Review; no program-side action. Scope the deferred native-conversion request when the founder is ready.
 - **Company website:** route-by-route screenshot pass, mobile-responsiveness check, Vercel project/domain confirmation, SEO/analytics proof if claimed externally.
 - **Cost claim:** attach actual invoices/receipts before quoting "$360-380" as a verified figure in any external-facing document.
