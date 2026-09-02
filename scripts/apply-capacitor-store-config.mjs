@@ -103,20 +103,30 @@ function generateIosAppIcon() {
   // shell:true, which then breaks on this repo's own path (spaces in "Sudipta Sarmah") and is a
   // real, documented Node security footgun (unescaped shell concatenation) besides. The shim is
   // just `#!/usr/bin/env node` + a plain script either way, so calling `node <that script>`
-  // directly is both simpler and safer, and works identically on the Linux CI runners this
-  // pipeline actually ships from.
+  // directly is both simpler and safer, and works identically on the iOS release job's actual
+  // macOS (darwin-arm64) CI runner.
   const capacitorAssetsEntry = path.join(shellRoot, "node_modules", "@capacitor", "assets", "bin", "capacitor-assets");
 
   try {
     execFileSync(process.execPath, [capacitorAssetsEntry, "generate", "--ios"], { cwd: shellRoot, stdio: "inherit" });
   } catch (error) {
-    console.warn(`[mobile-store] iOS app icon generation failed, leaving Assets.xcassets as-is: ${error.message}`);
-    return;
-  } finally {
+    // 2026-09-02: this used to warn and return, letting the release continue and ship with
+    // Capacitor's own generic default icon still in place -- which is exactly what happened on a
+    // real release run (0.7.0 build 2: sharp's darwin-arm64 binary was missing from the lockfile,
+    // see pnpm-workspace.yaml's supportedArchitectures comment for that root cause), and that
+    // broken-icon build still got uploaded to Apple's Beta App Review, wasting a real review
+    // cycle. The whole point of this function is to guarantee a real icon ships; a failure here
+    // must fail the release, not silently degrade to the exact bug this function exists to fix.
     if (hadExistingSplash) {
       fs.rmSync(splashImagesetDir, { recursive: true, force: true });
       fs.renameSync(splashBackupDir, splashImagesetDir);
     }
+    throw new Error(`[mobile-store] iOS app icon generation failed -- refusing to ship a release with Capacitor's default icon: ${error.message}`);
+  }
+
+  if (hadExistingSplash) {
+    fs.rmSync(splashImagesetDir, { recursive: true, force: true });
+    fs.renameSync(splashBackupDir, splashImagesetDir);
   }
 
   console.log("[mobile-store] Generated iOS app icon from resources/icon.png (splash screen left untouched).");

@@ -45,4 +45,36 @@ describe("apply-capacitor-store-config.mjs: iOS app icon generation", () => {
     const tail = source.slice(source.lastIndexOf("applyAndroid();"));
     expect(tail).toMatch(/applyAndroid\(\);\s*applyIos\(\);\s*generateIosAppIcon\(\);/);
   });
+
+  // 2026-09-02: a real release run (0.7.0 build 2) proved this the hard way -- generation failed
+  // (sharp's darwin-arm64 binary missing from the lockfile) and the original catch block only
+  // warned and returned, so the release continued and shipped Capacitor's default icon anyway,
+  // which still got uploaded to Apple's Beta App Review. A failure here must be fatal.
+  it("throws on generation failure instead of warning and continuing to ship a broken icon", () => {
+    const fnBlock = source.slice(source.indexOf("function generateIosAppIcon"), source.indexOf("function applyAndroid"));
+    const catchBlock = fnBlock.slice(fnBlock.indexOf("} catch (error) {"));
+    expect(catchBlock).toContain("throw new Error(");
+    expect(catchBlock).not.toMatch(/console\.warn\([^)]*\);\s*return;/);
+  });
+});
+
+// 2026-09-02: the iOS release job runs on a macOS (darwin-arm64) GitHub Actions runner. Nothing in
+// this repo needed a native npm binary there until this generation step started requiring sharp
+// (via @capacitor/assets) -- confirmed live: a real release run failed with "Could not load the
+// sharp module using the darwin-arm64 runtime" because pnpm-workspace.yaml's supportedArchitectures
+// never listed darwin, so the lockfile never recorded that binary.
+describe("pnpm-workspace.yaml: darwin architecture support", () => {
+  it("lists darwin alongside win32/linux so sharp's darwin-arm64 binary is resolvable for the macOS iOS release runner", () => {
+    const workspaceYaml = readFileSync(join(process.cwd(), "pnpm-workspace.yaml"), "utf8");
+    const architecturesBlock = workspaceYaml.slice(
+      workspaceYaml.indexOf("supportedArchitectures:"),
+      workspaceYaml.indexOf("minimumReleaseAge:"),
+    );
+    expect(architecturesBlock).toMatch(/os:[\s\S]*- win32[\s\S]*- linux[\s\S]*- darwin/);
+  });
+
+  it("has sharp's darwin-arm64 optional binary actually resolved in the lockfile, not just architectures listed", () => {
+    const lockfile = readFileSync(join(process.cwd(), "pnpm-lock.yaml"), "utf8");
+    expect(lockfile).toContain("@img/sharp-darwin-arm64@");
+  });
 });
