@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -53,6 +54,72 @@ function replaceOrWarn(filePath, transforms) {
     source = source.replace(pattern, replacement);
   }
   fs.writeFileSync(filePath, source);
+}
+
+// 2026-08-30: `cap add ios` scaffolds a fresh Xcode project every CI run (App.xcodeproj is never
+// committed -- see this repo's .gitignore), and neither `cap sync`/`cap build` nor anything else
+// in this pipeline ever replaced that scaffold's own AppIcon.appiconset with the real AXXESS logo
+// already sitting at resources/icon.png. A prior audit doc
+// (CODEBASE_DEBLOAT_SPRINT2_EVIDENCE_ARTIFACT_AUDIT_2026_08_12.md) claimed "Capacitor's build
+// tooling (cap sync/cap build) reads this exact path directly to generate every platform-specific
+// app icon size" -- confirmed false by direct inspection: a fresh `cap add ios` scaffold's
+// AppIcon.appiconset contains exactly one file, Capacitor's own generic default template icon
+// (a blue chevron/X mark), not anything derived from resources/icon.png. Apple's App Store
+// Connect/TestFlight extract the app icon directly from the shipped .ipa's own AppIcon.appiconset
+// -- unlike Google Play, there is no separate "upload your listing icon" field to paper over this
+// -- so a build carrying Capacitor's stock icon is a real, plausible explanation for a Beta App
+// Review rejection. Fixed by generating the real icon via @capacitor/assets (the actual official
+// tool for this, newly added as a devDependency -- plain `cap sync`/`cap build` never had this
+// capability on their own).
+function generateIosAppIcon() {
+  const iosProjectDir = path.join(shellRoot, "ios", "App");
+  const xcodeprojMarker = path.join(iosProjectDir, "App.xcodeproj", "project.pbxproj");
+  const iconSource = path.join(shellRoot, "resources", "icon.png");
+
+  if (!fs.existsSync(xcodeprojMarker)) {
+    console.warn("[mobile-store] Skipping iOS app icon generation: no Xcode project yet (run `cap add ios` first).");
+    return;
+  }
+  if (!fs.existsSync(iconSource)) {
+    console.warn("[mobile-store] Skipping iOS app icon generation: resources/icon.png not found.");
+    return;
+  }
+
+  // Scoped to the app icon only. resources/splash.png is a byte-for-byte duplicate of icon.png,
+  // well below Apple's recommended 2732x2732 splash-screen minimum, and was never reviewed as an
+  // actual splash design -- @capacitor/assets' `generate --ios` regenerates both the icon and the
+  // splash screen in one pass with no icon-only flag, so Capacitor's own scaffolded splash screen
+  // is snapshotted here and restored afterward, leaving it exactly as `cap add ios` produced it.
+  const splashImagesetDir = path.join(iosProjectDir, "App", "Assets.xcassets", "Splash.imageset");
+  const splashBackupDir = `${splashImagesetDir}.pre-icon-generate-backup`;
+  const hadExistingSplash = fs.existsSync(splashImagesetDir);
+  if (hadExistingSplash) {
+    fs.rmSync(splashBackupDir, { recursive: true, force: true });
+    fs.cpSync(splashImagesetDir, splashBackupDir, { recursive: true });
+  }
+
+  // Invoke the package's own JS entry point directly via `node` rather than the node_modules/.bin
+  // shim -- the .bin/capacitor-assets.cmd shim on Windows can't be spawned by execFileSync without
+  // shell:true, which then breaks on this repo's own path (spaces in "Sudipta Sarmah") and is a
+  // real, documented Node security footgun (unescaped shell concatenation) besides. The shim is
+  // just `#!/usr/bin/env node` + a plain script either way, so calling `node <that script>`
+  // directly is both simpler and safer, and works identically on the Linux CI runners this
+  // pipeline actually ships from.
+  const capacitorAssetsEntry = path.join(shellRoot, "node_modules", "@capacitor", "assets", "bin", "capacitor-assets");
+
+  try {
+    execFileSync(process.execPath, [capacitorAssetsEntry, "generate", "--ios"], { cwd: shellRoot, stdio: "inherit" });
+  } catch (error) {
+    console.warn(`[mobile-store] iOS app icon generation failed, leaving Assets.xcassets as-is: ${error.message}`);
+    return;
+  } finally {
+    if (hadExistingSplash) {
+      fs.rmSync(splashImagesetDir, { recursive: true, force: true });
+      fs.renameSync(splashBackupDir, splashImagesetDir);
+    }
+  }
+
+  console.log("[mobile-store] Generated iOS app icon from resources/icon.png (splash screen left untouched).");
 }
 
 function applyAndroid() {
@@ -256,6 +323,7 @@ function applyIos() {
 
 applyAndroid();
 applyIos();
+generateIosAppIcon();
 
 console.log(
   `[mobile-store] Applied store config for Android ${envValue("ANDROID_APPLICATION_ID") || defaults.androidApplicationId} and iOS ${
