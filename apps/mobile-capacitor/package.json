@@ -20,7 +20,7 @@
     "build:ios:store": "node ../../scripts/apply-capacitor-store-config.mjs && node scripts/build-ios.mjs --store"
   },
   "dependencies": {
-    "@capacitor/android": "7.6.7",
+    "@capacitor/android": "8.5.0",
     "@capacitor/app": "8.1.1",
     "@capacitor/browser": "8.0.4",
     "@capacitor/core": "8.5.0",
