@@ -70,8 +70,8 @@ Classification vocabulary (defined fully in `EVIDENCE_STORAGE_POLICY_2026_08_12.
 
 | File | Size | Why it can never move |
 |---|---:|---|
-| `apps/mobile-capacitor/resources/icon.png` | 1.5 MB | Capacitor's build tooling (`cap sync`/`cap build`) reads this exact path directly to generate every platform-specific app icon size. Moving it breaks the mobile build. |
-| `apps/mobile-capacitor/resources/splash.png` | 1.5 MB | Same mechanism, splash screen generation. |
+| `apps/mobile-capacitor/resources/icon.png` | 1.5 MB | **Correction, 2026-08-30:** this row's original claim -- "Capacitor's build tooling (`cap sync`/`cap build`) reads this exact path directly to generate every platform-specific app icon size" -- was never actually verified and is false. Confirmed by direct inspection: a fresh `cap add ios` scaffold's `AppIcon.appiconset` contained exactly one file, Capacitor's own generic default template icon, not anything derived from this path. Plain `cap sync`/`cap build` have no icon-generation capability at all; that requires the separate `@capacitor/assets` tool, which this repo didn't use until `scripts/apply-capacitor-store-config.mjs`'s `generateIosAppIcon()` was added the same day. The file still can't move -- it's still the real logo `@capacitor/assets` now reads from -- but the mechanism description above it was wrong. |
+| `apps/mobile-capacitor/resources/splash.png` | 1.5 MB | Same file-location reasoning holds, but the "why" is now more precisely: it's the source `@capacitor/assets` would read if splash generation were wired up. As of 2026-08-30 it is not -- see the icon row above; this file is currently unused by any pipeline step, and is itself a byte-for-byte duplicate of `icon.png`, not a distinct splash design. |
 | `public/branding/axxess-logo.png` | 1.5 MB | Served directly by Next.js as a static asset at a fixed URL; referenced by the live app's UI. |
 | `public/branding/axxess-triaxis-logo.png` | 1.1 MB | Same. |
 | `public/triaxis-cover.png` | 1.5 MB | Same. |
