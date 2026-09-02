@@ -3,9 +3,22 @@ packages:
   - 'apps/*'
   - 'packages/*'
 supportedArchitectures:
+  # 2026-09-02: added darwin -- the iOS release job runs on a macOS (darwin-arm64) GitHub Actions
+  # runner and, until this pipeline started running @capacitor/assets there (see
+  # scripts/apply-capacitor-store-config.mjs's generateIosAppIcon()), nothing in this repo ever
+  # needed a native npm binary on that platform: the iOS job explicitly skips the Next.js web
+  # build ("Skipping iOS web build in this job; Android job already validates web build"), which
+  # is the only other thing that touches sharp. Without darwin listed here, pnpm's lockfile never
+  # recorded sharp's darwin-arm64 optional binary, so `pnpm install --frozen-lockfile` on that
+  # runner silently left sharp uninstallable there -- confirmed live: a real release run
+  # (0.7.0 build 2) failed icon generation with "Could not load the sharp module using the
+  # darwin-arm64 runtime" and, worse, shipped anyway with the broken default icon because the
+  # generation failure was caught and only warned, not treated as fatal (also fixed, see that
+  # function's own comment).
   os:
     - win32
     - linux
+    - darwin
   cpu:
     - x64
     - arm64
