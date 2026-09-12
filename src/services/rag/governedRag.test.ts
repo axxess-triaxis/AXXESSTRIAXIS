@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import type { Document, DocumentPermission, KnowledgeArticle } from "../../domain";
-import type { DocumentsRepository, DocumentPermissionsRepository, KnowledgeArticlesRepository, TenantScope } from "../../repositories/interfaces";
+import type { DocumentsRepository, DocumentPermissionsRepository, FullTextSearchHit, KnowledgeArticlesRepository, RagFullTextSearchRepository, TenantScope } from "../../repositories/interfaces";
 import { answerWithGovernedRag, retrieveInstitutionalContext, type RagRepositories } from "./governedRag";
 
 const now = "2026-07-04T00:00:00.000Z";
@@ -45,6 +45,7 @@ function repositories(input: {
   permissions?: DocumentPermission[];
   articles?: KnowledgeArticle[];
   record?: ReturnType<typeof vi.fn>;
+  ragFullTextSearchRepository?: RagFullTextSearchRepository;
 }): RagRepositories {
   return {
     documentsRepository: {
@@ -61,6 +62,24 @@ function repositories(input: {
         record: input.record,
       } as unknown as RagRepositories["auditLogsRepository"]
       : undefined,
+    ragFullTextSearchRepository: input.ragFullTextSearchRepository,
+  };
+}
+
+function fakeFullTextSearch(input: {
+  documentHits?: FullTextSearchHit[];
+  articleHits?: FullTextSearchHit[];
+  throwOnSearch?: boolean;
+}): RagFullTextSearchRepository {
+  return {
+    async searchDocuments() {
+      if (input.throwOnSearch) throw new Error("RPC unavailable");
+      return input.documentHits ?? [];
+    },
+    async searchArticles() {
+      if (input.throwOnSearch) throw new Error("RPC unavailable");
+      return input.articleHits ?? [];
+    },
   };
 }
 
@@ -213,5 +232,111 @@ describe("governed RAG retrieval", () => {
     expect(answer.sources).toHaveLength(0);
     expect(answer.confidence).toBe(0);
     expect(answer.rationale).toMatch(/no authorized institutional source matched/i);
+  });
+});
+
+// RAG retrieval quality (2026-09-12): search_documents_fulltext/search_knowledge_articles_fulltext
+// narrow the candidate set governedRag.ts scores -- these prove that narrowing can never widen
+// what canRetrieveDocument() would otherwise allow, and that any failure of the new path degrades
+// to exactly today's full-scan behavior rather than a hard error or a silent recall regression.
+describe("governed RAG full-text-search narrowing", () => {
+  it("still excludes a restricted document for a non-elevated role even when full-text search surfaces it as a candidate", async () => {
+    const restricted = document({
+      id: "doc_restricted",
+      organizationId: "org_1",
+      title: "Restricted Audit Observation",
+      description: "Audit observation for oxygen procurement variance and management response.",
+      classification: "restricted",
+    });
+
+    const chunks = await retrieveInstitutionalContext(
+      repositories({
+        documents: [restricted],
+        ragFullTextSearchRepository: fakeFullTextSearch({ documentHits: [{ id: "doc_restricted", rank: 0.9 }] }),
+      }),
+      scope, // "Employee" -- non-elevated
+      { question: "oxygen procurement audit observation variance" },
+    );
+
+    expect(chunks.map((chunk) => chunk.sourceId)).not.toContain("doc_restricted");
+  });
+
+  it("reports retrievalMode: fulltext_search when the search repository returns a usable candidate set", async () => {
+    const allowed = document({
+      id: "doc_allowed",
+      organizationId: "org_1",
+      title: "Dibrugarh Oxygen Resilience SOP",
+      description: "Oxygen resilience mitigation for district biomedical maintenance.",
+    });
+
+    const answer = await answerWithGovernedRag(
+      repositories({
+        documents: [allowed],
+        ragFullTextSearchRepository: fakeFullTextSearch({ documentHits: [{ id: "doc_allowed", rank: 0.8 }] }),
+      }),
+      scope,
+      { question: "oxygen resilience" },
+    );
+
+    expect(answer.retrievalMode).toBe("fulltext_search");
+  });
+
+  it("falls back to the full scan (identical result) when the search repository throws", async () => {
+    const allowed = document({
+      id: "doc_allowed",
+      organizationId: "org_1",
+      title: "Dibrugarh Oxygen Resilience SOP",
+      description: "Oxygen resilience mitigation for district biomedical maintenance.",
+    });
+    const query = { question: "oxygen resilience" };
+
+    const withoutFts = await retrieveInstitutionalContext(repositories({ documents: [allowed] }), scope, query);
+    const withThrowingFts = await retrieveInstitutionalContext(
+      repositories({ documents: [allowed], ragFullTextSearchRepository: fakeFullTextSearch({ throwOnSearch: true }) }),
+      scope,
+      query,
+    );
+
+    expect(withThrowingFts.map((chunk) => chunk.sourceId)).toEqual(withoutFts.map((chunk) => chunk.sourceId));
+  });
+
+  it("falls back to the full scan when the search repository returns zero candidates", async () => {
+    const allowed = document({
+      id: "doc_allowed",
+      organizationId: "org_1",
+      title: "Dibrugarh Oxygen Resilience SOP",
+      description: "Oxygen resilience mitigation for district biomedical maintenance.",
+    });
+
+    const answer = await answerWithGovernedRag(
+      repositories({ documents: [allowed], ragFullTextSearchRepository: fakeFullTextSearch({}) }),
+      scope,
+      { question: "oxygen resilience" },
+    );
+
+    expect(answer.retrievalMode).toBe("full_scan");
+    expect(answer.sources.map((source) => source.sourceId)).toContain("doc_allowed");
+  });
+
+  it("does not crash when a full-text-search hit references a document that can no longer be found", async () => {
+    const allowed = document({
+      id: "doc_allowed",
+      organizationId: "org_1",
+      title: "Dibrugarh Oxygen Resilience SOP",
+      description: "Oxygen resilience mitigation for district biomedical maintenance.",
+    });
+
+    const chunks = await retrieveInstitutionalContext(
+      repositories({
+        documents: [allowed],
+        ragFullTextSearchRepository: fakeFullTextSearch({
+          documentHits: [{ id: "doc_allowed", rank: 0.8 }, { id: "doc_deleted_or_stale_index", rank: 0.7 }],
+        }),
+      }),
+      scope,
+      { question: "oxygen resilience" },
+    );
+
+    expect(chunks.map((chunk) => chunk.sourceId)).toEqual(["doc_allowed"]);
   });
 });

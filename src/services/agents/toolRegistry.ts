@@ -1,5 +1,5 @@
 import { supabaseAdminRest } from "../../repositories/supabaseAdmin";
-import type { TenantScope, DocumentsRepository, DocumentPermissionsRepository, KnowledgeArticlesRepository } from "../../repositories/interfaces";
+import type { TenantScope, DocumentsRepository, DocumentPermissionsRepository, KnowledgeArticlesRepository, RagFullTextSearchRepository } from "../../repositories/interfaces";
 import type { Document, DocumentPermission, KnowledgeArticle, Meeting, Project, Stakeholder, Task } from "../../domain";
 import { answerWithGovernedRag } from "../rag/governedRag";
 import { routeAiRequest } from "../ai/router/aiRouter";
@@ -222,7 +222,29 @@ function agentRagRepositories(organizationId: string) {
     update: () => notImplemented("documentPermissionsRepository.update"),
   } satisfies DocumentPermissionsRepository;
 
-  return { documentsRepository, knowledgeArticlesRepository, documentPermissionsRepository };
+  // RAG retrieval quality (2026-09-12): same ranked-narrowing-only contract as
+  // supabaseEnterpriseRepositories.ts's ragFullTextSearchRepository -- canRetrieveDocument() below
+  // (via syntheticRagScope's "Organization Admin" floor) still gates what the agent can actually use.
+  // supabaseAdminRest's `table` param is already a plain string, so no new admin-side helper is
+  // needed to call an RPC function through it.
+  const ragFullTextSearchRepository = {
+    async searchDocuments(_scope: TenantScope, query: string, limit: number) {
+      const rows = await supabaseAdminRest<{ id: string; rank: number }[]>("rpc/search_documents_fulltext", {
+        method: "POST",
+        body: { p_organization_id: organizationId, p_query: query, p_limit: limit },
+      });
+      return (rows ?? []).map((row) => ({ id: row.id, rank: row.rank }));
+    },
+    async searchArticles(_scope: TenantScope, query: string, limit: number) {
+      const rows = await supabaseAdminRest<{ id: string; rank: number }[]>("rpc/search_knowledge_articles_fulltext", {
+        method: "POST",
+        body: { p_organization_id: organizationId, p_query: query, p_limit: limit },
+      });
+      return (rows ?? []).map((row) => ({ id: row.id, rank: row.rank }));
+    },
+  } satisfies RagFullTextSearchRepository;
+
+  return { documentsRepository, knowledgeArticlesRepository, documentPermissionsRepository, ragFullTextSearchRepository };
 }
 
 // governedRag's canRetrieveDocument() branches on scope.role for private/team/restricted content
