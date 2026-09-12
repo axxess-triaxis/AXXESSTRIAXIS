@@ -26,6 +26,13 @@ insert into public.users (id, organization_id, email, display_name, role, status
   ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '11111111-1111-1111-1111-111111111111', 'alpha@example.com', 'Alpha Admin', 'Organization Admin', 'active'),
   ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', '22222222-2222-2222-2222-222222222222', 'beta@example.com', 'Beta Admin', 'Organization Admin', 'active');
 
+-- record_enterprise_audit_log() (fired by the knowledge_articles insert below, once we're under
+-- role authenticated) writes audit_logs.actor_user_id -> public.profiles(id) -- a separate table
+-- from public.users that this fixture also needs a row in.
+insert into public.profiles (id, email, display_name, avatar_initials) values
+  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'alpha@example.com', 'Alpha Admin', 'AA'),
+  ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'beta@example.com', 'Beta Admin', 'BA');
+
 insert into public.documents (id, organization_id, name, title, description, storage_path, file_name, mime_type, document_type, status, visibility, classification, owner_user_id, created_by_user_id) values
   ('cccccccc-cccc-cccc-cccc-cccccccccccc', '11111111-1111-1111-1111-111111111111', 'alpha-doc', 'Oxygen Resilience SOP', 'Biomedical maintenance oxygen manifold uptime procedure', 'x', 'x.pdf', 'application/pdf', 'pdf', 'active', 'organization', 'internal', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'),
   ('dddddddd-dddd-dddd-dddd-dddddddddddd', '22222222-2222-2222-2222-222222222222', 'beta-doc', 'Quarterly Budget Variance Review', 'Finance variance analysis for the quarter', 'x', 'x.pdf', 'application/pdf', 'pdf', 'active', 'organization', 'internal', 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb');
