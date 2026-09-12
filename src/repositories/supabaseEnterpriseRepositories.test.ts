@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { auditLogsRepository, invitationsRepository, projectsRepository, remindersRepository, stakeholdersRepository, tasksRepository } from "./supabaseEnterpriseRepositories";
+import { auditLogsRepository, documentsRepository, invitationsRepository, projectsRepository, ragFullTextSearchRepository, remindersRepository, stakeholdersRepository, tasksRepository } from "./supabaseEnterpriseRepositories";
 import type { TenantScope } from "./interfaces";
 
 const scope: TenantScope = {
@@ -474,5 +474,57 @@ describe("Supabase enterprise repositories", () => {
     expect(String(url)).toContain("/rest/v1/reminders");
     expect(String(init?.body)).toContain("org_public_safety");
     expect(String(init?.body)).not.toContain("org_someone_elses_tenant");
+  });
+
+  // RAG retrieval quality (2026-09-12): applyRepositoryQuery's pageSize clamp used to silently cap
+  // every caller at 100 rows regardless of what was requested -- governedRag.ts/tenantRagWorkflow.ts
+  // both request pageSize: 2500 for documents, so any org with >100 documents was getting RAG
+  // answers from only a subset of its corpus. Proves the requested pageSize actually reaches the
+  // outgoing request now, not just that the clamp constant changed.
+  it("passes a pageSize above the old 100-row cap through to the actual REST request limit", async () => {
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify([]), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://example.supabase.co");
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY", "anon-key");
+
+    await documentsRepository.list({ ...scope, accessToken: "server-token" }, { pageSize: 2500 });
+
+    const [url] = fetchCall(fetchMock);
+    expect(String(url)).toContain("limit=2500");
+  });
+
+  describe("ragFullTextSearchRepository", () => {
+    it("calls the search_documents_fulltext RPC with the expected shape", async () => {
+      const fetchMock = vi.fn(async () => new Response(JSON.stringify([{ id: "doc_1", rank: 0.42 }]), { status: 200 }));
+      vi.stubGlobal("fetch", fetchMock);
+      vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://example.supabase.co");
+      vi.stubEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY", "anon-key");
+
+      const hits = await ragFullTextSearchRepository.searchDocuments(
+        { ...scope, accessToken: "server-token" },
+        "oxygen resilience",
+        25,
+      );
+
+      expect(hits).toEqual([{ id: "doc_1", rank: 0.42 }]);
+      const [url, init] = fetchCall(fetchMock);
+      expect(String(url)).toBe("https://example.supabase.co/rest/v1/rpc/search_documents_fulltext");
+      expect(init?.method).toBe("POST");
+      expect(JSON.parse(String(init?.body))).toEqual({
+        p_organization_id: "org_public_safety",
+        p_query: "oxygen resilience",
+        p_limit: 25,
+      });
+    });
+
+    it("returns an empty result without calling fetch when no access token is present (no gateway route exists yet)", async () => {
+      const fetchMock = vi.fn();
+      vi.stubGlobal("fetch", fetchMock);
+
+      const hits = await ragFullTextSearchRepository.searchDocuments(scope, "oxygen resilience", 25);
+
+      expect(hits).toEqual([]);
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
   });
 });

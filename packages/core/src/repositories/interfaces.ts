@@ -147,6 +147,20 @@ export interface KnowledgeSearchRepository {
   search(scope: TenantScope, query: KnowledgeSearchQuery): Promise<KnowledgeSearchResult[]>;
 }
 
+export type FullTextSearchHit = { id: EntityId; rank: number };
+
+// RAG retrieval quality (2026-09-12): a new, optional, RAG-scoped interface rather than new
+// required methods on DocumentsRepository/KnowledgeArticlesRepository -- those two already have
+// real implementations/fakes across governedRag.test.ts, tenantRagWorkflow.test.ts, toolRegistry.ts,
+// and supabaseEnterpriseRepositories.ts, so a required addition there breaks all of them for a
+// concern (ranked full-text search) unrelated to what those interfaces otherwise do. Ranking/
+// narrowing only -- callers still apply their own document-layer authorization check afterward,
+// unchanged; this is never itself an authorization gate.
+export interface RagFullTextSearchRepository {
+  searchDocuments(scope: TenantScope, query: string, limit: number): Promise<FullTextSearchHit[]>;
+  searchArticles(scope: TenantScope, query: string, limit: number): Promise<FullTextSearchHit[]>;
+}
+
 export type CreateInvitationInput = {
   organizationId: EntityId;
   email: string;
