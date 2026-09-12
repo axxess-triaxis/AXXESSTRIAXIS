@@ -5,6 +5,7 @@ import type {
   DocumentPermissionsRepository,
   DocumentVersionsRepository,
   KnowledgeArticlesRepository,
+  RagFullTextSearchRepository,
   TasksRepository,
   TenantScope,
 } from "../../repositories/interfaces";
@@ -13,7 +14,7 @@ import { appendConversationMessage, createConversation, listConversationMessages
 import { routeAiRequest } from "../ai/router/aiRouter";
 import { liveModelProviders } from "../ai/providers";
 import { extractKeywords, summarizeText } from "../nlp/localNlp";
-import { answerWithGovernedRag, canRetrieveDocument, type RagAnswer, type RagCitation } from "./governedRag";
+import { answerWithGovernedRag, canRetrieveDocument, type RagAnswer, type RagCitation, type RagRetrievalMode } from "./governedRag";
 import { buildConfidenceExplanation } from "./confidenceExplanation";
 import { deterministicEmbeddingProvider } from "./embeddings/embeddingProvider";
 import { buildRagIngestionRecord, chunkInstitutionalText } from "./ingestion/ingestionPipeline";
@@ -47,6 +48,9 @@ export type TenantRagRepositories = {
   knowledgeArticlesRepository: KnowledgeArticlesRepository;
   tasksRepository?: TasksRepository;
   auditLogsRepository?: AuditLogsRepository;
+  // RAG retrieval quality (2026-09-12): optional -- every existing construction of
+  // TenantRagRepositories keeps compiling and behaving exactly as before when this is absent.
+  ragFullTextSearchRepository?: RagFullTextSearchRepository;
 };
 
 export type TenantDocumentIngestInput = {
@@ -335,8 +339,8 @@ async function persistentCitationsForQuestion(
   question: string,
   limit: number,
   documentIds?: string[],
-) {
-  if (!isSupabaseAdminConfigured()) return [];
+): Promise<{ citations: RagCitation[]; retrievalMode: RagRetrievalMode }> {
+  if (!isSupabaseAdminConfigured()) return { citations: [], retrievalMode: "full_scan" };
 
   const [documents, permissions] = await Promise.all([
     repositories.documentsRepository.list(scope, { pageSize: 2500 }),
@@ -348,9 +352,29 @@ async function persistentCitationsForQuestion(
   // silently excluded, not silently bypassed). Absent, behavior is unchanged: every authorized
   // document is a retrieval candidate, same as before this field existed.
   const documentIdFilter = documentIds?.length ? new Set(documentIds) : undefined;
-  const authorizedDocuments = documents.filter((document) =>
+  let authorizedDocuments = documents.filter((document) =>
     canRetrieveDocument(scope, document, permissions) && (!documentIdFilter || documentIdFilter.has(document.id)));
-  if (authorizedDocuments.length === 0) return [];
+  if (authorizedDocuments.length === 0) return { citations: [], retrievalMode: "full_scan" };
+
+  // RAG retrieval quality (2026-09-12): narrows which authorized documents' chunks get fetched
+  // from rag_document_chunks -- ranking/narrowing only, canRetrieveDocument() above already ran
+  // and remains the real authorization gate; this never widens what a user could otherwise see.
+  let retrievalMode: RagRetrievalMode = "full_scan";
+  if (repositories.ragFullTextSearchRepository && !documentIdFilter) {
+    try {
+      const hits = await repositories.ragFullTextSearchRepository.searchDocuments(scope, question, limit * 5);
+      if (hits.length) {
+        const candidateIds = new Set(hits.map((hit) => hit.id));
+        const narrowed = authorizedDocuments.filter((document) => candidateIds.has(document.id));
+        if (narrowed.length) {
+          authorizedDocuments = narrowed;
+          retrievalMode = "fulltext_search";
+        }
+      }
+    } catch {
+      // Fall through to the unnarrowed authorizedDocuments set below.
+    }
+  }
 
   const ids = authorizedDocuments.map((document) => document.id);
   const query = new URLSearchParams({
@@ -372,7 +396,7 @@ async function persistentCitationsForQuestion(
     assertTenantBoundary(tenantContext, { id: row.id, organizationId: row.organization_id });
   }
 
-  return rows
+  const citations = rows
     .filter((row) => {
       const document = documentById.get(row.document_id);
       if (!document) return false;
@@ -392,6 +416,8 @@ async function persistentCitationsForQuestion(
     .filter((citation) => citation.score > 0)
     .sort((left, right) => right.score - left.score)
     .slice(0, limit);
+
+  return { citations, retrievalMode };
 }
 
 export async function answerTenantQuestion(
@@ -422,7 +448,7 @@ export async function answerTenantQuestion(
     ? `Conversation so far:\n${priorMessages.map((message) => `${message.role === "user" ? "Q" : "A"}: ${message.content}`).join("\n")}\n\n`
     : "";
 
-  const citations = await persistentCitationsForQuestion(repositories, scope, question, limit, options.documentIds);
+  const { citations, retrievalMode: persistentRetrievalMode } = await persistentCitationsForQuestion(repositories, scope, question, limit, options.documentIds);
   let baseAnswer: RagAnswer;
   if (citations.length) {
     const rawConfidence = Math.min(0.96, Math.max(0.42, citations.reduce((sum, citation) => sum + citation.score, 0) / citations.length + 0.28));
@@ -443,6 +469,7 @@ export async function answerTenantQuestion(
       keywords: extractKeywords(question, 6),
       rationale: `Synthesized from ${citations.length} governed source${citations.length === 1 ? "" : "s"} (top match: "${citations[0].title}", ${Math.round(citations[0].score * 100)}% relevance).`,
       confidenceExplanation: explanation,
+      retrievalMode: persistentRetrievalMode,
     };
   } else {
     baseAnswer = await answerWithGovernedRag(repositories, scope, { question, limit });
@@ -564,6 +591,10 @@ export async function answerTenantQuestion(
       modelUsed: routeResult.modelUsed,
       latencyMs: routeResult.latencyMs,
       costTier: routeResult.costTier,
+      // RAG retrieval quality (2026-09-12): passes through unchanged via the `...baseAnswer` spread
+      // above -- which path (persistent-chunk fulltext_search/full_scan, or the governedRag.ts
+      // fallback's own mode) actually served this answer.
+      retrievalMode: answer.retrievalMode,
     },
   }).catch(() => undefined);
 
