@@ -55,6 +55,7 @@
     "**/*.test.tsx",
     "apps/mobile",
     "apps/mobile-capacitor",
+    "apps/callismatic",
     "src/main.tsx",
     "src/test",
     "tests",
