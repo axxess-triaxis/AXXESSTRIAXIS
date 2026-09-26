@@ -6,6 +6,7 @@ import {
   documentsRepository,
   documentVersionsRepository,
   knowledgeArticlesRepository,
+  ragFullTextSearchRepository,
   tasksRepository,
   tenantScopeFromUser,
 } from "../../../../repositories/supabaseEnterpriseRepositories";
@@ -28,6 +29,7 @@ export async function POST(request: Request) {
       knowledgeArticlesRepository,
       tasksRepository,
       auditLogsRepository,
+      ragFullTextSearchRepository,
     }, scope, question, { limit: body.limit, conversationId: body.conversationId, documentIds: body.documentIds });
     return NextResponse.json(answer);
   } catch (error) {

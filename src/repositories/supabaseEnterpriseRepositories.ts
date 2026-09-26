@@ -34,6 +34,7 @@ import type {
   DocumentsRepository,
   DocumentTagsRepository,
   DocumentVersionsRepository,
+  FullTextSearchHit,
   InvitationsRepository,
   KnowledgeArticlesRepository,
   KnowledgeSearchRepository,
@@ -44,6 +45,7 @@ import type {
   OrganizationsRepository,
   ProgramsRepository,
   ProjectsRepository,
+  RagFullTextSearchRepository,
   RemindersRepository,
   RepositoryQuery,
   StakeholdersRepository,
@@ -407,7 +409,11 @@ function applyRepositoryQuery(params: URLSearchParams, config: ResourceConfig<un
     }
   }
 
-  const pageSize = Math.min(Math.max(query?.pageSize ?? 50, 1), 100);
+  // Was clamped to 100 regardless of what callers requested -- several callers across this codebase
+  // (RAG retrieval, Knowledge Hub, live-platform aggregation, onboarding sample-data) request up to
+  // 2500 and were silently getting only the first 100 rows back. Raised to match the largest existing
+  // caller; this only ever returns more rows than before, never fewer, for every call site.
+  const pageSize = Math.min(Math.max(query?.pageSize ?? 50, 1), 2500);
   const page = Math.max(query?.page ?? 1, 1);
   params.set("limit", String(pageSize));
   params.set("offset", String((page - 1) * pageSize));
@@ -435,6 +441,32 @@ async function supabaseRest<TResponse>(table: ResourceName, options: SupabaseRes
 
   const text = await response.text();
   return (text ? JSON.parse(text) : undefined) as TResponse;
+}
+
+// RAG retrieval quality (2026-09-12): supabaseRest above is typed to the closed ResourceName union
+// and builds a GET-with-querystring request against /rest/v1/<table> -- not a fit for PostgREST's
+// POST /rest/v1/rpc/<fn> with a JSON args body. A small sibling helper, not a modification of
+// supabaseRest, so its existing call sites/typing are untouched.
+async function supabaseRestRpc<TResponse>(fn: string, accessToken: string, args: Record<string, unknown>) {
+  const { url, anonKey } = getSupabaseConfig();
+  const response = await fetch(`${url}/rest/v1/rpc/${fn}`, {
+    method: "POST",
+    headers: {
+      apikey: anonKey,
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(args),
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    const message = await response.text().catch(() => "");
+    throw new Error(`Supabase RPC failed for ${fn}: ${response.status} ${message}`);
+  }
+
+  const text = await response.text();
+  return (text ? JSON.parse(text) : []) as TResponse;
 }
 
 async function gatewayList<TResource>(resource: ResourceName, query?: RepositoryQuery, id?: EntityId) {
@@ -1602,6 +1634,36 @@ export const knowledgeSearchRepository: KnowledgeSearchRepository = {
       .map((item): KnowledgeSearchResult => ({ type: "article", item }));
 
     return [...documentResults, ...articleResults];
+  },
+};
+
+// RAG retrieval quality (2026-09-12): ranked candidate ids from the search_documents_fulltext/
+// search_knowledge_articles_fulltext functions (20260912180011_rag_fulltext_search_functions.sql).
+// Narrowing/ranking only -- callers still apply their own document-layer authorization check
+// (canRetrieveDocument() in governedRag.ts, or the equivalent in tenantRagWorkflow.ts/toolRegistry.ts)
+// on the result before using it for anything. No .catch() here deliberately -- each caller decides
+// its own fallback-to-full-scan behavior explicitly, so a failure is visible/testable rather than
+// silently swallowed two layers down. Browser/no-token callers get an empty result (no gateway route
+// exists for this RPC yet) -- that's a safe degrade, not an error, since every caller treats an empty
+// candidate set the same as "no full-text search available" and falls back to the full scan.
+export const ragFullTextSearchRepository: RagFullTextSearchRepository = {
+  async searchDocuments(scope, query, limit) {
+    if (!scope.accessToken) return [];
+    const rows = await supabaseRestRpc<{ id: string; rank: number }[]>("search_documents_fulltext", scope.accessToken, {
+      p_organization_id: scope.organizationId,
+      p_query: query,
+      p_limit: limit,
+    });
+    return rows.map((row): FullTextSearchHit => ({ id: row.id, rank: row.rank }));
+  },
+  async searchArticles(scope, query, limit) {
+    if (!scope.accessToken) return [];
+    const rows = await supabaseRestRpc<{ id: string; rank: number }[]>("search_knowledge_articles_fulltext", scope.accessToken, {
+      p_organization_id: scope.organizationId,
+      p_query: query,
+      p_limit: limit,
+    });
+    return rows.map((row): FullTextSearchHit => ({ id: row.id, rank: row.rank }));
   },
 };
 
