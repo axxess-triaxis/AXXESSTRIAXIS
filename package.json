@@ -143,7 +143,7 @@
     "input-otp": "1.5.0",
     "jszip": "^3.10.1",
     "lucide-react": "1.31.0",
-    "mammoth": "^1.12.0",
+    "mammoth": "^1.12.3",
     "mixpanel-browser": "2.82.1",
     "motion": "12.42.2",
     "next": "^16.3.1",
