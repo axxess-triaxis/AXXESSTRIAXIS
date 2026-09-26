@@ -331,4 +331,81 @@ describe("tenant RAG workflow -- Sprint 4 conversation memory (2026-08-16)", () 
     const unscopedAnswer = await answerTenantQuestion(repo, scope, question);
     expect(unscopedAnswer.sources.map((source) => source.title).sort()).toEqual(["Cachar Referral Review", "Dibrugarh Oxygen Note"]);
   });
+
+  // RAG retrieval quality (2026-09-12): persistentCitationsForQuestion narrows which authorized
+  // documents' chunks get fetched using a ragFullTextSearchRepository, if one is provided --
+  // narrowing/ranking only, never a widening of what canRetrieveDocument() already authorized.
+  it("full-text-search narrowing on the persistent-chunk path only serves the candidates the search repository actually surfaced", async () => {
+    supabaseAdminState.isConfigured = true;
+    const repo = repositories();
+    const question = "What is the district referral risk?";
+    const vector = await deterministicEmbeddingProvider.embed(question);
+
+    const cachar = await repo.documentsRepository.create(scope, {
+      organizationId: scope.organizationId, name: "cachar.txt", title: "Cachar Referral Review",
+      storagePath: "x", fileName: "cachar.txt", fileSize: 10, mimeType: "text/plain",
+    });
+    const dibrugarh = await repo.documentsRepository.create(scope, {
+      organizationId: scope.organizationId, name: "dibrugarh.txt", title: "Dibrugarh Oxygen Note",
+      storagePath: "x", fileName: "dibrugarh.txt", fileSize: 10, mimeType: "text/plain",
+    });
+
+    function chunkRow(documentId: string, title: string) {
+      return {
+        id: `chunk-${documentId}`, organization_id: scope.organizationId, document_id: documentId,
+        chunk_index: 0, chunk_text: "relevant excerpt", embedding_hash: vector,
+        visibility: "organization", role_allowlist: [] as string[],
+        metadata: { title },
+      };
+    }
+    supabaseAdminState.rows.rag_document_chunks = [
+      chunkRow(cachar.id, "Cachar Referral Review"),
+      chunkRow(dibrugarh.id, "Dibrugarh Oxygen Note"),
+    ];
+
+    repo.ragFullTextSearchRepository = {
+      async searchDocuments() {
+        return [{ id: cachar.id, rank: 1 }]; // deliberately excludes dibrugarh
+      },
+      async searchArticles() {
+        return [];
+      },
+    };
+
+    const answer = await answerTenantQuestion(repo, scope, question);
+
+    expect(answer.sources.map((source) => source.title)).toEqual(["Cachar Referral Review"]);
+    expect(answer.retrievalMode).toBe("fulltext_search");
+  });
+
+  it("falls back to the unnarrowed persistent-chunk result when the search repository throws", async () => {
+    supabaseAdminState.isConfigured = true;
+    const repo = repositories();
+    const question = "What is the district referral risk?";
+    const vector = await deterministicEmbeddingProvider.embed(question);
+
+    const cachar = await repo.documentsRepository.create(scope, {
+      organizationId: scope.organizationId, name: "cachar.txt", title: "Cachar Referral Review",
+      storagePath: "x", fileName: "cachar.txt", fileSize: 10, mimeType: "text/plain",
+    });
+    supabaseAdminState.rows.rag_document_chunks = [{
+      id: `chunk-${cachar.id}`, organization_id: scope.organizationId, document_id: cachar.id,
+      chunk_index: 0, chunk_text: "relevant excerpt", embedding_hash: vector,
+      visibility: "organization", role_allowlist: [] as string[], metadata: { title: "Cachar Referral Review" },
+    }];
+
+    repo.ragFullTextSearchRepository = {
+      async searchDocuments() {
+        throw new Error("RPC unavailable");
+      },
+      async searchArticles() {
+        return [];
+      },
+    };
+
+    const answer = await answerTenantQuestion(repo, scope, question);
+
+    expect(answer.sources.map((source) => source.title)).toEqual(["Cachar Referral Review"]);
+    expect(answer.retrievalMode).toBe("full_scan");
+  });
 });

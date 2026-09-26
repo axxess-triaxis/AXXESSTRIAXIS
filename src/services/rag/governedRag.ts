@@ -1,4 +1,4 @@
-import type { AuditLogsRepository, DocumentsRepository, DocumentPermissionsRepository, KnowledgeArticlesRepository, TenantScope } from "../../repositories/interfaces";
+import type { AuditLogsRepository, DocumentsRepository, DocumentPermissionsRepository, KnowledgeArticlesRepository, RagFullTextSearchRepository, TenantScope } from "../../repositories/interfaces";
 import type { Document, DocumentPermission, KnowledgeArticle, RoleName } from "../../domain";
 import { extractKeywords, summarizeText, tokenize } from "../nlp/localNlp";
 import { buildConfidenceExplanation, type RagConfidenceExplanation } from "./confidenceExplanation";
@@ -40,6 +40,10 @@ export type RagAnswer = {
   rationale: string;
   /** RAG Remediation Sprint 2 (A-56): what the confidence number actually measures. */
   confidenceExplanation: RagConfidenceExplanation;
+  /** RAG retrieval quality (2026-09-12): which retrieval path served this answer -- set by
+   * answerWithGovernedRag; other producers of a RagAnswer (e.g. tenantRagWorkflow.ts's persistent-
+   * chunk path) set their own. Optional so every existing RagAnswer literal stays valid. */
+  retrievalMode?: RagRetrievalMode;
 };
 
 export type RagRepositories = {
@@ -47,7 +51,12 @@ export type RagRepositories = {
   documentPermissionsRepository: DocumentPermissionsRepository;
   knowledgeArticlesRepository: KnowledgeArticlesRepository;
   auditLogsRepository?: AuditLogsRepository;
+  // RAG retrieval quality (2026-09-12): optional -- every existing construction of RagRepositories
+  // (tests, toolRegistry.ts) keeps compiling and behaving exactly as before when this is absent.
+  ragFullTextSearchRepository?: RagFullTextSearchRepository;
 };
+
+export type RagRetrievalMode = "fulltext_search" | "full_scan";
 
 export type RagQuery = {
   question: string;
@@ -153,34 +162,83 @@ function chunksFromArticle(article: KnowledgeArticle) {
   }));
 }
 
-export async function retrieveInstitutionalContext(repositories: RagRepositories, scope: TenantScope, query: RagQuery) {
+// RAG retrieval quality (2026-09-12): tries a Postgres full-text-search candidate set first
+// (search_documents_fulltext/search_knowledge_articles_fulltext, ranked via search_vector/GIN --
+// see 20260912180011_rag_fulltext_search_functions.sql) and narrows the full document/article
+// fetch down to just those ids before applying canRetrieveDocument() and chunk-level similarity()
+// scoring exactly as before. This is narrowing/ranking only -- canRetrieveDocument() remains the
+// real, unbypassed authorization gate; the SQL functions never encode classification/status logic
+// (confirmed the RLS select policy backing them doesn't either -- see the migration's own comment).
+// On any RPC failure or an empty result, falls straight through to today's exact full-corpus scan --
+// never a hard failure, never worse recall than before this change.
+async function retrieveInstitutionalContextWithMode(
+  repositories: RagRepositories,
+  scope: TenantScope,
+  query: RagQuery,
+): Promise<{ chunks: RagChunk[]; retrievalMode: RagRetrievalMode }> {
+  const limit = query.limit ?? 5;
+  const overFetch = limit * 5; // room for canRetrieveDocument() to filter some candidates out
+
+  let candidateDocumentIds: Set<string> | undefined;
+  let candidateArticleIds: Set<string> | undefined;
+  let retrievalMode: RagRetrievalMode = "full_scan";
+
+  if (repositories.ragFullTextSearchRepository) {
+    try {
+      const [docHits, articleHits] = await Promise.all([
+        repositories.ragFullTextSearchRepository.searchDocuments(scope, query.question, overFetch),
+        repositories.ragFullTextSearchRepository.searchArticles(scope, query.question, overFetch),
+      ]);
+      if (docHits.length || articleHits.length) {
+        candidateDocumentIds = new Set(docHits.map((hit) => hit.id));
+        candidateArticleIds = new Set(articleHits.map((hit) => hit.id));
+        retrievalMode = "fulltext_search";
+      }
+    } catch {
+      // Fall through to the full scan below.
+    }
+  }
+
+  // pageSize: 2500 now actually returns up to 2500 rows (supabaseEnterpriseRepositories.ts's
+  // applyRepositoryQuery silently clamped every caller to 100 until this same change) -- narrowing
+  // by candidate id below is real narrowing of an already-complete fetch, not a workaround for a
+  // still-truncated one.
   const [documents, articles, permissions] = await Promise.all([
     repositories.documentsRepository.list(scope, { pageSize: 2500 }),
     repositories.knowledgeArticlesRepository.list(scope, { pageSize: 500 }),
     repositories.documentPermissionsRepository.list(scope, { pageSize: 1000 }).catch(() => []),
   ]);
 
-  const documentChunks = documents
+  const scopedDocuments = candidateDocumentIds ? documents.filter((document) => candidateDocumentIds!.has(document.id)) : documents;
+  const scopedArticles = candidateArticleIds ? articles.filter((article) => candidateArticleIds!.has(article.id)) : articles;
+
+  const documentChunks = scopedDocuments
     .filter((document) => canRetrieveDocument(scope, document, permissions))
     .filter((document) => !query.categoryId || document.categoryId === query.categoryId)
     .filter((document) => !query.tag || document.tags?.includes(query.tag))
     .flatMap(chunksFromDocument);
 
-  const articleChunks = articles
+  const articleChunks = scopedArticles
     .filter((article) => article.organizationId === scope.organizationId && article.status !== "archived")
     .filter((article) => !query.categoryId || article.categoryId === query.categoryId)
     .filter((article) => !query.tag || article.tags.includes(query.tag))
     .flatMap(chunksFromArticle);
 
-  return [...documentChunks, ...articleChunks]
+  const chunks = [...documentChunks, ...articleChunks]
     .map((chunk) => ({ ...chunk, score: similarity(query.question, chunk.text) }))
     .filter((chunk) => chunk.score > 0)
     .sort((a, b) => b.score - a.score)
-    .slice(0, query.limit ?? 5);
+    .slice(0, limit);
+
+  return { chunks, retrievalMode };
+}
+
+export async function retrieveInstitutionalContext(repositories: RagRepositories, scope: TenantScope, query: RagQuery): Promise<RagChunk[]> {
+  return (await retrieveInstitutionalContextWithMode(repositories, scope, query)).chunks;
 }
 
 export async function answerWithGovernedRag(repositories: RagRepositories, scope: TenantScope, query: RagQuery): Promise<RagAnswer> {
-  const chunks = await retrieveInstitutionalContext(repositories, scope, query);
+  const { chunks, retrievalMode } = await retrieveInstitutionalContextWithMode(repositories, scope, query);
   const topText = chunks.map((chunk) => chunk.text).join(" ");
   const rawConfidence = chunks.length === 0 ? 0 : Math.min(0.96, chunks.reduce((sum, chunk) => sum + chunk.score, 0) / chunks.length + 0.35);
   const hasRestrictedSource = chunks.some((chunk) => chunk.classification === "restricted");
@@ -216,6 +274,7 @@ export async function answerWithGovernedRag(repositories: RagRepositories, scope
     rationale,
     sources,
     confidenceExplanation: explanation,
+    retrievalMode,
   };
 
   await repositories.auditLogsRepository?.record(scope, {
@@ -227,6 +286,10 @@ export async function answerWithGovernedRag(repositories: RagRepositories, scope
       humanReviewRequired: result.humanReviewRequired,
       sourceIds: result.sources.map((source) => source.sourceId),
       query: query.question,
+      // RAG retrieval quality (2026-09-12): which path served this answer -- the concrete mechanism
+      // for comparing hit-rate/quality across full-text-search vs. full-scan retrieval in production,
+      // rather than a separate offline evaluation harness.
+      retrievalMode,
     },
   }).catch(() => undefined);
 

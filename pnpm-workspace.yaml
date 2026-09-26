@@ -55,7 +55,9 @@ overrides:
   # Dependabot #66 (high): inherited libvips CVEs (CVE-2026-33327/33328/35590/35591), fixed
   # upstream in 0.35.0. Transitive via next.js's own image-optimization dependency -- runtime-
   # relevant (Next Image component runs sharp server-side).
-  sharp: 0.35.0
+  # Dependabot #119 (high), 2026-09-13: a follow-up libheif advisory (GHSA-g89c-p67h-r497,
+  # GHSA-2jg2-4ch7-h545) found 0.35.0 still vulnerable -- fixed upstream in 0.35.4.
+  sharp: 0.35.4
   # Dependabot #65/#64 (high/medium): quadratic-CPU DoS via YAML merge-key/alias chains, fixed
   # upstream in 4.2.0. Transitive via the Vercel CLI devDependency tree only, not bundled into the
   # deployed app -- overridden anyway to close the alert.
@@ -138,4 +140,15 @@ overrides:
   # pnpm audit finding, no separate Dependabot alert yet (moderate): denial of service via TOML
   # documents containing thousands of consecutive commented lines, fixed upstream in 1.6.1.
   # Transitive via @vercel/python-analysis (Vercel CLI devDependency tree only).
-  smol-toml: 1.6.1
+  # Dependabot #118 (high), 2026-09-13: a follow-up advisory found 1.6.1 still vulnerable to a
+  # separate DoS via malformed TOML documents, fixed upstream in 1.7.1.
+  smol-toml: 1.7.1
+  # Dependabot #100-117 (medium/high, 21 alerts covering the same package), 2026-09-13: a long
+  # run of xmldom parser bugs (ReDoS via quadratic backtracking/memory/attribute-dedup, several
+  # requireWellFormed-bypass injection variants), all fixed upstream in 0.8.15. Transitive via
+  # @expo/plist -> @expo/cli -> expo (mobile build tooling only, not part of the deployed web app).
+  '@xmldom/xmldom': 0.8.15
+  # Dependabot #96 (medium): DoS via exponential decoding of malformed percent-encoded input,
+  # fixed upstream in 0.5.0. Transitive via query-string -> @react-navigation/core (mobile app's
+  # deep-link handling), not part of the deployed web app's runtime.
+  decode-uri-component: 0.5.0
