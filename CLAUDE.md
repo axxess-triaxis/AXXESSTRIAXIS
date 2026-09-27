@@ -125,3 +125,13 @@ Any deploy or merge that reaches production without its normal gate passing -- `
 5. **Mandatory post-deployment verification** -- a specific, named check performed immediately after the bypassed deploy goes live, confirming the risk in (3) did not materialize.
 
 Absent all five, do not bypass the gate -- stop and fix the underlying failure, or hand back to the founder for an explicit go/no-go decision instead. This rule exists because a real instance of bypassing a gate under pressure, without this structure, was flagged as a growth area in external session analysis (Paxel Report #13, `docs/readiness/PAXEL_REPORT_13_CODEX_BEHAVIORAL_ANALYSIS_2026_08_07.md`) -- it formalizes the stronger pattern this program has shown elsewhere (named passing gates, explicit risk acceptance) as the baseline, not the exception.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

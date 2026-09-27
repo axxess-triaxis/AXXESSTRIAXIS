@@ -101,8 +101,12 @@ overrides:
   # The 11 packages below are every other package `pnpm outdated` showed drifting away from main's
   # committed lockfile version during that regeneration -- pinned back to hold this PR to exactly
   # the 4 intended changes, verified via `pnpm outdated` showing zero further mismatches afterward.
-  eslint-config-next: 16.2.12
-  next: 16.2.12
+  # 2026-09-27: next/eslint-config-next lifted from 16.2.12 to 16.3.5 to close Dependabot #120/#121
+  # (critical RCE, GHSA-p293-qw3h-jr36 / GHSA-2xp9-vwfh-vxw4; affects >=16.0.0 <16.3.3, no 16.2.x
+  # backport). 16.3.5 is the newest release past the minimumReleaseAge gate on that date. The
+  # 16.3.0 Turbopack boundary regression above was fixed structurally in PR #221 (demoMode split).
+  eslint-config-next: 16.3.5
+  next: 16.3.5
   '@napi-rs/canvas': 1.0.2
   '@playwright/test': 1.62.0
   '@types/node': 26.1.1
