@@ -294,6 +294,7 @@ export const StakeholdersSection = () => {
   function handleAddNote(profile: ContactProfile) {
     const enrichment = demoStakeholderCardFor(profile.name);
     writeStakeholderNoteDraft({ stakeholderName: profile.name, presetBody: enrichment?.suggestion });
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- pre-existing full-page navigation, kept unchanged in the Next 16.3.5 security bump
     window.location.assign("/tasks");
   }
 
@@ -311,6 +312,7 @@ export const StakeholdersSection = () => {
         // leaving the click silently inert.
       }
     }
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- pre-existing full-page navigation, kept unchanged in the Next 16.3.5 security bump
     window.location.assign("/tasks");
   }
 
