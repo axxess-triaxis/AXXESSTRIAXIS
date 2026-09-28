@@ -62,7 +62,13 @@ describe("AIWorkspaceSection (Sprint 3 -- does not hang, no raw backend error te
 describe("AIWorkspaceSection (Sprint 4 -- real conversation memory + Context Window + AI Audit Trail)", () => {
   it("removes the dead getAiMessages() call -- institutionalRepository is hardwired to always-empty for real tenants", () => {
     expect(source).not.toContain("getAiMessages()");
-    expect(source).not.toContain('"No conversation history yet"\n                  message="Ask a governed question below');
+    // The dead aiMessages list is gone; the empty state it used to guard was kept on purpose and
+    // now renders only when there is no real conversation history. \s keeps the check the same on
+    // LF (Linux CI) and CRLF (Windows) checkouts.
+    expect(source).not.toMatch(/aiMessages\.(length|map)/);
+    expect(source).toMatch(
+      /priorTurns\.length === 0 && !ragAnswer\.answer && \(\s*<EmptyState\s+title="No conversation history yet"/,
+    );
   });
 
   it("threads conversationId through the request body and captures it back from the response", () => {
