@@ -72,6 +72,7 @@ export default function App() {
     // The login flow (src/app/auth/page.tsx) already routes correctly; this catches any other
     // path into the workspace shell (bookmarks, direct links, the marketing site's entry point).
     if (!currentUser?.needsOnboarding) return;
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- full reload so the workspace shell does not keep querying with a non-tenant organizationId
     window.location.assign("/onboarding");
   }, [currentUser]);
 

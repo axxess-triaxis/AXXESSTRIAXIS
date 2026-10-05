@@ -584,6 +584,7 @@ function DemoModePanel() {
     // Investor Preview off. The prompt itself can't render here since we're about to hard-navigate
     // away; mark intent and let App.tsx trigger it once /dashboard has actually mounted.
     if (!nextEnabled) markPostDemoSatisfactionPromptPending();
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- intentional hard navigation so the demo-mode switch takes effect on a fresh load
     window.setTimeout(() => window.location.assign("/dashboard"), 250);
   };
 
