@@ -32,7 +32,7 @@ describe("AI router", () => {
         userRole: "Executive",
         preferredProvider: "kimi",
       },
-    }, { OPENROUTER_API_KEY: "test-key", AXXESS_AI_ROUTING_MODE: "demo" } as unknown as NodeJS.ProcessEnv);
+    }, { OPENROUTER_API_KEY: "test-key", AXXESS_AI_PAID_PROVIDERS: "enabled", AXXESS_AI_ROUTING_MODE: "demo" } as unknown as NodeJS.ProcessEnv);
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(result.providerUsed).toBe("kimi");
@@ -62,7 +62,7 @@ describe("AI router", () => {
   });
 
   it("reports configured provider health", () => {
-    const snapshot = getAiRouterStatusSnapshot({ OPENAI_API_KEY: "configured" } as unknown as NodeJS.ProcessEnv);
+    const snapshot = getAiRouterStatusSnapshot({ OPENAI_API_KEY: "configured", AXXESS_AI_PAID_PROVIDERS: "enabled" } as unknown as NodeJS.ProcessEnv);
     expect(snapshot.configuredCount).toBeGreaterThanOrEqual(1);
     expect(snapshot.providers.some((provider) => provider.name === "openai" && provider.configured)).toBe(true);
   });

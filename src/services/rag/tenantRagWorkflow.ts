@@ -17,6 +17,7 @@ import { extractKeywords, summarizeText } from "../nlp/localNlp";
 import { answerWithGovernedRag, canRetrieveDocument, type RagAnswer, type RagCitation, type RagRetrievalMode } from "./governedRag";
 import { buildConfidenceExplanation } from "./confidenceExplanation";
 import { deterministicEmbeddingProvider } from "./embeddings/embeddingProvider";
+import { embedTexts, SEMANTIC_EMBEDDING_MODEL, toPgVector } from "./embeddings/semanticEmbeddings";
 import { buildRagIngestionRecord, chunkInstitutionalText } from "./ingestion/ingestionPipeline";
 import { recordWorkflowTimelineEvent } from "../workflows/liveTenantWorkflow";
 import { assertTenantBoundary, type TenantRequestContext } from "../../security/tenantGuard";
@@ -302,10 +303,25 @@ export async function ingestTenantDocument(
       },
     })));
 
-    await supabaseAdminRest("rag_document_chunks", {
-      method: "POST",
-      body: chunkRows,
-    });
+    // Real semantic embeddings (gte-small) alongside the hash. null when the embed function is
+    // unavailable -- the chunks are still written and stay retrievable by their hash score.
+    const semanticVectors = await embedTexts(chunks);
+    const rowsWithEmbeddings = semanticVectors
+      ? chunkRows.map((row, index) => ({
+          ...row,
+          embedding: toPgVector(semanticVectors[index]),
+          metadata: { ...row.metadata, semanticEmbeddingModel: SEMANTIC_EMBEDDING_MODEL },
+        }))
+      : chunkRows;
+
+    try {
+      await supabaseAdminRest("rag_document_chunks", { method: "POST", body: rowsWithEmbeddings });
+    } catch (error) {
+      // An app deployed before the embedding migration has no `embedding` column to write to;
+      // ingestion must not fail for that. Any other failure is re-raised by the plain retry.
+      if (!semanticVectors) throw error;
+      await supabaseAdminRest("rag_document_chunks", { method: "POST", body: chunkRows });
+    }
   }
 
   await repositories.auditLogsRepository?.record(scope, {
@@ -356,6 +372,11 @@ async function persistentCitationsForQuestion(
     canRetrieveDocument(scope, document, permissions) && (!documentIdFilter || documentIdFilter.has(document.id)));
   if (authorizedDocuments.length === 0) return { citations: [], retrievalMode: "full_scan" };
 
+  // Semantic first: it ranks across every authorized document, so it runs before (and instead of)
+  // the keyword narrowing below, which would drop documents that answer the question in other words.
+  const semantic = await semanticCitationsForQuestion(scope, permissions, authorizedDocuments, question, limit);
+  if (semantic) return { citations: semantic, retrievalMode: "semantic" };
+
   // RAG retrieval quality (2026-09-12): narrows which authorized documents' chunks get fetched
   // from rag_document_chunks -- ranking/narrowing only, canRetrieveDocument() above already ran
   // and remains the real authorization gate; this never widens what a user could otherwise see.
@@ -376,6 +397,7 @@ async function persistentCitationsForQuestion(
     }
   }
 
+  const documentById = new Map(authorizedDocuments.map((document) => [document.id, document]));
   const ids = authorizedDocuments.map((document) => document.id);
   const query = new URLSearchParams({
     organization_id: `eq.${scope.organizationId}`,
@@ -385,39 +407,85 @@ async function persistentCitationsForQuestion(
   });
   const rows = await supabaseAdminRest<RagChunkRow[]>("rag_document_chunks", { query }).catch(() => []);
   const questionVector = await deterministicEmbeddingProvider.embed(question);
-  const documentById = new Map(authorizedDocuments.map((document) => [document.id, document]));
+  const citations = authorizedCitations(scope, permissions, documentById, rows, limit, (row) =>
+    row.embedding_hash.reduce((sum, value, index) => sum + value * (questionVector[index] ?? 0), 0));
 
-  // Hard tenant-boundary guard (Q-005): the querystring org filter above and the row-shape checks
-  // below are soft, defeatable application-layer trust -- rag_document_chunks is read via the
-  // service-role client, which bypasses RLS entirely. Throw loudly on a mismatch instead of
-  // silently dropping the row, so a leak attempt is caught and logged rather than quietly hidden.
+  return { citations, retrievalMode };
+}
+
+// Hard tenant-boundary guard (Q-005) plus the per-row authorization filter, shared by the semantic
+// and hash retrieval paths: rag_document_chunks is read via the service-role client, which
+// bypasses RLS entirely. Throw loudly on a mismatch instead of silently dropping the row, so a
+// leak attempt is caught and logged rather than quietly hidden.
+function authorizedCitations(
+  scope: TenantScope,
+  permissions: DocumentPermission[],
+  documentById: Map<string, Document>,
+  rows: RagChunkRow[],
+  limit: number,
+  scoreFor: (row: RagChunkRow) => number,
+): RagCitation[] {
   const tenantContext = tenantRequestContextFromScope(scope);
   for (const row of rows) {
     assertTenantBoundary(tenantContext, { id: row.id, organizationId: row.organization_id });
   }
 
-  const citations = rows
+  return rows
     .filter((row) => {
       const document = documentById.get(row.document_id);
       if (!document) return false;
       if (row.role_allowlist.length > 0 && !row.role_allowlist.includes(scope.role)) return false;
       return canRetrieveDocument(scope, document, permissions);
     })
-    .map((row): RagCitation => {
-      const score = row.embedding_hash.reduce((sum, value, index) => sum + value * (questionVector[index] ?? 0), 0);
-      return {
-        sourceType: "document",
-        sourceId: row.document_id,
-        title: row.metadata?.title ?? documentById.get(row.document_id)?.title ?? "Institutional document",
-        score,
-        excerpt: summarizeText(row.chunk_text, 1),
-      };
-    })
+    .map((row): RagCitation => ({
+      sourceType: "document",
+      sourceId: row.document_id,
+      title: row.metadata?.title ?? documentById.get(row.document_id)?.title ?? "Institutional document",
+      score: scoreFor(row),
+      excerpt: summarizeText(row.chunk_text, 1),
+    }))
     .filter((citation) => citation.score > 0)
     .sort((left, right) => right.score - left.score)
     .slice(0, limit);
+}
 
-  return { citations, retrievalMode };
+// Semantic retrieval (2026-10-05): rank this question's gte-small embedding against the chunk
+// embeddings of every authorized document, in Postgres (match_rag_document_chunks). Returns null
+// -- the caller falls back to the full-text/hash path unchanged -- whenever the embed function,
+// the migration or the RPC isn't available, or no chunk has an embedding yet.
+async function semanticCitationsForQuestion(
+  scope: TenantScope,
+  permissions: DocumentPermission[],
+  authorizedDocuments: Document[],
+  question: string,
+  limit: number,
+): Promise<RagCitation[] | null> {
+  const questionVectors = await embedTexts([question]);
+  if (!questionVectors) return null;
+
+  const hits = await supabaseAdminRest<Array<{ id: string; similarity: number }>>("rpc/match_rag_document_chunks", {
+    method: "POST",
+    body: {
+      p_organization_id: scope.organizationId,
+      p_document_ids: authorizedDocuments.map((document) => document.id),
+      p_query_embedding: toPgVector(questionVectors[0]),
+      p_limit: limit * 10,
+    },
+  }).catch(() => null);
+  if (!hits?.length) return null;
+
+  const similarityById = new Map(hits.map((hit) => [hit.id, hit.similarity]));
+  const query = new URLSearchParams({
+    organization_id: `eq.${scope.organizationId}`,
+    id: `in.(${hits.map((hit) => hit.id).join(",")})`,
+    select: "id,organization_id,document_id,chunk_index,chunk_text,embedding_hash,visibility,role_allowlist,metadata",
+  });
+  const rows = await supabaseAdminRest<RagChunkRow[]>("rag_document_chunks", { query }).catch(() => null);
+  if (!rows?.length) return null;
+
+  const documentById = new Map(authorizedDocuments.map((document) => [document.id, document]));
+  const citations = authorizedCitations(scope, permissions, documentById, rows, limit, (row) => similarityById.get(row.id) ?? 0);
+  return citations.length ? citations : null;
 }
 
 export async function answerTenantQuestion(
