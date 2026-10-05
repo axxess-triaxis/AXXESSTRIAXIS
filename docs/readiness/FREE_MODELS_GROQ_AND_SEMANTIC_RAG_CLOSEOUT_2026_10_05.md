@@ -1,7 +1,7 @@
 # Free Models (Groq) and Semantic RAG (gte-small) — Closeout, 2026-10-05
 
-Branch: `feat/groq-free-models-rag` (from `main` `2c8b401`). Status: **code complete and verified
-locally. Not merged, not deployed, and the production migration is not applied.**
+Branch: `feat/groq-free-models-rag` (from `main` `2c8b401`). Status: **code complete and verified locally; production prerequisites 1–5 done (see below);
+app code not merged or deployed.**
 
 ## External signal → decision
 
@@ -129,16 +129,23 @@ The new tests cover:
 - the rate-limit headers confirmed 8,000 tokens a minute and 1,000 requests a day.
 - This was **not** run against AXXESS itself: no AXXESS environment has `GROQ_API_KEY` yet.
 
+## Production prerequisites, done 2026-10-05 (founder go-ahead given for each step in chat)
+
+| Step | What | Verified by |
+|---|---|---|
+| 1 | `GROQ_API_KEY` on Vercel **landing only** (`triaxis-www-frontend-import`), Production + Preview, type Encrypted | pulled back: 56 chars, equal to the source key. Investor demo and Lite deliberately left out (founder: "landing only"); they share the same free-tier quota with public traffic |
+| 2 | `EMBED_FUNCTION_SECRET` (64 chars, generated locally, never printed): Vercel landing Production + Preview; Supabase `vnliomnfabaicvvvfwia` secrets | Vercel pull: exact match. Supabase `secrets list` SHA-256 digest `44524c0…` equals the local digest. Local copy deleted |
+| 3 | `supabase db push`: dry run showed `20261005120000_rag_chunk_embeddings_gte_small.sql` as the only pending migration, then applied | `migration list` shows it local = remote. SQL check: pgvector 0.8.2; `embedding vector(384)`; HNSW index present; `match_rag_document_chunks` executable by `service_role`, not `authenticated`/`anon` (a publishable-key call returned `permission denied`) |
+| 4 | `supabase functions deploy embed --use-api` | live: no secret → 401, wrong secret → 401, right secret → 200 in 1.0 s, 3 × 384-dim normalized vectors; "medical oxygen" question vs oxygen note 0.892, vs budget note 0.761 |
+| 5 | Backfill of the 6 existing production chunks, through the Supabase CLI's linked connection (both Supabase service keys are *Sensitive* in Vercel, so `scripts/backfill-rag-embeddings.mjs` couldn't get one); writes guarded by `embedding is null` | 6 updated, 0 remaining. Live RPC call ranked all 6 chunks for a business-plan question (top: "Triaxis Ventures 31072026", 0.805) |
+
+Note for the scored ranking: gte-small similarities cluster high (unrelated text still scores about
+0.75), so ordering is meaningful but a fixed relevance cutoff would not be; the code uses none.
+
 ## What remains: founder go/no-go on each production step
 
-1. **`GROQ_API_KEY`:** add it to the Vercel project(s) that serve the AI routes.
-2. **`EMBED_FUNCTION_SECRET`:** generate one value and set it in both places:
-   - Supabase: `supabase secrets set …`;
-   - Vercel: the environment variable.
-3. **Apply the migration** to production Supabase (`supabase db push`). It is additive and has a
-   rollback.
-4. **Deploy the Edge Function:** `supabase functions deploy embed`.
-5. **Run the backfill:** `node scripts/backfill-rag-embeddings.mjs --dry-run`, then for real.
+Steps 1–5 are done (table above). Remaining:
+
 6. **Merge and deploy.** The deploy is also gated by the package-age rule until about Oct 9; the
    scheduled redeploy task covers that.
 7. **Live verification:**
