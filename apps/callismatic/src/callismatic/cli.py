@@ -32,7 +32,7 @@ def _print_report(results):
     ok = [r for r in results if r.error is None]
     needs_action = [r for r in ok if r.triage.needs_decision]
     callback_decided = [r for r in ok if r.triage.callback_recommended]
-    callback_placed = [r for r in callback_decided if r.callback_result is not None]
+    callback_placed = [r for r in callback_decided if r.callback_result is not None and r.callback_result.get("status") != "provider_error"]
     blocked = [r for r in ok if r.triage.block_recommended]
     filed = [
         r for r in ok
@@ -65,7 +65,9 @@ def _print_report(results):
         for r in callback_decided:
             print(f"\n{r.file_name} (caller: {r.caller_number})")
             print(f"  Task: {r.triage.callback_task}")
-            if r.callback_result is not None:
+            if r.callback_result is not None and r.callback_result.get("status") == "provider_error":
+                print(f"  Result: FAILED to place -- {r.callback_result.get('error', 'unknown error')}")
+            elif r.callback_result is not None:
                 print(f"  Result: placed via CALL-E -- status {r.callback_result.get('status', 'unknown')}")
             else:
                 print("  Result: NOT placed (dry run / --no-callbacks, or unknown caller number)")
@@ -247,10 +249,76 @@ def _run_reminders(argv: list[str]) -> None:
     print(f"Sent {len(sent)} due reminder(s)." if sent else "No reminders due.")
 
 
+def _run_web_intel(argv: list[str]) -> None:
+    """Runs the same web check the triage agent's check_web_intel tool runs, standalone --
+    for seeing exactly what evidence a caller would produce, without a Bedrock call."""
+    from callismatic.web_intel import caller_web_intel, searches_used_today
+
+    parser = argparse.ArgumentParser(prog="callismatic web-intel", description="Web check a caller via SerpApi.")
+    parser.add_argument("--phone", required=True, help="Caller number, E.164 (e.g. +15550001111)")
+    parser.add_argument("--company", default="", help="Organisation the caller claimed to represent")
+    args = parser.parse_args(argv)
+
+    print(caller_web_intel(args.phone, args.company or None))
+    print(f"\n(SerpApi searches used today: {searches_used_today()})")
+
+
+def _run_brief(argv: list[str]) -> None:
+    """Pre-meeting briefs from the calendar (or one company, no calendar needed)."""
+    from callismatic.briefs import brief_for_company, schedule_briefs
+
+    parser = argparse.ArgumentParser(prog="callismatic brief", description="Pre-meeting briefs via SerpApi.")
+    parser.add_argument("--company", help="Brief one company now (no calendar needed)")
+    parser.add_argument("--hours", type=int, default=24, help="Look this many hours ahead on the calendar (default 24)")
+    parser.add_argument("--to", help="WhatsApp number (E.164) to deliver scheduled briefs to")
+    parser.add_argument("--dry-run", action="store_true", help="Print briefs without scheduling them")
+    args = parser.parse_args(argv)
+
+    if args.company:
+        print(brief_for_company(args.company))
+        return
+    briefs = schedule_briefs(hours_ahead=args.hours, to=args.to, dry_run=args.dry_run)
+    if not briefs:
+        print(f"No upcoming meetings with an identifiable organisation in the next {args.hours} h.")
+    for b in briefs:
+        print(b["brief"])
+        print(f"({'not scheduled -- dry run' if args.dry_run else 'scheduled for ' + b['due_at']})\n")
+
+
+def _run_places(argv: list[str]) -> None:
+    """Places near a location, or near an upcoming meeting's location."""
+    from callismatic.web_intel import find_places, format_places
+
+    parser = argparse.ArgumentParser(prog="callismatic places", description="Places near a meeting via SerpApi Google Maps.")
+    parser.add_argument("what", help='What to look for, e.g. "quiet cafe"')
+    where = parser.add_mutually_exclusive_group(required=True)
+    where.add_argument("--near", help='A place, e.g. "Koramangala, Bengaluru"')
+    where.add_argument("--event", help="An upcoming calendar event id -- uses its location")
+    args = parser.parse_args(argv)
+
+    near = args.near
+    if args.event:
+        from callismatic.calendar_sync import list_upcoming_events
+
+        event = next((e for e in list_upcoming_events(hours_ahead=72) if e["id"] == args.event), None)
+        if not event or not event.get("location"):
+            print(f"No upcoming event {args.event} with a location in the next 72 h.")
+            return
+        near = event["location"]
+        print(f"Near \"{event['summary']}\" at {near}:")
+    print(format_places(find_places(args.what, near)))
+
+
 def main() -> None:
     load_dotenv()
     argv = sys.argv[1:]
-    if argv and argv[0] == "correct":
+    if argv and argv[0] == "web-intel":
+        _run_web_intel(argv[1:])
+    elif argv and argv[0] == "brief":
+        _run_brief(argv[1:])
+    elif argv and argv[0] == "places":
+        _run_places(argv[1:])
+    elif argv and argv[0] == "correct":
         _run_correct(argv[1:])
     elif argv and argv[0] == "digest":
         _run_digest(argv[1:])
