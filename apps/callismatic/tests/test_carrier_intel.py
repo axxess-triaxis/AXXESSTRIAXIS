@@ -52,7 +52,7 @@ def test_embedded_error_code_is_reported_distinctly(monkeypatch):
     fake_client.lookups.v2.phone_numbers.return_value.fetch.return_value = fake_lookup
 
     with patch("twilio.rest.Client", return_value=fake_client):
-        report = check_carrier_intel("+918402999963")
+        report = check_carrier_intel("+910000000000")
 
     assert "60627" in report
     assert "unavailable" in report.lower()

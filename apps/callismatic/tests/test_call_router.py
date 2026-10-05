@@ -4,7 +4,7 @@ from callismatic import call_router
 
 
 def test_country_code_for_india_number():
-    assert call_router.country_code_for("+918402999963") == 91
+    assert call_router.country_code_for("+910000000000") == 91
 
 
 def test_country_code_for_us_number():
@@ -32,8 +32,8 @@ def test_route_call_uses_registered_country_provider(monkeypatch):
     monkeypatch.setattr(call_router, "PROVIDERS_BY_COUNTRY_CODE", {91: fake_india_provider})
     monkeypatch.setattr(call_router, "DEFAULT_PROVIDER", fake_default)
 
-    result = call_router.route_call("Call back and confirm.", "+918402999963")
+    result = call_router.route_call("Call back and confirm.", "+910000000000")
 
-    fake_india_provider.assert_called_once_with("Call back and confirm.", "+918402999963")
+    fake_india_provider.assert_called_once_with("Call back and confirm.", "+910000000000")
     fake_default.assert_not_called()
     assert result["via"] == "india-local"
