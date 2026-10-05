@@ -9,7 +9,7 @@ import type { TenantRagRepositories } from "./tenantRagWorkflow";
 // mock and keep exercising the real "Supabase admin not configured" honest-degradation path
 // unchanged. Only the new "conversation memory" describe block flips it to true.
 const { supabaseAdminState, mockRouteAiRequest } = vi.hoisted(() => ({
-  supabaseAdminState: { isConfigured: false, rows: {} as Record<string, unknown[]> },
+  supabaseAdminState: { isConfigured: false, rows: {} as Record<string, unknown[]>, writes: [] as Array<{ table: string; body: unknown }> },
   mockRouteAiRequest: vi.fn(),
 }));
 
@@ -21,6 +21,12 @@ vi.mock("../../repositories/supabaseAdmin", () => ({
     // GET reads never pass a method (matches this file's own real call sites, e.g.
     // persistentCitationsForQuestion's `supabaseAdminRest("rag_document_chunks", { query })`).
     if (table === "ai_conversation_messages") return options.method ? [] : (supabaseAdminState.rows.ai_conversation_messages ?? []);
+    // Semantic retrieval (2026-10-05): RPCs are POSTs that return rows, not writes.
+    if (table.startsWith("rpc/")) {
+      supabaseAdminState.writes.push({ table, body: options.body });
+      return supabaseAdminState.rows[table] ?? [];
+    }
+    if (options.method) supabaseAdminState.writes.push({ table, body: options.body });
     return options.method ? [] : (supabaseAdminState.rows[table] ?? []);
   },
 }));
@@ -407,5 +413,134 @@ describe("tenant RAG workflow -- Sprint 4 conversation memory (2026-08-16)", () 
 
     expect(answer.sources.map((source) => source.title)).toEqual(["Cachar Referral Review"]);
     expect(answer.retrievalMode).toBe("full_scan");
+  });
+});
+
+describe("tenant RAG workflow -- semantic retrieval with gte-small embeddings (2026-10-05)", () => {
+  const unit = (index: number) => Array.from({ length: 384 }, (_, i) => (i === index ? 1 : 0));
+
+  function stubEmbedFunction(vectorFor: (text: string) => number[]) {
+    const fetchMock = vi.fn(async (_url: string, init: RequestInit) => {
+      const { texts } = JSON.parse(String(init.body)) as { texts: string[] };
+      return new Response(JSON.stringify({ embeddings: texts.map(vectorFor) }), { status: 200 });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://example.supabase.co");
+    vi.stubEnv("EMBED_FUNCTION_SECRET", "test-secret");
+    return fetchMock;
+  }
+
+  afterEach(() => {
+    supabaseAdminState.isConfigured = false;
+    supabaseAdminState.rows = {};
+    supabaseAdminState.writes = [];
+    mockRouteAiRequest.mockClear();
+    vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
+  });
+
+  it("ranks by embedding similarity across every authorized document, ahead of keyword narrowing", async () => {
+    supabaseAdminState.isConfigured = true;
+    const fetchMock = stubEmbedFunction(() => unit(0));
+    const repo = repositories();
+    const cachar = await repo.documentsRepository.create(scope, {
+      organizationId: scope.organizationId, name: "cachar.txt", title: "Cachar Referral Review",
+      storagePath: "x", fileName: "cachar.txt", fileSize: 10, mimeType: "text/plain",
+    });
+    const oxygen = await repo.documentsRepository.create(scope, {
+      organizationId: scope.organizationId, name: "oxygen.txt", title: "Oxygen Supply Continuity",
+      storagePath: "x", fileName: "oxygen.txt", fileSize: 10, mimeType: "text/plain",
+    });
+    const row = (documentId: string, title: string) => ({
+      id: `chunk-${documentId}`, organization_id: scope.organizationId, document_id: documentId,
+      chunk_index: 0, chunk_text: `${title} excerpt`, embedding_hash: [] as number[],
+      visibility: "organization", role_allowlist: [] as string[], metadata: { title },
+    });
+    supabaseAdminState.rows.rag_document_chunks = [row(cachar.id, "Cachar Referral Review"), row(oxygen.id, "Oxygen Supply Continuity")];
+    // The question shares no keyword with the oxygen document, but means the same thing.
+    supabaseAdminState.rows["rpc/match_rag_document_chunks"] = [
+      { id: `chunk-${oxygen.id}`, similarity: 0.83 },
+      { id: `chunk-${cachar.id}`, similarity: 0.41 },
+    ];
+    const searchDocuments = vi.fn(async () => [{ id: cachar.id, rank: 1 }]);
+    repo.ragFullTextSearchRepository = { searchDocuments, searchArticles: async () => [] };
+
+    const answer = await answerTenantQuestion(repo, scope, "Will the hospitals run out of medical gas?");
+
+    expect(answer.retrievalMode).toBe("semantic");
+    expect(answer.sources.map((source) => source.title)).toEqual(["Oxygen Supply Continuity", "Cachar Referral Review"]);
+    expect(searchDocuments).not.toHaveBeenCalled();
+    const rpc = supabaseAdminState.writes.find((write) => write.table === "rpc/match_rag_document_chunks")?.body as Record<string, unknown>;
+    expect(rpc.p_organization_id).toBe(scope.organizationId);
+    expect(rpc.p_document_ids).toEqual([cachar.id, oxygen.id]);
+    expect(String(rpc.p_query_embedding).startsWith("[1,0,0")).toBe(true);
+    expect(fetchMock.mock.calls[0][0]).toBe("https://example.supabase.co/functions/v1/embed");
+  });
+
+  it("never returns a role-restricted chunk, even when the RPC ranks it first", async () => {
+    supabaseAdminState.isConfigured = true;
+    stubEmbedFunction(() => unit(0));
+    const repo = repositories();
+    const doc = await repo.documentsRepository.create(scope, {
+      organizationId: scope.organizationId, name: "board.txt", title: "Board Only",
+      storagePath: "x", fileName: "board.txt", fileSize: 10, mimeType: "text/plain",
+    });
+    supabaseAdminState.rows.rag_document_chunks = [{
+      id: "chunk-board", organization_id: scope.organizationId, document_id: doc.id, chunk_index: 0,
+      chunk_text: "board minutes", embedding_hash: [] as number[], visibility: "organization",
+      role_allowlist: ["Super Admin"], metadata: { title: "Board Only" },
+    }];
+    supabaseAdminState.rows["rpc/match_rag_document_chunks"] = [{ id: "chunk-board", similarity: 0.9 }];
+
+    const answer = await answerTenantQuestion(repo, scope, "What did the board decide?");
+
+    // The document itself is visible to this role (document-level retrieval may still cite it);
+    // the role-restricted chunk's text must never come back through the semantic path.
+    expect(JSON.stringify(answer)).not.toContain("board minutes");
+    expect(answer.retrievalMode).not.toBe("semantic");
+  });
+
+  it("falls back to the hash/full-text path when the embed function is unavailable", async () => {
+    supabaseAdminState.isConfigured = true;
+    vi.stubGlobal("fetch", vi.fn(async () => new Response("down", { status: 503 })));
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://example.supabase.co");
+    vi.stubEnv("EMBED_FUNCTION_SECRET", "test-secret");
+    const repo = repositories();
+    const question = "What is the district referral risk?";
+    const cachar = await repo.documentsRepository.create(scope, {
+      organizationId: scope.organizationId, name: "cachar.txt", title: "Cachar Referral Review",
+      storagePath: "x", fileName: "cachar.txt", fileSize: 10, mimeType: "text/plain",
+    });
+    supabaseAdminState.rows.rag_document_chunks = [{
+      id: `chunk-${cachar.id}`, organization_id: scope.organizationId, document_id: cachar.id,
+      chunk_index: 0, chunk_text: "relevant excerpt", embedding_hash: await deterministicEmbeddingProvider.embed(question),
+      visibility: "organization", role_allowlist: [] as string[], metadata: { title: "Cachar Referral Review" },
+    }];
+
+    const answer = await answerTenantQuestion(repo, scope, question);
+
+    expect(answer.retrievalMode).toBe("full_scan");
+    expect(answer.sources.map((source) => source.title)).toEqual(["Cachar Referral Review"]);
+    expect(supabaseAdminState.writes.some((write) => write.table === "rpc/match_rag_document_chunks")).toBe(false);
+  });
+
+  it("writes a gte-small embedding with every chunk at ingestion when the embed function is available", async () => {
+    supabaseAdminState.isConfigured = true;
+    stubEmbedFunction(() => unit(5));
+    const repo = repositories();
+
+    await ingestTenantDocument(repo, scope, {
+      title: "Oxygen Supply Continuity",
+      bodyText: "Oxygen manifold uptime procedure for district hospitals. Escalate low cylinder stock to the biomedical lead.",
+    });
+
+    const chunkWrite = supabaseAdminState.writes.find((write) => write.table === "rag_document_chunks");
+    const rows = chunkWrite?.body as Array<Record<string, unknown>>;
+    expect(rows.length).toBeGreaterThan(0);
+    for (const row of rows) {
+      expect(String(row.embedding).split(",")).toHaveLength(384);
+      expect((row.metadata as Record<string, unknown>).semanticEmbeddingModel).toBe("gte-small");
+      expect(Array.isArray(row.embedding_hash)).toBe(true); // the hash is still written
+    }
   });
 });

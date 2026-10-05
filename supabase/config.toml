@@ -389,6 +389,12 @@ deno_version = 2
 # [edge_runtime.secrets]
 # secret_key = "env(SECRET_VALUE)"
 
+# RAG embeddings (gte-small). The server credential is an sb_secret_ key, not a JWT, so JWT
+# verification is off and the function checks its own EMBED_FUNCTION_SECRET header instead
+# (supabase/functions/embed/index.ts).
+[functions.embed]
+verify_jwt = false
+
 [analytics]
 enabled = true
 port = 54327

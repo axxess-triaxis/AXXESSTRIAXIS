@@ -50,14 +50,16 @@ function mergePreferredProviders(
   override?: Partial<Record<AiTaskCategory, AiProviderName>>,
 ): Partial<Record<AiTaskCategory, AiProviderName>> {
   return {
-    document_analysis: "google",
-    multilingual_translation: "google",
-    compliance_review: "anthropic",
-    risk_assessment: "anthropic",
-    code_or_structured_generation: "openai",
-    workflow_generation: "openai",
-    rag_answer: "openai",
-    executive_summary: "openai",
+    // Free-first (2026-10-05): Groq for every task by default. A preferred provider that isn't
+    // configured is skipped, so this falls through to the next configured candidate.
+    document_analysis: "groq",
+    multilingual_translation: "groq",
+    compliance_review: "groq",
+    risk_assessment: "groq",
+    code_or_structured_generation: "groq",
+    workflow_generation: "groq",
+    rag_answer: "groq",
+    executive_summary: "groq",
     ...override,
   };
 }
@@ -69,7 +71,7 @@ export function buildTenantModelPolicy(
   return {
     policyId: overrides.policyId ?? "tenant-default-ai-routing-policy",
     organizationId,
-    allowedProviders: uniqueValues(overrides.allowedProviders ?? ["openai", "anthropic", "google", "falcon", "jais", "kimi", "deepseek", "local"]),
+    allowedProviders: uniqueValues(overrides.allowedProviders ?? ["groq", "openai", "anthropic", "google", "falcon", "jais", "kimi", "deepseek", "local"]),
     blockedProviders: uniqueValues(overrides.blockedProviders ?? []),
     preferredProviders: mergePreferredProviders(overrides.preferredProviders),
     fallbackProviders: uniqueValues(overrides.fallbackProviders ?? defaultFallbackProviders),
