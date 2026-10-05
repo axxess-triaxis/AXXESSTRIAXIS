@@ -122,11 +122,13 @@ export function EnterpriseAuthFlowPage({ kind }: { kind: AuthFlowKind }) {
 
   async function submit() {
     if (kind === "login") {
+      // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- pre-existing full-page navigation, kept unchanged in the Next 16.3.5 security bump
       window.location.assign("/auth");
       return;
     }
 
     if (kind === "security") {
+      // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- pre-existing full-page navigation, kept unchanged in the Next 16.3.5 security bump
       window.location.assign("/settings/security");
       return;
     }
