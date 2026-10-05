@@ -18,15 +18,20 @@ from __future__ import annotations
 import html
 import json
 import os
+from contextlib import asynccontextmanager
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Literal
+from typing import AsyncIterator, Literal
 
 from fastapi import FastAPI, Header, HTTPException, Request, Response
 from pydantic import BaseModel
+from starlette.routing import Route
 
 from callismatic.agent import build_agent
 from callismatic.corrections import record_correction
 from callismatic.digest_report import BLOCKLIST_PATH, DIGEST_PATH, generate_weekly_digest
+from callismatic.mcp_server import app as mcp_asgi_app
+from callismatic.mcp_server import mcp as mcp_server_instance
 from callismatic.reminders import add_reminder, send_due_reminders
 from callismatic.todos import TODOS_PATH, complete_todo, list_todos
 from callismatic.tools import find_digest_entry, unblock_number
@@ -36,7 +41,77 @@ from callismatic.whatsapp_webhook import (
     verify_signature,
 )
 
-app = FastAPI(title="Callismatic")
+
+_mcp_session_cm = None  # holds the entered context manager alive -- see _lifespan
+
+
+@asynccontextmanager
+async def _lifespan(_app: FastAPI) -> AsyncIterator[None]:
+    # A mounted ASGI sub-app's own lifespan is NOT triggered automatically by
+    # Starlette's Mount -- found via a real live-client test that failed with
+    # "Task group is not initialized. Make sure to use run()." on the very first
+    # /mcp request through the full app, even though the standalone mcp_server.py
+    # app (which uvicorn drives directly, invoking its lifespan itself) worked
+    # fine. The MCP session manager's task group has to be entered explicitly
+    # here instead.
+    #
+    # Entered via raw __aenter__, deliberately never __aexit__'d, with the context
+    # manager object itself kept alive in a module global: found via two real
+    # production failures in sequence, not guessed.
+    #   1. A 502 on the *second* request after deploying to Lambda. Unlike a
+    #      long-lived uvicorn process, Mangum runs the ASGI lifespan cycle (both
+    #      startup AND shutdown) on every single invocation, not once per
+    #      container -- so a plain `async with ...: yield` here tears the session
+    #      manager's task group down at the end of the FIRST request, and
+    #      StreamableHTTPSessionManager.run() also raises if entered a second
+    #      time on the same instance ("can only be called once per instance")
+    #      regardless. Fix: enter it exactly once for the process's whole life
+    #      and never exit it -- Lambda freezes/thaws the container rather than
+    #      cleanly shutting it down between invocations, so there's no real
+    #      "shutdown" to run anyway.
+    #   2. That fix alone still broke under a local 3-invocation simulation: the
+    #      first `session_manager.run().__aenter__()` call's return value wasn't
+    #      kept anywhere, so Python's garbage collector eventually finalized the
+    #      orphaned context-manager object itself -- and its cleanup runs an
+    #      anyio cancel-scope exit, which anyio requires happen in the same task
+    #      it was entered from. GC runs on its own schedule, in whatever task
+    #      happens to be current, which raised "Attempted to exit cancel scope in
+    #      a different task than it was entered in". Fix: keep a strong
+    #      module-level reference to the entered context manager so it's never
+    #      garbage collected during the process's life.
+    global _mcp_session_cm
+    if _mcp_session_cm is None:
+        _mcp_session_cm = mcp_server_instance.session_manager.run()
+        await _mcp_session_cm.__aenter__()
+    yield
+
+
+app = FastAPI(title="Callismatic", lifespan=_lifespan)
+
+# The MCP server (mcp_server.py) is the same read-only/safe tool set as the JSON
+# API above, exposed over Streamable HTTP so an MCP client -- an Alexa+ Agent
+# Skill, Claude Desktop, or any other MCP-speaking client -- can call it directly.
+# Registered on the same already-deployed Lambda rather than standing up a
+# second service, so it reuses the exact same Bedrock creds, Secrets Manager
+# wiring, and IAM role the rest of this app already has.
+#
+# A direct Route at the exact path, NOT app.mount("/mcp", mcp_asgi_app) -- found
+# by adding temporary debug logging and reading the real scope Lambda
+# constructs, after three prior fix attempts (lifespan double-entry, DNS-
+# rebinding host validation) were each real and each confirmed via local Mangum
+# simulation, yet the live URL kept 307-redirecting /mcp/ to itself regardless.
+# The actual cause: AWS Lambda Function URLs strip a trailing slash before
+# Mangum ever constructs the ASGI scope -- confirmed directly from a live
+# CloudWatch log line for a request sent to "/mcp/": `path='/mcp'`. A synthetic
+# local test event can't reproduce this because it never goes through AWS's own
+# normalization; only a real request does. Starlette's Mount, on seeing the
+# request path exactly equal its own registered prefix with nothing left over,
+# redirects to add a trailing slash -- and since every subsequent request also
+# gets normalized back to no-trailing-slash by AWS itself, the redirect target
+# is unreachable by construction: infinite loop, not a transient bug. A plain
+# Route matches the exact literal path with no prefix-stripping or trailing-
+# slash semantics to go wrong, sidestepping the mismatch entirely.
+app.router.routes.append(Route("/mcp", endpoint=mcp_asgi_app.routes[0].app, methods=None))
 
 _agent = None
 
@@ -65,54 +140,210 @@ def _load_json(path: Path) -> list[dict]:
 # --------------------------------------------------------------------------
 
 
+_CATEGORY_COLORS = {
+    "scam": "#f85149",
+    "spam": "#db6d28",
+    "lead": "#58a6ff",
+    "important": "#d29922",
+    "routine": "#8b949e",
+}
+
+_URGENCY_COLORS = {
+    "low": "#8b949e",
+    "medium": "#d29922",
+    "high": "#f85149",
+}
+
+
+def _within_days(timestamp_iso: str, since: datetime) -> bool:
+    try:
+        timestamp = datetime.fromisoformat(timestamp_iso)
+    except ValueError:
+        return False
+    if timestamp.tzinfo is None:
+        timestamp = timestamp.replace(tzinfo=timezone.utc)
+    return timestamp >= since
+
+
 @app.get("/", response_class=Response)
 def dashboard() -> Response:
-    digest = _load_json(DIGEST_PATH)[-20:][::-1]
-    blocklist = _load_json(BLOCKLIST_PATH)[-20:][::-1]
+    all_digest = _load_json(DIGEST_PATH)
+    all_blocklist = _load_json(BLOCKLIST_PATH)
+    digest = all_digest[-20:][::-1]
+    blocklist = all_blocklist[-20:][::-1]
     todos = list_todos()
-    summary = html.escape(generate_weekly_digest(days=7))
+
+    since = datetime.now(timezone.utc) - timedelta(days=7)
+    weekly = [e for e in all_digest if _within_days(e["triaged_at"], since)]
+    needs_decision_count = sum(1 for e in weekly if e["triage"].get("needs_decision"))
+    auto_handled_count = len(weekly) - needs_decision_count
 
     def esc(value: object) -> str:
         return html.escape(str(value))
 
-    digest_rows = "".join(
-        f"<tr><td>{esc(e['file'])}</td><td>{esc(e['triaged_at'])}</td>"
-        f"<td>{esc(e['triage'].get('category', ''))}</td>"
-        f"<td>{esc(e['triage'].get('summary', ''))}</td></tr>"
-        for e in digest
-    ) or "<tr><td colspan='4'>No voicemails/messages triaged yet.</td></tr>"
+    def badge(category: str) -> str:
+        color = _CATEGORY_COLORS.get(category, "#8b949e")
+        return f'<span class="badge" style="--badge-color:{color}">{esc(category)}</span>'
+
+    def flag_tags(triage: dict) -> str:
+        tags = []
+        if triage.get("needs_decision"):
+            tags.append('<span class="tag tag-decision">needs decision</span>')
+        if triage.get("callback_recommended"):
+            tags.append('<span class="tag">callback</span>')
+        if triage.get("block_recommended"):
+            tags.append('<span class="tag tag-blocked">blocked</span>')
+        urgency = triage.get("urgency", "none")
+        if urgency and urgency != "none":
+            color = _URGENCY_COLORS.get(urgency, "#8b949e")
+            tags.append(f'<span class="tag" style="--tag-color:{color}">{esc(urgency)} urgency</span>')
+        return "".join(tags)
+
+    def triage_card(e: dict) -> str:
+        triage = e.get("triage") or {}
+        category = triage.get("category", "routine")
+        needs_decision = bool(triage.get("needs_decision"))
+        card_class = "card triage-card" + (" needs-decision" if needs_decision else "")
+        return f"""<div class="{card_class}" style="--accent-color:{_CATEGORY_COLORS.get(category, '#8b949e')}">
+  <div class="card-top">
+    {badge(category)}
+    <span class="timestamp">{esc(e.get('triaged_at', ''))}</span>
+  </div>
+  <div class="card-source">{esc(e.get('file', ''))}</div>
+  <p class="card-summary">{esc(triage.get('summary', ''))}</p>
+  <div class="tag-row">{flag_tags(triage)}</div>
+</div>"""
+
+    digest_cards = "".join(triage_card(e) for e in digest) or '<p class="empty">No voicemails/messages triaged yet.</p>'
 
     blocklist_rows = "".join(
-        f"<tr><td>{esc(e['phone_number'])}</td><td>{esc(e['reason'])}</td></tr>" for e in blocklist
-    ) or "<tr><td colspan='2'>Nothing blocked yet.</td></tr>"
+        f'<div class="list-row"><span class="mono">{esc(e["phone_number"])}</span>'
+        f'<span class="muted">{esc(e["reason"])}</span></div>'
+        for e in blocklist
+    ) or '<p class="empty">Nothing blocked yet.</p>'
 
     todo_rows = "".join(
-        f"<tr><td>{esc(t['id'])}</td><td>{esc(t['text'])}</td><td>{esc(t['source'])}</td></tr>" for t in todos
-    ) or "<tr><td colspan='3'>No open to-dos.</td></tr>"
+        f'<div class="list-row todo-row"><span class="todo-check">&#9744;</span>'
+        f'<span class="todo-body">{esc(t["text"])}<span class="muted todo-source">{esc(t["source"])}</span></span></div>'
+        for t in todos
+    ) or '<p class="empty">No open to-dos.</p>'
 
     body = f"""<!doctype html>
 <html><head><title>Callismatic</title>
 <style>
-body {{ font-family: system-ui, sans-serif; margin: 2rem; background: #0b0f14; color: #e6edf3; }}
-h1 {{ margin-bottom: 0.25rem; }}
-p.tagline {{ color: #8b949e; margin-top: 0; }}
-pre {{ background: #161b22; padding: 1rem; border-radius: 8px; white-space: pre-wrap; }}
-table {{ border-collapse: collapse; width: 100%; margin-bottom: 2rem; }}
-th, td {{ text-align: left; padding: 0.4rem 0.6rem; border-bottom: 1px solid #30363d; font-size: 0.9rem; }}
-th {{ color: #8b949e; font-weight: 600; }}
-h2 {{ border-bottom: 1px solid #30363d; padding-bottom: 0.3rem; }}
+:root {{
+  --bg: #0b0f14;
+  --bg-card: #12161c;
+  --border: #242c36;
+  --text: #e6edf3;
+  --text-muted: #8b949e;
+}}
+* {{ box-sizing: border-box; }}
+body {{
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  margin: 0; padding: 2.5rem 1.5rem;
+  background: var(--bg); color: var(--text);
+}}
+.wrap {{ max-width: 1180px; margin: 0 auto; }}
+header {{ margin-bottom: 2.5rem; }}
+h1 {{ margin: 0 0 0.35rem; font-size: 1.6rem; letter-spacing: -0.02em; }}
+p.tagline {{ color: var(--text-muted); margin: 0; font-size: 0.95rem; }}
+h2 {{
+  font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--text-muted); font-weight: 600; margin: 0 0 0.9rem;
+}}
+section {{ margin-bottom: 2.5rem; }}
+
+.stat-grid {{
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.85rem; margin-bottom: 2.5rem;
+}}
+
+.main-grid {{ display: grid; grid-template-columns: 2fr 1fr; gap: 2rem; align-items: start; }}
+.sidebar {{ display: flex; flex-direction: column; gap: 2rem; }}
+.sidebar section {{ margin-bottom: 0; }}
+@media (max-width: 820px) {{
+  .main-grid {{ grid-template-columns: 1fr; }}
+}}
+.stat-card {{
+  background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px;
+  padding: 1.1rem 1.2rem;
+}}
+.stat-number {{ font-size: 1.9rem; font-weight: 650; line-height: 1.1; }}
+.stat-label {{ color: var(--text-muted); font-size: 0.82rem; margin-top: 0.3rem; }}
+
+.card {{
+  background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px;
+  padding: 0.9rem 1.1rem; margin-bottom: 0.6rem;
+}}
+.triage-card {{ border-left: 3px solid var(--accent-color); }}
+.triage-card.needs-decision {{ background: #161b1f; border-left-width: 4px; }}
+.card-top {{ display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.45rem; }}
+.timestamp {{ color: var(--text-muted); font-size: 0.78rem; }}
+.card-source {{ font-size: 0.82rem; color: var(--text-muted); margin-bottom: 0.25rem; }}
+.card-summary {{ margin: 0 0 0.5rem; font-size: 0.94rem; line-height: 1.4; }}
+
+.badge {{
+  display: inline-block; padding: 0.15rem 0.55rem; border-radius: 999px;
+  font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em;
+  color: var(--badge-color); background: color-mix(in srgb, var(--badge-color) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--badge-color) 40%, transparent);
+}}
+.tag-row {{ display: flex; flex-wrap: wrap; gap: 0.35rem; }}
+.tag {{
+  font-size: 0.72rem; padding: 0.1rem 0.5rem; border-radius: 6px;
+  background: #1c2129; color: var(--tag-color, var(--text-muted)); border: 1px solid var(--border);
+}}
+.tag-decision {{ color: #d29922; border-color: color-mix(in srgb, #d29922 40%, transparent); }}
+.tag-blocked {{ color: #f85149; border-color: color-mix(in srgb, #f85149 40%, transparent); }}
+
+.list-row {{
+  display: flex; justify-content: space-between; align-items: center; gap: 0.75rem;
+  padding: 0.6rem 0.2rem; border-bottom: 1px solid var(--border); font-size: 0.88rem;
+}}
+.list-row:last-child {{ border-bottom: none; }}
+.list-row.todo-row {{ align-items: flex-start; }}
+.todo-row {{ justify-content: flex-start; }}
+.todo-body {{ display: flex; flex-direction: column; gap: 0.15rem; flex: 1; }}
+.todo-source {{ font-size: 0.76rem; }}
+.todo-check {{ color: var(--text-muted); line-height: 1.4; }}
+.mono {{ font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.85rem; }}
+.muted {{ color: var(--text-muted); font-size: 0.82rem; }}
+.empty {{ color: var(--text-muted); font-size: 0.88rem; font-style: italic; margin: 0; }}
 </style></head>
 <body>
+<div class="wrap">
+<header>
 <h1>Callismatic</h1>
-<p class="tagline">An agent that listens to the voicemails you'd never check, decides what needs you, and quietly handles or blocks the rest.</p>
-<h2>Weekly digest</h2>
-<pre>{summary}</pre>
+<p class="tagline">The voicemails you'd never check &mdash; triaged, so you don't have to.</p>
+</header>
+
+<div class="stat-grid">
+  <div class="stat-card"><div class="stat-number">{len(weekly)}</div><div class="stat-label">Triaged this week</div></div>
+  <div class="stat-card"><div class="stat-number">{needs_decision_count}</div><div class="stat-label">Needs your decision</div></div>
+  <div class="stat-card"><div class="stat-number">{auto_handled_count}</div><div class="stat-label">Auto-handled</div></div>
+  <div class="stat-card"><div class="stat-number">{len(todos)}</div><div class="stat-label">Open to-dos</div></div>
+</div>
+
+<div class="main-grid">
+<section>
 <h2>Recent triage decisions</h2>
-<table><tr><th>Source</th><th>Triaged at</th><th>Category</th><th>Summary</th></tr>{digest_rows}</table>
-<h2>Blocked numbers</h2>
-<table><tr><th>Number</th><th>Reason</th></tr>{blocklist_rows}</table>
+{digest_cards}
+</section>
+
+<div class="sidebar">
+<section>
 <h2>Open to-dos</h2>
-<table><tr><th>ID</th><th>Text</th><th>Source</th></tr>{todo_rows}</table>
+<div class="card">{todo_rows}</div>
+</section>
+
+<section>
+<h2>Blocked numbers</h2>
+<div class="card">{blocklist_rows}</div>
+</section>
+</div>
+</div>
+</div>
 </body></html>"""
     return Response(content=body, media_type="text/html")
 
