@@ -1,6 +1,7 @@
 import type { RagCitation } from "../rag/governedRag";
 
 export type AiProviderName =
+  | "groq"
   | "openai"
   | "anthropic"
   | "google"
