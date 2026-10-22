@@ -28,7 +28,7 @@ const migrations = readdirSync(migrationsDir)
   .filter((file) => file.endsWith(".sql"))
   .sort();
 
-assert(packageJson.devDependencies?.supabase === "2.109.1", "Supabase CLI must be pinned as devDependency supabase@2.109.1.");
+assert(packageJson.devDependencies?.supabase === "2.117.0", "Supabase CLI must be pinned as devDependency supabase@2.117.0.");
 assert(config.includes('project_id = "axxess-triaxis"'), "supabase/config.toml project_id must be axxess-triaxis.");
 assert(config.includes("[db.migrations]"), "supabase/config.toml must include db.migrations configuration.");
 assert(config.includes("./seeds/001_local_enterprise_seed.sql"), "supabase/config.toml must reference the existing AXXESS seed files.");
