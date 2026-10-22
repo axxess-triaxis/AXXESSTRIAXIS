@@ -12,9 +12,12 @@ export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
 const token = process.env.NEXT_PUBLIC_POSTHOG_KEY;
 
 if (!token) {
+  // Warn, never throw: a throw here aborts client bootstrap, so the page renders server HTML but
+  // never hydrates and every click is dead. That kept the Pilot Golden Path gate (dev server, no
+  // PostHog key) red on main since this file was added -- ledger #77.
   if (process.env.NODE_ENV === "development") {
-    throw new Error(
-      "NEXT_PUBLIC_POSTHOG_KEY variable required by PostHog is missing or un-configured, this causes events to be silently missed. This error stops appearing once NEXT_PUBLIC_POSTHOG_KEY is configured",
+    console.warn(
+      "NEXT_PUBLIC_POSTHOG_KEY variable required by PostHog is missing or un-configured, this causes events to be silently missed. This warning stops appearing once NEXT_PUBLIC_POSTHOG_KEY is configured",
     );
   }
 } else {
