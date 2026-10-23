@@ -141,7 +141,7 @@
     "date-fns": "4.4.0",
     "embla-carousel-react": "8.6.0",
     "input-otp": "1.5.0",
-    "jszip": "^3.10.1",
+    "jszip": "^3.10.2",
     "lucide-react": "1.31.0",
     "mammoth": "^1.12.3",
     "mixpanel-browser": "2.82.1",
