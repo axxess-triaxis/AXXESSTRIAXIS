@@ -1,6 +1,7 @@
 import { getAiProviderConfigurations } from "../model-routing-policy";
 import type { AiProviderAdapter } from "../types";
 import { localAiProvider } from "./localProvider";
+import { createGroqProvider } from "./groqProvider";
 import { createOpenAiProvider } from "./openAiProvider";
 import { createOpenRouterProvider } from "./openRouterProvider";
 
@@ -9,7 +10,8 @@ import { createOpenRouterProvider } from "./openRouterProvider";
 // AiRouteResult shape, so provider identity is the only reliable signal. "openai" joined this set
 // 2026-07-31 once a real Chat Completions adapter (with its own spend guard) replaced its stub.
 // anthropic/google/xai/falcon/jais remain stub-only until they get the same real-adapter treatment.
-export const liveModelProviders = new Set(["kimi", "deepseek", "openai"]);
+// "groq" joined 2026-10-05 as the free-tier default (groqProvider.ts).
+export const liveModelProviders = new Set(["groq", "kimi", "deepseek", "openai"]);
 
 function remotePlaceholderProvider(config: ReturnType<typeof getAiProviderConfigurations>[number]): AiProviderAdapter {
   return {
@@ -33,6 +35,9 @@ export function buildAiProviderAdapters(env: NodeJS.ProcessEnv = process.env): A
     }
     if (OPENROUTER_BACKED_PROVIDERS.has(config.name)) {
       return createOpenRouterProvider(config, env);
+    }
+    if (config.name === "groq") {
+      return createGroqProvider(config, env);
     }
     if (config.name === "openai") {
       return createOpenAiProvider(config, env);

@@ -10,6 +10,7 @@
 import { classifyAiPrompt } from "../ai/prompt-classifier";
 import { buildTenantModelPolicy } from "../ai/tenantModelPolicy";
 import { getAiProviderConfigurations } from "../ai/model-routing-policy";
+import { createGroqProvider } from "../ai/providers/groqProvider";
 import { createOpenAiProvider } from "../ai/providers/openAiProvider";
 import { createOpenRouterProvider } from "../ai/providers/openRouterProvider";
 import type { AiConversationMessage, AiPromptClassification, AiPromptRequest, AiProviderAdapter, AiProviderCompletion, AiRoutingContext, AiToolDefinition } from "../ai/types";
@@ -62,12 +63,14 @@ export type AgenticChatLoopResult =
 
 export type AgenticChatLoopDeps = {
   env?: NodeJS.ProcessEnv;
+  // Overrides the primary reasoning adapter (tests). Named for its original provider; it is
+  // whichever adapter runs first, and the tenant policy must still allow its config.name.
   openAiAdapter?: AiProviderAdapter;
   openRouterAdapter?: AiProviderAdapter;
 };
 
-// Sprint 2 agentic fallback (2026-08-16): OpenAI stays primary (its tool-calling is the
-// better-verified of the two); DeepSeek via OpenRouter is a same-turn fallback for when OpenAI's own
+// Sprint 2 agentic fallback (2026-08-16), primary updated 2026-10-05: Groq is primary when
+// configured (free tier), else OpenAI; DeepSeek via OpenRouter is a same-turn fallback for when the primary's own
 // response is a non-live-call (confidence < 0.62 -- missing key, budget skip, non-200, empty
 // content -- see openAiProvider.ts), not an alternate default. Fixes the exact failure mode observed
 // live: an OpenAI 429 previously dead-ended the whole turn.
@@ -258,10 +261,19 @@ async function executeConfirmedPendingTool(resume: AgenticChatResumeInput, scope
   return state;
 }
 
-function resolveOpenAiAdapter(env: NodeJS.ProcessEnv): AiProviderAdapter {
-  const config = getAiProviderConfigurations(env).find((candidate) => candidate.name === "openai");
-  if (!config) throw new Error("OpenAI provider configuration is missing from getAiProviderConfigurations.");
-  return createOpenAiProvider(config, env);
+// Free-first (2026-10-05): Groq when configured, else OpenAI -- which only counts as configured
+// with AXXESS_AI_PAID_PROVIDERS=enabled (model-routing-policy.ts). Both must be tool-calling
+// capable and allowed by the tenant policy. undefined means no eligible provider at all.
+function resolvePrimaryAdapter(
+  env: NodeJS.ProcessEnv,
+  isAllowed: (name: AiProviderAdapter["config"]["name"]) => boolean,
+): AiProviderAdapter | undefined {
+  const configs = getAiProviderConfigurations(env);
+  const groq = configs.find((candidate) => candidate.name === "groq");
+  if (groq?.configured && isAllowed("groq")) return createGroqProvider(groq, env);
+  const openAi = configs.find((candidate) => candidate.name === "openai");
+  if (openAi?.configured && isAllowed("openai")) return createOpenAiProvider(openAi, env);
+  return undefined;
 }
 
 function resolveDeepSeekAdapter(env: NodeJS.ProcessEnv): AiProviderAdapter {
@@ -271,9 +283,9 @@ function resolveDeepSeekAdapter(env: NodeJS.ProcessEnv): AiProviderAdapter {
 }
 
 // The eligibility gate reuses buildTenantModelPolicy() unmodified -- the loop bypasses normal
-// tenant-policy provider *selection* (selectTenantModelRoute) for its own reasoning calls and always
-// uses OpenAI directly when eligible, but still refuses to start at all if this tenant's policy
-// blocks/disallows OpenAI, or the prompt classifies as restricted-sensitivity without
+// tenant-policy provider *selection* (selectTenantModelRoute) for its own reasoning calls and uses
+// Groq (else OpenAI, when paid providers are enabled) directly, but still refuses to start at all if
+// the tenant's policy disallows that provider, or the prompt classifies as restricted-sensitivity without
 // restrictedDataExternalProviders. This is a stated Sprint 1 compromise, not silently dropped.
 export async function runAgenticChatTurn(input: AgenticChatLoopInput, deps: AgenticChatLoopDeps = {}): Promise<AgenticChatLoopResult> {
   const env = deps.env ?? process.env;
@@ -283,9 +295,14 @@ export async function runAgenticChatTurn(input: AgenticChatLoopInput, deps: Agen
   const classification = classifyAiPrompt({ prompt: promptForClassification, context });
   const policy = buildTenantModelPolicy(tenantScope.organizationId);
 
-  const openAiNotAllowed = !policy.allowedProviders.includes("openai") || policy.blockedProviders.includes("openai");
-  if (openAiNotAllowed) {
-    return { status: "unavailable", reason: "OpenAI is not an allowed provider under this tenant's AI routing policy." };
+  const isAllowed = (name: AiProviderAdapter["config"]["name"]) =>
+    policy.allowedProviders.includes(name) && !policy.blockedProviders.includes(name);
+  const primary = deps.openAiAdapter ?? resolvePrimaryAdapter(env, isAllowed);
+  if (!primary) {
+    return { status: "unavailable", reason: "No tool-calling AI provider is configured and allowed for this tenant (set GROQ_API_KEY, or enable paid providers)." };
+  }
+  if (!isAllowed(primary.config.name)) {
+    return { status: "unavailable", reason: `${primary.config.displayName} is not an allowed provider under this tenant's AI routing policy.` };
   }
   if (classification.sensitivity === "restricted" && !policy.restrictedDataExternalProviders) {
     return { status: "unavailable", reason: "Restricted-sensitivity content is held to local/tenant-approved providers until explicit policy approval." };
@@ -293,7 +310,6 @@ export async function runAgenticChatTurn(input: AgenticChatLoopInput, deps: Agen
 
   const scope = synthesizeChatbotAgentScope(tenantScope, role);
   const tools = buildToolDefinitions(scope);
-  const primary = deps.openAiAdapter ?? resolveOpenAiAdapter(env);
 
   // Fallback is only ever constructed if the tenant's own policy actually allows deepseek -- a
   // policy-restricted tenant must never get silently routed to a provider its policy disallows,
