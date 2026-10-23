@@ -7,6 +7,13 @@ updates:
       day: monday
       time: "09:00"
     open-pull-requests-limit: 10
+    # Match pnpm-workspace.yaml's minimumReleaseAge (7 days): don't propose a version
+    # published less than 7 days ago. Applies to version updates only -- GitHub does not
+    # apply cooldown to security updates, and it governs only the bumped package, not
+    # transitive lockfile entries. Security PRs that fail the release-age check
+    # (ERR_PNPM_MINIMUM_RELEASE_AGE_VIOLATION, e.g. #398/#399) are redone by hand (#403).
+    cooldown:
+      default-days: 7
     ignore:
       # @typescript-eslint/typescript-estree@8.62.1 (pulled in transitively via
       # eslint-config-next) declares peerDependencies typescript ">=4.8.4 <6.1.0".
