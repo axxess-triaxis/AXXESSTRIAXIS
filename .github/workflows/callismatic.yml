@@ -27,5 +27,11 @@ jobs:
           python-version: '3.12'
           cache: pip
           cache-dependency-path: apps/callismatic/pyproject.toml
-      - run: pip install -e ".[demo,google,whatsapp]"
+      # pytest isn't a dependency of the package, so it was never installed and every run failed
+      # with "pytest: command not found" (exit 127) -- the suite had never actually run here.
+      - run: pip install -e ".[demo,google,whatsapp]" pytest
+      # Tests write digests, blocklists and reminders under CALLISMATIC_DATA_DIR; keep them out
+      # of the checkout.
       - run: pytest
+        env:
+          CALLISMATIC_DATA_DIR: ${{ runner.temp }}/callismatic-data
