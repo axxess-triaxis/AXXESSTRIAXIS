@@ -15,7 +15,7 @@ pnpm run supabase:verify
 Pinned CLI version:
 
 ```text
-supabase 2.109.1
+supabase 2.117.0
 ```
 
 ## Creating Migrations
