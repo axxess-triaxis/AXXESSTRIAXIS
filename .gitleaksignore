@@ -1,0 +1,9 @@
+# False positives only. Each line is one exact finding (commit:file:rule:line), never a rule or path.
+#
+# 2026-10-23, PR #409: gitleaks generic-api-key matched the public GitHub advisory ID
+# GHSA-673q-mjm6-r5xr because the preceding text read "Image Optimization API, GHSA-...".
+# Not a secret. The text was reworded in a later commit; these entries cover the two
+# already-pushed commits that contain the original wording.
+a8bea30c597cf92b0ae6b4e8cca5a94fc7585120:pnpm-workspace.yaml:generic-api-key:124
+a8bea30c597cf92b0ae6b4e8cca5a94fc7585120:docs/readiness/FOUNDER_BUG_CLOSURE_LEDGER_2026_07_31.md:generic-api-key:205
+6dfccfe68b7e8241febec57ad606c9e0a14695c4:docs/readiness/FOUNDER_BUG_CLOSURE_LEDGER_2026_07_31.md:generic-api-key:205

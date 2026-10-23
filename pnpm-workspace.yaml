@@ -121,7 +121,7 @@ overrides:
   # and #146/#147/#148/#164/#165 (medium/low, incl. `use cache` Draft Mode leak); all affect
   # <16.3.8. eslint-config-next kept in lockstep. package.json bumped to ^16.3.8 alongside.
   # 2026-10-23: lifted 16.3.8 -> 16.4.2. pnpm audit reports two critical unauthenticated RCEs
-  # (GHSA-2464-fhr4-w9xw Image Optimization API, GHSA-673q-mjm6-r5xr `use cache`) and a high DoS
+  # (image optimization: GHSA-2464-fhr4-w9xw; `use cache`: GHSA-673q-mjm6-r5xr) and a high DoS
   # (GHSA-p3m5-59mp-jv5r, Server Actions), all affecting <=16.4.0, fixed in 16.4.1. No 16.3.x
   # backport. 16.4.2 is the newest release past the minimumReleaseAge gate.
   eslint-config-next: 16.4.2
