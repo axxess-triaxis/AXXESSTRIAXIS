@@ -7,6 +7,13 @@ test.describe("Sprint 27 live tenant workflow execution", () => {
   });
 
   test("shows the pilot golden path from dashboard through review, import, and task evidence", async ({ page }) => {
+    // A fresh browser has no "last seen release" in localStorage, so the once-per-release
+    // What's New modal opens after hydration and its overlay swallows every click beneath it.
+    // Dismiss it whenever it appears, the same way a real first-time user would.
+    await page.addLocatorHandler(page.getByRole("heading", { name: "What's New" }), async () => {
+      await page.getByRole("button", { name: "Got it" }).click();
+    });
+
     await loginAs(page, seededUsers.orgAdminAlpha);
 
     await page.goto("/dashboard");

@@ -2141,7 +2141,7 @@ The platform no longer depends on a globally installed Supabase CLI.
 
 Current implementation includes:
 
-- Repository-pinned Supabase CLI (`supabase@2.109.1`)
+- Repository-pinned Supabase CLI (`supabase@2.117.0`)
 - Version-controlled `supabase/config.toml`
 - Repository-managed `.gitignore`
 - Dedicated package scripts
