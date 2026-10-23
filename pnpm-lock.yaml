@@ -397,8 +397,8 @@ importers:
         specifier: 8.5.1
         version: 8.5.1(@capacitor/core@8.5.1)
       '@capacitor/keyboard':
-        specifier: 8.0.5
-        version: 8.0.5(@capacitor/core@8.5.1)
+        specifier: 8.0.6
+        version: 8.0.6(@capacitor/core@8.5.1)
       '@capacitor/network':
         specifier: 7.0.4
         version: 7.0.4(@capacitor/core@8.5.1)
@@ -449,8 +449,8 @@ importers:
         specifier: 8.5.1
         version: 8.5.1(@capacitor/core@8.5.1)
       '@capacitor/keyboard':
-        specifier: 8.0.5
-        version: 8.0.5(@capacitor/core@8.5.1)
+        specifier: 8.0.6
+        version: 8.0.6(@capacitor/core@8.5.1)
       '@capacitor/network':
         specifier: 7.0.4
         version: 7.0.4(@capacitor/core@8.5.1)
@@ -1007,8 +1007,8 @@ packages:
     peerDependencies:
       '@capacitor/core': ^8.5.0
 
-  '@capacitor/keyboard@8.0.5':
-    resolution: {integrity: sha512-oFXygC4eKYA5l2MdpTR06L2M/4x6e2SLD5yS1T9+UBDKTkzyvhWKEhbYLUaTIBPpLKqlfGudJw1X73S1H9eUzQ==}
+  '@capacitor/keyboard@8.0.6':
+    resolution: {integrity: sha512-Bbe+9V0qaT6dzEFJEK7BUWR01l2+vZE8FM5ITF/WgKtx+G6eGZ6d5+YiSMRJBAK0VGjdO59v8yiQ10Doa5KyvQ==}
     peerDependencies:
       '@capacitor/core': '>=8.0.0'
 
@@ -4968,8 +4968,8 @@ packages:
     engines: {node: '>=6.0.0'}
     hasBin: true
 
-  baseline-browser-mapping@2.11.28:
-    resolution: {integrity: sha512-br0LOmjJqr6Rt4AEkadbcNf67Zpo7EPwKsWbjnRrJIa1QYFHQBqM4C7F2WTbV8ahTEcg1Eo+Y0aWjjORInYFyA==}
+  baseline-browser-mapping@2.11.29:
+    resolution: {integrity: sha512-YeesxhUmR4h5y5V8KF8iBCqJb8YFrBJ++XBTeGcWIaQOYXGN19JM0FoiOjAhwuDoln8owMgXcWBmgHtYSkky2w==}
     engines: {node: '>=6.0.0'}
     hasBin: true
 
@@ -9870,7 +9870,7 @@ snapshots:
     dependencies:
       '@capacitor/core': 8.5.1
 
-  '@capacitor/keyboard@8.0.5(@capacitor/core@8.5.1)':
+  '@capacitor/keyboard@8.0.6(@capacitor/core@8.5.1)':
     dependencies:
       '@capacitor/core': 8.5.1
 
@@ -13923,7 +13923,7 @@ snapshots:
 
   baseline-browser-mapping@2.11.27: {}
 
-  baseline-browser-mapping@2.11.28: {}
+  baseline-browser-mapping@2.11.29: {}
 
   basic-ftp@5.3.1: {}
 
@@ -13974,7 +13974,7 @@ snapshots:
 
   browserslist@4.28.9:
     dependencies:
-      baseline-browser-mapping: 2.11.28
+      baseline-browser-mapping: 2.11.29
       caniuse-lite: 1.0.30001806
       electron-to-chromium: 1.5.396
       node-releases: 2.0.51
