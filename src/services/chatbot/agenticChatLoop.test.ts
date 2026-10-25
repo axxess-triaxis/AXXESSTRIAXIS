@@ -393,4 +393,36 @@ describe("runAgenticChatTurn", () => {
     if (result.status === "final") expect(result.steps).toEqual([]);
     expect(mockRecordAudit).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ toolName: "list_tasks", success: false }));
   });
+
+  it("uses Groq as the primary reasoning provider when GROQ_API_KEY is set (free-first, 2026-10-05)", async () => {
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify({ choices: [{ message: { content: "You have no open tasks." } }] }), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+    try {
+      const result = await runAgenticChatTurn(
+        { tenantScope, role: "Super Admin", userMessage: "List my tasks." },
+        { env: { GROQ_API_KEY: "test-key" } as unknown as NodeJS.ProcessEnv },
+      );
+      expect(result.status).toBe("final");
+      if (result.status === "final") expect(result.reply).toBe("You have no open tasks.");
+      expect(String((fetchMock.mock.calls[0] as unknown as [string])[0])).toBe("https://api.groq.com/openai/v1/chat/completions");
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it("returns unavailable when no free provider is configured and paid providers are off, even with an OpenAI key present", async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    try {
+      const result = await runAgenticChatTurn(
+        { tenantScope, role: "Super Admin", userMessage: "List my tasks." },
+        { env: { OPENAI_API_KEY: "test-key", OPENROUTER_API_KEY: "test-key" } as unknown as NodeJS.ProcessEnv },
+      );
+      expect(result.status).toBe("unavailable");
+      if (result.status === "unavailable") expect(result.reason).toContain("GROQ_API_KEY");
+      expect(fetchMock).not.toHaveBeenCalled();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
 });

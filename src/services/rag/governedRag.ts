@@ -56,7 +56,8 @@ export type RagRepositories = {
   ragFullTextSearchRepository?: RagFullTextSearchRepository;
 };
 
-export type RagRetrievalMode = "fulltext_search" | "full_scan";
+// "semantic" (2026-10-05): gte-small embeddings ranked in pgvector (tenantRagWorkflow.ts only).
+export type RagRetrievalMode = "semantic" | "fulltext_search" | "full_scan";
 
 export type RagQuery = {
   question: string;
