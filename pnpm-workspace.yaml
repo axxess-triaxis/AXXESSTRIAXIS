@@ -57,7 +57,16 @@ overrides:
   # relevant (Next Image component runs sharp server-side).
   # Dependabot #119 (high), 2026-09-13: a follow-up libheif advisory (GHSA-g89c-p67h-r497,
   # GHSA-2jg2-4ch7-h545) found 0.35.0 still vulnerable -- fixed upstream in 0.35.4.
-  sharp: 0.35.4
+  # Dependabot #163 (high), 2026-10-23: librsvg CVE-2026-96889 (GHSA-wq5f-xc86-pv6w), fixed
+  # upstream in 0.35.5. Dependabot's own security update failed to open a PR for it.
+  sharp: 0.35.5
+  # Dependabot #125/#162 (low), 2026-10-23: two IN_PLACE sanitize bypasses (GHSA-p98j-92pf-mc4p,
+  # GHSA-6688-9rhm-gjv2), fixed upstream in 3.4.16. pnpm audit the same day also reports
+  # GHSA-cg2g-xh64-v4q7 (critical, SAFE_FOR_TEMPLATES bypass), GHSA-mrv2-3pqr-j5jr (high) and
+  # GHSA-c6gr-qvv4-5v3f (low), all fixed in 3.4.17. Transitive via posthog-js (declares ^3.3.2,
+  # so this only forces the lockfile off 3.4.14). Pinned exact so a fresh resolution can't pick
+  # a release inside the minimumReleaseAge window.
+  dompurify@<3.4.17: 3.4.17
   # Dependabot #65/#64 (high/medium): quadratic-CPU DoS via YAML merge-key/alias chains, fixed
   # upstream in 4.2.0. Transitive via the Vercel CLI devDependency tree only, not bundled into the
   # deployed app -- overridden anyway to close the alert.
@@ -111,8 +120,12 @@ overrides:
   # 2026-10-22: lifted 16.3.6 -> 16.3.8 to close Dependabot #145 (high, Image Optimization SSRF)
   # and #146/#147/#148/#164/#165 (medium/low, incl. `use cache` Draft Mode leak); all affect
   # <16.3.8. eslint-config-next kept in lockstep. package.json bumped to ^16.3.8 alongside.
-  eslint-config-next: 16.3.8
-  next: 16.3.8
+  # 2026-10-23: lifted 16.3.8 -> 16.4.2. pnpm audit reports two critical unauthenticated RCEs
+  # (image optimization: GHSA-2464-fhr4-w9xw; `use cache`: GHSA-673q-mjm6-r5xr) and a high DoS
+  # (GHSA-p3m5-59mp-jv5r, Server Actions), all affecting <=16.4.0, fixed in 16.4.1. No 16.3.x
+  # backport. 16.4.2 is the newest release past the minimumReleaseAge gate.
+  eslint-config-next: 16.4.2
+  next: 16.4.2
   '@napi-rs/canvas': 1.0.2
   '@playwright/test': 1.62.0
   '@types/node': 26.1.1
@@ -152,7 +165,9 @@ overrides:
   # Transitive via @vercel/python-analysis (Vercel CLI devDependency tree only).
   # Dependabot #118 (high), 2026-09-13: a follow-up advisory found 1.6.1 still vulnerable to a
   # separate DoS via malformed TOML documents, fixed upstream in 1.7.1.
-  smol-toml: 1.7.1
+  # Dependabot #161 (medium), 2026-10-23: quadratic-time parse() via parseKey rescanning
+  # (GHSA-r4xh-jqrq-34v2), fixed upstream in 1.9.0.
+  smol-toml: 1.9.0
   # Dependabot #100-117 (medium/high, 21 alerts covering the same package), 2026-09-13: a long
   # run of xmldom parser bugs (ReDoS via quadratic backtracking/memory/attribute-dedup, several
   # requireWellFormed-bypass injection variants), all fixed upstream in 0.8.15. Transitive via
