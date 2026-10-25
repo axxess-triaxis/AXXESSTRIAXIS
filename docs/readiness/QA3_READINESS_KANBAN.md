@@ -421,7 +421,7 @@ No cards moved yet.
     landing.* and investor.* return 200.
   - #386 (founder's free-models + semantic RAG PR, merged `2809969`): merged `main` in twice,
     ledger conflict resolved; all CI checks green at merge.
-  - High-alert batch (PR __PR__): brace-expansion, compression, source-map-js, undici, zod overrides;
+  - High-alert batch (#422): brace-expansion, compression, source-map-js, undici, zod overrides;
     replaces Dependabot #421. Ledger 81.
 - `pnpm audit` on `main`: critical 4 -> 0 (#409); high 12 -> 5 with the batch.
 - Cards moved: none -- no existing actionables card tracks dependency security; this update is
