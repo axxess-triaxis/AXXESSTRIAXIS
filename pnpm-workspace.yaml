@@ -48,7 +48,15 @@ overrides:
   uuid: 11.1.1
   # Dependabot #38 (high): DoS via exponential-time expansion of consecutive
   # non-expanding {} groups, fixed upstream in 2.1.2. Transitive via minimatch (eslint chain).
-  brace-expansion@>=2.0.0 <2.1.2: '>=2.1.2'
+  # Dependabot #126/#128 (high) and #130/#131 (medium), 2026-10-25: stack-exhaustion DoS via
+  # uncontrolled recursion (GHSA-6j4f-fj2g-mc7p, GHSA-qhr7-859c-m2p7) and quadratic `{a},b}`
+  # expansion (GHSA-q2hr-2g5m-vwhr), patched on every line: 1.1.21, 2.1.7, 5.0.12. The 2.x
+  # override above used to target '>=2.1.2', which resolved minimatch 8/9's `^2.0.x` requests to
+  # the newest major (5.0.9, vulnerable); it now targets '^2.1.7' so those requests stay on the
+  # 2.x API they declare. `^` on every line keeps the override from pulling in a later major.
+  brace-expansion@>=2.0.0 <2.1.7: '^2.1.7'
+  brace-expansion@<1.1.21: '^1.1.21'
+  brace-expansion@>=4.0.0 <5.0.12: '^5.0.12'
   # Dependabot #42 (medium): process crash via PAX numeric path type confusion, fixed
   # upstream in 7.5.18. Transitive via @capacitor/cli and expo (mobile build tooling).
   tar@<=7.5.17: '>=7.5.18'
@@ -84,7 +92,27 @@ overrides:
   # and SameSite downgrade, cookie/domain attribute injection, response desync via retry
   # interceptor). All fixed by 6.28.0. Transitive via the Vercel CLI devDependency tree
   # (`@vercel/node` and friends), not bundled into the deployed app.
-  undici@>=5.29.0 <6.28.0: '>=6.28.0'
+  # Dependabot #186 (high), 2026-10-25: DoS via unhandled error on excessive content-encodings
+  # (GHSA-xjj6-f33q-929c), affects >=8.0.0 <8.12.2. The '>=6.28.0' target this override used to
+  # have already resolved the Vercel CLI's exact `undici: 5.29.0` request to 8.10.2 (vulnerable);
+  # it now targets '^8.12.2' (same major the CLI was already running on, patched).
+  undici@>=5.29.0 <6.28.0: '^8.12.2'
+  # Same advisory for packages that request 8.x directly (@expo/cli, jsdom test env).
+  undici@>=8.0.0 <8.12.2: '^8.12.2'
+  # Dependabot #149 (high), 2026-10-25: DoS via memory leak on premature response close
+  # (GHSA-vc2v-76pw-4v95), fixed in 1.8.2. Transitive via @expo/cli (mobile dev server only).
+  compression@<1.8.2: '^1.8.2'
+  # Dependabot #150 (high), 2026-10-25: event-loop DoS via indexed source-map section offsets
+  # (GHSA-68fv-2mgg-jv7q), fixed in 1.2.2. Lockfile had both 1.2.1 and 1.2.2; transitive via
+  # @tailwindcss/node, css-tree and postcss (build tooling).
+  source-map-js@>=1.0.0 <1.2.2: '^1.2.2'
+  # Dependabot #179 (high), 2026-10-25: memory exhaustion validating oversized constrained
+  # collections (GHSA-mrhx-c7xc-m3w5), affects <4.6.6 with no 3.x fix. package.json zod moves to
+  # ^4.6.6; this override also lifts the Vercel CLI's 4.1.11 copy. The 3.22.4 copy (Vercel CLI
+  # @vercel/backends, express, hono, python-analysis -- devDependency tree, not deployed) is left
+  # alone: forcing it to 4.x would break that tooling's zod 3 API usage. Alert stays open on it
+  # until Vercel moves off zod 3.
+  zod@>=4.0.0 <4.6.6: '^4.6.6'
   # Dependabot #59 (low): arbitrary file read via the esbuild dev server on Windows, fixed
   # upstream in 0.28.1. Dev-server-only, not present in the production build output.
   esbuild@>=0.27.3 <0.28.1: '>=0.28.1'
