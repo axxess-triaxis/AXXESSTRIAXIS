@@ -401,3 +401,40 @@ No cards moved yet.
   the corresponding env vars, register each new Google-based redirect URI in the same Google Cloud
   OAuth Client used for Calendar/Drive, then live-test at least one connect-and-import cycle per
   provider.
+
+### Dependency Security Kanban Update (2026-10-22 to 2026-10-25): RepoWatch Audit and Dependabot Backlog
+
+- Date: 2026-10-25
+- Origin: founder-requested RepoWatch governance audit of the `axxess-triaxis` org (2026-10-22,
+  18 repos, read-only). It found 35 open Dependabot alerts on this repo (11 high) and Dependabot
+  PRs that could not merge. Root cause for the stuck PRs: Dependabot regenerates `pnpm-lock.yaml`
+  without honouring the 7-day `minimumReleaseAge` policy (`ERR_PNPM_MINIMUM_RELEASE_AGE_VIOLATION`),
+  and exact `next:` overrides kept the lockfile behind `package.json`.
+- Shipped:
+  - #403 (merged `9d7a7a4`): vite 8.3.4, next 16.3.8 -- 18 alerts. Ledger 79.
+  - #404 (merged `c2d7a47`): Dependabot `cooldown: default-days: 7` for npm version updates
+    (does not apply to security updates -- GitHub docs).
+  - #409 (merged `2fff7e6`): next/eslint-config-next 16.4.2 (two critical unauthenticated RCEs),
+    @sentry/nextjs 10.76.2 (critical), dompurify 3.4.17 (critical), sharp 0.35.5, smol-toml 1.9.0,
+    @vitest/coverage-v8 5.0.5; `.gitleaksignore` for one false positive (advisory ID). Ledger 80.
+    `main` post-merge: Security Gates, Repository Quality, Deploy Production all success;
+    landing.* and investor.* return 200.
+  - #386 (founder's free-models + semantic RAG PR, merged `2809969`): merged `main` in twice,
+    ledger conflict resolved; all CI checks green at merge.
+  - High-alert batch (#422): brace-expansion, compression, source-map-js, undici, zod overrides;
+    replaces Dependabot #421. Ledger 81.
+- `pnpm audit` on `main`: critical 4 -> 0 (#409); high 12 -> 5 with the batch.
+- Cards moved: none -- no existing actionables card tracks dependency security; this update is
+  evidence only. No new card was created.
+- Blocked (named blocker, owner, next action):
+  - image-size #123/#124 -- only fix is 2.x, breaks Metro's file-path API (mobile bundling).
+    Owner: Claude Code. Next action: re-check when Expo/Metro is upgraded (Dependabot #413, Expo
+    54 -> 58, is open and has no founder decision).
+  - node-forge #136 -- no patched release upstream. Next action: re-check weekly.
+  - zod 3.22.4 (Vercel CLI dev tooling) -- no 3.x fix. Next action: re-check on Vercel CLI updates.
+  - basic-ftp (`pnpm audit` only) -- get-uri still requires `^5.3.1`. Next action: re-check weekly.
+  - fast-uri #180-#183 (low/medium) -- fix inside the release-age window until 2026-10-26 23:05 UTC.
+- Evidence added: `docs/readiness/FOUNDER_BUG_CLOSURE_LEDGER_2026_07_31.md` entries 79, 80, 81.
+- HITL decision: founder authorized each merge on green CI (no skip-checks or admin overrides)
+  and closing the superseded Dependabot PRs #394/#398/#399. Pending: whether to act on #413
+  (Expo 54 -> 58), which also unblocks image-size.
