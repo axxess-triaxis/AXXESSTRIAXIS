@@ -21,7 +21,7 @@ describe("tenant model policy", () => {
       request.prompt,
       classification,
       context,
-      getAiProviderConfigurations({ ANTHROPIC_API_KEY: "configured", AXXESS_AI_ROUTING_MODE: "demo" } as unknown as NodeJS.ProcessEnv),
+      getAiProviderConfigurations({ ANTHROPIC_API_KEY: "configured", AXXESS_AI_PAID_PROVIDERS: "enabled", AXXESS_AI_ROUTING_MODE: "demo" } as unknown as NodeJS.ProcessEnv),
     );
 
     expect(decision.provider.name).toBe("anthropic");

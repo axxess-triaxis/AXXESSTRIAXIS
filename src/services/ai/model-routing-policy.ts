@@ -1,6 +1,20 @@
 import type { AiPromptClassification, AiProviderConfig, AiProviderName, AiRoutingContext } from "./types";
 
 const providerCapabilities: Record<AiProviderName, Omit<AiProviderConfig, "configured" | "status">> = {
+  // Declared first on purpose: selectAiProvider() takes the first configured, capable, non-local
+  // provider in this declaration order, so Groq is the default whenever GROQ_API_KEY is set.
+  groq: {
+    name: "groq",
+    displayName: "Groq (gpt-oss, free tier)",
+    mode: "remote",
+    capabilities: ["general_chat", "rag_answer", "executive_summary", "document_analysis", "meeting_minutes", "crm_followup", "workflow_generation", "compliance_review", "risk_assessment", "stakeholder_brief", "code_or_structured_generation", "multilingual_translation"],
+    languages: ["english", "hindi", "bengali", "french"],
+    costTier: "low",
+    latencyTier: "low",
+    // Groq documents native tool calling for gpt-oss on its OpenAI-compatible API, and
+    // groqProvider.ts actually sends tools/tool_choice and parses tool_calls.
+    supportsToolCalling: true,
+  },
   openai: {
     name: "openai",
     displayName: "OpenAI / ChatGPT",
@@ -109,8 +123,18 @@ const providerCapabilities: Record<AiProviderName, Omit<AiProviderConfig, "confi
   },
 };
 
+// Free models only by default (founder decision 2026-10-05). Billed providers count as configured
+// only with AXXESS_AI_PAID_PROVIDERS=enabled, even when their keys are present, so a stray key in
+// an environment can't silently start spending.
+const PAID_PROVIDERS = new Set<AiProviderName>(["openai", "anthropic", "google", "xai", "falcon", "jais", "kimi", "deepseek"]);
+
+export function paidProvidersEnabled(env: NodeJS.ProcessEnv = process.env) {
+  return env.AXXESS_AI_PAID_PROVIDERS === "enabled";
+}
+
 export function getAiProviderConfigurations(env: NodeJS.ProcessEnv = process.env): AiProviderConfig[] {
-  const configured: Record<AiProviderName, boolean> = {
+  const hasKey: Record<AiProviderName, boolean> = {
+    groq: Boolean(env.GROQ_API_KEY),
     openai: Boolean(env.OPENAI_API_KEY),
     anthropic: Boolean(env.ANTHROPIC_API_KEY),
     google: Boolean(env.GOOGLE_AI_API_KEY),
@@ -122,11 +146,16 @@ export function getAiProviderConfigurations(env: NodeJS.ProcessEnv = process.env
     local: env.LOCAL_AI_PROVIDER_ENABLED === "true" || env.AXXESS_AI_ROUTING_MODE === "demo" || !env.AXXESS_AI_ROUTING_MODE,
   };
 
-  return (Object.keys(providerCapabilities) as AiProviderName[]).map((name) => ({
-    ...providerCapabilities[name],
-    configured: configured[name],
-    status: configured[name] ? "configured" : name === "local" ? "disabled" : "missing_credentials",
-  }));
+  const paidOff = !paidProvidersEnabled(env);
+  return (Object.keys(providerCapabilities) as AiProviderName[]).map((name) => {
+    const disabledAsPaid = paidOff && PAID_PROVIDERS.has(name);
+    const configured = hasKey[name] && !disabledAsPaid;
+    return {
+      ...providerCapabilities[name],
+      configured,
+      status: configured ? "configured" : name === "local" || disabledAsPaid ? "disabled" : "missing_credentials",
+    };
+  });
 }
 
 export function selectAiProvider(
