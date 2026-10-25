@@ -1,5 +1,7 @@
 # AXXESS by Triaxis
 
+<a href="https://www.producthunt.com/products/axxess-triaxis?embed=true&amp;utm_source=badge-featured&amp;utm_medium=badge&amp;utm_campaign=badge-axxess-triaxis" target="_blank" rel="noopener noreferrer"><img alt="AXXESS TRIaxis on Product Hunt" width="250" height="54" src="public/branding/product-hunt-featured.svg"></a>
+
 > Enterprise AI Operating Platform for Regulated Organizations
 
 **Governance-native. Human-in-the-Loop. Sovereignty-aware. Built for durable enterprise deployment.**
