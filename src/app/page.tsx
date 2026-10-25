@@ -95,6 +95,23 @@ export default function HomePage() {
               </a>
             ))}
           </div>
+
+          {/* Product Hunt's badge, served from /public: the CSP allows only same-origin images,
+              and a local copy sends no visitor request to Product Hunt. */}
+          <a
+            href="https://www.producthunt.com/products/axxess-triaxis?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-axxess-triaxis"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/branding/product-hunt-featured.svg"
+              alt="AXXESS TRIaxis on Product Hunt"
+              width={250}
+              height={54}
+            />
+          </a>
         </div>
 
         <aside className="grid gap-5">
