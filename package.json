@@ -154,7 +154,7 @@
     "posthog-js": "^1.404.1",
     "posthog-node": "^5.49.1",
     "react": "19.3.1",
-    "react-day-picker": "10.0.1",
+    "react-day-picker": "10.0.2",
     "react-dnd": "16.0.1",
     "react-dnd-html5-backend": "16.0.1",
     "react-dom": "19.3.1",
