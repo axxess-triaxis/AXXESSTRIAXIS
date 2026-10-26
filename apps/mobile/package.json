@@ -23,7 +23,7 @@
   "dependencies": {
     "@axxess/shared": "workspace:*",
     "expo": "^54.0.0",
-    "expo-linking": "^8.0.0",
+    "expo-linking": "^58.0.13",
     "expo-router": "^6.0.0",
     "expo-secure-store": "^57.0.1",
     "expo-status-bar": "^57.0.0",
