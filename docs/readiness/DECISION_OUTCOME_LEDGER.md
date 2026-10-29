@@ -45,3 +45,9 @@ re-verified against current code in this pass -- adding them here with invented 
 references would itself violate the Evidence Chain rule. If these are still-standing boundaries, the
 next session that touches Lite/MCP scope should add a properly sourced row (real commit, real PR, real
 date) rather than this ledger asserting them from the founder's paraphrase alone.
+
+## Investor EOD sync decision (2026-10-29)
+
+| Decision | Date | Session/tool | Issue ID | Why | Outcome | Commit/PR | Verification | Closeout |
+|---|---|---|---|---|---|---|---|---|
+| Keep investor on landing's commit via a gated EOD safety-net workflow, and make demo data date-relative, instead of changing investor's env or Vercel settings | 2026-10-29 | Founder request, executed by Claude Code | INVESTOR-EOD-SYNC | Research showed investor and landing ran the same commit (`8fe2f25`) yet investor read as months behind because `src/demo/demoDataset.ts` pinned every seeded date to 2026-07-04; separately, landing is also deployed by the Vercel Git integration ahead of CI, so investor can trail landing until the CI chain finishes | Implemented on branch, PR open, not yet merged or run on schedule | Branch `feat/investor-eod-sync` | Unit tests for every sync gate and the partition guard; live read-only dry run of the gates against real Vercel/GitHub data (see closeout) | `docs/readiness/INVESTOR_EOD_SYNC_CLOSEOUT_2026_10_29.md` |
