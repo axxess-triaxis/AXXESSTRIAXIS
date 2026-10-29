@@ -36,7 +36,17 @@ import type {
 import { defaultProductivityPlugins } from "@axxess/shared";
 import { demoOrganization } from "./demoMode";
 
-const baseDate = new Date("2026-07-04T08:30:00.000Z");
+// Investor sync (2026-10-29): was a fixed new Date("2026-07-04T08:30:00.000Z"), so every seeded task,
+// meeting and document on investor.triaxisventures.com aged in place and the demo read as months
+// behind landing even while both ran the same commit. Every dayOffset()/compactDate() below is
+// authored relative to "today", so anchoring baseDate to the current UTC day (08:30, as before)
+// keeps the same overdue/upcoming mix the dataset was written for. Day granularity, not Date.now(),
+// so server and client render the same values except across a UTC midnight boundary.
+export function demoBaseDate(now: Date = new Date()) {
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 8, 30, 0, 0));
+}
+
+const baseDate = demoBaseDate();
 
 const departments = [
   "Primary Care Access",
