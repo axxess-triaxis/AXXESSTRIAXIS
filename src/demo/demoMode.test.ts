@@ -1,6 +1,6 @@
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createDemoDataset, demoDatasetSummary } from "./demoDataset";
+import { createDemoDataset, demoBaseDate, demoDatasetSummary } from "./demoDataset";
 import {
   demoModeChangedEvent,
   demoSessionCookieName,
@@ -57,6 +57,18 @@ describe("Demo Mode", () => {
     expect(dataset.institutional.approvals).toHaveLength(demoDatasetSummary.approvals);
     expect(dataset.auditLogs).toHaveLength(demoDatasetSummary.auditLogs);
     expect(new Set(dataset.projects.map((project) => project.organizationId))).toEqual(new Set([dataset.organization.id]));
+  });
+
+  // Investor sync (2026-10-29): the dataset used to be pinned to 2026-07-04, so the investor demo aged
+  // in place. It must now be anchored to the current UTC day.
+  it("anchors seeded dates to the current UTC day, not a fixed authoring date", () => {
+    expect(demoBaseDate(new Date("2027-03-15T23:59:00.000Z")).toISOString()).toBe("2027-03-15T08:30:00.000Z");
+    expect(demoBaseDate(new Date("2027-03-16T00:01:00.000Z")).toISOString()).toBe("2027-03-16T08:30:00.000Z");
+
+    const today = new Date().toISOString().slice(0, 10);
+    const taskDueDays = createDemoDataset().tasks.map((task) => task.dueDate?.slice(0, 10)).filter(Boolean);
+    expect(taskDueDays.some((day) => day! < today)).toBe(true);
+    expect(taskDueDays.some((day) => day! > today)).toBe(true);
   });
 
   it("sets a non-secret demo-session cookie the edge proxy can see, and clears it when disabled (Investor Preview fix, 2026-07-24)", () => {
