@@ -2525,8 +2525,14 @@ packages:
   '@posthog/core@1.50.5':
     resolution: {integrity: sha512-afEchuShDaVIoxAIj76kDZQ1DhfesDmgfVp+mtTzsA3wlc8DF5uoz8YjuTjnxOicWkpP5HCDqYidK/1kT125Cg==}
 
+  '@posthog/core@1.59.1':
+    resolution: {integrity: sha512-P39YgzQVDh6oz6wAzQXEnoHgTYpM7gifonmVKq1scAJco79h31XmmNVurRq9tTmmyIrr1uX8FHT0riCsyfV9AQ==}
+
   '@posthog/types@1.409.0':
     resolution: {integrity: sha512-239umoaZVb2GBaXeEyJpwFvjhrrChJH8NHCwiao23EBSu3NA6EN0MTMoaHSmMEf4yjiXEFFoYJA6FjJAXF5HGA==}
+
+  '@posthog/types@1.416.0':
+    resolution: {integrity: sha512-0/9+02s/0uDyrH4G/qUg1yyl6gXUg8Uuxw/PlDad3KLzo9FFS9zS/kAQaEshx/saVGupj1aAy/4EUBxWisBogw==}
 
   '@prettier/plugin-xml@2.2.0':
     resolution: {integrity: sha512-UWRmygBsyj4bVXvDiqSccwT1kmsorcwQwaIy30yVh8T+Gspx4OlC0shX1y+ZuwXZvgnafmpRYKks0bAu9urJew==}
@@ -11289,14 +11295,20 @@ snapshots:
 
   '@posthog/browser-common@0.2.5':
     dependencies:
-      '@posthog/core': 1.50.5
+      '@posthog/core': 1.59.1
       '@posthog/types': 1.409.0
 
   '@posthog/core@1.50.5':
     dependencies:
       '@posthog/types': 1.409.0
 
+  '@posthog/core@1.59.1':
+    dependencies:
+      '@posthog/types': 1.416.0
+
   '@posthog/types@1.409.0': {}
+
+  '@posthog/types@1.416.0': {}
 
   '@prettier/plugin-xml@2.2.0':
     dependencies:
@@ -16917,7 +16929,7 @@ snapshots:
 
   posthog-node@5.49.1:
     dependencies:
-      '@posthog/core': 1.50.5
+      '@posthog/core': 1.59.1
 
   preact@10.29.8: {}
 
