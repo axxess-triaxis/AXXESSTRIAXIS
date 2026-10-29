@@ -47,8 +47,8 @@ into one stack.
 |---|---|---|
 | [AXXESS TRIaxis](https://github.com/axxess-triaxis/AXXESSTRIAXIS) | The product we sell: an AI operating platform with governance and a human in the loop | Product: [investor.triaxisventures.com](https://investor.triaxisventures.com) (demo); [Live Beta](https://landing.triaxisventures.com) (sign-in) |
 | [PORT4LLEO](https://github.com/axxess-triaxis/port4lleo) | Governance, security checks, builder analysis, product improvements | Live at [port4leo-sigma.vercel.app](https://port4leo-sigma.vercel.app) |
-| [Callismatic](https://github.com/axxess-triaxis/callismatic) | Sales and outreach: triages inbound calls and messages, researches leads, places callbacks | Live on AWS Lambda (us-east-1); STILL publishing switched on 2026-10-29, end-to-end check pending |
-| [Omnidamus](https://github.com/axxess-triaxis/Omnidamus) | SMS, WhatsApp and email outreach and customer service | Deployed on AWS (ap-southeast-2); STILL publishing switched on 2026-10-29, end-to-end check pending; WhatsApp sending blocked on Meta's display-name review |
+| [Callismatic](https://github.com/axxess-triaxis/callismatic) | Sales and outreach: triages inbound calls and messages, researches leads, places callbacks | Live on AWS Lambda (us-east-1); publishes to STILL since 2026-10-29, verified end to end |
+| [Omnidamus](https://github.com/axxess-triaxis/Omnidamus) | SMS, WhatsApp and email outreach and customer service | Deployed on AWS (ap-southeast-2); publishes to STILL since 2026-10-29, verified end to end; WhatsApp replies blocked on Meta's display-name review |
 | [STILL](https://github.com/axxess-triaxis/STILL) | The event bus that joins them: Callismatic leads and Omnidamus completed conversations become AXXESS tasks | Deployed (EventBridge, ap-southeast-2); STILL to AXXESS verified live 2026-10-29 |
 
 The founder's aim is a roughly 80% automated company with the founder as the human in the
@@ -71,9 +71,10 @@ an approval step; a tool marked `critical` becomes an approval request instead.
 - **Verified live 2026-10-29:** a STILL test event created AXXESS task
   `8c01df21-47e1-49a1-a6f7-98c86dab7e7d` in the Triaxis (Tenant 0) org on the Live Beta. Evidence:
   the Status table in the [STILL README](https://github.com/axxess-triaxis/STILL#status-said-plainly).
-- **Not yet verified:** a real Callismatic lead or a real Omnidamus conversation arriving as an
-  AXXESS task. Both producers were switched on in production on 2026-10-29; the end-to-end check
-  is pending.
+- **Verified end to end 2026-10-29:** two synthetic Callismatic leads became AXXESS tasks
+  `fa971d9e-2282-4c46-9d0d-1b96177ddc3c` and `556eb2bb-1cf5-4b9b-a83b-c0668cf6921b`, and a real
+  Omnidamus WhatsApp conversation became task `15b11f0f-a636-46ad-8022-b667344757d5`. Evidence:
+  [STILL#1](https://github.com/axxess-triaxis/STILL/pull/1) and STILL's idempotency records (COMPLETED, with those task ids).
 
 ---
 
