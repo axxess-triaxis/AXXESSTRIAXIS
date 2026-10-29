@@ -436,7 +436,7 @@ export const TasksSection = () => {
                   <span className="hidden w-40 truncate text-[11px] text-[#5F6B73] lg:block">{project?.name ?? "Unlinked"}</span>
                   <div className="hidden w-20 justify-center text-center lg:flex"><RiskBadge level={task.priority} /></div>
                   <div className="flex w-20 justify-center"><Avatar initials={assignee?.avatarInitials ?? "UA"} /></div>
-                  <span className="w-24 text-right font-mono text-[11px] text-[#5F6B73]">{task.dueDate?.slice(5) ?? "TBD"}</span>
+                  <span className="w-24 text-right font-mono text-[11px] text-[#5F6B73]">{task.dueDate?.slice(5, 10) ?? "TBD"}</span>
                 </div>
               );
             })}
