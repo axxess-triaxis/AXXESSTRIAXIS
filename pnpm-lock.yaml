@@ -238,8 +238,8 @@ importers:
         specifier: 4.12.3
         version: 4.12.3(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       react-responsive-masonry:
-        specifier: 2.7.2
-        version: 2.7.2
+        specifier: 2.9.0
+        version: 2.9.0(react@19.3.1)
       react-slick:
         specifier: 0.31.0
         version: 0.31.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
@@ -7924,8 +7924,10 @@ packages:
       react: ^18.0.0 || ^19.0.0
       react-dom: ^18.0.0 || ^19.0.0
 
-  react-responsive-masonry@2.7.2:
-    resolution: {integrity: sha512-33j38neZYAb3ymO1A/xuiq6Pi09/nOKAfphn2vG5Uz46d95UhMWOyM2n4LLNR/pf/8FAc9myPkHPE7k0Ijix5w==}
+  react-responsive-masonry@2.9.0:
+    resolution: {integrity: sha512-Gf/YDIkb8+QhIUnofrGihZtU+gyjV+yiDg4mOpjxTJLOQNACSvVZAgIWTaAPrGBO+oig3M9hTwarc+YBuFFCdQ==}
+    peerDependencies:
+      react: '>=16.8.0'
 
   react-slick@0.31.0:
     resolution: {integrity: sha512-zo6VLT8wuSBJffg/TFPbzrw2dEnfZ/cUKmYsKByh3AgatRv29m2LoFbq5vRMa3R3A4wp4d8gwbJKO2fWZFaI3g==}
@@ -17241,9 +17243,10 @@ snapshots:
       react: 19.3.1
       react-dom: 19.3.1(react@19.3.1)
 
-  react-responsive-masonry@2.7.2:
+  react-responsive-masonry@2.9.0(react@19.3.1):
     dependencies:
       prop-types: 15.8.1
+      react: 19.3.1
 
   react-slick@0.31.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1):
     dependencies:
