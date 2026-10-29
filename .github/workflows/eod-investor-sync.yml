@@ -1,0 +1,119 @@
+name: EOD Investor Sync (investor -> landing's live commit)
+
+# 2026-10-29: founder rule -- "investor version auto-syncs to live version on landing at every EOD".
+# deploy-production.yml already deploys investor right after landing on every merge to main. This
+# is the end-of-day safety net for when that chain does not finish (a cancelled or failed investor
+# job, a Vercel quota error, a manual landing deploy): at 23:30 IST it compares the commit behind
+# each domain and, only if they differ, redeploys investor from landing's commit.
+#
+# Gates, none of which can be skipped (CLAUDE.md "Production Gate Bypass" rule):
+#   1. landing's commit must be on main and READY on Vercel;
+#   2. the required check runs on that commit must have succeeded
+#      (scripts/investor-sync-lib.mjs REQUIRED_CHECKS);
+#   3. the pulled investor env must force NEXT_PUBLIC_AXXESS_DEMO_MODE=true and carry no live
+#      credential names (demo/live partition guard);
+#   4. after deploy, investor.triaxisventures.com must serve that commit and answer 200.
+# Investor is always built with its own Vercel project env (VERCEL_PROJECT_ID_INVESTOR_DEMO); this
+# workflow never reads or copies landing's env.
+#
+# Uses the same repo secrets as deploy-production.yml.
+
+on:
+  schedule:
+    # 18:00 UTC = 23:30 IST
+    - cron: "0 18 * * *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Only report whether investor is behind; do not deploy"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+  checks: read
+  actions: read
+
+# Deliberately NOT the deploy-production group: GitHub keeps only one pending run per group, so a
+# queued sync would cancel a queued merge deploy. Instead `plan` stands down while any
+# deploy-production run is queued or in progress -- that run deploys investor itself.
+concurrency:
+  group: eod-investor-sync
+  cancel-in-progress: false
+
+jobs:
+  plan:
+    name: Compare landing and investor
+    runs-on: ubuntu-latest
+    outputs:
+      action: ${{ steps.plan.outputs.action }}
+      landing_sha: ${{ steps.plan.outputs.landing_sha }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - name: Decide
+        id: plan
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/investor-eod-sync.mjs plan
+
+  deploy-investor-demo:
+    name: Sync investor.triaxisventures.com
+    needs: plan
+    if: needs.plan.outputs.action == 'deploy' && !(github.event_name == 'workflow_dispatch' && inputs.dry_run)
+    runs-on: ubuntu-latest
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_INVESTOR_DEMO }}
+    steps:
+      - name: Checkout landing's commit
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.plan.outputs.landing_sha }}
+
+      - name: Use this run's sync scripts
+        # The commit being deployed may predate these scripts; take them from the workflow's own ref.
+        run: |
+          git fetch --depth=1 origin "${{ github.sha }}"
+          git show "${{ github.sha }}:scripts/investor-eod-sync.mjs" > "$RUNNER_TEMP/investor-eod-sync.mjs"
+          git show "${{ github.sha }}:scripts/investor-sync-lib.mjs" > "$RUNNER_TEMP/investor-sync-lib.mjs"
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 11.7.0
+          run_install: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Pull investor Vercel environment
+        run: npx vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Partition guard
+        run: node "$RUNNER_TEMP/investor-eod-sync.mjs" guard-env .vercel/.env.production.local
+
+      - name: Build
+        run: npx vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Deploy
+        run: >
+          npx vercel deploy --prebuilt --prod --archive=tgz
+          --meta eodSyncSourceSha=${{ needs.plan.outputs.landing_sha }}
+          --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Verify investor serves landing's commit
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: node "$RUNNER_TEMP/investor-eod-sync.mjs" verify ${{ needs.plan.outputs.landing_sha }}
