@@ -19,7 +19,7 @@ Purpose: a running, factual record of who AXXESS has been pitched to, what respo
   founder-side decline, warm-but-waiting relationship, and active/open evaluation. A "not now" with
   praise, reapplication guidance, or open communication is not the same evidence as a hard no.
 - Entries are numbered in the order reported, not necessarily chronological order of the actual conversations.
-- This log is separate from `docs/readiness/CUSTOMER_ACQUISITION_FUNNEL_2026_07_24.md` (the forward-looking acquisition funnel design) and from `Enterprise beta feedback - Batch 1 (30 responses)/` (the structured, anonymized 30-response beta survey batch already analyzed in `MONOREPO_ARCHITECTURE_AND_BUSINESS_MODEL.md` S6). This log is specifically the named, one-to-one pitch and accelerator/incubator conversation history.
+- This log is separate from `docs/readiness/CUSTOMER_ACQUISITION_FUNNEL_2026_07_24.md` (the forward-looking acquisition funnel design) and from `docs/research/beta-batch-1/` (the structured, anonymized 30-response beta survey batch already analyzed in `MONOREPO_ARCHITECTURE_AND_BUSINESS_MODEL.md` S6). This log is specifically the named, one-to-one pitch and accelerator/incubator conversation history.
 
 ## Enterprise / Institutional Prospects
 

@@ -80,16 +80,25 @@ more disruptive action (requires re-sync for any other clone, including Codex's)
 **not** been performed. If full removal from history is wanted, it needs to be requested and
 scheduled explicitly.
 
-**Status, 2026-10-30:** still not purged. The founder chose to anonymise named people in the
-tracked docs (respondent and stakeholder names reduced to initials) and not to rewrite history,
-so the unmasked archive remains reachable in this repository's history and in any existing fork
-or clone.
+**Status, 2026-10-30: history rewritten (founder decision, option B).** With `git filter-repo`,
+every survey ZIP and PDF that ever lived in this folder (the unmasked archive, the masked archive,
+the product-survey archive and both NPS reports) was removed from every commit. Named people
+(survey respondents, stakeholders, investor contacts, pilot proprietors) were reduced to initials,
+and personal email addresses and a personal phone number were redacted, in every file and commit
+message. All branches and the tag were force-pushed on 2026-10-30, and every commit SHA changed.
+
+What the rewrite does **not** reach, stated plainly:
+- GitHub keeps closed pull requests' refs and cached views of the old commits, so the old archive
+  stays fetchable by its old commit or blob ID until GitHub Support purges them. A request was
+  prepared for the founder to file.
+- Copies already outside this repository (local clones, worktrees, CI or hosting build caches,
+  and anything downloaded) still hold the old history.
+
+The raw survey exports are now kept outside this repository, per the policy in
+`Enterprise_Beta_Feedback_Batch_1.md` §3.4.
 
 ## 6. Files in this folder after remediation
 
-- `Enterprise_Beta_Feedback_Batch_1.md` — aggregate analysis report
-- `AXXESS Enterprise Beta Feedback-NPS Report.pdf` — aggregate NPS by geography, no PII
-- `AXXESS by Triaxis Beta User Product Feedback Survey-NPS Report.pdf` — aggregate NPS charts, no PII
-- `AXXESS by Triaxis Beta User Product Feedback Survey.zip` — raw product-survey PDFs, verified anonymous
-- `AXXESS Enterprise Beta Feedback (PII-masked).zip` — raw enterprise-survey PDFs with only the PII fields redacted
-- `DATA_HYGIENE_NOTE.md` — this file
+The folder moved from the repository root to `docs/research/beta-batch-1/` on 2026-10-30. It holds
+only the Markdown analyses (aggregate, anonymised): `Enterprise_Beta_Feedback_Batch_1.md`, the
+sprint and iteration reports, the SWOT analysis, and this file. It holds no raw survey exports.
