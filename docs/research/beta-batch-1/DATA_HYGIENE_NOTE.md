@@ -11,7 +11,7 @@ archive named `AXXESS Enterprise Beta Feedback.zip` was committed alongside it, 
 the 9 raw per-respondent enterprise-survey PDFs exported directly from the survey tool.
 
 That archive's filenames included respondents' real full names (e.g.
-`number_1_respondent-name.pdf`), and each PDF's first page contained the respondent's full
+`number_1_<respondent-name>.pdf`), and each PDF's first page contained the respondent's full
 name, organization, job title/designation, country, state/province, and (for most
 respondents) email address.
 
@@ -72,18 +72,33 @@ problem, feature requests, roadmap opportunities, etc.).
 ## 5. Residual risk — please read before treating this as fully closed
 
 `AXXESS Enterprise Beta Feedback.zip` (the fully unmasked original) was committed and pushed
-to this **public** repository before this remediation, in commit `1a774a2`. Removing/replacing
+to this **public** repository before this remediation, in an earlier commit (this note previously
+cited `1a774a2`, which was the wrong commit). Removing/replacing
 it in later commits does **not** purge it from git history — the original raw files remain
 fetchable via that commit until history is rewritten and force-pushed. That is a separate,
 more disruptive action (requires re-sync for any other clone, including Codex's) and has
 **not** been performed. If full removal from history is wanted, it needs to be requested and
 scheduled explicitly.
 
+**Status, 2026-10-30: history rewritten (founder decision, option B).** With `git filter-repo`,
+every survey ZIP and PDF that ever lived in this folder (the unmasked archive, the masked archive,
+the product-survey archive and both NPS reports) was removed from every commit. Named people
+(survey respondents, stakeholders, investor contacts, pilot proprietors) were reduced to initials,
+and personal email addresses and a personal phone number were redacted, in every file and commit
+message. All branches and the tag were force-pushed on 2026-10-30, and every commit SHA changed.
+
+What the rewrite does **not** reach, stated plainly:
+- GitHub keeps closed pull requests' refs and cached views of the old commits, so the old archive
+  stays fetchable by its old commit or blob ID until GitHub Support purges them. A request was
+  prepared for the founder to file.
+- Copies already outside this repository (local clones, worktrees, CI or hosting build caches,
+  and anything downloaded) still hold the old history.
+
+The raw survey exports are now kept outside this repository, per the policy in
+`Enterprise_Beta_Feedback_Batch_1.md` §3.4.
+
 ## 6. Files in this folder after remediation
 
-- `Enterprise_Beta_Feedback_Batch_1.md` — aggregate analysis report
-- `AXXESS Enterprise Beta Feedback-NPS Report.pdf` — aggregate NPS by geography, no PII
-- `AXXESS by Triaxis Beta User Product Feedback Survey-NPS Report.pdf` — aggregate NPS charts, no PII
-- `AXXESS by Triaxis Beta User Product Feedback Survey.zip` — raw product-survey PDFs, verified anonymous
-- `AXXESS Enterprise Beta Feedback (PII-masked).zip` — raw enterprise-survey PDFs with only the PII fields redacted
-- `DATA_HYGIENE_NOTE.md` — this file
+The folder moved from the repository root to `docs/research/beta-batch-1/` on 2026-10-30. It holds
+only the Markdown analyses (aggregate, anonymised): `Enterprise_Beta_Feedback_Batch_1.md`, the
+sprint and iteration reports, the SWOT analysis, and this file. It holds no raw survey exports.

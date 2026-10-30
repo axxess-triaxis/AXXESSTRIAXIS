@@ -1,5 +1,7 @@
 # Pitch and Traction Log
 
+> **Anonymised 2026-10-30 (founder decision).** People other than the founders are named by initials only; organisations are kept. Full names were in earlier commits of this public repository and remain in its history.
+
 Date created: 2026-07-24
 Product: AXXESS TRIaxis
 Company: Triaxis Ventures Private Limited
@@ -17,7 +19,7 @@ Purpose: a running, factual record of who AXXESS has been pitched to, what respo
   founder-side decline, warm-but-waiting relationship, and active/open evaluation. A "not now" with
   praise, reapplication guidance, or open communication is not the same evidence as a hard no.
 - Entries are numbered in the order reported, not necessarily chronological order of the actual conversations.
-- This log is separate from `docs/readiness/CUSTOMER_ACQUISITION_FUNNEL_2026_07_24.md` (the forward-looking acquisition funnel design) and from `Enterprise beta feedback - Batch 1 (30 responses)/` (the structured, anonymized 30-response beta survey batch already analyzed in `MONOREPO_ARCHITECTURE_AND_BUSINESS_MODEL.md` S6). This log is specifically the named, one-to-one pitch and accelerator/incubator conversation history.
+- This log is separate from `docs/readiness/CUSTOMER_ACQUISITION_FUNNEL_2026_07_24.md` (the forward-looking acquisition funnel design) and from `docs/research/beta-batch-1/` (the structured, anonymized 30-response beta survey batch already analyzed in `MONOREPO_ARCHITECTURE_AND_BUSINESS_MODEL.md` S6). This log is specifically the named, one-to-one pitch and accelerator/incubator conversation history.
 
 ## Enterprise / Institutional Prospects
 
@@ -579,7 +581,7 @@ to move this from founder-stated to source-backed.
 
 **Status:** Rejected -- fund-mandate mismatch, not a product or traction judgment. **New,
 2026-08-25.** Recorded from a founder-forwarded rejection email. Source: "Application to Iterative"
-email from Brian (`[redacted]@iterative.vc`, reply-to `[redacted]@iterative.vc`), cc'd to
+email from an Iterative partner (`[redacted]@iterative.vc`, reply-to `[redacted]@iterative.vc`), cc'd to
 `admissions@iterative.vc`, dated Tue, Aug 25, 2026, 6:53 AM. Personal email addresses are not
 reproduced here beyond the sender's own organizational address.
 
@@ -964,7 +966,7 @@ and #37; the Estonian and Lithuanian startup-visa applications, entries #39 and 
 roughly a four-week span (2026-07-15 through 2026-08-12). Where specific reasons were given (Hub71
 main program, entry #36; Lithuania, entry #40), they cite some combination of early stage,
 pre-revenue status, and insufficient proven market traction -- consistent with, not contradicting,
-the pattern already established by David D. O.'s angel-round pass (entry #19) and 3one4 Capital's
+the pattern already established by D. O.'s angel-round pass (entry #19) and 3one4 Capital's
 initial too-early feedback (entry #22). **The Estonian rejection (entry #39) is a different kind of evidence, not a
 harder version of the same pattern** -- its own rejection text is an explicitly generic,
 "one-or-more-of-the-following" checklist that does not state which factor(s) actually applied, and

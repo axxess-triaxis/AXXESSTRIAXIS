@@ -4,7 +4,7 @@
 
 `scripts/linear-sync.mjs` (via `pnpm run linear:sync`) reads the 20 pre-demo actionables' current
 status directly out of
-`Enterprise beta feedback - Batch 1 (30 responses)/PRE_DEMO_ACTIONABLES.md` and syncs each one into
+`docs/research/beta-batch-1/PRE_DEMO_ACTIONABLES.md` and syncs each one into
 a Linear issue, one-way (doc -> Linear, never the reverse). It talks directly to Linear's GraphQL
 API -- no GitHub Actions step, no Git host involved at all.
 

@@ -132,7 +132,7 @@ docs/readiness/CODEBASE_DEBLOAT_SPRINT2_EVIDENCE_ARTIFACT_AUDIT_2026_08_12.md  (
 docs/readiness/CODEBASE_DEBLOAT_SPRINT3_CLOSEOUT_2026_08_12.md            (new, this file)
 ```
 
-Zero files added under `Enterprise beta feedback - Batch 1 (30 responses)/`, `docs/pitch-deck/`, or
+Zero files added under `docs/research/beta-batch-1/`, `docs/pitch-deck/`, or
 any location that would carry any of the 4 LOI/engagement-letter PDFs' content into this repository.
 
 ## Decision Ledger (CLAUDE.md standing rule -- this closeout carries a product-boundary decision)
@@ -156,7 +156,7 @@ Product boundary: This repository's git history retains 100% of its beta-feedbac
   and rendered screenshots, going forward, as a permanent characteristic of this repo rather than a
   temporary state pending a future rewrite. Any future decision to rewrite history is a new,
   separately-authorized decision, not a resumption of this one.
-Verification: `git log --all --oneline -- "Enterprise beta feedback - Batch 1 (30 responses)/*"` and
+Verification: `git log --all --oneline -- "docs/research/beta-batch-1/*"` and
   `git log --all --oneline -- "docs/feedback-artifacts/rendered/*"` both show the original 2026-07-20
   commits unchanged and present in `main`'s ancestry (checked via `gh pr view 226` showing PR #226
   still open against `main`, no rewrite commits in this branch's history).

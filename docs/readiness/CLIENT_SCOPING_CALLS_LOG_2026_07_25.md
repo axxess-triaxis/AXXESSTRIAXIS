@@ -1,5 +1,7 @@
 # Client Scoping Calls Log
 
+> **Anonymised 2026-10-30 (founder decision).** People other than the founders are named by initials only; organisations are kept. Full names were in earlier commits of this public repository and remain in its history.
+
 Date created: 2026-07-25
 Product: AXXESS TRIaxis
 Company: Triaxis Ventures Private Limited

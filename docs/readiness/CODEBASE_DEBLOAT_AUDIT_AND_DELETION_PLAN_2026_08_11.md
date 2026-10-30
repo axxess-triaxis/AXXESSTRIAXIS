@@ -77,7 +77,7 @@ program's own CLAUDE.md standing rules, produces exactly this shape of split). N
 | `docs/` | 44,802 | 317 |
 | root-level files | 23,721 | 31 |
 | `supabase/` | 6,235 | 47 |
-| `Enterprise beta feedback - Batch 1 (30 responses)/` | 4,906 | 12 |
+| `docs/research/beta-batch-1/` | 4,906 | 12 |
 | `scripts/` | 2,556 | 27 |
 | `.github/` | 1,888 | 22 |
 | `apps/` | 1,616 | 69 |
@@ -248,7 +248,7 @@ Nothing else executed. Every other candidate found stayed in `KEEP_*`/`LIKELY_DE
 |---|---|---|
 | `README.md` (3,124 LOC) | `REFACTOR_LATER` | Unusually large for a README; splitting into README + linked docs is a real improvement but not urgent, and this sprint's own spec says not to split files unless "tiny and extremely safe" |
 | `src/repositories/supabaseEnterpriseRepositories.ts` (1,733 LOC) | `SPLIT_LATER` | Central repository file, genuine growth-over-time candidate for a per-resource-type split; too large a change to attempt safely within this sprint's own stated constraints |
-| `Enterprise beta feedback - Batch 1 (30 responses)/` binaries (~20.5MB) | `ARCHIVE_CANDIDATE` / founder decision | See Section 7 and Section 16 -- a privacy/repo-hygiene question, not a code-quality one; needs founder sign-off before any action, including working-tree removal |
+| `docs/research/beta-batch-1/` binaries (~20.5MB) | `ARCHIVE_CANDIDATE` / founder decision | See Section 7 and Section 16 -- a privacy/repo-hygiene question, not a code-quality one; needs founder sign-off before any action, including working-tree removal |
 
 ## 13. Guardrails for Future Bloat
 
