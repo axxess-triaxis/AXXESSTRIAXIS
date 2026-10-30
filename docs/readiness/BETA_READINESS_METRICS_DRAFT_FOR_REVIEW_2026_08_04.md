@@ -308,7 +308,7 @@ separately as a shareable quote:
 - "I had expected a far less evolved product, honestly."
 - "Your pace and vision here are correct."
 
-**-- Prajnyan Ballav Goswami, Proprietor, Imprints Production** (AXXESS Pilot 1)
+**-- P. B. G., Proprietor, Imprints Production** (AXXESS Pilot 1)
 
 Ready to reuse in investor materials or a future testimonials section, if wanted.
 

@@ -1,8 +1,8 @@
 # Compliance Certification & Investor Feedback Roadmap
 
 Date created: 2026-08-03
-Source: David Orban's investment-decision feedback, 2026-08-01 (`docs/readiness/PITCH_AND_TRACTION_LOG_2026_07_24.md` entry #19)
-Purpose: track the founder's actual response to each of Orban's five due-diligence questions -- what's being pursued as a long-run action item, and what's being explicitly deferred, with the founder's own reasoning recorded rather than silently acted on or silently dropped. Per this repo's evidence-chain discipline (`CLAUDE.md`), a founder decision not to pursue something is recorded as a decision, not treated as an open gap.
+Source: D. O.'s investment-decision feedback, 2026-08-01 (`docs/readiness/PITCH_AND_TRACTION_LOG_2026_07_24.md` entry #19)
+Purpose: track the founder's actual response to each of D. O.'s five due-diligence questions -- what's being pursued as a long-run action item, and what's being explicitly deferred, with the founder's own reasoning recorded rather than silently acted on or silently dropped. Per this repo's evidence-chain discipline (`CLAUDE.md`), a founder decision not to pursue something is recorded as a decision, not treated as an open gap.
 
 ## Question 1: signed pilots / MOUs / current MRR
 
@@ -19,7 +19,7 @@ Purpose: track the founder's actual response to each of Orban's five due-diligen
 
 ## Question 3: differentiation against incumbents (Microsoft Copilot, Notion AI, Glean, ServiceNow)
 
-**Not addressed in this pass.** Orban's question was about competitive positioning for a procurement officer who already has budget allocated to an incumbent vendor. Not raised by the founder as an action item in this round of instructions -- not recorded here as either pursued or deferred, simply not yet addressed. Flagging its absence rather than silently omitting it from this roadmap.
+**Not addressed in this pass.** D. O.'s question was about competitive positioning for a procurement officer who already has budget allocated to an incumbent vendor. Not raised by the founder as an action item in this round of instructions -- not recorded here as either pursued or deferred, simply not yet addressed. Flagging its absence rather than silently omitting it from this roadmap.
 
 ## Question 4: team size/contractor structure, data isolation
 
@@ -27,8 +27,8 @@ Team size/contractor structure: not addressed in this pass, not recorded as purs
 
 ## Question 5: ICP narrowing (single buyer segment + geography) and GCC traction/timeline
 
-**Founder's call, 2026-08-03: not being pursued.** Explicit reasoning: "ICP narrowing is not on the cards unless someone like YC advises me." This is a deliberate decision to keep the current multi-segment, multi-geography positioning unless a credible outside advisor (the founder named YC specifically) recommends narrowing -- not an oversight, not an open gap, a considered call against Orban's specific advice. GCC traction/timeline: see Question 1 above -- same "not high on agenda at 3.5 months" reasoning.
+**Founder's call, 2026-08-03: not being pursued.** Explicit reasoning: "ICP narrowing is not on the cards unless someone like YC advises me." This is a deliberate decision to keep the current multi-segment, multi-geography positioning unless a credible outside advisor (the founder named YC specifically) recommends narrowing -- not an oversight, not an open gap, a considered call against D. O.'s specific advice. GCC traction/timeline: see Question 1 above -- same "not high on agenda at 3.5 months" reasoning.
 
 ## Summary
 
-Of Orban's five questions: **none are currently tracked as open action items.** Three produced explicit founder decisions not to pursue right now (SOC 2/ISO cost and timeline including the folded-in data-isolation documentation and audit packaging, ICP narrowing, MRR/GCC traction tracking), each with the founder's own stated reasoning recorded above rather than silently dropped. One (competitive differentiation) plus part of another (team/contractor structure) were not addressed in this pass and are flagged here as genuinely unaddressed, not as deferred decisions. Revisit basis: SOC 2/ISO/HIPAA/defense clearance -- when a real prospect's procurement process names one as a blocking requirement; ICP narrowing -- if a credible outside advisor (founder named YC specifically) recommends it; MRR/GCC traction and competitive differentiation/team structure -- no set trigger, open for founder to raise when relevant.
+Of D. O.'s five questions: **none are currently tracked as open action items.** Three produced explicit founder decisions not to pursue right now (SOC 2/ISO cost and timeline including the folded-in data-isolation documentation and audit packaging, ICP narrowing, MRR/GCC traction tracking), each with the founder's own stated reasoning recorded above rather than silently dropped. One (competitive differentiation) plus part of another (team/contractor structure) were not addressed in this pass and are flagged here as genuinely unaddressed, not as deferred decisions. Revisit basis: SOC 2/ISO/HIPAA/defense clearance -- when a real prospect's procurement process names one as a blocking requirement; ICP narrowing -- if a credible outside advisor (founder named YC specifically) recommends it; MRR/GCC traction and competitive differentiation/team structure -- no set trigger, open for founder to raise when relevant.

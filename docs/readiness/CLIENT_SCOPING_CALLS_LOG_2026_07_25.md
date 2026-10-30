@@ -1,5 +1,7 @@
 # Client Scoping Calls Log
 
+> **Anonymised 2026-10-30 (founder decision).** People other than the founders are named by initials only; organisations are kept. Full names were in earlier commits of this public repository and remain in its history.
+
 Date created: 2026-07-25
 Product: AXXESS TRIaxis
 Company: Triaxis Ventures Private Limited
@@ -20,9 +22,9 @@ Purpose: a factual record of the named organizations and individuals AXXESS has 
 | # | Organization | Contact | Notes |
 |---:|---|---|---|
 | 1 | Shonali Foods & Feeds Pvt Ltd | -- | -- |
-| 2 | Shonali Group companies -- Shonali Pharma, Shonali Takshak Entertainment, Shonali Construction | Mr. Nilam Medhi | One relationship spanning three sister-brand entities under the Shonali Group, recorded as a single scoping conversation, not three |
-| 3 | Manik Chand Nand Kishore Jewellers | Mr. Pawan Pareek | -- |
-| 4 | Arya Nursing College | Mrs. Bandana Devi | -- |
+| 2 | Shonali Group companies -- Shonali Pharma, Shonali Takshak Entertainment, Shonali Construction | Mr. N. M. | One relationship spanning three sister-brand entities under the Shonali Group, recorded as a single scoping conversation, not three |
+| 3 | Manik Chand Nand Kishore Jewellers | Mr. P. P. | -- |
+| 4 | Arya Nursing College | Mrs. B. D. | -- |
 | 5 | Atsfy Group | -- | Described by the founder as a venture studio with 9 startups under it -- recorded as a single scoping relationship with the studio, not 9 separate calls |
 | 6 | Royal Prix India Consultants Private Limited | -- | -- |
 | 7 | Sakura Law Chambers | -- | -- |
@@ -34,7 +36,7 @@ Purpose: a factual record of the named organizations and individuals AXXESS has 
 | 13 | Bonphul Foods | -- | -- |
 | 14 | Alp Harvest | -- | -- |
 | 15 | Crevoo | -- | -- |
-| 16 | Rising India Venture Studio | Mr. Tarun Agal | -- |
+| 16 | Rising India Venture Studio | Mr. T. A. | -- |
 
 **Count: 16 named organizations**, against the founder-stated claim of "10 to 15 client scoping calls" -- exceeds the stated range, treating each organization (not each sister-brand or portfolio company) as one scoping relationship.
 

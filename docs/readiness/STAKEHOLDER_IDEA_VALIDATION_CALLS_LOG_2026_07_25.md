@@ -1,5 +1,7 @@
 # Stakeholder Idea-Validation Calls Log
 
+> **Anonymised 2026-10-30 (founder decision).** People other than the founders are named by initials only; organisations are kept. Full names were in earlier commits of this public repository and remain in its history.
+
 Date created: 2026-07-25
 Product: AXXESS TRIaxis
 Company: Triaxis Ventures Private Limited
@@ -19,9 +21,9 @@ Three names in the founder's stakeholder list already appear, under the same ide
 
 | Name | Already logged as | Source |
 |---|---|---|
-| Mr. Moloy Bora | Entry #2, Investor/Pitch log ("Moloy Bora -- ex-Joint Secretary, Government of Assam (retired IAS)") | `docs/readiness/PITCH_AND_TRACTION_LOG_2026_07_24.md` |
-| Mr. Nilam Medhi | Entry #2's contact, Client Scoping Calls log ("Shonali Group companies... Mr. Nilam Medhi") | `docs/readiness/CLIENT_SCOPING_CALLS_LOG_2026_07_25.md` |
-| Dr. Mrs. Bandana Devi (Head, Arya Nursing College; Advisor, Arya Nursing Home) | Entry #4's contact, Client Scoping Calls log ("Arya Nursing College -- Mrs. Bandana Devi") | `docs/readiness/CLIENT_SCOPING_CALLS_LOG_2026_07_25.md` |
+| Mr. M. B. | Entry #2, Investor/Pitch log ("M. B. -- ex-Joint Secretary, Government of Assam (retired IAS)") | `docs/readiness/PITCH_AND_TRACTION_LOG_2026_07_24.md` |
+| Mr. N. M. | Entry #2's contact, Client Scoping Calls log ("Shonali Group companies... Mr. N. M.") | `docs/readiness/CLIENT_SCOPING_CALLS_LOG_2026_07_25.md` |
+| Dr. Mrs. B. D. (Head, Arya Nursing College; Advisor, Arya Nursing Home) | Entry #4's contact, Client Scoping Calls log ("Arya Nursing College -- Mrs. B. D.") | `docs/readiness/CLIENT_SCOPING_CALLS_LOG_2026_07_25.md` |
 
 All three are excluded from the counted table below to avoid inflating the stakeholder-call total with relationships already evidenced elsewhere. This is the same person appearing in a different capacity (pitch recipient / scoping contact) than the "stakeholder idea-validation" framing used here, not separate people.
 
@@ -29,30 +31,30 @@ All three are excluded from the counted table below to avoid inflating the stake
 
 | # | Name | Role / Affiliation |
 |---:|---|---|
-| 1 | Mr. Kankan Jyoti Kharghoria | Assam Startup ecosystem enabler |
-| 2 | Mr. Hemanta Choudhury | Officer on Special Duty to Chief Minister's Office |
-| 3 | Mr. Tapan Das | Bharatiya Janata Party District President |
-| 4 | Rukunuddin Ahmed | Major microfinance promoter |
-| 5 | Mr. Pankaj Phukan | Retired Joint Director, Directorate of Economics & Statistics, Government of Assam |
-| 6 | Mr. Mantu Nath Sarma | MD & CEO, Nightingale Finvest |
-| 7 | Mr. Dibyajyoti Nath | Founder, Impact Weaver |
-| 8 | Mr. Jyoti P Bora | Initiator, Entrepreneurs of Assam Forum |
-| 9 | Mr. Surjya Kumar Bordoloi | Major NGO promoter; Executive Director, RWUAAA |
-| 10 | Dr. Amiya Kumar Sharma | Executive Director, RGVN -- one of the largest NGOs and grant recipients in North East India |
-| 11 | Mrs. Anamika Phukan | Social activist and advocacy |
-| 12 | Mr. Badal Nyalang | Founder, MWire Labs -- prominent NLP founder |
+| 1 | Mr. K. J. K. | Assam Startup ecosystem enabler |
+| 2 | Mr. H. C. | Officer on Special Duty to Chief Minister's Office |
+| 3 | Mr. T. D. | Bharatiya Janata Party District President |
+| 4 | R. A. | Major microfinance promoter |
+| 5 | Mr. P. P. | Retired Joint Director, Directorate of Economics & Statistics, Government of Assam |
+| 6 | Mr. M. N. S. | MD & CEO, Nightingale Finvest |
+| 7 | Mr. D. N. | Founder, Impact Weaver |
+| 8 | Mr. J. P. B. | Initiator, Entrepreneurs of Assam Forum |
+| 9 | Mr. S. K. B. | Major NGO promoter; Executive Director, RWUAAA |
+| 10 | Dr. A. K. S. | Executive Director, RGVN -- one of the largest NGOs and grant recipients in North East India |
+| 11 | Mrs. A. P. | Social activist and advocacy |
+| 12 | Mr. B. N. | Founder, MWire Labs -- prominent NLP founder |
 | 13 | Idea Catalyst team, iCreate Ahmedabad | Incubator/idea-validation team |
-| 14 | Mr. Pranta Protim Sinha | NRL Ideation Head; Senior Executive, Numaligarh Refinery Limited |
-| 15 | Mr. Ananya Singhal | Growth Strategist, Rodha Edu Ventures |
-| 16 | Mr. Shashankajyoti Brahma | Senior Manager, HDFC Bank Treasury Advisory Group |
-| 17 | Mr. Abhijit Konwar | Senior Dealer, State Bank of India, New York |
-| 18 | Mr. Prasujya Saikia | Branch Manager, State Bank of India |
-| 19 | Mr. Prajnyan Goswami | Ex-Founder; currently Government of Assam |
-| 20 | Mrs. Parinita Hazarika | Ex-Dibrugarh University; now Education Program Manager, Government of India |
-| 21 | Ms. Adela Khriyem | Mental health professional; Assistant Professor, Arya Nursing College |
-| 22 | Mrs. Sangeeta Paul | Assistant Professor, PEWS Nursing College |
-| 23 | Mrs. Chinmoyee Saikia | Officer, Development & Transformation Department, Government of Assam |
-| 24 | Mr. Utpal Kumar Sarmah | Retired, Quality Control Cell, Agriculture and Public Distribution System, Government of India |
+| 14 | Mr. P. P. S. | NRL Ideation Head; Senior Executive, Numaligarh Refinery Limited |
+| 15 | Mr. A. S. | Growth Strategist, Rodha Edu Ventures |
+| 16 | Mr. S. B. | Senior Manager, HDFC Bank Treasury Advisory Group |
+| 17 | Mr. A. K. | Senior Dealer, State Bank of India, New York |
+| 18 | Mr. P. S. | Branch Manager, State Bank of India |
+| 19 | Mr. P. G. | Ex-Founder; currently Government of Assam |
+| 20 | Mrs. P. H. | Ex-Dibrugarh University; now Education Program Manager, Government of India |
+| 21 | Ms. A. K. | Mental health professional; Assistant Professor, Arya Nursing College |
+| 22 | Mrs. S. P. | Assistant Professor, PEWS Nursing College |
+| 23 | Mrs. C. S. | Officer, Development & Transformation Department, Government of Assam |
+| 24 | Mr. U. K. S. | Retired, Quality Control Cell, Agriculture and Public Distribution System, Government of India |
 | 25 | "and many others" | Stated by the founder as an open-ended addendum; not individually named, not counted numerically |
 
 **Count: 24 named individuals/teams** (after dedupe), against the founder-stated claim of "15+ stakeholder idea-validation calls" -- exceeds the stated threshold before the unquantified "and many others" is even considered.

@@ -95,7 +95,7 @@ later update (session memory `project_duns_mobile_release_blocker`).
 
 ### Pilot Testimonials
 
-Added a second testimonial (Ekora Hive, Diksha Rajkhowa) per the founder's explicit request. Quotes
+Added a second testimonial (Ekora Hive, D. R.) per the founder's explicit request. Quotes
 are verbatim excerpts from the pilot's 2026-08-08 feedback email, already recorded in full in
 `LOIS_BETA_PILOT_INTEREST_REFERRAL_AND_STRATEGIC_PARTNERSHIPS_LOG.md` entry #3. Per the founder's
 direct instruction ("The highlighted part below testimonial need not be written"), the provenance

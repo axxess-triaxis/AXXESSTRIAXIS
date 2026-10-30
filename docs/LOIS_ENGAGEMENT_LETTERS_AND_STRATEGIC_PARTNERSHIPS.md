@@ -19,14 +19,14 @@ states.
 referral arrangement (titled "IN RE: Strategic Collaboration and Referral Agreement").
 
 **Parties:**
-- **Sakura Law Chambers** ("Sakura") -- signed by Shradhanjali Sarma, Partner, Startup &
+- **Sakura Law Chambers** ("Sakura") -- signed by S. S., Partner, Startup &
   Corporate Advisory.
 - **Triaxis Ventures Private Limited** ("Triaxis") -- signed by Sudipta Koushik Sarmah, Founder.
 
 **Dates:**
 - Letter dated: **19.06.2026**.
 - Digitally signed by Sudipta Koushik Sarmah: **24-06-2026, 09:17 am**.
-- Sakura's counter-signature (Shradhanjali Sarma) appears on the document as a signature block;
+- Sakura's counter-signature (S. S.) appears on the document as a signature block;
   no separate digital-signature timestamp is shown for that side in the source PDF.
 
 **Purpose / scope:**

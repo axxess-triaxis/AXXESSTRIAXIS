@@ -132,7 +132,7 @@ of "bring back as tenant even if a few things are missing" -- recovery proceeded
 recreation using only real, known data**, not a blank placeholder:
 
 - **Business identity**: sourced from `docs/LOIS_BETA_PILOT_INTEREST_REFERRAL_AND_STRATEGIC_PARTNERSHIPS_LOG.md`,
-  which independently records this customer's real context (Prajnyan Goswami, Proprietor, Imprints
+  which independently records this customer's real context (P. G., Proprietor, Imprints
   Production, Jorhat, Assam) -- not invented for this recovery.
 - **Account identity**: the real, surviving `auth.users` row (`9adcaff6-74bb-48c7-8ade-43862ecac30a`,
   `imprintsprod@[REDACTED -- PII, matches this repo's standing masking policy]`, display name "Imprints" -- taken verbatim from `raw_user_meta_data`, not

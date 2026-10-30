@@ -27,12 +27,12 @@ diverge rather than silently picking one.
 
 ### Reconciled cleanly (today's statement matches the documented record)
 
-- **UNDP** = entry #1 (Ritu Kumar Mishra, UNDP **Malawi**, not "Africa" generically): 6-month pilot
+- **UNDP** = entry #1 (R. K. M., UNDP **Malawi**, not "Africa" generically): 6-month pilot
   willingness, $5,000+/month indicative pricing, 90+ promoter score.
 - **SIIC IIT Kanpur** = entries #5/#6: Round 3 in progress.
 - **NASSCOM CoE Gurugram** = entry #7: incubation offered, onboarding actively in progress (not yet
   formalized -- no payment confirmation exists in the evidence reviewed).
-- **Reliance Jio GenNext (entry #32, Amey Mashelkar) -- reconciled with the founder's own more
+- **Reliance Jio GenNext (entry #32, A. M.) -- reconciled with the founder's own more
   precise framing (Q-011, RESOLVED, 2026-08-11), not a clean match or a clean discrepancy.** The
   documented email (2026-08-06) is a real, closed program-selection "no" -- *"not selected for the
   upcoming program due to limited fitment within our ecosystem at the moment"* -- occurring
@@ -55,7 +55,7 @@ diverge rather than silently picking one.
 
 ### Reconciled with a real discrepancy, flagged not resolved
 
-- **Startup Wise Guys (entry #9, Davide Coppola).** The log records this offer as **declined by the
+- **Startup Wise Guys (entry #9, D. C.).** The log records this offer as **declined by the
   founder, to preserve runway** (EUR 1,500+VAT entry fee). Today's session mentioned only the offer
   itself (50% discount on the Founders Club) without mentioning the decline -- both are recorded, the
   decline is the documented status.

@@ -11,7 +11,7 @@ archive named `AXXESS Enterprise Beta Feedback.zip` was committed alongside it, 
 the 9 raw per-respondent enterprise-survey PDFs exported directly from the survey tool.
 
 That archive's filenames included respondents' real full names (e.g.
-`number_1_ananya_singhal.pdf`), and each PDF's first page contained the respondent's full
+`number_1_<respondent-name>.pdf`), and each PDF's first page contained the respondent's full
 name, organization, job title/designation, country, state/province, and (for most
 respondents) email address.
 
@@ -72,12 +72,18 @@ problem, feature requests, roadmap opportunities, etc.).
 ## 5. Residual risk — please read before treating this as fully closed
 
 `AXXESS Enterprise Beta Feedback.zip` (the fully unmasked original) was committed and pushed
-to this **public** repository before this remediation, in commit `1a774a2`. Removing/replacing
+to this **public** repository before this remediation, in an earlier commit (this note previously
+cited `1a774a2`, which was the wrong commit). Removing/replacing
 it in later commits does **not** purge it from git history — the original raw files remain
 fetchable via that commit until history is rewritten and force-pushed. That is a separate,
 more disruptive action (requires re-sync for any other clone, including Codex's) and has
 **not** been performed. If full removal from history is wanted, it needs to be requested and
 scheduled explicitly.
+
+**Status, 2026-10-30:** still not purged. The founder chose to anonymise named people in the
+tracked docs (respondent and stakeholder names reduced to initials) and not to rewrite history,
+so the unmasked archive remains reachable in this repository's history and in any existing fork
+or clone.
 
 ## 6. Files in this folder after remediation
 

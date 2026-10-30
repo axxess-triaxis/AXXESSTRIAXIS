@@ -1,5 +1,7 @@
 # LOIs, Beta Interest, Pilot Interest, Referral Arrangements and Strategic Partnerships Log
 
+> **Anonymised 2026-10-30 (founder decision).** People other than the founders are named by initials only; organisations are kept. Full names were in earlier commits of this public repository and remain in its history.
+
 Tracking log for Letters of Intent, beta/pilot interest expressions, referral arrangements, and
 signed strategic partnership / engagement letters involving Triaxis Ventures Private Limited.
 Each entry is sourced directly from the attached document itself -- no terms are inferred or
@@ -32,19 +34,19 @@ than treated as verified. Applied below to entries where a pilot has not yet sta
 
 | # | Organization | Type | Sector | Proprietor | Status | Source File |
 |---|---|---|---|---|---|---|
-| 1 | Sakura Law Chambers | Signed engagement letter (referral/strategic collaboration) | -- | Shradhanjali Sarma | Signed, active | `Sakura signed engagement letter_signed.pdf` |
-| 2 | Imprints Production -- Pilot 1 | LOI / beta interest email | Startup | Mr. Prajnyan Ballav Goswami | **Onboarded; $50 advance now committed in writing (2026-08-12), not yet collected -- pending Triaxis's own IDFC First Bank current account + GST setup** | `LOI 1 Imprints Production.pdf`, `Imprints Commitment to Pay.pdf` |
-| 3 | Ekora Hive -- Pilot 2 | LOI / beta interest email | Startup | Mrs. Diksha Rajkhowa | **Onboarded (live-verified); $50 advance offered orally, not yet collected pending IDFC First Bank current account** | `LOI 2 Ekora.pdf` |
-| 4 | Mahanta & Sons Filling Station | LOI / beta interest letter | -- | Pollob Mahanta | LOI received | `LOI 3 - 3 customers (...).pdf` |
-| 5 | Trimurti Blocks & Pavers | LOI / beta interest letter | -- | Pollob Mahanta | LOI received | `LOI 3 - 3 customers (...).pdf` |
-| 6 | P. D. Wine Shop | LOI / beta interest letter | -- | Pollob Mahanta | LOI received | `LOI 3 - 3 customers (...).pdf` |
-| 7 | Elevate Group FZE (Elevate Wealth X) | Expression of interest / beta interest email | Financial services | Satabdi Parashar | Expression of interest received | `Elevate Wealth X LOI.pdf` |
+| 1 | Sakura Law Chambers | Signed engagement letter (referral/strategic collaboration) | -- | S. S. | Signed, active | `Sakura signed engagement letter_signed.pdf` |
+| 2 | Imprints Production -- Pilot 1 | LOI / beta interest email | Startup | Mr. P. B. G. | **Onboarded; $50 advance now committed in writing (2026-08-12), not yet collected -- pending Triaxis's own IDFC First Bank current account + GST setup** | `LOI 1 Imprints Production.pdf`, `Imprints Commitment to Pay.pdf` |
+| 3 | Ekora Hive -- Pilot 2 | LOI / beta interest email | Startup | Mrs. D. R. | **Onboarded (live-verified); $50 advance offered orally, not yet collected pending IDFC First Bank current account** | `LOI 2 Ekora.pdf` |
+| 4 | Mahanta & Sons Filling Station | LOI / beta interest letter | -- | P. M. | LOI received | `LOI 3 - 3 customers (...).pdf` |
+| 5 | Trimurti Blocks & Pavers | LOI / beta interest letter | -- | P. M. | LOI received | `LOI 3 - 3 customers (...).pdf` |
+| 6 | P. D. Wine Shop | LOI / beta interest letter | -- | P. M. | LOI received | `LOI 3 - 3 customers (...).pdf` |
+| 7 | Elevate Group FZE (Elevate Wealth X) | Expression of interest / beta interest email | Financial services | S. P. | Expression of interest received | `Elevate Wealth X LOI.pdf` |
 
 ---
 
 ## 1. Sakura Law Chambers
 
-**Contact:** Shradhanjali Sarma, Partner, Startup & Corporate Advisory
+**Contact:** S. S., Partner, Startup & Corporate Advisory
 **Location:** Not stated in source document (full detail in the dedicated file below)
 **Status:** Signed engagement letter, active (letter dated 19.06.2026, digitally signed by
 Sudipta Koushik Sarmah 24-06-2026, 09:17 am)
@@ -70,7 +72,7 @@ see `docs/LOIS_ENGAGEMENT_LETTERS_AND_STRATEGIC_PARTNERSHIPS.md`, Section 1.
 
 ## 2. Imprints Production -- Pilot 1
 
-**Contact:** Mr. Prajnyan Ballav Goswami, Proprietor (LOI itself signed "Prajnyan Goswami"; full
+**Contact:** Mr. P. B. G., Proprietor (LOI itself signed "P. G."; full
 name per founder, 2026-07-29)
 **Location:** Jorhat, Assam
 **Status:** **Onboarding complete (2026-07-29, founder-confirmed).** Pilot 1, the first pilot
@@ -93,7 +95,7 @@ only, not a payment or a written agreement.
 **Update, 2026-08-12 -- first written evidence of this commitment, upgraded from oral-only:** email
 from [PILOT_CONTACT_EMAIL_MASKED_IMPRINTS] to [FOUNDER_EMAIL_MASKED], subject "Reg: Axxess," 11:42 PM,
 quoted in full: **"As discussed on call, we are willing to pay a token advance once your current
-account and GST are setup."** Signed Prajnyan Goswami, Imprints Production. **The blocker named in
+account and GST are setup."** Signed P. G., Imprints Production. **The blocker named in
 this email is on Triaxis's own side, not the customer's** -- Imprints Production is not asking for
 anything further; the advance is contingent on Triaxis completing its own current-account and GST
 setup, which per the entry above was still in processing with IDFC First Bank as of 2026-07-29 and
@@ -127,7 +129,7 @@ expected ~7-14 days after pilot start (standard definition, see note above; not 
 here since no pilot has started)
 **Next meeting:** Not stated in source document
 
-**Pilot feedback, 2026-08-03 (WhatsApp, verbatim, first substantive qualitative feedback received from any pilot customer in this program):** Prajnyan Ballav Goswami, following a 30-minute call and hands-on use of the web product for Imprints Production (Diksha Rajkhowa -- Pilot 2/Ekora Hive's contact, see entry #3 -- separately using it for Ekora Hive over the same period). Recorded in full per this log's evidence discipline -- praise and criticism both, not selectively quoted.
+**Pilot feedback, 2026-08-03 (WhatsApp, verbatim, first substantive qualitative feedback received from any pilot customer in this program):** P. B. G., following a 30-minute call and hands-on use of the web product for Imprints Production (D. R. -- Pilot 2/Ekora Hive's contact, see entry #3 -- separately using it for Ekora Hive over the same period). Recorded in full per this log's evidence discipline -- praise and criticism both, not selectively quoted.
 - **Positioning read-back:** understood the product as intended to function as "the brain of a company or government department," with the mobile-first, lower-segment entry point as a deliberate on-ramp toward that larger ambition, which the founder described as multi-year ("targeting that few years from now"). Advised holding the "5% cost of Palantir" framing for post-launch marketing rather than using it now.
 - **Core criticism -- complexity/segment mismatch:** "Your current web version is not currently suitable for small customers, though big clients might like it being so comprehensive." Assessed current UX as better suited to "corporate" or "government" buyers than MSME/NGO/startup owners, who "do not need so many features and integrations" and "most especially in India might currently find it cumbersome, difficult to use and very hard to get used too... almost looks like something a Fortune 500 CEO might be very happy to use personally... Not something an MSME owner needs in India." Explicit, numeric recommendation: **"you need to simplify this 70-80% before launch"** if targeting Indian small customers, NGOs, contractors and startups.
 - **Pricing context (founder-stated, in this call):** referenced the founder's own stated pricing of **Rs. 5,000/year**, for a "extremely low cost build" -- recorded here as the specific price point discussed with this pilot customer; not necessarily the same figure as the willingness-to-pay ranges reported to other audiences elsewhere in this program's documentation (see entry #10 in `docs/readiness/PITCH_AND_TRACTION_LOG_2026_07_24.md` for the ₹12L+/₹60L+ enterprise figures reported to Plug and Play UAE -- these describe different buyer segments/tiers, not a contradiction, but not reconciled into one pricing table anywhere in this repo either).
@@ -138,7 +140,7 @@ here since no pilot has started)
 
 ## 3. Ekora Hive -- Pilot 2
 
-**Contact:** Mrs. Diksha Rajkhowa, Proprietor
+**Contact:** Mrs. D. R., Proprietor
 **Location:** Not stated in source document
 **Status:** **Onboarding complete (2026-07-29, live)** -- Pilot 2, the first pilot tenant to
 successfully reach a live, provisioned workspace. LOI received (email dated Wed, Jul 29, 2026,
@@ -221,7 +223,7 @@ payment commitments on record** -- this one (Ekora Hive) and Imprints Production
 >
 > Regards
 >
-> Diksha Rajkhowa
+> D. R.
 > Ekora Hive
 
 **Key points extracted, not independently verified beyond what the letter itself states:**
@@ -292,14 +294,14 @@ as three separate customer entries per the founder's instruction, since each is 
 business the founder intends to onboard independently, while noting they share one signatory,
 one contact point, and one location.
 
-**Contact (shared across all 3):** Pollob Mahanta, Proprietor. Cell: [THIRD_PARTY_PHONE_MASKED].
+**Contact (shared across all 3):** P. M., Proprietor. Cell: [THIRD_PARTY_PHONE_MASKED].
 Email: [PILOT_CONTACT_EMAIL_MASKED]
 **Location (shared across all 3):** Office Address: [THIRD_PARTY_ADDRESS_MASKED -- Naharkatia,
 District Dibrugarh, Assam]
 **Status:** LOI received (letter dated 28/07/2026, addressed "Dear Triaxis Ventures team"; letterhead
 is "M/s Mahanta & Son's Filling Station," an authorized Nayara Energy franchisee). **Update, 2026-08-04
 (founder-stated):** rather than waiting on the LOI's own stated post-launch timeline, the founder
-convinced Pollob Mahanta to bring **one of the three firms** onboard as an active pilot now. Which
+convinced P. M. to bring **one of the three firms** onboard as an active pilot now. Which
 of the three firms was not specified in this update -- flagged as an open detail, not assumed to be
 the filling station by default just because it is listed first. **Oral commitment to an advance
 payment was also made, not yet collected or documented** -- same "founder-stated, source artifact
@@ -332,8 +334,8 @@ here since no pilot has started)
 
 ## 7. Elevate Group FZE (Elevate Wealth X)
 
-**Contact:** Satabdi Parashar, Founder & Managing Partner. **Founder-stated (2026-08-12), not from
-the source email itself:** Satabdi Parashar is the life partner and co-director of Anshuman Kashyap,
+**Contact:** S. P., Founder & Managing Partner. **Founder-stated (2026-08-12), not from
+the source email itself:** S. P. is the life partner and co-director of A. K.,
 who is separately logged as an angel-investor pitch contact for the same company in
 `docs/readiness/PITCH_AND_TRACTION_LOG_2026_07_24.md` entry #17 ("Founder of Elevate Wealth X, Dubai
 resident"). No discrepancy between the two names -- both are real, current co-directors of the same
@@ -366,9 +368,9 @@ and no signed agreement, invoice, or payment record exists for this yet.
 entries in this log (tenant provisioned; full workflow declared via survey; Pilot Experience Survey
 ~7-14 days after start), not yet applicable since no pilot has started.
 **Next meeting:** Not stated in source document.
-**Cross-reference:** relates to, but is distinct from, the angel-investor relationship with Anshuman
-Kashyap already tracked in `docs/readiness/PITCH_AND_TRACTION_LOG_2026_07_24.md` entry #17 -- that
-entry covers Kashyap being pitched as a potential angel investor; this entry covers Elevate Group
+**Cross-reference:** relates to, but is distinct from, the angel-investor relationship with A.
+K. already tracked in `docs/readiness/PITCH_AND_TRACTION_LOG_2026_07_24.md` entry #17 -- that
+entry covers A. K. being pitched as a potential angel investor; this entry covers Elevate Group
 FZE's own interest in becoming a product customer/beta participant, initiated by his co-director.
 Both relationships involve the same company; neither should be read as evidence for the other
 (a customer expression of interest is not investment traction, and vice versa).

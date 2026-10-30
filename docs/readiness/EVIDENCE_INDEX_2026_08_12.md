@@ -124,7 +124,7 @@ the current policy, not an interim step.
 
 - **Original path:** N/A -- was never tracked in this repository
 - **Moved:** 2026-08-12, to `evidence-private/loi-and-engagement-letters/LOI 1 Imprints Production.pdf`
-- **Description:** Email LOI/beta-access expression of interest from Prajnyan Goswami, Proprietor,
+- **Description:** Email LOI/beta-access expression of interest from P. G., Proprietor,
   Imprints Production (Jorhat, Assam), dated 29 Jul 2026 (email timestamp). Corresponds to entry 2
   in `LOIS_BETA_PILOT_INTEREST_REFERRAL_AND_STRATEGIC_PARTNERSHIPS_LOG.md`.
 - **Size:** 176.9 KB
@@ -140,7 +140,7 @@ the current policy, not an interim step.
 
 - **Original path:** N/A -- was never tracked in this repository
 - **Moved:** 2026-08-12, to `evidence-private/loi-and-engagement-letters/LOI 2 Ekora.pdf`
-- **Description:** Email LOI/beta-access expression of interest from Diksha Rajkhowa, Proprietor,
+- **Description:** Email LOI/beta-access expression of interest from D. R., Proprietor,
   Ekora Hive, dated 29 Jul 2026 (email timestamp). Corresponds to entry 3 in
   `LOIS_BETA_PILOT_INTEREST_REFERRAL_AND_STRATEGIC_PARTNERSHIPS_LOG.md`.
 - **Size:** 179.3 KB
@@ -154,7 +154,7 @@ the current policy, not an interim step.
 - **Original path:** N/A -- was never tracked in this repository
 - **Moved:** 2026-08-12, to `evidence-private/loi-and-engagement-letters/LOI 3 - 3 customers
   (Mahanta & Sons Filling Station, P D Wine Shops, Trimurti Blocks & Pavers.pdf`
-- **Description:** Signed letter LOI from Pollob Mahanta, Proprietor, covering 3 affiliated
+- **Description:** Signed letter LOI from P. M., Proprietor, covering 3 affiliated
   businesses (Mahanta & Sons Filling Station, Trimurti Blocks & Pavers, P. D. Wine Shop), dated
   28 Jul 2026. Corresponds to entries 4-6 in
   `LOIS_BETA_PILOT_INTEREST_REFERRAL_AND_STRATEGIC_PARTNERSHIPS_LOG.md`.
@@ -181,7 +181,7 @@ the current policy, not an interim step.
 - **Size:** 283.5 KB
 - **Classification reason:** Distinct risk profile from the 3 LOIs above -- contains no personal
   phone number, personal email, or personal home address for either party (unlike the LOIs). It
-  does name a third party by name and professional title (Shradhanjali Sarma, Partner, Sakura Law
+  does name a third party by name and professional title (S. S., Partner, Sakura Law
   Chambers) in a signed legal agreement. Per explicit founder decision, given the same consistent
   policy applied to the other 3: no signed document naming a third party goes into the public repo
   without that party's explicit consent, regardless of the specific risk level of the fields

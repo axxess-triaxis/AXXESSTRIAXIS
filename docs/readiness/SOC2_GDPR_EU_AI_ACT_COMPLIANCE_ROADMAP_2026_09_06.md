@@ -28,7 +28,7 @@ way past:
   properly, ideally with legal input, before building specific controls against it.
 
 **Investor context already on file** (per the founder's own YC application, cited here as
-founder-stated context, not independently verified): "David Orban passed at this stage and
+founder-stated context, not independently verified): "D. O. passed at this stage and
 highlighted GCC MRR, SOC 2 readiness and data residency as key milestones." This confirms SOC 2
 readiness is already a named, external-signal-validated priority, not a speculative addition.
 
