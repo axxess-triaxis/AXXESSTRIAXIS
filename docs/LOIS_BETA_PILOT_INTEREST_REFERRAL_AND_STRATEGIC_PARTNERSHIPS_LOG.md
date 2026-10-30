@@ -1,5 +1,7 @@
 # LOIs, Beta Interest, Pilot Interest, Referral Arrangements and Strategic Partnerships Log
 
+> **Anonymised 2026-10-30 (founder decision).** People other than the founders are named by initials only; organisations are kept. Full names were in earlier commits of this public repository and remain in its history.
+
 Tracking log for Letters of Intent, beta/pilot interest expressions, referral arrangements, and
 signed strategic partnership / engagement letters involving Triaxis Ventures Private Limited.
 Each entry is sourced directly from the attached document itself -- no terms are inferred or
