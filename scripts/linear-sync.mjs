@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Syncs the 20 pre-demo actionables' status (parsed from
-// "Enterprise beta feedback - Batch 1 (30 responses)/PRE_DEMO_ACTIONABLES.md") into Linear issues,
+// "docs/research/beta-batch-1/PRE_DEMO_ACTIONABLES.md") into Linear issues,
 // one-way (doc -> Linear). GitHub-independent: talks directly to Linear's GraphQL API, no GitHub
 // Actions or Git host involved. See docs/LINEAR_SYNC.md.
 //
@@ -17,7 +17,7 @@ import path from "node:path";
 const root = process.cwd();
 const actionablesPath = path.join(
   root,
-  "Enterprise beta feedback - Batch 1 (30 responses)",
+  "docs/research/beta-batch-1",
   "PRE_DEMO_ACTIONABLES.md",
 );
 

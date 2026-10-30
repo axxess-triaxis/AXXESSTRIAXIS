@@ -16,7 +16,7 @@ not from re-estimating the founder's recollection upward or downward without a s
 
 ## 1. Where "1,200+" actually comes from
 
-The figure is computed in `Enterprise beta feedback - Batch 1 (30 responses)/Enterprise_Beta_Feedback_Batch_1.md`,
+The figure is computed in `docs/research/beta-batch-1/Enterprise_Beta_Feedback_Batch_1.md`,
 section 2.1 ("Definition: actionable surveyed data points"):
 
 - **1,236 raw / 1,112 deduplicated instrument-weighted actionable data points**
@@ -27,7 +27,7 @@ section 2.1 ("Definition: actionable surveyed data points"):
   the size of the user base... It should never be presented as 1,112 users, usage events, or
   independent market validations."*
 
-This is echoed in `Enterprise beta feedback - Batch 1 (30 responses)/BETA_FEEDBACK_SPRINT_1-3_ITERATION_REPORT.md`
+This is echoed in `docs/research/beta-batch-1/BETA_FEEDBACK_SPRINT_1-3_ITERATION_REPORT.md`
 line 22-24, which already carries the same caveat.
 
 **`docs/SPRINT_41_QA2_MILESTONE_2026_07_22.md`** (lines 24 and 160) is the one place that states the
@@ -39,7 +39,7 @@ feedback points." That is the specific claim this reconciliation corrects (see S
 The founder's clarification states the 1,200+ figure was based on 23 surveyed respondents, with 10
 more added later. The repository does contain a genuine, separate 23-respondent document:
 
-- `Enterprise beta feedback - Batch 1 (30 responses)/BETA_0.5_0.7_FEEDBACK_ANALYSIS_2026_07_23.md`
+- `docs/research/beta-batch-1/BETA_0.5_0.7_FEEDBACK_ANALYSIS_2026_07_23.md`
   (committed 2026-07-23) -- **23 total responses**: Beta 0.5 = 15 (responses 1-15), Beta 0.7 = 8
   (responses 16-23). Combined NPS 82.61.
 

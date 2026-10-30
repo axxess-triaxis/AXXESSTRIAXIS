@@ -345,7 +345,7 @@ tenant data — the same discipline a commercial pilot (not just an accelerator 
 
 ## 6. Pre-revenue, pre-pilot traction (NPS, PMF signal, willingness to pay)
 
-Source: `Enterprise beta feedback - Batch 1 (30 responses)/Enterprise_Beta_Feedback_Batch_1.md`,
+Source: `docs/research/beta-batch-1/Enterprise_Beta_Feedback_Batch_1.md`,
 the deduplicated analysis of AXXESS's first structured beta-feedback batch (30 submissions, 28
 unique respondents after removing duplicates). The two source PDFs
 (`AXXESS Enterprise Beta Feedback-NPS Report.pdf`,

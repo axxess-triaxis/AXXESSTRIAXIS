@@ -23,7 +23,7 @@ De-Bloat initiative (Sprints 1-3) is concluded.
 
 ### AXXESS Enterprise Beta Feedback (PII-masked).zip
 
-- **Original path:** `Enterprise beta feedback - Batch 1 (30 responses)/AXXESS Enterprise Beta Feedback (PII-masked).zip`
+- **Original path:** `docs/research/beta-batch-1/AXXESS Enterprise Beta Feedback (PII-masked).zip`
 - **Moved:** no -- final. Founder decided against a git history rewrite (the only mechanism that
   could move this file, since it's already git-tracked); this file remains in the repo permanently.
   See Decision Ledger, `CODEBASE_DEBLOAT_SPRINT3_CLOSEOUT_2026_08_12.md`.
@@ -39,7 +39,7 @@ De-Bloat initiative (Sprints 1-3) is concluded.
 
 ### AXXESS by Triaxis Beta User Product Feedback Survey.zip
 
-- **Original path:** `Enterprise beta feedback - Batch 1 (30 responses)/AXXESS by Triaxis Beta User Product Feedback Survey.zip`
+- **Original path:** `docs/research/beta-batch-1/AXXESS by Triaxis Beta User Product Feedback Survey.zip`
 - **Moved:** no -- final. Founder decided against a git history rewrite (the only mechanism that
   could move this file, since it's already git-tracked); this file remains in the repo permanently.
   See Decision Ledger, `CODEBASE_DEBLOAT_SPRINT3_CLOSEOUT_2026_08_12.md`.
@@ -62,7 +62,7 @@ De-Bloat initiative (Sprints 1-3) is concluded.
 
 ### AXXESS Enterprise Beta Feedback-NPS Report.pdf
 
-- **Original path:** `Enterprise beta feedback - Batch 1 (30 responses)/AXXESS Enterprise Beta Feedback-NPS Report.pdf`
+- **Original path:** `docs/research/beta-batch-1/AXXESS Enterprise Beta Feedback-NPS Report.pdf`
 - **Moved:** no -- final. Founder decided against a git history rewrite (the only mechanism that
   could move this file, since it's already git-tracked); this file remains in the repo permanently.
   See Decision Ledger, `CODEBASE_DEBLOAT_SPRINT3_CLOSEOUT_2026_08_12.md`.
@@ -75,7 +75,7 @@ De-Bloat initiative (Sprints 1-3) is concluded.
 
 ### AXXESS by Triaxis Beta User Product Feedback Survey-NPS Report.pdf
 
-- **Original path:** `Enterprise beta feedback - Batch 1 (30 responses)/AXXESS by Triaxis Beta User Product Feedback Survey-NPS Report.pdf`
+- **Original path:** `docs/research/beta-batch-1/AXXESS by Triaxis Beta User Product Feedback Survey-NPS Report.pdf`
 - **Moved:** no -- final. Founder decided against a git history rewrite (the only mechanism that
   could move this file, since it's already git-tracked); this file remains in the repo permanently.
   See Decision Ledger, `CODEBASE_DEBLOAT_SPRINT3_CLOSEOUT_2026_08_12.md`.

@@ -36,7 +36,7 @@ call logs), adding them to the three logs above would let this line move to Veri
 anywhere in this repository. The real, computed figure is **1,236 raw / 1,112 deduplicated
 instrument-weighted actionable data points**, from a 30-raw / 28-deduplicated respondent batch (20
 product-feedback + 8 enterprise-feedback respondents) --
-`Enterprise beta feedback - Batch 1 (30 responses)/Enterprise_Beta_Feedback_Batch_1.md` section 2.1.
+`docs/research/beta-batch-1/Enterprise_Beta_Feedback_Batch_1.md` section 2.1.
 That source document is explicit that this is an instrument-depth metric, not a headcount. Full
 trace, including the 23-vs-30-respondent question: `docs/readiness/BETA_FEEDBACK_EVIDENCE_RECONCILIATION_2026_07_25.md`.
 
@@ -209,7 +209,7 @@ part of the case, because every figure above traces to a specific, checkable sou
 **The boundary worth naming:** everything verified above is *interest, validation, and reach*
 evidence -- named conversations, survey signal, audience numbers, and execution proof. It is not yet
 *commercial* traction: `docs/UNSUPPORTED_OR_PARTIAL_CLAIMS.md` and
-`Enterprise beta feedback - Batch 1 (30 responses)/Enterprise_Beta_Feedback_Batch_1.md` both record
+`docs/research/beta-batch-1/Enterprise_Beta_Feedback_Batch_1.md` both record
 pilot interest from external enterprise respondents as "qualified expressions of intent, not yet
 contractual traction" -- no signed pilot, paying customer, or revenue figure appears anywhere in this
 evidence base as of 2026-07-25. Stating both halves together -- real, diversified, verifiable
