@@ -1,7 +1,7 @@
 # Compliance Certification & Investor Feedback Roadmap
 
 Date created: 2026-08-03
-Source: David D. O.'s investment-decision feedback, 2026-08-01 (`docs/readiness/PITCH_AND_TRACTION_LOG_2026_07_24.md` entry #19)
+Source: D. O.'s investment-decision feedback, 2026-08-01 (`docs/readiness/PITCH_AND_TRACTION_LOG_2026_07_24.md` entry #19)
 Purpose: track the founder's actual response to each of D. O.'s five due-diligence questions -- what's being pursued as a long-run action item, and what's being explicitly deferred, with the founder's own reasoning recorded rather than silently acted on or silently dropped. Per this repo's evidence-chain discipline (`CLAUDE.md`), a founder decision not to pursue something is recorded as a decision, not treated as an open gap.
 
 ## Question 1: signed pilots / MOUs / current MRR

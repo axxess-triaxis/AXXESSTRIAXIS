@@ -1,5 +1,7 @@
 # Market to Product Evidence Ledger
 
+> **Anonymised 2026-10-30 (founder decision).** People other than the founders are named by initials only; organisations are kept. Full names were in earlier commits of this public repository and remain in its history.
+
 Date created: 2026-07-25  
 Governance source: `docs/FOUNDER_EXECUTION_EVIDENCE_GOVERNANCE.md`
 
