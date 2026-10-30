@@ -1,7 +1,8 @@
 # Investor EOD Sync + Demo Freshness -- Closeout (2026-10-29)
 
-Branch: `feat/investor-eod-sync` (from `origin/main` at `6c80277`). Status: **PR open, not merged, no
-deploy, no scheduled or dispatched run yet.**
+Branch: `feat/investor-eod-sync` (from `origin/main` at `6c80277`). Status: **merged in PR #435
+(`585fa2b`), deployed to landing and investor, dry-run dispatch passed. First scheduled run (23:30 IST
+2026-10-29) and the sync's real deploy path are not yet verified.** See "Post-merge evidence" below.
 
 ## External signal
 
@@ -99,13 +100,30 @@ Notes:
 - **Local demo-mode check** (`next dev` on port 3017, demo flag set in localStorage): `/tasks` due dates
   render as `10-13`, `10-17`, `10-21`, `10-25`, `10-29`, `11-02` (today 2026-10-29), with no ISO
   fragments and no hydration errors in the console.
-- The workflow file itself has **not** executed in GitHub Actions (see below).
+- Before merge, the workflow file had not executed in GitHub Actions; see post-merge evidence below.
+
+## Post-merge evidence (2026-10-29)
+
+| Step | Evidence | Result |
+|---|---|---|
+| PR checks on head `d3cc87f` | `gh api .../commits/d3cc87f.../check-runs` and `/status`, 13:37 UTC | 12 check runs success, 3 skipped (Supabase Preview, android-preview, ios-preview); 4 Vercel preview statuses success; merge state `CLEAN` |
+| Merge (founder-approved in session) | `gh pr merge 435 --merge --match-head-commit d3cc87f...` | PR #435 merged 13:37:59 UTC, merge commit `585fa2b1203f9e0d15d4dae63e481b69ed6c521a` |
+| Dry-run dispatch | Actions run 40883740362 (`workflow_dispatch`, `dry_run=true`, ref `main` @ `585fa2b`) | success; "Compare landing and investor" success, decision `in-sync` (both on `e0104192`, PR #434), "Sync investor" skipped |
+| Merge deploy | Actions run 40883726090 (`deploy-production.yml` @ `585fa2b`) | landing, investor, lite jobs all success |
+| Commit behind each domain | `vercel api /v13/deployments/<domain>` | landing `dpl_68eL9efrYjTqQTjwoHNVP7xsG1vp` READY `585fa2b`; investor `dpl_BhrNDxtbPoWvm89WFZSdrL2U63wu` READY `585fa2b` |
+| Live demo freshness | investor `/tasks` in the browser pane, ~14:05 UTC | due dates `10-13`, `10-17`, `10-21`, `10-25`, `10-29`, `11-02`, `11-06`, `11-10` (`MM-DD`, no ISO fragments) |
+
+A `curl` check of `https://investor.triaxisventures.com/` from the local machine failed with exit 35
+(TLS error; the same machine also had a GitHub TLS handshake timeout minutes earlier). The page was
+confirmed loading in the browser instead. This is a local network issue, not evidence about the site.
 
 ## Partial / blocked / unsupported
 
-- **Not run in GitHub Actions yet.** `workflow_dispatch` and `schedule` only work once the file is on
-  the default branch, so the first real run can only happen after the PR is merged (founder's call).
-- **Demo freshness not live yet.** It reaches investor only after merge + deploy.
+- **First scheduled run not yet verified.** The 23:30 IST (18:00 UTC) cron run has not happened at the
+  time of writing.
+- **The sync's deploy path is unexercised live.** Since merge, investor has not been behind landing, so
+  only the `in-sync` branch has run in Actions. Partition guard, build/deploy and post-deploy verify
+  steps are covered by unit tests and code review only, until a run finds investor behind.
 - **Landing's Vercel Git integration** deploys `main` without waiting for CI. This is a governance gap
   against `TEST_GOVERNANCE.md` (landing can serve a commit whose checks have not finished or failed).
   Out of scope here; it is a Vercel dashboard setting and the founder's decision.
@@ -114,6 +132,8 @@ Notes:
 
 ## Next steps (founder)
 
-1. Review and merge the PR.
-2. Approve a first `workflow_dispatch` with `dry_run: true`, then (if investor is behind) one with
-   `dry_run: false`; or wait for the 23:30 IST run.
+1. Check the first scheduled run (Actions -> "EOD Investor Sync") after 23:30 IST.
+2. Decide on landing's Vercel Git integration (deploys `main` ahead of CI).
+3. Consider branch protection on `main` requiring the checks the sync relies on (`Build, Lint, Type
+   Check`, `Secret Scan`, `pnpm Critical Vulnerability Gate`); today `main` is unprotected, which also
+   made GitHub auto-merge unavailable for PR #435.
