@@ -37,6 +37,14 @@ Linked issue: `AXX-___` or `N/A`
 - [ ] `pnpm run test`
 - [ ] `pnpm run build`
 
+## Practice Standards (`CLAUDE.md`, "Paxel 9.5 Practice Standards")
+
+- [ ] Acceptance criteria were stated before the work began, and are met
+- [ ] Bug fix: a regression test fails before the fix and passes after it (or the reason none is possible is given)
+- [ ] Every error hit while making this change is fixed, or recorded with an ID and owner
+- [ ] Deploy-facing: an independent live check against the deployed SHA is recorded (not only a green run)
+- [ ] Each decision or product insight has an Outcome, or `Pending, review by <date>` in `docs/readiness/DECISION_OUTCOME_LEDGER.md`
+
 ## Evidence
 
 See `docs/readiness/EVIDENCE_INDEX.md`, `docs/readiness/CLOSEOUT_TEMPLATE.md`.

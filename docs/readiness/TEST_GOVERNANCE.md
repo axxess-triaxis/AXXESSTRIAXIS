@@ -13,6 +13,15 @@ make required gates explicit by change type, rather than implicit in the standar
 | Deploy-facing change (env var, build config, CI workflow) | `pnpm run build`, the relevant GitHub Actions workflow run, a live endpoint check post-deploy |
 | Docs-only change | Link/path check where the doc references real files or code (broken references are a real defect); no app test suite required unless the doc is itself generated from code |
 | Mobile change | `pnpm --dir apps/mobile run typecheck`, Capacitor doctor/build check where applicable |
+| Bug fix (any of the above) | A regression test that reproduces the bug and fails before the fix, then passes after it; if no test is possible, the closeout says why |
+
+Two rules apply to every row (`CLAUDE.md`, "Paxel 9.5 Practice Standards -- Standing Rule", added 2026-11-01):
+
+- **Error closure.** Every error a session hits is fixed and re-run, or recorded with an ID and owner, before the
+  session ends. A check is not "pre-existing" without a citation (for example
+  `docs/readiness/FAILED_OR_TIMED_OUT_CHECKS.md`).
+- **Live check before "done".** For a deploy-facing change, a green workflow or a Vercel "ready" is not the live
+  check; the live endpoint check against the deployed SHA is, and it goes in the closeout.
 
 None of these replace the standard suite already in `CLAUDE.md` (`pnpm run typecheck`,
 `pnpm --dir apps/mobile run typecheck`, `pnpm run lint` zero-warnings, `pnpm run test`, `pnpm run build`,
