@@ -49,7 +49,9 @@ is failing or unavailable.
   - every decision and product insight gets an Outcome or `Pending, review by <date>` (at most 14 days),
     closed in a weekly pass;
   - plan-first in at least 95% of build sessions;
-  - each repository's work runs in its own checkout; parallel agents get their own worktree, brief and PR.
+  - each repository's work runs in its own checkout; parallel agents get their own worktree, brief and PR;
+  - every gate bypass closeout includes the filled `docs/readiness/PRODUCTION_DEPLOY_EXCEPTION_POLICY.md`
+    template (targeted checks passed, what is unverified, and the deciding live check), added after Report #29.
 
 ## Commit trailer convention (going forward, not retrofitted)
 

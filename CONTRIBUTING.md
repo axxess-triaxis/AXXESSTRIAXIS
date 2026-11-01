@@ -80,6 +80,8 @@ Standards" (summary in `docs/readiness/GOVERNANCE_RULES.md`):
 - When retrying, say what failed, what you think caused it, and what success looks like.
 - Do not call a deploy done until a live check against the deployed SHA is recorded.
 - Record an outcome, or a dated review, for each decision.
+- If a gate is ever bypassed, fill in `docs/readiness/PRODUCTION_DEPLOY_EXCEPTION_POLICY.md` with the checks that
+  passed, what is unverified, and the live check that decides the deploy is done.
 
 ## Security-sensitive Changes
 

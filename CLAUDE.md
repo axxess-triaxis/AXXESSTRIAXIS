@@ -29,8 +29,8 @@ that connect an issue to its plan/commits/PR/tests/deploy/closeout live at
 
 Added 2026-11-01: every session also follows the **Paxel 9.5 Practice Standards** below -- close every error,
 live-check every deploy, regression test first, no bare retries, acceptance criteria up front, an outcome (or a
-dated review) for every decision, plan-first in at least 95% of build sessions, and each repository's work in
-its own checkout.
+dated review) for every decision, plan-first in at least 95% of build sessions, each repository's work in
+its own checkout, and a filled exception template for every gate bypass.
 
 ### Mandatory Plan-First Sessions -- Standing Rule
 
@@ -71,8 +71,9 @@ Adopted 2026-11-01 from Paxel Report #28 (`docs/readiness/PAXEL_REPORT_28_BEHAVI
 6. **Outcome closure.** Every Decision Ledger entry and product insight gets an Outcome, or `Pending, review by <date>` at most 14 days out. A weekly pass in `docs/readiness/DECISION_OUTCOME_LEDGER.md` closes or re-dates Pending rows with the observed result, never an inferred one.
 7. **Plan-first in at least 95% of build sessions**, under the Mandatory Plan-First rule above; exceptions are still declared.
 8. **Each repository's work in its own checkout**, so Paxel attributes sessions and commits correctly; parallel agents each get their own worktree, a written brief with acceptance criteria, and their own PR.
+9. **Bypass evidence** (added after Report #29, which found production deploys made with `--skip-checks` and no record of what had been checked). Every gate bypass closeout includes the filled `docs/readiness/PRODUCTION_DEPLOY_EXCEPTION_POLICY.md` template: the targeted checks that passed (raw output), what remains unverified, and the live check that decides whether the deploy is done. The deploy is not done until that live check passes. This adds to the Production Gate Bypass rule below and does not relax it.
 
-Progress is measured by a monthly Paxel rerun, logged as a new `PAXEL_REPORT_<n>_BEHAVIORAL_ANALYSIS_<date>.md` against the signals in Report #28's plan. The same rules are mirrored, as pointers, in `docs/readiness/GOVERNANCE_RULES.md`, `docs/readiness/TEST_GOVERNANCE.md`, `docs/readiness/CLOSEOUT_TEMPLATE.md`, `docs/readiness/DECISION_OUTCOME_LEDGER.md`, `.github/PULL_REQUEST_TEMPLATE.md`, and `CONTRIBUTING.md`; if a rule changes, change it here first.
+Progress is measured by a monthly Paxel rerun, logged as a new `PAXEL_REPORT_<n>_BEHAVIORAL_ANALYSIS_<date>.md` against the signals in Report #28's plan, including a comparison of unresolved errors in planned and unplanned work of similar size. The same rules are mirrored, as pointers, in `docs/readiness/GOVERNANCE_RULES.md`, `docs/readiness/TEST_GOVERNANCE.md`, `docs/readiness/CLOSEOUT_TEMPLATE.md`, `docs/readiness/DECISION_OUTCOME_LEDGER.md`, `.github/PULL_REQUEST_TEMPLATE.md`, and `CONTRIBUTING.md`; if a rule changes, change it here first.
 
 ## The Evidence Chain -- Standing Rule
 

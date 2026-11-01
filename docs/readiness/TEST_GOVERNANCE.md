@@ -15,7 +15,11 @@ make required gates explicit by change type, rather than implicit in the standar
 | Mobile change | `pnpm --dir apps/mobile run typecheck`, Capacitor doctor/build check where applicable |
 | Bug fix (any of the above) | A regression test that reproduces the bug and fails before the fix, then passes after it; if no test is possible, the closeout says why |
 
-Two rules apply to every row (`CLAUDE.md`, "Paxel 9.5 Practice Standards -- Standing Rule", added 2026-11-01):
+Three rules apply to every row (`CLAUDE.md`, "Paxel 9.5 Practice Standards -- Standing Rule", added 2026-11-01):
+
+- **Bypass evidence.** If any gate in a row is skipped (`--skip-checks`, `--no-verify`, an override), the closeout
+  includes the filled `docs/readiness/PRODUCTION_DEPLOY_EXCEPTION_POLICY.md` template: the targeted checks that
+  passed (raw output), what remains unverified, and the live check that decides whether the deploy is done.
 
 - **Error closure.** Every error a session hits is fixed and re-run, or recorded with an ID and owner, before the
   session ends. A check is not "pre-existing" without a citation (for example
