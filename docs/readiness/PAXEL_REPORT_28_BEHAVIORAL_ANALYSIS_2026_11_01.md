@@ -84,6 +84,41 @@ These are adopted as a standing rule in `CLAUDE.md` ("Paxel 9.5 Practice Standar
 - Not done here and needing separate approval: raising Claude Code's `cleanupPeriodDays` above its 30-day default, so
   session evidence survives long enough for Paxel to read it. This is a user setting, not a repository change.
 
+## Addendum: Report #29, no-cache rerun (2026-11-01)
+
+Source: `https://paxel.ycombinator.com/results/6kt4ofws` (uploaded 1 Nov 2026, 14:03 UTC), the same bundle and the
+same official image as Report #28, run with `--clean` so no cached analysis from earlier runs was reused. Report
+content pasted into chat by the founder on 2026-11-01; Paxel-generated, not independently verified here.
+
+- **Unchanged headline metrics:** 81 sessions, 215,272 lines, 1,212 commits, plan-first 79% (27 of 34), 4 agents at
+  once, "Try again" 21 times, 31-day streak, 193 hours. The local log differs only in decisions extracted
+  (116 against 123).
+- **Strengths named:** observable stop conditions for retries and cleanup; boundaries held under fast
+  implementation (tenant isolation, hashed keys, approvals, audit logging, the mock Investor Preview); separate
+  fixes and passing CI chosen over an override on PR #400.
+- **Outcome tracking:** strategic redirects positive in 6 of 46 decisions; the tracked "raise the abstraction"
+  redirect (STILL into a shared harness) was negative. This is a different category from Report #28's figures, so
+  the two are not compared.
+- **New growth area 1:** "verify what planning changes, not just whether a plan exists" -- the averages do not show
+  that planning reduced unresolved errors.
+- **New growth area 2:** production deploys used `--skip-checks` while a passing-test count or full-suite result
+  was unavailable, without recording which targeted checks passed, what stayed unverified, and which live check
+  decided completion.
+
+**Revised axis estimate (Claude Code, not YC):** execution leverage 8, steering 8 (up from 7), engineering
+quality 6, product thinking 8, planning 7; average 7.4.
+
+**Changes adopted from this addendum:**
+- `CLAUDE.md` rule 9, **bypass evidence**: every gate bypass closeout includes the filled
+  `docs/readiness/PRODUCTION_DEPLOY_EXCEPTION_POLICY.md` template, with the targeted checks that passed (raw
+  output), what remains unverified, and the live check that decides whether the deploy is done. The deploy is not
+  done until that live check passes. This makes the existing Production Gate Bypass rule checkable after the fact;
+  it does not relax it.
+- **New measure, planned against unplanned:** each monthly rerun compares unresolved errors per session for planned
+  and unplanned work of similar size (similar commit count or files changed), using the session list and the
+  Paxel report. If planned work is not lower, the next plans add explicit verification steps and alternatives
+  considered.
+
 ## What this document does not claim
 
 - It does not claim YC's actual scores; only Paxel's server has them.
