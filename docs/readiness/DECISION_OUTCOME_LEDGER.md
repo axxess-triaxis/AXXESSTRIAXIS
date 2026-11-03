@@ -51,3 +51,13 @@ date) rather than this ledger asserting them from the founder's paraphrase alone
 | Decision | Date | Session/tool | Issue ID | Why | Outcome | Commit/PR | Verification | Closeout |
 |---|---|---|---|---|---|---|---|---|
 | Keep investor on landing's commit via a gated EOD safety-net workflow, and make demo data date-relative, instead of changing investor's env or Vercel settings | 2026-10-29 | Founder request, executed by Claude Code | INVESTOR-EOD-SYNC | Research showed investor and landing ran the same commit (`8fe2f25`) yet investor read as months behind because `src/demo/demoDataset.ts` pinned every seeded date to 2026-07-04; separately, landing is also deployed by the Vercel Git integration ahead of CI, so investor can trail landing until the CI chain finishes | Merged and deployed; both domains verified on `585fa2b`; dry-run dispatch passed; scheduled run and live deploy path not yet verified | #435 (`585fa2b`) | Unit tests for every sync gate and the partition guard; Actions run 40883740362 (dry run, `in-sync`); Actions run 40883726090 (merge deploy, all jobs success); Vercel deployment SHAs on both domains; live investor `/tasks` dates current | `docs/readiness/INVESTOR_EOD_SYNC_CLOSEOUT_2026_10_29.md` |
+
+## Paxel 9.5 practice standards (2026-11-01)
+
+| Decision | Date | Session/tool | Issue ID | Why | Outcome | Commit/PR | Verification | Closeout |
+|---|---|---|---|---|---|---|---|---|
+| Adopt the Paxel 9.5 Practice Standards as a standing rule in `CLAUDE.md` and mirror them in the closeout template, PR template, test governance, governance summary and contributing guide | 2026-11-01 | Founder request, executed by Claude Code | PAXEL-9-5 | Paxel Report #28 (`results/z3w3ytji`) found outcomes tracked for only 8 of 19 option choices and 1 of 21 product insights, 0.59 unresolved errors per planned session, a deploy record closed at "ready" without a live check, and 21 bare "Try again" prompts; Claude Code's axis estimate (not YC's) averaged 7.2 | Adopted; Pending, review by 2026-11-15 (are the rules being followed); effect on the score checked at the next monthly Paxel rerun | This branch (`docs/paxel-9-5-practice-standards`) | Docs-only path check over the changed files | `docs/readiness/PAXEL_REPORT_28_BEHAVIORAL_ANALYSIS_2026_11_01.md` |
+
+From 2026-11-01, under rule 6 of that standard, a new row's Outcome is either the observed result or
+`Pending, review by <date>` at most 14 days out, and a weekly pass closes or re-dates Pending rows.
+Existing rows are not rewritten.

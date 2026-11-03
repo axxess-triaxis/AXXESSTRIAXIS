@@ -37,6 +37,15 @@ Linked issue: `AXX-___` or `N/A`
 - [ ] `pnpm run test`
 - [ ] `pnpm run build`
 
+## Practice Standards (`CLAUDE.md`, "Paxel 9.5 Practice Standards")
+
+- [ ] Acceptance criteria were stated before the work began, and are met
+- [ ] Bug fix: a regression test fails before the fix and passes after it (or the reason none is possible is given)
+- [ ] Every error hit while making this change is fixed, or recorded with an ID and owner
+- [ ] Deploy-facing: an independent live check against the deployed SHA is recorded (not only a green run)
+- [ ] Any gate bypassed (`--skip-checks`, `--no-verify`, an override): the filled `docs/readiness/PRODUCTION_DEPLOY_EXCEPTION_POLICY.md` template is linked, listing the checks that passed, what is unverified, and the deciding live check
+- [ ] Each decision or product insight has an Outcome, or `Pending, review by <date>` in `docs/readiness/DECISION_OUTCOME_LEDGER.md`
+
 ## Evidence
 
 See `docs/readiness/EVIDENCE_INDEX.md`, `docs/readiness/CLOSEOUT_TEMPLATE.md`.
