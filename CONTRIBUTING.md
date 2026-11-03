@@ -69,6 +69,20 @@ Pull requests should include:
 - Notes on RBAC, tenant, environment, or migration impact.
 - Confirmation that required checks passed locally.
 
+## Practice Standards
+
+Contributors and AI agents follow the standing rules in `CLAUDE.md`, including the "Paxel 9.5 Practice
+Standards" (summary in `docs/readiness/GOVERNANCE_RULES.md`):
+
+- State acceptance criteria before starting, and plan first.
+- Start a bug fix with a regression test that fails.
+- Close every error you hit, or record it with an ID and owner.
+- When retrying, say what failed, what you think caused it, and what success looks like.
+- Do not call a deploy done until a live check against the deployed SHA is recorded.
+- Record an outcome, or a dated review, for each decision.
+- If a gate is ever bypassed, fill in `docs/readiness/PRODUCTION_DEPLOY_EXCEPTION_POLICY.md` with the checks that
+  passed, what is unverified, and the live check that decides the deploy is done.
+
 ## Security-sensitive Changes
 
 Do not include real credentials, tenant data, production exports, API keys, or private certificates in commits. Use `.env.local` for local secrets and managed deployment secrets in hosted environments.

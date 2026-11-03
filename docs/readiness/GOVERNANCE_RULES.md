@@ -38,6 +38,20 @@ is failing or unavailable.
 - **Production Gate Bypass** (five required elements before any bypass) -- `CLAUDE.md`, under
   "Production Gate Bypass -- Standing Rule"; fillable template at
   `docs/readiness/PRODUCTION_DEPLOY_EXCEPTION_POLICY.md`
+- **Paxel 9.5 Practice Standards** (added 2026-11-01) -- `CLAUDE.md`, under "Paxel 9.5 Practice Standards --
+  Standing Rule"; full plan, targets and measures at
+  `docs/readiness/PAXEL_REPORT_28_BEHAVIORAL_ANALYSIS_2026_11_01.md`. In short:
+  - close every error before a session ends (fixed and re-run, or recorded with an ID and owner);
+  - no deploy is done without an independent live check recorded in the closeout;
+  - bug fixes start with a regression test that fails first;
+  - no bare retries: say what failed, the hypothesis, and the success check;
+  - every prompt states acceptance criteria;
+  - every decision and product insight gets an Outcome or `Pending, review by <date>` (at most 14 days),
+    closed in a weekly pass;
+  - plan-first in at least 95% of build sessions;
+  - each repository's work runs in its own checkout; parallel agents get their own worktree, brief and PR;
+  - every gate bypass closeout includes the filled `docs/readiness/PRODUCTION_DEPLOY_EXCEPTION_POLICY.md`
+    template (targeted checks passed, what is unverified, and the deciding live check), added after Report #29.
 
 ## Commit trailer convention (going forward, not retrofitted)
 

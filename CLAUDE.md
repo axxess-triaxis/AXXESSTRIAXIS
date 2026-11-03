@@ -27,6 +27,11 @@ one-page version of this whole section lives at `docs/readiness/GOVERNANCE_RULES
 that connect an issue to its plan/commits/PR/tests/deploy/closeout live at
 `docs/readiness/EVIDENCE_INDEX.md` and `docs/readiness/DECISION_OUTCOME_LEDGER.md`.
 
+Added 2026-11-01: every session also follows the **Paxel 9.5 Practice Standards** below -- close every error,
+live-check every deploy, regression test first, no bare retries, acceptance criteria up front, an outcome (or a
+dated review) for every decision, plan-first in at least 95% of build sessions, each repository's work in
+its own checkout, and a filled exception template for every gate bypass.
+
 ### Mandatory Plan-First Sessions -- Standing Rule
 
 Every session in this repository must start in Plan Mode automatically -- no separate prompt or slash command from the founder should be required to trigger it. This is enforced at the harness level via `.claude/settings.json` (`permissions.defaultMode: "plan"`), not left to a memory/instruction that could be forgotten or skipped under time pressure: a session opening in this repo starts gated behind an approved plan before any file edit or command executes.
@@ -53,6 +58,22 @@ Follow-up:
 This is lighter-weight than, and distinct from, the closeout `*_CLOSEOUT_*.md` documents (which cover a shipped unit of work) -- it applies to any session with a major call in it, whether or not that session shipped a completed feature.
 
 This directly closes a growth area named in external session analysis (Paxel Report #14, `docs/readiness/PAXEL_REPORT_14_BEHAVIORAL_ANALYSIS_2026_08_10.md`): of 98 high-value decisions detected across this repository's session history, only 9 were recorded with a verified positive outcome (strategic redirects 8/61, technical catches 0/14, product insights 1/23). Per the founder's own framing when adopting this rule: "AXXESS became more complex, but Paxel's observable closure signals did not scale with the complexity... the correction is process, not identity" -- this is not read as a capability gap, but as an evidence-trail gap, the same category of fix as the Plan-First rule above.
+
+### Paxel 9.5 Practice Standards -- Standing Rule
+
+Adopted 2026-11-01 from Paxel Report #28 (`docs/readiness/PAXEL_REPORT_28_BEHAVIORAL_ANALYSIS_2026_11_01.md`), which found outcomes recorded for only 8 of 19 option choices and 1 of 21 product insights, 0.59 unresolved errors per planned session, a deploy record closed at "ready" without a live check, and 21 bare "Try again" prompts. The target is 9.5 on each of Paxel's five axes. That is a stretch goal on a scorer that is not public: these rules improve real practice and must never be used to game it -- no fabricated outcomes, padded sessions, or backfilled history.
+
+1. **Error closure.** No session ends with an unexplained error. Each failed test, command, build, or runtime error is fixed and re-run, or recorded with an ID and owner in the closeout or `docs/readiness/ACTIONABLES_READINESS_MATRIX.md`. "Pre-existing" needs a citation.
+2. **Live check before "done".** A green workflow or a Vercel "ready" is not done. The closeout records an independent live check (URL, status, timestamp) against the deployed SHA; if that needs a credentialed console, hand it to the founder and leave the status not verified.
+3. **Regression test first.** A bug fix starts with a test that reproduces the bug and fails; where none is possible, the closeout says why.
+4. **No bare retries.** A retry says what failed, the hypothesis, and the success check. An agent given a bare "try again" or "check now" restates the failure and its hypothesis before acting.
+5. **Acceptance criteria up front.** Every session or sprint prompt states what done looks like, in checkable terms.
+6. **Outcome closure.** Every Decision Ledger entry and product insight gets an Outcome, or `Pending, review by <date>` at most 14 days out. A weekly pass in `docs/readiness/DECISION_OUTCOME_LEDGER.md` closes or re-dates Pending rows with the observed result, never an inferred one.
+7. **Plan-first in at least 95% of build sessions**, under the Mandatory Plan-First rule above; exceptions are still declared.
+8. **Each repository's work in its own checkout**, so Paxel attributes sessions and commits correctly; parallel agents each get their own worktree, a written brief with acceptance criteria, and their own PR.
+9. **Bypass evidence** (added after Report #29, which found production deploys made with `--skip-checks` and no record of what had been checked). Every gate bypass closeout includes the filled `docs/readiness/PRODUCTION_DEPLOY_EXCEPTION_POLICY.md` template: the targeted checks that passed (raw output), what remains unverified, and the live check that decides whether the deploy is done. The deploy is not done until that live check passes. This adds to the Production Gate Bypass rule below and does not relax it.
+
+Progress is measured by a monthly Paxel rerun, logged as a new `PAXEL_REPORT_<n>_BEHAVIORAL_ANALYSIS_<date>.md` against the signals in Report #28's plan, including a comparison of unresolved errors in planned and unplanned work of similar size. The same rules are mirrored, as pointers, in `docs/readiness/GOVERNANCE_RULES.md`, `docs/readiness/TEST_GOVERNANCE.md`, `docs/readiness/CLOSEOUT_TEMPLATE.md`, `docs/readiness/DECISION_OUTCOME_LEDGER.md`, `.github/PULL_REQUEST_TEMPLATE.md`, and `CONTRIBUTING.md`; if a rule changes, change it here first.
 
 ## The Evidence Chain -- Standing Rule
 

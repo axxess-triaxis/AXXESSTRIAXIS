@@ -41,6 +41,17 @@ Deploy evidence (if applicable):
   - Status:
   - Timestamp:
 
+Acceptance criteria (as stated before the work began):
+Regression test (bug fixes: the test that failed before the fix, or why none is possible):
+
+Errors hit this session (each fixed and re-run, or recorded with an ID and owner):
+- Error:
+  Resolution: fixed (re-run result) / recorded as <ID>, owner <name>
+
+Decision outcomes (each decision or product insight from this work):
+- Decision:
+  Outcome: <observed result> / Pending, review by <date, at most 14 days out>
+
 Final status: (use exactly one value from docs/readiness/STATUS_TAXONOMY.md)
 Remaining risk:
 Follow-up issue IDs:
@@ -48,6 +59,10 @@ Supersedes:
 Superseded by:
 Reopened by:
 ```
+
+The acceptance-criteria, regression-test, errors and decision-outcome fields were added 2026-11-01 under
+`CLAUDE.md`'s "Paxel 9.5 Practice Standards -- Standing Rule". A deploy closeout is not complete with the
+"Live endpoint checks" field empty: a green workflow or a Vercel "ready" does not fill it.
 
 ## Optional machine-readable header
 
