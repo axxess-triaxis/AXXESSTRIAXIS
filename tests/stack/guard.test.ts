@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { assertStaging, loadStackConfig, type StackConfig } from "./guard";
+import {
+  assertStaging,
+  assertStagingBundle,
+  loadStackConfig,
+  PRODUCTION_SUPABASE_REF,
+  STAGING_SUPABASE_REF,
+  type StackConfig,
+} from "./guard";
 
 const staging: StackConfig = {
   axxessUrl: "https://staging.triaxisventures.com",
@@ -47,5 +54,20 @@ describe("loadStackConfig", () => {
         STACK_OMNIDAMUS_SMS_TOPIC_ARN: staging.omnidamusSmsTopicArn,
       }),
     ).toThrow(/AXXESS host is landing/);
+  });
+});
+
+describe("assertStagingBundle", () => {
+  it("accepts code that points at the staging Supabase project", () => {
+    expect(() => assertStagingBundle(["other", `https://${STAGING_SUPABASE_REF}.supabase.co`])).not.toThrow();
+  });
+
+  it("refuses code that points at the production Supabase project", () => {
+    const scripts = [`https://${STAGING_SUPABASE_REF}.supabase.co`, `https://${PRODUCTION_SUPABASE_REF}.supabase.co`];
+    expect(() => assertStagingBundle(scripts)).toThrow(/production Supabase project/);
+  });
+
+  it("refuses code that names neither project, such as a login page", () => {
+    expect(() => assertStagingBundle(["<html>Log in to Vercel</html>"])).toThrow(/does not point at the staging/);
   });
 });

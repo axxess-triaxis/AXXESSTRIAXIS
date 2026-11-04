@@ -50,3 +50,17 @@ export function loadStackConfig(env: Record<string, string | undefined> = proces
   assertStaging(config);
   return config;
 }
+
+// The address alone is not enough: a domain connected to Production answers on the staging host
+// while its code points at the production database.
+export const STAGING_SUPABASE_REF = "qpbeoslikcosfytwuguf";
+export const PRODUCTION_SUPABASE_REF = "vnliomnfabaicvvvfwia";
+
+export function assertStagingBundle(scripts: string[]): void {
+  if (scripts.some((script) => script.includes(PRODUCTION_SUPABASE_REF))) {
+    throw new Error("Refusing to run outside staging: the site's code points at the production Supabase project");
+  }
+  if (!scripts.some((script) => script.includes(STAGING_SUPABASE_REF))) {
+    throw new Error("Refusing to run outside staging: the site's code does not point at the staging Supabase project");
+  }
+}

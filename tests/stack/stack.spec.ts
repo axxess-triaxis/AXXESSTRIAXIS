@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { expect, test, type Page } from "@playwright/test";
 import { loginAs, seededUsers } from "../e2e/helpers";
-import { loadStackConfig } from "./guard";
+import { assertStagingBundle, loadStackConfig } from "./guard";
 
 // Triggers each product through its real entry point, then checks the result in the AXXESS UI.
 // Uses the AWS CLI so the app's own dependencies do not grow for a staging-only test.
@@ -64,8 +64,12 @@ async function countTasksMentioning(page: Page, marker: string): Promise<number>
   await expect(rows.first()).toBeVisible({ timeout: 30_000 });
   let found = 0;
   for (let index = 0; index < (await rows.count()); index += 1) {
+    const title = (await rows.nth(index).locator("span").first().textContent())?.trim() ?? "";
     await rows.nth(index).click();
-    if (await page.getByText(marker).first().isVisible().catch(() => false)) found += 1;
+    // Wait for this row's details, then check only this task. A marker in another row's title must not count.
+    await expect(page.getByRole("heading", { level: 3, name: title, exact: true })).toBeVisible();
+    const inDescription = await page.locator("p.leading-relaxed").filter({ hasText: marker }).count();
+    if (title.includes(marker) || inDescription > 0) found += 1;
   }
   return found;
 }
@@ -104,9 +108,23 @@ function leadEnvelope(id: string, marker: string, overrides: object = {}) {
   };
 }
 
+// Sent only to the staging site: as a browser-wide header it would also reach Supabase, whose CORS rules reject it.
+const bypassHeaders: Record<string, string> = process.env.VERCEL_AUTOMATION_BYPASS_SECRET
+  ? { "x-vercel-protection-bypass": process.env.VERCEL_AUTOMATION_BYPASS_SECRET, "x-vercel-set-bypass-cookie": "true" }
+  : {};
+
 test.describe.configure({ mode: "serial" });
 
+test.beforeAll(async ({ request }) => {
+  const html = await (await request.get("/auth", { headers: bypassHeaders })).text();
+  const paths = [...new Set(html.match(/\/_next\/static\/[^"\\]+\.js/g) ?? [])];
+  assertStagingBundle(await Promise.all(paths.map(async (path) => (await request.get(path, { headers: bypassHeaders })).text())));
+});
+
 test.beforeEach(async ({ page }) => {
+  // The "What's New" popup can open at any point and would otherwise block clicks on the task list.
+  await page.addLocatorHandler(page.getByRole("button", { name: "Got it" }), (button) => button.click());
+  await page.context().request.get("/auth", { headers: bypassHeaders });
   await loginAs(page, seededUsers.orgAdminAlpha);
 });
 
@@ -120,8 +138,8 @@ test("a Callismatic lead becomes one AXXESS task", async ({ page }) => {
   );
   expect(result.error).toBeNull();
   expect(result.callback_result).toBeNull();
-  expect(result.triage?.category).toMatch(/lead|important/);
-  expect(result.triage?.needs_decision).toBe(true);
+  // Every lead makes a task whatever needs_decision says, so only the category is checked.
+  expect(result.triage?.category).toBe("lead");
   await expectExactlyOneTask(page, `sms:${messageId}`);
 });
 
@@ -132,6 +150,9 @@ test("a completed Omnidamus conversation becomes one task, and no real message i
   const opened = invokeLambda(topicRegion, config.omnidamusFunction, {
     action: "start_conversation",
     phone,
+    // The agent only closes once an email is on file. This domain is reserved and cannot receive mail,
+    // and staging captures outbound email rather than sending it.
+    email: "stack-test@example.invalid",
     notification: "Thanks for your interest. When would you like your demo?",
     context: `Stack test ${marker}: book a demo time, then close the conversation.`,
   });
