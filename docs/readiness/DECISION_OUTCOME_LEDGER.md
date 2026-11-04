@@ -61,3 +61,9 @@ date) rather than this ledger asserting them from the founder's paraphrase alone
 From 2026-11-01, under rule 6 of that standard, a new row's Outcome is either the observed result or
 `Pending, review by <date>` at most 14 days out, and a weekly pass closes or re-dates Pending rows.
 Existing rows are not rewritten.
+
+## Stack E2E on staging (2026-11-04)
+
+| Decision | Date | Session/tool | Issue ID | Why | Outcome | Commit/PR | Verification | Closeout |
+|---|---|---|---|---|---|---|---|---|
+| Every Callismatic lead becomes an AXXESS task, whatever needs_decision says | 2026-11-04 | Founder decision, executed by Claude Code | #452 | A clear buyer was marked as not needing a person in 20 of 23 tries, with no error | Working on staging. Pending on production, review by 2026-11-18 | STILL#7, STILL#8 (`f4e6dfe`) | 70 STILL tests, AWS pattern test, 3 clean runs, one deliberate failure | `docs/readiness/STACK_E2E_STAGING_CLOSEOUT_2026_11_04.md` |

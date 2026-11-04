@@ -5,7 +5,6 @@ import { loadStackConfig } from "./tests/stack/guard";
 // the config throws unless every target is a staging resource. Kept apart from
 // playwright.config.ts so normal CI runs never pick it up.
 const config = loadStackConfig();
-const bypass = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
 
 export default defineConfig({
   testDir: "./tests/stack",
@@ -20,7 +19,6 @@ export default defineConfig({
     baseURL: config.axxessUrl,
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
-    extraHTTPHeaders: bypass ? { "x-vercel-protection-bypass": bypass, "x-vercel-set-bypass-cookie": "true" } : undefined,
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
 });
