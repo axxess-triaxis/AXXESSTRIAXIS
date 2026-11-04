@@ -275,8 +275,8 @@ importers:
         specifier: 1.62.0
         version: 1.62.0
       '@rollup/rollup-win32-x64-msvc':
-        specifier: 4.64.10
-        version: 4.64.10
+        specifier: 4.66.0
+        version: 4.66.0
       '@tailwindcss/postcss':
         specifier: ^4.1.12
         version: 4.3.3
@@ -1623,6 +1623,14 @@ packages:
 
   '@expo/require-utils@58.0.4':
     resolution: {integrity: sha512-DvjS5NCitXYcad2Woe1EMHJKcbhTbE77HX0BgOQGL2LFHE3q2H0n8kCWDPBOCVJ63Drap3c35nwoJwF5TQL7Tw==}
+    peerDependencies:
+      typescript: ^5.0.0 || ^5.0.0-0 || ^6.0.0 || ^7.0.0
+    peerDependenciesMeta:
+      typescript:
+        optional: true
+
+  '@expo/require-utils@58.0.5':
+    resolution: {integrity: sha512-14dGubYUBmJjK9aqVSGnwSDs9uaxfzvtqJugtMCEWyuTa/eIvToUbzUwpKCSek6S/hYSEYcgds23vDJhXSBpbQ==}
     peerDependencies:
       typescript: ^5.0.0 || ^5.0.0-0 || ^6.0.0 || ^7.0.0
     peerDependenciesMeta:
@@ -3724,8 +3732,8 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@rollup/rollup-win32-x64-msvc@4.64.10':
-    resolution: {integrity: sha512-vrvuasIpm/xf+BpZbzgirku0WnrQZMAc+H2Ai26jzqBxYEmQQE4DdJb7h8erkJMfRRipx0ma2Cty8jJwUm9ocQ==}
+  '@rollup/rollup-win32-x64-msvc@4.66.0':
+    resolution: {integrity: sha512-xA+neBh1bqkqaS3b48T2UHZnDsTIpb9B0h+TdBzynjF/ymCpYndhfY10RqW0qSKB1HqqQA83mINVhAdwA+mETg==}
     cpu: [x64]
     os: [win32]
 
@@ -5032,6 +5040,11 @@ packages:
 
   baseline-browser-mapping@2.11.33:
     resolution: {integrity: sha512-yiVKDX+qCMRKBE084lXvq9EcwFUhKZ2nU8TK1EQQuOgPNR/lmbGxXOeDdlGUqC2Zz11Cs9rk1d/8NfgBmlkt0w==}
+    engines: {node: '>=6.0.0'}
+    hasBin: true
+
+  baseline-browser-mapping@2.11.34:
+    resolution: {integrity: sha512-Aqr8mA1kIvyJ3UY5YAY7ib8LSo1DmDMbMnVqGPtsKW1LxaFQFwn9Eb3yvq2fUKJsRvaXjnAV7R5osqETapzNiA==}
     engines: {node: '>=6.0.0'}
     hasBin: true
 
@@ -10538,6 +10551,16 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
+  '@expo/require-utils@58.0.5(typescript@6.0.3)':
+    dependencies:
+      '@babel/code-frame': 7.29.7
+      '@babel/core': 7.29.7
+      '@babel/plugin-transform-modules-commonjs': 7.29.7(@babel/core@7.29.7)
+    optionalDependencies:
+      typescript: 6.0.3
+    transitivePeerDependencies:
+      - supports-color
+
   '@expo/router-server@58.0.16(expo-constants@58.0.13)(expo-font@58.0.9(expo@58.0.17)(react-native@0.87.1(@babel/core@7.29.7)(@types/react@19.2.17)(react@19.3.1))(react@19.3.1))(expo-router@6.0.24)(expo-server@58.0.5)(expo@58.0.17)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)':
     dependencies:
       debug: 4.4.3
@@ -12417,7 +12440,7 @@ snapshots:
   '@rollup/rollup-win32-x64-msvc@4.63.1':
     optional: true
 
-  '@rollup/rollup-win32-x64-msvc@4.64.10': {}
+  '@rollup/rollup-win32-x64-msvc@4.66.0': {}
 
   '@rtsao/scc@1.1.0': {}
 
@@ -13888,6 +13911,8 @@ snapshots:
 
   baseline-browser-mapping@2.11.33: {}
 
+  baseline-browser-mapping@2.11.34: {}
+
   basic-ftp@5.3.1: {}
 
   bidi-js@1.1.0:
@@ -13937,7 +13962,7 @@ snapshots:
 
   browserslist@4.29.4:
     dependencies:
-      baseline-browser-mapping: 2.11.33
+      baseline-browser-mapping: 2.11.34
       caniuse-lite: 1.0.30001806
       electron-to-chromium: 1.5.396
       node-releases: 2.0.51
@@ -14925,7 +14950,7 @@ snapshots:
   expo-constants@58.0.13(expo@58.0.17)(react-native@0.87.1(@babel/core@7.29.7)(@types/react@19.2.17)(react@19.3.1))(typescript@6.0.3):
     dependencies:
       '@expo/env': 2.5.3
-      '@expo/require-utils': 58.0.4(typescript@6.0.3)
+      '@expo/require-utils': 58.0.5(typescript@6.0.3)
       expo: 58.0.17(@babel/core@7.29.7)(@expo/dom-webview@58.0.2)(expo-router@6.0.24)(react-dom@19.3.1(react@19.3.1))(react-native@0.87.1(@babel/core@7.29.7)(@types/react@19.2.17)(react@19.3.1))(react@19.3.1)(typescript@6.0.3)
       react-native: 0.87.1(@babel/core@7.29.7)(@types/react@19.2.17)(react@19.3.1)
     transitivePeerDependencies:
