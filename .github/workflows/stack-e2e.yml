@@ -1,0 +1,53 @@
+name: Stack E2E (staging)
+
+# Cross-product end-to-end test: AXXESS, Callismatic, Omnidamus, STILL. Manual only, against
+# staging only (tests/stack/guard.ts refuses anything else). No schedule until it has proven stable.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: stack-e2e
+  cancel-in-progress: false
+
+jobs:
+  stack-e2e:
+    runs-on: ubuntu-latest
+    environment: staging
+    timeout-minutes: 45
+    env:
+      STACK_AXXESS_URL: ${{ vars.STACK_AXXESS_URL }}
+      STACK_BUS_ARN: ${{ vars.STACK_BUS_ARN }}
+      STACK_ADAPTER_FAILURE_QUEUE_URL: ${{ vars.STACK_ADAPTER_FAILURE_QUEUE_URL }}
+      STACK_CALLISMATIC_FUNCTION: ${{ vars.STACK_CALLISMATIC_FUNCTION }}
+      STACK_OMNIDAMUS_FUNCTION: ${{ vars.STACK_OMNIDAMUS_FUNCTION }}
+      STACK_OMNIDAMUS_SMS_TOPIC_ARN: ${{ vars.STACK_OMNIDAMUS_SMS_TOPIC_ARN }}
+      STACK_CALLISMATIC_ADMIN_KEY: ${{ secrets.STACK_CALLISMATIC_ADMIN_KEY }}
+      VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+      E2E_ORG_ADMIN_ALPHA: ${{ vars.E2E_ORG_ADMIN_ALPHA }}
+      E2E_AXXESS_PASSWORD: ${{ secrets.E2E_AXXESS_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 11.7.0
+          run_install: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.STACK_AWS_ROLE_ARN }}
+          aws-region: us-east-1
+      - run: pnpm exec playwright test --config playwright.stack.config.ts
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: playwright-report-stack
+          path: playwright-report-stack
