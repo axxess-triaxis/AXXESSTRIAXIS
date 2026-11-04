@@ -181,8 +181,8 @@ importers:
         specifier: ^3.10.2
         version: 3.10.2
       lucide-react:
-        specifier: 1.59.0
-        version: 1.59.0(@types/react@19.2.17)(react@19.3.1)
+        specifier: 1.63.0
+        version: 1.63.0(@types/react@19.2.17)(react@19.3.1)
       mammoth:
         specifier: ^1.12.3
         version: 1.12.3
@@ -1623,6 +1623,14 @@ packages:
 
   '@expo/require-utils@58.0.4':
     resolution: {integrity: sha512-DvjS5NCitXYcad2Woe1EMHJKcbhTbE77HX0BgOQGL2LFHE3q2H0n8kCWDPBOCVJ63Drap3c35nwoJwF5TQL7Tw==}
+    peerDependencies:
+      typescript: ^5.0.0 || ^5.0.0-0 || ^6.0.0 || ^7.0.0
+    peerDependenciesMeta:
+      typescript:
+        optional: true
+
+  '@expo/require-utils@58.0.5':
+    resolution: {integrity: sha512-14dGubYUBmJjK9aqVSGnwSDs9uaxfzvtqJugtMCEWyuTa/eIvToUbzUwpKCSek6S/hYSEYcgds23vDJhXSBpbQ==}
     peerDependencies:
       typescript: ^5.0.0 || ^5.0.0-0 || ^6.0.0 || ^7.0.0
     peerDependenciesMeta:
@@ -5035,6 +5043,11 @@ packages:
     engines: {node: '>=6.0.0'}
     hasBin: true
 
+  baseline-browser-mapping@2.11.34:
+    resolution: {integrity: sha512-Aqr8mA1kIvyJ3UY5YAY7ib8LSo1DmDMbMnVqGPtsKW1LxaFQFwn9Eb3yvq2fUKJsRvaXjnAV7R5osqETapzNiA==}
+    engines: {node: '>=6.0.0'}
+    hasBin: true
+
   basic-ftp@5.3.1:
     resolution: {integrity: sha512-bopVNp6ugyA150DDuZfPFdt1KZ5a94ZDiwX4hMgZDzF+GttD80lEy8kj98kbyhLXnPvhtIo93mdnLIjpCAeeOw==}
     engines: {node: '>=10.0.0'}
@@ -6958,8 +6971,8 @@ packages:
     resolution: {integrity: sha512-jumlc0BIUrS3qJGgIkWZsyfAM7NCWiBcCDhnd+3NNM5KbBmLTgHVfWBcg6W+rLUsIpzpERPsvwUP7CckAQSOoA==}
     engines: {node: '>=12'}
 
-  lucide-react@1.59.0:
-    resolution: {integrity: sha512-5qgMyyCPU6OvnKpLS2t693+ZtiqA8oaSweWoUows0BLFKFf6V75m4+CptpmohZHpD5IuOVIBXHBBiv2vpLJmtw==}
+  lucide-react@1.63.0:
+    resolution: {integrity: sha512-GkBfQG+FUJ41x6y3/lNXiOziVU0Rcqqq0TCzhHS8avsFXHZmOdmfBqsVTvHSaVmbI+wbdGkxHRmhYWhD3N4/yA==}
     peerDependencies:
       '@types/react': 19.2.17
       react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0
@@ -10538,6 +10551,16 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
+  '@expo/require-utils@58.0.5(typescript@6.0.3)':
+    dependencies:
+      '@babel/code-frame': 7.29.7
+      '@babel/core': 7.29.7
+      '@babel/plugin-transform-modules-commonjs': 7.29.7(@babel/core@7.29.7)
+    optionalDependencies:
+      typescript: 6.0.3
+    transitivePeerDependencies:
+      - supports-color
+
   '@expo/router-server@58.0.16(expo-constants@58.0.13)(expo-font@58.0.9(expo@58.0.17)(react-native@0.87.1(@babel/core@7.29.7)(@types/react@19.2.17)(react@19.3.1))(react@19.3.1))(expo-router@6.0.24)(expo-server@58.0.5)(expo@58.0.17)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)':
     dependencies:
       debug: 4.4.3
@@ -13888,6 +13911,8 @@ snapshots:
 
   baseline-browser-mapping@2.11.33: {}
 
+  baseline-browser-mapping@2.11.34: {}
+
   basic-ftp@5.3.1: {}
 
   bidi-js@1.1.0:
@@ -13937,7 +13962,7 @@ snapshots:
 
   browserslist@4.29.4:
     dependencies:
-      baseline-browser-mapping: 2.11.33
+      baseline-browser-mapping: 2.11.34
       caniuse-lite: 1.0.30001806
       electron-to-chromium: 1.5.396
       node-releases: 2.0.51
@@ -14925,7 +14950,7 @@ snapshots:
   expo-constants@58.0.13(expo@58.0.17)(react-native@0.87.1(@babel/core@7.29.7)(@types/react@19.2.17)(react@19.3.1))(typescript@6.0.3):
     dependencies:
       '@expo/env': 2.5.3
-      '@expo/require-utils': 58.0.4(typescript@6.0.3)
+      '@expo/require-utils': 58.0.5(typescript@6.0.3)
       expo: 58.0.17(@babel/core@7.29.7)(@expo/dom-webview@58.0.2)(expo-router@6.0.24)(react-dom@19.3.1(react@19.3.1))(react-native@0.87.1(@babel/core@7.29.7)(@types/react@19.2.17)(react@19.3.1))(react@19.3.1)(typescript@6.0.3)
       react-native: 0.87.1(@babel/core@7.29.7)(@types/react@19.2.17)(react@19.3.1)
     transitivePeerDependencies:
@@ -15982,7 +16007,7 @@ snapshots:
 
   lru-cache@7.18.3: {}
 
-  lucide-react@1.59.0(@types/react@19.2.17)(react@19.3.1):
+  lucide-react@1.63.0(@types/react@19.2.17)(react@19.3.1):
     dependencies:
       react: 19.3.1
     optionalDependencies:
