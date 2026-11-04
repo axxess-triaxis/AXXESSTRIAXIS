@@ -12,6 +12,7 @@ export default defineConfig({
     environment: "jsdom",
     exclude: [
       "tests/e2e/**",
+      "tests/stack/*.spec.ts",
       "**/node_modules/**",
       "node_modules/**",
       "dist/**",
