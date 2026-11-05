@@ -6,6 +6,7 @@ import { ChevronLeft, Plug } from "lucide-react";
 import { useEffect, useState } from "react";
 import { InlineToast } from "../../../components/forms/InlineToast";
 import { liteConnectorLabels, liteConnectorProviderIds } from "../liteIntegrationsConfig";
+import { isDemoModeForcedByEnv } from "../../../demo/demoMode";
 
 type ConnectionState = Record<string, boolean>;
 
@@ -36,6 +37,10 @@ export function LiteIntegrationsSection() {
   }, []);
 
   useEffect(() => {
+    if (isDemoModeForcedByEnv()) {
+      setLoading(false);
+      return;
+    }
     const query = new URLSearchParams();
     for (const id of liteConnectorProviderIds) query.append("provider", id);
     fetch(`/api/connectors/status?${query.toString()}`, { credentials: "include" })

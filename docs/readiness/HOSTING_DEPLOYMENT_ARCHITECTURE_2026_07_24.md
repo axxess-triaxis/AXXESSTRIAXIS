@@ -2,13 +2,30 @@
 
 This document is the authoritative record of how AXXESS TRIaxis is hosted, why it is structured this way, and exactly what is and isn't automated. Every claim below was checked directly against Vercel CLI output, deployment build logs, and live `curl` checks against the production URLs -- nothing here is inferred from intent alone. This document supersedes its own earlier draft from earlier the same day, which recorded an interim state (only two projects, no domains assigned, several open decisions) before the founder's final direction resolved those decisions.
 
+## Current State (checked 2026-11-04)
+
+The sections below are the dated record from July 2026. Where this section and an older one disagree, this section is correct.
+
+| Item | Current state | Source |
+|---|---|---|
+| Projects | Four, not three. `triaxis-product-lite-web` (`prj_NQOBzuj4wpO5UnlRB6L0xdO1nT6f`) serves `lite.triaxisventures.com` from the same repository | `.github/workflows/deploy-production.yml` header. Lite's settings were not read in this check |
+| Production branch | `main` on `triaxis-www-frontend-import` and `triaxis-product-investor-demo` | Vercel API `GET /v9/projects/{id}`, `link.productionBranch`. The other two projects were not read in this check |
+| Automatic production deploys | Every merge to `main` deploys twice: Vercel's Git integration builds it, and `deploy-production.yml` builds and deploys landing, then investor, then Lite from the CLI | Deployment `source` values `git` and `cli` in `GET /v6/deployments?target=production` |
+| Deploy order risk | The two paths are not coordinated, so an older commit can finish last and go live over a newer one. On 2026-11-04 the CLI build of `cd199de` replaced the Git build of `d393d8f` on both sites at 16:36 and 16:41 UTC. The `d393d8f` CLI run then completed successfully. The difference between those commits was tests, docs and CI config only | Same API, and `gh run list --workflow=deploy-production.yml` |
+| End-of-day check | `eod-investor-sync.yml` runs at 18:00 UTC (23:30 IST). If investor's commit differs from landing's, it redeploys investor after its gates pass | `.github/workflows/eod-investor-sync.yml`; `docs/readiness/INVESTOR_EOD_SYNC_CLOSEOUT_2026_10_29.md` |
+| Cron jobs | Three in `vercel.json`, enabled on both landing and investor. All three return `503` because neither project has `CRON_SECRET`, so none of them does its work | Unauthenticated `curl` to each `/api/cron/*` route on both hosts; variable names from the Vercel API |
+| Host awareness in `src/proxy.ts` | It does know these hosts: `dashboardRootRedirectHosts` names `landing.` and `investor.`, and the file also handles Lite hosts | `src/proxy.ts` |
+| `beta.triaxisventures.com` | Not marketing-only. Its bundle contains the production Supabase URL | Read-only bundle check by the parent session, 2026-11-04 |
+| Investor demo mode | Still forced, by founder decision on 2026-11-05 | `docs/readiness/INVESTOR_LANDING_PAR_CLOSEOUT_2026_11_05.md` |
+| Investor error reporting | Investor has `SENTRY_AUTH_TOKEN` only, so errors are not reported until the founder adds the DSN variables | Variable names from the Vercel API |
+
 ## Final Architecture
 
 Three fully isolated Vercel projects, **one shared GitHub repository**, three separate public entry points:
 
 | Role | Vercel project | Project ID | Public URL | Data mode |
 |---|---|---|---|---|
-| **Website** | `axxesstriaxis` | `prj_zTMRnOsfmUUxnzJkEUDUxNvoEOFt` | `https://www.triaxisventures.com` (+ `triaxisventures.com` apex, `beta.triaxisventures.com`, `axxesstriaxis.vercel.app`) | N/A -- marketing page only, no product data |
+| **Website** | `axxesstriaxis` | `prj_zTMRnOsfmUUxnzJkEUDUxNvoEOFt` | `https://www.triaxisventures.com` (+ `triaxisventures.com` apex, `beta.triaxisventures.com`, `axxesstriaxis.vercel.app`) | N/A -- marketing page only, no product data (out of date for `beta.`: see Current State) |
 | **Product** (Live Onboardable Beta) | `triaxis-www-frontend-import` | `prj_TKNsiB2hMIHUy8bqEmJVpAq4EiTT` | `https://landing.triaxisventures.com` | Real Supabase-backed auth and data. `NEXT_PUBLIC_AXXESS_DEMO_MODE` unset (production-safe default: real auth required, no demo persona ever shown) |
 | **Demo** (Investor Demo) | `triaxis-product-investor-demo` | `prj_DmQEa8CtZss0eTnZgGL4aZA6Y8gP` | `https://investor.triaxisventures.com` | Forced demo mode. `NEXT_PUBLIC_AXXESS_DEMO_MODE=true` set at the project level -- every request to this deployment renders the illustrative North East Health Mission demo tenant, unconditionally, with no toggle, no login, no localStorage/cookie state involved |
 
@@ -129,6 +146,8 @@ The Demo's dataset (`src/demo/demoDataset.ts`, plus `getDemoSocialAlerts()` in `
 
 **Practical consequence, stated precisely:** a push to the canonical branch already auto-builds all three projects (this part works, for all three, not just Product as previously documented) -- but none of those builds becomes live at `www.`/`landing.`/`investor.triaxisventures.com` without an explicit follow-up action: either (a) a manual `vercel deploy --prod` / `vercel promote` against each project after any future change (the mechanism used throughout this program to date), or (b) changing all three projects' Production Branch setting from `main` to `canonical/sprint-1-35-unified-gitlab`, which would make a single push update all three live sites automatically -- matching the founder's stated preference ("Better if we can install auto-sync between both product modes").
 
+**Superseded 2026-11-04:** all of this section predates `deploy-production.yml` and `eod-investor-sync.yml`. See Current State above.
+
 **Attempted 2026-07-25, conclusively ruled out via API:** the CLI's `vercel project update` does not expose a Production Branch flag (confirmed via `--help`). A direct `PATCH /v9/projects/{id}` with `{"link":{"productionBranch":"..."}}` was attempted using the already-authenticated CLI's own stored token and returned `400 Bad Request: "should NOT have additional property 'link'"`. Reading Vercel's own cached OpenAPI schema for this exact endpoint confirms why: `productionBranch` appears **only** inside response schemas (what `GET` returns), never as an allowed field in the `PATCH` request body's property list. This is not a CLI gap or a permission-classifier block -- Vercel's public API genuinely does not expose changing a project's Production Branch. It is dashboard-only: **Vercel Dashboard -> [project] -> Settings -> Git -> Production Branch**, required for all three projects (`axxesstriaxis`, `triaxis-www-frontend-import`, `triaxis-product-investor-demo`), each changed to `canonical/sprint-1-35-unified-gitlab`. Not yet applied as of this writing -- external/HITL-only, same category as the DNS fix above.
 
 **Mobile builds are a separate pipeline, not part of Vercel's auto-sync at all.** `apps/mobile-capacitor` (the Capacitor shell wrapping the same web kernel) and `apps/mobile` (the native Expo/React Native app, per `MONOREPO_ARCHITECTURE_AND_BUSINESS_MODEL.md` S2.2-2.3) are built via EAS (`eas build`) and Capacitor's own native tooling, triggered manually or via `.github/workflows/mobile-*.yml` GitHub Actions -- entirely independent of Vercel's deploy pipeline. A change merged to the canonical branch does not automatically produce a new mobile build; that remains a separate, explicit step (`pnpm run mobile:eas:build:android`/`:ios`, or the GitHub Actions mobile workflows), regardless of how the three Vercel web projects are configured. There is currently no mechanism, and none was requested, to auto-trigger a mobile build from a web deployment.
@@ -137,12 +156,14 @@ The Demo's dataset (`src/demo/demoDataset.ts`, plus `getDemoSocialAlerts()` in `
 
 | File | Purpose | Which deployment(s) it affects |
 |---|---|---|
-| `vercel.json` | `{"framework": "nextjs", "buildCommand": "pnpm run build", ...}` -- the canonical Vercel build configuration for the Next.js app at repo root, plus one cron job. | All three projects, since all three build from this same repo root with this same config. |
-| `src/proxy.ts` | Next.js Edge Runtime middleware. Handles apex/www/beta host redirects and the protected-route login gate. | All three projects identically -- it is part of the shared codebase. It does not (and, per the cloning approach above, does not need to) know about `investor.`/`landing.` at all; those are handled entirely by which Vercel project a request lands on, before this middleware ever runs. |
+| `vercel.json` | `{"framework": "nextjs", "buildCommand": "pnpm run build", ...}` -- the canonical Vercel build configuration for the Next.js app at repo root, plus three cron jobs (one when this was written). | All three projects, since all three build from this same repo root with this same config. |
+| `src/proxy.ts` | Next.js Edge Runtime middleware. Handles apex/www/beta host redirects and the protected-route login gate. | All three projects identically -- it is part of the shared codebase. Its root redirect does name `investor.` and `landing.` (see Landing Root Fix and Investor Root Fix above). Which data a request can reach is still decided by which Vercel project it lands on. |
 | `vite.config.ts`, `index.html`, `src/main.tsx` | A separate, parallel client-only build entry (`src/main.tsx` -> `src/app/App.tsx`) that produces the `dist/` bundle `apps/mobile-capacitor` packages into the iOS/Android app shell. Not used by any of the three Vercel projects -- all three run `next build`, none run `vite build`. | Mobile (Capacitor) only. |
 | `.vercel/project.json` (this working directory) | Links this local checkout to whichever Vercel project is currently active for CLI deploys. Defaults to, and must be restored to, `axxesstriaxis` after any temporary use for deploying to the other two projects (the mechanism used throughout this session via the `--project` flag or a temporary swap-and-restore). | Whichever project it's pointed at when `vercel deploy` runs. |
 | `.github/workflows/*` | GitHub Actions CI (typecheck/lint/test/build gates, security scanning, mobile validation) -- separate from Vercel's own deployment triggers. | Pre-merge checks only; does not deploy to Vercel or trigger mobile builds on its own beyond the dedicated `mobile-*.yml` workflows. |
 
 ## Known, Self-Resolving Reliability Note
+
+**Historical (2026-07-24).** Kept as a record; it no longer describes the current state.
 
 `axxesstriaxis`'s GitHub-triggered auto-deploy from `main` is currently failing at `pnpm install --frozen-lockfile`: a Dependabot Next.js bump (16.2.10 -> 16.2.11) trips pnpm's supply-chain "minimum release age" policy (rejects packages published within the last 7 days). This does not affect current production serving -- the manually-deployed CLI build remains live and correct on all three projects -- and requires no code change; it self-resolves once those packages age past the cutoff, expected around 2026-07-28. Left alone per founder direction (2026-07-24).

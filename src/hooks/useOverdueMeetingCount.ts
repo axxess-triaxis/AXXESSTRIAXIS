@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { isDemoModeForcedByEnv } from "../demo/demoMode";
 import type { TenantScope } from "../repositories/interfaces";
 import { getSharedMeetingsList } from "./meetingsListCache";
 
@@ -13,7 +14,7 @@ export function useOverdueMeetingCount(scope?: TenantScope, refreshToken = 0) {
   const [count, setCount] = useState<number | undefined>(undefined);
 
   useEffect(() => {
-    if (!scope?.organizationId) return;
+    if (!scope?.organizationId || isDemoModeForcedByEnv()) return;
     let mounted = true;
     getSharedMeetingsList(scope)
       .then((rows) => {

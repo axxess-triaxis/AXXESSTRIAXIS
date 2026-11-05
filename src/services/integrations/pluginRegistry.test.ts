@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getIntegrationHealth, getInfrastructureOnlyIntegrations, getPilotIntegrations, getProductivityPluginRegistry } from "./pluginRegistry";
+import { getDisplayedIntegrationHealth, getIntegrationHealth, getInfrastructureOnlyIntegrations, getPilotIntegrations, getProductivityPluginRegistry } from "./pluginRegistry";
 
 describe("productivity plugin registry", () => {
   it("lists enterprise productivity adapters without requiring credentials", () => {
@@ -36,5 +36,18 @@ describe("productivity plugin registry", () => {
     const infrastructureOnly = getInfrastructureOnlyIntegrations({} as unknown as NodeJS.ProcessEnv);
     expect(health.pilotEnabled).toBe(20);
     expect(infrastructureOnly.length).toBe(health.total - 20);
+  });
+
+  it("shows the registry's counts on a live deployment", () => {
+    const health = getIntegrationHealth({} as unknown as NodeJS.ProcessEnv);
+    expect(getDisplayedIntegrationHealth(health, false, [{ status: "connected" }])).toEqual(health);
+  });
+
+  it("counts the demo's own list, so connected and configured can't contradict each other", () => {
+    const health = getIntegrationHealth({} as unknown as NodeJS.ProcessEnv);
+    const displayed = getDisplayedIntegrationHealth(health, true, [{ status: "connected" }, { status: "connected" }, { status: "pending" }]);
+    expect(displayed.total).toBe(3);
+    expect(displayed.configured).toBe(2);
+    expect(displayed.webhookReady).toBe(health.webhookReady);
   });
 });
