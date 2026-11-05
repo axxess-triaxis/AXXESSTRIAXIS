@@ -109,7 +109,7 @@ Verification result (raw):
 - Build: PASS, `pnpm run build`
 - Supabase: PASS, `pnpm run supabase:verify`: 47 migrations, 114 tables, 114 RLS protected, one existing warning
 - Playwright, production build in demo mode: `23 passed`, `19 skipped`, 0 failed, full `tests/e2e` suite. The skips were not reviewed in this work.
-- Playwright, dev server, new spec only: `16 passed`, `2 failed`. Both stayed on the loading state for the full 90 seconds ("Project workflows", "Loading pending reviews..."), with no application error. CI runs Playwright on the dev server, so the PR's own run is the check that matters here. On this dev server, the 16 passes may not have fully hydrated, so the production-build run is the real evidence.
+- Playwright, dev server, new spec only, with analytics blocked by host: `18 passed`, 0 failed. See the second Playwright entry under Errors.
 - Local crawl, production build in demo mode, 80 static routes, browser in `Pacific/Auckland`: 0 failed requests, 0 page errors, 0 raw timestamps. `/documents` 1,519 elements and 172,528 characters of HTML (was 50,980 elements, 5.7 MB). `/knowledge` 1,340 elements and 142,986 characters (was 38,002 elements, 3.8 MB). This crawl was run before the final narrowing of the API skips, and the spec above was re-run after it.
 
 Deploy evidence: None yet. Not deployed.
@@ -122,7 +122,11 @@ Errors hit this session:
 - Error: skipping API calls on any demo flag broke "renders real events when the API returns them, regardless of Demo Mode" in `PilotConversionSection.test.tsx`.
   Resolution: fixed; the test exposed a real mistake, and the skip now uses `isDemoModeForcedByEnv()`.
 - Error: 5 Playwright failures on the first full run, against the dev server (3 in the new spec, plus `sprint13-readiness` and `visual-mobile-admin`).
-  Resolution: partly closed. The full suite passes on a production build with no failures. On this machine's dev server, 2 tests in the new spec still fail on a loading state, even with 90-second timeouts, and `sprint13-readiness` took 22.8 minutes. Slow dev compiles are the likely cause, not proven. Recorded as INVESTOR-LANDING-PAR-1, owner Claude Code: read the PR's Playwright run, and fix the spec if it fails there.
+  Resolution: the 3 in the new spec are closed by the entry below. `sprint13-readiness` and `visual-mobile-admin` passed on the later production build, and `sprint13-readiness` took 22.8 minutes on this machine's dev server. Slow dev compiles are the likely cause for those two, not proven. PR #453's CI run is the check on them.
+- Error: 2 tests in the new spec stayed on a loading state on the dev server, locally and in CI on `932f42d`, including CI retries. I first blamed slow compiles, and longer timeouts did not help, which ruled that out.
+  Resolution: fixed. The spec blocked analytics with `/posthog|mixpanel/`, which also matched dev server chunk URLs, so those pages never hydrated. It now matches the host only, and the new spec passes 18 of 18 on the dev server. Production chunk names are hashed, which is why production builds passed.
+- Error: the Lite boundary guard failed on `44a0888`, because a demo import was added to `LiteIntegrationsSection.tsx`.
+  Resolution: fixed in `932f42d` by restoring the file. `pnpm run lite:ci` passes: guard across 66 files, 95 of 95 Lite tests.
 - Error: Vitest `Failed to start threads worker` for `src/app/page.test.tsx`, on a 51-minute run while the machine was loaded.
   Resolution: file re-run alone and passed, 3 of 3. Same class as the worker issue in `docs/readiness/FAILED_OR_TIMED_OUT_CHECKS.md`.
 - Error: `git worktree add` with `MSYS_NO_PATHCONV=1` created the worktree under the wrong path.

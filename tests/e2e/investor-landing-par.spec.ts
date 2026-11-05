@@ -29,7 +29,8 @@ test.describe("Investor demo parity", () => {
   // This spec can also point at the live demo via PLAYWRIGHT_BASE_URL, so keep test traffic out of
   // product analytics.
   test.beforeEach(async ({ page }) => {
-    await page.route(/posthog|mixpanel/, (route) => route.abort());
+    // Match the host only: dev server chunk URLs can contain these words, and blocking those stops hydration.
+    await page.route(/^https?:\/\/[^/]*(posthog|mixpanel)\.com\//, (route) => route.abort());
   });
 
   for (const route of demoRoutes) {
