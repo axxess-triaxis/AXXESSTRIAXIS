@@ -1,6 +1,6 @@
 # Investor and Landing Parity: Closeout (2026-11-05)
 
-**Status: code ready, not deployed.** Nothing here has been committed, pushed or deployed yet, so the live sites do not have these fixes. The live re-check in "After merge" is still to do.
+**Status: PR open, not merged or deployed.** The live sites do not have these fixes yet. The live re-check in "After merge" is still to do.
 
 ## External signal
 
@@ -96,8 +96,8 @@ Issue ID: INVESTOR-LANDING-PAR
 Title: Bring investor to par with landing, keeping demo mode
 Origin plan: founder-approved in session on 2026-11-05; comparison table in the shared session notes, reproduced above
 Research artifact: the table above
-Implementation commit(s): Pending, founder confirmation needed
-PR: Pending, founder confirmation needed
+Implementation commit(s): `4a7b087`
+PR: [#453](https://github.com/axxess-triaxis/AXXESSTRIAXIS/pull/453)
 Branch: `fix/investor-landing-par`, from `origin/main` at `d393d8f`
 Files changed: see "What changed"; new test `tests/e2e/investor-landing-par.spec.ts`
 
@@ -135,7 +135,7 @@ Decision outcomes:
 - Decision: remove the backups link rather than build a page.
   Outcome: Pending, review by 2026-11-19.
 
-Final status: Implemented locally
+Final status: Code complete
 Remaining risk: times on the three changed panels now show UTC for live users. "Show more" means browser find on the page only covers rows already shown; the Knowledge Hub's own search and filters still cover all documents.
 Follow-up issue IDs: see below
 Supersedes: none
@@ -159,5 +159,5 @@ Architecture boundary: Investor stays a separate Vercel project with no database
 Product boundary: Investor shows illustrative data and never accepts real sign-in.
 Verification: See Closeout Evidence.
 Outcome: Pending, review by 2026-11-19.
-Follow-up: Founder confirmation to commit, push and merge; Vercel steps; live re-check; signed-in landing comparison.
+Follow-up: Founder confirmation to merge #453; Vercel steps; live re-check; signed-in landing comparison.
 ```
