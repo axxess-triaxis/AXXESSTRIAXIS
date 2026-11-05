@@ -41,6 +41,7 @@ Read-only, 2026-11-04. Both Vercel projects through the API, with environment va
 - **AI Governance.** It now shows the same pending item as the inbox, from one shared record (`src/demo/demoAiReviews.ts`). On the demo, the note says the data is illustrative and actions change nothing (`EnterpriseAdminPage.tsx`, `AdminActionsPanel.tsx`).
 - **Integrations.** On the demo, the adapter and configured counts come from the demo's own list (`getDisplayedIntegrationHealth` in `pluginRegistry.ts`). Live counts are unchanged.
 - **API calls.** Demo pages no longer call routes they can't use. The skip uses `isDemoModeForcedByEnv()`, so it only applies to a deployment built in demo mode. A live browser with a leftover demo flag behaves as before.
+- **Known exception to the API skip.** `/lite/settings/integrations` on investor still makes one failing call to `/api/connectors/status`. The Lite boundary guard forbids demo imports in Lite, so this file was restored rather than changed. The page handles the failure, and the guard matters more than one 401.
 - **Page weight.** `/documents` and `/knowledge` render 50 documents at a time, with a "Show more" button (`useVisibleRowCount.ts`). This applies to live tenants too.
 - **Backups link.** Removed rather than given a page, because `ADMIN_PANEL_WIRING_ROADMAP_2026_07_25.md` records that no backup table, service or route exists. A page would advertise a feature that isn't built.
 - **Hosting record.** `HOSTING_DEPLOYMENT_ARCHITECTURE_2026_07_24.md` gained a dated Current State section and corrected lines.
