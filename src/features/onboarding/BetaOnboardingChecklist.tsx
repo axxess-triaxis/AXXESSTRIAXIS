@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Card } from "../../components/ui/Card";
 import type { UserContext } from "../../security/rbac";
 import { useAnalytics } from "../../services/analytics";
+import { isDemoModeForcedByEnv } from "../../demo/demoMode";
 import {
   defaultOnboardingProgress,
   LocalOnboardingProgressRepository,
@@ -68,7 +69,7 @@ export function BetaOnboardingChecklist({ user, projectCount, documentCount = 0,
     setProgress((current) => {
       const nextValue = !current[id];
       const next = { ...current, [id]: nextValue };
-      if (nextValue) {
+      if (nextValue && !isDemoModeForcedByEnv()) {
         void fetch("/api/pilot-readiness-events", {
           method: "POST",
           credentials: "include",

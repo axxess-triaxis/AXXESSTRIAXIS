@@ -26,6 +26,7 @@ import { SelectField, TextAreaField, TextField } from "../../components/forms/Fo
 import { DataStateBadge, DemoDataNotice, ModuleHeader, TenantScopeBadge, WorkflowStepCard } from "../../components/enterprise";
 import { Card } from "../../components/ui/Card";
 import { isDemoModeEnabled } from "../../demo/demoMode";
+import { useVisibleRowCount } from "../../hooks/useVisibleRowCount";
 import type { Document, DocumentActivity, DocumentCategory, DocumentTag, DocumentVisibility, KnowledgeArticle } from "../../domain";
 import { ragIndexStages } from "../../lib/demo/demoDocuments";
 import { applicationServices } from "../../providers/serviceProvider";
@@ -261,6 +262,7 @@ export const KnowledgeHubSection = () => {
       ].some((value) => value?.toLowerCase().includes(normalized));
     });
   }, [activeTab, documents, query]);
+  const documentRows = useVisibleRowCount(filteredDocuments.length);
 
   const searchResults = useMemo(() => localDocumentSearch(documents, articles, query), [articles, documents, query]);
   const ingestionStatus = useMemo(() => {
@@ -610,7 +612,7 @@ export const KnowledgeHubSection = () => {
                 <span className="rounded-full bg-[#F2F3F5] px-2 py-0.5 font-mono text-[11px] text-[#5F6B73]">{filteredDocuments.length}</span>
               </div>
               <div className="grid grid-cols-1 gap-3 2xl:grid-cols-2">
-                {filteredDocuments.map((document) => {
+                {filteredDocuments.slice(0, documentRows.shown).map((document) => {
                   const badge = documentBadge(document);
                   return (
                     <Card key={document.id} className="p-4 transition-shadow hover:shadow-md">
@@ -646,6 +648,11 @@ export const KnowledgeHubSection = () => {
                   <EmptyState title="No documents found" message="Try another search or upload a document." />
                 )}
               </div>
+              {documentRows.remaining > 0 && (
+                <button type="button" onClick={documentRows.showMore} className="mt-3 w-full rounded-lg border border-[rgba(139,30,45,0.22)] bg-white px-3 py-2 text-xs font-semibold text-[#8B1E2D]">
+                  Show more ({documentRows.remaining} remaining)
+                </button>
+              )}
             </div>
           ) : null}
 

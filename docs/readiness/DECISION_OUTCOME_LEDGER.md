@@ -67,3 +67,10 @@ Existing rows are not rewritten.
 | Decision | Date | Session/tool | Issue ID | Why | Outcome | Commit/PR | Verification | Closeout |
 |---|---|---|---|---|---|---|---|---|
 | Every Callismatic lead becomes an AXXESS task, whatever needs_decision says | 2026-11-04 | Founder decision, executed by Claude Code | #452 | A clear buyer was marked as not needing a person in 20 of 23 tries, with no error | Working on staging. Pending on production, review by 2026-11-18 | STILL#7, STILL#8 (`f4e6dfe`) | 70 STILL tests, AWS pattern test, 3 clean runs, one deliberate failure | `docs/readiness/STACK_E2E_STAGING_CLOSEOUT_2026_11_04.md` |
+
+## Investor and landing parity (2026-11-05)
+
+| Decision | Date | Session/tool | Issue ID | Why | Outcome | Commit/PR | Verification | Closeout |
+|---|---|---|---|---|---|---|---|---|
+| Investor stays in forced demo mode; par means the same code and features, with demo data | 2026-11-05 | Founder decision, executed by Claude Code | INVESTOR-LANDING-PAR | Production data on a public, no-login site would be a major security and product change | Pending, review by 2026-11-19 | Pending, founder confirmation needed | See closeout | `docs/readiness/INVESTOR_LANDING_PAR_CLOSEOUT_2026_11_05.md` |
+| Remove the dead `/admin/backups` link rather than build a page | 2026-11-05 | Claude Code, reported to founder | INVESTOR-LANDING-PAR | The wiring roadmap records no backup table, service or route, so a page would advertise an unbuilt feature | Pending, review by 2026-11-19 | Pending, founder confirmation needed | See closeout | `docs/readiness/INVESTOR_LANDING_PAR_CLOSEOUT_2026_11_05.md` |

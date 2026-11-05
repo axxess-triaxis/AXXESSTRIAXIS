@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { isDemoModeForcedByEnv } from "../demo/demoMode";
 import type { TenantScope } from "../repositories/interfaces";
 
 type AiReviewsResponse = { reviews?: Array<{ status: string }> };
@@ -12,7 +13,7 @@ export function usePendingAiReviewCount(scope?: TenantScope, refreshToken = 0) {
   const [count, setCount] = useState(0);
 
   useEffect(() => {
-    if (!scope?.organizationId) return;
+    if (!scope?.organizationId || isDemoModeForcedByEnv()) return;
     const controller = new AbortController();
     fetch("/api/ai/reviews", { credentials: "include", cache: "no-store", signal: controller.signal })
       .then(async (response) => {

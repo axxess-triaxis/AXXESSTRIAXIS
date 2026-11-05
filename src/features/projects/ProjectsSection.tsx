@@ -349,7 +349,7 @@ export const ProjectsSection = () => {
                                 </div>
                                 <div className="text-right">
                                   <div className="text-[10px] text-[#5F6B73]">Due</div>
-                                  <div className="font-mono text-[11px] text-[#0F1117]">{project.dueDate?.slice(5) ?? "TBD"}</div>
+                                  <div className="font-mono text-[11px] text-[#0F1117]">{project.dueDate?.slice(5, 10) ?? "TBD"}</div>
                                 </div>
                               </div>
                             </button>

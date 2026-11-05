@@ -11,6 +11,7 @@ import { MockAnalyticsProvider } from "../../services/analytics/MockAnalyticsPro
 const state = {
   user: { id: "admin-1", organizationId: "org-1", role: "Organization Admin" as const },
   demoMode: false,
+  forcedDemoMode: false,
   fetchOk: true,
   events: [] as Array<{ id: string; organizationId: string; stepId: string; eventType: string; source: string; createdAt: string }>,
 };
@@ -21,6 +22,7 @@ vi.mock("../../auth/AuthProvider", () => ({
 
 vi.mock("../../demo/demoMode", () => ({
   isDemoModeEnabled: () => state.demoMode,
+  isDemoModeForcedByEnv: () => state.forcedDemoMode,
 }));
 
 import { PilotConversionSection } from "./PilotConversionSection";
@@ -69,6 +71,21 @@ describe("PilotConversionSection real-vs-demo data (dummy-data fix)", () => {
       expect(screen.getAllByText(/step_completed via admin/).length).toBeGreaterThan(0);
     });
     expect(screen.queryByText("No pilot events yet")).not.toBeInTheDocument();
+  });
+
+  it("makes no API call on a deployment forced into demo mode, and shows the seeded events", async () => {
+    state.demoMode = true;
+    state.forcedDemoMode = true;
+    const fetchMock = vi.fn(async () => ({ ok: false, status: 401, json: async () => ({}) }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    renderSection();
+
+    await waitFor(() => {
+      expect(screen.getAllByText(/step_completed via admin/).length).toBeGreaterThan(0);
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
+    state.forcedDemoMode = false;
   });
 
   it("renders real events when the API returns them, regardless of Demo Mode", async () => {

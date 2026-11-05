@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { Card } from "../../components/ui/Card";
+import { demoPendingAiReview } from "../../demo/demoAiReviews";
+import { isDemoModeForcedByEnv } from "../../demo/demoMode";
 import { adminActionFetch, useAdminAction } from "../../hooks/useAdminAction";
 
 type AiOperationReview = {
@@ -222,6 +224,11 @@ function AiGovernanceActions() {
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
+    if (isDemoModeForcedByEnv()) {
+      setReviews([demoPendingAiReview]);
+      setLoaded(true);
+      return;
+    }
     let mounted = true;
     void adminActionFetch("/api/ai/reviews")
       .then((data) => {
@@ -237,6 +244,11 @@ function AiGovernanceActions() {
   }, []);
 
   function decide(reviewId: string, decision: "approved" | "rejected") {
+    if (isDemoModeForcedByEnv()) {
+      setReviews((current) => current.filter((review) => review.id !== reviewId));
+      setMessage(`Review ${decision} in this demo. Nothing was saved.`);
+      return;
+    }
     run(async () => {
       await adminActionFetch("/api/ai/reviews", {
         method: "POST",

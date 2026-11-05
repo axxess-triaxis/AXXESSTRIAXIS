@@ -15,7 +15,7 @@ import { evaluateActionableGate } from "../../services/agentic/actionableGate";
 import { writeAgenticDraft } from "../../services/agentic/agenticDraftHandoff";
 import { isAgenticGateEnabled } from "../../services/agentic/agenticGateToggle";
 import { useWorkspaceRouting } from "../../hooks/useWorkspaceRouting";
-import { getRuntimeMode, isDemoModeEnabled } from "../../demo/demoMode";
+import { getRuntimeMode, isDemoModeEnabled, isDemoModeForcedByEnv } from "../../demo/demoMode";
 import {
   AuditTrailBadge,
   ConfidenceBadge,
@@ -245,7 +245,7 @@ export const AIWorkspaceSection = () => {
   // configuration. GET /api/ai/model-policy already computes this server-side and already exists
   // (used elsewhere for AI policy preview) -- fetching it here is the fix, not new infrastructure.
   useEffect(() => {
-    if (!session.user) return;
+    if (!session.user || isDemoModeForcedByEnv()) return;
     let isMounted = true;
     fetch("/api/ai/model-policy", { credentials: "include", cache: "no-store" })
       .then((response) => (response.ok ? response.json() : null))
