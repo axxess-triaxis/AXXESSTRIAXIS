@@ -9,6 +9,8 @@ import {
   tasksRepository,
   tenantScopeFromUser,
 } from "../../../../../repositories/supabaseEnterpriseRepositories";
+import { canUseCapability } from "../../../../../security/rbac";
+import { recordDeniedAttempt } from "../../../../../services/audit/auditEvents";
 import { getConnectorContract, previewSelectedEmailImport, type SelectedEmailImport } from "../../../../../services/integrations/connectorContract";
 import { ingestTenantDocument } from "../../../../../services/rag/tenantRagWorkflow";
 import { recordWorkflowTimelineEvent, upsertWorkflowProgressRecords } from "../../../../../services/workflows/liveTenantWorkflow";
@@ -16,6 +18,11 @@ import { recordWorkflowTimelineEvent, upsertWorkflowProgressRecords } from "../.
 export async function POST(request: Request) {
   const session = await getServerAuthSession(true);
   if (!session) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+
+  if (!canUseCapability(session.user.role, "email-import")) {
+    await recordDeniedAttempt(session, { route: "/api/connectors/email/import", method: "POST" });
+    return NextResponse.json({ error: "Forbidden." }, { status: 403 });
+  }
 
   const body = await request.json().catch(() => ({})) as Partial<SelectedEmailImport> & { confirm?: boolean };
   const providerId = body.providerId ?? "gmail";
