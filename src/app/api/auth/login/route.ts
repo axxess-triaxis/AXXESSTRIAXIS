@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { signInServerSide } from "../../../../auth/serverSession";
 import { auditLogsRepository } from "../../../../repositories/supabaseEnterpriseRepositories";
 import { SupabaseAuthError } from "../../../../auth/supabaseAuthError";
+import { AccountSuspendedError } from "../../../../auth/supabaseUser";
 import { getPostHogClient } from "../../../../lib/posthog-server";
 
 export async function POST(request: Request) {
@@ -52,6 +53,9 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ user: session.user });
   } catch (error) {
+    if (error instanceof AccountSuspendedError) {
+      return NextResponse.json({ error: "This account is suspended. Contact your organization admin.", code: "account_suspended" }, { status: 403 });
+    }
     if (error instanceof SupabaseAuthError) {
       console.error(`[auth/login] Supabase sign-in failed (status=${error.status}, code=${error.code ?? "unknown"}): ${error.message}`);
       if (error.code === "email_not_confirmed") {

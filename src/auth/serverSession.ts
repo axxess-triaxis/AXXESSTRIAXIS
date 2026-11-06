@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 import type { UserContext } from "../security/rbac";
-import { userContextFromAuthUser, userContextFromSupabaseRow, type SupabaseUserRow } from "./supabaseUser";
+import { AccountSuspendedError, userContextFromAuthUser, userContextFromSupabaseRow, type SupabaseUserRow } from "./supabaseUser";
 import { parseSupabaseAuthErrorResponse, SupabaseAuthError } from "./supabaseAuthError";
 
 export const accessTokenCookieName = "axxess-access-token";
@@ -146,9 +146,11 @@ async function supabaseRestRequest<TResponse>(path: string, accessToken: string)
 
 async function resolveUser(accessToken: string, authUser: SupabasePasswordResponse["user"]) {
   const rows = await supabaseRestRequest<SupabaseUserRow[]>(
-    `users?id=eq.${encodeURIComponent(authUser.id)}&select=id,organization_id,email,display_name,avatar_initials,role,department_name,title,timezone&limit=1`,
+    `users?id=eq.${encodeURIComponent(authUser.id)}&select=id,organization_id,email,display_name,avatar_initials,role,status,department_name,title,timezone&limit=1`,
     accessToken,
   );
+
+  if (rows?.[0]?.status === "suspended") throw new AccountSuspendedError();
 
   // A-84 (2026-08-02): a linked phone number lives only on the Supabase Auth user object (no
   // public.users.phone column -- Supabase's own auth.users.phone is the single source of truth,
@@ -239,6 +241,12 @@ async function refreshServerSession(refreshToken: string) {
   return { accessToken: payload.access_token, refreshToken: payload.refresh_token, user };
 }
 
+async function endSuspendedSession() {
+  // Cookies cannot be written while a server component renders. Refusing the session is what matters.
+  await clearServerAuthCookies().catch(() => undefined);
+  return null;
+}
+
 export async function getServerAuthSession(
   allowRefresh = true,
   options?: { refreshIfExpiringWithinSeconds?: number },
@@ -285,16 +293,25 @@ export async function getServerAuthSession(
   }
 
   try {
-    if (!accessToken) return refreshServerSession(refreshToken ?? "");
+    if (!accessToken) {
+      try {
+        return await refreshServerSession(refreshToken ?? "");
+      } catch (error) {
+        if (error instanceof AccountSuspendedError) return await endSuspendedSession();
+        throw error;
+      }
+    }
     const payload = await supabaseAuthRequest<SupabasePasswordResponse["user"] | { user: SupabasePasswordResponse["user"] }>("user", {}, accessToken);
     const authUser = "user" in payload ? payload.user : payload;
     const user = await resolveUser(accessToken, authUser);
     return { accessToken, refreshToken, user };
-  } catch {
+  } catch (error) {
+    if (error instanceof AccountSuspendedError) return await endSuspendedSession();
     if (allowRefresh && refreshToken) {
       try {
         return await refreshServerSession(refreshToken);
       } catch (refreshError) {
+        if (refreshError instanceof AccountSuspendedError) return await endSuspendedSession();
         // 2026-08-01 incident: this used to call clearServerAuthCookies() here, which is wrong
         // under concurrency -- Supabase refresh tokens are single-use, so when a burst of parallel
         // requests (a page's own concurrent data-fetch calls) all try to refresh a near-expiry
