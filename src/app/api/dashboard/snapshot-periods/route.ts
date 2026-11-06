@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getServerAuthSession } from "../../../../auth/serverSession";
+import { canUseCapability } from "../../../../security/rbac";
 import { buildSnapshotPeriod, earliestTenantActivityDate, type SnapshotPeriodKey } from "../../../../services/dashboard/dashboardSnapshotPeriods";
 
 // A-110 (2026-08-09): Daily/Weekly/Monthly Executive Dashboard snapshots. Server-side because
@@ -11,6 +12,10 @@ import { buildSnapshotPeriod, earliestTenantActivityDate, type SnapshotPeriodKey
 export async function GET(request: Request) {
   const session = await getServerAuthSession(true);
   if (!session) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+
+  if (!canUseCapability(session.user.role, "tenant-activity")) {
+    return NextResponse.json({ error: "Forbidden." }, { status: 403 });
+  }
 
   const url = new URL(request.url);
   const period = url.searchParams.get("period");

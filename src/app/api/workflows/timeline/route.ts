@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getServerAuthSession } from "../../../../auth/serverSession";
+import { canUseCapability } from "../../../../security/rbac";
 import { listWorkflowTimeline } from "../../../../services/workflows/liveTenantWorkflow";
 import type { WorkflowTimelineResourceType } from "../../../../services/workflows/workflowEvidence";
 
@@ -25,6 +26,10 @@ function resourceType(value: string | null): WorkflowTimelineResourceType | unde
 export async function GET(request: Request) {
   const session = await getServerAuthSession(true);
   if (!session) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+
+  if (!canUseCapability(session.user.role, "workflow-timeline")) {
+    return NextResponse.json({ error: "Forbidden." }, { status: 403 });
+  }
 
   const url = new URL(request.url);
   const limit = Math.min(Math.max(Number(url.searchParams.get("limit") ?? 20), 1), 50);

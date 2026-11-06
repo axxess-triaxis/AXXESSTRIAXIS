@@ -91,8 +91,8 @@ try {
   const taskId = task.rows[0]?.id;
   const taskAudit = (await admin(`/rest/v1/audit_logs?action=eq.task.created&resource_id=eq.${taskId}&select=actor_user_id,actor_role`)).rows[0];
   check("task trigger still logs the real actor", taskAudit?.actor_user_id === employee.id && taskAudit?.actor_role === "Employee", taskAudit);
-  const consultantRead = await call("/rest/v1/tasks?select=id&limit=1", { token: consultant.token });
-  check("Consultant can still read through RLS", consultantRead.ok && consultantRead.rows.length > 0, consultantRead.status);
+  const managerRead = await call("/rest/v1/tasks?select=id&limit=1", { token: manager.token });
+  check("Manager can still read tasks through RLS", managerRead.ok && managerRead.rows.length > 0, managerRead.status);
 
   // L1: suspend
   const sus = await call(`/rest/v1/users?id=eq.${employee.id}`, { method: "PATCH", token: adminA.token, body: { status: "suspended" } });
@@ -178,6 +178,84 @@ try {
   const tamper = await call(`/rest/v1/audit_logs?id=eq.${aid}`, { method: "PATCH", token: adminA.token, body: { action: "integrity.tampered" } });
   const erase = await call(`/rest/v1/audit_logs?id=eq.${aid}`, { method: "DELETE", token: adminA.token });
   check("admin cannot change or delete an audit row", tamper.rows.length === 0 && erase.rows.length === 0);
+
+  // API role checks: direct database calls follow the same table as the routes (L3, L6, L8, L9, L10, L13, L18)
+  const employee2 = await createUser("employee2", orgA, "Employee"); users.push(employee2);
+  const rows = async (path, user) => (await call(path, { token: user.token })).rows;
+  const ids = (list) => list.map((row) => row.id).sort();
+
+  const mineLead = await call("/rest/v1/crm_leads", { method: "POST", token: employee.token, body: { organization_id: orgA, title: `Mine ${run}`, owner_user_id: employee.id, created_by: employee.id, estimated_value: 100 } });
+  check("L18 Employee can create their own lead", mineLead.ok, mineLead.json);
+  const otherLead = await call("/rest/v1/crm_leads", { method: "POST", token: employee2.token, body: { organization_id: orgA, title: `Other ${run}`, owner_user_id: employee2.id, created_by: employee2.id, estimated_value: 200 } });
+  check("L18 a second Employee can create their own lead", otherLead.ok, otherLead.json);
+  const mineId = mineLead.rows[0]?.id;
+  const otherId = otherLead.rows[0]?.id;
+  check("L18 Employee sees exactly their own leads", JSON.stringify(ids(await rows("/rest/v1/crm_leads?select=id", employee))) === JSON.stringify([mineId]));
+  check("L18 Manager sees both leads", JSON.stringify(ids(await rows("/rest/v1/crm_leads?select=id", manager))) === JSON.stringify([mineId, otherId].sort()));
+  const assignedAway = await call("/rest/v1/crm_leads", { method: "POST", token: employee.token, body: { organization_id: orgA, title: `Away ${run}`, owner_user_id: employee2.id, created_by: employee.id } });
+  check("L18 Employee cannot create a lead owned by someone else", refused(assignedAway), assignedAway.status);
+  for (const [label, user] of [["Guest", guest], ["Consultant", consultant]]) {
+    check(`L3 ${label} reads 0 leads through REST`, (await rows("/rest/v1/crm_leads?select=id", user)).length === 0);
+    const lead = await call("/rest/v1/crm_leads", { method: "POST", token: user.token, body: { organization_id: orgA, title: "refused", created_by: user.id, owner_user_id: user.id } });
+    check(`L13 ${label} cannot create a lead through REST`, refused(lead), lead.status);
+  }
+
+  const watch = await call("/rest/v1/financial_watch_items", { method: "POST", token: manager.token, body: { organization_id: orgA, title: `Watch ${run}`, category: "accounts_actionable", threshold_type: "above", threshold_amount: 1, created_by: manager.id } });
+  check("L6 Manager can create a watch item", watch.ok, watch.json);
+  for (const [label, user] of [["Employee", employee], ["Consultant", consultant], ["Guest", guest]]) {
+    check(`L6 ${label} reads 0 watch items through REST`, (await rows("/rest/v1/financial_watch_items?select=id", user)).length === 0);
+    const item = await call("/rest/v1/financial_watch_items", { method: "POST", token: user.token, body: { organization_id: orgA, title: "refused", category: "accounts_actionable", threshold_type: "above", threshold_amount: 1, created_by: user.id } });
+    check(`L6 ${label} cannot create a watch item through REST`, refused(item), item.status);
+  }
+
+  const contact = await call("/rest/v1/stakeholders", { method: "POST", token: manager.token, body: { organization_id: orgA, name: `Contact ${run}` } });
+  check("L8 Manager can create a stakeholder", contact.ok, contact.json);
+  check("L8 Employee reads stakeholders", (await rows("/rest/v1/stakeholders?select=id", employee)).length > 0);
+  await admin("/rest/v1/workflow_timeline_events", { method: "POST", body: { organization_id: orgA, resource_type: "project", event_type: "workflow_action_created", title: `Timeline ${run}`, actor_user_id: manager.id } });
+  check("L9 Employee reads the workflow timeline", (await rows("/rest/v1/workflow_timeline_events?select=id", employee)).length > 0);
+  for (const [label, user] of [["Guest", guest], ["Consultant", consultant]]) {
+    check(`L8 ${label} reads 0 stakeholders through REST`, (await rows("/rest/v1/stakeholders?select=id", user)).length === 0);
+    const note = await call("/rest/v1/stakeholder_notes", { method: "POST", token: user.token, body: { organization_id: orgA, title: "refused", body: "refused", created_by_user_id: user.id } });
+    check(`L8 ${label} cannot create a stakeholder note through REST`, refused(note), note.status);
+    check(`L9 ${label} reads 0 timeline events through REST`, (await rows("/rest/v1/workflow_timeline_events?select=id", user)).length === 0);
+  }
+
+  // Outside roles see exactly what is theirs, and staff still see the tenant
+  const outsideProject = await call("/rest/v1/projects", { method: "POST", token: manager.token, body: { organization_id: orgA, name: `Outside ${run}`, owner_id: manager.id, status: "planning", priority: "medium", risk_level: "medium" } });
+  const outsideProjectId = outsideProject.rows[0]?.id;
+  const assigned = await call("/rest/v1/tasks", { method: "POST", token: manager.token, body: { organization_id: orgA, project_id: outsideProjectId, title: `Assigned ${run}`, status: "pending", priority: "medium", assignee_id: guest.id } });
+  check("Manager can assign a task to a Guest", assigned.ok, assigned.json);
+  const assignedId = assigned.rows[0]?.id;
+  check("L9 Guest sees exactly their assigned task", JSON.stringify(ids(await rows("/rest/v1/tasks?select=id", guest))) === JSON.stringify([assignedId]));
+  check("L9 Guest sees only the project holding that task", JSON.stringify(ids(await rows("/rest/v1/projects?select=id", guest))) === JSON.stringify([outsideProjectId]));
+  check("L9 Consultant with no assignment sees 0 tasks", (await rows("/rest/v1/tasks?select=id", consultant)).length === 0);
+  check("L9 Consultant with no assignment sees 0 projects", (await rows("/rest/v1/projects?select=id", consultant)).length === 0);
+  check("L9 Employee still sees other people's tasks", (await rows("/rest/v1/tasks?select=id", employee)).length >= 2);
+  check("L9 Employee still sees every project", (await rows("/rest/v1/projects?select=id", employee)).length >= 2);
+
+  const meeting = await call("/rest/v1/meetings", { method: "POST", token: manager.token, body: { organization_id: orgA, title: `Meeting ${run}`, starts_at: new Date().toISOString() } });
+  check("Manager can create a meeting", meeting.ok, meeting.json);
+  const meetingId = meeting.rows[0]?.id;
+  const otherMeeting = await call("/rest/v1/meetings", { method: "POST", token: manager.token, body: { organization_id: orgA, title: `Other meeting ${run}`, starts_at: new Date().toISOString() } });
+  check("L9 Guest sees 0 meetings before being invited", (await rows("/rest/v1/meetings?select=id", guest)).length === 0);
+  await admin("/rest/v1/meeting_attendees", { method: "POST", body: { meeting_id: meetingId, user_id: guest.id } });
+  check("L9 Guest sees exactly the meeting they attend", JSON.stringify(ids(await rows("/rest/v1/meetings?select=id", guest))) === JSON.stringify([meetingId]));
+  check("L9 Employee still sees every meeting", ids(await rows("/rest/v1/meetings?select=id", employee)).includes(otherMeeting.rows[0]?.id));
+
+  const orgDoc = await admin("/rest/v1/documents", { method: "POST", body: { organization_id: orgA, name: `Org doc ${run}`, storage_path: `organizations/${orgA}/org-${run}.txt`, mime_type: "text/plain", tenant_id: orgA, visibility: "organization", owner_user_id: manager.id, created_by_user_id: manager.id } });
+  check("a tenant-wide document exists", orgDoc.ok, orgDoc.json);
+  check("L10 Consultant cannot read a tenant-wide document", (await rows(`/rest/v1/documents?id=eq.${orgDoc.rows[0]?.id}&select=id`, consultant)).length === 0);
+  check("L10 Employee can read a tenant-wide document", (await rows(`/rest/v1/documents?id=eq.${orgDoc.rows[0]?.id}&select=id`, employee)).length === 1);
+  const ownDoc = await admin("/rest/v1/documents", { method: "POST", body: { organization_id: orgA, name: `Own doc ${run}`, storage_path: `organizations/${orgA}/own-${run}.txt`, mime_type: "text/plain", tenant_id: orgA, visibility: "private", owner_user_id: consultant.id, created_by_user_id: consultant.id } });
+  check("L10 Consultant keeps their own document", (await rows(`/rest/v1/documents?id=eq.${ownDoc.rows[0]?.id}&select=id`, consultant)).length === 1, ownDoc.json);
+
+  // Suspending still removes an outside role's assigned work
+  await admin(`/rest/v1/users?id=eq.${guest.id}`, { method: "PATCH", body: { status: "suspended" } });
+  check("L1 a suspended Guest loses their assigned task", (await rows("/rest/v1/tasks?select=id", guest)).length === 0);
+  await admin(`/rest/v1/users?id=eq.${guest.id}`, { method: "PATCH", body: { status: "active" } });
+
+  const crossLeads = await rows("/rest/v1/crm_leads?select=id", adminB);
+  check("another tenant's admin sees none of these leads", crossLeads.length === 0, crossLeads.length);
 
   // Cross-tenant
   const crossRole = await call(`/rest/v1/users?id=eq.${employee.id}`, { method: "PATCH", token: adminB.token, body: { role: "Guest" } });

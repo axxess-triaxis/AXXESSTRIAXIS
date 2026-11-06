@@ -35,6 +35,7 @@ import { SampleDataBanner } from "./SampleDataBanner";
 import { UrgentAttentionBarStack } from "./UrgentAttentionBarStack";
 import { useDashboardSnapshot } from "./useDashboardSnapshot";
 import { useDashboardSnapshotPeriods } from "../../hooks/useDashboardSnapshotPeriods";
+import { canUseCapability } from "../../security/rbac";
 import {
   demoAiRecommendations,
   demoObjectives,
@@ -213,7 +214,9 @@ export function DashboardSection() {
   // parallel layer to the tile-scoring stack above (see DashboardSnapshotBar.tsx's own header
   // comment). Shares refreshToken with the rest of this page's hooks, so the "Refresh" button below
   // refreshes this section for free.
-  const snapshotPeriods = useDashboardSnapshotPeriods(tenantScope, refreshToken, demoMode);
+  // Outside roles are refused these counts by the API, so they are not requested at all.
+  const tenantActivityAllowed = demoMode || !session.user || canUseCapability(session.user.role, "tenant-activity");
+  const snapshotPeriods = useDashboardSnapshotPeriods(tenantActivityAllowed ? tenantScope : undefined, refreshToken, demoMode);
   // Executive Dashboard Sprint ED-2: a real, literal count of pending AI review items (from the
   // same GET /api/ai/reviews the AI Review Inbox itself uses), replacing the pendingApprovals/10
   // heuristic previously used by both the Golden Path step and the Tenant Health Command Center tile.
@@ -356,6 +359,7 @@ export function DashboardSection() {
         pendingAiReviewCount={pendingAiReviewCount}
         overdueTaskCount={overdueTaskCount}
         overdueMeetingCount={overdueMeetingCount}
+        tenantActivityAllowed={tenantActivityAllowed}
       />
 
       {demoMode && (

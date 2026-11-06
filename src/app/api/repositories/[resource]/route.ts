@@ -12,7 +12,7 @@ import {
 } from "../../../../repositories/supabaseEnterpriseRepositories";
 import type { RepositoryQuery, TenantScope } from "../../../../repositories/interfaces";
 import { recordWorkflowTimelineEvent } from "../../../../services/workflows/liveTenantWorkflow";
-import { canGrantRole, isRoleName } from "../../../../security/rbac";
+import { canGrantRole, canUseCapability, isRoleName } from "../../../../security/rbac";
 import { isDatabaseRefusal, recordDeniedAttempt } from "../../../../services/audit/auditEvents";
 import type { WorkflowTimelineResourceType } from "../../../../services/workflows/workflowEvidence";
 
@@ -212,6 +212,12 @@ export async function GET(request: Request, context: RouteContext) {
   const session = await getServerAuthSession(true);
   if (!session) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+  }
+
+  // RLS scopes the other resources per row. Stakeholders are refused outright, so the caller gets a
+  // 403 that matches the page instead of an empty list that looks like a tenant with no contacts.
+  if (resource === "stakeholders" && !canUseCapability(session.user.role, "stakeholders")) {
+    return NextResponse.json({ error: "Forbidden." }, { status: 403 });
   }
 
   const url = new URL(request.url);

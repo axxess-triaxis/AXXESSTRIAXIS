@@ -65,7 +65,9 @@ export type CreateCrmLeadInput = {
 export type UpdateCrmLeadInput = Partial<CreateCrmLeadInput>;
 
 // A real tenant with zero leads must see a genuinely empty list -- never fabricated pipeline data.
-export async function listCrmLeads(scope: TenantScope): Promise<CrmLead[]> {
+// This reads with the service role, so RLS does not apply: the caller decides whether to pass
+// ownerUserId, and an Employee's request must always pass it.
+export async function listCrmLeads(scope: TenantScope, filter?: { ownerUserId: EntityId }): Promise<CrmLead[]> {
   if (!isSupabaseAdminConfigured()) return [];
   const query = new URLSearchParams({
     organization_id: `eq.${scope.organizationId}`,
@@ -73,6 +75,7 @@ export async function listCrmLeads(scope: TenantScope): Promise<CrmLead[]> {
     order: "created_at.desc",
     limit: "500",
   });
+  if (filter) query.set("or", `(owner_user_id.eq.${filter.ownerUserId},created_by.eq.${filter.ownerUserId})`);
   const rows = await supabaseAdminRest<CrmLeadRow[]>("crm_leads", { query }).catch(() => []);
   return rows.map(fromRow);
 }
