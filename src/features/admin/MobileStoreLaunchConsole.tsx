@@ -3,6 +3,7 @@
 import { useEffect, useState, useTransition } from "react";
 import { Activity, BadgeCheck, Camera, ClipboardList, Rocket, ShieldCheck, Smartphone, UploadCloud } from "lucide-react";
 import { Card } from "../../components/ui/Card";
+import { isDemoModeForcedByEnv } from "../../demo/demoMode";
 import type {
   MobileBuildReadiness,
   MobileReleaseGateStatus,
@@ -53,7 +54,9 @@ function label(value: string) {
 }
 
 function formatDate(value: string) {
-  return new Intl.DateTimeFormat("en", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }).format(new Date(value));
+  // Rendered on the server and again in the browser, so it needs a fixed time zone. Without one,
+  // a server on UTC and a visitor in IST produce different text (React error #418).
+  return `${new Intl.DateTimeFormat("en", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: "UTC" }).format(new Date(value))} UTC`;
 }
 
 function platformLabel(item: MobileBuildReadiness) {
@@ -66,6 +69,7 @@ export function MobileStoreLaunchConsole({ initialSnapshot }: { initialSnapshot:
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
+    if (isDemoModeForcedByEnv()) return;
     let mounted = true;
     void fetch("/api/admin/mobile-release", { cache: "no-store" })
       .then((response) => response.ok ? response.json() : undefined)

@@ -4,6 +4,7 @@ import { useEffect, useState, useTransition } from "react";
 import { Clock3, KeyRound, LifeBuoy, RadioTower, ShieldAlert } from "lucide-react";
 import { Card } from "../../components/ui/Card";
 import type { CustomerSuccessLiveOpsSnapshot } from "../../services/pilot/customerSuccessLiveOps";
+import { isDemoModeForcedByEnv } from "../../demo/demoMode";
 
 const statusTone = {
   live_ops_ready: "border-emerald-200 bg-emerald-50 text-emerald-700",
@@ -38,7 +39,9 @@ function label(value: string) {
 }
 
 function formatDate(value: string) {
-  return new Intl.DateTimeFormat("en", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }).format(new Date(value));
+  // Rendered on the server and again in the browser, so it needs a fixed time zone. Without one,
+  // a server on UTC and a visitor in IST produce different text (React error #418).
+  return `${new Intl.DateTimeFormat("en", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: "UTC" }).format(new Date(value))} UTC`;
 }
 
 export function CustomerSuccessLiveOpsPanel({ initialSnapshot }: { initialSnapshot: CustomerSuccessLiveOpsSnapshot }) {
@@ -47,6 +50,7 @@ export function CustomerSuccessLiveOpsPanel({ initialSnapshot }: { initialSnapsh
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
+    if (isDemoModeForcedByEnv()) return;
     let mounted = true;
     void fetch("/api/admin/customer-success/live-ops", { cache: "no-store" })
       .then((response) => response.ok ? response.json() : undefined)

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { isDemoModeForcedByEnv } from "../demo/demoMode";
 import type { TenantScope } from "../repositories/interfaces";
 
 // Executive Dashboard Sprint ED-2: a real count of this tenant's audit_logs rows, from the same
@@ -10,7 +11,7 @@ export function useAuditLogCount(scope?: TenantScope, refreshToken = 0) {
   const [count, setCount] = useState<number | undefined>(undefined);
 
   useEffect(() => {
-    if (!scope?.organizationId) return;
+    if (!scope?.organizationId || isDemoModeForcedByEnv()) return;
     const controller = new AbortController();
     fetch("/api/repositories/audit_logs?pageSize=500", { credentials: "include", cache: "no-store", signal: controller.signal })
       .then(async (response) => {

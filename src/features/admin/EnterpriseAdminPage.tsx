@@ -9,6 +9,7 @@ import { buildCustomerSuccessLiveOpsSnapshot } from "../../services/pilot/custom
 import { computePilotHealth, createDemoPilotReadinessEvents } from "../../services/pilot/pilotHealth";
 import { buildEnterpriseGoldenPathSnapshot } from "../../services/workflows/enterpriseGoldenPath";
 import { buildMobileStoreLaunchSnapshot } from "../../services/mobile/mobileStoreLaunch";
+import { isDemoModeForcedByEnv } from "../../demo/demoMode";
 import { AdminActionsPanel } from "./AdminActionsPanel";
 import { CustomerSuccessLiveOpsPanel } from "./CustomerSuccessLiveOpsPanel";
 import { MobileStoreLaunchConsole } from "./MobileStoreLaunchConsole";
@@ -32,8 +33,7 @@ type AdminPanelId =
   | "pilot-command-center"
   | "support-ops"
   | "mobile-release"
-  | "audit-logs"
-  | "backups";
+  | "audit-logs";
 
 const panelContent: Record<AdminPanelId, { title: string; description: string; actions: string[]; evidence: string[] }> = {
   organization: {
@@ -149,12 +149,6 @@ const panelContent: Record<AdminPanelId, { title: string; description: string; a
     description: "Review and export tenant security, auth, document, workflow, and AI events.",
     actions: ["Export CSV", "Verify hash chain", "Filter by category"],
     evidence: ["security_audit_events", "integrity hash", "request id"],
-  },
-  backups: {
-    title: "Backup and Restore",
-    description: "Track backup status, restore drills, and tenant recovery readiness.",
-    actions: ["Run restore checklist", "Verify backup manifest", "Record drill result"],
-    evidence: ["backup manifest", "restore verification SQL", "incident report"],
   },
 };
 
@@ -282,7 +276,9 @@ export function EnterpriseAdminPage({ panel }: { panel: AdminPanelId }) {
             <Card className="p-5">
               <h2 className="text-sm font-semibold text-[#0F1117]">Beta readiness note</h2>
               <p className="mt-2 text-sm leading-relaxed text-[#5F6B73]">
-                {wiredPanels.includes(panel)
+                {isDemoModeForcedByEnv()
+                  ? "This is the investor demo, with illustrative data. Actions here change nothing. In a live workspace they run through server-only routes with tenant-scoped policies and audit records."
+                  : wiredPanels.includes(panel)
                   ? "These actions call real, server-only routes with tenant-scoped policies and write audit-log evidence -- not a preview."
                   : "This admin surface is wired for Sprint 22 and Sprint 23 enterprise readiness. Live mutation paths use server-only routes, tenant-scoped policies, and audit records before autonomous workflow execution is enabled."}
               </p>
