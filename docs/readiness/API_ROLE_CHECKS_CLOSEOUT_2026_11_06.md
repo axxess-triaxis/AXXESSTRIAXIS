@@ -1,6 +1,6 @@
 # API role checks: closeout (2026-11-06)
 
-**Status: `Code complete`, draft PR stacked on #456. Not merged, not deployed, and the migration has not been applied to staging or production.** Every result here comes from local Supabase and local builds with synthetic data. None of it shows production behaviour.
+**Status: `Code complete`, draft PR #457, stacked on #456. Not merged, not deployed, and the migration has not been applied to staging or production.** Every result here comes from local Supabase and local builds with synthetic data. None of it shows production behaviour.
 
 **Merge order:** #456 first, then retarget this PR to `main`.
 
@@ -66,8 +66,8 @@ Issue ID: API-ROLE-CHECKS (findings L3, L6, L8, L9, L10, L13, L18)
 Title: Make "Access restricted" true at the API and the database
 Origin plan: approved plan-mode plan, `~/.claude/plans/transient-drifting-wilkinson.md`
 Research artifact: `docs/readiness/STACK_PERSONA_ORCHESTRATION_AUDIT_2026_11_05.md`
-Implementation commit(s): on branch `fix/api-role-checks`, see the PR
-PR: draft, stacked on #456, see the Evidence Index row
+Implementation commit(s): `c68f63c`, on branch `fix/api-role-checks`
+PR: https://github.com/axxess-triaxis/AXXESSTRIAXIS/pull/457, draft, stacked on #456
 Branch: `fix/api-role-checks`, from `fix/access-and-audit-integrity`
 Files changed: listed above
 
@@ -99,7 +99,7 @@ Acceptance criteria (from the approved plan):
 3. A sales agent can open `/crm`, a `Guest` cannot. Met locally. An agent has no sidebar link and needs the URL, see the limits below.
 4. A `Guest` dashboard loads with no error state. Met locally.
 5. A Guest with an assigned task sees that task and no others. Met locally, with the vendor persona (`Guest`).
-6. Standard suite with exact counts, and PR CI passes. Suite met. **PR CI is not yet read here, see the PR.**
+6. Standard suite with exact counts, and PR CI passes. Suite met. **PR CI is read on #457, not recorded here, and the Sprint 27/29 gate does not run until the PR targets `main`.**
 
 Regression test: written before the fix and seen failing.
 
