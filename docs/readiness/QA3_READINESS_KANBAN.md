@@ -453,4 +453,5 @@ No cards moved yet.
 - Column: Blocked, not Verified. Fixes pass locally, but nothing is deployed.
 - Blocker: #456 merges first, then founder review, merge and deploy. Owner: founder. Next review: 2026-11-20.
 - Evidence: `docs/readiness/API_ROLE_CHECKS_CLOSEOUT_2026_11_06.md`.
-- Still open: the leads page and agent sidebar link (M1 to M3), a finance role (M23), and `programs` readable by outside roles.
+- Added the same day, by founder decision: Employees see only their own tasks, projects, meetings and timeline events.
+- Still open: the leads page and agent sidebar link (M1 to M3), a finance role (M23), `programs` readable by outside roles, and `project_updates`, `decisions`, `risks` and `meeting_attendees` readable by every member.
