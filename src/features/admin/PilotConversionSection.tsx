@@ -3,7 +3,7 @@
 import { Activity, CheckCircle2, ClipboardCheck, TrendingUp, Users } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "../../auth/AuthProvider";
-import { isDemoModeEnabled } from "../../demo/demoMode";
+import { isDemoModeEnabled, isDemoModeForcedByEnv } from "../../demo/demoMode";
 import {
   ActivityFeed,
   DataStateBadge,
@@ -99,6 +99,10 @@ export function PilotConversionSection() {
   const [portfolio, setPortfolio] = useState<PilotPortfolioSnapshot | undefined>(undefined);
 
   const loadPilotEvents = useCallback(async () => {
+    if (isDemoModeForcedByEnv()) {
+      setState({ events: createDemoPilotReadinessEvents(user?.organizationId), loading: false, source: "Demo" });
+      return;
+    }
     setState((current) => ({ ...current, loading: true }));
     const response = await fetch("/api/pilot-readiness-events?pageSize=100", { credentials: "include", cache: "no-store" }).catch(() => undefined);
     // Founder-reported (2026-08-15): a genuinely empty real tenant (zero pilot_readiness_events, not
@@ -138,6 +142,7 @@ export function PilotConversionSection() {
     // platform operator's own Super Admin (canViewCrossTenantPilotPortfolio in rbac.ts). A regular
     // tenant admin gets a 403 here and simply never sees this section -- fail-closed, no error UI,
     // and the client never needs or sees which organization id is the platform operator's.
+    if (isDemoModeForcedByEnv()) return;
     let cancelled = false;
     fetch("/api/admin/pilot-portfolio", { credentials: "include", cache: "no-store" })
       .then((response) => (response.ok ? response.json() : undefined))

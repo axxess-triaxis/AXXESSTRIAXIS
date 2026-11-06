@@ -22,12 +22,15 @@ function eventIcon(eventType: WorkflowTimelineEvent["eventType"]) {
 }
 
 function formatEventTime(value: string) {
-  return new Intl.DateTimeFormat("en", {
+  // The demo server-renders these events, so this needs a fixed time zone. Without one, a server on
+  // UTC and a visitor in IST produce different text (React error #418).
+  return `${new Intl.DateTimeFormat("en", {
     month: "short",
     day: "2-digit",
     hour: "2-digit",
     minute: "2-digit",
-  }).format(new Date(value));
+    timeZone: "UTC",
+  }).format(new Date(value))} UTC`;
 }
 
 export function WorkflowTimelinePanel({

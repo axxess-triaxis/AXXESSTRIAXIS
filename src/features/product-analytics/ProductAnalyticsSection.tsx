@@ -6,7 +6,7 @@ import { useAuth } from "../../auth/AuthProvider";
 import { LoadingState } from "../../components/feedback/LoadingState";
 import { SectionHeader } from "../../components/layout/SectionHeader";
 import { Card } from "../../components/ui/Card";
-import { isDemoModeEnabled } from "../../demo/demoMode";
+import { isDemoModeEnabled, isDemoModeForcedByEnv } from "../../demo/demoMode";
 import { DemoDataNotice } from "../../components/enterprise";
 import type { BetaFeedback, User } from "../../domain";
 import { applicationServices } from "../../providers/serviceProvider";
@@ -156,6 +156,7 @@ export function ProductAnalyticsSection() {
     // Same cross-tenant route PilotConversionSection.tsx uses -- only its `integrations` field is
     // consumed here. A regular tenant admin gets a 403 and simply keeps the honest "not wired yet"
     // fallback below, fail-closed with no error UI.
+    if (isDemoModeForcedByEnv()) return;
     let cancelled = false;
     fetch("/api/admin/pilot-portfolio", { credentials: "include", cache: "no-store" })
       .then((response) => (response.ok ? response.json() : undefined))
@@ -171,6 +172,7 @@ export function ProductAnalyticsSection() {
     // PilotConversionSection.tsx already reads, restricted to Super Admin/Organization Admin (this
     // page's own route guard). No demo fallback needed here -- the honest empty state below already
     // covers a real tenant with zero events, and demo mode keeps its own fabricated branch.
+    if (isDemoModeForcedByEnv()) return;
     let cancelled = false;
     fetch("/api/pilot-readiness-events?pageSize=200", { credentials: "include", cache: "no-store" })
       .then((response) => (response.ok ? response.json() : undefined))
@@ -184,6 +186,7 @@ export function ProductAnalyticsSection() {
   useEffect(() => {
     // Real Most Used Modules data: every real navigation writes here via App.tsx's module_opened
     // effect. Restricted to Super Admin/Organization Admin, matching this page's own route guard.
+    if (isDemoModeForcedByEnv()) return;
     let cancelled = false;
     fetch("/api/module-usage-events?pageSize=500", { credentials: "include", cache: "no-store" })
       .then((response) => (response.ok ? response.json() : undefined))

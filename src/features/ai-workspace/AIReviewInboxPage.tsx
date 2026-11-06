@@ -6,7 +6,8 @@ import { Card } from "../../components/ui/Card";
 import { MicroSurveyPrompt } from "../../components/feedback/MicroSurveyPrompt";
 import { SectionHeader } from "../../components/layout/SectionHeader";
 import { WorkflowTimelinePanel } from "../../components/enterprise/WorkflowTimelinePanel";
-import { isDemoModeEnabled } from "../../demo/demoMode";
+import { demoPendingAiReview } from "../../demo/demoAiReviews";
+import { isDemoModeEnabled, isDemoModeForcedByEnv } from "../../demo/demoMode";
 import { WorkflowCompletionCelebration } from "../../components/feedback/WorkflowCompletionCelebration";
 import { useMicroSurveyPrompt } from "../../hooks/useMicroSurveyPrompt";
 import { useWorkflowCompletionCelebration } from "../../hooks/useWorkflowCompletionCelebration";
@@ -103,6 +104,11 @@ export function AIReviewInboxPage() {
   }, [tenantScope]);
 
   async function loadReviews() {
+    if (isDemoModeForcedByEnv()) {
+      setReviews(withPendingDemoReview([]));
+      setMessage(null);
+      return;
+    }
     try {
       const response = await fetch("/api/ai/reviews", { credentials: "include" });
       // Never surface the raw backend error string (e.g. "Unauthorized.") to the user (Sprint 3,
@@ -110,7 +116,7 @@ export function AIReviewInboxPage() {
       // developer diagnostics instead.
       if (response.status === 401) {
         console.error("AI review inbox request was unauthorized.");
-        if (isDemoModeEnabled()) {
+        if (isDemoModeForcedByEnv()) {
           setReviews(withPendingDemoReview([]));
           setMessage(null);
           return;
@@ -133,7 +139,7 @@ export function AIReviewInboxPage() {
       setReviews(withPendingDemoReview(payload.reviews ?? []));
       setMessage(null);
     } catch (error) {
-      if (isDemoModeEnabled()) {
+      if (isDemoModeForcedByEnv()) {
         setReviews(withPendingDemoReview([]));
         setMessage(null);
         return;
@@ -512,27 +518,8 @@ export function AIReviewInboxPage() {
 
 function withPendingDemoReview(reviews: AiReviewInboxItem[]) {
   if (!isDemoModeEnabled() || reviews.some((review) => review.status === "pending")) return reviews;
-  const demoReview: AiReviewInboxItem = {
-    id: "review-dibrugarh-referral-sla",
-    organizationId: "demo-north-east-health-mission",
-    sourceAuditId: "demo-email-import-dibrugarh-referral-sla",
-    taskCategory: "workflow_execution",
-    status: "pending",
-    confidence: 0.82,
-    humanReviewFlag: true,
-    answerExcerpt: "Dibrugarh referral SLA variance should be converted into a district ambulance turnaround review task with audit evidence attached.",
-    citations: [
-      {
-        title: "Dibrugarh Referral SLA Review",
-        sourceId: "msg-dibrugarh-referral-review",
-        excerpt: "Action required: assign ambulance turnaround review to the district transport coordinator by Friday.",
-        score: 0.88,
-      },
-    ],
-    createdAt: "2026-07-15T08:10:00.000Z",
-  };
   return [
-    demoReview,
+    demoPendingAiReview,
     ...reviews,
   ];
 }

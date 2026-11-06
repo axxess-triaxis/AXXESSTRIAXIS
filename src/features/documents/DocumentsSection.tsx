@@ -7,6 +7,7 @@ import { WorkflowTimelinePanel } from "../../components/enterprise/WorkflowTimel
 import { EmptyState } from "../../components/feedback/EmptyState";
 import { Card } from "../../components/ui/Card";
 import { isDemoModeEnabled } from "../../demo/demoMode";
+import { useVisibleRowCount } from "../../hooks/useVisibleRowCount";
 import type { Document } from "../../domain";
 import { applicationServices } from "../../providers/serviceProvider";
 import { tenantScopeFromUser } from "../../repositories/supabaseEnterpriseRepositories";
@@ -46,6 +47,7 @@ export const DocumentsSection = () => {
     classification: "internal",
     visibility: "organization",
   });
+  const documentRows = useVisibleRowCount(documents.length);
   const [indexableDocuments, setIndexableDocuments] = useState<Document[]>([]);
   const [selectedDocumentId, setSelectedDocumentId] = useState("");
   const documentTimeline = useWorkflowTimeline(scope, { limit: 5, resourceType: "document" });
@@ -231,7 +233,7 @@ export const DocumentsSection = () => {
         {!isDemoModeEnabled() && documents.length === 0 && (
           <EmptyState message="No documents indexed yet. Use Upload above to index your first document." />
         )}
-        {documents.map((document) => (
+        {documents.slice(0, documentRows.shown).map((document) => (
           <Card key={document.id} className="p-4 hover:shadow-md transition-shadow cursor-pointer">
             <div className="flex items-start gap-4">
               <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 text-[11px] font-bold ${document.type === "PDF" ? "bg-red-50 text-red-700" : document.type === "XLSX" ? "bg-emerald-50 text-emerald-700" : "bg-blue-50 text-blue-700"}`}>
@@ -260,6 +262,11 @@ export const DocumentsSection = () => {
             </div>
           </Card>
         ))}
+        {documentRows.remaining > 0 && (
+          <button type="button" onClick={documentRows.showMore} className="w-full rounded-lg border border-[rgba(139,30,45,0.22)] bg-white px-3 py-2 text-xs font-semibold text-[#8B1E2D]">
+            Show more ({documentRows.remaining} remaining)
+          </button>
+        )}
       </div>
     </div>
   );
