@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { isDemoModeForcedByEnv } from "../demo/demoMode";
 import type { TenantScope } from "../repositories/interfaces";
 
 type SocialAlertsStatusResponse = { anyLiveProviderConfigured?: boolean };
@@ -12,7 +13,7 @@ export function useSocialAlertsStatus(scope?: TenantScope) {
   const [anyLiveProviderConfigured, setAnyLiveProviderConfigured] = useState(false);
 
   useEffect(() => {
-    if (!scope?.organizationId) return;
+    if (!scope?.organizationId || isDemoModeForcedByEnv()) return;
     const controller = new AbortController();
     fetch("/api/social-alerts/status", { credentials: "include", cache: "no-store", signal: controller.signal })
       .then(async (response) => {

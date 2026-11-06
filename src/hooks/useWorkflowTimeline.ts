@@ -5,7 +5,7 @@ import {
   type WorkflowTimelineEvent,
   type WorkflowTimelineResourceType,
 } from "../services/workflows/workflowEvidence";
-import { isDemoModeEnabled } from "../demo/demoMode";
+import { isDemoModeEnabled, isDemoModeForcedByEnv } from "../demo/demoMode";
 
 type TimelineResponse = {
   timeline?: WorkflowTimelineEvent[];
@@ -29,6 +29,10 @@ export function useWorkflowTimeline(
     const demoMode = isDemoModeEnabled();
     const limit = options.limit ?? 12;
     setTimeline(demoMode ? fallbackWorkflowTimelineEvents(scope.organizationId).slice(0, limit) : []);
+    if (isDemoModeForcedByEnv()) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     fetch(`/api/workflows/timeline?${params.toString()}`, {
       credentials: "include",

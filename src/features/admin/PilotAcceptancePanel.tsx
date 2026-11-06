@@ -4,6 +4,7 @@ import { useEffect, useState, useTransition } from "react";
 import { CheckCircle2, ClipboardCheck, RadioTower, ShieldCheck } from "lucide-react";
 import { Card } from "../../components/ui/Card";
 import type { PilotTenantAcceptanceSnapshot } from "../../services/pilot/pilotAcceptance";
+import { isDemoModeForcedByEnv } from "../../demo/demoMode";
 
 const criterionTone = {
   accepted: "border-emerald-200 bg-emerald-50 text-emerald-700",
@@ -28,6 +29,7 @@ export function PilotAcceptancePanel({ initialSnapshot }: { initialSnapshot: Pil
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
+    if (isDemoModeForcedByEnv()) return;
     let mounted = true;
     void fetch("/api/admin/pilot-acceptance", { cache: "no-store" })
       .then((response) => response.ok ? response.json() : undefined)
