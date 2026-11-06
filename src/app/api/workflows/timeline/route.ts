@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getServerAuthSession } from "../../../../auth/serverSession";
-import { canUseCapability } from "../../../../security/rbac";
+import { canReadWholeTimeline, canUseCapability } from "../../../../security/rbac";
 import { listWorkflowTimeline } from "../../../../services/workflows/liveTenantWorkflow";
 import type { WorkflowTimelineResourceType } from "../../../../services/workflows/workflowEvidence";
 
@@ -37,6 +37,7 @@ export async function GET(request: Request) {
     limit,
     resourceType: resourceType(url.searchParams.get("resourceType")),
     resourceId: url.searchParams.get("resourceId") ?? undefined,
+    actorUserId: canReadWholeTimeline(session.user.role) ? undefined : session.user.id,
   });
 
   return NextResponse.json({ timeline });

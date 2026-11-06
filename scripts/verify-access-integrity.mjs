@@ -75,6 +75,7 @@ try {
   const superA = await createUser("super", orgA, "Super Admin"); users.push(superA);
   const adminA = await createUser("admin", orgA, "Organization Admin"); users.push(adminA);
   const employee = await createUser("employee", orgA, "Employee"); users.push(employee);
+  const colleague = await createUser("colleague", orgA, "Employee"); users.push(colleague);
   const manager = await createUser("manager", orgA, "Manager"); users.push(manager);
   const guest = await createUser("guest", orgA, "Guest"); users.push(guest);
   const consultant = await createUser("consultant", orgA, "Consultant"); users.push(consultant);
@@ -212,7 +213,9 @@ try {
   check("L8 Manager can create a stakeholder", contact.ok, contact.json);
   check("L8 Employee reads stakeholders", (await rows("/rest/v1/stakeholders?select=id", employee)).length > 0);
   await admin("/rest/v1/workflow_timeline_events", { method: "POST", body: { organization_id: orgA, resource_type: "project", event_type: "workflow_action_created", title: `Timeline ${run}`, actor_user_id: manager.id } });
-  check("L9 Employee reads the workflow timeline", (await rows("/rest/v1/workflow_timeline_events?select=id", employee)).length > 0);
+  const ownEvent = await admin("/rest/v1/workflow_timeline_events", { method: "POST", body: { organization_id: orgA, resource_type: "task", event_type: "workflow_action_created", title: `Own timeline ${run}`, actor_user_id: employee.id } });
+  check("Employee reads exactly the timeline events they performed", JSON.stringify(ids(await rows("/rest/v1/workflow_timeline_events?select=id", employee))) === JSON.stringify([ownEvent.rows[0]?.id]), ownEvent.json);
+  check("Manager reads the whole workflow timeline", (await rows("/rest/v1/workflow_timeline_events?select=id", manager)).length >= 2);
   for (const [label, user] of [["Guest", guest], ["Consultant", consultant]]) {
     check(`L8 ${label} reads 0 stakeholders through REST`, (await rows("/rest/v1/stakeholders?select=id", user)).length === 0);
     const note = await call("/rest/v1/stakeholder_notes", { method: "POST", token: user.token, body: { organization_id: orgA, title: "refused", body: "refused", created_by_user_id: user.id } });
@@ -230,8 +233,38 @@ try {
   check("L9 Guest sees only the project holding that task", JSON.stringify(ids(await rows("/rest/v1/projects?select=id", guest))) === JSON.stringify([outsideProjectId]));
   check("L9 Consultant with no assignment sees 0 tasks", (await rows("/rest/v1/tasks?select=id", consultant)).length === 0);
   check("L9 Consultant with no assignment sees 0 projects", (await rows("/rest/v1/projects?select=id", consultant)).length === 0);
-  check("L9 Employee still sees other people's tasks", (await rows("/rest/v1/tasks?select=id", employee)).length >= 2);
-  check("L9 Employee still sees every project", (await rows("/rest/v1/projects?select=id", employee)).length >= 2);
+
+  // An Employee sees their own work and not a colleague's, and cannot change a colleague's
+  const newProject = (name) => call("/rest/v1/projects", { method: "POST", token: manager.token, body: { organization_id: orgA, name: `${name} ${run}`, owner_id: manager.id, status: "planning", priority: "medium", risk_level: "medium" } });
+  const newTask = (token, title, fields) => call("/rest/v1/tasks", { method: "POST", token, body: { organization_id: orgA, title: `${title} ${run}`, status: "pending", priority: "medium", ...fields } });
+  const handedProject = (await newProject("Handed")).rows[0]?.id;
+  const colleagueProject = (await newProject("Colleague")).rows[0]?.id;
+  const linkedProject = (await newProject("Linked")).rows[0]?.id;
+  const handedTask = (await newTask(manager.token, "Handed", { assignee_id: employee.id, project_id: handedProject })).rows[0]?.id;
+  const colleagueTask = (await newTask(manager.token, "Colleague", { assignee_id: colleague.id, project_id: colleagueProject })).rows[0]?.id;
+  const createdForOther = (await newTask(employee.token, "Created", { assignee_id: colleague.id, project_id: linkedProject, created_by_user_id: employee.id })).rows[0]?.id;
+  check("Employee can create a task and assign it to a colleague", Boolean(createdForOther));
+  const employeeTasks = ids(await rows("/rest/v1/tasks?select=id", employee));
+  check("Employee sees a task assigned to them", employeeTasks.includes(handedTask));
+  check("Employee sees a task they created for someone else", employeeTasks.includes(createdForOther));
+  check("Employee does not see a colleague's task", !employeeTasks.includes(colleagueTask));
+  check("Employee does not see a Guest's task", !employeeTasks.includes(assignedId));
+  const taskTitle = async (id) => (await admin(`/rest/v1/tasks?id=eq.${id}&select=title`)).rows[0]?.title;
+  const changed = await call(`/rest/v1/tasks?id=eq.${colleagueTask}`, { method: "PATCH", token: employee.token, body: { title: "changed by a colleague" } });
+  check("Employee changes 0 rows on a colleague's task", changed.rows.length === 0 && (await taskTitle(colleagueTask)) === `Colleague ${run}`, changed.json);
+  const deleted = await call(`/rest/v1/tasks?id=eq.${colleagueTask}`, { method: "DELETE", token: employee.token });
+  check("Employee deletes 0 rows on a colleague's task", deleted.rows.length === 0 && (await taskTitle(colleagueTask)) === `Colleague ${run}`, deleted.json);
+  const ownUpdate = await call(`/rest/v1/tasks?id=eq.${handedTask}`, { method: "PATCH", token: employee.token, body: { status: "in-progress" } });
+  check("Employee can update a task assigned to them", ownUpdate.rows.length === 1, ownUpdate.json);
+  const managerUpdate = await call(`/rest/v1/tasks?id=eq.${colleagueTask}`, { method: "PATCH", token: manager.token, body: { status: "in-progress" } });
+  check("Manager can still change anyone's task", managerUpdate.rows.length === 1, managerUpdate.json);
+  check("Manager still sees a colleague's task", ids(await rows("/rest/v1/tasks?select=id", manager)).includes(colleagueTask));
+  const employeeProjects = ids(await rows("/rest/v1/projects?select=id", employee));
+  check("Employee sees a project holding their assigned task", employeeProjects.includes(handedProject));
+  check("Employee sees a project holding a task they created", employeeProjects.includes(linkedProject));
+  check("Employee does not see a project they have no part in", !employeeProjects.includes(colleagueProject));
+  check("Employee colleague sees their own project", ids(await rows("/rest/v1/projects?select=id", colleague)).includes(colleagueProject));
+  check("Manager still sees every project", ids(await rows("/rest/v1/projects?select=id", manager)).includes(colleagueProject));
 
   const meeting = await call("/rest/v1/meetings", { method: "POST", token: manager.token, body: { organization_id: orgA, title: `Meeting ${run}`, starts_at: new Date().toISOString() } });
   check("Manager can create a meeting", meeting.ok, meeting.json);
@@ -240,7 +273,17 @@ try {
   check("L9 Guest sees 0 meetings before being invited", (await rows("/rest/v1/meetings?select=id", guest)).length === 0);
   await admin("/rest/v1/meeting_attendees", { method: "POST", body: { meeting_id: meetingId, user_id: guest.id } });
   check("L9 Guest sees exactly the meeting they attend", JSON.stringify(ids(await rows("/rest/v1/meetings?select=id", guest))) === JSON.stringify([meetingId]));
-  check("L9 Employee still sees every meeting", ids(await rows("/rest/v1/meetings?select=id", employee)).includes(otherMeeting.rows[0]?.id));
+
+  // The app saves participants in meetings.attendee_ids, not in meeting_attendees
+  const listed = await call("/rest/v1/meetings", { method: "POST", token: manager.token, body: { organization_id: orgA, title: `Listed ${run}`, starts_at: new Date().toISOString(), attendee_ids: [employee.id, consultant.id] } });
+  const listedId = listed.rows[0]?.id;
+  check("Manager can create a meeting with participants", listed.ok, listed.json);
+  const employeeMeetings = ids(await rows("/rest/v1/meetings?select=id", employee));
+  check("Employee participant sees the meeting", employeeMeetings.includes(listedId));
+  check("Consultant participant sees the meeting", ids(await rows("/rest/v1/meetings?select=id", consultant)).includes(listedId));
+  check("Employee does not see a meeting they are not part of", !employeeMeetings.includes(otherMeeting.rows[0]?.id));
+  check("Colleague not listed does not see the meeting", !ids(await rows("/rest/v1/meetings?select=id", colleague)).includes(listedId));
+  check("Manager still sees every meeting", ids(await rows("/rest/v1/meetings?select=id", manager)).includes(otherMeeting.rows[0]?.id));
 
   const orgDoc = await admin("/rest/v1/documents", { method: "POST", body: { organization_id: orgA, name: `Org doc ${run}`, storage_path: `organizations/${orgA}/org-${run}.txt`, mime_type: "text/plain", tenant_id: orgA, visibility: "organization", owner_user_id: manager.id, created_by_user_id: manager.id } });
   check("a tenant-wide document exists", orgDoc.ok, orgDoc.json);

@@ -100,6 +100,12 @@ export function canReadAllLeads(role: RoleName) {
   return seniorRoles.includes(role);
 }
 
+// An Employee may use the workflow timeline, but sees only events they performed. Its titles and
+// descriptions name other people's work. See 20261106135000_employee_own_work.sql.
+export function canReadWholeTimeline(role: RoleName) {
+  return seniorRoles.includes(role);
+}
+
 export function canAccessSection(user: UserContext, section: NavSection) {
   return sectionPermissions[section].includes(user.role);
 }

@@ -12,6 +12,7 @@ const allRoles: RoleName[] = [...senior, "Employee", ...outside];
 const state = {
   role: "Guest" as RoleName,
   listCrmLeadsArgs: [] as unknown[][],
+  timelineOptions: [] as Array<Record<string, unknown>>,
   denied: [] as Array<Record<string, unknown>>,
 };
 
@@ -62,7 +63,10 @@ vi.mock("../repositories/workflowActionRepositories", () => ({
 }));
 
 vi.mock("../services/workflows/liveTenantWorkflow", () => ({
-  listWorkflowTimeline: async () => [],
+  listWorkflowTimeline: async (_organizationId: string, options: Record<string, unknown>) => {
+    state.timelineOptions.push(options);
+    return [];
+  },
   recordWorkflowTimelineEvent: async () => undefined,
   upsertWorkflowProgressRecords: async () => undefined,
 }));
@@ -117,6 +121,7 @@ describe("canUseCapability", () => {
 describe("routes follow the table", () => {
   beforeEach(() => {
     state.listCrmLeadsArgs = [];
+    state.timelineOptions = [];
     state.denied = [];
   });
 
@@ -180,6 +185,18 @@ describe("routes follow the table", () => {
     state.role = "Manager";
     await getLeads();
     expect(state.listCrmLeadsArgs[0][1]).toBeUndefined();
+  });
+
+  it("limits an Employee's workflow timeline to what they did", async () => {
+    state.role = "Employee";
+    await getTimeline(new Request("http://localhost/api/workflows/timeline"));
+    expect(state.timelineOptions[0].actorUserId).toBe("user-1");
+  });
+
+  it("gives a Manager the whole workflow timeline", async () => {
+    state.role = "Manager";
+    await getTimeline(new Request("http://localhost/api/workflows/timeline"));
+    expect(state.timelineOptions[0].actorUserId).toBeUndefined();
   });
 
   it("leaves other repository resources to RLS for outside roles", async () => {
