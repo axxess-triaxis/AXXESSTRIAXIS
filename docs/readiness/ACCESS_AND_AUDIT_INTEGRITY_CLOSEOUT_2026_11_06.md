@@ -1,6 +1,6 @@
 # Access and audit integrity: closeout (2026-11-06)
 
-**Status: `Implemented locally`, moving to `Code complete` when the PR opens. Not merged, not deployed, and the migration has not been applied to staging or production.** Every result here comes from local Supabase and a local production build with synthetic data. None of it shows production behaviour.
+**Status: `Code complete`, PR #456. Not merged, not deployed, and the migration has not been applied to staging or production.** Every result here comes from local Supabase and a local production build with synthetic data. None of it shows production behaviour.
 
 ## Before you merge: two checks only you can run
 
@@ -71,8 +71,8 @@ Issue ID: ACCESS-AUDIT-INTEGRITY (findings L1, L2, M10, L16, L17, M20, M7, M21, 
 Title: Make access follow one source, limit `Super Admin` grants, make the audit log reliable
 Origin plan: approved plan-mode plan, `~/.claude/plans/transient-drifting-wilkinson.md`
 Research artifact: `docs/readiness/STACK_PERSONA_ORCHESTRATION_AUDIT_2026_11_05.md`
-Implementation commit(s): on branch `fix/access-and-audit-integrity`, listed in the PR
-PR: recorded in `docs/readiness/EVIDENCE_INDEX.md` once open
+Implementation commit(s): `590e976`, on branch `fix/access-and-audit-integrity`
+PR: https://github.com/axxess-triaxis/AXXESSTRIAXIS/pull/456
 Branch: `fix/access-and-audit-integrity`
 Files changed: listed above
 
@@ -128,7 +128,7 @@ Decision outcomes:
 - Decision: no authenticated user inserts into `audit_logs` directly, only through the RPC.
   Outcome: works locally, including task and project writes through audit triggers. Pending on production, review by 2026-11-20.
 
-Final status: Implemented locally
+Final status: Code complete
 Remaining risk: listed below
 Follow-up issue IDs: listed below
 Supersedes: none
