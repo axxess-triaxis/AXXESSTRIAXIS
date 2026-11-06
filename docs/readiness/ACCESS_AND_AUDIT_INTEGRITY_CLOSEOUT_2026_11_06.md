@@ -81,8 +81,11 @@ Verification commands and raw results:
 - `pnpm run lint`: `LINT_EXIT=0`, zero warnings
 - `pnpm run typecheck`: `TYPECHECK_EXIT=0`
 - `pnpm --dir apps/mobile run typecheck`: `MOBILE_EXIT=0`
-- `pnpm run test`: `Test Files  336 passed (336)`, `Tests  1890 passed (1890)`
-- `pnpm run build`: `BUILD_EXIT=0`, with local Supabase values
+- `pnpm run test`, before merging `main`: `Test Files  336 passed (336)`, `Tests  1890 passed (1890)`, exit 0
+- `pnpm run test`, after merging `main`: **no clean full run on this machine.** First run: `Test Files  330 passed (330)`, `Tests  1843 passed (1843)`, `Errors  7 errors`, exit 1. With `--maxWorkers=2`: `Test Files  334 passed (334)`, `Tests  1880 passed (1880)`, `Errors  3 errors`, exit 1. No test failed, but some files did not run, because of `[vitest-pool]: Timeout starting threads runner`. The first run's errors are that message. The second run's text was not captured
+- Targeted run after merging `main`, the 3 test files `main` changed and this PR's 5 test files: `Tests  64 passed (64)`, exit 0. The full suite on the merged code is left to CI on the PR
+- `pnpm run build`: `BUILD_EXIT=0` before merging, with local Supabase values, and `BUILD_EXIT=0` after merging, without them
+- Lint and both typechecks: exit 0 again after merging
 - `pnpm run supabase:verify`: exit 0, one warning, `20260702165736_initial_enterprise_schema.sql: contains permissive using (true) RLS predicate.` That file predates this change and is not touched by it
 - `pnpm exec playwright test tests/e2e/auth.spec.ts tests/e2e/user-admin.spec.ts tests/e2e/audit-logs.spec.ts` with `E2E_RUN_SEEDED=true`, against the local production build: `6 passed (17.0s)`
 - `node scripts/verify-access-integrity.mjs`, on a freshly reset database: `status passed, total 44, passed 44, failed []`
@@ -107,6 +110,10 @@ Errors hit this session:
   Resolution: the test environment had no `AXXESS_TOKEN_VAULT_KEY`. Fixed with a random throwaway value, re-run at 54 of 54 with one added check. **A deployment without this variable still returns 500 on key creation. That behaviour is not new.**
 - Error: 3 of 6 Playwright tests failed on the first run.
   Resolution: fixed. Two were blocked by the What's New panel. One expected old invitation wording, then could not find `employee.alpha3` because 62 test personas pushed it past the 50-user list limit. Re-run on plain seeds: 6 of 6.
+- Error: Vitest worker startup timeouts on the merged code, 7 errors, then 3 with fewer workers.
+  Resolution: not fixed. Likely cause, not proven: this machine has 8 GB of memory, with about 1.5 GB free at the time. Recorded as VITEST-WORKER-TIMEOUT, owner Claude Code, closed only by the full suite passing in CI on the PR.
+- Error: merging `main` conflicted in `docs/readiness/DECISION_OUTCOME_LEDGER.md`.
+  Resolution: fixed, both new sections kept, no lines removed compared with `main`.
 - Error: `preview_start` ran `next-dev` from the primary checkout's config rather than this worktree's entry.
   Resolution: stopped straight away. This worktree's build was unaffected, and the production build was served as a background process.
 - Error: seed run lost 3 personas to Supabase Auth 504 timeouts while lint and tests ran at the same time.
@@ -131,6 +138,7 @@ Reopened by: none
 ## Partial, unsupported and known limits
 
 - **Not tested on staging or production.** Staging was out of reach during the audit, and this work stays local until you approve otherwise.
+- **The API round, Playwright and database scripts ran before `main` was merged.** `main` brought UI code and one new spec, and changed nothing in `src/auth`, `src/security`, `src/app/api`, `supabase/migrations` or dependencies, so they were not repeated.
 - **The backfill changes live access** when applied. Run check 1 above first.
 - **A multi-organization user is suspended only in their current organization.** Other memberships keep working.
 - **Issued access tokens stay valid until they expire,** but a suspended user's token now passes no role or membership check, so it reads nothing and writes nothing, as tested above.
