@@ -1,3 +1,4 @@
+import { recordDeniedAttempt } from "../../../../../services/audit/auditEvents";
 import { NextResponse } from "next/server";
 import { getServerAuthSession } from "../../../../../auth/serverSession";
 import { auditLogsRepository, tenantScopeFromUser } from "../../../../../repositories/supabaseEnterpriseRepositories";
@@ -57,6 +58,7 @@ export async function POST(request: Request) {
   const session = await getServerAuthSession(true);
   if (!session) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   if (!canConfigure(session.user.role)) {
+    await recordDeniedAttempt(session, { route: "/api/connectors/enterprise/credentials", method: "POST" });
     return NextResponse.json({ error: "Only Organization Admins can configure enterprise connectors." }, { status: 403 });
   }
 
@@ -117,6 +119,7 @@ export async function DELETE(request: Request) {
   const session = await getServerAuthSession(true);
   if (!session) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   if (!canConfigure(session.user.role)) {
+    await recordDeniedAttempt(session, { route: "/api/connectors/enterprise/credentials", method: "DELETE" });
     return NextResponse.json({ error: "Only Organization Admins can configure enterprise connectors." }, { status: 403 });
   }
 

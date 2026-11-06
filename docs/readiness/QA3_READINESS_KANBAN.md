@@ -438,3 +438,11 @@ No cards moved yet.
 - HITL decision: founder authorized each merge on green CI (no skip-checks or admin overrides)
   and closing the superseded Dependabot PRs #394/#398/#399. Pending: whether to act on #413
   (Expo 54 -> 58), which also unblocks image-size.
+
+## Access and Audit Integrity Update (2026-11-06)
+
+- Card: ACCESS-AUDIT-INTEGRITY, audit findings L1, L2, M10, L16, L17, M20, M7, M21, M22.
+- Column: Blocked, not Verified. Fixes pass locally, but nothing is deployed.
+- Blocker: founder review, the two pre-merge queries, then merge and deploy. Owner: founder. Next review: 2026-11-20.
+- Evidence: `docs/readiness/ACCESS_AND_AUDIT_INTEGRITY_CLOSEOUT_2026_11_06.md`.
+- Still open from the same audit: role checks on API routes (L3, L6, L8 to L10, L13, L18), so "Access restricted" remains mostly a screen.
