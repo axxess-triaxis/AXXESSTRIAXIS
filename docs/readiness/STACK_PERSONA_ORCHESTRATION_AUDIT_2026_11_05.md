@@ -4,6 +4,8 @@
 
 **Update, 2026-11-06:** L1, L2, M10, L16, L17, M20, M7, M21 and M22 have fixes on branch `fix/access-and-audit-integrity`, verified locally only and not deployed. See `docs/readiness/ACCESS_AND_AUDIT_INTEGRITY_CLOSEOUT_2026_11_06.md`. Every other finding remains open.
 
+**Update, 2026-11-06:** L3, L6, L8, L9, L10, L13 and L18 have fixes on branch `fix/api-role-checks`, verified locally only and not deployed. See `docs/readiness/API_ROLE_CHECKS_CLOSEOUT_2026_11_06.md`.
+
 One simulated company ran across PORT4LLEO, AXXESS TRIaxis, Callismatic, Omnidamus and STILL with 63 personas. There are 55 findings: 20 leaks, 28 misses and 7 unexpected status results. Nine matter most:
 
 1. **Suspending a user does not remove access.** A suspended employee still signed in, read 37 leads and created a task.

@@ -71,6 +71,41 @@ export function isRoleName(value: string): value is RoleName {
   return ["Super Admin", "Organization Admin", "Executive", "Manager", "Employee", "Consultant", "Guest"].includes(value);
 }
 
+// The API and the page guard read these same rules, so a page saying "Access restricted" and the
+// route behind it cannot disagree. RLS holds the matching rules for direct database calls, see
+// supabase/migrations/20261106130000_api_role_checks.sql. Change both together.
+const seniorRoles: RoleName[] = ["Super Admin", "Organization Admin", "Executive", "Manager"];
+const staffRoles: RoleName[] = [...seniorRoles, "Employee"];
+
+const capabilityPermissions = {
+  "crm.read": staffRoles,
+  "crm.create": staffRoles,
+  // Manager is here for the finance head, because AXXESS has no finance role yet.
+  "financial-watch": seniorRoles,
+  stakeholders: staffRoles,
+  "email-import": staffRoles,
+  "workflow-timeline": staffRoles,
+  // Counts of what happened across the whole tenant, so outside roles get nothing here.
+  "tenant-activity": staffRoles,
+} satisfies Record<string, RoleName[]>;
+
+export type ApiCapability = keyof typeof capabilityPermissions;
+
+export function canUseCapability(role: RoleName, capability: ApiCapability) {
+  return capabilityPermissions[capability].includes(role);
+}
+
+// An Employee may use the CRM, but sees only their own leads.
+export function canReadAllLeads(role: RoleName) {
+  return seniorRoles.includes(role);
+}
+
+// An Employee may use the workflow timeline, but sees only events they performed. Its titles and
+// descriptions name other people's work. See 20261106135000_employee_own_work.sql.
+export function canReadWholeTimeline(role: RoleName) {
+  return seniorRoles.includes(role);
+}
+
 export function canAccessSection(user: UserContext, section: NavSection) {
   return sectionPermissions[section].includes(user.role);
 }

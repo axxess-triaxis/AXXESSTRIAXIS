@@ -7,9 +7,9 @@ import type { TenantScope } from "../repositories/interfaces";
 type CrmLeadsResponse = { leads?: CrmLead[] };
 
 // undefined until the first successful fetch, so callers can distinguish "not loaded yet" from a
-// genuinely empty pipeline.
+// genuinely empty pipeline. null when this role is refused.
 export function useCrmLeads(scope?: TenantScope, refreshToken = 0) {
-  const [leads, setLeads] = useState<CrmLead[] | undefined>(undefined);
+  const [leads, setLeads] = useState<CrmLead[] | null | undefined>(undefined);
 
   useEffect(() => {
     // A-91: investor.triaxisventures.com only -- see useMailDashboardSignals.ts's comment.
@@ -21,6 +21,10 @@ export function useCrmLeads(scope?: TenantScope, refreshToken = 0) {
     const controller = new AbortController();
     fetch("/api/crm/leads", { credentials: "include", cache: "no-store", signal: controller.signal })
       .then(async (response) => {
+        if (response.status === 403) {
+          setLeads(null);
+          return;
+        }
         if (!response.ok) return;
         const payload = await response.json().catch(() => ({})) as CrmLeadsResponse;
         setLeads(payload.leads ?? []);
