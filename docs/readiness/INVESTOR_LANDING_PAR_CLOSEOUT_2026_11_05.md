@@ -1,6 +1,6 @@
 # Investor and Landing Parity: Closeout (2026-11-05)
 
-**Status: PR open, not merged or deployed.** The live sites do not have these fixes yet. The live re-check in "After merge" is still to do.
+**Status: merged and deployed on 2026-11-06 as `650b131` (PR #453).** The live re-check is recorded under "After merge". The signed-in landing comparison is still open, and one check used a substitute because the Vercel API refused the request.
 
 ## External signal
 
@@ -91,6 +91,29 @@ Scope was checked against the Vercel API on 2026-11-04. Do these before the merg
 2. Re-run the crawl of all 80 routes on both hosts, with analytics blocked, and record the results here.
 3. Run `PLAYWRIGHT_BASE_URL=https://investor.triaxisventures.com pnpm exec playwright test investor-landing-par`.
 
+### Results, 2026-11-06
+
+**Vercel steps:** Founder-stated as done before the merge, source artifact needed. Not independently checked, because the Vercel API returned `403 forbidden` to this machine's CLI login.
+
+**1. Serving the merge commit: substitute evidence, not the check specified above.** `meta.githubCommitSha` could not be read, for the same reason. Instead:
+- `deploy-production.yml` run `42200510535` ran on `650b13160824531cf059a9757a7593a38aa402f9` and succeeded for landing, investor and lite.
+- GitHub deployment records for that commit show success: `7597581587` (landing project), `7597555323` (investor project), `7597602062` (`axxesstriaxis`).
+- Investor behaviour agrees: the new spec failed 17 of 18 on the old code and now passes (item 3).
+- Landing has no equivalent behavioural proof, because the changed pages need sign-in there.
+
+**2. Crawl of 80 routes, signed out, analytics blocked by host, browser zone `Pacific/Auckland`.** A local internet outage interrupted the first pass (9 landing and 11 investor routes), so those routes were re-run. The figures combine both passes.
+
+| Host | Document status 200 | Page errors | Raw timestamps | Failed requests |
+| --- | --- | --- | --- | --- |
+| investor | 80 of 80 | 0 | 0 | 1: `401 /api/connectors/status` on `/lite/settings/integrations`, the known exception |
+| landing | 80 of 80 | 0 | 0 | 67: `401 /api/auth/session` on 66 routes and `401 /api/ai/reviews` on `/ai-workspace/review-inbox` |
+
+Landing's 401s are from a signed-out browser, so they don't test signed-in behaviour. 48 landing routes end somewhere other than the requested path, mostly `/auth`. On investor, 3 do: `/` to `/dashboard`, and `/admin/invitations` and `/admin/roles` to `/settings`. `/documents` has 1,528 elements on investor and `/knowledge` has 1,351.
+
+**3. New spec against the live investor site:** `18 passed (1.6m)`.
+
+**Main branch workflows on `650b131`:** Repository Quality, Security Gates, Pilot Golden Path Release Gate, Mobile Store Release Readiness, Capacitor Mobile Build and Deploy Production all succeeded.
+
 ## Closeout Evidence
 
 Issue ID: INVESTOR-LANDING-PAR
@@ -163,6 +186,6 @@ What changed: Demo-only bug fixes, shared fixes for dates, list length and the d
 Architecture boundary: Investor stays a separate Vercel project with no database or secret keys. API skips apply only to builds forced into demo mode.
 Product boundary: Investor shows illustrative data and never accepts real sign-in.
 Verification: See Closeout Evidence.
-Outcome: Pending, review by 2026-11-19.
-Follow-up: Founder confirmation to merge #453; Vercel steps; live re-check; signed-in landing comparison.
+Outcome: Partial. Merged as `650b131`, and the live investor check passed on 2026-11-06. Par with signed-in landing is not yet shown. Pending, review by 2026-11-19.
+Follow-up: Signed-in landing comparison; read `meta.githubCommitSha` and the Vercel settings once the API is reachable.
 ```
