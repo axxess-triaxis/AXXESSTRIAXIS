@@ -85,7 +85,7 @@ Issue ID: API-ROLE-CHECKS (findings L3, L6, L8, L9, L10, L13, L18)
 Title: Make "Access restricted" true at the API and the database
 Origin plan: approved plan-mode plan, `~/.claude/plans/transient-drifting-wilkinson.md`
 Research artifact: `docs/readiness/STACK_PERSONA_ORCHESTRATION_AUDIT_2026_11_05.md`
-Implementation commit(s): `c68f63c` and the narrowing commit recorded in the PR, on branch `fix/api-role-checks`
+Implementation commit(s): `c68f63c`, `954271e`, on branch `fix/api-role-checks`
 PR: https://github.com/axxess-triaxis/AXXESSTRIAXIS/pull/457, draft, stacked on #456
 Branch: `fix/api-role-checks`, from `fix/access-and-audit-integrity`
 Files changed: listed above
