@@ -106,6 +106,22 @@ export function getIntegrationHealth(env: NodeJS.ProcessEnv = process.env) {
   };
 }
 
+// The registry's counts come from this deployment's environment, which on the demo has no connector
+// credentials, while the demo's list shows every seeded integration as connected. Showing both gave
+// "40 connected" beside "Configured 0" and "27 adapters". The demo counts its own list instead.
+export function getDisplayedIntegrationHealth(
+  health: ReturnType<typeof getIntegrationHealth>,
+  demoMode: boolean,
+  integrations: { status: string }[],
+) {
+  if (!demoMode) return health;
+  return {
+    ...health,
+    total: integrations.length,
+    configured: integrations.filter((integration) => integration.status === "connected").length,
+  };
+}
+
 export function getPilotIntegrations(env: NodeJS.ProcessEnv = process.env): ProductivityPlugin[] {
   return getProductivityPluginRegistry(env).filter((plugin) => plugin.pilotEnabled);
 }

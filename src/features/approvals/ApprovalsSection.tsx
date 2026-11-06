@@ -312,7 +312,7 @@ export const ApprovalsSection = () => {
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
                 <RiskBadge level={approval.urgency} />
-                <span className="text-[11px] font-mono text-[#5F6B73]">Due {approval.dueDate.slice(5)}</span>
+                <span className="text-[11px] font-mono text-[#5F6B73]">Due {approval.dueDate.slice(5, 10)}</span>
               </div>
             </div>
             <p className="text-xs text-[#5F6B73] leading-relaxed mb-4 bg-[#F8F9FA] rounded-lg px-3 py-2.5">{approval.description}</p>

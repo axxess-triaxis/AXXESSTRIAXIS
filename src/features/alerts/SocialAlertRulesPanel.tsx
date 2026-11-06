@@ -9,6 +9,7 @@ import { Trash2 } from "lucide-react";
 import { Card } from "../../components/ui/Card";
 import { EmptyState } from "../../components/feedback/EmptyState";
 import type { SocialAlertRule, SocialAlertRuleProvider, SocialAlertRuleUrgency } from "../../domain";
+import { isDemoModeForcedByEnv } from "../../demo/demoMode";
 
 const ruleProviderOptions: Array<{ id: SocialAlertRuleProvider; label: string }> = [
   { id: "facebook", label: "Facebook" },
@@ -36,6 +37,11 @@ export function SocialAlertRulesPanel() {
   const [error, setError] = useState<string | null>(null);
 
   const loadRules = useCallback(async () => {
+    if (isDemoModeForcedByEnv()) {
+      setRules([]);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
       const response = await fetch("/api/social-alert-rules", { credentials: "include", cache: "no-store" });
