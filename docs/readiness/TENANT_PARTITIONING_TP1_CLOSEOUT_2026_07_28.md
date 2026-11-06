@@ -6,7 +6,7 @@ Governance source: `CLAUDE.md`'s evidence-chain discipline; sprint executed per 
 "Sprint TP-1: Stop Tenant/Demo Data Leakage in Settings" prompt.
 Related: `docs/readiness/ACTIONABLES_READINESS_MATRIX.md` A-28 (and A-29/A-30/A-31, named as
 follow-ups, not fixed this pass); `docs/readiness/HOSTING_DEPLOYMENT_ARCHITECTURE_2026_07_24.md`;
-`Enterprise beta feedback - Batch 1 (30 responses)/DEMO_DATA_LEAKAGE_AUDIT.md`.
+`docs/research/beta-batch-1/DEMO_DATA_LEAKAGE_AUDIT.md`.
 
 ## Sprint Objective
 
@@ -41,7 +41,7 @@ Product deployment's own code chose to render demo content.
 - `src/demo/demoDataset.ts` (`demoDatasetSummary` shape)
 - `docs/readiness/ACTIONABLES_READINESS_MATRIX.md` (A-28 and related rows)
 - `docs/readiness/HOSTING_DEPLOYMENT_ARCHITECTURE_2026_07_24.md` (the "100% Strict Partitioning" claim)
-- `Enterprise beta feedback - Batch 1 (30 responses)/DEMO_DATA_LEAKAGE_AUDIT.md` (prior 5-round audit)
+- `docs/research/beta-batch-1/DEMO_DATA_LEAKAGE_AUDIT.md` (prior 5-round audit)
 - `src/features/settings/SettingsSection.test.ts` (existing Settings tests)
 
 No required file was missing.
@@ -65,7 +65,7 @@ No required file was missing.
   "Strict Partitioning Between Demo and Beta (100%)" section clarifying that heading describes the
   infra layer only, citing this exact incident as proof that "no application code can ever render
   demo content inside the live product" is not a guarantee that exists.
-- **`Enterprise beta feedback - Batch 1 (30 responses)/DEMO_DATA_LEAKAGE_AUDIT.md`**: corrected the
+- **`docs/research/beta-batch-1/DEMO_DATA_LEAKAGE_AUDIT.md`**: corrected the
   Executive Summary's claim that `SettingsSection.tsx` "correctly gates its demo-related behavior"
   (true for the file's other panels, false for this one); added "Round 6" following the doc's own
   established per-round pattern, documenting this finding, root cause, and fix.
@@ -188,7 +188,7 @@ Files changed:
 - `src/features/settings/OrganizationPanel.test.tsx` (new)
 - `docs/readiness/ACTIONABLES_READINESS_MATRIX.md`
 - `docs/readiness/HOSTING_DEPLOYMENT_ARCHITECTURE_2026_07_24.md`
-- `Enterprise beta feedback - Batch 1 (30 responses)/DEMO_DATA_LEAKAGE_AUDIT.md`
+- `docs/research/beta-batch-1/DEMO_DATA_LEAKAGE_AUDIT.md`
 - `docs/readiness/TENANT_PARTITIONING_TP1_CLOSEOUT_2026_07_28.md` (this file, new)
 
 Branch: `canonical/sprint-1-35-unified-gitlab`. Commit and push (to `origin` and `gitlab`, this

@@ -33,7 +33,7 @@ below traces to a section in that doc -- this file tracks status, that file carr
 
 ## Needs Review
 
-- **Tracked binary survey-export files** (`Enterprise beta feedback - Batch 1 (30 responses)/`'s 2
+- **Tracked binary survey-export files** (`docs/research/beta-batch-1/`'s 2
   ZIPs + 2 PDFs, `docs/pitch-deck/`'s PDF, ~20.5MB total): public-repo privacy/hygiene question,
   founder decision required before any working-tree or history action -- Audit doc Section 7, 16.
 

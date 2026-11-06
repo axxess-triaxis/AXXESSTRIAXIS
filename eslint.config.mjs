@@ -23,7 +23,7 @@ const eslintConfig = defineConfig([
       "coverage/**",
       "playwright-report/**",
       "test-results/**",
-      "Enterprise beta feedback - Batch 1 (30 responses)/**",
+      "docs/research/beta-batch-1/**",
       "next-env.d.ts",
       "src/app/components/figma/**",
       "src/app/components/ui/**",

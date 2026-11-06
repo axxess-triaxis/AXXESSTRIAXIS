@@ -82,7 +82,7 @@ repoint the build/serve tooling, which is out of this sprint's scope and not req
 
 ### Group 2 -- Beta-feedback survey exports (4 files, ~20.5 MB) -- `MOVE_CANDIDATE_PENDING_APPROVAL`
 
-All under `Enterprise beta feedback - Batch 1 (30 responses)/`, committed 2026-07-20:
+All under `docs/research/beta-batch-1/`, committed 2026-07-20:
 
 | File | Size | Content |
 |---|---:|---|

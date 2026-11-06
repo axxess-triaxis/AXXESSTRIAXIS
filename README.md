@@ -415,9 +415,9 @@ governed-RAG-query walkthrough was run end to end against a real, non-demo tenan
 resulting AI answer correctly cited a real, just-seeded document by name with a real confidence
 score — not a fabricated one. Four rounds of dedicated demo-data-leakage auditing have found and
 closed cases where this partition previously leaked (see
-`Enterprise beta feedback - Batch 1 (30 responses)/DEMO_DATA_LEAKAGE_AUDIT.md`), and the schema-level
+`docs/research/beta-batch-1/DEMO_DATA_LEAKAGE_AUDIT.md`), and the schema-level
 tenant-isolation bugs found during the live walkthrough have been fixed (see
-`Enterprise beta feedback - Batch 1 (30 responses)/ITERATION_PROGRESS.md`'s 2026-07-21 entry). Full
+`docs/research/beta-batch-1/ITERATION_PROGRESS.md`'s 2026-07-21 entry). Full
 architectural detail in `MONOREPO_ARCHITECTURE_AND_BUSINESS_MODEL.md` §5.
 
 **The point of this discipline:** AXXESS is built for commercial pilots, not for impressing an
@@ -431,7 +431,7 @@ boundary is now verified, not just designed.
 
 AXXESS completed its first structured beta-feedback batch: 30 submissions, 28 unique respondents
 after deduplication. Full methodology and honest caveats in
-`Enterprise beta feedback - Batch 1 (30 responses)/Enterprise_Beta_Feedback_Batch_1.md` and
+`docs/research/beta-batch-1/Enterprise_Beta_Feedback_Batch_1.md` and
 `MONOREPO_ARCHITECTURE_AND_BUSINESS_MODEL.md` §6 — summarized here:
 
 | Signal | Result |
@@ -1750,7 +1750,7 @@ full architecture rationale and how these surfaces share a kernel.
 │   ├── migrations/            # Versioned schema, RLS policies, tenant_id/grant fixes
 │   └── seeds/
 │
-├── Enterprise beta feedback - Batch 1 (30 responses)/   # Beta survey analysis, sprint iteration
+├── docs/research/beta-batch-1/   # Beta survey analysis, sprint iteration
 │                                                          # log, closeout, demo-data-leakage audit
 │
 ├── scripts/
