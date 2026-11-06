@@ -67,3 +67,10 @@ Existing rows are not rewritten.
 | Decision | Date | Session/tool | Issue ID | Why | Outcome | Commit/PR | Verification | Closeout |
 |---|---|---|---|---|---|---|---|---|
 | Every Callismatic lead becomes an AXXESS task, whatever needs_decision says | 2026-11-04 | Founder decision, executed by Claude Code | #452 | A clear buyer was marked as not needing a person in 20 of 23 tries, with no error | Working on staging. Pending on production, review by 2026-11-18 | STILL#7, STILL#8 (`f4e6dfe`) | 70 STILL tests, AWS pattern test, 3 clean runs, one deliberate failure | `docs/readiness/STACK_E2E_STAGING_CLOSEOUT_2026_11_04.md` |
+
+## Access and audit integrity (2026-11-06)
+
+| Decision | Date | Session/tool | Issue ID | Why | Outcome | Commit/PR | Verification | Closeout |
+|---|---|---|---|---|---|---|---|---|
+| `public.users` is the single source of truth for access, kept in step by a database trigger | 2026-11-06 | Founder chose the fix group, executed by Claude Code | ACCESS-AUDIT-INTEGRITY | Suspending and demoting did not remove database access, because the API and RLS read different role stores | Works locally. Pending on production, review by 2026-11-20 | Branch `fix/access-and-audit-integrity` | API round 54 of 54, `verify-access-integrity.mjs` 44 of 44, local only | `docs/readiness/ACCESS_AND_AUDIT_INTEGRITY_CLOSEOUT_2026_11_06.md` |
+| Members write audit rows only through an RPC that takes the actor from the token, and only refused writes are logged, not refused reads | 2026-11-06 | Claude Code, in the approved plan | ACCESS-AUDIT-INTEGRITY | Non-admin audit writes failed silently and direct inserts could name someone else. Pages make refused reads routinely, which would flood the log | Works locally. Pending on production and log volume, review by 2026-11-20 | Branch `fix/access-and-audit-integrity` | 30 lead creates added 30 rows, forged insert 403, local only | `docs/readiness/ACCESS_AND_AUDIT_INTEGRITY_CLOSEOUT_2026_11_06.md` |

@@ -87,6 +87,12 @@ export function canAccessRoute(user: UserContext, route: AppRoute) {
 // here previously let a caller manage any tenant by simply naming its id, backstopped only by
 // Postgres RLS (which is correctly scoped per docs/readiness/ACTIONABLES_READINESS_MATRIX.md
 // Sprint 3 tenant-model audit). Both roles must always match the acting user's own organization.
+// L16: Organization Admins manage every role except the one above them. The database enforces the same
+// rule (guard_super_admin_* triggers); this gives the API a clean 403.
+export function canGrantRole(actorRole: RoleName, grantedRole: RoleName) {
+  return grantedRole !== "Super Admin" || actorRole === "Super Admin";
+}
+
 export function canManageOrganization(user: UserContext, organizationId: string) {
   if (user.organizationId !== organizationId) return false;
   return user.role === "Super Admin" || user.role === "Organization Admin";
