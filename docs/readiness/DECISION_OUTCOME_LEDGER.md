@@ -79,4 +79,4 @@ Existing rows are not rewritten.
 
 | Decision | Date | Session/tool | Issue ID | Why | Outcome | Commit/PR | Verification | Closeout |
 |---|---|---|---|---|---|---|---|---|
-| The YC demo's staging minute uses a new `/admin/stack` page built on existing audit records | 2026-11-08 | Founder request, executed by Claude Code | STACK-STATUS-PAGE | Founder asked for schema, stats and workflow runs on staging | Pending, review by 2026-11-22 | Not merged | See closeout | `docs/readiness/STACK_STATUS_PAGE_CLOSEOUT_2026_11_08.md` |
+| The YC demo's staging minute uses a new `/admin/stack` page built on existing audit records | 2026-11-08 | Founder request, executed by Claude Code | STACK-STATUS-PAGE | Founder asked for schema, stats and workflow runs on staging | Partial: merged, deployed, 5 stack scenarios pass on staging; signed-in view pending. Review by 2026-11-22 | PR #459, `c2bc70c`; staging `eec34ae` | See closeout | `docs/readiness/STACK_STATUS_PAGE_CLOSEOUT_2026_11_08.md` |
