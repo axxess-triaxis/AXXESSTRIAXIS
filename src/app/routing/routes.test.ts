@@ -18,6 +18,12 @@ describe("enterprise route metadata", () => {
     expect(routeForPath("/workflow-records/approval-requests").section).toBe("tasks");
   });
 
+  it("maps the stack status page to an admin-only route", () => {
+    expect(routeForSection("stack-status").path).toBe("admin/stack");
+    expect(sectionFromPath("/admin/stack")).toBe("stack-status");
+    expect(routeForPath("/admin/stack").requiredRoles).toEqual(["Super Admin", "Organization Admin"]);
+  });
+
   it("maps Sprint 8 admin pages to role-protected routes", () => {
     expect(routeForSection("beta-readiness").path).toBe("admin/beta-readiness");
     expect(routeForSection("product-analytics").path).toBe("admin/product-analytics");
