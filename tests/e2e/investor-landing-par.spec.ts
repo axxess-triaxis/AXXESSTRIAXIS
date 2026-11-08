@@ -20,6 +20,7 @@ const demoRoutes = [
   "/admin/pilot-command-center",
   "/admin/pilot-conversion",
   "/admin/product-analytics",
+  "/admin/stack",
 ];
 
 test.describe("Investor demo parity", () => {
