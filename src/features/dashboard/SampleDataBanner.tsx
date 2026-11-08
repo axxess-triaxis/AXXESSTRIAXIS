@@ -3,6 +3,7 @@
 import { AlertTriangle, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Card } from "../../components/ui/Card";
+import { isDemoModeForcedByEnv } from "../../demo/demoMode";
 
 type SampleDataCounts = {
   projects: number;
@@ -23,6 +24,7 @@ export function SampleDataBanner({ canRemove }: { canRemove: boolean }) {
   const [result, setResult] = useState<string | null>(null);
 
   useEffect(() => {
+    if (isDemoModeForcedByEnv()) return;
     let mounted = true;
     fetch("/api/onboarding/sample-data", { credentials: "include", cache: "no-store" })
       .then((response) => (response.ok ? response.json() : null))

@@ -9,13 +9,14 @@ import { BrandIcon } from "../../components/ui/BrandIcon";
 import { brandIcons } from "../../components/ui/brandIcons";
 import { likenessIcons } from "../../components/ui/LikenessIcon";
 import { EmptyState } from "../../components/feedback/EmptyState";
-import { isDemoModeEnabled } from "../../demo/demoMode";
+import { isDemoModeEnabled, isDemoModeForcedByEnv } from "../../demo/demoMode";
+import { useDemoModeEnabled } from "../../demo/useDemoModeEnabled";
 import { applicationServices } from "../../providers/serviceProvider";
 import { previewSelectedEmailImport, type ConnectorProviderId, type EmailImportPreview } from "../../services/integrations/connectorContract";
 import type { GmailMailboxMessageSummary } from "../../services/integrations/gmailMailbox";
 import type { MicrosoftGraphMailboxMessageSummary } from "../../services/integrations/microsoftGraphMailbox";
 import type { NotionPageSummary } from "../../services/integrations/notionPages";
-import { getIntegrationHealth, getInfrastructureOnlyIntegrations, getPilotIntegrations } from "../../services/integrations/pluginRegistry";
+import { getDisplayedIntegrationHealth, getIntegrationHealth, getInfrastructureOnlyIntegrations, getPilotIntegrations } from "../../services/integrations/pluginRegistry";
 import { useFacebookLoginStatus, facebookLoginStatusCopy } from "../../hooks/useFacebookLoginStatus";
 import { WhatsAppPhoneNumberField } from "./WhatsAppPhoneNumberField";
 import { allAgentCapabilities, mcp2AgentCapabilities, type AgentCapability } from "../../security/agentScope";
@@ -139,6 +140,8 @@ export const IntegrationsSection = () => {
   const integrations = applicationServices.institutionalRepository.getIntegrations();
   const connectedCount = integrations.filter((integration) => integration.status === "connected").length;
   const disconnectedCount = integrations.length - connectedCount;
+  const demoMode = useDemoModeEnabled();
+  const displayedHealth = getDisplayedIntegrationHealth(pluginHealth, demoMode, integrations);
   // A-109 (2026-08-09): moved from Settings > Integrations (now removed) -- gates the WhatsApp
   // phone-number-ID field, same admin-role check that tab used.
   const { session } = useAuth();
@@ -186,6 +189,7 @@ export const IntegrationsSection = () => {
   }, []);
 
   useEffect(() => {
+    if (isDemoModeForcedByEnv()) return;
     let cancelled = false;
     fetch("/api/connectors/status?provider=gmail&provider=microsoft&provider=notion", { credentials: "include", cache: "no-store" })
       .then((response) => (response.ok ? response.json() : { connections: [] }))
@@ -419,7 +423,7 @@ export const IntegrationsSection = () => {
 
   return (
   <div className="space-y-5">
-    <SectionHeader title="Integrations" subtitle={`${pluginHealth.total} plugin adapters - ${pluginHealth.webhookReady} webhook-ready - ${connectedCount} connected - ${disconnectedCount} disconnected - provider-gated for production credentials`} />
+    <SectionHeader title="Integrations" subtitle={`${displayedHealth.total} plugin adapters - ${displayedHealth.webhookReady} webhook-ready - ${connectedCount} connected - ${disconnectedCount} disconnected - provider-gated for production credentials`} />
 
     {/* Reordered (2026-08-13, applies to both landing.triaxisventures.com and
         investor.triaxisventures.com -- this is a real information-architecture improvement, not
@@ -429,10 +433,10 @@ export const IntegrationsSection = () => {
         release -- not what a first-time visitor to this page needs to see first. */}
     <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
       {[
-        ["Adapters catalogued", pluginHealth.total],
-        ["Configured", pluginHealth.configured],
-        ["Pilot-enabled", pluginHealth.pilotEnabled],
-        ["Webhook-capable", pluginHealth.webhookReady],
+        ["Adapters catalogued", displayedHealth.total],
+        ["Configured", displayedHealth.configured],
+        ["Pilot-enabled", displayedHealth.pilotEnabled],
+        ["Webhook-capable", displayedHealth.webhookReady],
       ].map(([label, value]) => (
         <Card key={label} className="p-4">
           <div className="text-[11px] font-semibold uppercase tracking-wide text-[#5F6B73]">{label}</div>
@@ -684,6 +688,7 @@ function EnterpriseConnectorCredentialsPanel() {
   const canConfigure = Boolean(session.user && ["Super Admin", "Organization Admin"].includes(session.user.role));
 
   useEffect(() => {
+    if (isDemoModeForcedByEnv()) return;
     let isMounted = true;
     fetch("/api/connectors/enterprise/credentials", { credentials: "include", cache: "no-store" })
       .then((response) => response.json())
@@ -1072,7 +1077,7 @@ function AgentConnectionsPanel() {
   }
 
   useEffect(() => {
-    if (!canManage) return;
+    if (!canManage || isDemoModeForcedByEnv()) return;
     let isMounted = true;
     fetch("/api/agents/connections", { credentials: "include", cache: "no-store" })
       .then((response) => response.json())

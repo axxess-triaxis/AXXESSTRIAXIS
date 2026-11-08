@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { isDemoModeForcedByEnv } from "../demo/demoMode";
 import type { TenantScope } from "../repositories/interfaces";
 import type { Task } from "../domain";
 
@@ -11,7 +12,7 @@ export function useOverdueTaskCount(scope?: TenantScope, refreshToken = 0) {
   const [count, setCount] = useState<number | undefined>(undefined);
 
   useEffect(() => {
-    if (!scope?.organizationId) return;
+    if (!scope?.organizationId || isDemoModeForcedByEnv()) return;
     const controller = new AbortController();
     fetch("/api/repositories/tasks?pageSize=500", { credentials: "include", cache: "no-store", signal: controller.signal })
       .then(async (response) => {
