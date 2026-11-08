@@ -80,3 +80,9 @@ Existing rows are not rewritten.
 | Decision | Date | Session/tool | Issue ID | Why | Outcome | Commit/PR | Verification | Closeout |
 |---|---|---|---|---|---|---|---|---|
 | Product Hunt launch numbers appear as a live, operator-only tile, with no history table yet | 2026-11-07 | Founder request, executed by Claude Code | PRODUCT-HUNT-TRACKER | They describe Triaxis's own listing, not customer data, and the existing tile pattern needs no migration | Pending, review by 2026-11-21 | Not merged | See closeout | `docs/readiness/PRODUCT_HUNT_LAUNCH_TRACKER_CLOSEOUT_2026_11_07.md` |
+
+## Stack status page (2026-11-08)
+
+| Decision | Date | Session/tool | Issue ID | Why | Outcome | Commit/PR | Verification | Closeout |
+|---|---|---|---|---|---|---|---|---|
+| The YC demo's staging minute uses a new `/admin/stack` page built on existing audit records | 2026-11-08 | Founder request, executed by Claude Code | STACK-STATUS-PAGE | Founder asked for schema, stats and workflow runs on staging | Pending, review by 2026-11-22 | Not merged | See closeout | `docs/readiness/STACK_STATUS_PAGE_CLOSEOUT_2026_11_08.md` |
