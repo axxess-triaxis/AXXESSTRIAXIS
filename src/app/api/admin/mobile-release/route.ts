@@ -1,3 +1,4 @@
+import { recordDeniedAttempt } from "../../../../services/audit/auditEvents";
 import { NextResponse } from "next/server";
 import { getServerAuthSession } from "../../../../auth/serverSession";
 import { isDemoModeEnabled } from "../../../../demo/demoMode";
@@ -41,6 +42,7 @@ export async function POST(request: Request) {
   const session = await getServerAuthSession(true);
   if (!session) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   if (!canManageOrganization(session.user, session.user.organizationId)) {
+    await recordDeniedAttempt(session, { route: "/api/admin/mobile-release", method: "POST" });
     return NextResponse.json({ error: "Organization admin access is required." }, { status: 403 });
   }
 

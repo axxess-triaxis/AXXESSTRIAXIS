@@ -141,6 +141,24 @@ describe("Executive Dashboard signal hooks -- demo mode (A-91)", () => {
     expect(signals.stalledCount).toBeGreaterThan(0);
   });
 
+  it("useCrmLeads: a refused role gets null, so the dashboard does not stay on loading", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 403, json: async () => ({ error: "Forbidden." }) }));
+    const { useCrmLeads } = await import("./useCrmLeads");
+
+    const { result } = renderHook(() => useCrmLeads(scope));
+
+    await waitFor(() => expect(result.current).toBeNull());
+  });
+
+  it("useFinancialWatchItems: a refused role gets null, so the dashboard does not stay on loading", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 403, json: async () => ({ error: "Forbidden." }) }));
+    const { useFinancialWatchItems } = await import("./useFinancialWatchItems");
+
+    const { result } = renderHook(() => useFinancialWatchItems(scope));
+
+    await waitFor(() => expect(result.current).toBeNull());
+  });
+
   it("computeFinancialDashboardSignals against demo items produces non-zero, colorful counts", async () => {
     const { demoFinancialWatchItems } = await import("../demo/demoDashboardSignals");
     const { computeFinancialDashboardSignals } = await import("../services/dashboard/financialDashboardSignals");

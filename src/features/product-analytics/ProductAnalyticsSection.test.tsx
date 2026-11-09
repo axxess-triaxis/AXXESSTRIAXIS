@@ -224,6 +224,7 @@ describe("ProductAnalyticsSection Engineering & Delivery Tooling (real integrati
               postHogQuery: { status: "not-configured", provider: "none" },
               mixpanelQuery: { status: "not-configured", provider: "none" },
               asana: { status: "not-configured", provider: "none" },
+              productHunt: { status: "ok", provider: "product-hunt", post: "AXXESS TRIaxis", votes: 42, comments: 7, reviewsRating: 4.5, featuredOn: "2026-10-01" },
             },
           }),
         };
@@ -241,5 +242,7 @@ describe("ProductAnalyticsSection Engineering & Delivery Tooling (real integrati
     expect(screen.getByText("PostHog (query)")).toBeInTheDocument();
     expect(screen.getByText("Mixpanel (query)")).toBeInTheDocument();
     expect(screen.getByText("Asana")).toBeInTheDocument();
+    expect(screen.getByText("Product Hunt launch")).toBeInTheDocument();
+    expect(screen.getByText(/votes: 42, comments: 7/)).toBeInTheDocument();
   });
 });
