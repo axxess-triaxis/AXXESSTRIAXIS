@@ -1,6 +1,6 @@
 # Stack Status Page: Closeout (2026-11-08)
 
-**Status: built and tested locally, not merged, deployed or shown on staging yet.**
+**Status: merged (PR #459, `c2bc70c`), deployed to production and staging, and the five stack scenarios passed on staging. The page itself has not yet been viewed signed in on staging.**
 
 ## External signal
 
@@ -41,10 +41,24 @@ Run on `feat/stack-status-page`, from `origin/main` at `2023d58`:
   - `investor-landing-par` spec: `19 passed (54.5s)`, including `/admin/stack` with no failing API call and no page error.
   - Screenshots at 1366 and 390 pixels wide: schema, sample label, stats and runs render. The existing "What's New" dialog covered part of the page.
 
+## Live results (2026-11-08)
+
+- **Merged:** PR #459 merged to `main` as `c2bc70c`; the production deploy for that commit succeeded.
+- **Investor, live:** `investor-landing-par` spec against investor.triaxisventures.com: `19 passed`, including `/admin/stack` (200, sample data). Landing and staging return 401 when signed out, as expected.
+- **Staging:** `main` merged into `staging` and pushed as `eec34ae`; its Vercel deploy statuses report success. The domain sits behind Vercel login, so it was not opened from here.
+- **Stack scenarios on staging:** `playwright test --config playwright.stack.config.ts --retries=1`, run from the founder's machine, log finished 2026-11-08 18:14: `4 passed`, `1 flaky`, `9.6m`.
+  - All five passed on the retry: Callismatic lead makes one task; completed Omnidamus conversation makes one task with no real message sent; a duplicate event makes one task; spam makes no task; a malformed event reaches the failure queue and makes no task.
+  - The first attempt stopped at the test admin's sign-in (Executive Dashboard not visible within 20 s).
+  - An earlier run the same day (12:06) failed scenario 1 because Callismatic labelled the test lead `important` instead of `lead`. Callismatic's lead labelling is not deterministic; an unlabelled lead would not take STILL's every-lead path.
+- **Not verified:** `/admin/stack` on staging has not been viewed signed in, so the runs these scenarios made are expected on the page but not yet seen.
+- **Credential note:** during setup the Callismatic staging `ADMIN_API_KEY` was shown in a local terminal and in the working conversation. It needs a new value in its Secrets Manager secret (staging only).
+
 ## Still partial or unsupported
 
 - **Real data has not been viewed.** That needs a signed-in admin on staging. STILL writes into the organization its agent key belongs to, so the founder must sign in as an admin of that organization.
-- **Staging shows nothing yet.** It needs this merged to `main`, then `main` merged into `staging` and pushed. Both need founder approval. The page will also be empty until stack runs exist in the last 7 days, and running the five stack scenarios needs an AWS sign-in.
+- **Signed-in view on staging still to do.** Merge, staging update and the stack scenarios are done (see Live results); the founder still needs to sign in as an admin of STILL's organization and view `/admin/stack`.
+- **Callismatic lead labelling varies.** The same clear buying message was labelled `important` once and `lead` once.
+- **Rotate the exposed staging admin key** (see Live results).
 - **Narrow layout:** at phone width, the app's own sidebar and dialog cover the page. That is the existing app layout, not this change.
 
 ## Decision ledger
@@ -56,6 +70,6 @@ What changed: See "What changed".
 Architecture boundary: Admin-only API, caller's organization only; descriptions never leave the server.
 Product boundary: Counts only calls that reached AXXESS. Investor shows labelled sample runs.
 Verification: See Closeout Evidence.
-Outcome: Pending, review by 2026-11-22.
-Follow-up: Merge; update staging; run the stack scenarios; check with a real sign-in.
+Outcome: Partial. Merged, deployed, and stack scenarios pass on staging; signed-in view pending. Review by 2026-11-22.
+Follow-up: View /admin/stack signed in on staging; rotate the Callismatic staging admin key; make Callismatic's lead labelling dependable.
 ```
