@@ -1,6 +1,6 @@
 # Stack Status Page: Closeout (2026-11-08)
 
-**Status: merged (PR #459, `c2bc70c`), deployed to production and staging, and the five stack scenarios passed on staging. The page itself has not yet been viewed signed in on staging.**
+**Status: merged (PR #459, `c2bc70c`), deployed to production and staging, and the five stack scenarios passed on staging. On 2026-11-09 the page was viewed signed in on staging and showed real runs (see "Signed-in view on staging").**
 
 ## External signal
 
@@ -50,13 +50,43 @@ Run on `feat/stack-status-page`, from `origin/main` at `2023d58`:
   - All five passed on the retry: Callismatic lead makes one task; completed Omnidamus conversation makes one task with no real message sent; a duplicate event makes one task; spam makes no task; a malformed event reaches the failure queue and makes no task.
   - The first attempt stopped at the test admin's sign-in (Executive Dashboard not visible within 20 s).
   - An earlier run the same day (12:06) failed scenario 1 because Callismatic labelled the test lead `important` instead of `lead`. Callismatic's lead labelling is not deterministic; an unlabelled lead would not take STILL's every-lead path.
-- **Not verified:** `/admin/stack` on staging has not been viewed signed in, so the runs these scenarios made are expected on the page but not yet seen.
+- **Signed-in view:** done on 2026-11-09, see the next section.
 - **Credential note:** during setup the Callismatic staging `ADMIN_API_KEY` was shown in a local terminal and in the working conversation. It needs a new value in its Secrets Manager secret (staging only).
+
+## Signed-in view on staging (2026-11-09)
+
+**External signal:** the founder asked to show the four-product orchestration in the YC demo, and chose the seeded test admin for the sign-in.
+
+**How:** the founder passed Vercel's login in the Claude desktop browser pane. Claude then signed in to staging.triaxisventures.com as `orgadmin.alpha@axxess.test`, using the seeded password from `tests/e2e/helpers.ts`, and opened `/admin/stack`. That is the account `tests/stack/stack.spec.ts` signs in with (`seededUsers.orgAdminAlpha`), and the stack runs land in its organization.
+
+**What the page showed:**
+
+| Item | Value |
+|---|---|
+| Runs, last 7 days | 18 |
+| Tasks created | 18 |
+| Awaiting approval | 0 |
+| Failed or refused | 0 |
+| From Callismatic | 12 runs, 12 tasks created |
+| From Omnidamus | 6 runs, 6 tasks created |
+| Latest run | 8 Nov, 12:37 UTC |
+| Oldest run listed | 4 Nov, 15:14 UTC |
+
+- The schema strip (Callismatic, Omnidamus, Event bus, STILL, AXXESS TRIaxis) and the workflow run list rendered. The runs include the stack test's buyer message, its replay events and the Omnidamus follow-up.
+- `GET /api/agents/stack-runs` returned 200.
+- No phone number or email appeared in the page text.
+- Console: Content Security Policy blocks on `vexo.co`, `getlaunchlist.com` and `vercel.live` scripts, plus one 401 on a resource that was not traced. None came from this page's API call.
+- The "What's New" dialog covered the page on first load until it was dismissed.
+- A screenshot was taken in the browser pane at 1366 x 900. It was not saved to the repo.
+
+**Not checked:** individual task bodies, the 18:14 run on 2026-11-08 (no run after 12:37 UTC is listed, and why was not traced), and production or landing.
+
+**Demo note:** the stats cover 7 days only. The 15 runs from 4 Nov leave the window after 11 Nov, which leaves 3. Re-run the stack scenarios the day before the demo, so the page shows recent runs.
 
 ## Still partial or unsupported
 
-- **Real data has not been viewed.** That needs a signed-in admin on staging. STILL writes into the organization its agent key belongs to, so the founder must sign in as an admin of that organization.
-- **Signed-in view on staging still to do.** Merge, staging update and the stack scenarios are done (see Live results); the founder still needs to sign in as an admin of STILL's organization and view `/admin/stack`.
+- **Fresh runs before the demo.** The founder needs to run `playwright.stack.config.ts` from their machine, with AWS signed in.
+- **Backup recording.** No video of a stack run exists yet.
 - **Callismatic lead labelling varies.** The same clear buying message was labelled `important` once and `lead` once.
 - **Rotate the exposed staging admin key** (see Live results).
 - **Narrow layout:** at phone width, the app's own sidebar and dialog cover the page. That is the existing app layout, not this change.
@@ -70,6 +100,6 @@ What changed: See "What changed".
 Architecture boundary: Admin-only API, caller's organization only; descriptions never leave the server.
 Product boundary: Counts only calls that reached AXXESS. Investor shows labelled sample runs.
 Verification: See Closeout Evidence.
-Outcome: Partial. Merged, deployed, and stack scenarios pass on staging; signed-in view pending. Review by 2026-11-22.
-Follow-up: View /admin/stack signed in on staging; rotate the Callismatic staging admin key; make Callismatic's lead labelling dependable.
+Outcome: Merged, deployed, stack scenarios pass on staging, and the signed-in view on 2026-11-09 showed 18 real runs (12 Callismatic, 6 Omnidamus, 0 failed). Review by 2026-11-22.
+Follow-up: Re-run the stack scenarios before the demo; rotate the Callismatic staging admin key; make Callismatic's lead labelling dependable.
 ```
