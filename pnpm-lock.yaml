@@ -352,8 +352,8 @@ importers:
         specifier: ^6.0.0
         version: 6.0.24(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(expo-constants@58.0.13)(expo-linking@58.0.13)(expo@58.0.17)(react-dom@19.3.1(react@19.3.1))(react-native-safe-area-context@5.10.1(react-native@0.87.1(@babel/core@7.29.7)(@types/react@19.2.17)(react@19.3.1))(react@19.3.1))(react-native-screens@4.30.0(react-native@0.87.1(@babel/core@7.29.7)(@types/react@19.2.17)(react@19.3.1))(react@19.3.1))(react-native@0.87.1(@babel/core@7.29.7)(@types/react@19.2.17)(react@19.3.1))(react@19.3.1)
       expo-secure-store:
-        specifier: ^57.0.1
-        version: 57.0.3(expo@58.0.17)
+        specifier: ^58.0.2
+        version: 58.0.2(expo@58.0.17)
       expo-status-bar:
         specifier: ^58.0.3
         version: 58.0.3(expo@58.0.17)(react-native@0.87.1(@babel/core@7.29.7)(@types/react@19.2.17)(react@19.3.1))(react@19.3.1)
@@ -6017,8 +6017,8 @@ packages:
       react-server-dom-webpack:
         optional: true
 
-  expo-secure-store@57.0.3:
-    resolution: {integrity: sha512-w7XkSQeUiYXPoKXo1jSrQqql7pyCSyIzOp2k0apsZZBE+RkoLTQIMjcbqc181y6KgupfNnYxkaKe+4MEg94+SA==}
+  expo-secure-store@58.0.2:
+    resolution: {integrity: sha512-VupWWEuQF6IiQ06McSymtn7/tehs8ifThhFwAU4UK8poomZcaa2S0UVt/y7G2XozBdkI3xpiPSx+r0pS2zsuYQ==}
     peerDependencies:
       expo: '*'
 
@@ -15127,7 +15127,7 @@ snapshots:
       - '@types/react-dom'
       - supports-color
 
-  expo-secure-store@57.0.3(expo@58.0.17):
+  expo-secure-store@58.0.2(expo@58.0.17):
     dependencies:
       expo: 58.0.17(@babel/core@7.29.7)(@expo/dom-webview@58.0.2)(expo-router@6.0.24)(react-dom@19.3.1(react@19.3.1))(react-native@0.87.1(@babel/core@7.29.7)(@types/react@19.2.17)(react@19.3.1))(react@19.3.1)(typescript@6.0.3)
 
