@@ -77,6 +77,14 @@ describe("DashboardSnapshotBar (A-110)", () => {
     expect(screen.getByText("Loading...")).toBeInTheDocument();
   });
 
+  it("tells an outside role the counts are not for them, instead of loading forever", () => {
+    render(<DashboardSnapshotBar periods={{}} actionQueue={[]} pendingAiReviewCount={0} tenantActivityAllowed={false} />);
+    expect(screen.queryByText("Loading...")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Daily" })).not.toBeInTheDocument();
+    expect(screen.getByText("Organization activity counts are not available for your role.")).toBeInTheDocument();
+    expect(screen.getByText("Actionables")).toBeInTheDocument();
+  });
+
   it("Insights shows the honest 'nothing notable' message when weekly data hasn't loaded", () => {
     render(<DashboardSnapshotBar periods={{}} actionQueue={[]} pendingAiReviewCount={0} />);
     expect(screen.getByText("No notable change to report yet.")).toBeInTheDocument();

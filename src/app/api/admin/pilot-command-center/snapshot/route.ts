@@ -1,3 +1,4 @@
+import { recordDeniedAttempt } from "../../../../../services/audit/auditEvents";
 import { NextResponse } from "next/server";
 import { getServerAuthSession } from "../../../../../auth/serverSession";
 import { canManageOrganization } from "../../../../../security/rbac";
@@ -7,6 +8,7 @@ export async function POST() {
   const session = await getServerAuthSession(true);
   if (!session) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   if (!canManageOrganization(session.user, session.user.organizationId)) {
+    await recordDeniedAttempt(session, { route: "/api/admin/pilot-command-center/snapshot", method: "POST" });
     return NextResponse.json({ error: "Organization admin access is required." }, { status: 403 });
   }
 

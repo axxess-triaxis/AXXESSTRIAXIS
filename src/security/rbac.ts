@@ -72,6 +72,41 @@ export function isRoleName(value: string): value is RoleName {
   return ["Super Admin", "Organization Admin", "Executive", "Manager", "Employee", "Consultant", "Guest"].includes(value);
 }
 
+// The API and the page guard read these same rules, so a page saying "Access restricted" and the
+// route behind it cannot disagree. RLS holds the matching rules for direct database calls, see
+// supabase/migrations/20261106130000_api_role_checks.sql. Change both together.
+const seniorRoles: RoleName[] = ["Super Admin", "Organization Admin", "Executive", "Manager"];
+const staffRoles: RoleName[] = [...seniorRoles, "Employee"];
+
+const capabilityPermissions = {
+  "crm.read": staffRoles,
+  "crm.create": staffRoles,
+  // Manager is here for the finance head, because AXXESS has no finance role yet.
+  "financial-watch": seniorRoles,
+  stakeholders: staffRoles,
+  "email-import": staffRoles,
+  "workflow-timeline": staffRoles,
+  // Counts of what happened across the whole tenant, so outside roles get nothing here.
+  "tenant-activity": staffRoles,
+} satisfies Record<string, RoleName[]>;
+
+export type ApiCapability = keyof typeof capabilityPermissions;
+
+export function canUseCapability(role: RoleName, capability: ApiCapability) {
+  return capabilityPermissions[capability].includes(role);
+}
+
+// An Employee may use the CRM, but sees only their own leads.
+export function canReadAllLeads(role: RoleName) {
+  return seniorRoles.includes(role);
+}
+
+// An Employee may use the workflow timeline, but sees only events they performed. Its titles and
+// descriptions name other people's work. See 20261106135000_employee_own_work.sql.
+export function canReadWholeTimeline(role: RoleName) {
+  return seniorRoles.includes(role);
+}
+
 export function canAccessSection(user: UserContext, section: NavSection) {
   return sectionPermissions[section].includes(user.role);
 }
@@ -88,6 +123,12 @@ export function canAccessRoute(user: UserContext, route: AppRoute) {
 // here previously let a caller manage any tenant by simply naming its id, backstopped only by
 // Postgres RLS (which is correctly scoped per docs/readiness/ACTIONABLES_READINESS_MATRIX.md
 // Sprint 3 tenant-model audit). Both roles must always match the acting user's own organization.
+// L16: Organization Admins manage every role except the one above them. The database enforces the same
+// rule (guard_super_admin_* triggers); this gives the API a clean 403.
+export function canGrantRole(actorRole: RoleName, grantedRole: RoleName) {
+  return grantedRole !== "Super Admin" || actorRole === "Super Admin";
+}
+
 export function canManageOrganization(user: UserContext, organizationId: string) {
   if (user.organizationId !== organizationId) return false;
   return user.role === "Super Admin" || user.role === "Organization Admin";

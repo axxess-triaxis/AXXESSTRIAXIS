@@ -1,18 +1,20 @@
 import { NextResponse } from "next/server";
 import { getServerAuthSession } from "../../../../auth/serverSession";
+import { recordAuditBestEffort, recordDeniedAttempt } from "../../../../services/audit/auditEvents";
 import { createAgentConnection, listAgentConnections, revokeAgentConnection, updateAgentConnectionCapabilities } from "../../../../services/agents/agentConnectionRepository";
 import { getAgentProfile } from "../../../../services/agents/agentProfileRepository";
 import { agentProviderIds, normalizeAgentCapabilities, type AgentProviderId } from "../../../../security/agentScope";
 
 const adminRoles = ["Super Admin", "Organization Admin"];
 
-async function requireAdminSession(): Promise<
+async function requireAdminSession(refusedWriteMethod?: string): Promise<
   | { ok: true; session: NonNullable<Awaited<ReturnType<typeof getServerAuthSession>>> }
   | { ok: false; error: NextResponse }
 > {
   const session = await getServerAuthSession(true);
   if (!session) return { ok: false, error: NextResponse.json({ error: "Unauthorized." }, { status: 401 }) };
   if (!adminRoles.includes(session.user.role)) {
+    if (refusedWriteMethod) await recordDeniedAttempt(session, { route: "/api/agents/connections", method: refusedWriteMethod });
     return { ok: false, error: NextResponse.json({ error: "Only organization admins can manage agent connections." }, { status: 403 }) };
   }
   return { ok: true, session };
@@ -27,7 +29,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const authResult = await requireAdminSession();
+  const authResult = await requireAdminSession("POST");
   if (!authResult.ok) return authResult.error;
   const { session } = authResult;
 
@@ -59,13 +61,21 @@ export async function POST(request: Request) {
     agentProfileId: body?.agentProfileId,
   });
 
+  await recordAuditBestEffort(session, {
+    action: "agent_connection.created",
+    resourceType: "agent_connection",
+    resourceId: connection.id,
+    category: "agentic-infrastructure",
+    metadata: { provider, label: body?.label?.trim() || provider, agentProfileId: body?.agentProfileId ?? null },
+  });
+
   // rawApiKey is returned exactly once here -- it is never persisted (only its hash is) and this
   // response is the only opportunity the tenant admin has to copy it.
   return NextResponse.json({ connection, rawApiKey }, { status: 201 });
 }
 
 export async function PATCH(request: Request) {
-  const authResult = await requireAdminSession();
+  const authResult = await requireAdminSession("PATCH");
   if (!authResult.ok) return authResult.error;
 
   const body = await request.json().catch(() => null) as { id?: string; capabilities?: unknown } | null;
@@ -84,16 +94,29 @@ export async function PATCH(request: Request) {
     connectionId: id,
     capabilities: normalized,
   });
+  await recordAuditBestEffort(authResult.session, {
+    action: "agent_connection.capabilities_updated",
+    resourceType: "agent_connection",
+    resourceId: id,
+    category: "agentic-infrastructure",
+    metadata: { capabilities: normalized },
+  });
   return NextResponse.json({ connection });
 }
 
 export async function DELETE(request: Request) {
-  const authResult = await requireAdminSession();
+  const authResult = await requireAdminSession("DELETE");
   if (!authResult.ok) return authResult.error;
 
   const id = new URL(request.url).searchParams.get("id");
   if (!id) return NextResponse.json({ error: "id is required." }, { status: 400 });
 
   await revokeAgentConnection(authResult.session.user.organizationId, id);
+  await recordAuditBestEffort(authResult.session, {
+    action: "agent_connection.revoked",
+    resourceType: "agent_connection",
+    resourceId: id,
+    category: "agentic-infrastructure",
+  });
   return NextResponse.json({ ok: true });
 }

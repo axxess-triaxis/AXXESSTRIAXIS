@@ -3,6 +3,8 @@ import { getServerAuthSession } from "../../../../auth/serverSession";
 import type { CrmLeadStage, CrmLeadStatus, PriorityLevel } from "../../../../domain";
 import { auditLogsRepository, tenantScopeFromUser } from "../../../../repositories/supabaseEnterpriseRepositories";
 import { createCrmLead, listCrmLeads, type CreateCrmLeadInput } from "../../../../repositories/crmRepository";
+import { canReadAllLeads, canUseCapability } from "../../../../security/rbac";
+import { recordDeniedAttempt } from "../../../../services/audit/auditEvents";
 
 // Executive Dashboard Redesign Sprint ED-R2. organization_id/userId are derived from the
 // authenticated server session via tenantScopeFromUser -- never accepted from the client.
@@ -10,8 +12,12 @@ export async function GET() {
   const session = await getServerAuthSession(true);
   if (!session) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
 
+  if (!canUseCapability(session.user.role, "crm.read")) {
+    return NextResponse.json({ error: "Forbidden." }, { status: 403 });
+  }
+
   const scope = tenantScopeFromUser(session.user, session.accessToken);
-  const leads = await listCrmLeads(scope);
+  const leads = await listCrmLeads(scope, canReadAllLeads(session.user.role) ? undefined : { ownerUserId: session.user.id });
   return NextResponse.json({ leads });
 }
 
@@ -31,6 +37,11 @@ type CreateLeadRequest = {
 export async function POST(request: Request) {
   const session = await getServerAuthSession(true);
   if (!session) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+
+  if (!canUseCapability(session.user.role, "crm.create")) {
+    await recordDeniedAttempt(session, { route: "/api/crm/leads", method: "POST" });
+    return NextResponse.json({ error: "Forbidden." }, { status: 403 });
+  }
 
   const body = await request.json().catch(() => ({})) as CreateLeadRequest;
   if (!body.title?.trim()) return NextResponse.json({ error: "Lead title is required." }, { status: 400 });

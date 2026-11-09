@@ -68,12 +68,27 @@ Existing rows are not rewritten.
 |---|---|---|---|---|---|---|---|---|
 | Every Callismatic lead becomes an AXXESS task, whatever needs_decision says | 2026-11-04 | Founder decision, executed by Claude Code | #452 | A clear buyer was marked as not needing a person in 20 of 23 tries, with no error | Working on staging. Pending on production, review by 2026-11-18 | STILL#7, STILL#8 (`f4e6dfe`) | 70 STILL tests, AWS pattern test, 3 clean runs, one deliberate failure | `docs/readiness/STACK_E2E_STAGING_CLOSEOUT_2026_11_04.md` |
 
+## Access and audit integrity (2026-11-06)
+
+| Decision | Date | Session/tool | Issue ID | Why | Outcome | Commit/PR | Verification | Closeout |
+|---|---|---|---|---|---|---|---|---|
+| `public.users` is the single source of truth for access, kept in step by a database trigger | 2026-11-06 | Founder chose the fix group, executed by Claude Code | ACCESS-AUDIT-INTEGRITY | Suspending and demoting did not remove database access, because the API and RLS read different role stores | Works locally. Pending on production, review by 2026-11-20 | #456 (`590e976`) | API round 54 of 54, `verify-access-integrity.mjs` 44 of 44, local only | `docs/readiness/ACCESS_AND_AUDIT_INTEGRITY_CLOSEOUT_2026_11_06.md` |
+| Members write audit rows only through an RPC that takes the actor from the token, and only refused writes are logged, not refused reads | 2026-11-06 | Claude Code, in the approved plan | ACCESS-AUDIT-INTEGRITY | Non-admin audit writes failed silently and direct inserts could name someone else. Pages make refused reads routinely, which would flood the log | Works locally. Pending on production and log volume, review by 2026-11-20 | #456 (`590e976`) | 30 lead creates added 30 rows, forged insert 403, local only | `docs/readiness/ACCESS_AND_AUDIT_INTEGRITY_CLOSEOUT_2026_11_06.md` |
+| Employees use the CRM and see only their own leads, with no new Sales role | 2026-11-06 | Founder chose, executed by Claude Code | API-ROLE-CHECKS | 30 sales agents could not open `/crm` yet could read each other's deal values through the API | Works locally: each agent reads exactly their own deal. Pending on real use, review by 2026-11-20 | #457 (`c68f63c`) | Round 163/163, local only | `docs/readiness/API_ROLE_CHECKS_CLOSEOUT_2026_11_06.md` |
+| `Manager` keeps the financial watchlist until a finance role exists, against the audit matrix's `N` | 2026-11-06 | Approved plan, executed by Claude Code | API-ROLE-CHECKS | The only alternative locks the finance head out, because AXXESS has no finance role | Works locally. Pending M23, review by 2026-11-20 | #457 (`c68f63c`) | Round 163/163, local only | `docs/readiness/API_ROLE_CHECKS_CLOSEOUT_2026_11_06.md` |
+| Employees see only their own tasks, projects and meetings, with projects kept in although the audit lets Employees read all projects | 2026-11-06 | Founder chose, executed by Claude Code | API-ROLE-CHECKS | The audit asks for assigned-only tasks. `tasks_sprint5_employee_write` also let every Employee change any task | Works locally: an Employee cannot read, change or delete a colleague's task. Pending on real use, review by 2026-11-20 | #457 | Integrity 105/105, round 163/163, local only | `docs/readiness/API_ROLE_CHECKS_CLOSEOUT_2026_11_06.md` |
 ## Investor and landing parity (2026-11-05)
 
 | Decision | Date | Session/tool | Issue ID | Why | Outcome | Commit/PR | Verification | Closeout |
 |---|---|---|---|---|---|---|---|---|
 | Investor stays in forced demo mode; par means the same code and features, with demo data | 2026-11-05 | Founder decision, executed by Claude Code | INVESTOR-LANDING-PAR | Production data on a public, no-login site would be a major security and product change | Partial: live investor check passed 2026-11-06, signed-in landing not compared. Pending, review by 2026-11-19 | #453, merged as `650b131` | See closeout | `docs/readiness/INVESTOR_LANDING_PAR_CLOSEOUT_2026_11_05.md` |
 | Remove the dead `/admin/backups` link rather than build a page | 2026-11-05 | Claude Code, reported to founder | INVESTOR-LANDING-PAR | The wiring roadmap records no backup table, service or route, so a page would advertise an unbuilt feature | Pending, review by 2026-11-19 | #453, merged as `650b131` | See closeout | `docs/readiness/INVESTOR_LANDING_PAR_CLOSEOUT_2026_11_05.md` |
+
+## Product Hunt launch tracker (2026-11-07)
+
+| Decision | Date | Session/tool | Issue ID | Why | Outcome | Commit/PR | Verification | Closeout |
+|---|---|---|---|---|---|---|---|---|
+| Product Hunt launch numbers appear as a live, operator-only tile, with no history table yet | 2026-11-07 | Founder request, executed by Claude Code | PRODUCT-HUNT-TRACKER | They describe Triaxis's own listing, not customer data, and the existing tile pattern needs no migration | Pending, review by 2026-11-21 | Not merged | See closeout | `docs/readiness/PRODUCT_HUNT_LAUNCH_TRACKER_CLOSEOUT_2026_11_07.md` |
 
 ## Stack status page (2026-11-08)
 
