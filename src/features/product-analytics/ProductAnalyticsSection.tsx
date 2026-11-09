@@ -14,6 +14,7 @@ import { tenantScopeFromUser } from "../../repositories/supabaseEnterpriseReposi
 import type { AsanaPortfolioHealthResult } from "../../services/integrations/asanaPortfolioHealth";
 import type { MixpanelQueryHealthResult } from "../../services/integrations/mixpanelQueryHealth";
 import type { PostHogQueryHealthResult } from "../../services/integrations/postHogQueryHealth";
+import type { ProductHuntLaunchHealthResult } from "../../services/integrations/productHuntLaunchTracker";
 import type { SentryProjectHealthResult } from "../../services/integrations/sentryProjectHealth";
 import { pilotReadinessSteps } from "../../services/pilot/pilotHealth";
 import { useAnalytics } from "../../services/analytics";
@@ -33,6 +34,7 @@ type IntegrationsHealth = {
   postHogQuery: PostHogQueryHealthResult;
   mixpanelQuery: MixpanelQueryHealthResult;
   asana: AsanaPortfolioHealthResult;
+  productHunt: ProductHuntLaunchHealthResult;
 };
 
 const integrationDisplayNames: Record<keyof IntegrationsHealth, string> = {
@@ -40,6 +42,7 @@ const integrationDisplayNames: Record<keyof IntegrationsHealth, string> = {
   postHogQuery: "PostHog (query)",
   mixpanelQuery: "Mixpanel (query)",
   asana: "Asana",
+  productHunt: "Product Hunt launch",
 };
 
 type PilotReadinessEventRow = {

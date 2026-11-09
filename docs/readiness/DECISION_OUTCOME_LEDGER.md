@@ -75,6 +75,12 @@ Existing rows are not rewritten.
 | Investor stays in forced demo mode; par means the same code and features, with demo data | 2026-11-05 | Founder decision, executed by Claude Code | INVESTOR-LANDING-PAR | Production data on a public, no-login site would be a major security and product change | Partial: live investor check passed 2026-11-06, signed-in landing not compared. Pending, review by 2026-11-19 | #453, merged as `650b131` | See closeout | `docs/readiness/INVESTOR_LANDING_PAR_CLOSEOUT_2026_11_05.md` |
 | Remove the dead `/admin/backups` link rather than build a page | 2026-11-05 | Claude Code, reported to founder | INVESTOR-LANDING-PAR | The wiring roadmap records no backup table, service or route, so a page would advertise an unbuilt feature | Pending, review by 2026-11-19 | #453, merged as `650b131` | See closeout | `docs/readiness/INVESTOR_LANDING_PAR_CLOSEOUT_2026_11_05.md` |
 
+## Product Hunt launch tracker (2026-11-07)
+
+| Decision | Date | Session/tool | Issue ID | Why | Outcome | Commit/PR | Verification | Closeout |
+|---|---|---|---|---|---|---|---|---|
+| Product Hunt launch numbers appear as a live, operator-only tile, with no history table yet | 2026-11-07 | Founder request, executed by Claude Code | PRODUCT-HUNT-TRACKER | They describe Triaxis's own listing, not customer data, and the existing tile pattern needs no migration | Pending, review by 2026-11-21 | Not merged | See closeout | `docs/readiness/PRODUCT_HUNT_LAUNCH_TRACKER_CLOSEOUT_2026_11_07.md` |
+
 ## Stack status page (2026-11-08)
 
 | Decision | Date | Session/tool | Issue ID | Why | Outcome | Commit/PR | Verification | Closeout |
