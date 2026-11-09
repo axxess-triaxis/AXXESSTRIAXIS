@@ -19,6 +19,7 @@ vi.mock("../../demo/demoMode", () => ({
   isDemoModeEnabled: () => state.demoMode,
 }));
 
+import { supabaseAdminRest } from "../../repositories/supabaseAdmin";
 import { listWorkflowTimeline } from "./liveTenantWorkflow";
 
 describe("listWorkflowTimeline never proves live tenant activity with fabricated events (Sprint 4)", () => {
@@ -79,5 +80,18 @@ describe("listWorkflowTimeline never proves live tenant activity with fabricated
     expect(events).toHaveLength(1);
     expect(events[0].id).toBe("real-event-1");
     expect(events[0].title).toBe("Real document indexed");
+  });
+
+  // This reads with the service role, so RLS cannot limit an Employee to their own events here.
+  it("asks only for one person's events when given an actor", async () => {
+    await listWorkflowTimeline("org-real-tenant", { actorUserId: "user-1" });
+    const query = vi.mocked(supabaseAdminRest).mock.calls[0][1]?.query as URLSearchParams;
+    expect(query.get("actor_user_id")).toBe("eq.user-1");
+  });
+
+  it("does not filter by actor unless asked", async () => {
+    await listWorkflowTimeline("org-real-tenant");
+    const query = vi.mocked(supabaseAdminRest).mock.calls[0][1]?.query as URLSearchParams;
+    expect(query.has("actor_user_id")).toBe(false);
   });
 });
