@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { getServerAuthSession } from "../../../auth/serverSession";
 import type { FinancialWatchCategory, FinancialWatchThresholdType } from "../../../domain";
 import { auditLogsRepository, tenantScopeFromUser } from "../../../repositories/supabaseEnterpriseRepositories";
+import { canUseCapability } from "../../../security/rbac";
+import { recordDeniedAttempt } from "../../../services/audit/auditEvents";
 import { createFinancialWatchItem, listFinancialWatchItems, type CreateFinancialWatchItemInput } from "../../../repositories/financialWatchRepository";
 
 // Executive Dashboard Redesign Sprint ED-R3. organization_id/userId are derived from the
@@ -10,6 +12,10 @@ import { createFinancialWatchItem, listFinancialWatchItems, type CreateFinancial
 export async function GET() {
   const session = await getServerAuthSession(true);
   if (!session) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+
+  if (!canUseCapability(session.user.role, "financial-watch")) {
+    return NextResponse.json({ error: "Forbidden." }, { status: 403 });
+  }
 
   const scope = tenantScopeFromUser(session.user, session.accessToken);
   const items = await listFinancialWatchItems(scope);
@@ -30,6 +36,11 @@ type CreateWatchItemRequest = {
 export async function POST(request: Request) {
   const session = await getServerAuthSession(true);
   if (!session) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+
+  if (!canUseCapability(session.user.role, "financial-watch")) {
+    await recordDeniedAttempt(session, { route: "/api/financial-watch", method: "POST" });
+    return NextResponse.json({ error: "Forbidden." }, { status: 403 });
+  }
 
   const body = await request.json().catch(() => ({})) as CreateWatchItemRequest;
   if (!body.title?.trim()) return NextResponse.json({ error: "Watch item title is required." }, { status: 400 });

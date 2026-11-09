@@ -91,9 +91,11 @@ export type DashboardSnapshotBarProps = {
   pendingAiReviewCount: number;
   overdueTaskCount?: number;
   overdueMeetingCount?: number;
+  // False for outside roles: the API refuses them these counts, so waiting for them would never end.
+  tenantActivityAllowed?: boolean;
 };
 
-export function DashboardSnapshotBar({ periods, actionQueue, pendingAiReviewCount, overdueTaskCount, overdueMeetingCount }: DashboardSnapshotBarProps) {
+export function DashboardSnapshotBar({ periods, actionQueue, pendingAiReviewCount, overdueTaskCount, overdueMeetingCount, tenantActivityAllowed = true }: DashboardSnapshotBarProps) {
   const yoyEarliestActivityDate = periods.yoyEarliestActivityDate;
   const [tab, setTab] = useState<PeriodTab>("daily");
   const activeResult = tab === "yoy" ? undefined : periods[tab];
@@ -102,6 +104,10 @@ export function DashboardSnapshotBar({ periods, actionQueue, pendingAiReviewCoun
 
   return (
     <SectionCard title="Snapshot" className="mb-0">
+      {!tenantActivityAllowed ? (
+        <p className="text-xs text-[#5F6B73]">Organization activity counts are not available for your role.</p>
+      ) : (
+      <>
       <div className="mb-4 flex gap-1 border-b border-[rgba(0,0,0,0.08)]">
         {periodTabs.map((periodTab) => (
           <button
@@ -130,6 +136,8 @@ export function DashboardSnapshotBar({ periods, actionQueue, pendingAiReviewCoun
         </div>
       ) : (
         <p className="text-xs text-[#5F6B73]">Loading...</p>
+      )}
+      </>
       )}
 
       <div className="mt-4 grid grid-cols-1 gap-3 lg:grid-cols-2">
