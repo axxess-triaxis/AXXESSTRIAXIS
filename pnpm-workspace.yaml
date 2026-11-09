@@ -37,6 +37,11 @@ allowBuilds:
   # by reading node_modules/.pnpm/tesseract.js@7.0.0/node_modules/tesseract.js/package.json.
   tesseract.js: true
   unrs-resolver: true
+  # 2026-11-09: koffi 3.3.3 arrived with the Vercel CLI bump (Dependabot PR #466) and its install
+  # script made `pnpm install` fail on every CI job (ERR_PNPM_IGNORED_BUILDS). koffi ships its
+  # native binaries as prebuilt @koromix/koffi-* optional packages, and it is only reached via the
+  # Vercel CLI devDependency tree, so its build script is denied rather than run.
+  koffi: false
 overrides:
   # Dependabot #77 (high, superseded by #85 below): path traversal in previous-sourcemap
   # auto-loading, originally fixed upstream in 8.5.18. Transitive via @expo/metro-config
