@@ -41,6 +41,36 @@ export async function loadImportContext(scope: TenantScope): Promise<{ suppresse
   return { suppressed: new Set(suppressions.map((s) => s.identifier)), existing };
 }
 
+/**
+ * Adds a suppression. A duplicate (same organization, identifier and channel) already suppresses,
+ * so the unique-index conflict (409) counts as success.
+ */
+export async function addSuppression(entry: {
+  organizationId: string;
+  identifier: string;
+  channel: "email" | "whatsapp" | "sms" | "voice_human" | "voice_ai" | null;
+  reason: "unsubscribe" | "opt_out" | "complaint" | "bounce" | "manual";
+  createdBy?: string;
+}): Promise<void> {
+  if (!isSupabaseAdminConfigured()) throw new Error("Outbound repository is not configured (Supabase admin credentials missing).");
+  try {
+    await supabaseAdminRest("contact_suppressions", {
+      method: "POST",
+      prefer: "return=minimal",
+      body: {
+        organization_id: entry.organizationId,
+        identifier: entry.identifier.trim().toLowerCase(),
+        channel: entry.channel,
+        reason: entry.reason,
+        created_by: entry.createdBy ?? null,
+      },
+    });
+  } catch (error) {
+    if (error instanceof Error && / 409 /.test(error.message)) return;
+    throw error;
+  }
+}
+
 /** Inserts imported leads owned by the importing user. Returns the number of rows created. */
 export async function insertImportedLeads(scope: TenantScope, leads: ImportedLead[]): Promise<number> {
   if (leads.length === 0) return 0;
