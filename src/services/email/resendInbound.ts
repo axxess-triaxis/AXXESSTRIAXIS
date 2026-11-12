@@ -4,9 +4,22 @@
 export type ReceivedEmail = { from: string; to: string[]; subject: string; text: string; html: string; headers: Record<string, string> };
 
 /** "Asha <asha@acme.in>" or "asha@acme.in" to "asha@acme.in"; null if there is no address. */
+// Linear scan, no backtracking regex: the value comes from outside senders (CodeQL js/polynomial-redos).
 export function emailAddress(value: string): string | null {
-  const match = /<([^<>\s]+@[^<>\s]+)>/.exec(value) ?? /([^\s<>",;]+@[^\s<>",;]+)/.exec(value);
-  return match ? match[1].trim().toLowerCase() : null;
+  const input = value.slice(0, 1000);
+  const open = input.lastIndexOf("<");
+  const close = open >= 0 ? input.indexOf(">", open) : -1;
+  const candidates = open >= 0 && close > open ? [input.slice(open + 1, close)] : input.split(/[\s<>",;]/);
+  const address = candidates.map((c) => c.trim()).find((c) => isPlainAddress(c));
+  return address ? address.toLowerCase() : null;
+}
+
+function isPlainAddress(candidate: string): boolean {
+  if (candidate.length < 3 || candidate.length > 320) return false;
+  const at = candidate.indexOf("@");
+  if (at <= 0 || at !== candidate.lastIndexOf("@") || at === candidate.length - 1) return false;
+  for (const ch of candidate) if (ch === "<" || ch === ">" || ch === "\"" || ch === "," || ch === ";" || ch.trim() === "") return false;
+  return true;
 }
 
 function normalizeHeaders(raw: unknown): Record<string, string> {
@@ -41,13 +54,36 @@ export async function fetchReceivedEmail(apiKey: string, emailId: string): Promi
   };
 }
 
-/** Rough text from HTML when a reply has no text part. */
+/**
+ * Rough plain text from HTML when a reply has no text part. The result is only classified, stored
+ * and sent as text, never rendered as HTML. Tags are removed by a single scan (so no fragment can
+ * re-form a tag), any stray angle brackets are dropped, and entities are decoded in one pass so
+ * "&amp;lt;" becomes "&lt;", not "<" (CodeQL js/incomplete-multi-character-sanitization, js/double-escaping).
+ */
+const ENTITIES: Record<string, string> = { "&nbsp;": " ", "&amp;": "&", "&quot;": "\"", "&#39;": "'", "&lt;": "", "&gt;": "" };
+
 export function htmlToText(html: string): string {
-  return html
-    .replace(/<(script|style)[\s\S]*?<\/\1>/gi, "")
-    .replace(/<br\s*\/?>|<\/p>|<\/div>/gi, "\n")
-    .replace(/<[^>]+>/g, "")
-    .replace(/&nbsp;/g, " ").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, "\"").replace(/&#39;/g, "'")
+  let out = "";
+  let inTag = false;
+  let tag = "";
+  let skipUntil: string | null = null; // inside <script> or <style>: drop text until its closing tag
+  for (const ch of html) {
+    if (inTag) {
+      if (ch === ">") {
+        inTag = false;
+        const name = tag.trim().toLowerCase().split(/[\s/]/).filter(Boolean)[0] ?? "";
+        const closing = tag.trim().startsWith("/");
+        if (skipUntil) { if (closing && name === skipUntil) skipUntil = null; }
+        else if (!closing && (name === "script" || name === "style")) skipUntil = name;
+        else if (name === "br" || (closing && ["p", "div", "li", "tr"].includes(name))) out += "\n";
+      } else tag += ch;
+    } else if (ch === "<") {
+      inTag = true;
+      tag = "";
+    } else if (ch !== ">" && !skipUntil) out += ch;
+  }
+  return out
+    .replace(/&(?:nbsp|amp|quot|#39|lt|gt);/g, (entity) => ENTITIES[entity] ?? "")
     .replace(/\n{3,}/g, "\n\n")
     .trim();
 }
