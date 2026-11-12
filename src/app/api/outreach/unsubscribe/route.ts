@@ -14,7 +14,8 @@ async function handle(request: Request) {
   const secret = process.env.OUTREACH_UNSUBSCRIBE_SECRET;
   if (!secret || secret.length < 32) return page(503, "Unsubscribe is temporarily unavailable. Please reply to the email with \"unsubscribe\".");
   const token = new URL(request.url).searchParams.get("token") ?? "";
-  const payload = token ? verifyUnsubscribeToken(secret, token) : null;
+  // The HMAC check is the only gate: an empty or forged token verifies to null.
+  const payload = verifyUnsubscribeToken(secret, token);
   if (!payload) return page(400, "This unsubscribe link is not valid. Please reply to the email with \"unsubscribe\".");
   await addSuppression({ organizationId: payload.organizationId, identifier: payload.identifier, channel: "email", reason: "unsubscribe" });
   return page(200, "You have been unsubscribed and will not receive further emails from us.");
