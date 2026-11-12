@@ -1,0 +1,47 @@
+name: Outreach Tick (scheduled email sender)
+
+# GTM plan 2026-11-11, Day 2. Calls POST /api/outreach/tick on production every 15 minutes so due
+# outreach emails go out. The endpoint itself decides everything: it does nothing unless
+# OUTREACH_SENDING_ENABLED=true in Vercel, every send passes the contactability gate, and the daily
+# budget (default 20, max 200) limits volume. This workflow only knocks on the door.
+#
+# Interim scheduler: the plan's EventBridge Scheduler needs an AWS session, which is not available
+# yet. GitHub's schedule can run late or skip runs under load; the next run picks up anything due.
+#
+# Repo secret required: OUTREACH_TICK_SECRET (the same value as in the Vercel project
+# triaxis-www-frontend-import). Without it the job reports and exits without calling anything.
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: outreach-tick
+  cancel-in-progress: false
+
+jobs:
+  tick:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Call the outreach sender
+        env:
+          TICK_SECRET: ${{ secrets.OUTREACH_TICK_SECRET }}
+          TICK_URL: https://landing.triaxisventures.com/api/outreach/tick
+        run: |
+          if [ -z "$TICK_SECRET" ]; then
+            echo "::notice::OUTREACH_TICK_SECRET is not set in repo secrets; nothing called."
+            exit 0
+          fi
+          status=$(curl -sS -o body.json -w '%{http_code}' -m 120 -X POST \
+            -H "Authorization: Bearer $TICK_SECRET" "$TICK_URL")
+          echo "HTTP $status"
+          cat body.json; echo
+          case "$status" in
+            2??) ;;
+            *) echo "::error::Outreach tick failed with HTTP $status"; exit 1 ;;
+          esac
