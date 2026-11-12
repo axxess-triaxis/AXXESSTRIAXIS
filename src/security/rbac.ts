@@ -48,6 +48,7 @@ const sectionPermissions: Record<NavSection, RoleName[]> = {
   "product-analytics": ["Super Admin", "Organization Admin"],
   "pilot-conversion": ["Super Admin", "Organization Admin"],
   "stack-status": ["Super Admin", "Organization Admin"],
+  leads: ["Super Admin", "Organization Admin", "Executive", "Manager", "Employee"],
   "organization-admin": ["Super Admin", "Organization Admin"],
   integrations: ["Super Admin", "Organization Admin"],
   settings: ["Super Admin", "Organization Admin", "Executive", "Manager"],

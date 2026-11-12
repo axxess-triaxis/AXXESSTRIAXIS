@@ -354,6 +354,11 @@ export interface CrmLead {
   nextFollowUpAt?: ISODateTime;
   status: CrmLeadStatus;
   source?: string;
+  /** Outbound contact fields (GTM 2026-11-11). Visible only to the owner and senior roles. */
+  country?: string;
+  contactEmail?: string;
+  contactPhoneE164?: string;
+  consentBasis?: "opt_in" | "b2b_legitimate_interest";
   createdAt: ISODateTime;
   updatedAt: ISODateTime;
 }
