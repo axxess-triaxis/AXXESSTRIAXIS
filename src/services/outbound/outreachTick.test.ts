@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { runOutreachTick, type OutreachTickDeps } from "./outreachTick";
 
 const NOW = new Date("2026-11-12T06:00:00Z");
-const SECRET = "unsubscribe-secret-for-tests-0123456789";
+const SECRET = "x".repeat(40); // test-only placeholder
 
 function deps(overrides: Partial<OutreachTickDeps> = {}) {
   const log = { attempts: [] as unknown[], updates: [] as unknown[], sent: [] as unknown[] };

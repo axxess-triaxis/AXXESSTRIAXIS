@@ -13,13 +13,13 @@ import { POST } from "./route";
 
 const ENV = {
   OUTREACH_SENDING_ENABLED: "true",
-  OUTREACH_TICK_SECRET: "tick-secret-for-tests-0123456789abcdef",
+  OUTREACH_TICK_SECRET: "t".repeat(40),
   OUTREACH_ORGANIZATION_ID: "org-1",
   OUTREACH_FROM: "Asha <asha@go.example.com>",
   OUTREACH_SENDER_NAME: "Asha Rao",
   OUTREACH_SENDER_COMPANY: "Triaxis Ventures Private Limited",
   OUTREACH_SENDER_ADDRESS: "Guwahati, India",
-  OUTREACH_UNSUBSCRIBE_SECRET: "unsubscribe-secret-for-tests-0123456789",
+  OUTREACH_UNSUBSCRIBE_SECRET: "u".repeat(40),
   OUTREACH_RESEND_API_KEY: "re_test",
   NEXT_PUBLIC_APP_URL: "https://app.example.com",
 };

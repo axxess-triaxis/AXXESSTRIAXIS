@@ -8,7 +8,7 @@ vi.mock("../../../../repositories/outboundRepository", () => ({
 
 import { GET, POST } from "./route";
 
-const SECRET = "unsubscribe-secret-for-tests-0123456789";
+const SECRET = "x".repeat(40); // test-only placeholder
 const url = (token: string) => `http://localhost/api/outreach/unsubscribe?token=${encodeURIComponent(token)}`;
 
 describe("/api/outreach/unsubscribe", () => {
