@@ -4,6 +4,7 @@
 import type { ContactChannel } from "../compliance/contactability";
 import type { ImportedLead } from "../services/outbound/leadImport";
 import type { TickSequence, TickState } from "../services/outbound/outreachTick";
+import type { SequenceDefinition } from "../services/outbound/sequenceDefinition";
 import type { TenantScope } from "./interfaces";
 import { isSupabaseAdminConfigured, supabaseAdminRest } from "./supabaseAdmin";
 
@@ -201,4 +202,75 @@ export async function updateEnrollment(organizationId: string, id: string, patch
       updated_at: new Date().toISOString(),
     },
   });
+}
+
+// ---- Sequence management ----------------------------------------------------------------
+
+export async function createSequence(scope: TenantScope, definition: SequenceDefinition): Promise<string> {
+  if (!isSupabaseAdminConfigured()) throw new Error("Outbound repository is not configured (Supabase admin credentials missing).");
+  const rows = await supabaseAdminRest<{ id: string }[]>("outreach_sequences", {
+    method: "POST",
+    query: new URLSearchParams({ select: "id" }),
+    body: { organization_id: scope.organizationId, name: definition.name, steps: definition.steps, status: "draft", created_by: scope.userId },
+  });
+  if (!rows[0]) throw new Error("Sequence creation did not return a row.");
+  return rows[0].id;
+}
+
+/** Draft to approved only. Returns false if no draft sequence with that id exists in the organization. */
+export async function approveSequence(scope: TenantScope, sequenceId: string): Promise<boolean> {
+  const now = new Date().toISOString();
+  const rows = await supabaseAdminRest<{ id: string }[]>("outreach_sequences", {
+    method: "PATCH",
+    query: new URLSearchParams({ organization_id: `eq.${scope.organizationId}`, id: `eq.${sequenceId}`, status: "eq.draft", select: "id" }),
+    body: { status: "approved", approved_by: scope.userId, approved_at: now, updated_at: now },
+  });
+  return rows.length === 1;
+}
+
+export type EnrollSkip = { leadId: string; reason: "not_found" | "no_email" | "no_lawful_basis" | "lead_closed" | "already_enrolled" };
+
+/** Enrolls eligible leads in an approved sequence, first step due now. Ineligible leads are reported, not enrolled. */
+export async function enrollLeads(scope: TenantScope, sequenceId: string, leadIds: string[]): Promise<{ sequenceFound: boolean; enrolled: number; skipped: EnrollSkip[] }> {
+  const org = `eq.${scope.organizationId}`;
+  const sequences = await supabaseAdminRest<{ id: string }[]>("outreach_sequences", {
+    query: new URLSearchParams({ organization_id: org, id: `eq.${sequenceId}`, status: "eq.approved", select: "id" }),
+  });
+  if (sequences.length === 0) return { sequenceFound: false, enrolled: 0, skipped: [] };
+
+  const ids = [...new Set(leadIds)];
+  const [leads, existing] = await Promise.all([
+    supabaseAdminRest<{ id: string; contact_email: string | null; consent_basis: string | null; status: string }[]>("crm_leads", {
+      query: new URLSearchParams({ organization_id: org, id: `in.${quoteIn(ids)}`, select: "id,contact_email,consent_basis,status" }),
+    }),
+    supabaseAdminRest<{ lead_id: string }[]>("outreach_enrollments", {
+      query: new URLSearchParams({ organization_id: org, sequence_id: `eq.${sequenceId}`, lead_id: `in.${quoteIn(ids)}`, select: "lead_id" }),
+    }),
+  ]);
+  const byId = new Map(leads.map((l) => [l.id, l]));
+  const enrolledAlready = new Set(existing.map((e) => e.lead_id));
+  const skipped: EnrollSkip[] = [];
+  const eligible: string[] = [];
+  for (const id of ids) {
+    const lead = byId.get(id);
+    if (!lead) skipped.push({ leadId: id, reason: "not_found" });
+    else if (enrolledAlready.has(id)) skipped.push({ leadId: id, reason: "already_enrolled" });
+    else if (!lead.contact_email) skipped.push({ leadId: id, reason: "no_email" });
+    else if (!lead.consent_basis) skipped.push({ leadId: id, reason: "no_lawful_basis" });
+    else if (lead.status === "won" || lead.status === "lost") skipped.push({ leadId: id, reason: "lead_closed" });
+    else eligible.push(id);
+  }
+  if (eligible.length) {
+    const now = new Date().toISOString();
+    await supabaseAdminRest("outreach_enrollments", {
+      method: "POST",
+      prefer: "return=minimal,resolution=ignore-duplicates",
+      query: new URLSearchParams({ on_conflict: "sequence_id,lead_id" }),
+      body: eligible.map((leadId) => ({
+        organization_id: scope.organizationId, sequence_id: sequenceId, lead_id: leadId,
+        step_index: 0, next_send_at: now, status: "active", created_by: scope.userId,
+      })),
+    });
+  }
+  return { sequenceFound: true, enrolled: eligible.length, skipped };
 }

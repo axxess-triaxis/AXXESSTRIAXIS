@@ -42,6 +42,8 @@ const MERGE_FIELDS = {
   company: (lead: OutreachLead) => lead.organizationName?.trim(),
 } as const;
 
+export const MERGE_FIELD_NAMES: readonly string[] = Object.keys(MERGE_FIELDS);
+
 function escapeHtml(value: string) {
   return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
