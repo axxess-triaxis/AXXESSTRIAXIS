@@ -114,24 +114,31 @@ export async function listActiveStaff(scope: TenantScope): Promise<StaffMember[]
 
 export type HistoryEntry =
   | { kind: "attempt"; at: string; channel: ContactChannel; decision: "allowed" | "refused"; reasons: string[]; outcome: string | null; note: string | null }
-  | { kind: "change"; at: string; action: string; metadata: Record<string, unknown> };
+  | { kind: "change"; at: string; action: string; metadata: Record<string, unknown> }
+  | { kind: "reply"; at: string; category: string; subject: string; fromEmail: string };
 
 export async function loadLeadHistory(scope: TenantScope, leadId: string): Promise<HistoryEntry[]> {
   ensureConfigured();
   const org = `eq.${scope.organizationId}`;
-  const [attempts, changes] = await Promise.all([
+  const [attempts, changes, replies] = await Promise.all([
     supabaseAdminRest<{ created_at: string; channel: ContactChannel; decision: "allowed" | "refused"; reasons: string[]; outcome: string | null; note: string | null }[]>(
       "contact_attempts", { query: new URLSearchParams({
         organization_id: org, lead_id: `eq.${leadId}`, select: "created_at,channel,decision,reasons,outcome,note", order: "created_at.desc", limit: "200",
       }) }),
     supabaseAdminRest<{ created_at: string; action: string; metadata: Record<string, unknown> | null }[]>(
       "audit_logs", { query: new URLSearchParams({
-        organization_id: org, resource_type: "eq.crm_lead", resource_id: `eq.${leadId}`, select: "created_at,action,metadata", order: "created_at.desc", limit: "200",
+        organization_id: org, resource_type: "eq.crm_lead", resource_id: `eq.${leadId}`, action: "neq.outreach.reply.received",
+        select: "created_at,action,metadata", order: "created_at.desc", limit: "200",
+      }) }),
+    supabaseAdminRest<{ created_at: string; category: string; subject: string; from_email: string }[]>(
+      "lead_replies", { query: new URLSearchParams({
+        organization_id: org, lead_id: `eq.${leadId}`, select: "created_at,category,subject,from_email", order: "created_at.desc", limit: "200",
       }) }),
   ]);
   const entries: HistoryEntry[] = [
     ...attempts.map((a) => ({ kind: "attempt" as const, at: a.created_at, channel: a.channel, decision: a.decision, reasons: a.reasons ?? [], outcome: a.outcome, note: a.note })),
     ...changes.map((c) => ({ kind: "change" as const, at: c.created_at, action: c.action, metadata: c.metadata ?? {} })),
+    ...replies.map((r) => ({ kind: "reply" as const, at: r.created_at, category: r.category, subject: r.subject, fromEmail: r.from_email })),
   ];
   return entries.sort((a, b) => b.at.localeCompare(a.at));
 }

@@ -41,7 +41,12 @@ const OUTCOME_LABELS: Record<CallOutcome, string> = {
 type QueueResponse = { callable: (QueueLead & { lastContactAt: string | null })[]; refused: { lead: QueueLead; reasons: QueueReason[] }[] };
 type HistoryEntry =
   | { kind: "attempt"; at: string; channel: string; decision: string; reasons: string[]; outcome: string | null; note: string | null }
-  | { kind: "change"; at: string; action: string; metadata: Record<string, unknown> };
+  | { kind: "change"; at: string; action: string; metadata: Record<string, unknown> }
+  | { kind: "reply"; at: string; category: string; subject: string; fromEmail: string };
+
+const REPLY_LABELS: Record<string, string> = {
+  interested: "Interested", not_now: "Not now", unsubscribe: "Unsubscribe", out_of_office: "Out of office", other: "Needs reading",
+};
 
 const when = (iso?: string | null) => (iso ? new Date(iso).toLocaleString() : "-");
 const input = "rounded-md border border-[rgba(0,0,0,0.12)] bg-white px-2 py-1 text-xs text-[#0F1117]";
@@ -111,7 +116,9 @@ function LeadPanel(props: { lead: CrmLead; senior: boolean; staff: { id: string;
           {history.map((h, i) => (
             <li key={i} className="text-xs text-[#0F1117]">
               <span className="text-[#5F6B73]">{when(h.at)}</span>{" "}
-              {h.kind === "attempt"
+              {h.kind === "reply"
+                ? `Reply: ${REPLY_LABELS[h.category] ?? h.category}${h.subject ? ` - ${h.subject}` : ""}`
+                : h.kind === "attempt"
                 ? `${h.channel === "voice_human" ? "Call" : h.channel} ${h.decision}${h.outcome ? `: ${OUTCOME_LABELS[h.outcome as CallOutcome] ?? h.outcome}` : ""}${h.note ? ` (${h.note})` : ""}${h.reasons.length ? ` [${h.reasons.join(", ")}]` : ""}`
                 : `${h.action.replace("crm.lead.", "Lead ")}${Array.isArray(h.metadata.changed) ? `: ${(h.metadata.changed as string[]).join(", ")}` : ""}`}
             </li>

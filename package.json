@@ -100,6 +100,7 @@
     "linear:sync": "node scripts/linear-sync.mjs"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^1.5.0",
     "@emotion/react": "11.14.0",
     "@emotion/styled": "11.14.1",
     "@mui/icons-material": "9.5.0",
