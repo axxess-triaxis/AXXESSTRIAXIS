@@ -274,3 +274,12 @@ export async function enrollLeads(scope: TenantScope, sequenceId: string, leadId
   }
   return { sequenceFound: true, enrolled: eligible.length, skipped };
 }
+
+/** The organization that sent an outreach email, by Resend message id; null if it is not an outreach send. */
+export async function findOrganizationForMessage(providerMessageId: string): Promise<string | null> {
+  if (!isSupabaseAdminConfigured()) throw new Error("Outbound repository is not configured (Supabase admin credentials missing).");
+  const rows = await supabaseAdminRest<{ organization_id: string }[]>("contact_attempts", {
+    query: new URLSearchParams({ provider_message_id: `eq.${providerMessageId}`, select: "organization_id", limit: "1" }),
+  });
+  return rows[0]?.organization_id ?? null;
+}
