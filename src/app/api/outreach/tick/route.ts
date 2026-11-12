@@ -15,7 +15,7 @@ const REQUIRED = [
   "OUTREACH_SENDER_COMPANY",
   "OUTREACH_SENDER_ADDRESS",
   "OUTREACH_UNSUBSCRIBE_SECRET",
-  "RESEND_API_KEY",
+  "OUTREACH_RESEND_API_KEY",
   "NEXT_PUBLIC_APP_URL",
 ] as const;
 
@@ -41,7 +41,7 @@ export async function POST(request: Request) {
 
   const summary = await runOutreachTick({
     loadState: loadTickState,
-    sendEmail: (email, key) => sendViaResend(env.RESEND_API_KEY, email, key),
+    sendEmail: (email, key) => sendViaResend(env.OUTREACH_RESEND_API_KEY, email, key),
     recordAttempt: recordContactAttempt,
     updateEnrollment: (id, patch) => updateEnrollment(organizationId, id, patch),
     config: {

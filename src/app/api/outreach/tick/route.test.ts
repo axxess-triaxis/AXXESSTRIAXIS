@@ -20,7 +20,7 @@ const ENV = {
   OUTREACH_SENDER_COMPANY: "Triaxis Ventures Private Limited",
   OUTREACH_SENDER_ADDRESS: "Guwahati, India",
   OUTREACH_UNSUBSCRIBE_SECRET: "unsubscribe-secret-for-tests-0123456789",
-  RESEND_API_KEY: "re_test",
+  OUTREACH_RESEND_API_KEY: "re_test",
   NEXT_PUBLIC_APP_URL: "https://app.example.com",
 };
 const call = (auth?: string) => POST(new Request("http://localhost/api/outreach/tick", { method: "POST", headers: auth ? { authorization: auth } : {} }));
@@ -45,10 +45,10 @@ describe("POST /api/outreach/tick", () => {
 
   it("returns 503 naming missing settings, never their values", async () => {
     delete process.env.OUTREACH_SENDER_ADDRESS;
-    delete process.env.RESEND_API_KEY;
+    delete process.env.OUTREACH_RESEND_API_KEY;
     const response = await call(`Bearer ${ENV.OUTREACH_TICK_SECRET}`);
     expect(response.status).toBe(503);
-    expect(await response.json()).toEqual({ error: "Outreach is not configured.", missing: ["OUTREACH_SENDER_ADDRESS", "RESEND_API_KEY"] });
+    expect(await response.json()).toEqual({ error: "Outreach is not configured.", missing: ["OUTREACH_SENDER_ADDRESS", "OUTREACH_RESEND_API_KEY"] });
     expect(calls).toEqual([]);
   });
 
