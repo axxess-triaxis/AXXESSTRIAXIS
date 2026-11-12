@@ -20,6 +20,7 @@ export const lazyRouteComponents: Record<NavSection, LazyRouteComponent> = {
   analytics: lazy(() => import("../../features/analytics/AnalyticsSection")),
   "product-analytics": lazy(() => import("../../features/product-analytics/ProductAnalyticsSection")),
   "pilot-conversion": lazy(() => import("../../features/admin/PilotConversionSection")),
+  leads: lazy(() => import("../../features/leads/LeadsSection")),
   "stack-status": lazy(() => import("../../features/stack/StackStatusSection")),
   "organization-admin": lazy(() => import("../../features/admin/OrganizationAdminSection")),
   integrations: lazy(() => import("../../features/integrations/IntegrationsSection")),

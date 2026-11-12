@@ -22,6 +22,10 @@ type CrmLeadRow = {
   next_follow_up_at: string | null;
   status: CrmLeadStatus;
   source: string | null;
+  country?: string | null;
+  contact_email?: string | null;
+  contact_phone_e164?: string | null;
+  consent_basis?: "opt_in" | "b2b_legitimate_interest" | null;
   created_at: string;
   updated_at: string;
 };
@@ -42,6 +46,10 @@ function fromRow(row: CrmLeadRow): CrmLead {
     nextFollowUpAt: row.next_follow_up_at ?? undefined,
     status: row.status,
     source: row.source ?? undefined,
+    country: row.country ?? undefined,
+    contactEmail: row.contact_email ?? undefined,
+    contactPhoneE164: row.contact_phone_e164 ?? undefined,
+    consentBasis: row.consent_basis ?? undefined,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -62,7 +70,8 @@ export type CreateCrmLeadInput = {
   source?: string;
 };
 
-export type UpdateCrmLeadInput = Partial<CreateCrmLeadInput>;
+// nextFollowUpAt may be null to clear a follow-up date.
+export type UpdateCrmLeadInput = Omit<Partial<CreateCrmLeadInput>, "nextFollowUpAt"> & { nextFollowUpAt?: ISODateTime | null };
 
 // A real tenant with zero leads must see a genuinely empty list -- never fabricated pipeline data.
 // This reads with the service role, so RLS does not apply: the caller decides whether to pass
@@ -71,7 +80,7 @@ export async function listCrmLeads(scope: TenantScope, filter?: { ownerUserId: E
   if (!isSupabaseAdminConfigured()) return [];
   const query = new URLSearchParams({
     organization_id: `eq.${scope.organizationId}`,
-    select: "id,organization_id,stakeholder_id,title,organization_name,contact_name,stage,estimated_value,currency,priority,owner_user_id,next_follow_up_at,status,source,created_at,updated_at",
+    select: "id,organization_id,stakeholder_id,title,organization_name,contact_name,stage,estimated_value,currency,priority,owner_user_id,next_follow_up_at,status,source,country,contact_email,contact_phone_e164,consent_basis,created_at,updated_at",
     order: "created_at.desc",
     limit: "500",
   });
@@ -124,7 +133,7 @@ export async function updateCrmLead(scope: TenantScope, leadId: EntityId, input:
   const query = new URLSearchParams({
     id: `eq.${leadId}`,
     organization_id: `eq.${scope.organizationId}`,
-    select: "id,organization_id,stakeholder_id,title,organization_name,contact_name,stage,estimated_value,currency,priority,owner_user_id,next_follow_up_at,status,source,created_at,updated_at",
+    select: "id,organization_id,stakeholder_id,title,organization_name,contact_name,stage,estimated_value,currency,priority,owner_user_id,next_follow_up_at,status,source,country,contact_email,contact_phone_e164,consent_basis,created_at,updated_at",
   });
   const rows = await supabaseAdminRest<CrmLeadRow[]>("crm_leads", { method: "PATCH", query, body });
   if (!rows[0]) throw new Error("CRM lead not found for this organization.");
