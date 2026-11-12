@@ -42,6 +42,19 @@ describe("LeadsSection", () => {
     expect(fetchMock.mock.calls.some(([url]) => String(url).includes("/api/crm/staff"))).toBe(false);
   });
 
+  it("shows a sorted reply in the lead's history", async () => {
+    const fetchMock = stubApi();
+    fetchMock.mockImplementation(async (url: string) => {
+      const body = url.includes("/history")
+        ? { history: [{ kind: "reply", at: "2026-11-13T10:00:00Z", category: "interested", subject: "Re: Quick question", fromEmail: "asha@acme.in" }] }
+        : url.includes("call-queue") ? queue : { leads };
+      return { ok: true, status: 200, json: async () => body };
+    });
+    render(<LeadsSection />);
+    fireEvent.click(await screen.findByText("Acme - Asha"));
+    expect(await screen.findByText(/Reply: Interested - Re: Quick question/)).toBeTruthy();
+  });
+
   it("a Manager can see the owner select", async () => {
     state.role = "Manager";
     stubApi();
