@@ -3,9 +3,10 @@ import Script from "next/script";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { PostHogSessionReplayInit } from "../services/analytics/PostHogSessionReplayInit";
+import { MarketingScripts } from "./MarketingScripts";
 import "../styles/index.css";
 
-// Added Vexo Analytics script for web React app
+// Vexo and LaunchList load from MarketingScripts, on public marketing pages only (2026-11-13).
 // A-89 (2026-08-03): CI's `vercel pull` build path (unlike Vercel's own build servers, which the
 // prior manual `vercel --prod` CLI deploys used) can resolve this to an empty string rather than
 // leaving it unset -- `??` only falls back on null/undefined, so `new URL("")` crashed the build.
@@ -63,8 +64,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body>
         {children}
-        <Script src="https://www.vexo.co/analytics.js" strategy="afterInteractive" />
-        <Script src="https://getlaunchlist.com/js/widget.js" strategy="afterInteractive" />
+        <MarketingScripts />
         {facebookAppId ? (
           <>
             <div id="fb-root" />
