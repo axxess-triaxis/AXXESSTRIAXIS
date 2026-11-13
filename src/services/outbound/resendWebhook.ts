@@ -24,6 +24,18 @@ export function verifyWebhookSignature(secret: string, headers: WebhookHeaders, 
   });
 }
 
+export type DeliveryEvent = { messageId: string; type: "delivered" | "bounced" | "complained"; recipient: string | null };
+
+/** Day 4: delivered, bounced and complained events, recorded per message for the funnel and the ramp rule. */
+export function parseDeliveryEvent(payload: unknown): DeliveryEvent | null {
+  if (!payload || typeof payload !== "object") return null;
+  const { type, data } = payload as { type?: unknown; data?: { email_id?: unknown; to?: unknown } };
+  const kind = type === "email.delivered" ? "delivered" : type === "email.bounced" ? "bounced" : type === "email.complained" ? "complained" : null;
+  if (!kind || !data || typeof data.email_id !== "string") return null;
+  const first = Array.isArray(data.to) ? data.to.find((r): r is string => typeof r === "string" && r.includes("@")) : undefined;
+  return { messageId: data.email_id, type: kind, recipient: first ? first.trim().toLowerCase() : null };
+}
+
 export type SuppressionEvent = { messageId: string; recipients: string[]; reason: "bounce" | "complaint" };
 
 export function parseSuppressionEvent(payload: unknown): SuppressionEvent | null {

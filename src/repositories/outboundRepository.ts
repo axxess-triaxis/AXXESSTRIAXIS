@@ -275,6 +275,51 @@ export async function enrollLeads(scope: TenantScope, sequenceId: string, leadId
   return { sequenceFound: true, enrolled: eligible.length, skipped };
 }
 
+/** Start of the UTC day `daysBack` days before `now`. */
+function utcDayStart(now: Date, daysBack: number): Date {
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - daysBack));
+}
+
+/**
+ * Day 4: sending health for the ramp rule. Emails sent on each of the last 7 UTC days (oldest
+ * first, today last) and bounce and complaint events over the same window, all from real rows.
+ */
+export async function loadSendHealth(organizationId: string, now: Date): Promise<{ sentPerDay: number[]; bounces7d: number; complaints7d: number }> {
+  if (!isSupabaseAdminConfigured()) throw new Error("Outbound repository is not configured (Supabase admin credentials missing).");
+  const since = utcDayStart(now, 6);
+  const org = `eq.${organizationId}`;
+  const [sends, events] = await Promise.all([
+    supabaseAdminRest<{ created_at: string }[]>("contact_attempts", { query: new URLSearchParams({
+      organization_id: org, channel: "eq.email", decision: "eq.allowed", created_at: `gte.${since.toISOString()}`, select: "created_at", limit: "20000",
+    }) }),
+    supabaseAdminRest<{ type: string }[]>("outreach_email_events", { query: new URLSearchParams({
+      organization_id: org, type: "in.(bounced,complained)", created_at: `gte.${since.toISOString()}`, select: "type", limit: "20000",
+    }) }),
+  ]);
+  const sentPerDay = [0, 0, 0, 0, 0, 0, 0];
+  for (const row of sends) {
+    const index = Math.floor((new Date(row.created_at).getTime() - since.getTime()) / 86_400_000);
+    if (index >= 0 && index < 7) sentPerDay[index] += 1;
+  }
+  return {
+    sentPerDay,
+    bounces7d: events.filter((e) => e.type === "bounced").length,
+    complaints7d: events.filter((e) => e.type === "complained").length,
+  };
+}
+
+/** Day 4: one delivery event per message and type; a webhook retry is ignored by the unique index. */
+export async function recordEmailEvent(entry: {
+  organizationId: string; providerMessageId: string; type: "delivered" | "bounced" | "complained"; recipient: string | null;
+}): Promise<void> {
+  await supabaseAdminRest("outreach_email_events", {
+    method: "POST",
+    prefer: "return=minimal,resolution=ignore-duplicates",
+    query: new URLSearchParams({ on_conflict: "provider_message_id,type" }),
+    body: { organization_id: entry.organizationId, provider_message_id: entry.providerMessageId, type: entry.type, recipient: entry.recipient },
+  });
+}
+
 /** The organization that sent an outreach email, by Resend message id; null if it is not an outreach send. */
 export async function findOrganizationForMessage(providerMessageId: string): Promise<string | null> {
   if (!isSupabaseAdminConfigured()) throw new Error("Outbound repository is not configured (Supabase admin credentials missing).");
