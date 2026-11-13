@@ -12,7 +12,8 @@ const leads = [
   { id: "l1", organizationId: "o", title: "Acme - Asha", stage: "new", status: "open", priority: "medium", ownerUserId: "emp", country: "IN", consentBasis: "opt_in", contactPhoneE164: "+919876543210", createdAt: "x", updatedAt: "x" },
 ];
 const queue = {
-  callable: [{ id: "l1", title: "Acme - Asha", phoneE164: "+919876543210", stage: "new", consentBasis: "opt_in", registryStatus: "unchecked", registryCheckedAt: null, lastContactAt: null }],
+  callable: [{ id: "l1", title: "Acme - Asha", phoneE164: "+919876543210", stage: "new", consentBasis: "opt_in", registryStatus: "unchecked", registryCheckedAt: null, lastContactAt: null,
+    agentCall: { allowed: false, reasons: ["dlt_registration_missing", "counsel_sign_off_missing"] }, agentJob: null }],
   refused: [{ lead: { id: "l2", title: "Beta - Omar", phoneE164: "+971500000000", stage: "new" }, reasons: ["tdra_registration_missing", "counsel_sign_off_missing"] }],
 };
 
@@ -129,6 +130,31 @@ describe("LeadsSection", () => {
     fireEvent.click(await screen.findByRole("tab", { name: /Call queue/ }));
     expect(await screen.findByText("Log manually")).toBeTruthy();
     expect(screen.getByLabelText("Call outcome")).toBeTruthy();
+  });
+
+  it("keeps Call with agent disabled and says why while the gate refuses agent calls", async () => {
+    stubApi();
+    render(<LeadsSection />);
+    fireEvent.click(await screen.findByRole("tab", { name: /Call queue/ }));
+    const button = await screen.findByRole("button", { name: "Call with agent" });
+    expect((button as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.getByTestId("agent-call").textContent).toContain("Agent calls are off: India DLT registration not recorded; counsel sign-off not recorded");
+  });
+
+  it("starts an agent call with one click when the gate allows it, and shows the last result", async () => {
+    const fetchMock = stubApi();
+    const allowedQueue = { ...queue, callable: [{ ...queue.callable[0], agentCall: { allowed: true, reasons: [] }, agentJob: { id: "j1", status: "completed", outcome: "interested", summary: "Wants a demo", failureReason: null } }] };
+    fetchMock.mockImplementation(async (url: string, init?: RequestInit) => {
+      if (url.includes("/agent-calls") && init?.method === "POST") return { ok: true, status: 202, json: async () => ({ jobId: "j2", status: "calling" }) };
+      const body = url.includes("call-queue") ? allowedQueue : url.includes("/history") ? { history: [] } : { leads };
+      return { ok: true, status: 200, json: async () => body };
+    });
+    render(<LeadsSection />);
+    fireEvent.click(await screen.findByRole("tab", { name: /Call queue/ }));
+    expect((await screen.findByTestId("agent-call")).textContent).toContain("Agent call: Interested - Wants a demo");
+    fireEvent.click(screen.getByRole("button", { name: "Call with agent" }));
+    expect(await screen.findByText("The agent is calling. The result will appear here.")).toBeTruthy();
+    expect(fetchMock.mock.calls.some(([url, init]) => String(url) === "/api/crm/leads/l1/agent-calls" && (init as RequestInit | undefined)?.method === "POST")).toBe(true);
   });
 
   it("shows a Manager the funnel from real counts, the paused ramp, and what is not tracked", async () => {

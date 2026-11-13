@@ -47,6 +47,15 @@ describe("call queue", () => {
     expect(queue.callable.map((l) => l.id)).toEqual(["a", "c", "b"]);
     expect(queue.callable.find((l) => l.id === "b")?.lastContactAt).toBe("2026-11-10T00:00:00.000Z");
   });
+
+  it("refuses an agent (voice_ai) call to a callable opted-in contact until DLT and counsel sign-off", () => {
+    const [callable] = build([lead()]).callable;
+    expect(callable.agentCall).toEqual({ allowed: false, reasons: ["dlt_registration_missing", "counsel_sign_off_missing"] });
+    const registrations = { dltIndia: true, tdraUae: false, counselSignedOff: true };
+    expect(build([lead()], TEN_IST, { registrations }).callable[0].agentCall).toEqual({ allowed: true, reasons: [] });
+    const aiSuppressed = build([lead()], TEN_IST, { registrations, suppressedAi: new Set(["+919876543210"]) });
+    expect(aiSuppressed.callable[0].agentCall.reasons).toEqual(["suppressed"]);
+  });
 });
 
 describe("call outcomes", () => {

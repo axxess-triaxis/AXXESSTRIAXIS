@@ -19,8 +19,10 @@ import { canAccessSection, type UserContext } from "./rbac";
 import type { AgentCapability, AgentScope } from "./agentScope";
 
 // Every capability's requisite NavSection. query_external_model has none -- it is withheld from
-// every role unconditionally this sprint (see below), not mapped to a section.
-const capabilitySection: Record<Exclude<AgentCapability, "query_external_model">, NavSection> = {
+// every role unconditionally this sprint (see below), not mapped to a section. log_agent_call is
+// withheld too (2026-11-13): only STILL reports a voice-agent call's result; the chatbot must not.
+type ChatbotCapability = Exclude<AgentCapability, "query_external_model" | "log_agent_call">;
+const capabilitySection: Record<ChatbotCapability, NavSection> = {
   create_task: "tasks",
   list_tasks: "tasks",
   update_task_status: "tasks",
@@ -39,8 +41,8 @@ const capabilitySection: Record<Exclude<AgentCapability, "query_external_model">
 
 // query_external_model is deliberately excluded from this table -- nested-LLM recursion/budget risk
 // from letting the chatbot's own model call another model through a tool is not modeled yet.
-const chatbotEligibleCapabilities: Exclude<AgentCapability, "query_external_model">[] =
-  Object.keys(capabilitySection) as Exclude<AgentCapability, "query_external_model">[];
+const chatbotEligibleCapabilities: ChatbotCapability[] =
+  Object.keys(capabilitySection) as ChatbotCapability[];
 
 // The role parameter is deliberately separate from tenantScope.role: the caller (the agentic-chat
 // route) fetches the acting user's authoritative UserContext.role fresh for this request rather than

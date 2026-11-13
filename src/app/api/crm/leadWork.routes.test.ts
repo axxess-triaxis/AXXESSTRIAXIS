@@ -27,6 +27,10 @@ vi.mock("../../../services/audit/auditEvents", () => ({ recordDeniedAttempt: asy
 vi.mock("../../../repositories/crmRepository", () => ({
   updateCrmLead: async (_s: unknown, id: string, input: Record<string, unknown>) => { calls.updates.push({ id, input }); return { id, ...input }; },
 }));
+const jobsState = { fail: false };
+vi.mock("../../../repositories/agentCallRepository", () => ({
+  latestAgentCallJobs: async () => { if (jobsState.fail) throw new Error('relation "agent_call_jobs" does not exist'); return new Map(); },
+}));
 vi.mock("../../../repositories/leadWorkRepository", async (original) => ({
   isOwnLead: (await original<typeof import("../../../repositories/leadWorkRepository")>()).isOwnLead,
   getLead: async (_s: unknown, id: string) => leads.find((l) => l.id === id) ?? null,
@@ -104,6 +108,16 @@ describe("lead work routes", () => {
     as("Employee");
     const own = await (await queue()).json();
     expect(own.callable.map((l: { id: string }) => l.id)).toEqual(["l1"]);
+    expect(own.callable[0].agentCall).toEqual({ allowed: false, reasons: ["dlt_registration_missing", "counsel_sign_off_missing"] });
+    expect(own.callable[0].agentJob).toBeNull();
+
+    // The human queue still loads if the agent_call_jobs table is not there yet.
+    jobsState.fail = true;
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const withoutJobs = await queue();
+    jobsState.fail = false;
+    expect(withoutJobs.status).toBe(200);
+    expect((await withoutJobs.json()).callable[0].agentJob).toBeNull();
     expect(own.refused).toEqual([]);
     as("Manager");
     const all = await (await queue()).json();
