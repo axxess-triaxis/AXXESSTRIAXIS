@@ -27,6 +27,7 @@ vi.mock("../../../services/audit/auditEvents", () => ({ recordDeniedAttempt: asy
 vi.mock("../../../repositories/crmRepository", () => ({
   updateCrmLead: async (_s: unknown, id: string, input: Record<string, unknown>) => { calls.updates.push({ id, input }); return { id, ...input }; },
 }));
+vi.mock("../../../repositories/agentCallRepository", () => ({ latestAgentCallJobs: async () => new Map() }));
 vi.mock("../../../repositories/leadWorkRepository", async (original) => ({
   isOwnLead: (await original<typeof import("../../../repositories/leadWorkRepository")>()).isOwnLead,
   getLead: async (_s: unknown, id: string) => leads.find((l) => l.id === id) ?? null,
@@ -104,6 +105,8 @@ describe("lead work routes", () => {
     as("Employee");
     const own = await (await queue()).json();
     expect(own.callable.map((l: { id: string }) => l.id)).toEqual(["l1"]);
+    expect(own.callable[0].agentCall).toEqual({ allowed: false, reasons: ["dlt_registration_missing", "counsel_sign_off_missing"] });
+    expect(own.callable[0].agentJob).toBeNull();
     expect(own.refused).toEqual([]);
     as("Manager");
     const all = await (await queue()).json();

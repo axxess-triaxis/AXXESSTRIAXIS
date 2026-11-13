@@ -28,7 +28,7 @@ export type QueueLead = {
 export type QueueReason = RefusalReason | "no_phone_number";
 
 export type CallQueue = {
-  callable: (QueueLead & { lastContactAt: string | null })[];
+  callable: (QueueLead & { lastContactAt: string | null; agentCall: { allowed: boolean; reasons: QueueReason[] } })[];
   refused: { lead: QueueLead; reasons: QueueReason[] }[];
 };
 
@@ -43,10 +43,12 @@ export function decideCall(input: {
   attempts: { channel: ContactChannel; at: Date }[];
   registrations: Registrations;
   now: Date;
+  /** "voice_ai" for a call placed by the voice agent (agent call pipeline); default a human call. */
+  channel?: "voice_human" | "voice_ai";
 }): { allowed: boolean; reasons: QueueReason[] } {
   if (!input.lead.phoneE164) return { allowed: false, reasons: ["no_phone_number"] };
   return checkContactability({
-    channel: "voice_human",
+    channel: input.channel ?? "voice_human",
     country: input.lead.country ?? "",
     consentBasis: input.lead.consentBasis,
     suppressed: input.suppressed,
@@ -60,6 +62,8 @@ export function decideCall(input: {
 export function buildCallQueue(input: {
   leads: QueueLead[];
   suppressed: Set<string>;
+  /** Numbers suppressed for voice-agent calls; defaults to the human-call set. */
+  suppressedAi?: Set<string>;
   attemptsByLead: Map<string, { channel: ContactChannel; at: Date }[]>;
   registrations: Registrations;
   now: Date;
@@ -76,7 +80,15 @@ export function buildCallQueue(input: {
     });
     if (decision.allowed) {
       const last = attempts.reduce<Date | null>((max, a) => (!max || a.at > max ? a.at : max), null);
-      queue.callable.push({ ...lead, lastContactAt: last?.toISOString() ?? null });
+      const agentCall = decideCall({
+        lead,
+        suppressed: Boolean(lead.phoneE164 && (input.suppressedAi ?? input.suppressed).has(lead.phoneE164)),
+        attempts,
+        registrations: input.registrations,
+        now: input.now,
+        channel: "voice_ai",
+      });
+      queue.callable.push({ ...lead, lastContactAt: last?.toISOString() ?? null, agentCall });
     } else {
       queue.refused.push({ lead, reasons: decision.reasons });
     }

@@ -56,11 +56,11 @@ export async function listOpenLeads(scope: TenantScope, ownerUserId?: string): P
 
 /** Suppressed phone numbers and allowed attempts in the last 7 days, for the gate. */
 export async function loadCallContext(scope: TenantScope, leads: WorkLead[], now: Date): Promise<{
-  suppressed: Set<string>; attemptsByLead: Map<string, { channel: ContactChannel; at: Date }[]>;
+  suppressed: Set<string>; suppressedAi: Set<string>; attemptsByLead: Map<string, { channel: ContactChannel; at: Date }[]>;
 }> {
   ensureConfigured();
   const attemptsByLead = new Map<string, { channel: ContactChannel; at: Date }[]>();
-  if (leads.length === 0) return { suppressed: new Set(), attemptsByLead };
+  if (leads.length === 0) return { suppressed: new Set(), suppressedAi: new Set(), attemptsByLead };
   const org = `eq.${scope.organizationId}`;
   const phones = leads.map((l) => l.phoneE164).filter((p): p is string => Boolean(p));
   const weekAgo = new Date(now.getTime() - 7 * 86_400_000).toISOString();
@@ -69,8 +69,8 @@ export async function loadCallContext(scope: TenantScope, leads: WorkLead[], now
       organization_id: org, lead_id: `in.${quoteIn(leads.map((l) => l.id))}`, decision: "eq.allowed", created_at: `gte.${weekAgo}`,
       select: "lead_id,channel,created_at", limit: "5000",
     }) }),
-    phones.length === 0 ? Promise.resolve([]) : supabaseAdminRest<{ identifier: string }[]>("contact_suppressions", { query: new URLSearchParams({
-      organization_id: org, identifier: `in.${quoteIn(phones)}`, or: "(channel.is.null,channel.eq.voice_human)", select: "identifier",
+    phones.length === 0 ? Promise.resolve([]) : supabaseAdminRest<{ identifier: string; channel: ContactChannel | null }[]>("contact_suppressions", { query: new URLSearchParams({
+      organization_id: org, identifier: `in.${quoteIn(phones)}`, or: "(channel.is.null,channel.eq.voice_human,channel.eq.voice_ai)", select: "identifier,channel",
     }) }),
   ]);
   for (const a of attempts) {
@@ -78,15 +78,18 @@ export async function loadCallContext(scope: TenantScope, leads: WorkLead[], now
     list.push({ channel: a.channel, at: new Date(a.created_at) });
     attemptsByLead.set(a.lead_id, list);
   }
-  return { suppressed: new Set(suppressions.map((s) => s.identifier)), attemptsByLead };
+  const forChannel = (channel: ContactChannel) =>
+    new Set(suppressions.filter((s) => s.channel === null || s.channel === channel).map((s) => s.identifier));
+  return { suppressed: forChannel("voice_human"), suppressedAi: forChannel("voice_ai"), attemptsByLead };
 }
 
 export async function recordCall(scope: TenantScope, call: {
   leadId: string; decision: "allowed" | "refused"; reasons: string[]; outcome: CallOutcome | null; note: string | null;
+  channel?: "voice_human" | "voice_ai";
 }): Promise<void> {
   ensureConfigured();
   await supabaseAdminRest("contact_attempts", { method: "POST", prefer: "return=minimal", body: {
-    organization_id: scope.organizationId, lead_id: call.leadId, channel: "voice_human", decision: call.decision,
+    organization_id: scope.organizationId, lead_id: call.leadId, channel: call.channel ?? "voice_human", decision: call.decision,
     reasons: call.reasons, outcome: call.outcome, note: call.note, actor_user_id: scope.userId,
   } });
 }

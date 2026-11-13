@@ -40,7 +40,11 @@ const OUTCOME_LABELS: Record<CallOutcome, string> = {
   call_back: "Asked for a call back", not_interested: "Not interested", interested: "Interested",
 };
 
-type QueueResponse = { callable: (QueueLead & { lastContactAt: string | null })[]; refused: { lead: QueueLead; reasons: QueueReason[] }[] };
+type AgentJob = { id: string; status: "queued" | "calling" | "completed" | "failed"; outcome: CallOutcome | null; summary: string | null; failureReason: string | null };
+type QueueResponse = {
+  callable: (QueueLead & { lastContactAt: string | null; agentCall?: { allowed: boolean; reasons: QueueReason[] }; agentJob?: AgentJob | null })[];
+  refused: { lead: QueueLead; reasons: QueueReason[] }[];
+};
 type HistoryEntry =
   | { kind: "attempt"; at: string; channel: string; decision: string; reasons: string[]; outcome: string | null; note: string | null }
   | { kind: "change"; at: string; action: string; metadata: Record<string, unknown> }
@@ -183,6 +187,51 @@ function PendingCallBanner(props: { onLogged: () => void }) {
   );
 }
 
+// Agent call pipeline (2026-11-13): one click asks the voice agent to call this lead. The server
+// gate decides (channel voice_ai); while it refuses, the button stays disabled and says why.
+const AGENT_REASON_LABELS: Partial<Record<QueueReason, string>> = {
+  dlt_registration_missing: "India DLT registration not recorded",
+  tdra_registration_missing: "UAE TDRA registration not recorded",
+  counsel_sign_off_missing: "counsel sign-off not recorded",
+};
+
+function AgentCallControl(props: { leadId: string; agentCall?: { allowed: boolean; reasons: QueueReason[] }; job?: AgentJob | null; onStarted: () => void }) {
+  const [message, setMessage] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const allowed = props.agentCall?.allowed === true;
+  const job = props.job;
+
+  const start = async () => {
+    setBusy(true);
+    setMessage(null);
+    const response = await fetch(`/api/crm/leads/${props.leadId}/agent-calls`, { method: "POST", credentials: "include" }).catch(() => null);
+    const data = (await response?.json().catch(() => null)) as { error?: string; reasons?: QueueReason[]; failureReason?: string } | null;
+    setBusy(false);
+    if (response?.status === 202) { setMessage("The agent is calling. The result will appear here."); props.onStarted(); return; }
+    if (data?.reasons?.length) setMessage(`Refused: ${data.reasons.map((r) => AGENT_REASON_LABELS[r] ?? REASON_LABELS[r] ?? r).join("; ")}`);
+    else setMessage(data?.failureReason ? `The agent could not call: ${data.failureReason}` : data?.error ?? "Could not start the agent call.");
+  };
+
+  return (
+    <div data-testid="agent-call" className="mt-2 text-xs">
+      <div className="flex flex-wrap items-center gap-2">
+        <button type="button" disabled={!allowed || busy} onClick={() => void start()} className="rounded-md bg-[#0F1117] px-3 py-1 font-semibold text-white disabled:opacity-40">Call with agent</button>
+        {!allowed && props.agentCall ? (
+          <span className="text-[#5F6B73]">Agent calls are off: {props.agentCall.reasons.map((r) => AGENT_REASON_LABELS[r] ?? REASON_LABELS[r] ?? r).join("; ")}</span>
+        ) : null}
+      </div>
+      {job ? (
+        <p className="mt-1 text-[#5F6B73]">
+          {job.status === "completed" ? `Agent call: ${job.outcome ? OUTCOME_LABELS[job.outcome] : "Done"}${job.summary ? ` - ${job.summary}` : ""}`
+            : job.status === "failed" ? `Agent call failed: ${job.failureReason ?? "unknown"}`
+            : "Agent call in progress"}
+        </p>
+      ) : null}
+      {message ? <p className="mt-1 text-[#8B1E2D]">{message}</p> : null}
+    </div>
+  );
+}
+
 function LogCallForm(props: { leadId: string; onLogged: () => void }) {
   const [outcome, setOutcome] = useState<CallOutcome>("connected");
   const [note, setNote] = useState("");
@@ -311,6 +360,7 @@ export function LeadsSection() {
                         </div>
                         <a href={`tel:${l.phoneE164}`} onClick={() => savePendingCall({ leadId: l.id, title: l.title }, new Date())} className="rounded-md border border-[#8B1E2D] px-3 py-1 text-xs font-semibold text-[#8B1E2D]">Call {l.phoneE164}</a>
                       </div>
+                      <AgentCallControl leadId={l.id} agentCall={l.agentCall} job={l.agentJob} onStarted={reload} />
                       <details className="mt-2">
                         <summary className="cursor-pointer text-xs text-[#5F6B73]">Log manually</summary>
                         <LogCallForm leadId={l.id} onLogged={reload} />
