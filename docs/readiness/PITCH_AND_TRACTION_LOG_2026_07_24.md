@@ -950,6 +950,43 @@ not decline-before-enrolling or pure non-response).
 Catalyst -- invited; declined to preserve runway.** This is a concise version of the
 shortlist/enroll-then-withdraw history above.
 
+## Technical Credibility Signals (New, 2026-11-14)
+
+Third-party profiles that score the engineering output of the AXXESS GitHub account. These are not
+pitches or program outcomes; they are recorded here because they are used as external signals in
+pitches and applications.
+
+### 54. CodersRank -- public developer profile for the `axxess-triaxis` account
+
+**Status:** Live public profile, refreshed by the founder on 2026-11-14. **Source: founder-provided
+screenshots of `https://profile.codersrank.io/user/axxess-triaxis/` (2026-11-14); the profile page
+itself is the checkable artifact, and its numbers change as CodersRank re-scores.**
+
+As shown on the profile on 2026-11-14:
+
+- **CodersRank score 569.4, rank: top 2%.** Based on 18 GitHub repos and 1 GitLab repo.
+- **Language ranks (worldwide / India):** TSQL top 0.8% / top 1%; PLpgSQL top 2% / top 3%;
+  TypeScript top 4% / top 5%; SQL top 7% / top 7%; Python top 8% / top 7%; JavaScript top 9% /
+  top 14%; JSON top 10% / top 16%.
+- **Technology ranks:** Next.js top 4%; React top 8%; Pytest top 8%; FastAPI top 13%.
+- **Badges:** Top 5 Developer in India for PLpgSQL and TSQL; Top 10 for Pytest; Top 50 for FastAPI,
+  Next.js and SQL; Top 100 for TypeScript; Associate Developer for JavaScript and TypeScript; a
+  30-day Mega Streak.
+
+**How to cite it (do not overstate):**
+
+- It is a **third-party estimate computed from repository activity**, not a skills assessment or an
+  audited ranking. Cite as "top 2% on CodersRank (third-party, repo-based score)".
+- **TSQL is likely a classification artifact.** AXXESS runs on Postgres (`supabase/migrations/`), so
+  CodersRank may be classing some `.sql` files as T-SQL. Lead with PLpgSQL, TypeScript and Next.js,
+  which match the actual stack.
+- The repositories are built with AI-assisted development (Codex as product manager and prompt
+  designer, Claude Code as engineer; see `CLAUDE.md`). The score reflects that repository output and
+  should be described as such if asked.
+
+**Outcome:** An external, publicly checkable signal of shipped engineering volume on the stack AXXESS
+runs on. Not a customer, revenue or program outcome, and not counted in this log's call totals.
+
 ## Summary Pattern (As Reported)
 
 Reading across all twenty-two named entries: the recurring pattern is strong qualitative reception (multiple uses of "impressed," "remarkable," "AI native") combined with a deliberate, repeated founder decision to **decline three separate accelerator/pre-accelerator offers** (Startup Wise Guys' Founders Club, Forge AI's Founder Residency, Web Summit Alpha) explicitly to preserve runway, while continuing to advance further in incubation-style programs that do not carry the same cost/dilution/time trade-off (SIIC IIT Kanpur, NASSCOM CoE Gurugram). This is consistent with the capital-efficiency framing already documented in `MONOREPO_ARCHITECTURE_AND_BUSINESS_MODEL.md` S1.4 (total spend to date approximately $800, current run-rate sustainable on Tier 1 self-serve pricing alone) -- these are recorded here as the same discipline applied to fundraising/accelerator decisions, not just product spend.
