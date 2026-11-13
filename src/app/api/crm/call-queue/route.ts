@@ -15,7 +15,12 @@ export async function GET() {
   const leads = await listOpenLeads(access.scope, access.senior ? undefined : access.session.user.id);
   const context = await loadCallContext(access.scope, leads, now);
   const queue = buildCallQueue({ leads, ...context, registrations: CURRENT_REGISTRATIONS, now });
-  const jobs = await latestAgentCallJobs(access.scope, queue.callable.map((l) => l.id));
+  // The agent job is extra detail on a card. If it cannot be read (e.g. the agent_call_jobs migration
+  // is not applied yet), the human call queue must still load, so the error is logged, not returned.
+  const jobs = await latestAgentCallJobs(access.scope, queue.callable.map((l) => l.id)).catch((error: unknown) => {
+    console.error("call-queue: agent call jobs unavailable", error instanceof Error ? error.message : error);
+    return new Map<string, never>();
+  });
   const callable = queue.callable.map((l) => ({ ...l, agentJob: jobs.get(l.id) ?? null }));
   return NextResponse.json({ ...queue, callable, checkedAt: now.toISOString() });
 }
