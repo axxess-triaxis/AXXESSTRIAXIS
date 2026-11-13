@@ -38,6 +38,7 @@ describe("LeadsSection", () => {
     state.demoMode = false;
     state.role = "Employee";
     vi.unstubAllGlobals();
+    window.sessionStorage.clear();
   });
 
   it("lists leads and opens a lead with history; an Employee gets no owner select", async () => {
@@ -80,6 +81,54 @@ describe("LeadsSection", () => {
     const refused = screen.getByTestId("refused-lead");
     expect(refused.querySelector("a[href^='tel:']")).toBeNull();
     expect(refused.textContent).toContain("Cold calls in the UAE need TDRA registration");
+  });
+
+  it("after Call, asks how the call went on return and logs the outcome with one tap", async () => {
+    const fetchMock = stubApi();
+    render(<LeadsSection />);
+    fireEvent.click(await screen.findByRole("tab", { name: /Call queue/ }));
+    fireEvent.click(await screen.findByRole("link", { name: /Call \+919876543210/ }));
+    fetchMock.mockImplementationOnce(async () => ({ ok: true, status: 201, json: async () => ({ logged: true }) }) as never);
+    fireEvent(document, new Event("visibilitychange"));
+
+    const banner = await screen.findByTestId("pending-call");
+    expect(banner.textContent).toContain("How did the call with Acme - Asha go?");
+    fireEvent.click(screen.getByRole("button", { name: "No answer" }));
+
+    await waitFor(() => expect(screen.queryByTestId("pending-call")).toBeNull());
+    const post = fetchMock.mock.calls.find(([url, init]) => String(url) === "/api/crm/leads/l1/calls" && (init as RequestInit | undefined)?.method === "POST");
+    expect(JSON.parse(String((post?.[1] as RequestInit).body))).toEqual({ outcome: "no_answer" });
+    expect(window.sessionStorage.getItem("axxess.pendingCall")).toBeNull();
+  });
+
+  it("logs nothing when the caller says they didn't call", async () => {
+    const fetchMock = stubApi();
+    render(<LeadsSection />);
+    fireEvent.click(await screen.findByRole("tab", { name: /Call queue/ }));
+    fireEvent.click(await screen.findByRole("link", { name: /Call \+919876543210/ }));
+    fireEvent(window, new Event("focus"));
+    fireEvent.click(await screen.findByRole("button", { name: "Didn't call" }));
+    expect(screen.queryByTestId("pending-call")).toBeNull();
+    expect(fetchMock.mock.calls.some(([, init]) => (init as RequestInit | undefined)?.method === "POST")).toBe(false);
+  });
+
+  it("shows the gate's reasons when the one-tap log is refused", async () => {
+    const fetchMock = stubApi();
+    render(<LeadsSection />);
+    fireEvent.click(await screen.findByRole("tab", { name: /Call queue/ }));
+    fireEvent.click(await screen.findByRole("link", { name: /Call \+919876543210/ }));
+    fetchMock.mockImplementationOnce(async () => ({ ok: false, status: 409, json: async () => ({ reasons: ["tdra_registration_missing"] }) }) as never);
+    fireEvent(document, new Event("visibilitychange"));
+    fireEvent.click(await screen.findByRole("button", { name: "Connected" }));
+    expect((await screen.findByTestId("pending-call")).textContent).toContain("Refused: Cold calls in the UAE need TDRA registration");
+  });
+
+  it("keeps the full form under Log manually", async () => {
+    stubApi();
+    render(<LeadsSection />);
+    fireEvent.click(await screen.findByRole("tab", { name: /Call queue/ }));
+    expect(await screen.findByText("Log manually")).toBeTruthy();
+    expect(screen.getByLabelText("Call outcome")).toBeTruthy();
   });
 
   it("shows a Manager the funnel from real counts, the paused ramp, and what is not tracked", async () => {

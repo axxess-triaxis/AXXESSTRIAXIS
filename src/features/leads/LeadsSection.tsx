@@ -9,6 +9,7 @@ import { isDemoModeEnabled } from "../../demo/demoMode";
 import type { CrmLead, CrmLeadStage, CrmLeadStatus } from "../../domain";
 import { canReadAllLeads } from "../../security/rbac";
 import { FunnelPanel } from "./FunnelPanel";
+import { clearPendingCall, readPendingCall, savePendingCall, type PendingCall } from "./pendingCall";
 import { CALL_OUTCOMES, type CallOutcome, type QueueLead, type QueueReason } from "../../services/outbound/callQueue";
 
 // Leads page and daily call queue (GTM plan 2026-11-11, Day 3). Everything comes from the CRM
@@ -130,6 +131,58 @@ function LeadPanel(props: { lead: CrmLead; senior: boolean; staff: { id: string;
   );
 }
 
+// One-tap logging (2026-11-13): after Call, the tab remembers the lead; when the page is visible
+// again, this asks for the outcome. One tap posts it through the same gated /calls route.
+const ONE_TAP_OUTCOMES: CallOutcome[] = ["connected", "no_answer", "voicemail", "call_back", "interested", "not_interested", "wrong_number"];
+
+function PendingCallBanner(props: { onLogged: () => void }) {
+  const [pending, setPending] = useState<PendingCall | null>(null);
+  const [note, setNote] = useState("");
+  const [showNote, setShowNote] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    const check = () => { if (document.visibilityState !== "hidden") setPending(readPendingCall(new Date())); };
+    check();
+    document.addEventListener("visibilitychange", check);
+    window.addEventListener("focus", check);
+    return () => { document.removeEventListener("visibilitychange", check); window.removeEventListener("focus", check); };
+  }, []);
+
+  if (!pending) return null;
+
+  const close = () => { clearPendingCall(); setPending(null); setNote(""); setShowNote(false); setMessage(null); };
+  const log = async (outcome: CallOutcome) => {
+    setBusy(true);
+    setMessage(null);
+    const response = await fetch(`/api/crm/leads/${pending.leadId}/calls`, {
+      method: "POST", credentials: "include", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ outcome, ...(note.trim() ? { note: note.trim() } : {}) }),
+    }).catch(() => null);
+    const data = (await response?.json().catch(() => null)) as { error?: string; reasons?: QueueReason[] } | null;
+    setBusy(false);
+    if (response?.status === 201) { close(); props.onLogged(); return; }
+    setMessage(data?.reasons?.length ? `Refused: ${data.reasons.map((r) => REASON_LABELS[r] ?? r).join("; ")}` : data?.error ?? "Could not log the call.");
+  };
+
+  return (
+    <div data-testid="pending-call"><Card className="border-[#8B1E2D] p-4">
+      <p className="text-sm font-semibold text-[#0F1117]">How did the call with {pending.title} go?</p>
+      <p className="text-xs text-[#5F6B73]">Started {new Date(pending.startedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}. One tap logs it.</p>
+      <div className="mt-3 flex flex-wrap gap-2">
+        {ONE_TAP_OUTCOMES.map((o) => (
+          <button key={o} type="button" disabled={busy} onClick={() => void log(o)} className="rounded-md bg-[#8B1E2D] px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50">{OUTCOME_LABELS[o]}</button>
+        ))}
+        <button type="button" onClick={close} className="rounded-md border border-[rgba(0,0,0,0.15)] px-3 py-1.5 text-xs text-[#5F6B73]">Didn&apos;t call</button>
+        <button type="button" onClick={() => setShowNote((v) => !v)} className="px-2 py-1.5 text-xs text-[#8B1E2D] underline">{showNote ? "No note" : "+ note"}</button>
+      </div>
+      {showNote ? <input aria-label="Note for this call" className={`${input} mt-2 w-full`} maxLength={500} placeholder="Note (optional)" value={note} onChange={(e) => setNote(e.target.value)} /> : null}
+      {message ? <p className="mt-2 text-xs text-red-700">{message}</p> : null}
+    </Card></div>
+  );
+}
+
 function LogCallForm(props: { leadId: string; onLogged: () => void }) {
   const [outcome, setOutcome] = useState<CallOutcome>("connected");
   const [note, setNote] = useState("");
@@ -246,6 +299,7 @@ export function LeadsSection() {
             </div>
           ) : (
             <div className="space-y-4">
+              <PendingCallBanner onLogged={reload} />
               {queue === null ? <p className="text-xs text-[#5F6B73]">Checking who you may call...</p> : (
                 <>
                   {queue.callable.length === 0 ? <Card className="p-4"><p className="text-xs text-[#5F6B73]">Nobody to call right now.</p></Card> : queue.callable.map((l) => (
@@ -255,9 +309,12 @@ export function LeadsSection() {
                           <p className="text-sm font-semibold text-[#0F1117]">{l.title}</p>
                           <p className="text-xs text-[#5F6B73]">Last contact {when(l.lastContactAt)} · follow-up {when(l.nextFollowUpAt)}</p>
                         </div>
-                        <a href={`tel:${l.phoneE164}`} className="rounded-md border border-[#8B1E2D] px-3 py-1 text-xs font-semibold text-[#8B1E2D]">Call {l.phoneE164}</a>
+                        <a href={`tel:${l.phoneE164}`} onClick={() => savePendingCall({ leadId: l.id, title: l.title }, new Date())} className="rounded-md border border-[#8B1E2D] px-3 py-1 text-xs font-semibold text-[#8B1E2D]">Call {l.phoneE164}</a>
                       </div>
-                      <LogCallForm leadId={l.id} onLogged={reload} />
+                      <details className="mt-2">
+                        <summary className="cursor-pointer text-xs text-[#5F6B73]">Log manually</summary>
+                        <LogCallForm leadId={l.id} onLogged={reload} />
+                      </details>
                     </Card></div>
                   ))}
                   {queue.refused.length ? (
