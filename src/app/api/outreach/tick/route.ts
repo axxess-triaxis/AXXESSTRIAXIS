@@ -1,13 +1,17 @@
 import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
-import { loadTickState, recordContactAttempt, updateEnrollment } from "../../../../repositories/outboundRepository";
+import { loadSendHealth, loadTickState, recordContactAttempt, updateEnrollment } from "../../../../repositories/outboundRepository";
 import { sendViaResend } from "../../../../services/email/resendSend";
 import { runOutreachTick } from "../../../../services/outbound/outreachTick";
+import { decideDailyBudget } from "../../../../services/outbound/sendRamp";
 
 // Scheduled outreach sender (GTM plan 2026-11-11, Day 2). Called by a scheduler with
 // `Authorization: Bearer <OUTREACH_TICK_SECRET>`. Off unless OUTREACH_SENDING_ENABLED=true.
 // Single organization for now (OUTREACH_ORGANIZATION_ID, Tenant 0). The daily budget defaults
 // to 20 for domain warm-up and is capped at 200.
+// Day 4: OUTREACH_DAILY_SEND_BUDGET is now the ceiling. The day's budget comes from the ramp rule
+// (services/outbound/sendRamp.ts): it rises at most 50% a day while 7-day bounces stay under 2% and
+// complaints under 0.1%, and sending pauses (budget 0, nothing sent) when either limit is reached.
 const REQUIRED = [
   "OUTREACH_ORGANIZATION_ID",
   "OUTREACH_FROM",
@@ -36,8 +40,14 @@ export async function POST(request: Request) {
 
   // Every REQUIRED name was checked as present just above.
   const env = Object.fromEntries(REQUIRED.map((name) => [name, process.env[name] as string])) as Record<(typeof REQUIRED)[number], string>;
-  const budget = Number.parseInt(process.env.OUTREACH_DAILY_SEND_BUDGET ?? "20", 10);
+  const ceiling = Number.parseInt(process.env.OUTREACH_DAILY_SEND_BUDGET ?? "20", 10);
   const organizationId = env.OUTREACH_ORGANIZATION_ID;
+  const now = new Date();
+  const ramp = decideDailyBudget({ ceiling, ...(await loadSendHealth(organizationId, now)) });
+  if (ramp.budget === 0) {
+    console.warn("[outreach] sending paused by the ramp rule", { reason: ramp.reason });
+    return NextResponse.json({ sent: 0, stopped: 0, deferred: 0, failed: 0, budget: 0, reason: ramp.reason });
+  }
 
   const summary = await runOutreachTick({
     loadState: loadTickState,
@@ -50,9 +60,9 @@ export async function POST(request: Request) {
       sender: { name: env.OUTREACH_SENDER_NAME, company: env.OUTREACH_SENDER_COMPANY, postalAddress: env.OUTREACH_SENDER_ADDRESS },
       appUrl: env.NEXT_PUBLIC_APP_URL,
       unsubscribeSecret: env.OUTREACH_UNSUBSCRIBE_SECRET,
-      dailySendBudget: Number.isFinite(budget) ? Math.min(Math.max(budget, 0), 200) : 20,
+      dailySendBudget: ramp.budget,
     },
-    now: () => new Date(),
+    now: () => now,
   });
-  return NextResponse.json(summary);
+  return NextResponse.json({ ...summary, budget: ramp.budget, reason: ramp.reason });
 }

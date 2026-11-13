@@ -16,9 +16,17 @@ const queue = {
   refused: [{ lead: { id: "l2", title: "Beta - Omar", phoneE164: "+971500000000", stage: "new" }, reasons: ["tdra_registration_missing", "counsel_sign_off_missing"] }],
 };
 
+const funnel = {
+  window: { days: 30 },
+  activity: { leadsAdded: 4, emailsSent: 80, delivered: 78, bounced: 2, complained: 0, replies: 3, repliesByCategory: { interested: 1, other: 2 } },
+  pipelineNow: { open: 4, byStage: { new: 3, qualifying: 1 }, won: 0, lost: 0 },
+  notTracked: ["meetings", "trials", "paid"],
+  ramp: { budget: 0, reason: "paused_bounce_rate", sendingEnabled: true, sent7d: 80, bounceRate7d: 0.025, complaintRate7d: 0 },
+};
+
 function stubApi() {
   const fetchMock = vi.fn(async (url: string) => {
-    const body = url.includes("call-queue") ? queue : url.includes("/history") ? { history: [] } : url.includes("/staff") ? { staff: [{ id: "emp", displayName: "Emp" }] } : { leads };
+    const body = url.includes("/funnel") ? funnel : url.includes("call-queue") ? queue : url.includes("/history") ? { history: [] } : url.includes("/staff") ? { staff: [{ id: "emp", displayName: "Emp" }] } : { leads };
     return { ok: true, status: 200, json: async () => body };
   });
   vi.stubGlobal("fetch", fetchMock);
@@ -72,6 +80,24 @@ describe("LeadsSection", () => {
     const refused = screen.getByTestId("refused-lead");
     expect(refused.querySelector("a[href^='tel:']")).toBeNull();
     expect(refused.textContent).toContain("Cold calls in the UAE need TDRA registration");
+  });
+
+  it("shows a Manager the funnel from real counts, the paused ramp, and what is not tracked", async () => {
+    state.role = "Manager";
+    stubApi();
+    render(<LeadsSection />);
+    fireEvent.click(await screen.findByRole("tab", { name: /Funnel/ }));
+    expect((await screen.findByTestId("ramp-status")).textContent).toContain("Paused: the bounce rate reached 2%");
+    expect(screen.getByTestId("funnel-activity").textContent).toContain("Delivered78 (97.5%)");
+    expect(screen.getByTestId("funnel-pipeline").textContent).toContain("MeetingsNot tracked yet");
+  });
+
+  it("gives an Employee no Funnel tab and never calls the funnel API", async () => {
+    const fetchMock = stubApi();
+    render(<LeadsSection />);
+    await screen.findByText("Acme - Asha");
+    expect(screen.queryByRole("tab", { name: /Funnel/ })).toBeNull();
+    expect(fetchMock.mock.calls.some(([url]) => String(url).includes("/api/crm/funnel"))).toBe(false);
   });
 
   it("makes no API calls in the demo workspace", () => {

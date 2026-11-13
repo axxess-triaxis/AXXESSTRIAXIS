@@ -1,6 +1,6 @@
 "use client";
 
-import { PhoneCall, Users, X } from "lucide-react";
+import { Filter, PhoneCall, Users, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "../../auth/AuthProvider";
 import { SectionHeader } from "../../components/layout/SectionHeader";
@@ -8,6 +8,7 @@ import { Card } from "../../components/ui/Card";
 import { isDemoModeEnabled } from "../../demo/demoMode";
 import type { CrmLead, CrmLeadStage, CrmLeadStatus } from "../../domain";
 import { canReadAllLeads } from "../../security/rbac";
+import { FunnelPanel } from "./FunnelPanel";
 import { CALL_OUTCOMES, type CallOutcome, type QueueLead, type QueueReason } from "../../services/outbound/callQueue";
 
 // Leads page and daily call queue (GTM plan 2026-11-11, Day 3). Everything comes from the CRM
@@ -163,7 +164,7 @@ export function LeadsSection() {
   const { session } = useAuth();
   const user = session.user;
   const senior = user ? canReadAllLeads(user.role) : false;
-  const [tab, setTab] = useState<"leads" | "calls">("leads");
+  const [tab, setTab] = useState<"leads" | "calls" | "funnel">("leads");
   const [leads, setLeads] = useState<CrmLead[] | null>(null);
   const [queue, setQueue] = useState<QueueResponse | null>(null);
   const [staff, setStaff] = useState<{ id: string; displayName: string }[]>([]);
@@ -205,9 +206,15 @@ export function LeadsSection() {
               className={`flex items-center gap-1 rounded-md px-3 py-1.5 text-xs font-semibold ${tab === "calls" ? "bg-[#8B1E2D] text-white" : "bg-[#F2F3F5] text-[#0F1117]"}`}>
               <PhoneCall size={13} /> Call queue{queue ? ` (${queue.callable.length})` : ""}
             </button>
+            {senior ? (
+              <button role="tab" aria-selected={tab === "funnel"} type="button" onClick={() => setTab("funnel")}
+                className={`flex items-center gap-1 rounded-md px-3 py-1.5 text-xs font-semibold ${tab === "funnel" ? "bg-[#8B1E2D] text-white" : "bg-[#F2F3F5] text-[#0F1117]"}`}>
+                <Filter size={13} /> Funnel
+              </button>
+            ) : null}
           </div>
 
-          {tab === "leads" ? (
+          {tab === "funnel" && senior ? <FunnelPanel /> : tab === "leads" ? (
             <div className="space-y-4">
               <select aria-label="Filter by stage" className={input} value={stageFilter} onChange={(e) => setStageFilter(e.target.value)}>
                 <option value="">All stages</option>

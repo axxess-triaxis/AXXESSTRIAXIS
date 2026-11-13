@@ -4,8 +4,10 @@ const calls: Array<{ config: Record<string, unknown> }> = [];
 vi.mock("../../../../services/outbound/outreachTick", () => ({
   runOutreachTick: async (deps: { config: Record<string, unknown> }) => { calls.push({ config: deps.config }); return { sent: 2, stopped: 1, deferred: 0, failed: 0 }; },
 }));
+let health = { sentPerDay: [0, 0, 0, 0, 0, 0, 0], bounces7d: 0, complaints7d: 0 };
 vi.mock("../../../../repositories/outboundRepository", () => ({
   loadTickState: async () => ({}), recordContactAttempt: async () => undefined, updateEnrollment: async () => undefined,
+  loadSendHealth: async () => health,
 }));
 vi.mock("../../../../services/email/resendSend", () => ({ sendViaResend: async () => ({ id: "x" }) }));
 
@@ -27,7 +29,7 @@ const call = (auth?: string) => POST(new Request("http://localhost/api/outreach/
 
 describe("POST /api/outreach/tick", () => {
   beforeEach(() => { Object.assign(process.env, ENV); });
-  afterEach(() => { for (const k of [...Object.keys(ENV), "OUTREACH_DAILY_SEND_BUDGET"]) delete process.env[k]; calls.length = 0; });
+  afterEach(() => { for (const k of [...Object.keys(ENV), "OUTREACH_DAILY_SEND_BUDGET"]) delete process.env[k]; calls.length = 0; health = { sentPerDay: [0, 0, 0, 0, 0, 0, 0], bounces7d: 0, complaints7d: 0 }; });
 
   it("returns 401 without the right bearer secret", async () => {
     expect((await call()).status).toBe(401);
@@ -52,12 +54,21 @@ describe("POST /api/outreach/tick", () => {
     expect(calls).toEqual([]);
   });
 
-  it("runs one tick with a capped daily budget and returns the summary", async () => {
+  it("runs one tick with the ramp budget, capped by the ceiling, and returns the summary with the reason", async () => {
     process.env.OUTREACH_DAILY_SEND_BUDGET = "5000";
+    health = { sentPerDay: [150, 150, 150, 150, 150, 150, 0], bounces7d: 1, complaints7d: 0 };
     const response = await call(`Bearer ${ENV.OUTREACH_TICK_SECRET}`);
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ sent: 2, stopped: 1, deferred: 0, failed: 0 });
+    expect(await response.json()).toEqual({ sent: 2, stopped: 1, deferred: 0, failed: 0, budget: 200, reason: "ramping" });
     expect(calls[0].config).toMatchObject({ organizationId: "org-1", dailySendBudget: 200, appUrl: "https://app.example.com" });
+  });
+
+  it("pauses sending without running the tick when the 7-day bounce rate reaches 2%", async () => {
+    process.env.OUTREACH_DAILY_SEND_BUDGET = "100";
+    health = { sentPerDay: [20, 20, 20, 20, 20, 0, 0], bounces7d: 2, complaints7d: 0 };
+    const response = await call(`Bearer ${ENV.OUTREACH_TICK_SECRET}`);
+    expect(await response.json()).toEqual({ sent: 0, stopped: 0, deferred: 0, failed: 0, budget: 0, reason: "paused_bounce_rate" });
+    expect(calls).toEqual([]);
   });
 
   it("defaults the daily budget to 20 for warm-up", async () => {

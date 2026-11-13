@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { addSuppression, findOrganizationForMessage } from "../../../../repositories/outboundRepository";
+import { addSuppression, findOrganizationForMessage, recordEmailEvent } from "../../../../repositories/outboundRepository";
 import { handleInboundReply, parseReceivedEvent } from "../../../../services/outbound/replyIntake";
-import { parseSuppressionEvent, verifyWebhookSignature } from "../../../../services/outbound/resendWebhook";
+import { parseDeliveryEvent, parseSuppressionEvent, verifyWebhookSignature } from "../../../../services/outbound/resendWebhook";
 
 // Resend webhook for outreach email (GTM plan 2026-11-11). Point a Resend webhook at this URL for
 // the email.bounced and email.complained events and put its signing secret in
@@ -38,11 +38,16 @@ export async function POST(request: Request) {
     return NextResponse.json(result);
   }
 
-  const event = parseSuppressionEvent(payload);
-  if (!event) return NextResponse.json({ ignored: "not_a_suppression_event" });
+  // Day 4: delivered, bounced and complained events are recorded per message (funnel and ramp rule).
+  const delivery = parseDeliveryEvent(payload);
+  if (!delivery) return NextResponse.json({ ignored: "not_a_delivery_event" });
 
-  const organizationId = await findOrganizationForMessage(event.messageId);
+  const organizationId = await findOrganizationForMessage(delivery.messageId);
   if (!organizationId) return NextResponse.json({ ignored: "not_an_outreach_message" });
+  await recordEmailEvent({ organizationId, providerMessageId: delivery.messageId, type: delivery.type, recipient: delivery.recipient });
+
+  const event = parseSuppressionEvent(payload);
+  if (!event) return NextResponse.json({ recorded: delivery.type });
 
   for (const identifier of event.recipients) {
     await addSuppression({
