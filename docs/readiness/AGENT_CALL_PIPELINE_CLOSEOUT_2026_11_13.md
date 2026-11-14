@@ -115,7 +115,13 @@ GTM plan `GTM_4_DAY_AUTOMATION_PLAN_2026_11_11.md`, outbound calling. **Status: 
 
 ## What remains partial or blocked
 
-1. **Apply the migration:** run `pnpm run supabase:migrate:remote` on the founder's go. Until then the queue shows no agent jobs, and nothing writes any.
+1. **Apply the migration: done (2026-11-14), founder-reported.**
+   - The local checkout is linked to staging, so nothing was pushed from here. The founder ran `20261115120000_agent_call_jobs.sql` in the Supabase SQL editor for production (`vnliomnfabaicvvvfwia`).
+   - The founder ran the check query below and reported `jobs = 0, rls_on = true`. **Founder-stated, source artifact needed:** a screenshot of the result.
+     ```sql
+     select count(*) as jobs, (select relrowsecurity from pg_class where relname = 'agent_call_jobs') as rls_on from public.agent_call_jobs;
+     ```
+   - The agent couldn't confirm it independently. It has no production database credentials. The Vercel Hobby plan keeps only 30 minutes of logs, and no `/api/crm/*` request appeared between 02:37 and 03:07 UTC on 2026-11-14.
 2. **Grant the capability:** grant the opt-in `log_agent_call` capability to the AXXESS agent connection STILL uses.
 3. **Deploy:** STILL (SAM), then Callismatic (image).
    - Callismatic production also needs `lambda:InvokeFunction` on itself and a longer timeout.
@@ -133,5 +139,5 @@ Architecture boundary: AXXESS decides (gate, voice_ai) and records; Callismatic 
 Product boundary: One human approval remains, for the demo meeting (create_meeting is critical). No unattended batch dialling. No real call until DLT, counsel and a provider exist.
 Verification: AXXESS CI all green on 41cbdc9; Callismatic 181 tests; STILL 77 tests; local AXXESS typecheck, lint, build and supabase:verify pass; local full test run inconclusive (worker errors under load).
 Outcome: Partial. Production shows a disabled Call with agent button with the reason; no call path is live.
-Follow-up: Migration, capability grant, STILL and Callismatic deploys, Vercel env, script review; then DLT, counsel and an Indian provider.
+Follow-up: Migration applied 2026-11-14 (founder-reported: jobs = 0, rls_on = true). Remaining: capability grant, STILL and Callismatic deploys, Vercel env, script review; then DLT, counsel and an Indian provider.
 ```
