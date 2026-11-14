@@ -148,7 +148,12 @@ GTM plan `GTM_4_DAY_AUTOMATION_PLAN_2026_11_11.md`, outbound calling. **Status: 
    - **Redeploy:** `vercel redeploy` of the latest production deployment (`dpl_7f9LtxCp…`, prebuilt by `deploy-production.yml`) went Ready in 36 s. But Vercel warned that it reuses the prebuilt output and does not pick up new environment variables.
    - Merging this docs change runs `deploy-production.yml`, which `vercel pull`s the production env and rebuilds. That deploy is what carries the variables.
    - **Not checkable without a signed-in agent call**, which the gate refuses anyway: that the running site reads them.
-6. **Call script:** the founder reviews the script in `outbound.build_task` before anything is enabled.
+6. **Call script: approved as written (2026-11-14)** by the founder ("Approve as written"), after reviewing the full text of `outbound.build_task` at Callismatic `0f83ab3`.
+   - The script covers: AI disclosure first; opt-out honoured; a 30-minute demo; no prices, commitments or untold features; up to 3 slots in 5 days in local time, or ask and confirm by email.
+   - Points raised for the founder and left as they are: there is no product pitch; the call is made in the company's name, not a person's; and the 30-minute and 5-day settings stay.
+   - Any change to the wording needs a fresh approval. The disclosure wording still needs counsel's sign-off, which is part of item 7.
+   - Approval enables nothing: `OUTBOUND_AGENT_CALLS_ENABLED` is unset and no provider is registered.
+   - **Landing env redeploy:** `deploy-production.yml` run 43573332317 (`391cfc94`) rebuilt landing with the production env pulled at about 07:55 UTC. Landing serves `dpl_GnJmDiHL…` (Ready), and landing, investor and lite all return 200.
 7. **Before any real call (blocked):** DLT registration, counsel sign-off, and a DLT-registered Indian voice provider registered in `OUTBOUND_PROVIDERS_BY_COUNTRY_CODE[91]`. Then the registrations are flipped in a small follow-up PR.
 
 ## Decision ledger
@@ -161,5 +166,5 @@ Architecture boundary: AXXESS decides (gate, voice_ai) and records; Callismatic 
 Product boundary: One human approval remains, for the demo meeting (create_meeting is critical). No unattended batch dialling. No real call until DLT, counsel and a provider exist.
 Verification: AXXESS CI all green on 41cbdc9; Callismatic 181 tests; STILL 77 tests; local AXXESS typecheck, lint, build and supabase:verify pass; local full test run inconclusive (worker errors under load).
 Outcome: Partial. Production shows a disabled Call with agent button with the reason; no call path is live.
-Follow-up: Migration applied 2026-11-14 (founder-reported: jobs = 0, rls_on = true). Capabilities granted, STILL deployed (04:06 UTC) and Callismatic deployed (05:46 UTC, outbound still off) on 2026-11-14. Remaining: Vercel env, script review; then DLT, counsel and an Indian provider.
+Follow-up: Migration applied 2026-11-14 (founder-reported: jobs = 0, rls_on = true). Capabilities granted, STILL deployed (04:06 UTC) and Callismatic deployed (05:46 UTC, outbound still off) on 2026-11-14. Vercel env set and landing rebuilt; call script approved as written (2026-11-14). Remaining: DLT, counsel and an Indian provider.
 ```
