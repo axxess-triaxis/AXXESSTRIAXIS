@@ -1,0 +1,21 @@
+company,contact_name,email,phone,country,consent_basis,source
+Example Realty Bengaluru,Test Owner One,owner@realty-blr.example.com,,IN,b2b_legitimate_interest,https://realty-blr.example.com/contact
+Example Homes Mumbai,Test Owner Two,ops@homes-mum.example.com,+919000000001,IN,b2b_legitimate_interest,https://homes-mum.example.com/about
+Example Properties Pune,Test Owner Three,founder@props-pune.example.com,,IN,opt_in,Founder network
+Example Estates Dubai,Test Owner Four,owner@estates-dxb.example.com,+971500000001,AE,b2b_legitimate_interest,https://estates-dxb.example.com/contact
+Example Realty Abu Dhabi,Test Owner Five,ops@realty-auh.example.com,,AE,opt_in,Founder network
+Example Clinic Bengaluru,Test Manager One,manager@clinic-blr.example.org,,IN,b2b_legitimate_interest,https://clinic-blr.example.org/contact
+Example Diagnostics Chennai,Test Manager Two,ops@diag-chn.example.org,+919000000002,IN,b2b_legitimate_interest,https://diag-chn.example.org/contact
+Example Clinic Dubai,Test Manager Three,manager@clinic-dxb.example.org,,AE,b2b_legitimate_interest,https://clinic-dxb.example.org/contact
+Example Medical Sharjah,Test Manager Four,ops@medical-shj.example.org,,AE,opt_in,Founder network
+Example Realty Dupe,Test Owner Six,owner@realty-blr.example.com,,IN,b2b_legitimate_interest,https://realty-blr.example.com/team
+No Basis Realty,Test Owner Seven,owner@nobasis.example.com,,IN,,https://nobasis.example.com
+No Source Clinic,Test Manager Five,ops@nosource.example.org,,AE,b2b_legitimate_interest,
+,Test Owner Eight,owner@nocompany.example.com,,IN,opt_in,Founder network
+Example Realty London,Test Owner Nine,owner@realty-ldn.example.com,,GB,b2b_legitimate_interest,https://realty-ldn.example.com
+Bad Email Clinic,Test Manager Six,not-an-email,,IN,b2b_legitimate_interest,https://badmail.example.org
+Bad Phone Realty,Test Owner Ten,,9876543210,IN,b2b_legitimate_interest,https://badphone.example.com
+No Contact Clinic,Test Manager Seven,,,AE,opt_in,Founder network
+Example Suppressed Realty,Test Owner Eleven,suppressed@realty-sup.example.com,,AE,b2b_legitimate_interest,https://realty-sup.example.com
+Example Existing Clinic,Test Manager Eight,existing@clinic-old.example.org,,IN,opt_in,Founder network
+Consumer Basis Realty,Test Owner Twelve,owner@consumer.example.com,,IN,marketing_list,Bought list
