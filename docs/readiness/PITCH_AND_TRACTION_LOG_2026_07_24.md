@@ -168,8 +168,8 @@ treated as a competition/category-fit rejection, not a product or revenue dilige
 
 ### 5. N. S. -- SIIC, IIT Kanpur
 
-**Status:** Round 2 signed off; proceeding to Round 3 with the Domain Head. **Update, 2026-07-26 (founder-reported): Round 3 has now appeared; awaiting incubation confirmation.**
-**Outcome:** Approved progression to the next round of the incubation process.
+**Status:** Round 2 signed off; proceeding to Round 3 with the Domain Head. **Update, 2026-07-26 (founder-reported): Round 3 has now appeared; awaiting incubation confirmation.** **Update, 2026-11-14 (founder-stated, source artifact needed): not selected after Round 3.**
+**Outcome:** Approved progression to the next round of the incubation process; later not selected after Round 3 (founder-stated 2026-11-14; the decision email or message is not in this repo).
 
 **Founder clarification, 2026-08-22:** the relevant investor-facing status is that **SIIC IIT
 Kanpur's final round was taken by the Domain Head - AI & ML**. This clarifies the process stage and
@@ -1047,6 +1047,20 @@ program's own logs. Recorded here as a genuine, countable scale-of-reach fact fo
 young, not an inflated or rounded claim -- and still not a revenue, sales-lead, or closed-funding
 count.
 
+## Status Update, 2026-11-14 (Founder-Stated)
+
+The founder stated, in-session on 2026-11-14, that **9 programs have rejected AXXESS**, naming SIIC
+IIT Kanpur (#5/#6, not selected after Round 3) and Startup Wise Guys among them. For Startup Wise
+Guys, the rejection is the Flagship Accelerator (#38, asked to reapply at EUR 10,000 MRR); the
+Founders Club (#9) remains a founder-side decline, not a rejection.
+
+- **The count of 9 is founder-stated, source artifact needed.** It has not been reconciled entry by
+  entry against this log, and this pass does not claim which nine entries it covers.
+- The SIIC IIT Kanpur outcome is recorded on entry #5 above; no decision email or message was
+  supplied.
+- This also changes the Explicit Non-Claims below: NASSCOM CoE Gurugram is now the only incubation
+  process still actively progressing.
+
 ## Status Update, 2026-07-26 (Founder-Reported)
 
 The founder supplied a status refresh on 8 of the entries above, in-session. Recorded inline on each
@@ -1071,7 +1085,7 @@ itself.
 
 Consistent with this program's documentation discipline: this log does not claim any of the following, and none should be inferred from it --
 
-- No accelerator or incubation offer listed above has been accepted; SIIC IIT Kanpur and NASSCOM CoE Gurugram are the only two still actively progressing.
+- No accelerator or incubation offer listed above has been accepted. As of 2026-11-14, NASSCOM CoE Gurugram is the only incubation process still actively progressing; SIIC IIT Kanpur ended without selection after Round 3 (founder-stated, source artifact needed).
 - No pilot, contract, purchase order, or signed letter of intent exists from any entry in this log. UNDP Malawi's $5,000+/month indicative pricing is a survey response, not a commercial commitment -- this is the same caveat already applied to the broader beta-feedback willingness-to-pay data in `MONOREPO_ARCHITECTURE_AND_BUSINESS_MODEL.md` S6.4.
 - Promoter scores, "AI native" framing, and qualitative praise quoted above are the founder's own recollection of what was said in these conversations, not captured via a formal survey instrument (unlike the 30-response beta feedback batch, which was captured via structured NPS/PMF survey tooling).
 - No angel investment, check, term sheet, or formal commitment has been made or received from any entry in the Angel Investor Conversations or Ecosystem/Connector sections -- these are recorded as pitched/ongoing relationships only. 3one4 Capital's first "too early for us" interaction is recorded as a genuine pass, while the second interaction is recorded separately as warm-but-waiting / communication open.
