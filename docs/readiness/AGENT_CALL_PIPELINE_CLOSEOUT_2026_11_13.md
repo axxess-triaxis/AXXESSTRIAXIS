@@ -142,7 +142,12 @@ GTM plan `GTM_4_DAY_AUTOMATION_PLAN_2026_11_11.md`, outbound calling. **Status: 
    - **First cold start:** init hit the 10 s limit (`INIT_REPORT ... Status: timeout`). Lambda retried it inside the request, which took 6 s, and later requests took 3 to 8 ms.
      - Earlier cold starts were 2.7 to 4.3 s, and 9.5 s on the first start after the 2026-11-13 image.
      - So this reads as a first pull of a new image, **not confirmed** by a second cold start.
-5. **Vercel env:** set `CALLISMATIC_URL` and `CALLISMATIC_API_KEY`. The values are pasted by the founder and never pass through chat.
+5. **Vercel env: set (2026-11-14)** by the founder in `triaxis-www-frontend-import` (landing). The values were pasted in Vercel and never passed through chat.
+   - `vercel env ls production` lists `CALLISMATIC_URL` and `CALLISMATIC_API_KEY`, both Secret and Production only. The agent read names only.
+   - The key is Callismatic's `ADMIN_API_KEY` from `callismatic/prod`, because `/api/outbound-calls` needs the admin key. So AXXESS's server holds full admin access to Callismatic. A dedicated outbound key would be a small Callismatic change.
+   - **Redeploy:** `vercel redeploy` of the latest production deployment (`dpl_7f9LtxCp…`, prebuilt by `deploy-production.yml`) went Ready in 36 s. But Vercel warned that it reuses the prebuilt output and does not pick up new environment variables.
+   - Merging this docs change runs `deploy-production.yml`, which `vercel pull`s the production env and rebuilds. That deploy is what carries the variables.
+   - **Not checkable without a signed-in agent call**, which the gate refuses anyway: that the running site reads them.
 6. **Call script:** the founder reviews the script in `outbound.build_task` before anything is enabled.
 7. **Before any real call (blocked):** DLT registration, counsel sign-off, and a DLT-registered Indian voice provider registered in `OUTBOUND_PROVIDERS_BY_COUNTRY_CODE[91]`. Then the registrations are flipped in a small follow-up PR.
 
