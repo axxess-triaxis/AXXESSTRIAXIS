@@ -86,6 +86,14 @@ describe("email verification (QuickEmailVerification, mocked)", () => {
     expect(classifyQev(ok({ role: "true" })).role).toBe(true);
   });
 
+  it("keeps a role inbox the server confirmed, even though QEV says not safe_to_send (live 2026-11-14)", () => {
+    const role = { role: "true", safe_to_send: "false" };
+    expect(classifyQev(ok({ ...role, reason: "accepted_email" })).decision).toBe("keep");
+    expect(classifyQev(ok({ ...role, reason: "accepted_email", accept_all: "true" })).decision).toBe("review");
+    expect(classifyQev(ok({ ...role, result: "unknown", reason: "timeout" })).decision).toBe("review");
+    expect(classifyQev(ok({ safe_to_send: "false", reason: "accepted_email" })).decision).toBe("review");
+  });
+
   it("verifies each email once, sends only the address and key, and reports remaining credits", async () => {
     const urls: string[] = [];
     const answers: Record<string, Record<string, unknown>> = {

@@ -60,11 +60,16 @@ const flag = (value: unknown) => value === true || value === "true";
 export function classifyQev(body: Record<string, unknown>): Pick<EmailVerification, "decision" | "result" | "reason" | "role"> {
   const result = String(body.result ?? "unknown");
   const acceptAll = flag(body.accept_all);
+  const role = flag(body.role);
+  const reason = String(body.reason ?? "");
+  // QEV marks every role inbox (info@, team@) as not safe_to_send. The lead plan targets business
+  // inboxes, so a role address the mail server confirmed (accepted_email) is kept.
+  const confirmedRole = role && reason === "accepted_email";
   let decision: VerifyDecision;
   if (result === "invalid" || flag(body.disposable)) decision = "drop";
-  else if (result === "valid" && flag(body.safe_to_send) && !acceptAll) decision = "keep";
+  else if (result === "valid" && !acceptAll && (flag(body.safe_to_send) || confirmedRole)) decision = "keep";
   else decision = "review";
-  return { decision, result, reason: acceptAll ? "accept_all" : String(body.reason ?? ""), role: flag(body.role) };
+  return { decision, result, reason: acceptAll ? "accept_all" : reason, role };
 }
 
 /** Verifies one address at a time. Throws on an API failure, with QEV's message but never the key. */
