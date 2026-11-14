@@ -168,8 +168,8 @@ treated as a competition/category-fit rejection, not a product or revenue dilige
 
 ### 5. N. S. -- SIIC, IIT Kanpur
 
-**Status:** Round 2 signed off; proceeding to Round 3 with the Domain Head. **Update, 2026-07-26 (founder-reported): Round 3 has now appeared; awaiting incubation confirmation.** **Update, 2026-11-14 (founder-stated, source artifact needed): not selected after Round 3.**
-**Outcome:** Approved progression to the next round of the incubation process; later not selected after Round 3 (founder-stated 2026-11-14; the decision email or message is not in this repo).
+**Status:** Round 2 signed off; proceeding to Round 3 with the Domain Head. **Update, 2026-07-26 (founder-reported): Round 3 has now appeared; awaiting incubation confirmation.** **Update, 2026-11-14 (founder-stated, source artifact needed): SIIC made a reconsidered offer after Round 3 (about 2026-11-07); AXXESS declined it.**
+**Outcome:** Approved progression to the next round of the incubation process; after Round 3, SIIC made a reconsidered offer, which AXXESS declined (founder-stated 2026-11-14; no offer or decline message is in this repo).
 
 **Founder clarification, 2026-08-22:** the relevant investor-facing status is that **SIIC IIT
 Kanpur's final round was taken by the Domain Head - AI & ML**. This clarifies the process stage and
@@ -1049,17 +1049,25 @@ count.
 
 ## Status Update, 2026-11-14 (Founder-Stated)
 
-The founder stated, in-session on 2026-11-14, that **9 programs have rejected AXXESS**, naming SIIC
-IIT Kanpur (#5/#6, not selected after Round 3) and Startup Wise Guys among them. For Startup Wise
-Guys, the rejection is the Flagship Accelerator (#38, asked to reapply at EUR 10,000 MRR); the
-Founders Club (#9) remains a founder-side decline, not a rejection.
+**Correction, same day:** an earlier version of this section (PR #496) recorded "9 programs have
+rejected AXXESS". That was a misreading of the founder's words "Rejected 9 programs": the founder
+meant that **AXXESS declined 9 programs**. Corrected here; the founder flagged the error.
+
+The founder stated, in-session on 2026-11-14, that **AXXESS has declined 9 programs**, including:
+
+- **SIIC IIT Kanpur (#5/#6):** after Round 3, SIIC made a reconsidered offer (about 2026-11-07);
+  AXXESS declined it.
+- **NASSCOM CoE Gurugram (#7):** AXXESS declined the incubation offer.
+- **Startup Wise Guys Founders Club (#9):** declined to preserve runway (already recorded).
+
+Notes:
 
 - **The count of 9 is founder-stated, source artifact needed.** It has not been reconciled entry by
-  entry against this log, and this pass does not claim which nine entries it covers.
-- The SIIC IIT Kanpur outcome is recorded on entry #5 above; no decision email or message was
-  supplied.
-- AXXESS also declined the NASSCOM CoE Gurugram incubation offer (#7, founder-stated, source artifact
-  needed). That makes 7 founder-side declines: the six listed in the 2026-08-12 note above, plus #7.
+  entry against this log. The six founder-side declines in the 2026-08-12 note above plus #5 and #7
+  make eight logged entries; the ninth is not identified in this log.
+- No offer letter or decline message for SIIC or NASSCOM is in this repo.
+- Separately, the Startup Wise Guys Flagship Accelerator (#38) is an institutional rejection (asked
+  to reapply at EUR 10,000 MRR), not one of the founder-side declines.
 - This changes the Explicit Non-Claims below: no incubation process in this log is still progressing.
 
 ## Status Update, 2026-07-26 (Founder-Reported)
@@ -1086,7 +1094,7 @@ itself.
 
 Consistent with this program's documentation discipline: this log does not claim any of the following, and none should be inferred from it --
 
-- No accelerator or incubation offer listed above has been accepted. As of 2026-11-14, no incubation process in this log is still progressing: SIIC IIT Kanpur ended without selection after Round 3, and AXXESS declined the NASSCOM CoE Gurugram offer (both founder-stated, source artifact needed).
+- No accelerator or incubation offer listed above has been accepted. As of 2026-11-14, no incubation process in this log is still progressing: AXXESS declined the SIIC IIT Kanpur reconsidered offer and the NASSCOM CoE Gurugram offer (both founder-stated, source artifact needed).
 - No pilot, contract, purchase order, or signed letter of intent exists from any entry in this log. UNDP Malawi's $5,000+/month indicative pricing is a survey response, not a commercial commitment -- this is the same caveat already applied to the broader beta-feedback willingness-to-pay data in `MONOREPO_ARCHITECTURE_AND_BUSINESS_MODEL.md` S6.4.
 - Promoter scores, "AI native" framing, and qualitative praise quoted above are the founder's own recollection of what was said in these conversations, not captured via a formal survey instrument (unlike the 30-response beta feedback batch, which was captured via structured NPS/PMF survey tooling).
 - No angel investment, check, term sheet, or formal commitment has been made or received from any entry in the Angel Investor Conversations or Ecosystem/Connector sections -- these are recorded as pitched/ongoing relationships only. 3one4 Capital's first "too early for us" interaction is recorded as a genuine pass, while the second interaction is recorded separately as warm-but-waiting / communication open.
