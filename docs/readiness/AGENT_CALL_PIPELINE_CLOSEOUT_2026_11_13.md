@@ -122,12 +122,29 @@ GTM plan `GTM_4_DAY_AUTOMATION_PLAN_2026_11_11.md`, outbound calling. **Status: 
      select count(*) as jobs, (select relrowsecurity from pg_class where relname = 'agent_call_jobs') as rls_on from public.agent_call_jobs;
      ```
    - The agent couldn't confirm it independently. It has no production database credentials. The Vercel Hobby plan keeps only 30 minutes of logs, and no `/api/crm/*` request appeared between 02:37 and 03:07 UTC on 2026-11-14.
-2. **Grant the capability:** grant the opt-in `log_agent_call` capability to the AXXESS agent connection STILL uses.
-3. **Deploy:** STILL (SAM), then Callismatic (image).
-   - Callismatic production also needs `lambda:InvokeFunction` on itself and a longer timeout.
-   - Set `CALLISMATIC_URL` and `CALLISMATIC_API_KEY` in Vercel. Values are pasted by the founder and never pass through chat.
-4. **Call script:** the founder reviews the script in `outbound.build_task` before anything is enabled.
-5. **Before any real call (blocked):** DLT registration, counsel sign-off, and a DLT-registered Indian voice provider registered in `OUTBOUND_PROVIDERS_BY_COUNTRY_CODE[91]`. Then the registrations are flipped in a small follow-up PR.
+2. **Grant the capabilities: done (2026-11-14)**, on the founder's go, in production Integrations, with the founder signed in to the agent's browser pane.
+   - The STILL connection (`f2315c70-…`, Anthropic, active) went from `create_task` to `create_task`, `log_agent_call`, `create_meeting`.
+   - Each change showed the app's success toast ("Log Agent Call enabled for STILL.", "Create Meeting enabled for STILL.") and was re-read through `GET /api/agents/connections`.
+   - `create_meeting` was also missing; the founder approved adding it ("Yes, enable it"). Each change writes an `agent_connection.capabilities_updated` audit row. **The agent did not open those audit rows.**
+3. **Deploy STILL: done (2026-11-14)**, on the founder's go ("Deploy STILL").
+   - Stack `still` (ap-southeast-2) is UPDATE_COMPLETE at 04:06:28 UTC, from `main` `52187c1`, with parameters unchanged.
+   - The first change set would have dropped the stack tags `owner` and `project` from every resource. It was deleted unexecuted and recreated with `--tags`.
+   - The executed change set added `AxxessAgentCallRule` and its invoke permission, changed the adapter code and the DLQ policy, and replaced nothing.
+   - **Checked:** `still-AxxessAgentCallRule-xLXV7GYYPkUH` is ENABLED with the `triaxis.callismatic` / `call.completed.v1` pattern, targets the adapter with 20 retries and the delivery DLQ, and the existing lead and completion rules are unchanged. The function is Active and Successful, both production alarms are OK, and both production queues are at 0.
+4. **Deploy Callismatic: done (2026-11-14)**, on the founder's go ("Deploy Callismatic"). Function `callismatic` (us-east-1).
+   - Built from `master` `0f83ab3` (181 tests passed) and deployed by digest `sha256:16ec63a1…` (LastModified 05:46:10 UTC). **Rollback:** `sha256:5ab331e2…`.
+   - Added the inline policy `callismatic-self-invoke` on `callismatic-lambda-role`: `lambda:InvokeFunction` on that function only. The production function isn't managed by a template, so this was a direct IAM change.
+   - Raised the timeout from 60 to 600 s, as in staging. The environment variables are unchanged (`STILL_EVENT_BUS_ARN`, `CALLISMATIC_SECRET_ARN`), so `OUTBOUND_AGENT_CALLS_ENABLED` is unset and outbound calls are **off**.
+   - **Checked by unauthenticated probes:**
+     - `GET /` and `/api/digest` return 401.
+     - `POST /api/outbound-calls` with a well-formed body and no key returns 401 "Missing or invalid X-API-Key". An empty body returns 422 before the key check, the same as the existing `/api/triage/text`.
+   - **Not checked:** the 503 `outbound_disabled` answer, which needs the admin key, so it is covered by tests only.
+   - **First cold start:** init hit the 10 s limit (`INIT_REPORT ... Status: timeout`). Lambda retried it inside the request, which took 6 s, and later requests took 3 to 8 ms.
+     - Earlier cold starts were 2.7 to 4.3 s, and 9.5 s on the first start after the 2026-11-13 image.
+     - So this reads as a first pull of a new image, **not confirmed** by a second cold start.
+5. **Vercel env:** set `CALLISMATIC_URL` and `CALLISMATIC_API_KEY`. The values are pasted by the founder and never pass through chat.
+6. **Call script:** the founder reviews the script in `outbound.build_task` before anything is enabled.
+7. **Before any real call (blocked):** DLT registration, counsel sign-off, and a DLT-registered Indian voice provider registered in `OUTBOUND_PROVIDERS_BY_COUNTRY_CODE[91]`. Then the registrations are flipped in a small follow-up PR.
 
 ## Decision ledger
 
@@ -139,5 +156,5 @@ Architecture boundary: AXXESS decides (gate, voice_ai) and records; Callismatic 
 Product boundary: One human approval remains, for the demo meeting (create_meeting is critical). No unattended batch dialling. No real call until DLT, counsel and a provider exist.
 Verification: AXXESS CI all green on 41cbdc9; Callismatic 181 tests; STILL 77 tests; local AXXESS typecheck, lint, build and supabase:verify pass; local full test run inconclusive (worker errors under load).
 Outcome: Partial. Production shows a disabled Call with agent button with the reason; no call path is live.
-Follow-up: Migration applied 2026-11-14 (founder-reported: jobs = 0, rls_on = true). Remaining: capability grant, STILL and Callismatic deploys, Vercel env, script review; then DLT, counsel and an Indian provider.
+Follow-up: Migration applied 2026-11-14 (founder-reported: jobs = 0, rls_on = true). Capabilities granted, STILL deployed (04:06 UTC) and Callismatic deployed (05:46 UTC, outbound still off) on 2026-11-14. Remaining: Vercel env, script review; then DLT, counsel and an Indian provider.
 ```
