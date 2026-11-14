@@ -15,6 +15,7 @@
     "ci": "pnpm run typecheck && pnpm run lint && pnpm run test && pnpm run build",
     "dev": "next dev",
     "lint": "eslint . --max-warnings=0",
+    "gtm:check-leads": "node --experimental-strip-types --no-warnings scripts/check-leads-csv.mts",
     "lite:guard": "node scripts/lite-boundary-guard.mjs",
     "lite:test": "vitest run --config vitest.config.mjs src/features/lite src/app/lite packages/features-lite",
     "lite:typecheck": "tsc --noEmit",
