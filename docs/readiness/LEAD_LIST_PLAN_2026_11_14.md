@@ -59,7 +59,10 @@ Pace:
 
 ## Quality rules (before import)
 
-- **Verify every email** with a verification service before import.
+- **Verify every email** with a verification service before import. Tooling (added 2026-11-14): QuickEmailVerification, run from the pre-check:
+  - `pnpm run gtm:check-leads <file.csv> --verify --out <verified.csv>`
+  - The key is read from `QEV_API_KEY` in the gitignored `.env.local`. Only email addresses are sent to QEV.
+  - Rows marked "keep" (valid and safe to send) go to the `--out` file. "Review" (accept-all or unknown) and "drop" (invalid or disposable) are listed for the founder to decide.
   - The send ramp pauses all sending at 2% bounces or 0.1% complaints over 7 days.
   - Guessed addresses such as `firstname@company` must be verified too.
 - **Each row must pass `parseLeadImport` (`src/services/outbound/leadImport.ts`):**
@@ -81,7 +84,7 @@ Pace:
 
 - **India (DPDP Act 2023):** `b2b_legitimate_interest` for cold B2B email is **this program's reading, not counsel's**. The Act's "legitimate uses" are narrow. Network and opt-in contacts carry the least risk until counsel advises.
 - **Approved sequence:** whether one exists in production is **unverified**. There is no read endpoint for sequences, and the one sent email suggests a sequence ran. Check on the Leads page before enrolling.
-- **Delivered:** stays 0 until `email.delivered` is added to the Resend webhook (founder action, `GTM_FUNNEL_AND_SEND_RAMP_CLOSEOUT_2026_11_14.md`).
+- **Delivered:** `email.delivered` is wired in the Resend webhook (founder-stated 2026-11-14, not checked in Resend). Confirm it when the first real sends show Delivered above 0 on the Funnel tab.
 - **The campaign copy** is generic ("small teams"). A segment-specific first line is optional and should be written by hand. Claude first lines wait for counsel.
 - **No reply, demo or conversion rate** is claimed here. They are reported only from the funnel once sending starts.
 

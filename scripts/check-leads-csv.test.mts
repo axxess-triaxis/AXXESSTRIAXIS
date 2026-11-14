@@ -1,7 +1,15 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { checkLeadCsv, formatLeadCsvReport } from "./check-leads-csv.mts";
+import {
+  checkLeadCsv,
+  classifyQev,
+  formatLeadCsvReport,
+  formatVerifyReport,
+  parseArgs,
+  verifiedCsv,
+  verifyEmails,
+} from "./check-leads-csv.mts";
 
 // Reserved example.com / example.org domains only: nothing in this file can reach a real person.
 // Read by path from the repo root (vitest's cwd): under the jsdom environment import.meta.url is not a file URL.
@@ -56,5 +64,85 @@ describe("lead CSV pre-check", () => {
     expect(formatLeadCsvReport(report)).toEqual([
       "File error: Missing required columns: contact_name, phone, country, consent_basis, source.",
     ]);
+  });
+});
+
+describe("email verification (QuickEmailVerification, mocked)", () => {
+  const KEY = "test-key-not-real";
+  const qev = (body: Record<string, unknown>, init: { status?: number; credits?: string } = {}) =>
+    new Response(JSON.stringify(body), {
+      status: init.status ?? 200,
+      headers: init.credits ? { "X-QEV-Remaining-Credits": init.credits } : {},
+    });
+  const ok = (extra: Record<string, unknown>) => ({ success: "true", result: "valid", safe_to_send: "true", ...extra });
+
+  it("classifies keep, review and drop, accepting string or real booleans", () => {
+    expect(classifyQev(ok({})).decision).toBe("keep");
+    expect(classifyQev({ success: true, result: "valid", safe_to_send: true }).decision).toBe("keep");
+    expect(classifyQev(ok({ accept_all: "true" }))).toMatchObject({ decision: "review", reason: "accept_all" });
+    expect(classifyQev(ok({ result: "unknown", safe_to_send: "false", reason: "timeout" }))).toMatchObject({ decision: "review", reason: "timeout" });
+    expect(classifyQev(ok({ result: "invalid", safe_to_send: "false", reason: "rejected_email" })).decision).toBe("drop");
+    expect(classifyQev(ok({ disposable: "true" })).decision).toBe("drop");
+    expect(classifyQev(ok({ role: "true" })).role).toBe(true);
+  });
+
+  it("verifies each email once, sends only the address and key, and reports remaining credits", async () => {
+    const urls: string[] = [];
+    const answers: Record<string, Record<string, unknown>> = {
+      "ops@a.example.com": ok({ role: "true" }),
+      "x@b.example.com": ok({ result: "invalid", safe_to_send: "false", reason: "rejected_email" }),
+      "y@c.example.com": ok({ accept_all: "true" }),
+    };
+    const fetchFn = async (url: string) => {
+      urls.push(url);
+      const email = new URL(url).searchParams.get("email") ?? "";
+      return qev(answers[email], { credits: "2997" });
+    };
+    const report = await verifyEmails(Object.keys(answers), { apiKey: KEY, fetchFn });
+    expect(urls).toHaveLength(3);
+    for (const u of urls) expect([...new URL(u).searchParams.keys()].sort()).toEqual(["apikey", "email"]);
+    const lines = formatVerifyReport(report);
+    expect(lines).toEqual([
+      "Verified 3: keep 1, review 1, drop 1.",
+      "  review: y@c.example.com (valid, accept_all)",
+      "  drop: x@b.example.com (invalid, rejected_email)",
+      "Role addresses (such as info@): 1.",
+      "QEV credits remaining: 2997.",
+    ]);
+    expect(lines.join("\n")).not.toContain(KEY);
+  });
+
+  it("stops on an API failure with QEV's message and never echoes the key", async () => {
+    const fetchFn = async () => qev({ success: "false", message: `Invalid API key ${KEY}` }, { status: 401 });
+    await expect(verifyEmails(["ops@a.example.com"], { apiKey: KEY, fetchFn })).rejects.toThrow(
+      "Email verification failed for ops@a.example.com: Invalid API key [key]",
+    );
+  });
+
+  it("writes only kept rows and phone-only rows to the verified CSV", () => {
+    const csv = "company,contact_name,email,phone,country,consent_basis,source\n" +
+      "\"Keep, Ltd\",Test,keep@a.example.com,,IN,opt_in,Founder network\n" +
+      "Drop Co,Test,drop@b.example.com,,AE,b2b_legitimate_interest,https://b.example.com\n" +
+      "Phone Co,,,+919000000001,IN,opt_in,Founder network\n";
+    const report = checkLeadCsv(csv);
+    const out = verifiedCsv(report.accepted, {
+      results: [
+        { email: "keep@a.example.com", decision: "keep", result: "valid", reason: "", role: false },
+        { email: "drop@b.example.com", decision: "drop", result: "invalid", reason: "", role: false },
+      ],
+    });
+    expect(out.trim().split("\n")).toEqual([
+      "company,contact_name,email,phone,country,consent_basis,source",
+      "\"Keep, Ltd\",Test,keep@a.example.com,,IN,opt_in,Founder network",
+      "Phone Co,,,+919000000001,IN,opt_in,Founder network",
+    ]);
+    expect(checkLeadCsv(out).accepted).toHaveLength(2);
+  });
+
+  it("parses --verify and --out arguments", () => {
+    expect(parseArgs(["leads.csv"])).toMatchObject({ path: "leads.csv", verify: false, usageError: false });
+    expect(parseArgs(["--verify", "--out", "ok.csv", "leads.csv"])).toMatchObject({ path: "leads.csv", verify: true, outPath: "ok.csv", usageError: false });
+    expect(parseArgs(["leads.csv", "--out"]).usageError).toBe(true);
+    expect(parseArgs([]).usageError).toBe(true);
   });
 });
