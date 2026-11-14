@@ -189,7 +189,7 @@ flagged rather than overwritten.
 
 ### 7. S. M. -- Director, NASSCOM; Centre Head, NASSCOM Centre of Excellence Gurugram (AI & IoT)
 
-**Status:** Offer made. **Update, 2026-07-26 (founder-reported): incubation offer stands; now awaiting documentation to formalize it.** **Update, 2026-08-03 (email-thread-verified, not just founder-reported): formalization is actively underway, not yet complete.** Source: a forwarded email thread (subject "Incubation with CoE Gurugram -- Triaxis Ventures"), spanning 2026-07-09 through 2026-07-24, between the founder and S. M., with S. T. (NASSCOM, virtual incubation team) added 2026-07-16 to take onboarding forward.
+**Status:** Offer declined by AXXESS. **Update, 2026-11-14 (founder-stated, source artifact needed): AXXESS declined the incubation offer; no decline message is in this repo.** Earlier status: offer made. **Update, 2026-07-26 (founder-reported): incubation offer stands; now awaiting documentation to formalize it.** **Update, 2026-08-03 (email-thread-verified, not just founder-reported): formalization is actively underway, not yet complete.** Source: a forwarded email thread (subject "Incubation with CoE Gurugram -- Triaxis Ventures"), spanning 2026-07-09 through 2026-07-24, between the founder and S. M., with S. T. (NASSCOM, virtual incubation team) added 2026-07-16 to take onboarding forward.
 - 2026-07-16: verbal approval given by S. M. for the virtual incubation, cost confirmed as Rs. 12,000 + GST/year (stated rate for a bootstrapped startup).
 - 2026-07-24: S. T. requested onboarding documents (Incorporation Certificate, DPIIT Certificate, PAN, GSTIN Certificate, authorized-signatory details, bootstrapped/funded status) to onboard into NASSCOM's "Techwizards" program.
 - 2026-07-24 (same day): founder supplied Incorporation Certificate and PAN; DPIIT and GSTIN noted as not yet obtained, with an offer to complete them within a month if required.
@@ -1058,8 +1058,9 @@ Founders Club (#9) remains a founder-side decline, not a rejection.
   entry against this log, and this pass does not claim which nine entries it covers.
 - The SIIC IIT Kanpur outcome is recorded on entry #5 above; no decision email or message was
   supplied.
-- This also changes the Explicit Non-Claims below: NASSCOM CoE Gurugram is now the only incubation
-  process still actively progressing.
+- AXXESS also declined the NASSCOM CoE Gurugram incubation offer (#7, founder-stated, source artifact
+  needed). That makes 7 founder-side declines: the six listed in the 2026-08-12 note above, plus #7.
+- This changes the Explicit Non-Claims below: no incubation process in this log is still progressing.
 
 ## Status Update, 2026-07-26 (Founder-Reported)
 
@@ -1085,7 +1086,7 @@ itself.
 
 Consistent with this program's documentation discipline: this log does not claim any of the following, and none should be inferred from it --
 
-- No accelerator or incubation offer listed above has been accepted. As of 2026-11-14, NASSCOM CoE Gurugram is the only incubation process still actively progressing; SIIC IIT Kanpur ended without selection after Round 3 (founder-stated, source artifact needed).
+- No accelerator or incubation offer listed above has been accepted. As of 2026-11-14, no incubation process in this log is still progressing: SIIC IIT Kanpur ended without selection after Round 3, and AXXESS declined the NASSCOM CoE Gurugram offer (both founder-stated, source artifact needed).
 - No pilot, contract, purchase order, or signed letter of intent exists from any entry in this log. UNDP Malawi's $5,000+/month indicative pricing is a survey response, not a commercial commitment -- this is the same caveat already applied to the broader beta-feedback willingness-to-pay data in `MONOREPO_ARCHITECTURE_AND_BUSINESS_MODEL.md` S6.4.
 - Promoter scores, "AI native" framing, and qualitative praise quoted above are the founder's own recollection of what was said in these conversations, not captured via a formal survey instrument (unlike the 30-response beta feedback batch, which was captured via structured NPS/PMF survey tooling).
 - No angel investment, check, term sheet, or formal commitment has been made or received from any entry in the Angel Investor Conversations or Ecosystem/Connector sections -- these are recorded as pitched/ongoing relationships only. 3one4 Capital's first "too early for us" interaction is recorded as a genuine pass, while the second interaction is recorded separately as warm-but-waiting / communication open.
