@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { loginAs, seededUsers, skipUnlessSeeded } from "./helpers";
+import { loginAs, logout, seededUsers, skipUnlessSeeded } from "./helpers";
 
 test.describe("Sprint 8 beta analytics and feedback", () => {
   test.beforeEach(() => {
@@ -44,7 +44,7 @@ test.describe("Sprint 8 beta analytics and feedback", () => {
     await page.goto("/admin/beta-readiness");
     await expect(page.getByText("Beta Readiness").first()).toBeVisible();
 
-    await page.getByRole("button", { name: "Sign out" }).click();
+    await logout(page);
     await loginAs(page, seededUsers.guestAlpha);
     await page.goto("/admin/beta-readiness");
     await expect(page.getByText("Access restricted")).toBeVisible();

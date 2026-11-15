@@ -43,6 +43,11 @@ export async function loginAs(page: Page, email: string, password = seededPasswo
 }
 
 export async function logout(page: Page) {
-  await page.getByRole("button", { name: "Sign out" }).click();
+  // Wait for the logout request itself: signing in as someone else while it is still in flight leaves
+  // the next user on "Sign in required" (staging run, 2026-11-15).
+  await Promise.all([
+    page.waitForResponse((response) => response.url().includes("/api/auth/logout")),
+    page.getByRole("button", { name: "Sign out" }).click(),
+  ]);
   await expect(page).toHaveURL(/auth|dashboard/);
 }
