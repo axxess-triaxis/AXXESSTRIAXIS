@@ -108,4 +108,4 @@ Existing rows are not rewritten.
 
 | Decision | Date | Session/tool | Issue ID | Why | Outcome | Commit/PR | Verification | Closeout |
 |---|---|---|---|---|---|---|---|---|
-| Run Vercel functions in `syd1`, next to the production database | 2026-11-15 | Founder approved, executed by Claude Code | VERCEL-REGION | Functions ran in `iad1` while databases are in Tokyo and Sydney; staging API calls took 1 to 3 s each | Pending deploy and after-probe, review by 2026-11-29 | Pending PR | Staging probe before | `docs/readiness/VERCEL_FUNCTION_REGION_CLOSEOUT_2026_11_15.md` |
+| Run Vercel functions in `syd1`, next to the production database | 2026-11-15 | Founder approved, executed by Claude Code | VERCEL-REGION | Functions ran in `iad1` while databases are in Tokyo and Sydney; staging API calls took 1 to 3 s each | Pending deploy and after-probe, review by 2026-11-29 | #505 | Staging probe before | `docs/readiness/VERCEL_FUNCTION_REGION_CLOSEOUT_2026_11_15.md` |
