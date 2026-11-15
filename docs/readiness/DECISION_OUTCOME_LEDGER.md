@@ -95,3 +95,11 @@ Existing rows are not rewritten.
 | Decision | Date | Session/tool | Issue ID | Why | Outcome | Commit/PR | Verification | Closeout |
 |---|---|---|---|---|---|---|---|---|
 | The YC demo's staging minute uses a new `/admin/stack` page built on existing audit records | 2026-11-08 | Founder request, executed by Claude Code | STACK-STATUS-PAGE | Founder asked for schema, stats and workflow runs on staging | Partial: merged, deployed, 5 stack scenarios pass on staging; signed-in view pending. Review by 2026-11-22 | PR #459, `c2bc70c`; staging `eec34ae` | See closeout | `docs/readiness/STACK_STATUS_PAGE_CLOSEOUT_2026_11_08.md` |
+
+## App E2E suite on staging (2026-11-15)
+
+| Decision | Date | Session/tool | Issue ID | Why | Outcome | Commit/PR | Verification | Closeout |
+|---|---|---|---|---|---|---|---|---|
+| Specs needing a demo-mode build skip on staging instead of being rewritten for live data | 2026-11-15 | Claude Code, from the triage task | E2E-STAGING-TRIAGE | CI runs them only on demo builds; "Dibrugarh" is demo-only sample data, not a seed row | 25 skips on staging, CI coverage unchanged. Pending, review by 2026-11-29 | #504 (`d41898e3`) | Staging run 5: 18 passed, 25 skipped, 3 failed | `docs/readiness/E2E_STAGING_TRIAGE_CLOSEOUT_2026_11_15.md` |
+| Create, update and save messages stay visible after the list reloads | 2026-11-15 | Claude Code, product bug found in triage | E2E-STAGING-TRIAGE | The reload cleared the toast in the same render, so no user ever saw it, since Sprint 7 | Working on staging (`94b003c4`). Pending on production, review by 2026-11-29 | #504 (`d41898e3`) | Unit regression test fails on the old code and passes now; "Task created." and "Project created." seen on staging in run 3 | `docs/readiness/E2E_STAGING_TRIAGE_CLOSEOUT_2026_11_15.md` |
+| Seeded e2e runs use one worker, and sign-out scope stays global pending founder decision | 2026-11-15 | Claude Code; scope question to founder | E2E-STAGING-TRIAGE | Global logout revoked parallel tests' sessions (run 1) | "Sign in required" mid-test gone in runs 2 to 5. Pending founder decision, review by 2026-11-29 | #504 (`bb0a7212`) | Runs 2 to 5 | `docs/readiness/E2E_STAGING_TRIAGE_CLOSEOUT_2026_11_15.md` |
