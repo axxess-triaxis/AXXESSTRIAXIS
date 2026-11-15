@@ -8,6 +8,9 @@ const useVercelBypass = Boolean(process.env.VERCEL_AUTOMATION_BYPASS_SECRET);
 export default defineConfig({
   testDir: "./tests/e2e",
   fullyParallel: false,
+  // Seeded specs share the same seeded accounts, and signing out calls Supabase's logout with its default
+  // global scope, which revokes every session of that user. Parallel workers would sign each other out.
+  workers: process.env.E2E_RUN_SEEDED === "true" ? 1 : undefined,
   retries: process.env.CI ? 2 : 0,
   reporter: [["list"], ["html", { open: "never" }]],
   globalSetup: useVercelBypass ? "./tests/e2e/vercel-bypass.setup.ts" : undefined,

@@ -13,7 +13,7 @@ test.describe("Sprint 17 pilot readiness workflows", () => {
 
     await expect(page.getByText("Organization Admin").first()).toBeVisible();
     await expect(page.getByText("Pilot launch controls")).toBeVisible();
-    await expect(page.getByText("Pilot team access")).toBeVisible();
+    await expect(page.getByText("Team access", { exact: true })).toBeVisible();
   });
 
   test("admin filters audit logs and can reach them from onboarding", async ({ page }) => {
