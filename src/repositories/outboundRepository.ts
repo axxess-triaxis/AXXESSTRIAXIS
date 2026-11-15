@@ -206,6 +206,48 @@ export async function updateEnrollment(organizationId: string, id: string, patch
 
 // ---- Sequence management ----------------------------------------------------------------
 
+export type SequenceSummary = {
+  id: string;
+  name: string;
+  status: "draft" | "approved" | "archived";
+  stepCount: number;
+  subjects: string[];
+  createdAt: string;
+  approvedAt: string | null;
+  enrollments: { active: number; completed: number; stopped: number };
+};
+
+/** Every sequence in the organization, newest first, with enrollment counts. Email bodies are left out. */
+export async function listSequences(scope: TenantScope): Promise<SequenceSummary[]> {
+  if (!isSupabaseAdminConfigured()) throw new Error("Outbound repository is not configured (Supabase admin credentials missing).");
+  type Row = { id: string; name: string; status: SequenceSummary["status"]; steps: Array<{ subject?: unknown }>; created_at: string; approved_at: string | null };
+  const [sequences, enrollments] = await Promise.all([
+    readAll<Row>("outreach_sequences", "id,name,status,steps,created_at,approved_at", scope),
+    readAll<{ sequence_id: string; status: keyof SequenceSummary["enrollments"] }>("outreach_enrollments", "sequence_id,status", scope),
+  ]);
+  const counts = new Map<string, SequenceSummary["enrollments"]>();
+  for (const e of enrollments) {
+    const c = counts.get(e.sequence_id) ?? { active: 0, completed: 0, stopped: 0 };
+    if (e.status in c) c[e.status] += 1;
+    counts.set(e.sequence_id, c);
+  }
+  return sequences
+    .map((s) => {
+      const steps = Array.isArray(s.steps) ? s.steps : [];
+      return {
+        id: s.id,
+        name: s.name,
+        status: s.status,
+        stepCount: steps.length,
+        subjects: steps.map((step) => (typeof step?.subject === "string" ? step.subject : "")),
+        createdAt: s.created_at,
+        approvedAt: s.approved_at,
+        enrollments: counts.get(s.id) ?? { active: 0, completed: 0, stopped: 0 },
+      };
+    })
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+}
+
 export async function createSequence(scope: TenantScope, definition: SequenceDefinition): Promise<string> {
   if (!isSupabaseAdminConfigured()) throw new Error("Outbound repository is not configured (Supabase admin credentials missing).");
   const rows = await supabaseAdminRest<{ id: string }[]>("outreach_sequences", {
