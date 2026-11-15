@@ -94,10 +94,11 @@ export const ProjectsSection = () => {
 
   const canManageProjects = Boolean(user && ["Super Admin", "Organization Admin", "Executive", "Manager"].includes(user.role));
 
+  // The save handlers clear the toast before saving and then set a success toast before calling
+  // this reload, so clearing it here too would hide every "... created." / "... updated." message.
   const loadProjects = useCallback(async () => {
     if (!scope) return;
     setLoading(true);
-    setToast(null);
     try {
       const [projectRows, programRows, userRows, organizationRows] = await Promise.all([
         applicationServices.projectsRepository.list(scope),

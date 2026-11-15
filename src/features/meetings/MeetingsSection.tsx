@@ -100,10 +100,11 @@ export const MeetingsSection = () => {
   const [agenticDraftBanner, setAgenticDraftBanner] = useState<string | null>(null);
   const canManageMeetings = Boolean(user && ["Super Admin", "Organization Admin", "Executive", "Manager"].includes(user.role));
 
+  // The save handlers clear the toast before saving and then set a success toast before calling
+  // this reload, so clearing it here too would hide every "... created." / "... updated." message.
   const loadMeetings = useCallback(async () => {
     if (!scope) return;
     setLoading(true);
-    setToast(null);
     try {
       const [meetingRows, projectRows, programRows, userRows] = await Promise.all([
         applicationServices.meetingsRepository.list(scope),

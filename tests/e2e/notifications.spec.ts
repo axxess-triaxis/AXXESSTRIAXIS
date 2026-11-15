@@ -9,15 +9,18 @@ test.describe("notifications", () => {
   test("notification list supports filters, detail view, and mark all read", async ({ page }) => {
     await loginAs(page, seededUsers.orgAdminAlpha);
     await page.getByRole("button", { name: "Open notifications" }).click();
-    await expect(page.getByText("Notifications")).toBeVisible();
+    await expect(page.getByText("Notifications", { exact: true })).toBeVisible();
 
-    await page.getByRole("button", { name: "meeting" }).click();
+    await page.getByRole("button", { name: "meeting", exact: true }).click();
     await expect(page.getByText("Meeting created").first()).toBeVisible();
-    await page.getByText("Meeting created").first().click();
+    // The list shows each notification's body; clicking one opens its section (95711aba).
     await expect(page.getByText("Resident portal readiness review was scheduled.")).toBeVisible();
+    await page.getByText("Meeting created").first().click();
+    await expect(page).toHaveURL(/\/meetings/);
 
+    await page.getByRole("button", { name: "Open notifications" }).click();
     await page.getByRole("button", { name: /unread/ }).first().click();
-    await page.getByRole("button", { name: "unread" }).click();
-    await expect(page.getByText("Notifications")).toBeVisible();
+    await page.getByRole("button", { name: "unread", exact: true }).click();
+    await expect(page.getByText("Notifications", { exact: true })).toBeVisible();
   });
 });
