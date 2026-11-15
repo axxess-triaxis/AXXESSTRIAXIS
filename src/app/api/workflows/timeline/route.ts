@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getServerAuthSession } from "../../../../auth/serverSession";
+import { canReadWholeTimeline, canUseCapability } from "../../../../security/rbac";
 import { listWorkflowTimeline } from "../../../../services/workflows/liveTenantWorkflow";
 import type { WorkflowTimelineResourceType } from "../../../../services/workflows/workflowEvidence";
 
@@ -26,12 +27,17 @@ export async function GET(request: Request) {
   const session = await getServerAuthSession(true);
   if (!session) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
 
+  if (!canUseCapability(session.user.role, "workflow-timeline")) {
+    return NextResponse.json({ error: "Forbidden." }, { status: 403 });
+  }
+
   const url = new URL(request.url);
   const limit = Math.min(Math.max(Number(url.searchParams.get("limit") ?? 20), 1), 50);
   const timeline = await listWorkflowTimeline(session.user.organizationId, {
     limit,
     resourceType: resourceType(url.searchParams.get("resourceType")),
     resourceId: url.searchParams.get("resourceId") ?? undefined,
+    actorUserId: canReadWholeTimeline(session.user.role) ? undefined : session.user.id,
   });
 
   return NextResponse.json({ timeline });

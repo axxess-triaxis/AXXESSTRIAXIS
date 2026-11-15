@@ -1,7 +1,8 @@
 import { createHash, randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { getServerAuthSession } from "../../../auth/serverSession";
-import { canManageOrganization, isRoleName } from "../../../security/rbac";
+import { canGrantRole, canManageOrganization, isRoleName } from "../../../security/rbac";
+import { recordDeniedAttempt } from "../../../services/audit/auditEvents";
 import { auditLogsRepository, invitationsRepository, notificationsRepository, tenantScopeFromUser } from "../../../repositories/supabaseEnterpriseRepositories";
 import { sendInvitationEmail } from "../../../services/email/invitationEmail";
 import { getPostHogClient } from "../../../lib/posthog-server";
@@ -43,7 +44,13 @@ export async function POST(request: Request) {
   }
 
   if (!canManageOrganization(session.user, organizationId)) {
+    await recordDeniedAttempt(session, { route: "/api/invitations", method: "POST", attemptedRole: role });
     return NextResponse.json({ error: "You do not have permission to invite users to this organization." }, { status: 403 });
+  }
+
+  if (!canGrantRole(session.user.role, role)) {
+    await recordDeniedAttempt(session, { route: "/api/invitations", method: "POST", attemptedRole: role });
+    return NextResponse.json({ error: "Only a Super Admin can invite a Super Admin." }, { status: 403 });
   }
 
   const invitationToken = randomUUID();

@@ -14,7 +14,8 @@ test.describe("user administration", () => {
     await page.getByLabel("Email").fill(`invite-${Date.now()}@axxess.test`);
     await page.getByLabel("Role").selectOption("Guest");
     await page.getByRole("button", { name: "Invite" }).click();
-    await expect(page.getByText("Invitation created.")).toBeVisible();
+    // Wording depends on whether email delivery is configured, see SettingsSection.tsx.
+    await expect(page.getByText(/^Invitation created/)).toBeVisible();
 
     const employeeRow = page.getByText("employee.alpha3@axxess.test").locator("xpath=ancestor::div[contains(@class, 'flex')][1]");
     await employeeRow.locator("select").selectOption("Manager");

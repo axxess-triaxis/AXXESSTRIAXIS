@@ -205,7 +205,7 @@ function fallbackEvent(event: Omit<WorkflowTimelineEvent, "id" | "createdAt"> & 
 
 export async function listWorkflowTimeline(
   organizationId: string,
-  options: { limit?: number; resourceType?: WorkflowTimelineResourceType; resourceId?: string } = {},
+  options: { limit?: number; resourceType?: WorkflowTimelineResourceType; resourceId?: string; actorUserId?: string } = {},
 ): Promise<WorkflowTimelineEvent[]> {
   // Sprint 4 fix: a fabricated fallback timeline must never stand in for a genuinely empty real
   // tenant -- it previously did so unconditionally whenever Supabase wasn't configured, or even
@@ -224,6 +224,7 @@ export async function listWorkflowTimeline(
   });
   if (options.resourceType) query.set("resource_type", `eq.${options.resourceType}`);
   if (options.resourceId && isUuid(options.resourceId)) query.set("resource_id", `eq.${options.resourceId}`);
+  if (options.actorUserId) query.set("actor_user_id", `eq.${options.actorUserId}`);
 
   const rows = await supabaseAdminRest<WorkflowTimelineRow[]>("workflow_timeline_events", { query }).catch(() => []);
   if (rows.length) return rows.map(mapTimelineRow);

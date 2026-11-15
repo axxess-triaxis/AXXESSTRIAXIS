@@ -98,9 +98,13 @@ describe("Supabase enterprise repositories", () => {
     });
 
     expect(auditLog?.action).toBe("project.created");
-    const [, init] = fetchCall(fetchMock);
+    // Regression for audit findings M20 and L17: the write goes through the record_audit_event RPC,
+    // which works for non-admins and takes the actor from the token. The caller cannot name an actor.
+    const [url, init] = fetchCall(fetchMock);
+    expect(String(url)).toContain("/rest/v1/rpc/record_audit_event");
     expect(String(init?.body)).toContain("org_public_safety");
-    expect(String(init?.body)).toContain("Organization Admin");
+    expect(String(init?.body)).not.toContain("actor");
+    expect(String(init?.body)).not.toContain("Organization Admin");
   });
 
   it("creates projects through the server repository gateway when no client token is present", async () => {

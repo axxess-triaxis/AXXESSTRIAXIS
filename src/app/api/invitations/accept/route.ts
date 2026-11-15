@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { NextResponse } from "next/server";
 import { getServerAuthSession } from "../../../../auth/serverSession";
 import { isRoleName } from "../../../../security/rbac";
-import { auditLogsRepository, tenantScopeFromUser } from "../../../../repositories/supabaseEnterpriseRepositories";
+import { recordAuditBestEffort } from "../../../../services/audit/auditEvents";
 import { isSupabaseAdminConfigured, supabaseAdminRest } from "../../../../repositories/supabaseAdmin";
 
 type InvitationRow = {
@@ -136,11 +136,14 @@ export async function POST(request: Request) {
     },
   });
 
-  await auditLogsRepository.record(tenantScopeFromUser({
-    ...session.user,
-    organizationId: invitation.organization_id,
-    role: invitation.role,
-  }, session.accessToken), {
+  await recordAuditBestEffort({
+    accessToken: session.accessToken,
+    user: {
+      ...session.user,
+      organizationId: invitation.organization_id,
+      role: invitation.role,
+    },
+  }, {
     action: "invitation.accepted",
     resourceType: "invitation",
     resourceId: invitation.id,

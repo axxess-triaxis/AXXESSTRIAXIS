@@ -16,7 +16,6 @@ import type {
   Program,
   Project,
   Reminder,
-  RoleName,
   Stakeholder,
   Task,
   User,
@@ -1721,20 +1720,15 @@ export const auditLogsRepository: AuditLogsRepository = {
       return await response.json() as AuditLog;
     }
 
-    const rows = await supabaseRest<AuditLogRow[]>("audit_logs", {
-      method: "POST",
-      accessToken: scope.accessToken,
-      body: {
-        organization_id: scope.organizationId,
-        actor_user_id: scope.userId,
-        actor_role: scope.role as RoleName,
-        action: input.action,
-        resource_type: input.resourceType,
-        resource_id: input.resourceId,
-        category: input.category,
-        request_id: input.requestId,
-        metadata: input.metadata ?? {},
-      },
+    // M20, L17: members cannot insert into audit_logs directly. The RPC takes the actor from the token.
+    const rows = await supabaseRestRpc<AuditLogRow[]>("record_audit_event", scope.accessToken, {
+      p_organization_id: scope.organizationId,
+      p_action: input.action,
+      p_resource_type: input.resourceType,
+      p_resource_id: input.resourceId ?? null,
+      p_category: input.category ?? null,
+      p_request_id: input.requestId ?? null,
+      p_metadata: input.metadata ?? {},
     });
 
     return rows[0] ? auditLogConfig.map(rows[0]) : undefined;

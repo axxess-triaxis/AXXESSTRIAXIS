@@ -12,6 +12,8 @@ import {
 } from "../../../../repositories/supabaseEnterpriseRepositories";
 import type { RepositoryQuery, TenantScope } from "../../../../repositories/interfaces";
 import { recordWorkflowTimelineEvent } from "../../../../services/workflows/liveTenantWorkflow";
+import { canGrantRole, canUseCapability, isRoleName } from "../../../../security/rbac";
+import { isDatabaseRefusal, recordDeniedAttempt } from "../../../../services/audit/auditEvents";
 import type { WorkflowTimelineResourceType } from "../../../../services/workflows/workflowEvidence";
 
 const allowedResources = new Set([
@@ -51,6 +53,11 @@ function repositoryQueryFromUrl(url: URL): RepositoryQuery {
 
 function hasRole(role: RoleName, allowed: RoleName[]) {
   return allowed.includes(role);
+}
+
+function isRefusedRoleGrant(resource: ResourceName, body: Record<string, unknown>, role: RoleName) {
+  if (resource !== "users" && resource !== "invitations") return false;
+  return typeof body.role === "string" && isRoleName(body.role) && !canGrantRole(role, body.role);
 }
 
 function canWriteResource(resource: ResourceName, role: RoleName) {
@@ -207,6 +214,12 @@ export async function GET(request: Request, context: RouteContext) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
 
+  // RLS scopes the other resources per row. Stakeholders are refused outright, so the caller gets a
+  // 403 that matches the page instead of an empty list that looks like a tenant with no contacts.
+  if (resource === "stakeholders" && !canUseCapability(session.user.role, "stakeholders")) {
+    return NextResponse.json({ error: "Forbidden." }, { status: 403 });
+  }
+
   const url = new URL(request.url);
   const id = url.searchParams.get("id") ?? undefined;
   const scope = tenantScopeFromUser(session.user, session.accessToken);
@@ -227,10 +240,15 @@ export async function POST(request: Request, context: RouteContext) {
 
   const resourceName = resource as ResourceName;
   if (!canWriteResource(resourceName, session.user.role)) {
+    await recordDeniedAttempt(session, { route: `/api/repositories/${resourceName}`, method: "POST" });
     return NextResponse.json({ error: "Forbidden." }, { status: 403 });
   }
 
   const body = await jsonBody(request);
+  if (isRefusedRoleGrant(resourceName, body, session.user.role)) {
+    await recordDeniedAttempt(session, { route: `/api/repositories/${resourceName}`, method: "POST", attemptedRole: String(body.role) });
+    return NextResponse.json({ error: "Only a Super Admin can grant that role." }, { status: 403 });
+  }
   const validationError = validateResourceInput(resourceName, body);
   if (validationError) {
     return NextResponse.json({ error: validationError }, { status: 400 });
@@ -259,6 +277,7 @@ export async function PATCH(request: Request, context: RouteContext) {
 
   const resourceName = resource as ResourceName;
   if (!canWriteResource(resourceName, session.user.role)) {
+    await recordDeniedAttempt(session, { route: `/api/repositories/${resourceName}`, method: "PATCH" });
     return NextResponse.json({ error: "Forbidden." }, { status: 403 });
   }
 
@@ -269,13 +288,24 @@ export async function PATCH(request: Request, context: RouteContext) {
   }
 
   const body = await jsonBody(request);
+  if (isRefusedRoleGrant(resourceName, body, session.user.role)) {
+    await recordDeniedAttempt(session, { route: `/api/repositories/${resourceName}`, method: "PATCH", attemptedRole: String(body.role) });
+    return NextResponse.json({ error: "Only a Super Admin can grant that role." }, { status: 403 });
+  }
   const validationError = validateResourceInput(resourceName, { ...body, name: body.name ?? "existing", title: body.title ?? "existing", startsAt: body.startsAt ?? "existing", body: body.body ?? "existing" });
   if ((resourceName === "projects" || resourceName === "tasks" || resourceName === "meetings" || resourceName === "notifications") && validationError && Object.keys(body).length === 0) {
     return NextResponse.json({ error: validationError }, { status: 400 });
   }
 
   const scope = tenantScopeFromUser(session.user, session.accessToken);
-  const result = await updateRepositoryResource(resourceName, scope, id, body);
+  let result: Awaited<ReturnType<typeof updateRepositoryResource>>;
+  try {
+    result = await updateRepositoryResource(resourceName, scope, id, body);
+  } catch (error) {
+    if (!isDatabaseRefusal(error)) throw error;
+    await recordDeniedAttempt(session, { route: `/api/repositories/${resourceName}`, method: "PATCH" });
+    return NextResponse.json({ error: "You do not have permission to change this record." }, { status: 403 });
+  }
   if (resourceName === "projects" || resourceName === "tasks" || resourceName === "meetings") {
     await notifyAfterMutation(resourceName, scope, result, "updated");
   }

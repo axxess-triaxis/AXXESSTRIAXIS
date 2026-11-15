@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { getServerAuthSession } from "../../../../auth/serverSession";
 import { tenantScopeFromUser } from "../../../../repositories/supabaseEnterpriseRepositories";
 import { stakeholderNotesRepository } from "../../../../repositories/workflowActionRepositories";
+import { canUseCapability } from "../../../../security/rbac";
+import { recordDeniedAttempt } from "../../../../services/audit/auditEvents";
 
 // RAG Remediation Sprint 3 (A-57): stakeholder notes created from an approved AI Review Inbox
 // escalation were already real, tenant-scoped rows (stakeholderNotesRepository), but nothing in
@@ -12,6 +14,10 @@ import { stakeholderNotesRepository } from "../../../../repositories/workflowAct
 export async function GET() {
   const session = await getServerAuthSession(true);
   if (!session) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+
+  if (!canUseCapability(session.user.role, "stakeholders")) {
+    return NextResponse.json({ error: "Forbidden." }, { status: 403 });
+  }
 
   const scope = tenantScopeFromUser(session.user, session.accessToken);
   const notes = await stakeholderNotesRepository.list(scope, { pageSize: 50 }).catch(() => []);
@@ -24,6 +30,11 @@ export async function GET() {
 export async function POST(request: Request) {
   const session = await getServerAuthSession(true);
   if (!session) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+
+  if (!canUseCapability(session.user.role, "stakeholders")) {
+    await recordDeniedAttempt(session, { route: "/api/stakeholders/notes", method: "POST" });
+    return NextResponse.json({ error: "Forbidden." }, { status: 403 });
+  }
 
   const body = await request.json().catch(() => ({} as { title?: string; body?: string }));
   const title = typeof body.title === "string" ? body.title.trim() : "";

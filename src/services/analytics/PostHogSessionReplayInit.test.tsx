@@ -25,7 +25,23 @@ describe("PostHogSessionReplayInit", () => {
       api_host: "https://us.i.posthog.com",
       defaults: "2026-05-30",
       disable_session_recording: false,
+      enable_recording_console_log: false,
+      session_recording: { maskAllInputs: true, maskTextSelector: "*" },
     });
+  });
+
+  // 2026-11-13: CRM screens render customers' names and phone numbers, and a console line from a
+  // lead import was seen captured by the replay's console recorder. Replays keep layout and clicks
+  // but never text, inputs or console output.
+  it("masks all text and inputs in session replay and never records the console", () => {
+    vi.stubEnv("NEXT_PUBLIC_POSTHOG_KEY", "phc_test_token");
+
+    render(<PostHogSessionReplayInit />);
+
+    expect(posthog.init).toHaveBeenCalledWith("phc_test_token", expect.objectContaining({
+      enable_recording_console_log: false,
+      session_recording: { maskAllInputs: true, maskTextSelector: "*" },
+    }));
   });
 
   // MN-5 (2026-08-23): the sprint's own required remediation for session replay potentially

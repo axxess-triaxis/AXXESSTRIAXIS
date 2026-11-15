@@ -1,9 +1,9 @@
-import { BarChart3, BellRing, BookOpen, Brain, Building2, CalendarDays, CheckSquare, ClipboardCheck, FileText, FolderKanban, LayoutDashboard, Plug, ScrollText, Settings, ShieldCheck, TrendingUp, Users, Workflow } from "lucide-react";
+import { BarChart3, BellRing, BookOpen, Brain, Building2, CalendarDays, CheckSquare, ClipboardCheck, FileText, FolderKanban, LayoutDashboard, PhoneCall, Plug, ScrollText, Settings, ShieldCheck, TrendingUp, Users, Workflow } from "lucide-react";
 
 export type NavSection =
   | "dashboard" | "ai-workspace" | "projects" | "tasks"
   | "stakeholders" | "knowledge" | "documents" | "meetings"
-  | "approvals" | "audit-logs" | "analytics" | "product-analytics" | "pilot-conversion" | "stack-status" | "alerts" | "organization-admin" | "integrations" | "settings" | "beta-readiness";
+  | "approvals" | "audit-logs" | "analytics" | "product-analytics" | "pilot-conversion" | "stack-status" | "leads" | "alerts" | "organization-admin" | "integrations" | "settings" | "beta-readiness";
 
 export type NavItem = {
   id: NavSection;
@@ -61,7 +61,10 @@ export const navGroups: NavGroup[] = [
   },
   {
     label: "Relationships",
-    items: [{ id: "stakeholders" as NavSection, label: "Stakeholders & CRM", icon: Users }],
+    items: [
+      { id: "leads" as NavSection, label: "Leads & Calls", icon: PhoneCall },
+      { id: "stakeholders" as NavSection, label: "Stakeholders & CRM", icon: Users },
+    ],
   },
   {
     label: "Governance",

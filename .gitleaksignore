@@ -7,3 +7,11 @@
 a8bea30c597cf92b0ae6b4e8cca5a94fc7585120:pnpm-workspace.yaml:generic-api-key:124
 a8bea30c597cf92b0ae6b4e8cca5a94fc7585120:docs/readiness/FOUNDER_BUG_CLOSURE_LEDGER_2026_07_31.md:generic-api-key:205
 6dfccfe68b7e8241febec57ad606c9e0a14695c4:docs/readiness/FOUNDER_BUG_CLOSURE_LEDGER_2026_07_31.md:generic-api-key:205
+
+# 2026-11-12, PR #476: generic-api-key matched placeholder secrets in new outreach unit tests
+# ("unsubscribe-secret-for-tests-...", "tick-secret-for-tests-..."). Test fixtures, never real keys.
+# They were replaced with "x".repeat(40)-style values in a later commit; these cover the earlier commits.
+87629c8214638b211cd79cb094703b50f015d2d1:src/services/outbound/outreachTick.test.ts:generic-api-key:5
+d9c9b24ee3817a4ec7652f49fb7be32adf2e0c2f:src/app/api/outreach/unsubscribe/route.test.ts:generic-api-key:11
+87629c8214638b211cd79cb094703b50f015d2d1:src/app/api/outreach/tick/route.test.ts:generic-api-key:16
+87629c8214638b211cd79cb094703b50f015d2d1:src/app/api/outreach/tick/route.test.ts:generic-api-key:22

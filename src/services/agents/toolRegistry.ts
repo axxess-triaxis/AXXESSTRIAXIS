@@ -5,6 +5,10 @@ import { answerWithGovernedRag } from "../rag/governedRag";
 import { routeAiRequest } from "../ai/router/aiRouter";
 import type { AgentCapability, AgentScope } from "../../security/agentScope";
 import { stakeholderNotesRepository } from "../../repositories/workflowActionRepositories";
+import { completeAgentCallJob } from "../../repositories/agentCallRepository";
+import { getLead } from "../../repositories/leadWorkRepository";
+import { updateCrmLead } from "../../repositories/crmRepository";
+import { CALL_OUTCOMES, isCallOutcome, leadChangesForOutcome } from "../outbound/callQueue";
 
 export type McpToolContent = { type: "text"; text: string };
 export type McpToolResult = { content: McpToolContent[]; isError?: boolean };
@@ -877,6 +881,90 @@ const queryExternalModelTool: McpToolDefinition = {
   },
 };
 
+// Agent call pipeline (2026-11-13). STILL calls this when Callismatic reports call.completed.v1:
+// it records what the voice agent's call achieved, moves the lead on, and leaves a follow-up task.
+// Idempotent on jobId, so a replayed event changes nothing. Booking a demo is NOT done here: STILL
+// calls create_meeting, which is critical and waits for a human approval.
+const FOLLOW_UP_OUTCOMES = new Set(["interested", "call_back", "connected"]);
+
+const logAgentCallTool: McpToolDefinition = {
+  name: "log_agent_call",
+  version: "1",
+  description: "Record the result of a voice-agent call job started from AXXESS (Call with agent): outcome, summary and action items. Updates the lead and creates a follow-up task. Executes immediately; idempotent on jobId.",
+  requiredCapability: "log_agent_call",
+  criticality: "auto",
+  inputSchema: {
+    type: "object",
+    properties: {
+      jobId: { type: "string" },
+      status: { type: "string", enum: ["completed", "failed"] },
+      outcome: { type: "string", enum: [...CALL_OUTCOMES] },
+      summary: { type: "string", description: "What happened on the call, at most 1000 characters. No transcript." },
+      actionItems: { type: "array", items: { type: "string" } },
+      followUpAt: { type: "string", description: "ISO datetime for the next follow-up, if the contact asked for one." },
+      optedOut: { type: "boolean", description: "True if the contact asked not to be called again. Their number is suppressed for all calls." },
+      failureReason: { type: "string" },
+    },
+    required: ["jobId", "status"],
+  },
+  async handler(scope, args) {
+    const jobId = typeof args.jobId === "string" ? args.jobId.trim() : "";
+    if (!/^[0-9a-f-]{36}$/i.test(jobId)) return { content: [{ type: "text", text: "jobId must be a job id." }], isError: true };
+    const followUpAt = typeof args.followUpAt === "string" && !Number.isNaN(Date.parse(args.followUpAt)) ? new Date(args.followUpAt).toISOString() : undefined;
+
+    let result: Parameters<typeof completeAgentCallJob>[2];
+    if (args.status === "completed") {
+      if (!isCallOutcome(args.outcome)) return { content: [{ type: "text", text: "outcome is required for a completed call." }], isError: true };
+      const summary = typeof args.summary === "string" ? args.summary.trim() : "";
+      const actionItems = Array.isArray(args.actionItems) ? args.actionItems.filter((a): a is string => typeof a === "string" && a.trim() !== "") : [];
+      result = { status: "completed", outcome: args.outcome, summary, actionItems };
+    } else if (args.status === "failed") {
+      result = { status: "failed", failureReason: typeof args.failureReason === "string" && args.failureReason.trim() ? args.failureReason.trim() : "unknown" };
+    } else {
+      return { content: [{ type: "text", text: "status must be completed or failed." }], isError: true };
+    }
+
+    const done = await completeAgentCallJob(scope.organizationId, jobId, result);
+    if (!done) return { content: [{ type: "text", text: "Agent call job not found." }], isError: true };
+    if (done.alreadyDone) return textResult({ jobId, alreadyLogged: true, status: done.job.status });
+    if (result.status === "failed") return textResult({ jobId, status: "failed" });
+
+    const tenant = { organizationId: scope.organizationId, userId: scope.issuedByUserId ?? "", role: scope.issuedByRole ?? "Organization Admin" } as Parameters<typeof getLead>[0];
+    const lead = await getLead(tenant, done.job.leadId);
+    if (!lead) return textResult({ jobId, status: "completed", leadUpdated: false });
+
+    const optedOut = args.optedOut === true;
+    const changes = { ...leadChangesForOutcome(result.outcome, lead), ...(followUpAt && !optedOut ? { nextFollowUpAt: followUpAt } : {}) };
+    if (Object.keys(changes).length) await updateCrmLead(tenant, lead.id, changes);
+
+    // "Don't call me again" must stop every later call, by a person or the agent. A row that already
+    // exists (unique per organization, number and channel) is fine, so each insert stands alone.
+    let suppressed = false;
+    if (optedOut && lead.phoneE164) {
+      for (const channel of ["voice_human", "voice_ai"]) {
+        await supabaseAdminRest("contact_suppressions", {
+          method: "POST", prefer: "return=minimal",
+          body: { organization_id: scope.organizationId, identifier: lead.phoneE164.toLowerCase(), channel, reason: "opt_out", created_by: scope.issuedByUserId ?? null },
+        }).then(() => { suppressed = true; }, () => undefined);
+      }
+      if (!suppressed) return { content: [{ type: "text", text: `Opt-out could not be recorded for job ${jobId}; suppress this number by hand.` }], isError: true };
+    }
+
+    let taskId: string | undefined;
+    if (!optedOut && (FOLLOW_UP_OUTCOMES.has(result.outcome) || result.actionItems.length)) {
+      const description = [result.summary, ...result.actionItems.map((a) => `- ${a}`), `Agent call job ${jobId}.`].filter(Boolean).join(String.fromCharCode(10));
+      const task = await createTaskTool.handler(scope, {
+        title: `Follow up: ${lead.title}`.slice(0, 200),
+        description,
+        priority: result.outcome === "interested" ? "high" : "medium",
+        ...(followUpAt ? { dueDate: followUpAt.slice(0, 10) } : {}),
+      });
+      if (!task.isError) taskId = (JSON.parse(task.content[0].text) as { id?: string }).id;
+    }
+    return textResult({ jobId, status: "completed", outcome: result.outcome, leadId: lead.id, leadTitle: lead.title, changes, optedOut, suppressed, taskId: taskId ?? null });
+  },
+};
+
 export const agentToolRegistry: McpToolDefinition[] = [
   createTaskTool,
   queryKnowledgeHubTool,
@@ -893,6 +981,7 @@ export const agentToolRegistry: McpToolDefinition[] = [
   addStakeholderNoteTool,
   searchAuditLogsTool,
   queryExternalModelTool,
+  logAgentCallTool,
 ];
 
 export function getAgentTool(name: string): McpToolDefinition | undefined {

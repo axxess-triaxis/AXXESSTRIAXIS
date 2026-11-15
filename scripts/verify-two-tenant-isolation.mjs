@@ -181,7 +181,7 @@ async function cleanUpTenant(tenant) {
 async function checkResourceIsolation(tenantA, tenantB, config) {
   const result = { resource: config.resource, created: false, crossTenantReadBlocked: null, crossTenantWriteBlocked: null, error: null };
   try {
-    const createResponse = await userRequest(tenantA.accessToken, `/rest/v1/${config.resource}`, {
+    const createResponse = await userRequest(tenantA.accessToken, config.createPath ?? `/rest/v1/${config.resource}`, {
       method: "POST",
       prefer: "return=representation",
       body: config.createBody(tenantA),
@@ -243,7 +243,9 @@ async function main() {
     },
     {
       resource: "audit_logs",
-      createBody: (tenant) => ({ organization_id: tenant.orgId, actor_user_id: tenant.userId, action: "isolation.test", resource_type: "project", metadata: { runId } }),
+      // Members cannot insert into audit_logs directly since 20261106120000, only through this RPC.
+      createPath: "/rest/v1/rpc/record_audit_event",
+      createBody: (tenant) => ({ p_organization_id: tenant.orgId, p_action: "isolation.test", p_resource_type: "isolation_test" }),
       updateBody: { metadata: { mutated_by_b: true } },
     },
     {

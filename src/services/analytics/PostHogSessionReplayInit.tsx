@@ -35,6 +35,10 @@ export function PostHogSessionReplayInit() {
       api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST ?? "https://us.i.posthog.com",
       defaults: "2026-05-30",
       disable_session_recording: isNativeMobileSurface(),
+      // 2026-11-13: CRM screens show customers' names and phone numbers. Replays keep layout and
+      // clicks but mask all text and inputs, and never record console output.
+      enable_recording_console_log: false,
+      session_recording: { maskAllInputs: true, maskTextSelector: "*" },
     });
   }, []);
 

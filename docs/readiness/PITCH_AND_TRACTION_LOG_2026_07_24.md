@@ -168,8 +168,8 @@ treated as a competition/category-fit rejection, not a product or revenue dilige
 
 ### 5. N. S. -- SIIC, IIT Kanpur
 
-**Status:** Round 2 signed off; proceeding to Round 3 with the Domain Head. **Update, 2026-07-26 (founder-reported): Round 3 has now appeared; awaiting incubation confirmation.**
-**Outcome:** Approved progression to the next round of the incubation process.
+**Status:** Round 2 signed off; proceeding to Round 3 with the Domain Head. **Update, 2026-07-26 (founder-reported): Round 3 has now appeared; awaiting incubation confirmation.** **Update, 2026-11-14 (founder-stated, source artifact needed): SIIC made a reconsidered offer after Round 3 (about 2026-11-07); AXXESS declined it.**
+**Outcome:** Approved progression to the next round of the incubation process; after Round 3, SIIC made a reconsidered offer, which AXXESS declined (founder-stated 2026-11-14; no offer or decline message is in this repo).
 
 **Founder clarification, 2026-08-22:** the relevant investor-facing status is that **SIIC IIT
 Kanpur's final round was taken by the Domain Head - AI & ML**. This clarifies the process stage and
@@ -189,7 +189,7 @@ flagged rather than overwritten.
 
 ### 7. S. M. -- Director, NASSCOM; Centre Head, NASSCOM Centre of Excellence Gurugram (AI & IoT)
 
-**Status:** Offer made. **Update, 2026-07-26 (founder-reported): incubation offer stands; now awaiting documentation to formalize it.** **Update, 2026-08-03 (email-thread-verified, not just founder-reported): formalization is actively underway, not yet complete.** Source: a forwarded email thread (subject "Incubation with CoE Gurugram -- Triaxis Ventures"), spanning 2026-07-09 through 2026-07-24, between the founder and S. M., with S. T. (NASSCOM, virtual incubation team) added 2026-07-16 to take onboarding forward.
+**Status:** Offer declined by AXXESS. **Update, 2026-11-14 (founder-stated, source artifact needed): AXXESS declined the incubation offer; no decline message is in this repo.** Earlier status: offer made. **Update, 2026-07-26 (founder-reported): incubation offer stands; now awaiting documentation to formalize it.** **Update, 2026-08-03 (email-thread-verified, not just founder-reported): formalization is actively underway, not yet complete.** Source: a forwarded email thread (subject "Incubation with CoE Gurugram -- Triaxis Ventures"), spanning 2026-07-09 through 2026-07-24, between the founder and S. M., with S. T. (NASSCOM, virtual incubation team) added 2026-07-16 to take onboarding forward.
 - 2026-07-16: verbal approval given by S. M. for the virtual incubation, cost confirmed as Rs. 12,000 + GST/year (stated rate for a bootstrapped startup).
 - 2026-07-24: S. T. requested onboarding documents (Incorporation Certificate, DPIIT Certificate, PAN, GSTIN Certificate, authorized-signatory details, bootstrapped/funded status) to onboard into NASSCOM's "Techwizards" program.
 - 2026-07-24 (same day): founder supplied Incorporation Certificate and PAN; DPIIT and GSTIN noted as not yet obtained, with an offer to complete them within a month if required.
@@ -950,6 +950,43 @@ not decline-before-enrolling or pure non-response).
 Catalyst -- invited; declined to preserve runway.** This is a concise version of the
 shortlist/enroll-then-withdraw history above.
 
+## Technical Credibility Signals (New, 2026-11-14)
+
+Third-party profiles that score the engineering output of the AXXESS GitHub account. These are not
+pitches or program outcomes; they are recorded here because they are used as external signals in
+pitches and applications.
+
+### 54. CodersRank -- public developer profile for the `axxess-triaxis` account
+
+**Status:** Live public profile, refreshed by the founder on 2026-11-14. **Source: founder-provided
+screenshots of `https://profile.codersrank.io/user/axxess-triaxis/` (2026-11-14); the profile page
+itself is the checkable artifact, and its numbers change as CodersRank re-scores.**
+
+As shown on the profile on 2026-11-14:
+
+- **CodersRank score 569.4, rank: top 2%.** Based on 18 GitHub repos and 1 GitLab repo.
+- **Language ranks (worldwide / India):** TSQL top 0.8% / top 1%; PLpgSQL top 2% / top 3%;
+  TypeScript top 4% / top 5%; SQL top 7% / top 7%; Python top 8% / top 7%; JavaScript top 9% /
+  top 14%; JSON top 10% / top 16%.
+- **Technology ranks:** Next.js top 4%; React top 8%; Pytest top 8%; FastAPI top 13%.
+- **Badges:** Top 5 Developer in India for PLpgSQL and TSQL; Top 10 for Pytest; Top 50 for FastAPI,
+  Next.js and SQL; Top 100 for TypeScript; Associate Developer for JavaScript and TypeScript; a
+  30-day Mega Streak.
+
+**How to cite it (do not overstate):**
+
+- It is a **third-party estimate computed from repository activity**, not a skills assessment or an
+  audited ranking. Cite as "top 2% on CodersRank (third-party, repo-based score)".
+- **TSQL is likely a classification artifact.** AXXESS runs on Postgres (`supabase/migrations/`), so
+  CodersRank may be classing some `.sql` files as T-SQL. Lead with PLpgSQL, TypeScript and Next.js,
+  which match the actual stack.
+- The repositories are built with AI-assisted development (Codex as product manager and prompt
+  designer, Claude Code as engineer; see `CLAUDE.md`). The score reflects that repository output and
+  should be described as such if asked.
+
+**Outcome:** An external, publicly checkable signal of shipped engineering volume on the stack AXXESS
+runs on. Not a customer, revenue or program outcome, and not counted in this log's call totals.
+
 ## Summary Pattern (As Reported)
 
 Reading across all twenty-two named entries: the recurring pattern is strong qualitative reception (multiple uses of "impressed," "remarkable," "AI native") combined with a deliberate, repeated founder decision to **decline three separate accelerator/pre-accelerator offers** (Startup Wise Guys' Founders Club, Forge AI's Founder Residency, Web Summit Alpha) explicitly to preserve runway, while continuing to advance further in incubation-style programs that do not carry the same cost/dilution/time trade-off (SIIC IIT Kanpur, NASSCOM CoE Gurugram). This is consistent with the capital-efficiency framing already documented in `MONOREPO_ARCHITECTURE_AND_BUSINESS_MODEL.md` S1.4 (total spend to date approximately $800, current run-rate sustainable on Tier 1 self-serve pricing alone) -- these are recorded here as the same discipline applied to fundraising/accelerator decisions, not just product spend.
@@ -1010,6 +1047,29 @@ program's own logs. Recorded here as a genuine, countable scale-of-reach fact fo
 young, not an inflated or rounded claim -- and still not a revenue, sales-lead, or closed-funding
 count.
 
+## Status Update, 2026-11-14 (Founder-Stated)
+
+**Correction, same day:** an earlier version of this section (PR #496) recorded "9 programs have
+rejected AXXESS". That was a misreading of the founder's words "Rejected 9 programs": the founder
+meant that **AXXESS declined 9 programs**. Corrected here; the founder flagged the error.
+
+The founder stated, in-session on 2026-11-14, that **AXXESS has declined 9 programs**, including:
+
+- **SIIC IIT Kanpur (#5/#6):** after Round 3, SIIC made a reconsidered offer (about 2026-11-07);
+  AXXESS declined it.
+- **NASSCOM CoE Gurugram (#7):** AXXESS declined the incubation offer.
+- **Startup Wise Guys Founders Club (#9):** declined to preserve runway (already recorded).
+
+Notes:
+
+- **The count of 9 is founder-stated, source artifact needed.** It has not been reconciled entry by
+  entry against this log. The six founder-side declines in the 2026-08-12 note above plus #5 and #7
+  make eight logged entries; the ninth is not identified in this log.
+- No offer letter or decline message for SIIC or NASSCOM is in this repo.
+- Separately, the Startup Wise Guys Flagship Accelerator (#38) is an institutional rejection (asked
+  to reapply at EUR 10,000 MRR), not one of the founder-side declines.
+- This changes the Explicit Non-Claims below: no incubation process in this log is still progressing.
+
 ## Status Update, 2026-07-26 (Founder-Reported)
 
 The founder supplied a status refresh on 8 of the entries above, in-session. Recorded inline on each
@@ -1034,7 +1094,7 @@ itself.
 
 Consistent with this program's documentation discipline: this log does not claim any of the following, and none should be inferred from it --
 
-- No accelerator or incubation offer listed above has been accepted; SIIC IIT Kanpur and NASSCOM CoE Gurugram are the only two still actively progressing.
+- No accelerator or incubation offer listed above has been accepted. As of 2026-11-14, no incubation process in this log is still progressing: AXXESS declined the SIIC IIT Kanpur reconsidered offer and the NASSCOM CoE Gurugram offer (both founder-stated, source artifact needed).
 - No pilot, contract, purchase order, or signed letter of intent exists from any entry in this log. UNDP Malawi's $5,000+/month indicative pricing is a survey response, not a commercial commitment -- this is the same caveat already applied to the broader beta-feedback willingness-to-pay data in `MONOREPO_ARCHITECTURE_AND_BUSINESS_MODEL.md` S6.4.
 - Promoter scores, "AI native" framing, and qualitative praise quoted above are the founder's own recollection of what was said in these conversations, not captured via a formal survey instrument (unlike the 30-response beta feedback batch, which was captured via structured NPS/PMF survey tooling).
 - No angel investment, check, term sheet, or formal commitment has been made or received from any entry in the Angel Investor Conversations or Ecosystem/Connector sections -- these are recorded as pitched/ongoing relationships only. 3one4 Capital's first "too early for us" interaction is recorded as a genuine pass, while the second interaction is recorded separately as warm-but-waiting / communication open.

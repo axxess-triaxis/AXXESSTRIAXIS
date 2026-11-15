@@ -27,7 +27,9 @@ describe("agentScope", () => {
       "update_task_status",
       "add_stakeholder_note",
       "search_audit_logs",
+      "log_agent_call",
     ]);
+    expect(defaultAgentCapabilities).not.toContain("log_agent_call");
     expect(defaultAgentCapabilities).not.toEqual(allAgentCapabilities);
     expect(defaultAgentCapabilities).toEqual([
       "create_task",

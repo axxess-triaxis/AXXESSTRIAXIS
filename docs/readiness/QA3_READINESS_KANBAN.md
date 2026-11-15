@@ -438,3 +438,20 @@ No cards moved yet.
 - HITL decision: founder authorized each merge on green CI (no skip-checks or admin overrides)
   and closing the superseded Dependabot PRs #394/#398/#399. Pending: whether to act on #413
   (Expo 54 -> 58), which also unblocks image-size.
+
+## Access and Audit Integrity Update (2026-11-06)
+
+- Card: ACCESS-AUDIT-INTEGRITY, audit findings L1, L2, M10, L16, L17, M20, M7, M21, M22.
+- Column: Blocked, not Verified. Fixes pass locally, but nothing is deployed.
+- Blocker: founder review, the two pre-merge queries, then merge and deploy. Owner: founder. Next review: 2026-11-20.
+- Evidence: `docs/readiness/ACCESS_AND_AUDIT_INTEGRITY_CLOSEOUT_2026_11_06.md`.
+- Still open from the same audit: role checks on API routes (L3, L6, L8 to L10, L13, L18), so "Access restricted" remains mostly a screen.
+
+## API Role Checks Update (2026-11-06)
+
+- Card: API-ROLE-CHECKS, audit findings L3, L6, L8, L9, L10, L13, L18.
+- Column: Blocked, not Verified. Fixes pass locally, but nothing is deployed.
+- Blocker: #456 merges first, then founder review, merge and deploy. Owner: founder. Next review: 2026-11-20.
+- Evidence: `docs/readiness/API_ROLE_CHECKS_CLOSEOUT_2026_11_06.md`.
+- Added the same day, by founder decision: Employees see only their own tasks, projects, meetings and timeline events.
+- Still open: the leads page and agent sidebar link (M1 to M3), a finance role (M23), `programs` readable by outside roles, and `project_updates`, `decisions`, `risks` and `meeting_attendees` readable by every member.

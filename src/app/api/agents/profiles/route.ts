@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getServerAuthSession } from "../../../../auth/serverSession";
+import { recordAuditBestEffort, recordDeniedAttempt } from "../../../../services/audit/auditEvents";
 import { createAgentProfile, listAgentProfiles } from "../../../../services/agents/agentProfileRepository";
 import { isAgentPolicyTemplateId } from "../../../../services/agents/agentPolicyTemplates";
 import { agentProviderIds, normalizeAgentCapabilities, type AgentProviderId } from "../../../../security/agentScope";
@@ -7,13 +8,14 @@ import { agentProviderIds, normalizeAgentCapabilities, type AgentProviderId } fr
 const adminRoles = ["Super Admin", "Organization Admin"];
 const riskTiers = ["low", "standard", "elevated", "high"];
 
-async function requireAdminSession(): Promise<
+async function requireAdminSession(refusedWriteMethod?: string): Promise<
   | { ok: true; session: NonNullable<Awaited<ReturnType<typeof getServerAuthSession>>> }
   | { ok: false; error: NextResponse }
 > {
   const session = await getServerAuthSession(true);
   if (!session) return { ok: false, error: NextResponse.json({ error: "Unauthorized." }, { status: 401 }) };
   if (!adminRoles.includes(session.user.role)) {
+    if (refusedWriteMethod) await recordDeniedAttempt(session, { route: "/api/agents/profiles", method: refusedWriteMethod });
     return { ok: false, error: NextResponse.json({ error: "Only organization admins can manage agent profiles." }, { status: 403 }) };
   }
   return { ok: true, session };
@@ -30,7 +32,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const authResult = await requireAdminSession();
+  const authResult = await requireAdminSession("POST");
   if (!authResult.ok) return authResult.error;
   const { session } = authResult;
 
@@ -73,6 +75,12 @@ export async function POST(request: Request) {
     riskTier: body?.riskTier as "low" | "standard" | "elevated" | "high" | undefined,
     capabilities: body?.capabilities,
     policyTemplateId: body?.policyTemplateId,
+  });
+  await recordAuditBestEffort(session, {
+    action: "agent_profile.created",
+    resourceType: "agent_profile",
+    resourceId: profile.id,
+    category: "agentic-infrastructure",
   });
   return NextResponse.json({ profile }, { status: 201 });
 }

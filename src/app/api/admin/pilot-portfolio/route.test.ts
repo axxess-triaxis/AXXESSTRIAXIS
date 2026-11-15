@@ -35,6 +35,7 @@ describe("pilot portfolio admin API", () => {
 
   it("wires all 4 honest integration-health checks into the response", () => {
     expect(routeSource).toContain("fetchSentryProjectHealth");
+    expect(routeSource).toContain("fetchProductHuntLaunchHealth");
     expect(routeSource).toContain("fetchPostHogQueryHealth");
     expect(routeSource).toContain("fetchMixpanelQueryHealth");
     expect(routeSource).toContain("fetchAsanaPortfolioHealth");

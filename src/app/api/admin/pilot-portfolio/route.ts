@@ -6,6 +6,7 @@ import { canViewCrossTenantPilotPortfolio } from "../../../../security/rbac";
 import { fetchAsanaPortfolioHealth } from "../../../../services/integrations/asanaPortfolioHealth";
 import { fetchMixpanelQueryHealth } from "../../../../services/integrations/mixpanelQueryHealth";
 import { fetchPostHogQueryHealth } from "../../../../services/integrations/postHogQueryHealth";
+import { fetchProductHuntLaunchHealth } from "../../../../services/integrations/productHuntLaunchTracker";
 import { fetchSentryProjectHealth } from "../../../../services/integrations/sentryProjectHealth";
 import { buildPilotPortfolioSnapshot, type PilotPortfolioReadinessEvent, type PilotPortfolioWorkflowProgressRow } from "../../../../services/pilot/pilotPortfolio";
 
@@ -28,13 +29,14 @@ export async function GET() {
     return NextResponse.json({ error: "Cross-tenant pilot portfolio access is restricted." }, { status: 403 });
   }
 
-  const [sentry, postHogQuery, mixpanelQuery, asana] = await Promise.all([
+  const [sentry, postHogQuery, mixpanelQuery, asana, productHunt] = await Promise.all([
     fetchSentryProjectHealth(),
     fetchPostHogQueryHealth(),
     fetchMixpanelQueryHealth(),
     fetchAsanaPortfolioHealth(),
+    fetchProductHuntLaunchHealth(),
   ]);
-  const integrations = { sentry, postHogQuery, mixpanelQuery, asana };
+  const integrations = { sentry, postHogQuery, mixpanelQuery, asana, productHunt };
 
   if (!isSupabaseAdminConfigured()) {
     return NextResponse.json({

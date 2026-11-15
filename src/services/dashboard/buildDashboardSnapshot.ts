@@ -60,12 +60,14 @@ export type DashboardSnapshotInput = {
   demoMode: boolean;
   // Executive Dashboard Redesign Sprint ED-R2
   mailSignals: MailDashboardSignals | undefined;
-  crmLeads: CrmLead[] | undefined;
+  // undefined while loading, null when this role is refused.
+  crmLeads: CrmLead[] | null | undefined;
   socialSignals: SocialDashboardSignals | undefined;
   // Executive Dashboard Redesign Sprint ED-R3
   calendarSignals: CalendarDashboardSignals | undefined;
   externalMeetingsSignals: ExternalMeetingsDashboardSignals | undefined;
-  financialWatchItems: FinancialWatchItem[] | undefined;
+  // undefined while loading, null when this role is refused.
+  financialWatchItems: FinancialWatchItem[] | null | undefined;
   // Executive Dashboard Redesign Sprint ED-R4
   threadsSignals: ThreadsDashboardSignals | undefined;
   metaBusinessSignals: MetaBusinessDashboardSignals | undefined;
@@ -413,9 +415,10 @@ export function buildDashboardSnapshot(input: DashboardSnapshotInput): ScoredTil
       rationale: stalledResult.rationale,
     }));
   } else {
-    tiles.push(notConnectedTile("crm-open-leads", 1, "Open leads", "Loading CRM signal...", "/crm"));
-    tiles.push(notConnectedTile("crm-follow-ups-due", 1, "CRM follow-ups due", "Loading CRM signal...", "/crm"));
-    tiles.push(notConnectedTile("crm-stalled-leads", 1, "Stalled opportunities", "Loading CRM signal...", "/crm"));
+    const crmDetail = input.crmLeads === null ? "CRM figures are for staff." : "Loading CRM signal...";
+    tiles.push(notConnectedTile("crm-open-leads", 1, "Open leads", crmDetail, "/crm"));
+    tiles.push(notConnectedTile("crm-follow-ups-due", 1, "CRM follow-ups due", crmDetail, "/crm"));
+    tiles.push(notConnectedTile("crm-stalled-leads", 1, "Stalled opportunities", crmDetail, "/crm"));
   }
 
   // Executive Dashboard Redesign Sprint ED-R4: real, built on published_content_items /
@@ -655,10 +658,11 @@ export function buildDashboardSnapshot(input: DashboardSnapshotInput): ScoredTil
       rationale: actionablesResult.rationale,
     }));
   } else {
-    tiles.push(notConnectedTile("budget-thresholds", 3, "Budget thresholds", "Loading financial watchlist...", "/analytics"));
-    tiles.push(notConnectedTile("budget-overshoot", 3, "Budget overshoot", "Loading financial watchlist...", "/analytics"));
-    tiles.push(notConnectedTile("accounts-below-threshold", 3, "Accounts below threshold", "Loading financial watchlist...", "/analytics"));
-    tiles.push(notConnectedTile("accounts-actionables", 3, "Accounts actionables", "Loading financial watchlist...", "/analytics"));
+    const financialDetail = input.financialWatchItems === null ? "Finance figures are for senior roles." : "Loading financial watchlist...";
+    tiles.push(notConnectedTile("budget-thresholds", 3, "Budget thresholds", financialDetail, "/analytics"));
+    tiles.push(notConnectedTile("budget-overshoot", 3, "Budget overshoot", financialDetail, "/analytics"));
+    tiles.push(notConnectedTile("accounts-below-threshold", 3, "Accounts below threshold", financialDetail, "/analytics"));
+    tiles.push(notConnectedTile("accounts-actionables", 3, "Accounts actionables", financialDetail, "/analytics"));
   }
 
   return tiles;

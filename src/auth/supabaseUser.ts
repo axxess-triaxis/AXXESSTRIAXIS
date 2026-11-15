@@ -17,10 +17,19 @@ export type SupabaseUserRow = {
   display_name: string;
   avatar_initials: string;
   role: string;
+  status?: string | null;
   department_name?: string | null;
   title?: string | null;
   timezone?: string | null;
 };
+
+// L1: a suspended user is refused a session everywhere, not only on the pages that check.
+export class AccountSuspendedError extends Error {
+  constructor() {
+    super("This account is suspended.");
+    this.name = "AccountSuspendedError";
+  }
+}
 
 function readMetadataString(metadata: Record<string, unknown> | undefined, key: string) {
   const value = metadata?.[key];

@@ -32,6 +32,12 @@ allowBuilds:
   '@tailwindcss/oxide': true
   core-js: true
   esbuild: true
+  # 2026-11-09: denied, not allowed. vercel 65.9.0 (PR #466) pulls koffi@3.3.3 in through
+  # @vercel/cli-auth (Vercel CLI devDependency tree only, not the deployed app). Its install script
+  # (`cnoke --prebuild`) only selects a prebuilt binary, which the @koromix/koffi-* optional
+  # packages in the lockfile already provide. Unlisted, it made `pnpm install --frozen-lockfile`
+  # fail with ERR_PNPM_IGNORED_BUILDS on every CI job and production deploy since that merge.
+  koffi: false
   sharp: true
   # postinstall is just opencollective-postinstall (a harmless funding-message script) -- verified
   # by reading node_modules/.pnpm/tesseract.js@7.0.0/node_modules/tesseract.js/package.json.

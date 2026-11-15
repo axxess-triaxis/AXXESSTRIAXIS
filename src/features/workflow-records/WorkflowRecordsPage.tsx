@@ -6,6 +6,7 @@ import { getServerAuthSession } from "../../auth/serverSession";
 import { isDemoModeEnabled } from "../../demo/demoMode";
 import { approvalRequestsRepository, projectUpdatesRepository, stakeholderNotesRepository } from "../../repositories/workflowActionRepositories";
 import { tenantScopeFromUser } from "../../repositories/supabaseEnterpriseRepositories";
+import { canUseCapability } from "../../security/rbac";
 import {
   createFallbackApprovalRequest,
   createFallbackProjectUpdate,
@@ -152,7 +153,10 @@ async function loadRecords(type: WorkflowRecordType) {
 
   const scope = tenantScopeFromUser(session.user, session.accessToken);
   if (type === "approval-requests") return approvalRequestsRepository.list(scope, { pageSize: 50 });
-  if (type === "stakeholder-notes") return stakeholderNotesRepository.list(scope, { pageSize: 50 });
+  if (type === "stakeholder-notes") {
+    // This repository uses the service role, so RLS does not apply here.
+    return canUseCapability(session.user.role, "stakeholders") ? stakeholderNotesRepository.list(scope, { pageSize: 50 }) : [];
+  }
   return projectUpdatesRepository.list(scope, { pageSize: 50 });
 }
 

@@ -1,13 +1,15 @@
 import { NextResponse } from "next/server";
 import { getServerAuthSession } from "../../../../../../auth/serverSession";
+import { recordAuditBestEffort, recordDeniedAttempt } from "../../../../../../services/audit/auditEvents";
 import { listGrants, revokeGrant } from "../../../../../../services/agents/agentGrantsRepository";
 
 const adminRoles = ["Super Admin", "Organization Admin"];
 
-async function requireAdminSession() {
+async function requireAdminSession(refusedWriteMethod?: string) {
   const session = await getServerAuthSession(true);
   if (!session) return { ok: false as const, error: NextResponse.json({ error: "Unauthorized." }, { status: 401 }) };
   if (!adminRoles.includes(session.user.role)) {
+    if (refusedWriteMethod) await recordDeniedAttempt(session, { route: "/api/agents/connections/[id]/grants", method: refusedWriteMethod });
     return { ok: false as const, error: NextResponse.json({ error: "Only organization admins can manage agent connections." }, { status: 403 }) };
   }
   return { ok: true as const, session };
@@ -26,12 +28,18 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
 }
 
 export async function DELETE(request: Request) {
-  const authResult = await requireAdminSession();
+  const authResult = await requireAdminSession("DELETE");
   if (!authResult.ok) return authResult.error;
 
   const grantId = new URL(request.url).searchParams.get("grantId");
   if (!grantId) return NextResponse.json({ error: "grantId is required." }, { status: 400 });
 
   await revokeGrant(authResult.session.user.organizationId, grantId);
+  await recordAuditBestEffort(authResult.session, {
+    action: "agent_connection.grant_revoked",
+    resourceType: "agent_connection_grant",
+    resourceId: grantId,
+    category: "agentic-infrastructure",
+  });
   return NextResponse.json({ ok: true });
 }

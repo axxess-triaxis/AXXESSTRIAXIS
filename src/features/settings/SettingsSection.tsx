@@ -14,7 +14,7 @@ import { getRuntimeMode, isDemoModeEnabled, isDemoModeForcedByEnv, resetDemoEnvi
 import type { Invitation, RoleName, User } from "../../domain";
 import { applicationServices } from "../../providers/serviceProvider";
 import { tenantScopeFromUser } from "../../repositories/supabaseEnterpriseRepositories";
-import { canManageOrganization } from "../../security/rbac";
+import { canGrantRole, canManageOrganization } from "../../security/rbac";
 import { markPostDemoSatisfactionPromptPending } from "../../hooks/usePostDemoSatisfactionPrompt";
 import { useAnalytics } from "../../services/analytics";
 import { isAgenticGateEnabled, setAgenticGateEnabled } from "../../services/agentic/agenticGateToggle";
@@ -709,6 +709,8 @@ function UserAdministration() {
   const [toast, setToast] = useState<{ tone: "success" | "error" | "info"; message: string } | null>(null);
 
   const canManageUsers = Boolean(user && ["Super Admin", "Organization Admin"].includes(user.role));
+  // L16: only a Super Admin can grant Super Admin, so nobody else is offered it.
+  const grantableRoles = roleOptions.filter((role) => user && canGrantRole(user.role, role));
 
   const loadUsers = useCallback(async () => {
     if (!scope) return;
@@ -867,7 +869,7 @@ function UserAdministration() {
           </div>
           <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_180px_auto]">
             <TextField label="Email" type="email" value={inviteEmail} onChange={(event) => setInviteEmail(event.target.value)} disabled={!canManageUsers || saving} />
-            <SelectField label="Role" value={inviteRole} options={roleOptions.map((role) => ({ value: role, label: role }))} onChange={(event) => setInviteRole(event.target.value as RoleName)} disabled={!canManageUsers || saving} />
+            <SelectField label="Role" value={inviteRole} options={grantableRoles.map((role) => ({ value: role, label: role }))} onChange={(event) => setInviteRole(event.target.value as RoleName)} disabled={!canManageUsers || saving} />
             <button
               onClick={() => void inviteUser()}
               disabled={!canManageUsers || saving}
@@ -891,11 +893,11 @@ function UserAdministration() {
               </button>
               <select
                 value={member.role}
-                disabled={!canManageUsers || saving}
+                disabled={!canManageUsers || saving || (user ? !canGrantRole(user.role, member.role) : true)}
                 onChange={(event) => void updateUser(member, { role: event.target.value as RoleName })}
                 className="rounded-lg border border-[rgba(0,0,0,0.12)] bg-white px-2 py-1 text-[11px] text-[#0F1117] disabled:bg-[#F2F3F5]"
               >
-                {roleOptions.map((role) => <option key={role} value={role}>{role}</option>)}
+                {(grantableRoles.includes(member.role) ? grantableRoles : roleOptions).map((role) => <option key={role} value={role}>{role}</option>)}
               </select>
               <button
                 onClick={() => setConfirmUser(member)}

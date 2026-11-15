@@ -130,6 +130,15 @@ describe("buildDashboardSnapshot -- mail signal (ED-R2)", () => {
 });
 
 describe("buildDashboardSnapshot -- CRM signal (ED-R2)", () => {
+  it("says the figures are restricted, and not that they are loading, when the role is refused", () => {
+    const tiles = buildDashboardSnapshot(baseInput({ crmLeads: null }));
+    const byId = Object.fromEntries(tiles.map((tile) => [tile.id, tile]));
+    for (const id of ["crm-open-leads", "crm-follow-ups-due", "crm-stalled-leads"]) {
+      expect(byId[id].dataState).toBe("not-connected");
+      expect(byId[id].detail).toBe("CRM figures are for staff.");
+    }
+  });
+
   it("shows honest empty-state CRM tiles for a tenant with zero leads (real query, genuinely empty)", () => {
     const tiles = buildDashboardSnapshot(baseInput({ crmLeads: [] }));
     const byId = Object.fromEntries(tiles.map((tile) => [tile.id, tile]));
@@ -274,6 +283,15 @@ describe("buildDashboardSnapshot -- financial watchlist signal (ED-R3)", () => {
     const tiles = buildDashboardSnapshot(baseInput({ financialWatchItems: undefined }));
     const byId = Object.fromEntries(tiles.map((tile) => [tile.id, tile]));
     expect(byId["accounts-below-threshold"].dataState).toBe("not-connected");
+  });
+
+  it("says the figures are restricted, and not that they are loading, when the role is refused", () => {
+    const tiles = buildDashboardSnapshot(baseInput({ financialWatchItems: null }));
+    const byId = Object.fromEntries(tiles.map((tile) => [tile.id, tile]));
+    for (const id of ["budget-thresholds", "budget-overshoot", "accounts-below-threshold", "accounts-actionables"]) {
+      expect(byId[id].dataState).toBe("not-connected");
+      expect(byId[id].detail).toBe("Finance figures are for senior roles.");
+    }
   });
 });
 

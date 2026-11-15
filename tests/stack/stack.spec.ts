@@ -196,12 +196,16 @@ test("a malformed event reaches the failure queue and makes no task", async ({ p
   putEvent("triaxis.callismatic", "lead.triaged.v1", leadEnvelope(id, marker, { time: undefined }));
 
   // Lambda retries twice, with backoff, before the failure destination.
+  let receiptHandle: string | undefined;
   await expect.poll(() => {
     const response = JSON.parse(aws(
       regionOf(config.busArn), "sqs", "receive-message", "--queue-url", config.adapterFailureQueueUrl,
       "--max-number-of-messages", "10", "--wait-time-seconds", "10",
-    ) || "{}") as { Messages?: { Body: string }[] };
-    return (response.Messages ?? []).some((message) => message.Body.includes(id));
+    ) || "{}") as { Messages?: { Body: string; ReceiptHandle: string }[] };
+    receiptHandle = (response.Messages ?? []).find((message) => message.Body.includes(id))?.ReceiptHandle;
+    return receiptHandle !== undefined;
   }, { timeout: 6 * 60_000, intervals: [15_000] }).toBe(true);
+  // Delete only this test's own message, so a passing run leaves the failure queue (and its alarm) clean.
+  aws(regionOf(config.busArn), "sqs", "delete-message", "--queue-url", config.adapterFailureQueueUrl, "--receipt-handle", receiptHandle!);
   expect(await countTasksMentioning(page, marker)).toBe(0);
 });
