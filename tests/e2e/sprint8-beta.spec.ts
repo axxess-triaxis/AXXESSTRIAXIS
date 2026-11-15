@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { loginAs, seededUsers, skipUnlessSeeded } from "./helpers";
+import { loginAs, logout, seededUsers, skipUnlessSeeded } from "./helpers";
 
 test.describe("Sprint 8 beta analytics and feedback", () => {
   test.beforeEach(() => {
@@ -29,14 +29,9 @@ test.describe("Sprint 8 beta analytics and feedback", () => {
     expect(eventNames).toContain("module_opened");
     expect(eventNames).toContain("project_created");
 
+    // The in-app feedback form became a set of survey links in db7ceb40.
     await page.getByRole("button", { name: "Send Feedback" }).click();
-    await page.getByLabel("Type").selectOption("Bug");
-    await page.getByLabel("Module").selectOption("Projects");
-    await page.getByLabel("Rating").selectOption("5");
-    await page.getByLabel("Message").fill("Sprint 8 beta feedback submission.");
-    await page.getByRole("button", { name: "Submit Feedback" }).click();
-
-    await expect(page.getByText("Feedback submitted. Thank you.")).toBeVisible();
+    await expect(page.getByRole("dialog", { name: "Help shape AXXESS" })).toBeVisible();
   });
 
   test("admin can view beta readiness and guest cannot", async ({ page }) => {
@@ -44,7 +39,7 @@ test.describe("Sprint 8 beta analytics and feedback", () => {
     await page.goto("/admin/beta-readiness");
     await expect(page.getByText("Beta Readiness").first()).toBeVisible();
 
-    await page.getByRole("button", { name: "Sign out" }).click();
+    await logout(page);
     await loginAs(page, seededUsers.guestAlpha);
     await page.goto("/admin/beta-readiness");
     await expect(page.getByText("Access restricted")).toBeVisible();

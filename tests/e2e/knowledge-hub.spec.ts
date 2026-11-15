@@ -15,7 +15,7 @@ test.describe("Sprint 9 Knowledge Hub", () => {
     await page.getByRole("button", { name: /Search/i }).click();
     await expect(page.getByText(/risk/i).first()).toBeVisible();
 
-    await page.getByRole("button", { name: /Documents/i }).click();
+    await page.getByRole("button", { name: "Documents", exact: true }).click();
     await page.getByText(/Risk|Governance|Architecture/i).first().click();
     await expect(page.getByText("Document Preview")).toBeVisible();
 
