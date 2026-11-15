@@ -19,9 +19,10 @@ const queue = {
 
 const funnel = {
   window: { days: 30 },
-  activity: { leadsAdded: 4, emailsSent: 80, delivered: 78, bounced: 2, complained: 0, replies: 3, repliesByCategory: { interested: 1, other: 2 } },
+  activity: { leadsAdded: 4, emailsSent: 80, delivered: 78, bounced: 2, complained: 0, replies: 3, repliesByCategory: { interested: 1, other: 2 },
+    meetingsBooked: 2, meetingsHeld: 1, trialsStarted: 1 },
   pipelineNow: { open: 4, byStage: { new: 3, qualifying: 1 }, won: 0, lost: 0 },
-  notTracked: ["meetings", "trials", "paid"],
+  notTracked: ["paid"],
   ramp: { budget: 0, reason: "paused_bounce_rate", sendingEnabled: true, sent7d: 80, bounceRate7d: 0.025, complaintRate7d: 0 },
 };
 
@@ -63,6 +64,44 @@ describe("LeadsSection", () => {
     render(<LeadsSection />);
     fireEvent.click(await screen.findByText("Acme - Asha"));
     expect(await screen.findByText(/Reply: Interested - Re: Quick question/)).toBeTruthy();
+  });
+
+  it("logs a meeting on a lead, says outreach stopped, and shows milestones in the history", async () => {
+    const fetchMock = stubApi();
+    let logged = false;
+    fetchMock.mockImplementation(async (url: string, init?: RequestInit) => {
+      if (url === "/api/crm/leads/l1/milestones" && init?.method === "POST") {
+        logged = true;
+        return { ok: true, status: 201, json: async () => ({ kind: "meeting_booked", changes: { stage: "qualifying" }, stoppedEnrollments: 1 }) };
+      }
+      const body = url.includes("/history")
+        ? { history: logged ? [{ kind: "milestone", at: "2026-11-15T10:00:00Z", milestone: "meeting_booked", note: "Demo Tue" }] : [] }
+        : url.includes("call-queue") ? queue : { leads };
+      return { ok: true, status: 200, json: async () => body };
+    });
+    render(<LeadsSection />);
+    fireEvent.click(await screen.findByText("Acme - Asha"));
+    await screen.findByText("No contact or changes yet.");
+    fireEvent.change(screen.getByLabelText("Milestone note"), { target: { value: " Demo Tue " } });
+    fireEvent.click(screen.getByRole("button", { name: "Log" }));
+    expect(await screen.findByText("Meeting booked logged. Outreach emails to this lead are stopped.")).toBeTruthy();
+    expect(await screen.findByText(/Meeting booked \(Demo Tue\)/)).toBeTruthy();
+    const post = fetchMock.mock.calls.find(([url, init]) => String(url) === "/api/crm/leads/l1/milestones" && (init as RequestInit | undefined)?.method === "POST");
+    expect(JSON.parse(String((post?.[1] as RequestInit).body))).toEqual({ kind: "meeting_booked", note: "Demo Tue" });
+  });
+
+  it("shows the server's error when a milestone is refused", async () => {
+    const fetchMock = stubApi();
+    fetchMock.mockImplementation(async (url: string, init?: RequestInit) => {
+      if (url.endsWith("/milestones") && init?.method === "POST") return { ok: false, status: 400, json: async () => ({ error: "occurredAt may be at most one day in the future." }) };
+      const body = url.includes("/history") ? { history: [] } : url.includes("call-queue") ? queue : { leads };
+      return { ok: true, status: 200, json: async () => body };
+    });
+    render(<LeadsSection />);
+    fireEvent.click(await screen.findByText("Acme - Asha"));
+    fireEvent.change(await screen.findByLabelText("Milestone"), { target: { value: "trial_started" } });
+    fireEvent.click(screen.getByRole("button", { name: "Log" }));
+    expect(await screen.findByText("occurredAt may be at most one day in the future.")).toBeTruthy();
   });
 
   it("a Manager can see the owner select", async () => {
@@ -164,7 +203,11 @@ describe("LeadsSection", () => {
     fireEvent.click(await screen.findByRole("tab", { name: /Funnel/ }));
     expect((await screen.findByTestId("ramp-status")).textContent).toContain("Paused: the bounce rate reached 2%");
     expect(screen.getByTestId("funnel-activity").textContent).toContain("Delivered78 (97.5%)");
-    expect(screen.getByTestId("funnel-pipeline").textContent).toContain("MeetingsNot tracked yet");
+    expect(screen.getByTestId("funnel-activity").textContent).toContain("Meetings booked2");
+    expect(screen.getByTestId("funnel-activity").textContent).toContain("Meetings held1");
+    expect(screen.getByTestId("funnel-activity").textContent).toContain("Trials started1");
+    expect(screen.getByTestId("funnel-pipeline").textContent).toContain("PaidNot tracked yet (needs billing records)");
+    expect(screen.getByTestId("funnel-pipeline").textContent).not.toContain("MeetingsNot tracked");
   });
 
   it("gives an Employee no Funnel tab and never calls the funnel API", async () => {

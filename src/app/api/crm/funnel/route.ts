@@ -7,7 +7,7 @@ import { requireCrmAccess } from "../leadAccess";
 
 // Outreach funnel and sending health (GTM plan 2026-11-11, Day 4). Senior roles only.
 //   GET /api/crm/funnel?days=30   (1 to 365, default 30)
-// Counts come only from named tables; meetings, trials and paid are reported as not tracked.
+// Counts come only from named tables; paid is reported as not tracked until billing records exist.
 // The ramp block is the same rule the outreach tick uses, so the page shows what the sender will do.
 export async function GET(request: Request) {
   const access = await requireCrmAccess("/api/crm/funnel", "GET");

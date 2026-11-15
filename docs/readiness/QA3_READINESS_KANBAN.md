@@ -455,3 +455,11 @@ No cards moved yet.
 - Evidence: `docs/readiness/API_ROLE_CHECKS_CLOSEOUT_2026_11_06.md`.
 - Added the same day, by founder decision: Employees see only their own tasks, projects, meetings and timeline events.
 - Still open: the leads page and agent sidebar link (M1 to M3), a finance role (M23), `programs` readable by outside roles, and `project_updates`, `decisions`, `risks` and `meeting_attendees` readable by every member.
+
+## Lead Milestones Update (2026-11-15)
+
+- Card: LEAD-MILESTONES (GTM funnel: meetings and trials).
+- Column: Blocked, not Verified. The full local suite passes (2,261 tests), but nothing is deployed.
+- Blocker: apply `20261115140000_lead_milestones.sql` to production, then founder review, merge and deploy. Owner: founder.
+- Evidence: `docs/readiness/LEAD_MILESTONES_CLOSEOUT_2026_11_15.md`.
+- Still untracked: paid, until billing records exist.

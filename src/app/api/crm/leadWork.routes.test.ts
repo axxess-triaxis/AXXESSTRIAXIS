@@ -8,7 +8,10 @@ const calls = {
   recorded: [] as Array<Record<string, unknown>>,
   audits: [] as Array<{ action: string; metadata?: Record<string, unknown> }>,
   denied: [] as unknown[],
+  milestones: [] as Array<{ leadId: string; milestone: Record<string, unknown> }>,
+  stopped: [] as Array<{ organizationId: string; leadId: string; reason: string }>,
 };
+const stopState = { count: 1 };
 let leads: WorkLead[] = [];
 let staffIds = new Set<string>();
 let attemptsByLead = new Map<string, { channel: "voice_human" | "email"; at: Date }[]>();
@@ -37,12 +40,18 @@ vi.mock("../../../repositories/leadWorkRepository", async (original) => ({
   listOpenLeads: async (_s: unknown, owner?: string) => leads.filter((l) => !owner || l.ownerUserId === owner || l.createdBy === owner),
   loadCallContext: async () => ({ suppressed: new Set<string>(), attemptsByLead }),
   recordCall: async (_s: unknown, c: Record<string, unknown>) => { calls.recorded.push(c); },
+  recordMilestone: async (_s: unknown, leadId: string, milestone: Record<string, unknown>) => { calls.milestones.push({ leadId, milestone }); },
   isActiveStaffMember: async (_s: unknown, id: string) => staffIds.has(id),
   listActiveStaff: async () => [{ id: "emp", displayName: "Emp" }],
   loadLeadHistory: async () => [{ kind: "change", at: "2026-11-13T00:00:00Z", action: "crm.lead.updated", metadata: {} }],
 }));
 
+vi.mock("../../../repositories/replyRepository", () => ({
+  stopActiveEnrollments: async (organizationId: string, leadId: string, reason: string) => { calls.stopped.push({ organizationId, leadId, reason }); return stopState.count; },
+}));
+
 import { PATCH } from "./leads/[id]/route";
+import { POST as logMilestone } from "./leads/[id]/milestones/route";
 import { GET as history } from "./leads/[id]/history/route";
 import { POST as logCall } from "./leads/[id]/calls/route";
 import { GET as queue } from "./call-queue/route";
@@ -63,6 +72,7 @@ describe("lead work routes", () => {
   });
   afterEach(() => {
     vi.useRealTimers();
+    stopState.count = 1;
     state.session = null;
     for (const list of Object.values(calls)) list.length = 0;
   });
@@ -149,5 +159,49 @@ describe("lead work routes", () => {
     expect((await logCall(json({ outcome: "no_answer" }), params("l1"))).status).toBe(409);
     expect((await logCall(json({ outcome: "maybe" }), params("l1"))).status).toBe(400);
     expect((await logCall(json({ outcome: "no_answer", note: "x".repeat(501) }), params("l1"))).status).toBe(400);
+  });
+
+  it("milestones need a session, CRM access and a lead the caller can see", async () => {
+    expect((await logMilestone(json({ kind: "meeting_booked" }), params("l1"))).status).toBe(401);
+    as("Guest", "g");
+    expect((await logMilestone(json({ kind: "meeting_booked" }), params("l1"))).status).toBe(403);
+    as("Employee");
+    expect((await logMilestone(json({ kind: "meeting_booked" }), params("l2"))).status).toBe(404);
+    expect(calls.milestones).toEqual([]);
+    expect(calls.stopped).toEqual([]);
+  });
+
+  it("rejects an unknown kind, a bad or far-future date, and a long note", async () => {
+    as("Employee");
+    expect((await logMilestone(json({ kind: "paid" }), params("l1"))).status).toBe(400);
+    expect((await logMilestone(json({ kind: "meeting_held", occurredAt: "soon" }), params("l1"))).status).toBe(400);
+    const nextWeek = new Date(TEN_IST.getTime() + 7 * 86_400_000).toISOString();
+    expect((await logMilestone(json({ kind: "meeting_booked", occurredAt: nextWeek }), params("l1"))).status).toBe(400);
+    expect((await logMilestone(json({ kind: "meeting_held", note: "x".repeat(501) }), params("l1"))).status).toBe(400);
+    expect(calls.milestones).toEqual([]);
+  });
+
+  it("logging a booked meeting records it, stops outreach, moves a new lead to qualifying and audits it", async () => {
+    as("Employee");
+    const response = await logMilestone(json({ kind: "meeting_booked", note: " Demo Tue " }), params("l1"));
+    expect(response.status).toBe(201);
+    expect(await response.json()).toEqual({ kind: "meeting_booked", occurredAt: TEN_IST.toISOString(), changes: { stage: "qualifying" }, stoppedEnrollments: 1 });
+    expect(calls.milestones).toEqual([{ leadId: "l1", milestone: { kind: "meeting_booked", occurredAt: TEN_IST.toISOString(), note: "Demo Tue" } }]);
+    expect(calls.stopped).toEqual([{ organizationId: "org-1", leadId: "l1", reason: "milestone_meeting_booked" }]);
+    expect(calls.updates).toEqual([{ id: "l1", input: { stage: "qualifying" } }]);
+    expect(calls.audits).toEqual([expect.objectContaining({
+      action: "crm.lead.milestone_recorded", metadata: { kind: "meeting_booked", occurredAt: TEN_IST.toISOString(), stoppedEnrollments: 1, stage: "qualifying" },
+    })]);
+  });
+
+  it("a Manager may log a trial on someone else's lead; a lead past proposal keeps its stage", async () => {
+    as("Manager");
+    leads = [lead({ id: "l2", ownerUserId: "other", stage: "negotiation" })];
+    stopState.count = 0;
+    const response = await logMilestone(json({ kind: "trial_started", occurredAt: "2026-11-12T09:00:00Z" }), params("l2"));
+    expect(response.status).toBe(201);
+    expect((await response.json()).changes).toEqual({});
+    expect(calls.milestones[0].milestone).toMatchObject({ kind: "trial_started", occurredAt: "2026-11-12T09:00:00.000Z", note: null });
+    expect(calls.updates).toEqual([]);
   });
 });
