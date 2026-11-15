@@ -21,7 +21,7 @@ test.describe("Sprint 17 pilot readiness workflows", () => {
     await page.goto("/admin/audit-logs");
 
     await expect(page.getByText("Audit Logs").first()).toBeVisible();
-    await page.getByRole("button", { name: "ai" }).click();
+    await page.getByRole("button", { name: "ai", exact: true }).click();
     await expect(page.getByText("current filter: ai")).toBeVisible();
 
     await page.goto("/dashboard");

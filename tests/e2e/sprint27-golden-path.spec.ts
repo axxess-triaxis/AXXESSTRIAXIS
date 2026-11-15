@@ -1,9 +1,12 @@
 import { expect, test } from "@playwright/test";
-import { loginAs, seededUsers, skipUnlessSeeded } from "./helpers";
+import { loginAs, seededUsers, skipUnlessDemoTarget, skipUnlessSeeded } from "./helpers";
 
 test.describe("Sprint 27 live tenant workflow execution", () => {
   test.beforeEach(() => {
     skipUnlessSeeded();
+    // "Dibrugarh referral SLA review" is a sample mailbox message in IntegrationsSection.tsx, shown only
+    // in demo mode (SA-2b); it is not a database seed row. The release gate runs this with demo mode on.
+    skipUnlessDemoTarget();
   });
 
   test("shows the pilot golden path from dashboard through review, import, and task evidence", async ({ page }) => {

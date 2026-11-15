@@ -13,6 +13,18 @@ export function skipUnlessSeeded() {
   test.skip(process.env.E2E_RUN_SEEDED !== "true", "Set E2E_RUN_SEEDED=true against the Sprint 7 seeded Supabase branch.");
 }
 
+// Specs that read demo-only data or open protected pages without signing in need a target built with
+// NEXT_PUBLIC_AXXESS_DEMO_MODE=true: the local dev server in CI (.github/workflows/playwright.yml and
+// pilot-golden-path-release-gate.yml set it) or the investor demo. Staging is not a demo build, so these
+// skip there. Set NEXT_PUBLIC_AXXESS_DEMO_MODE=true in the Playwright environment only when the target
+// really is a demo build.
+export function skipUnlessDemoTarget() {
+  test.skip(
+    process.env.NEXT_PUBLIC_AXXESS_DEMO_MODE !== "true",
+    "Needs a target built with NEXT_PUBLIC_AXXESS_DEMO_MODE=true; set it here only when the target is a demo build.",
+  );
+}
+
 export async function loginAs(page: Page, email: string, password = seededPassword) {
   // The What's New panel opens once per release in a fresh browser and covers the page.
   await page.addInitScript((version) => window.localStorage.setItem("axxess.whats-new.last-seen-version", version), releaseVersion);

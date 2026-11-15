@@ -101,10 +101,11 @@ export const TasksSection = () => {
 
   const canManageTasks = Boolean(user && ["Super Admin", "Organization Admin", "Executive", "Manager", "Employee"].includes(user.role));
 
+  // The save handlers clear the toast before saving and then set a success toast before calling
+  // this reload, so clearing it here too would hide every "... created." / "... updated." message.
   const loadTasks = useCallback(async () => {
     if (!scope) return;
     setLoading(true);
-    setToast(null);
     try {
       const [taskRows, projectRows, programRows, userRows] = await Promise.all([
         applicationServices.tasksRepository.list(scope),

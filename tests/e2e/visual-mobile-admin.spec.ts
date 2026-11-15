@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { skipUnlessDemoTarget } from "./helpers";
 
 const screenshotRoutes = [
   { name: "organization-admin", path: "/admin/organization?screenshot=true", heading: "Organization Admin" },
@@ -8,6 +9,11 @@ const screenshotRoutes = [
 
 test.describe("mobile admin visual screenshots", () => {
   test.use({ viewport: { width: 390, height: 844 }, isMobile: true });
+
+  // Opens /admin pages without signing in, which only a demo build allows.
+  test.beforeEach(() => {
+    skipUnlessDemoTarget();
+  });
 
   for (const route of screenshotRoutes) {
     test(`captures ${route.name}`, async ({ page }) => {
