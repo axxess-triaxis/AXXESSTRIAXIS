@@ -1,8 +1,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 const state = { session: null as null | { user: { id: string; organizationId: string; role: string }; accessToken?: string } };
-const calls = { create: [] as unknown[], approve: [] as unknown[], enroll: [] as unknown[], denied: [] as unknown[], audits: [] as Array<{ action: string }> };
+const calls = { list: [] as unknown[], create: [] as unknown[], approve: [] as unknown[], enroll: [] as unknown[], denied: [] as unknown[], audits: [] as Array<{ action: string }> };
 let approveResult = true;
+const listResult = [{ id: "seq-1", name: "Network", status: "approved", stepCount: 3, subjects: ["Hi", "Re: Hi", "Close"], createdAt: "2026-11-14T15:24:00Z", approvedAt: "2026-11-14T15:24:01Z", enrollments: { active: 0, completed: 0, stopped: 2 } }];
 let enrollResult = { sequenceFound: true, enrolled: 1, skipped: [{ leadId: "l2", reason: "no_email" }] };
 
 vi.mock("../../../../auth/serverSession", () => ({ getServerAuthSession: async () => state.session }));
@@ -12,12 +13,13 @@ vi.mock("../../../../repositories/supabaseEnterpriseRepositories", () => ({
 }));
 vi.mock("../../../../services/audit/auditEvents", () => ({ recordDeniedAttempt: async (_s: unknown, a: unknown) => { calls.denied.push(a); } }));
 vi.mock("../../../../repositories/outboundRepository", () => ({
+  listSequences: async (scope: { organizationId: string }) => { calls.list.push(scope.organizationId); return listResult; },
   createSequence: async (scope: { organizationId: string }, def: unknown) => { calls.create.push({ org: scope.organizationId, def }); return "seq-1"; },
   approveSequence: async (_scope: unknown, id: string) => { calls.approve.push(id); return approveResult; },
   enrollLeads: async (_scope: unknown, id: string, leadIds: string[]) => { calls.enroll.push({ id, leadIds }); return enrollResult; },
 }));
 
-import { POST as create } from "./route";
+import { GET as list, POST as create } from "./route";
 import { POST as act } from "./[id]/route";
 
 const as = (role: string) => { state.session = { user: { id: "u1", organizationId: "org-1", role }, accessToken: "t" }; };
@@ -40,6 +42,19 @@ describe("outreach sequence routes", () => {
     expect((await act(req({ action: "approve" }), params("seq-1"))).status).toBe(403);
     expect(calls.denied).toHaveLength(2);
     expect(calls.create).toEqual([]);
+  });
+
+  it("lists sequences for senior roles only, scoped to the caller's organization", async () => {
+    expect((await list()).status).toBe(401);
+    as("Employee");
+    expect((await list()).status).toBe(403);
+    expect(calls.denied).toEqual([{ route: "/api/outreach/sequences", method: "GET" }]);
+    as("Organization Admin");
+    const response = await list();
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ sequences: listResult });
+    expect(calls.list).toEqual(["org-1"]);
+    expect(calls.audits).toEqual([]);
   });
 
   it("creates a draft sequence from a valid definition", async () => {

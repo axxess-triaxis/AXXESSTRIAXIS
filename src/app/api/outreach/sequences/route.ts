@@ -1,10 +1,23 @@
 import { NextResponse } from "next/server";
 import { getServerAuthSession } from "../../../../auth/serverSession";
-import { createSequence } from "../../../../repositories/outboundRepository";
+import { createSequence, listSequences } from "../../../../repositories/outboundRepository";
 import { auditLogsRepository, tenantScopeFromUser } from "../../../../repositories/supabaseEnterpriseRepositories";
 import { canReadAllLeads } from "../../../../security/rbac";
 import { recordDeniedAttempt } from "../../../../services/audit/auditEvents";
 import { validateSequence } from "../../../../services/outbound/sequenceDefinition";
+
+// List the organization's outreach sequences, newest first, with enrollment counts (read-only).
+// Senior roles only. Subjects are returned; email bodies are not.
+export async function GET() {
+  const session = await getServerAuthSession(true);
+  if (!session) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+  if (!canReadAllLeads(session.user.role)) {
+    await recordDeniedAttempt(session, { route: "/api/outreach/sequences", method: "GET" });
+    return NextResponse.json({ error: "Forbidden." }, { status: 403 });
+  }
+  const scope = tenantScopeFromUser(session.user, session.accessToken);
+  return NextResponse.json({ sequences: await listSequences(scope) });
+}
 
 // Create an outreach email sequence as a draft (GTM plan 2026-11-11). Senior roles only.
 // A draft never sends; it must be approved through POST /api/outreach/sequences/[id].
