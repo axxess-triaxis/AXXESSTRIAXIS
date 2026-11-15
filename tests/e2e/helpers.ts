@@ -49,5 +49,6 @@ export async function logout(page: Page) {
     page.waitForResponse((response) => response.url().includes("/api/auth/logout")),
     page.getByRole("button", { name: "Sign out" }).click(),
   ]);
-  await expect(page).toHaveURL(/auth|dashboard/);
+  // Signing out keeps the current URL and shows "Sign in required" in place (staging run 4).
+  await expect(page.getByText("Sign in required").or(page.getByRole("heading", { name: "Sign in" }))).toBeVisible();
 }
