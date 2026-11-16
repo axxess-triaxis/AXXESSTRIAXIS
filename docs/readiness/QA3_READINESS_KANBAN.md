@@ -456,6 +456,16 @@ No cards moved yet.
 - Added the same day, by founder decision: Employees see only their own tasks, projects, meetings and timeline events.
 - Still open: the leads page and agent sidebar link (M1 to M3), a finance role (M23), `programs` readable by outside roles, and `project_updates`, `decisions`, `risks` and `meeting_attendees` readable by every member.
 
+## App E2E Suite on Staging Update (2026-11-15)
+
+- Card: E2E-STAGING-TRIAGE, the app Playwright suite (`tests/e2e`) against staging.
+- Column: Blocked, not Verified. Staging went from 13 passed / 33 failed to 18 passed / 25 skipped / 3 failed (run 5). The 25 skips are demo-build-only specs.
+- Fixed: the create/update toast product bug (deployed to staging `94b003c4`), plus test drift and the parallel sign-out collisions.
+- Blocker 1: no documents seed, so the `knowledge-hub` admin test cannot pass. Owner: founder decision. Next review: 2026-11-29.
+- Blocker 2: intermittent staging slowness (saves over 5 to 30 s, "Checking session" over 20 s). Owner: Claude Code investigation. Next review: 2026-11-29.
+- Open product question: should Sign out end every session of the user (current global scope)?
+- Evidence: `docs/readiness/E2E_STAGING_TRIAGE_CLOSEOUT_2026_11_15.md`, PR #504.
+
 ## Lead Milestones Update (2026-11-15)
 
 - Card: LEAD-MILESTONES (GTM funnel: meetings and trials).

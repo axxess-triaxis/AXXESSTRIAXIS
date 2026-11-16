@@ -56,7 +56,7 @@ date) rather than this ledger asserting them from the founder's paraphrase alone
 
 | Decision | Date | Session/tool | Issue ID | Why | Outcome | Commit/PR | Verification | Closeout |
 |---|---|---|---|---|---|---|---|---|
-| Adopt the Paxel 9.5 Practice Standards as a standing rule in `CLAUDE.md` and mirror them in the closeout template, PR template, test governance, governance summary and contributing guide | 2026-11-01 | Founder request, executed by Claude Code | PAXEL-9-5 | Paxel Report #28 (`results/z3w3ytji`) found outcomes tracked for only 8 of 19 option choices and 1 of 21 product insights, 0.59 unresolved errors per planned session, a deploy record closed at "ready" without a live check, and 21 bare "Try again" prompts; Claude Code's axis estimate (not YC's) averaged 7.2 | Adopted; Pending, review by 2026-11-15 (are the rules being followed); effect on the score checked at the next monthly Paxel rerun | This branch (`docs/paxel-9-5-practice-standards`) | Docs-only path check over the changed files | `docs/readiness/PAXEL_REPORT_28_BEHAVIORAL_ANALYSIS_2026_11_01.md` |
+| Adopt the Paxel 9.5 Practice Standards as a standing rule in `CLAUDE.md` and mirror them in the closeout template, PR template, test governance, governance summary and contributing guide | 2026-11-01 | Founder request, executed by Claude Code | PAXEL-9-5 | Paxel Report #28 (`results/z3w3ytji`) found outcomes tracked for only 8 of 19 option choices and 1 of 21 product insights, 0.59 unresolved errors per planned session, a deploy record closed at "ready" without a live check, and 21 bare "Try again" prompts; Claude Code's axis estimate (not YC's) averaged 7.2 | Adopted. Reviewed 2026-11-15 in Report #32: partly followed (regression-test-first, staging live checks and dated outcomes followed in PR #504; plan-first well below 95% in desktop sessions running in auto mode; 12 bare retry or re-check prompts in the window). Pending, review by 2026-11-29 | This branch (`docs/paxel-9-5-practice-standards`) | Docs-only path check over the changed files | `docs/readiness/PAXEL_REPORT_28_BEHAVIORAL_ANALYSIS_2026_11_01.md`; review: `docs/readiness/PAXEL_REPORT_32_BEHAVIORAL_ANALYSIS_2026_11_15.md` |
 
 From 2026-11-01, under rule 6 of that standard, a new row's Outcome is either the observed result or
 `Pending, review by <date>` at most 14 days out, and a weekly pass closes or re-dates Pending rows.
@@ -95,3 +95,17 @@ Existing rows are not rewritten.
 | Decision | Date | Session/tool | Issue ID | Why | Outcome | Commit/PR | Verification | Closeout |
 |---|---|---|---|---|---|---|---|---|
 | The YC demo's staging minute uses a new `/admin/stack` page built on existing audit records | 2026-11-08 | Founder request, executed by Claude Code | STACK-STATUS-PAGE | Founder asked for schema, stats and workflow runs on staging | Partial: merged, deployed, 5 stack scenarios pass on staging; signed-in view pending. Review by 2026-11-22 | PR #459, `c2bc70c`; staging `eec34ae` | See closeout | `docs/readiness/STACK_STATUS_PAGE_CLOSEOUT_2026_11_08.md` |
+
+## App E2E suite on staging (2026-11-15)
+
+| Decision | Date | Session/tool | Issue ID | Why | Outcome | Commit/PR | Verification | Closeout |
+|---|---|---|---|---|---|---|---|---|
+| Specs needing a demo-mode build skip on staging instead of being rewritten for live data | 2026-11-15 | Claude Code, from the triage task | E2E-STAGING-TRIAGE | CI runs them only on demo builds; "Dibrugarh" is demo-only sample data, not a seed row | 25 skips on staging, CI coverage unchanged. Pending, review by 2026-11-29 | #504 (`d41898e3`) | Staging run 5: 18 passed, 25 skipped, 3 failed | `docs/readiness/E2E_STAGING_TRIAGE_CLOSEOUT_2026_11_15.md` |
+| Create, update and save messages stay visible after the list reloads | 2026-11-15 | Claude Code, product bug found in triage | E2E-STAGING-TRIAGE | The reload cleared the toast in the same render, so no user ever saw it, since Sprint 7 | Working on staging (`94b003c4`). Pending on production, review by 2026-11-29 | #504 (`d41898e3`) | Unit regression test fails on the old code and passes now; "Task created." and "Project created." seen on staging in run 3 | `docs/readiness/E2E_STAGING_TRIAGE_CLOSEOUT_2026_11_15.md` |
+| Seeded e2e runs use one worker, and sign-out scope stays global pending founder decision | 2026-11-15 | Claude Code; scope question to founder | E2E-STAGING-TRIAGE | Global logout revoked parallel tests' sessions (run 1) | "Sign in required" mid-test gone in runs 2 to 5. Pending founder decision, review by 2026-11-29 | #504 (`bb0a7212`) | Runs 2 to 5 | `docs/readiness/E2E_STAGING_TRIAGE_CLOSEOUT_2026_11_15.md` |
+
+## Vercel function region (2026-11-15)
+
+| Decision | Date | Session/tool | Issue ID | Why | Outcome | Commit/PR | Verification | Closeout |
+|---|---|---|---|---|---|---|---|---|
+| Run Vercel functions in `syd1`, next to the production database | 2026-11-15 | Founder approved, executed by Claude Code | VERCEL-REGION | Functions ran in `iad1` while databases are in Tokyo and Sydney; staging API calls took 1 to 3 s each | Working on staging (`bom1::syd1`, medians 25 to 30% faster). Production pending founder spot check, review by 2026-11-29 | #505 (`08eb7f8d`) | Staging probe before and after | `docs/readiness/VERCEL_FUNCTION_REGION_CLOSEOUT_2026_11_15.md` |

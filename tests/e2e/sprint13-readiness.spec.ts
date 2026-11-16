@@ -1,6 +1,12 @@
 import { expect, test } from "@playwright/test";
+import { skipUnlessDemoTarget } from "./helpers";
 
 test.describe("Sprint 13 enterprise readiness routes", () => {
+  // Opens /onboarding and /admin pages without signing in, which only a demo build allows.
+  test.beforeEach(() => {
+    skipUnlessDemoTarget();
+  });
+
   test("loads sign-up and onboarding route surfaces", async ({ page }) => {
     await page.goto("/auth/sign-up");
     await expect(page.getByRole("heading", { name: "Create your AXXESS account" })).toBeVisible();

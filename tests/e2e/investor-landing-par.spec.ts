@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { skipUnlessDemoTarget } from "./helpers";
 
 // Regressions found comparing investor.triaxisventures.com with landing.triaxisventures.com on
 // 2026-11-04. Needs a server built with NEXT_PUBLIC_AXXESS_DEMO_MODE=true. The browser uses a zone no
@@ -26,6 +27,11 @@ const demoRoutes = [
 test.describe("Investor demo parity", () => {
   // The dev server compiles each route on first visit, which can take over a minute.
   test.setTimeout(180_000);
+
+  // Staging and production are not demo builds: there these routes call real tenant APIs without a session.
+  test.beforeEach(() => {
+    skipUnlessDemoTarget();
+  });
 
   // This spec can also point at the live demo via PLAYWRIGHT_BASE_URL, so keep test traffic out of
   // product analytics.

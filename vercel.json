@@ -3,6 +3,9 @@
   "buildCommand": "pnpm run build",
   "devCommand": "pnpm run dev",
   "installCommand": "pnpm install --frozen-lockfile",
+  "regions": [
+    "syd1"
+  ],
   "crons": [
     {
       "path": "/api/cron/pilot-command-center-snapshot",
