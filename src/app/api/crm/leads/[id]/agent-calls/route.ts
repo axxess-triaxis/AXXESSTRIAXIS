@@ -4,6 +4,8 @@ import { loadCallContext, recordCall } from "../../../../../../repositories/lead
 import { CURRENT_REGISTRATIONS, decideCall } from "../../../../../../services/outbound/callQueue";
 import { isCallismaticConfigured, startAgentCall } from "../../../../../../services/outbound/callismaticClient";
 import { loadVisibleLead, requireCrmAccess } from "../../../leadAccess";
+import { loadLeadContext } from "../../../../../../repositories/leadContextRepository";
+import { leadBrief } from "../../../../../../services/crm/leadBrief";
 
 // Call with agent (agent call pipeline, 2026-11-13): one click asks Callismatic's voice agent to call
 // the lead. The contactability gate decides first, as channel voice_ai. Until India DLT, UAE TDRA and
@@ -38,9 +40,13 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
   }
 
   const job = await createAgentCallJob(access.scope, id);
+  // The brief is background only: if the history cannot be read, the call goes ahead without it.
+  const brief = await loadLeadContext(access.scope.organizationId, id)
+    .then((loaded) => (loaded ? leadBrief(loaded.timeline) : undefined))
+    .catch(() => undefined);
   const started = await startAgentCall({
     jobId: job.id, leadId: id, organizationId: access.scope.organizationId, phoneE164: lead.phoneE164 ?? "",
-    country: lead.country ?? "", title: lead.title, contactName: lead.contactName, company: lead.organizationName,
+    country: lead.country ?? "", title: lead.title, contactName: lead.contactName, company: lead.organizationName, context: brief,
   });
   if (!started.ok) {
     await setAgentCallJobStatus(access.scope, job.id, { status: "failed", failureReason: started.reason });
