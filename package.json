@@ -191,13 +191,13 @@
     "@vitest/coverage-v8": "5.0.5",
     "eslint": "^9.39.4",
     "eslint-config-next": "^16.4.4",
-    "jsdom": "^30.1.3",
+    "jsdom": "^31.0.0",
     "supabase": "2.117.0",
     "tailwindcss": "4.3.3",
     "typescript": "^6.0.3",
     "vercel": "65.9.0",
     "vite": "8.3.5",
-    "vitest": "^5.0.5"
+    "vitest": "^5.1.0"
   },
   "peerDependencies": {
     "react": "19.3.1",
