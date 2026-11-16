@@ -13,6 +13,7 @@ import { canReadAllLeads } from "../../security/rbac";
 import type { AgentScope } from "../../security/agentScope";
 import { isUuid, parseConversationInput, parseUpsertLeadInput, searchTerm } from "../crm/leadContext";
 import { getContextLead, loadLeadContext, recordConversation, searchContextLeads, upsertAgentLead } from "../../repositories/leadContextRepository";
+import { recordSystemAudit, stopActiveEnrollments, updateLeadFromReply } from "../../repositories/replyRepository";
 import type { McpToolDefinition, McpToolResult } from "./toolRegistry";
 
 function text(payload: unknown): McpToolResult {
@@ -103,7 +104,7 @@ export const upsertLeadTool: McpToolDefinition = {
 export const logConversationTool: McpToolDefinition = {
   name: "log_conversation",
   version: "1",
-  description: "Append a summary of a conversation with a lead (a call, SMS, WhatsApp or email thread, or chat) to the lead's history. Pass externalId (your call or thread id) so a retry is not stored twice.",
+  description: "Append a summary of a conversation with a lead (a call, SMS, WhatsApp or email thread, or chat) to the lead's history. Pass externalId (your call or thread id) so a retry is not stored twice. An inbound conversation stops the lead's active cold sequence and moves a new lead to qualifying.",
   requiredCapability: "log_conversation",
   criticality: "auto",
   inputSchema: {
@@ -126,7 +127,23 @@ export const logConversationTool: McpToolDefinition = {
     if (!lead) return refuse("No lead with that id in this organization.");
     const agentConnectionId = isUuid(scope.agentConnectionId) ? scope.agentConnectionId : null;
     const result = await recordConversation(scope.organizationId, agentConnectionId, parsed.value);
-    return text({ leadId: lead.id, conversationId: result.id, duplicate: result.duplicate });
+    // Automation plan Phase 3 (2026-11-16): the lead answering on any channel counts like an email reply.
+    // Its cold sequence stops and a new lead moves to qualifying, once (a repeat changes nothing).
+    const applied: string[] = [];
+    if (!result.duplicate && parsed.value.direction === "inbound") {
+      const source = parsed.value.source;
+      const stopped = await stopActiveEnrollments(scope.organizationId, lead.id, `conversation_${source}`);
+      if (stopped) applied.push(`stopped_${stopped}_enrollments`);
+      if (lead.stage === "new") {
+        await updateLeadFromReply(scope.organizationId, lead.id, { stage: "qualifying" });
+        await recordSystemAudit(scope.organizationId, {
+          action: "crm.lead.updated", resourceType: "crm_lead", resourceId: lead.id,
+          metadata: { via: "conversation", source, changed: ["stage"], stage: "qualifying" },
+        });
+        applied.push("stage_qualifying");
+      }
+    }
+    return text({ leadId: lead.id, conversationId: result.id, duplicate: result.duplicate, applied });
   },
 };
 
