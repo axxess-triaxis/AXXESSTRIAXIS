@@ -12,6 +12,8 @@ export type AgentCallRequest = {
   title: string;
   contactName?: string;
   company?: string;
+  // Automation plan Phase 2 (2026-11-16): the lead's history as background for the voice agent.
+  context?: string;
 };
 
 export type StartAgentCallResult = { ok: true } | { ok: false; reason: string };
@@ -41,6 +43,7 @@ export async function startAgentCall(request: AgentCallRequest, fetchImpl: typeo
         title: request.title,
         contact_name: request.contactName ?? null,
         company: request.company ?? null,
+        context: request.context ?? null,
       }),
       signal: AbortSignal.timeout(10_000),
     });

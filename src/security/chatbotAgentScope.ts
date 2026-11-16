@@ -21,7 +21,9 @@ import type { AgentCapability, AgentScope } from "./agentScope";
 // Every capability's requisite NavSection. query_external_model has none -- it is withheld from
 // every role unconditionally this sprint (see below), not mapped to a section. log_agent_call is
 // withheld too (2026-11-13): only STILL reports a voice-agent call's result; the chatbot must not.
-type ChatbotCapability = Exclude<AgentCapability, "query_external_model" | "log_agent_call">;
+// upsert_lead and log_conversation are withheld too (2026-11-16): they record what an agent or channel
+// did, and a person edits leads on the Leads page. The two read tools follow the Leads page's access.
+type ChatbotCapability = Exclude<AgentCapability, "query_external_model" | "log_agent_call" | "upsert_lead" | "log_conversation">;
 const capabilitySection: Record<ChatbotCapability, NavSection> = {
   create_task: "tasks",
   list_tasks: "tasks",
@@ -37,6 +39,8 @@ const capabilitySection: Record<ChatbotCapability, NavSection> = {
   list_documents: "documents",
   get_dashboard_snapshot: "dashboard",
   search_audit_logs: "audit-logs",
+  get_lead_context: "leads",
+  search_leads: "leads",
 };
 
 // query_external_model is deliberately excluded from this table -- nested-LLM recursion/budget risk

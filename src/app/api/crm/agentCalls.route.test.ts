@@ -34,6 +34,12 @@ vi.mock("../../../repositories/agentCallRepository", () => ({
   setAgentCallJobStatus: async (_s: unknown, jobId: string, change: Record<string, unknown>) => { calls.statuses.push({ jobId, ...change }); },
   latestAgentCallJobs: async () => new Map([["l1", { id: "job-1", leadId: "l1", status: "completed", outcome: "interested" }]]),
 }));
+vi.mock("../../../repositories/leadContextRepository", () => ({
+  loadLeadContext: async (_org: string, id: string) => (id === "l1"
+    ? { lead: { id }, timeline: [{ kind: "milestone", at: "2026-11-14T09:00:00Z", milestone: "meeting_booked", note: "Demo Tue" }] }
+    : null),
+}));
+
 vi.mock("../../../services/outbound/callismaticClient", () => ({
   isCallismaticConfigured: () => state.configured,
   startAgentCall: async (r: Record<string, unknown>) => { calls.started.push(r); return state.start; },
@@ -77,7 +83,7 @@ describe("agent call route", () => {
     const res = await POST(req(), params("l1"));
     expect(res.status).toBe(202);
     expect(await res.json()).toEqual({ jobId: "job-1", status: "calling" });
-    expect(calls.started).toEqual([expect.objectContaining({ jobId: "job-1", leadId: "l1", organizationId: "org-1", phoneE164: "+919876543210", country: "IN" })]);
+    expect(calls.started).toEqual([expect.objectContaining({ jobId: "job-1", leadId: "l1", organizationId: "org-1", phoneE164: "+919876543210", country: "IN", context: "2026-11-14 meeting booked: Demo Tue" })]);
     expect(calls.recorded).toEqual([expect.objectContaining({ decision: "allowed", channel: "voice_ai", outcome: null })]);
     expect(calls.statuses).toEqual([{ jobId: "job-1", status: "calling" }]);
   });

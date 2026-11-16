@@ -22,8 +22,8 @@ describe("synthesizeChatbotAgentScope", () => {
   it("Super Admin gets every capability except query_external_model", () => {
     expect(capabilitiesFor("Super Admin")).toEqual([
       "add_stakeholder_note", "create_meeting", "create_project", "create_stakeholder", "create_task",
-      "get_dashboard_snapshot", "list_documents", "list_meetings", "list_projects", "list_stakeholders",
-      "list_tasks", "query_knowledge_hub", "search_audit_logs", "update_task_status",
+      "get_dashboard_snapshot", "get_lead_context", "list_documents", "list_meetings", "list_projects", "list_stakeholders",
+      "list_tasks", "query_knowledge_hub", "search_audit_logs", "search_leads", "update_task_status",
     ].sort());
   });
 
@@ -43,13 +43,20 @@ describe("synthesizeChatbotAgentScope", () => {
 
   it("Employee loses stakeholder tools and audit logs relative to Executive", () => {
     expect(capabilitiesFor("Employee")).toEqual([
-      "create_meeting", "create_project", "create_task", "get_dashboard_snapshot", "list_documents",
-      "list_meetings", "list_projects", "list_tasks", "query_knowledge_hub", "update_task_status",
+      "create_meeting", "create_project", "create_task", "get_dashboard_snapshot", "get_lead_context", "list_documents",
+      "list_meetings", "list_projects", "list_tasks", "query_knowledge_hub", "search_leads", "update_task_status",
     ].sort());
   });
 
-  it("Consultant matches Employee's capability set exactly", () => {
-    expect(capabilitiesFor("Consultant")).toEqual(capabilitiesFor("Employee"));
+  it("Consultant matches Employee's capability set except the lead tools (no Leads page)", () => {
+    expect(capabilitiesFor("Consultant")).toEqual(capabilitiesFor("Employee").filter((c) => c !== "get_lead_context" && c !== "search_leads"));
+  });
+
+  it("never offers the copilot the lead write tools", () => {
+    for (const role of ["Super Admin", "Organization Admin", "Manager", "Employee"] as RoleName[]) {
+      expect(capabilitiesFor(role)).not.toContain("upsert_lead");
+      expect(capabilitiesFor(role)).not.toContain("log_conversation");
+    }
   });
 
   it("Guest is limited to read-only dashboard/knowledge/documents capabilities", () => {
