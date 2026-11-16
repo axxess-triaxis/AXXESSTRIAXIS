@@ -33,13 +33,15 @@ export async function loginAs(page: Page, email: string, password = seededPasswo
   const emailVisible = await emailField.isVisible({ timeout: 5_000 }).catch(() => false);
   if (!emailVisible) {
     await page.goto("/dashboard");
-    await expect(page.getByText("Executive Dashboard").first()).toBeVisible({ timeout: 20_000 });
+    // Staging sign-in can take over 20 s on a cold start (seen 2026-11-16: "Signing in..." still showing at 20 s).
+  await expect(page.getByText("Executive Dashboard").first()).toBeVisible({ timeout: 45_000 });
     return;
   }
   await emailField.fill(email);
   await page.getByLabel("Password").fill(password);
   await page.getByRole("button", { name: "Sign in" }).click();
-  await expect(page.getByText("Executive Dashboard").first()).toBeVisible({ timeout: 20_000 });
+  // Staging sign-in can take over 20 s on a cold start (seen 2026-11-16: "Signing in..." still showing at 20 s).
+  await expect(page.getByText("Executive Dashboard").first()).toBeVisible({ timeout: 45_000 });
 }
 
 export async function logout(page: Page) {

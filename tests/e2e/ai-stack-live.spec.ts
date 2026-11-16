@@ -8,7 +8,8 @@ import { createAgentConnection, ensureKnowledgeDocuments, mcp, mcpText, revokeAg
 // goes to the real deployment: real ingest, real retrieval, real model providers, real audit rows.
 
 const [riskRegister, governancePolicy] = knowledgeDocuments;
-type RagAnswer = { answer?: string; citations?: Array<{ title?: string; excerpt?: string }>; retrievalMode?: string; error?: string };
+// /api/rag/query returns its cited passages as `sources` (RagAnswer in governedRag.ts).
+type RagAnswer = { answer?: string; sources?: Array<{ title?: string; excerpt?: string }>; retrievalMode?: string; error?: string };
 
 test.describe("AI stack live: RAG, MCP, agentic chat, AI workspace", () => {
   test.describe.configure({ timeout: 120_000 });
@@ -28,11 +29,11 @@ test.describe("AI stack live: RAG, MCP, agentic chat, AI workspace", () => {
     const response = await page.request.post("/api/rag/query", { data: { question: riskRegister.question, limit: 5 }, timeout: 60_000 });
     const body = await response.json() as RagAnswer;
     await test.info().attach("rag-response.json", { body: JSON.stringify(body, null, 2), contentType: "application/json" });
-    console.log(`RAG retrievalMode=${String(body.retrievalMode)} citations=${JSON.stringify((body.citations ?? []).map((c) => c.title))}`);
+    console.log(`RAG retrievalMode=${String(body.retrievalMode)} citations=${JSON.stringify((body.sources ?? []).map((c) => c.title))}`);
     expect(response.ok(), JSON.stringify(body)).toBe(true);
-    const titles = (body.citations ?? []).map((citation) => citation.title);
+    const titles = (body.sources ?? []).map((citation) => citation.title);
     expect(titles, `retrievalMode=${String(body.retrievalMode)} answer=${String(body.answer).slice(0, 300)}`).toContain(riskRegister.title);
-    const cited = (body.citations ?? []).map((citation) => citation.excerpt ?? "").join(" ");
+    const cited = (body.sources ?? []).map((citation) => citation.excerpt ?? "").join(" ");
     expect(`${body.answer ?? ""} ${cited}`).toMatch(riskRegister.fact);
   });
 
@@ -44,7 +45,7 @@ test.describe("AI stack live: RAG, MCP, agentic chat, AI workspace", () => {
       return;
     }
     const body = await response.json() as RagAnswer;
-    expect((body.citations ?? []).map((citation) => citation.title)).not.toContain(governancePolicy.title);
+    expect((body.sources ?? []).map((citation) => citation.title)).not.toContain(governancePolicy.title);
     expect(body.answer ?? "").not.toMatch(governancePolicy.fact);
   });
 
@@ -115,7 +116,7 @@ test.describe("AI stack live: RAG, MCP, agentic chat, AI workspace", () => {
     expect(answer.ok()).toBe(true);
     const body = await answer.json() as RagAnswer;
     // The UI must show what the API returned: the cited title when there is one, else the answer text.
-    const expected = body.citations?.[0]?.title ?? (body.answer ?? "").slice(0, 40);
+    const expected = body.sources?.[0]?.title ?? (body.answer ?? "").slice(0, 40);
     await expect(page.getByText(expected, { exact: false }).first()).toBeVisible({ timeout: 20_000 });
   });
 });

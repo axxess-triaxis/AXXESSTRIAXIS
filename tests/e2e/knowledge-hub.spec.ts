@@ -22,7 +22,7 @@ test.describe("Sprint 9 Knowledge Hub", () => {
     await page.getByRole("button", { name: /Alpha Risk Register 2026|Risk|Architecture/i }).filter({ has: page.getByRole("heading") }).first().click();
     await expect(page.getByText("Document Preview")).toBeVisible();
 
-    await page.getByRole("button", { name: /Archive/i }).click();
+    await page.getByRole("button", { name: "Un-index (Archive)" }).click();
     await expect(page.getByText(/Document archived/i)).toBeVisible();
     await page.getByRole("button", { name: /Archived/i }).click();
     await expect(page.getByRole("button", { name: /Restore/i })).toBeVisible();
