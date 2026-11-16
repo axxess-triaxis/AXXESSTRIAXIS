@@ -32,7 +32,12 @@ export type AgentCapability =
   | "add_stakeholder_note"
   | "search_audit_logs"
   // Agent call pipeline (2026-11-13):
-  | "log_agent_call";
+  | "log_agent_call"
+  // Automation plan Phase 1, lead context layer (2026-11-16):
+  | "get_lead_context"
+  | "search_leads"
+  | "upsert_lead"
+  | "log_conversation";
 
 // Capability is distinct from criticality (McpToolDefinition.criticality, toolRegistry.ts):
 // capability answers "can this connection call this tool at all," criticality answers "does
@@ -62,10 +67,15 @@ export const mcp2AgentCapabilities: AgentCapability[] = [
 // Agent call pipeline (2026-11-13): only STILL's connection needs this, so it is opt-in like MCP2.
 export const stackAgentCapabilities: AgentCapability[] = ["log_agent_call"];
 
+// Automation plan Phase 1 (2026-11-16): the lead context tools. Opt-in like MCP2; STILL's connection
+// and any external agent that should read or record leads get them through PATCH /api/agents/connections.
+export const crmAgentCapabilities: AgentCapability[] = ["get_lead_context", "search_leads", "upsert_lead", "log_conversation"];
+
 export const allAgentCapabilities: AgentCapability[] = [
   ...mcp1AgentCapabilities,
   ...mcp2AgentCapabilities,
   ...stackAgentCapabilities,
+  ...crmAgentCapabilities,
 ];
 
 // New connections default to the already-reviewed MCP1 surface. MCP2 tools are deliberately

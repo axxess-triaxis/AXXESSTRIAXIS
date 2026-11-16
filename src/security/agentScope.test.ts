@@ -28,6 +28,10 @@ describe("agentScope", () => {
       "add_stakeholder_note",
       "search_audit_logs",
       "log_agent_call",
+      "get_lead_context",
+      "search_leads",
+      "upsert_lead",
+      "log_conversation",
     ]);
     expect(defaultAgentCapabilities).not.toContain("log_agent_call");
     expect(defaultAgentCapabilities).not.toEqual(allAgentCapabilities);

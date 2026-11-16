@@ -70,12 +70,13 @@ describe("agentToolRegistry", () => {
   it("registers MCP1 tools plus MCP2's bounded tool expansion", () => {
     expect(agentToolRegistry.map((tool) => tool.name).sort()).toEqual([
       "add_stakeholder_note", "create_meeting", "create_project", "create_stakeholder", "create_task",
-      "get_dashboard_snapshot", "list_documents", "list_meetings", "list_projects", "list_stakeholders",
-      "list_tasks", "log_agent_call", "query_external_model", "query_knowledge_hub", "search_audit_logs", "update_task_status",
+      "get_dashboard_snapshot", "get_lead_context", "list_documents", "list_meetings", "list_projects", "list_stakeholders",
+      "list_tasks", "log_agent_call", "log_conversation", "query_external_model", "query_knowledge_hub", "search_audit_logs",
+      "search_leads", "update_task_status", "upsert_lead",
     ]);
     expect(getAgentTool("nonexistent")).toBeUndefined();
 
-    const autoTools = ["create_task", "query_knowledge_hub", "list_projects", "list_stakeholders", "list_tasks", "list_meetings", "list_documents", "get_dashboard_snapshot", "log_agent_call"];
+    const autoTools = ["create_task", "query_knowledge_hub", "list_projects", "list_stakeholders", "list_tasks", "list_meetings", "list_documents", "get_dashboard_snapshot", "log_agent_call", "get_lead_context", "search_leads", "upsert_lead", "log_conversation"];
     const criticalTools = ["create_meeting", "create_project", "create_stakeholder", "query_external_model", "update_task_status", "add_stakeholder_note", "search_audit_logs"];
     for (const name of autoTools) expect(getAgentTool(name)?.criticality).toBe("auto");
     for (const name of criticalTools) expect(getAgentTool(name)?.criticality).toBe("critical");

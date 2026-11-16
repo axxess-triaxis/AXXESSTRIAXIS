@@ -108,6 +108,8 @@ const toolStepSummaries: Record<string, string> = {
   list_documents: "Checked your documents.",
   get_dashboard_snapshot: "Checked your dashboard.",
   search_audit_logs: "Searched the audit logs.",
+  get_lead_context: "Read a lead's history.",
+  search_leads: "Searched your leads.",
 };
 
 const toolPauseSummaries: Record<string, string> = {
