@@ -161,6 +161,21 @@ describe("serverSession absolute session cap", () => {
   // refresh token at once. The real fix is to stop that redemption from ever happening: proactively
   // renew the access token at the one call site that already gates dashboard mount, before the
   // parallel burst fires.
+  it("signs out only this device: logout is sent with scope=local, and cookies are cleared", async () => {
+    const fetchMock = vi.fn<(url: string, init?: RequestInit) => Promise<Response>>(async () => new Response(null, { status: 204 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { signOutServerSide, accessTokenCookieName } = await import("./serverSession");
+    store.set(accessTokenCookieName, { value: "access-1", maxAge: 3600 });
+    await signOutServerSide("access-1");
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe("https://project.supabase.co/auth/v1/logout?scope=local");
+    expect(init?.method).toBe("POST");
+    expect(store.has(accessTokenCookieName)).toBe(false);
+  });
+
   describe("proactive refresh (A-86)", () => {
     it("decodeAccessTokenExpiry reads a JWT's exp claim without verifying its signature", async () => {
       const { decodeAccessTokenExpiry } = await import("./serverSession");

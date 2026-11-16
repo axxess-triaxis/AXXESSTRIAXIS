@@ -337,9 +337,13 @@ export async function getServerAuthSession(
   return null;
 }
 
+// Founder decision 2026-11-16: Sign out ends only this device's session. Supabase's logout
+// defaults to scope=global, which also signed the user out of every other device.
+export const SIGN_OUT_SCOPE = "local";
+
 export async function signOutServerSide(accessToken?: string) {
   if (isSupabaseServerConfigured() && accessToken) {
-    await supabaseAuthRequest("logout", { method: "POST" }, accessToken).catch(() => undefined);
+    await supabaseAuthRequest(`logout?scope=${SIGN_OUT_SCOPE}`, { method: "POST" }, accessToken).catch(() => undefined);
   }
   await clearServerAuthCookies();
 }

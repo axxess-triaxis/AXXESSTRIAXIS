@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { loginAs, seededUsers, skipUnlessSeeded } from "./helpers";
+import { ensureKnowledgeDocuments } from "./knowledgeSeed";
 
 test.describe("Sprint 9 Knowledge Hub", () => {
   test.beforeEach(() => {
@@ -8,6 +9,8 @@ test.describe("Sprint 9 Knowledge Hub", () => {
 
   test("supports search, preview, archive, restore, and permission-aware upload controls", async ({ page }) => {
     await loginAs(page, seededUsers.orgAdminAlpha);
+    // The seed SQL has no documents; the test documents go in through the real ingest API (2026-11-16).
+    await ensureKnowledgeDocuments(page.request);
     await page.getByRole("button", { name: /Knowledge Hub/i }).click();
 
     await expect(page.getByRole("heading", { name: "Knowledge Hub" })).toBeVisible();
