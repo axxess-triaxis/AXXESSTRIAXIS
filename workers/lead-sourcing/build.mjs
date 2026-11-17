@@ -25,6 +25,6 @@ await build({
 
 writeFileSync(
   new URL("./dist/package.json", import.meta.url),
-  JSON.stringify({ name: pkg.name, private: true, type: "module", dependencies: pkg.dependencies }, null, 2) + "\n",
+  JSON.stringify({ name: pkg.name, version: pkg.version ?? "1.0.0", private: true, type: "module", dependencies: pkg.dependencies }, null, 2) + "\n",
 );
 console.log("Built dist/handler.mjs");

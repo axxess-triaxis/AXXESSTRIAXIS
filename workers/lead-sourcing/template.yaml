@@ -36,10 +36,20 @@ Parameters:
     Type: String
     Default: ""
     Description: Email for failure alarms (confirm the SNS subscription email). Empty = no subscription.
+  ReservedConcurrency:
+    Type: Number
+    Default: 0
+    MinValue: 0
+    Description: >-
+      Reserved concurrency for the worker; 0 = none. New accounts have a 10-execution limit and Lambda
+      refuses any reservation that leaves fewer than 10 unreserved, so keep 0 there. Overlapping
+      invocations are safe: a run is claimed only while still queued, and verify credits are reserved
+      per run when it is queued.
 
 Conditions:
   HasQev: !Not [!Equals [!Ref QevSecretArn, ""]]
   AlarmByEmail: !Not [!Equals [!Ref AlarmEmail, ""]]
+  HasReservedConcurrency: !Not [!Equals [!Ref ReservedConcurrency, 0]]
 
 Resources:
   WorkerLogGroup:
@@ -61,8 +71,7 @@ Resources:
       Timeout: 900
       EphemeralStorage:
         Size: 1024
-      # One run at a time: keeps crawling polite and the verification budget exact.
-      ReservedConcurrentExecutions: 1
+      ReservedConcurrentExecutions: !If [HasReservedConcurrency, !Ref ReservedConcurrency, !Ref AWS::NoValue]
       LoggingConfig:
         LogGroup: !Ref WorkerLogGroup
         LogFormat: Text
