@@ -19,7 +19,7 @@
 - **Decision:** send email only inside the lead's local business hours.
 - **Shipped artifact:** this branch.
 - **Verification:** see below.
-- **Current status:** PR open. Not merged and not deployed.
+- **Current status:** PR #527 open. Not merged and not deployed.
 
 ## What changed
 
