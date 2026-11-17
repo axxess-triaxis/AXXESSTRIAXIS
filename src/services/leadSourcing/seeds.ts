@@ -1,7 +1,7 @@
 // Seed lists: the pipe format, saved Apollo organizations_lookup JSON, plus de-duplication and
 // the do-not-contact exclusion list.
-import type { Seed } from "./types.mts";
-import { domainLabel } from "./extract.mts";
+import type { Seed } from "./types.ts";
+import { domainLabel } from "./extract.ts";
 
 /** Lines of `segment|country|company|domain[|registryName|registryRole]`. */
 export function parsePipeSeeds(text: string, source = "seed list"): Seed[] {

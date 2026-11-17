@@ -55,3 +55,7 @@ export type Candidate = {
 export type FetchText = (url: string) => Promise<string>;
 /** Renders a URL in a headless browser and returns the final HTML, or "" on failure. */
 export type RenderHtml = (url: string) => Promise<string>;
+
+/** One email verification result. Structurally the same as scripts/check-leads-csv.mts's type. */
+export type EmailVerification = { email: string; decision: "keep" | "review" | "drop"; result: string; reason: string; role: boolean };
+export type VerifyReport = { results: EmailVerification[]; remainingCredits?: string };

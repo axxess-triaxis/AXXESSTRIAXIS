@@ -1,13 +1,14 @@
 // Unit tests for the lead-sourcing tool. No network and no browser: fetch and render are injected.
 // Only reserved example.com/.org/.net domains and invented names appear here.
 import { describe, expect, it, vi } from "vitest";
-import { checkLeadCsv, type EmailVerification } from "../check-leads-csv.mts";
-import { crawlSite, mapLimit, parseRobots, robotsAllows } from "./crawl.mts";
-import { cleanPersonName, decodeCfEmail, domainLabel, extractEmails, extractJsonLdPeople, extractRolePeople, extractTeamLinks } from "./extract.mts";
-import { IMPORT_HEADER, toImportCsv, toReviewMarkdown } from "./output.mts";
-import { bestPerson, guessPatterns, isRoleAddress, pickCandidate, verifyGuess, type Budget, type Verifier } from "./pick.mts";
-import { filterSeeds, knownFromCsv, parseApolloSeeds, parsePipeSeeds } from "./seeds.mts";
-import type { Seed, SiteResult } from "./types.mts";
+import { parseLeadImport } from "../outbound/leadImport.ts";
+import type { EmailVerification } from "./types.ts";
+import { crawlSite, mapLimit, parseRobots, robotsAllows } from "./crawl.ts";
+import { cleanPersonName, decodeCfEmail, domainLabel, extractEmails, extractJsonLdPeople, extractRolePeople, extractTeamLinks } from "./extract.ts";
+import { IMPORT_HEADER, toImportCsv, toReviewMarkdown } from "./output.ts";
+import { bestPerson, guessPatterns, isRoleAddress, pickCandidate, verifyGuess, type Budget, type Verifier } from "./pick.ts";
+import { filterSeeds, knownFromCsv, parseApolloSeeds, parsePipeSeeds } from "./seeds.ts";
+import type { Seed, SiteResult } from "./types.ts";
 
 const seed: Seed = { segment: "brokerage", country: "AE", company: "Example Realty", domain: "example.com", source: "seed list test" };
 
@@ -36,6 +37,11 @@ describe("extract: emails", () => {
       <a href="/cdn-cgi/l/email-protection#${cf("care@example.ae")}">x</a>
       someone@gmail.com partner@other.org logo@example.com.png`;
     expect(extractEmails(html, "example.com")).toEqual(["care@example.ae", "founder@example.com", "info@example.com", "sales@example.com"]);
+  });
+
+  it("survives a malformed percent sequence", () => {
+    expect(() => extractEmails("%E0%A4%info@example.com", "example.com")).not.toThrow();
+    expect(extractEmails("x %zz sales@example.com", "example.com")).toEqual(["sales@example.com"]);
   });
 
   it("decodes a Cloudflare hex string", () => {
@@ -238,7 +244,7 @@ describe("output", () => {
     const c = await pickCandidate(site(), { date: "2026-11-17" });
     const csv = toImportCsv([c!], "2026-11-17");
     expect(csv.split("\n")[0]).toBe(IMPORT_HEADER);
-    const report = checkLeadCsv(csv);
+    const report = parseLeadImport(csv, { suppressed: new Set(), existing: new Set() });
     expect(report.rejected).toEqual([]);
     expect(report.accepted).toHaveLength(1);
     expect(report.accepted[0]).toMatchObject({ contactName: "Amara Samplefield", contactEmail: "info@example.com", country: "AE" });

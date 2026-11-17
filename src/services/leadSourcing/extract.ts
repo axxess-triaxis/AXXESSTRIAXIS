@@ -1,5 +1,5 @@
 // Pure HTML extraction: on-domain emails, named leaders, and team/about links. No network here.
-import type { Person } from "./types.mts";
+import type { Person } from "./types.ts";
 
 const EMAIL = /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g;
 const ASSET_SUFFIX = /\.(png|jpe?g|gif|webp|svg|css|js)$/i;
@@ -89,6 +89,15 @@ export function domainLabel(domain: string): string {
   return parts[parts.length - (twoLevel ? 3 : 2)] ?? parts[0];
 }
 
+/** decodeURIComponent that returns the input unchanged on a malformed % sequence instead of throwing. */
+function safeDecode(s: string): string {
+  try {
+    return decodeURIComponent(s);
+  } catch {
+    return s;
+  }
+}
+
 /** Emails on the company's own domain (any TLD with the same label), lower-cased and de-duplicated. */
 export function extractEmails(html: string, domain: string): string[] {
   const label = domainLabel(domain);
@@ -97,7 +106,7 @@ export function extractEmails(html: string, domain: string): string[] {
   for (const m of html.matchAll(/data-cfemail="([0-9a-f]+)"/gi)) raw.push(decodeCfEmail(m[1]));
   for (const m of html.matchAll(/\/cdn-cgi\/l\/email-protection#([0-9a-f]+)/gi)) raw.push(decodeCfEmail(m[1]));
   for (const candidate of raw) {
-    const email = decodeURIComponent(candidate.replace(/^%20/, "")).toLowerCase().replace(/^[^a-z0-9]+/, "").replace(/\.+$/, "");
+    const email = safeDecode(candidate.replace(/^%20/, "")).toLowerCase().replace(/^[^a-z0-9]+/, "").replace(/\.+$/, "");
     const match = /^[a-z0-9._%+-]+@([a-z0-9.-]+\.[a-z]{2,})$/.exec(email);
     if (!match || ASSET_SUFFIX.test(email)) continue;
     if (domainLabel(match[1]) !== label) continue;

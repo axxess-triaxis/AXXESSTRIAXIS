@@ -1,5 +1,5 @@
 // Writes the import CSV (the importer's exact columns) and a review file for the founder.
-import type { Candidate, SiteResult } from "./types.mts";
+import type { Candidate, SiteResult } from "./types.ts";
 
 export const IMPORT_HEADER = "company,contact_name,email,phone,country,consent_basis,source";
 

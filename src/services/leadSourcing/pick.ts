@@ -1,7 +1,7 @@
 // Chooses one contact per company, guesses a personal address when only a role inbox is
 // published, and verifies guesses with QEV under a credit cap.
-import type { EmailVerification, VerifyReport } from "../check-leads-csv.mts";
-import type { Candidate, Person, SiteResult } from "./types.mts";
+import type { EmailVerification, VerifyReport } from "./types.ts";
+import type { Candidate, Person, SiteResult } from "./types.ts";
 
 const ROLE_LOCAL = /^(info|contact|hello|enquir(y|ies)|inquir(y|ies)|sales|admin|office|support|reception|bookings?|appointments?|team|mail|career|careers|jobs|hr|marketing|leads|customercare|care)\b/;
 

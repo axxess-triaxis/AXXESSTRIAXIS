@@ -10,11 +10,11 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 import { checkLeadCsv, formatLeadCsvReport, verifyEmails } from "../check-leads-csv.mts";
-import { USER_AGENT, crawlSite, mapLimit } from "./crawl.mts";
-import { toImportCsv, toReviewMarkdown } from "./output.mts";
-import { pickCandidate, type Budget, type Verifier } from "./pick.mts";
-import { filterSeeds, knownFromCsv, parseApolloSeeds, parsePipeSeeds } from "./seeds.mts";
-import type { Candidate, FetchText, RenderHtml, Seed } from "./types.mts";
+import { USER_AGENT, crawlSite, mapLimit } from "../../src/services/leadSourcing/crawl.ts";
+import { toImportCsv, toReviewMarkdown } from "../../src/services/leadSourcing/output.ts";
+import { pickCandidate, type Budget, type Verifier } from "../../src/services/leadSourcing/pick.ts";
+import { filterSeeds, knownFromCsv, parseApolloSeeds, parsePipeSeeds } from "../../src/services/leadSourcing/seeds.ts";
+import type { Candidate, FetchText, RenderHtml, Seed } from "../../src/services/leadSourcing/types.ts";
 
 export type Args = {
   seeds?: string;
