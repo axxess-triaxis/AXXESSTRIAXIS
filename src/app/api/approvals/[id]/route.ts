@@ -11,6 +11,7 @@ import {
   reservePendingToolCallForExecution,
 } from "../../../../services/agents/agentPendingToolCallRepository";
 import { executePendingToolCall } from "../../../../services/agents/agentPendingToolCallExecutor";
+import { getAgentTool } from "../../../../services/agents/toolRegistry";
 import type { AgentScope } from "../../../../security/agentScope";
 
 const decisionRoles = ["Super Admin", "Organization Admin", "Executive", "Manager"];
@@ -83,7 +84,9 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   }).catch(() => undefined);
 
   let grantCreated = false;
-  if (body.status === "approved" && body.alwaysAllow && metadata.agentConnectionId && metadata.toolName) {
+  // Tools that require a fresh approval every time (approve_sourced_leads) never get a standing grant.
+  const freshOnly = Boolean(metadata.toolName && getAgentTool(metadata.toolName)?.requiresFreshApproval);
+  if (body.status === "approved" && body.alwaysAllow && !freshOnly && metadata.agentConnectionId && metadata.toolName) {
     const grant = await createGrant({
       organizationId: scope.organizationId,
       agentConnectionId: metadata.agentConnectionId,

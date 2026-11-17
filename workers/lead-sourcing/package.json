@@ -1,0 +1,17 @@
+{
+  "name": "axxess-lead-sourcing-worker",
+  "private": true,
+  "type": "module",
+  "description": "AWS Lambda worker that crawls AXXESS lead-sourcing runs. Not part of the pnpm workspace; deployed with SAM.",
+  "scripts": {
+    "build": "node build.mjs"
+  },
+  "dependencies": {
+    "@sparticuz/chromium": "153.0.0",
+    "playwright-core": "1.62.0"
+  },
+  "devDependencies": {
+    "@aws-sdk/client-secrets-manager": "3.1161.0",
+    "esbuild": "0.28.2"
+  }
+}

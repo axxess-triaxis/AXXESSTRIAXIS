@@ -161,6 +161,17 @@ describe("PATCH /api/approvals/[id]", () => {
     expect(state.auditCalls[1].input.resourceId).toBe("grant-1");
   });
 
+  it("alwaysAllow never creates a grant for a fresh-approval tool (approve_sourced_leads, 2026-11-17)", async () => {
+    state.session = { user: user("user-1", "Organization Admin") };
+    state.decideResult = { id: "approval-1", status: "pending", metadata: { agentConnectionId: "conn-1", toolName: "approve_sourced_leads" } };
+
+    const response = await PATCH(patchRequest({ status: "approved", alwaysAllow: true }), { params: Promise.resolve({ id: "approval-1" }) });
+    const body = await response.json() as { grantCreated: boolean };
+
+    expect(body.grantCreated).toBe(false);
+    expect(state.grantCalls).toEqual([]);
+  });
+
   it("rejecting never creates a grant, even with alwaysAllow set, but still audit-logs the rejection", async () => {
     state.session = { user: user("user-1", "Organization Admin") };
     state.decideResult = { id: "approval-1", status: "pending", metadata: { agentConnectionId: "conn-1", toolName: "create_meeting" } };

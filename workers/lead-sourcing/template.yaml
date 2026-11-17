@@ -1,0 +1,138 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: >-
+  AXXESS lead-sourcing worker. On a schedule it claims the oldest queued lead-sourcing run from
+  AXXESS, crawls the seed companies' public websites (headless Chromium for JavaScript-built
+  sites), verifies guessed addresses under the run's credit cap, and posts the candidates back.
+  Nothing is imported or contacted here; a person approves candidates in AXXESS.
+
+Metadata:
+  AWSToolsMetrics:
+    AWSAgentToolkit: aws-cloudformation@2
+
+Parameters:
+  Stage:
+    Type: String
+    Default: staging
+    AllowedValues: [staging, prod]
+  AxxessBaseUrl:
+    Type: String
+    AllowedPattern: "^https://[a-z0-9.-]+$"
+    Description: AXXESS origin the worker claims runs from, without a trailing slash (staging or production).
+  WorkerSecretArn:
+    Type: String
+    AllowedPattern: "^arn:aws:secretsmanager:[a-z0-9-]+:[0-9]{12}:secret:.+$"
+    Description: Secrets Manager ARN of LEAD_SOURCING_WORKER_SECRET (the same value as the AXXESS env var).
+  QevSecretArn:
+    Type: String
+    Default: ""
+    Description: Secrets Manager ARN of the QuickEmailVerification API key. Empty = guessed addresses are never verified.
+  ScheduleState:
+    Type: String
+    Default: DISABLED
+    AllowedValues: [ENABLED, DISABLED]
+    Description: DISABLED deploys the worker without running it; set ENABLED once AXXESS has the matching secret.
+  AlarmEmail:
+    Type: String
+    Default: ""
+    Description: Email for failure alarms (confirm the SNS subscription email). Empty = no subscription.
+
+Conditions:
+  HasQev: !Not [!Equals [!Ref QevSecretArn, ""]]
+  AlarmByEmail: !Not [!Equals [!Ref AlarmEmail, ""]]
+
+Resources:
+  WorkerLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/axxess-lead-sourcing-${Stage}
+      RetentionInDays: 30
+
+  WorkerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub axxess-lead-sourcing-${Stage}
+      Description: Crawls AXXESS lead-sourcing runs (no imports, no outreach).
+      CodeUri: dist/
+      Handler: handler.handler
+      Runtime: nodejs22.x
+      Architectures: [x86_64]
+      MemorySize: 2048
+      Timeout: 900
+      EphemeralStorage:
+        Size: 1024
+      # One run at a time: keeps crawling polite and the verification budget exact.
+      ReservedConcurrentExecutions: 1
+      LoggingConfig:
+        LogGroup: !Ref WorkerLogGroup
+        LogFormat: Text
+      Environment:
+        Variables:
+          AXXESS_BASE_URL: !Ref AxxessBaseUrl
+          WORKER_SECRET_ARN: !Ref WorkerSecretArn
+          QEV_SECRET_ARN: !If [HasQev, !Ref QevSecretArn, ""]
+          STAGE: !Ref Stage
+      Policies:
+        - Statement:
+            - Sid: ReadWorkerSecrets
+              Effect: Allow
+              Action: secretsmanager:GetSecretValue
+              Resource: !If
+                - HasQev
+                - [!Ref WorkerSecretArn, !Ref QevSecretArn]
+                - [!Ref WorkerSecretArn]
+      Events:
+        EveryFiveMinutes:
+          Type: ScheduleV2
+          Properties:
+            ScheduleExpression: rate(5 minutes)
+            State: !Ref ScheduleState
+            RetryPolicy:
+              MaximumRetryAttempts: 0
+
+  WorkerInvokeConfig:
+    Type: AWS::Lambda::EventInvokeConfig
+    Properties:
+      FunctionName: !Ref WorkerFunction
+      Qualifier: $LATEST
+      MaximumRetryAttempts: 0
+
+  AlarmTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub axxess-lead-sourcing-alarms-${Stage}
+      KmsMasterKeyId: alias/aws/sns
+
+  AlarmTopicEmail:
+    Type: AWS::SNS::Subscription
+    Condition: AlarmByEmail
+    Properties:
+      TopicArn: !Ref AlarmTopic
+      Protocol: email
+      Endpoint: !Ref AlarmEmail
+
+  WorkerErrorsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub axxess-lead-sourcing-${Stage}-errors
+      AlarmDescription: The lead-sourcing worker failed (claim, crawl or report). Check its log group.
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref WorkerFunction
+      Statistic: Sum
+      Period: 900
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref AlarmTopic]
+
+Outputs:
+  WorkerFunctionName:
+    Value: !Ref WorkerFunction
+  WorkerLogGroupName:
+    Value: !Ref WorkerLogGroup
+  AlarmTopicArn:
+    Value: !Ref AlarmTopic

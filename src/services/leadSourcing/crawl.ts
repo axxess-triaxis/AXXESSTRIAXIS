@@ -1,7 +1,7 @@
 // Crawls one company site: homepage, then the site's own team/about/contact links, with a
 // headless-browser fallback for pages that come back nearly empty (sites built in JavaScript).
-import { extractEmails, extractJsonLdPeople, extractRolePeople, extractTeamLinks, visibleTextLength } from "./extract.mts";
-import type { FetchText, Person, RenderHtml, Seed, SiteResult } from "./types.mts";
+import { extractEmails, extractJsonLdPeople, extractRolePeople, extractTeamLinks, visibleTextLength } from "./extract.ts";
+import type { FetchText, Person, RenderHtml, Seed, SiteResult } from "./types.ts";
 
 export const USER_AGENT = "AXXESS-lead-research/1.0 (+https://triaxisventures.com)";
 /** Fallback paths tried when the homepage links to nothing useful. */

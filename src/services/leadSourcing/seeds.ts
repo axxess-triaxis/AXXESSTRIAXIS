@@ -1,7 +1,7 @@
 // Seed lists: the pipe format, saved Apollo organizations_lookup JSON, plus de-duplication and
 // the do-not-contact exclusion list.
-import type { Seed } from "./types.mts";
-import { domainLabel } from "./extract.mts";
+import type { Seed } from "./types.ts";
+import { domainLabel } from "./extract.ts";
 
 /** Lines of `segment|country|company|domain[|registryName|registryRole]`. */
 export function parsePipeSeeds(text: string, source = "seed list"): Seed[] {
@@ -33,7 +33,7 @@ export function parseApolloSeeds(json: unknown, segment: string, country: string
     }));
 }
 
-const normCompany = (s: string) => s.toLowerCase().replace(/&/g, "and").replace(/[^a-z0-9]+/g, " ").replace(/\b(llc|l l c|pvt|ltd|private|limited|fze|fzco|real estate|brokerage|properties)\b/g, "").replace(/\s+/g, " ").trim();
+export const normCompany = (s: string) => s.toLowerCase().replace(/&/g, "and").replace(/[^a-z0-9]+/g, " ").replace(/\b(llc|l l c|pvt|ltd|private|limited|fze|fzco|real estate|brokerage|properties)\b/g, "").replace(/\s+/g, " ").trim();
 
 /** Company names and email/site domain labels found in previous lead CSVs or the exclusion list. */
 export function knownFromCsv(texts: string[]): { companies: Set<string>; labels: Set<string> } {
@@ -75,4 +75,12 @@ export function filterSeeds(seeds: Seed[], exclusion: { companies: Set<string>; 
     }
   }
   return report;
+}
+
+/** Normalised sets from raw company names and domains (database rows), for filterSeeds. */
+export function knownSets(companies: string[], domains: string[]): { companies: Set<string>; labels: Set<string> } {
+  return {
+    companies: new Set(companies.map(normCompany).filter(Boolean)),
+    labels: new Set(domains.map((d) => domainLabel(d)).filter(Boolean)),
+  };
 }

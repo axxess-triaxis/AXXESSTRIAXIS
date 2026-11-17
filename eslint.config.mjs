@@ -19,6 +19,8 @@ const eslintConfig = defineConfig([
       ".claude/worktrees/**",
       ".pnpm-store/**",
       "dist/**",
+      "workers/*/dist/**",
+      "workers/*/.aws-sam/**",
       "node_modules/**",
       "coverage/**",
       "playwright-report/**",
