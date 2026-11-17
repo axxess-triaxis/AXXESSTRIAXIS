@@ -51,10 +51,14 @@ export async function runOutreachTick(deps: OutreachTickDeps) {
     dailySendBudget: config.dailySendBudget,
     now,
   });
-  const summary = { sent: 0, stopped: 0, deferred: 0, failed: 0 };
+  const summary = { sent: 0, stopped: 0, deferred: 0, failed: 0, outsideWindow: 0 };
   const enrollmentsById = new Map(state.enrollments.map((e) => [e.id, e]));
 
   for (const action of actions) {
+    if (action.kind === "wait") {
+      summary.outsideWindow += 1;
+      continue;
+    }
     const enrollment = enrollmentsById.get(action.enrollmentId)!;
     const base = { organizationId: config.organizationId, leadId: enrollment.leadId, enrollmentId: enrollment.id, channel: "email" as const };
 

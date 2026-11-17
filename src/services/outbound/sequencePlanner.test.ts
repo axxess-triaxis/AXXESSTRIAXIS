@@ -80,6 +80,57 @@ describe("planDueSends", () => {
   });
 });
 
+describe("business-hours send window", () => {
+  // 2026-11-12 is a Thursday. India is UTC+05:30, the UAE is UTC+04:00, neither has daylight saving.
+  const at = (iso: string) => new Date(iso);
+  const plan = (country: string, now: Date) => planDueSends(input({
+    leads: new Map([["l1", lead("l1", { country })]]),
+    enrollments: [enrollment("e1", "l1", { nextSendAt: new Date(now.getTime() - 1000) })],
+    now,
+  }));
+  const wait = [{ kind: "wait", enrollmentId: "e1", reason: "outside_send_window" }];
+
+  it("India: waits before 09:00 and from 18:00 IST, sends from 09:00", () => {
+    expect(plan("IN", at("2026-11-12T03:29:00Z"))).toEqual(wait); // 08:59
+    expect(plan("IN", at("2026-11-12T03:30:00Z"))[0].kind).toBe("send"); // 09:00
+    expect(plan("IN", at("2026-11-12T12:29:00Z"))[0].kind).toBe("send"); // 17:59
+    expect(plan("IN", at("2026-11-12T13:00:00Z"))).toEqual(wait); // 18:30
+  });
+
+  it("UAE: sends at 17:59 and waits from 18:00 Gulf time", () => {
+    expect(plan("AE", at("2026-11-12T13:59:00Z"))[0].kind).toBe("send");
+    expect(plan("AE", at("2026-11-12T14:00:00Z"))).toEqual(wait);
+  });
+
+  it("India sends on Saturday and waits on Sunday", () => {
+    expect(plan("IN", at("2026-11-14T05:30:00Z"))[0].kind).toBe("send"); // Sat 11:00
+    expect(plan("IN", at("2026-11-15T05:30:00Z"))).toEqual(wait); // Sun 11:00
+  });
+
+  it("UAE waits on Saturday and Sunday and sends on Friday", () => {
+    expect(plan("AE", at("2026-11-13T06:00:00Z"))[0].kind).toBe("send"); // Fri 10:00
+    expect(plan("AE", at("2026-11-14T06:00:00Z"))).toEqual(wait); // Sat 10:00
+    expect(plan("AE", at("2026-11-15T06:00:00Z"))).toEqual(wait); // Sun 10:00
+  });
+
+  it("a waiting lead does not use the budget", () => {
+    const now = at("2026-11-12T13:00:00Z"); // 18:30 India, 17:00 UAE
+    const leads = new Map([["l1", lead("l1", { country: "IN" })], ["l2", lead("l2", { country: "AE" })]]);
+    const enrollments = [enrollment("e1", "l1", { nextSendAt: new Date(now.getTime() - 2000) }), enrollment("e2", "l2", { nextSendAt: new Date(now.getTime() - 1000) })];
+    expect(planDueSends(input({ leads, enrollments, now, dailySendBudget: 1 }))).toEqual([
+      { kind: "wait", enrollmentId: "e1", reason: "outside_send_window" },
+      { kind: "send", enrollmentId: "e2", leadId: "l2", stepIndex: 0, to: "l2@acme.in" },
+    ]);
+  });
+
+  it("permanent refusals still stop outside business hours", () => {
+    const now = at("2026-11-12T16:00:00Z");
+    const leads = new Map([["l1", lead("l1", { consentBasis: null })]]);
+    const enrollments = [enrollment("e1", "l1", { nextSendAt: new Date(now.getTime() - 1000) })];
+    expect(planDueSends(input({ leads, enrollments, now }))[0].kind).toBe("stop");
+  });
+});
+
 describe("advanceEnrollment", () => {
   it("schedules the next step by the difference in day offsets, then completes", () => {
     expect(advanceEnrollment({ stepIndex: 0 }, sequence, NOW)).toEqual({ stepIndex: 1, nextSendAt: new Date(NOW.getTime() + 3 * DAY), status: "active" });
