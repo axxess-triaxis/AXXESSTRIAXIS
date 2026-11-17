@@ -76,12 +76,17 @@ export async function addSuppression(entry: {
 
 /** Inserts imported leads owned by the importing user. Returns the number of rows created. */
 export async function insertImportedLeads(scope: TenantScope, leads: ImportedLead[]): Promise<number> {
-  if (leads.length === 0) return 0;
+  return (await insertImportedLeadsReturningIds(scope, leads)).length;
+}
+
+/** Same as insertImportedLeads, returning each new lead's id and contact email (for lead sourcing). */
+export async function insertImportedLeadsReturningIds(scope: TenantScope, leads: ImportedLead[]): Promise<{ id: string; contactEmail: string | null }[]> {
+  if (leads.length === 0) return [];
   if (!isSupabaseAdminConfigured()) throw new Error("Outbound repository is not configured (Supabase admin credentials missing).");
   const now = new Date().toISOString();
-  const rows = await supabaseAdminRest<{ id: string }[]>("crm_leads", {
+  const rows = await supabaseAdminRest<{ id: string; contact_email: string | null }[]>("crm_leads", {
     method: "POST",
-    query: new URLSearchParams({ select: "id" }),
+    query: new URLSearchParams({ select: "id,contact_email" }),
     body: leads.map((lead) => ({
       organization_id: scope.organizationId,
       title: lead.contactName ? `${lead.organizationName} - ${lead.contactName}` : lead.organizationName,
@@ -101,7 +106,7 @@ export async function insertImportedLeads(scope: TenantScope, leads: ImportedLea
       created_by: scope.userId,
     })),
   });
-  return rows.length;
+  return rows.map((r) => ({ id: r.id, contactEmail: r.contact_email }));
 }
 
 // ---- Outreach tick (Day 2) ----------------------------------------------------------------

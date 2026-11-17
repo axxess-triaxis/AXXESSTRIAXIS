@@ -21,7 +21,9 @@ import type { AgentCapability, AgentScope } from "./agentScope";
 // Every capability's requisite NavSection. query_external_model has none -- it is withheld from
 // every role unconditionally this sprint (see below), not mapped to a section. log_agent_call is
 // withheld too (2026-11-13): only STILL reports a voice-agent call's result; the chatbot must not.
-type ChatbotCapability = Exclude<AgentCapability, "query_external_model" | "log_agent_call">;
+// The lead-sourcing tools are withheld for now (2026-11-17): v1 is for external agents with keys the
+// founder grants, approved in the approvals UI.
+type ChatbotCapability = Exclude<AgentCapability, "query_external_model" | "log_agent_call" | "source_leads" | "get_sourcing_run" | "approve_sourced_leads">;
 const capabilitySection: Record<ChatbotCapability, NavSection> = {
   create_task: "tasks",
   list_tasks: "tasks",

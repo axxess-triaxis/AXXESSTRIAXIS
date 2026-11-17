@@ -9,6 +9,7 @@ import { completeAgentCallJob } from "../../repositories/agentCallRepository";
 import { getLead } from "../../repositories/leadWorkRepository";
 import { updateCrmLead } from "../../repositories/crmRepository";
 import { CALL_OUTCOMES, isCallOutcome, leadChangesForOutcome } from "../outbound/callQueue";
+import { leadSourcingTools } from "./leadSourcingTools";
 
 export type McpToolContent = { type: "text"; text: string };
 export type McpToolResult = { content: McpToolContent[]; isError?: boolean };
@@ -28,6 +29,9 @@ export type McpToolDefinition = {
   // this connection+tool; otherwise a real approval_requests row is created and the call returns
   // pending instead of running.
   criticality: "auto" | "critical";
+  // Lead sourcing (2026-11-17): a critical tool with this flag never runs on a standing "Always
+  // Allow" grant -- every call needs a fresh human approval (or the in-app inline confirm).
+  requiresFreshApproval?: boolean;
   inputSchema: {
     type: "object";
     properties: Record<string, {
@@ -982,6 +986,7 @@ export const agentToolRegistry: McpToolDefinition[] = [
   searchAuditLogsTool,
   queryExternalModelTool,
   logAgentCallTool,
+  ...leadSourcingTools,
 ];
 
 export function getAgentTool(name: string): McpToolDefinition | undefined {
