@@ -109,3 +109,10 @@ Existing rows are not rewritten.
 | Decision | Date | Session/tool | Issue ID | Why | Outcome | Commit/PR | Verification | Closeout |
 |---|---|---|---|---|---|---|---|---|
 | Run Vercel functions in `syd1`, next to the production database | 2026-11-15 | Founder approved, executed by Claude Code | VERCEL-REGION | Functions ran in `iad1` while databases are in Tokyo and Sydney; staging API calls took 1 to 3 s each | Working on staging (`bom1::syd1`, medians 25 to 30% faster). Production pending founder spot check, review by 2026-11-29 | #505 (`08eb7f8d`) | Staging probe before and after | `docs/readiness/VERCEL_FUNCTION_REGION_CLOSEOUT_2026_11_15.md` |
+
+## Lead sourcing as agent and MCP (2026-11-17)
+
+| Decision | Date | Session/tool | Issue ID | Why | Outcome | Commit/PR | Verification | Closeout |
+|---|---|---|---|---|---|---|---|---|
+| Lead sourcing runs as three MCP tools plus a scheduled Lambda crawler that pulls runs over HTTPS with a Bearer secret, not the planned SQS push | 2026-11-17 | Founder-approved plan, executed by Claude Code | LEAD-SOURCING-MCP | Vercel needs no AWS credentials; Chromium and multi-minute crawls don't fit a Vercel function | Merged and deployed to production, inert until the migration runs and the worker deploys. Staging end-to-end pending founder secrets. Review by 2026-12-01 | #524 (`c5d76c75`), #525 (`ed78e12f`) | 2300 of 2300 tests, CI all pass, production routes return 401 without the worker secret | `docs/readiness/LEAD_SOURCING_AGENT_MCP_CLOSEOUT_2026_11_17.md` |
+| `approve_sourced_leads` always needs a fresh human approval; standing grants and "Always Allow" never cover it | 2026-11-17 | Claude Code, from the founder's approve-before-import rule | LEAD-SOURCING-MCP | An agent must never be able to import leads on a grant it already holds | In code on production; not yet exercised live. Review by 2026-12-01 | #525 (`ed78e12f`) | MCP route test: pending even with a grant; approvals route test: no grant created | `docs/readiness/LEAD_SOURCING_AGENT_MCP_CLOSEOUT_2026_11_17.md` |
