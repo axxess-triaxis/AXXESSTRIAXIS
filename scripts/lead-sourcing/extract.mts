@@ -64,15 +64,12 @@ export function cleanPersonName(raw: string): { name: string; doctor: boolean } 
   return { name, doctor };
 }
 
+const ENTITIES: Record<string, string> = { nbsp: " ", amp: "&", apos: "'", quot: '"', lt: "<", gt: ">" };
+// One pass, so a decoded "&" can never start a second entity ("&amp;lt;" stays "&lt;").
 const decodeEntities = (s: string) =>
-  s
-    .replace(/&nbsp;/gi, " ")
-    .replace(/&amp;/gi, "&")
-    .replace(/&#0*39;|&apos;/gi, "'")
-    .replace(/&quot;/gi, '"')
-    .replace(/&lt;/gi, "<")
-    .replace(/&gt;/gi, ">")
-    .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)));
+  s.replace(/&(?:#(\d+)|([a-z]+));/gi, (whole, num: string | undefined, name: string | undefined) =>
+    num !== undefined ? String.fromCharCode(Number(num)) : (ENTITIES[name!.toLowerCase()] ?? whole),
+  );
 
 /** Decodes Cloudflare's email protection (`data-cfemail` hex, first byte is the XOR key). */
 export function decodeCfEmail(hex: string): string {
@@ -108,7 +105,7 @@ export function extractEmails(html: string, domain: string): string[] {
 
 /** Text segments between tags, scripts and styles removed, entities decoded, blanks dropped. */
 export function textBlocks(html: string): string[] {
-  const body = html.replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>|<noscript[\s\S]*?<\/noscript>|<!--[\s\S]*?-->/gi, " ");
+  const body = html.replace(/<script[\s\S]*?<\/script[^>]*>|<style[\s\S]*?<\/style[^>]*>|<noscript[\s\S]*?<\/noscript[^>]*>|<!--[\s\S]*?-->/gi, " ");
   return body
     .split(/<[^>]+>/)
     .map((s) => decodeEntities(s).replace(/\s+/g, " ").trim())
@@ -178,7 +175,7 @@ export function extractJsonLdPeople(html: string, url: string): Person[] {
     if (!cleaned || people.some((p) => p.name === cleaned.name)) return;
     people.push({ name: cleaned.name, role, url, via: "json-ld", doctor: cleaned.doctor });
   };
-  for (const m of html.matchAll(/<script[^>]+application\/ld\+json[^>]*>([\s\S]*?)<\/script>/gi)) {
+  for (const m of html.matchAll(/<script[^>]+application\/ld\+json[^>]*>([\s\S]*?)<\/script[^>]*>/gi)) {
     let data: unknown;
     try {
       data = JSON.parse(m[1].trim());

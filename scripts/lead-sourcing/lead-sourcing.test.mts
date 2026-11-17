@@ -3,7 +3,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { checkLeadCsv, type EmailVerification } from "../check-leads-csv.mts";
 import { crawlSite, mapLimit, parseRobots, robotsAllows } from "./crawl.mts";
-import { cleanPersonName, decodeCfEmail, domainLabel, extractEmails, extractJsonLdPeople, extractRolePeople, extractTeamLinks } from "./extract.mts";
+import { cleanPersonName, decodeCfEmail, domainLabel, extractEmails, extractJsonLdPeople, extractRolePeople, extractTeamLinks, textBlocks } from "./extract.mts";
 import { IMPORT_HEADER, toImportCsv, toReviewMarkdown } from "./output.mts";
 import { bestPerson, guessPatterns, isRoleAddress, pickCandidate, verifyGuess, type Budget, type Verifier } from "./pick.mts";
 import { filterSeeds, knownFromCsv, parseApolloSeeds, parsePipeSeeds } from "./seeds.mts";
@@ -250,5 +250,21 @@ describe("output", () => {
     expect(md).toContain("no email and no named leader");
     expect(md).toContain("site unreachable");
     expect(md).toContain("Nothing here is imported or enrolled");
+  });
+});
+
+describe("extract: hardening", () => {
+  it("decodes entities in one pass, so &amp;lt; stays literal", () => {
+    expect(textBlocks("<p>A &amp;lt;b&amp;gt; &amp; B&#039;s &nbsp;x</p>")).toEqual(["A &lt;b&gt; & B's x"]);
+  });
+
+  it("drops script and style bodies even when the end tag has trailing space", () => {
+    const blocks = textBlocks("<p>Visible</p><script>var a = 1;</script ><style>.x{}</style\n><p>After</p>");
+    expect(blocks).toEqual(["Visible", "After"]);
+  });
+
+  it("escapes backslashes and pipes in review markdown", () => {
+    const md = toReviewMarkdown([], [site({ seed: { ...seed, company: "Back\\slash | Co" }, people: [] })], { Candidates: 0 });
+    expect(md).toContain("Back\\\\slash \\| Co");
   });
 });
