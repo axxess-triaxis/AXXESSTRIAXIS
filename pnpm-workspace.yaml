@@ -158,8 +158,12 @@ overrides:
   # (image optimization: GHSA-2464-fhr4-w9xw; `use cache`: GHSA-673q-mjm6-r5xr) and a high DoS
   # (GHSA-p3m5-59mp-jv5r, Server Actions), all affecting <=16.4.0, fixed in 16.4.1. No 16.3.x
   # backport. 16.4.2 is the newest release past the minimumReleaseAge gate.
-  eslint-config-next: 16.4.2
-  next: 16.4.2
+  # 2026-11-17: lifted 16.4.2 -> 16.4.6. package.json already asks for ^16.4.5, but this override
+  # kept the lockfile on 16.4.2, so the first `pnpm run build` stopped with a Next.js
+  # SecurityFatalError notice. 16.4.6 (published 2026-11-09) is the newest 16.4.x past the
+  # minimumReleaseAge gate. eslint-config-next kept in lockstep.
+  eslint-config-next: 16.4.6
+  next: 16.4.6
   '@napi-rs/canvas': 1.0.2
   '@playwright/test': 1.62.0
   '@types/node': 26.1.1
