@@ -106,7 +106,7 @@ export async function POST(request: Request) {
     // grant (src/services/agents/agentGrantsRepository.ts) or a fresh human decision -- so this
     // creates a real approval_requests row and returns pending instead of running the handler.
     if (tool.criticality === "critical") {
-      const granted = await hasGrant(scope.agentConnectionId, tool.name);
+      const granted = tool.requiresFreshApproval ? false : await hasGrant(scope.agentConnectionId, tool.name);
       if (!granted) {
         const approval = await approvalRequestsRepository.create(tenantScopeForApproval(scope), {
           title: `Agent (${scope.provider}) wants to call ${tool.name}`,

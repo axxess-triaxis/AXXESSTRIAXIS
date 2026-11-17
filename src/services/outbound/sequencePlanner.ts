@@ -2,10 +2,34 @@
 // known about each lead, decide per enrollment whether to send now, stop for good, or defer.
 // Every send decision goes through checkContactability; the caller logs each decision to
 // contact_attempts and performs the sends.
-import { checkContactability, type ConsentBasis, type ContactChannel, type RefusalReason } from "../../compliance/contactability";
+// Business-hours window (2026-11-17): an allowed email is only sent inside the lead's local
+// business hours. Outside them the planner returns a "wait" action: nothing is logged, no budget
+// is used, and the enrollment stays due for the first tick inside the window.
+import {
+  checkContactability,
+  CONTACTABILITY_RULES,
+  localTimeParts,
+  type ConsentBasis,
+  type ContactChannel,
+  type RefusalReason,
+} from "../../compliance/contactability";
 
 const DAY_MS = 86_400_000;
 const PERMANENT: ReadonlySet<RefusalReason> = new Set(["suppressed", "no_lawful_basis", "country_not_configured"]);
+
+/** Local email send hours per country. Weekdays: 0 = Sunday. UAE weekend is Saturday and Sunday. */
+export const EMAIL_SEND_WINDOWS: Record<string, { timeZone: string; start: number; end: number; weekdays: ReadonlySet<number> }> = {
+  IN: { timeZone: CONTACTABILITY_RULES.IN.timeZone, start: 9, end: 18, weekdays: new Set([1, 2, 3, 4, 5, 6]) },
+  AE: { timeZone: CONTACTABILITY_RULES.AE.timeZone, start: 9, end: 18, weekdays: new Set([1, 2, 3, 4, 5]) },
+};
+
+/** True inside the country's email window. Countries without a window are not restricted here. */
+export function isWithinEmailWindow(country: string | undefined, now: Date): boolean {
+  const window = country ? EMAIL_SEND_WINDOWS[country] : undefined;
+  if (!window) return true;
+  const { hour, weekday } = localTimeParts(now, window.timeZone);
+  return window.weekdays.has(weekday) && hour >= window.start && hour < window.end;
+}
 
 export type PlannerLead = {
   id: string;
@@ -43,7 +67,8 @@ export type PlannerInput = {
 export type PlannedAction =
   | { kind: "send"; enrollmentId: string; leadId: string; stepIndex: number; to: string }
   | { kind: "stop"; enrollmentId: string; reasons: string[] }
-  | { kind: "defer"; enrollmentId: string; until: Date; reasons: string[] };
+  | { kind: "defer"; enrollmentId: string; until: Date; reasons: string[] }
+  | { kind: "wait"; enrollmentId: string; reason: "outside_send_window" };
 
 export function planDueSends(input: PlannerInput): PlannedAction[] {
   const actions: PlannedAction[] = [];
@@ -88,6 +113,11 @@ export function planDueSends(input: PlannerInput): PlannedAction[] {
       } else {
         actions.push({ kind: "defer", enrollmentId: enrollment.id, until: new Date(input.now.getTime() + DAY_MS), reasons: decision.reasons });
       }
+      continue;
+    }
+
+    if (!isWithinEmailWindow(lead.country, input.now)) {
+      actions.push({ kind: "wait", enrollmentId: enrollment.id, reason: "outside_send_window" });
       continue;
     }
 

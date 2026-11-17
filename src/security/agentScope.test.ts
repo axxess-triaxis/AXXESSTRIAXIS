@@ -28,8 +28,12 @@ describe("agentScope", () => {
       "add_stakeholder_note",
       "search_audit_logs",
       "log_agent_call",
+      "source_leads",
+      "get_sourcing_run",
+      "approve_sourced_leads",
     ]);
     expect(defaultAgentCapabilities).not.toContain("log_agent_call");
+    for (const c of ["source_leads", "get_sourcing_run", "approve_sourced_leads"] as const) expect(defaultAgentCapabilities).not.toContain(c);
     expect(defaultAgentCapabilities).not.toEqual(allAgentCapabilities);
     expect(defaultAgentCapabilities).toEqual([
       "create_task",

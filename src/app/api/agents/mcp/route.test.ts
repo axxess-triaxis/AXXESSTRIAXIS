@@ -63,6 +63,16 @@ vi.mock("../../../../services/agents/toolRegistry", () => {
       inputSchema: { type: "object", properties: { title: { type: "string" } }, required: ["title"] },
       handler: async () => ({ content: [{ type: "text", text: JSON.stringify({ id: "meeting-1" }) }] }),
     },
+    {
+      name: "approve_sourced_leads",
+      version: "1",
+      description: "Import sourced leads after approval.",
+      requiredCapability: "approve_sourced_leads",
+      criticality: "critical",
+      requiresFreshApproval: true,
+      inputSchema: { type: "object", properties: { run_id: { type: "string" }, candidate_ids: { type: "array" } }, required: ["run_id", "candidate_ids"] },
+      handler: async () => ({ content: [{ type: "text", text: JSON.stringify({ imported: 1 }) }] }),
+    },
   ];
   return {
     agentToolRegistry: tools,
@@ -273,6 +283,25 @@ describe("POST /api/agents/mcp (MCP JSON-RPC server)", () => {
     const body = await response.json() as { result: { content: Array<{ text: string }> } };
 
     expect(JSON.parse(body.result.content[0].text)).toEqual({ id: "task-1" });
+    expect(state.approvalCreateCalls).toHaveLength(0);
+  });
+
+  it("a fresh-approval tool returns pending even when an Always Allow grant exists (lead sourcing, 2026-11-17)", async () => {
+    state.scope = { ...activeScope, capabilities: [...activeScope.capabilities, "approve_sourced_leads"] };
+    state.granted = true;
+    const response = await POST(rpcRequest({ jsonrpc: "2.0", id: 9, method: "tools/call", params: { name: "approve_sourced_leads", arguments: { run_id: "r", candidate_ids: ["c"] } } }));
+    const payload = await response.json();
+    expect(JSON.parse(payload.result.content[0].text)).toMatchObject({ status: "pending_approval", approvalRequestId: "approval-1" });
+    expect(state.approvalCreateCalls).toHaveLength(1);
+    expect(state.pendingToolCallCreateCalls).toHaveLength(1);
+  });
+
+  it("an ordinary critical tool still runs on an existing grant", async () => {
+    state.scope = activeScope;
+    state.granted = true;
+    const response = await POST(rpcRequest({ jsonrpc: "2.0", id: 10, method: "tools/call", params: { name: "create_meeting", arguments: { title: "x" } } }));
+    const payload = await response.json();
+    expect(JSON.parse(payload.result.content[0].text)).toEqual({ id: "meeting-1" });
     expect(state.approvalCreateCalls).toHaveLength(0);
   });
 });

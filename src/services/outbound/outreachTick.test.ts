@@ -39,7 +39,7 @@ describe("runOutreachTick", () => {
   it("sends a due step, logs the allowed attempt with the message id, and schedules the next step", async () => {
     const { deps: d, log } = deps();
     const summary = await runOutreachTick(d);
-    expect(summary).toEqual({ sent: 1, stopped: 0, deferred: 0, failed: 0 });
+    expect(summary).toEqual({ sent: 1, stopped: 0, deferred: 0, failed: 0, outsideWindow: 0 });
     expect(log.sent).toHaveLength(1);
     const sent = log.sent[0] as { to: string; subject: string; text: string; headers: Record<string, string> };
     expect(sent.to).toBe("ravi@acme.in");
@@ -50,11 +50,20 @@ describe("runOutreachTick", () => {
     expect(log.updates).toEqual([{ id: "e1", stepIndex: 1, nextSendAt: new Date(NOW.getTime() + 3 * 86_400_000), status: "active", stopReasons: [] }]);
   });
 
+  it("outside the lead's business hours sends nothing, writes nothing and counts the wait", async () => {
+    const evening = new Date("2026-11-12T16:05:00Z"); // 21:35 in India
+    const { deps: d, log } = deps({ now: () => evening });
+    expect(await runOutreachTick(d)).toEqual({ sent: 0, stopped: 0, deferred: 0, failed: 0, outsideWindow: 1 });
+    expect(log.sent).toEqual([]);
+    expect(log.attempts).toEqual([]);
+    expect(log.updates).toEqual([]);
+  });
+
   it("logs refusals and stops the enrollment without sending", async () => {
     const { deps: base } = deps();
     const state = await base.loadState("org-1", NOW);
     const { deps: d, log } = deps({ loadState: async () => ({ ...state, suppressed: new Set(["ravi@acme.in"]) }) });
-    expect(await runOutreachTick(d)).toEqual({ sent: 0, stopped: 1, deferred: 0, failed: 0 });
+    expect(await runOutreachTick(d)).toEqual({ sent: 0, stopped: 1, deferred: 0, failed: 0, outsideWindow: 0 });
     expect(log.sent).toEqual([]);
     expect(log.attempts).toEqual([{ organizationId: "org-1", leadId: "l1", enrollmentId: "e1", channel: "email", decision: "refused", reasons: ["suppressed"], providerMessageId: null }]);
     expect(log.updates).toEqual([{ id: "e1", status: "stopped", stopReasons: ["suppressed"], nextSendAt: null }]);
@@ -62,7 +71,7 @@ describe("runOutreachTick", () => {
 
   it("leaves the enrollment due when the provider fails, and does not log an allowed attempt", async () => {
     const { deps: d, log } = deps({ sendEmail: async () => { throw new Error("Resend 500"); } });
-    expect(await runOutreachTick(d)).toEqual({ sent: 0, stopped: 0, deferred: 0, failed: 1 });
+    expect(await runOutreachTick(d)).toEqual({ sent: 0, stopped: 0, deferred: 0, failed: 1, outsideWindow: 0 });
     expect(log.attempts).toEqual([]);
     expect(log.updates).toEqual([]);
   });
@@ -72,7 +81,7 @@ describe("runOutreachTick", () => {
     const state = await base.loadState("org-1", NOW);
     const lead = { ...state.leads.get("l1")!, contactName: undefined };
     const { deps: d, log } = deps({ loadState: async () => ({ ...state, leads: new Map([["l1", lead]]) }) });
-    expect(await runOutreachTick(d)).toEqual({ sent: 0, stopped: 1, deferred: 0, failed: 0 });
+    expect(await runOutreachTick(d)).toEqual({ sent: 0, stopped: 1, deferred: 0, failed: 0, outsideWindow: 0 });
     expect(log.sent).toEqual([]);
     expect(log.updates).toEqual([{ id: "e1", status: "stopped", stopReasons: ["template_render_failed"], nextSendAt: null }]);
   });
