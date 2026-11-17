@@ -62,12 +62,20 @@ function isConfiguredCountry(country: string): country is ConfiguredCountry {
   return country === "IN" || country === "AE";
 }
 
-function localHour(now: Date, timeZone: string): number {
-  const parts = new Intl.DateTimeFormat("en-GB", { timeZone, hour: "2-digit", minute: "2-digit", hourCycle: "h23" })
+const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
+
+/** Local wall-clock time in a time zone: fractional hour (09:30 is 9.5) and weekday (0 = Sunday). */
+export function localTimeParts(now: Date, timeZone: string): { hour: number; weekday: number } {
+  const parts = new Intl.DateTimeFormat("en-GB", { timeZone, weekday: "short", hour: "2-digit", minute: "2-digit", hourCycle: "h23" })
     .formatToParts(now);
   const hour = Number(parts.find((p) => p.type === "hour")?.value);
   const minute = Number(parts.find((p) => p.type === "minute")?.value);
-  return hour + minute / 60;
+  const weekday = WEEKDAYS.indexOf(parts.find((p) => p.type === "weekday")?.value as (typeof WEEKDAYS)[number]);
+  return { hour: hour + minute / 60, weekday };
+}
+
+function localHour(now: Date, timeZone: string): number {
+  return localTimeParts(now, timeZone).hour;
 }
 
 export function checkContactability(input: ContactabilityInput): ContactabilityDecision {
