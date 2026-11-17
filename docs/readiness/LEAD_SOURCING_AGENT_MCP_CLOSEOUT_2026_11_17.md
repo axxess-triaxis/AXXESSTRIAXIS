@@ -19,10 +19,28 @@
 **Decision:** an agent-callable sourcing flow inside AXXESS, with human approval before import.
 **Shipped artifact:** this branch.
 **Verification:** below.
-**Current status:**
-- The code is in a PR.
-- Not deployed.
-- The migration has not been applied to any environment.
+**Current status (updated 2026-11-17):**
+- **Merged to `main`** on the founder's explicit go ("Merge #524 and #525 to main"):
+  - #524 as `c5d76c75`.
+  - #525 as `ed78e12f`.
+  - Every required check passed on both PRs (20 pass, 4 skipped optional jobs). No gate was bypassed.
+- **Deployed to production:** Vercel "Production – axxesstriaxis" deployment for `ed78e12f` reported `success`.
+- **Post-deploy check:** run against `axxesstriaxis.vercel.app` and the deployment URL.
+  - The site returns 200.
+  - `/api/lead-sourcing/worker/claim`, `/api/lead-sourcing/worker/runs/[id]` and `/api/lead-sourcing/exclusions` return 401 `{"error":"Unauthorized."}` with no credentials and with a wrong bearer token.
+  - The existing `/api/agents/mcp` returns 401 without a token, as before.
+- **Migration:** not applied to staging or production, so the feature is inert in production until it runs.
+  - Capabilities are opt-in, and the worker routes reject every call without the worker secret.
+- **Worker:** not deployed.
+
+## CodeQL fix before merge
+
+CodeQL flagged 3 high-severity alerts on #524:
+- `js/double-escaping`
+- `js/bad-tag-filter`
+- `js/incomplete-sanitization`
+
+All three were fixed in `b5b93a57` with 3 regression tests, then merged into #525 (`392c44e7`). CodeQL passed on both PRs afterwards.
 
 ## What changed
 
