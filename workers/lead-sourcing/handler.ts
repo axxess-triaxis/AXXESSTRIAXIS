@@ -15,7 +15,8 @@ async function secret(arn: string | undefined): Promise<string | undefined> {
   if (!arn) return undefined;
   if (!cache.has(arn)) {
     const out = await secrets.send(new GetSecretValueCommand({ SecretId: arn }));
-    cache.set(arn, out.SecretString ?? "");
+    // Trimmed: a value stored with a trailing line break would otherwise never match AXXESS.
+    cache.set(arn, (out.SecretString ?? "").trim());
   }
   return cache.get(arn) || undefined;
 }
