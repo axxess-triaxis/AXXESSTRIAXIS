@@ -27,7 +27,7 @@ export function toImportCsv(candidates: Candidate[], date: string): string {
   return [IMPORT_HEADER, ...rows].join("\n") + "\n";
 }
 
-const md = (s: string) => s.replace(/\|/g, "\\|");
+const md = (s: string) => s.replace(/\\/g, "\\\\").replace(/\|/g, "\\|");
 
 export function toReviewMarkdown(candidates: Candidate[], sites: SiteResult[], stats: Record<string, number | string>): string {
   const lines = ["# Lead sourcing review", "", "Nothing here is imported or enrolled. Approve rows before import.", "", "## Run", ""];
