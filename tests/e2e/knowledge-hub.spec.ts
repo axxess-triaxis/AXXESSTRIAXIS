@@ -6,25 +6,44 @@ test.describe("Sprint 9 Knowledge Hub", () => {
     skipUnlessSeeded();
   });
 
-  test("supports search, preview, archive, restore, and permission-aware upload controls", async ({ page }) => {
+  // No seed file inserts documents, so the test uploads its own uniquely named document
+  // (founder decision 2026-11-15) and soft-deletes it at the end.
+  test("uploads, searches, previews, archives and restores a document", async ({ page }) => {
+    const title = `E2E knowledge doc ${Date.now()}`;
+    const fileName = `${title}.md`;
+
     await loginAs(page, seededUsers.orgAdminAlpha);
     await page.getByRole("button", { name: /Knowledge Hub/i }).click();
-
     await expect(page.getByRole("heading", { name: "Knowledge Hub" })).toBeVisible();
-    await page.getByPlaceholder(/Search title/i).fill("risk");
-    await page.getByRole("button", { name: /Search/i }).click();
-    await expect(page.getByText(/risk/i).first()).toBeVisible();
 
-    await page.getByRole("button", { name: "Documents", exact: true }).click();
-    await page.getByText(/Risk|Governance|Architecture/i).first().click();
+    // The Upload button opens a hidden file input; set the file on the input directly.
+    await page.locator('input[type="file"]').setInputFiles({
+      name: fileName,
+      mimeType: "text/markdown",
+      buffer: Buffer.from(`# ${title}\n\nRisk register review created by the Playwright suite.\n`),
+    });
+
+    // The card only appears once the storage upload and the documents row both succeeded.
+    await expect(page.getByRole("button", { name: new RegExp(title) })).toBeVisible({ timeout: 30_000 });
     await expect(page.getByText("Document Preview")).toBeVisible();
 
-    await page.getByRole("button", { name: /Archive/i }).click();
-    await expect(page.getByText(/Document archived/i)).toBeVisible();
-    await page.getByRole("button", { name: /Archived/i }).click();
-    await expect(page.getByRole("button", { name: /Restore/i })).toBeVisible();
-    await page.getByRole("button", { name: /Restore/i }).click();
-    await expect(page.getByText(/Document restored/i)).toBeVisible();
+    await page.getByPlaceholder(/Search title/i).fill(title);
+    await page.getByRole("button", { name: "Documents", exact: true }).click();
+    await page.getByRole("button", { name: new RegExp(title) }).click();
+    await expect(page.getByText("Document Preview")).toBeVisible();
+
+    // Exact toast text: the local-fallback variant appends "Local fallback is active." and must fail here.
+    await page.getByRole("button", { name: "Un-index (Archive)" }).click();
+    await expect(page.getByText("Document archived and removed from AI/RAG indexing.", { exact: true })).toBeVisible();
+
+    await page.getByRole("button", { name: "Archived", exact: true }).click();
+    await expect(page.getByRole("button", { name: new RegExp(title) })).toBeVisible();
+    await page.getByRole("button", { name: "Restore", exact: true }).click();
+    await expect(page.getByText("Document restored.", { exact: true })).toBeVisible();
+
+    // Clean up: soft delete, so staging does not accumulate test documents.
+    await page.getByRole("button", { name: "Delete", exact: true }).click();
+    await expect(page.getByText("Document deleted.", { exact: true })).toBeVisible();
   });
 
   test("hides upload actions from guest users", async ({ page }) => {
