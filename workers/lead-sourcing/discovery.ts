@@ -40,6 +40,7 @@ export async function runDiscovery(
       "Rejected: robots.txt": rejected("robots"),
       "Companies checked": checked.kept.length,
       "Discovery incomplete": found.incomplete ? 1 : 0,
+      "Listed by no-tool extraction": found.extracted ? 1 : 0,
     },
   };
 }
