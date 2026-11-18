@@ -333,3 +333,34 @@ describe("serverSession absolute session cap", () => {
     });
   });
 });
+
+describe("signOutServerSide", () => {
+  beforeEach(() => {
+    store = new Map();
+    process.env.NEXT_PUBLIC_SUPABASE_URL = "https://project.supabase.co";
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = "anon-key";
+    vi.resetModules();
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  // Founder decision 2026-11-15: signing out ends this device's session only. Supabase's
+  // POST /logout defaults to scope=global, which also signed the user out on every other device.
+  it("revokes only the current session (scope=local) and clears the auth cookies", async () => {
+    const fetchMock = vi.fn(async () => new Response(null, { status: 204 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { signOutServerSide, accessTokenCookieName, refreshTokenCookieName } = await import("./serverSession");
+    store.set(accessTokenCookieName, { value: "access-1", maxAge: 3600 });
+    store.set(refreshTokenCookieName, { value: "refresh-1", maxAge: 3600 });
+
+    await signOutServerSide("access-1");
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls[0][0]).toBe("https://project.supabase.co/auth/v1/logout?scope=local");
+    expect(store.has(accessTokenCookieName)).toBe(false);
+    expect(store.has(refreshTokenCookieName)).toBe(false);
+  });
+});
