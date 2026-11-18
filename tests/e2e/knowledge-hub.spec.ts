@@ -14,7 +14,9 @@ test.describe("Sprint 9 Knowledge Hub", () => {
 
     await loginAs(page, seededUsers.orgAdminAlpha);
     await page.getByRole("button", { name: /Knowledge Hub/i }).click();
-    await expect(page.getByRole("heading", { name: "Knowledge Hub" })).toBeVisible();
+    // The section shows a loading state until five list calls finish; on staging that took over 5 s
+    // for the org admin (2026-11-18 run kh1), so the first render gets a longer wait.
+    await expect(page.getByRole("heading", { name: "Knowledge Hub" })).toBeVisible({ timeout: 30_000 });
 
     // The Upload button opens a hidden file input; set the file on the input directly.
     await page.locator('input[type="file"]').setInputFiles({
