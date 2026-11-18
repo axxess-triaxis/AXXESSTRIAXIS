@@ -38,6 +38,6 @@ sam deploy --guided --profile axxess-triaxis --region ap-southeast-2 --stack-nam
 
 ## Limits
 
-- One run at a time (reserved concurrency 1), 15 minutes per invocation, and at most 150 seeds per run.
+- 15 minutes per invocation and at most 150 seeds per run. Reserved concurrency is the optional `ReservedConcurrency` parameter (default 0, none): new accounts with a 10-execution limit cannot reserve any. Overlapping invocations are safe because a run is claimed only while still queued and its verify credits are reserved when it is queued.
 - The worker stops starting new sites 2 minutes before its timeout and reports what it has, including a count of sites skipped for time.
 - Crawling obeys robots.txt and uses the user agent `AXXESS-lead-research/1.0`.
