@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getServerAuthSession, signOutServerSide } from "../../../../auth/serverSession";
+import { getServerAuthSession, SIGN_OUT_SCOPE, signOutServerSide } from "../../../../auth/serverSession";
 import { auditLogsRepository } from "../../../../repositories/supabaseEnterpriseRepositories";
 import { getPostHogClient } from "../../../../lib/posthog-server";
 
@@ -17,6 +17,7 @@ export async function POST() {
       resourceType: "user",
       resourceId: session.user.id,
       category: "authentication",
+      metadata: { scope: SIGN_OUT_SCOPE },
     }).catch(() => undefined);
   }
 
