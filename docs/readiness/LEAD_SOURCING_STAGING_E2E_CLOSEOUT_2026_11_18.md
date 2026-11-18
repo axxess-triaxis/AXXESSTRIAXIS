@@ -39,7 +39,7 @@ The per-company comparison is in `gtm/leads_sourcing_staging_e2e_2026_11_18.md` 
 - **Not tested:**
   - the known-lead filter (staging has no record of the production CRM)
   - verification of guessed addresses (`verify_cap: 0`; QEV has 6 credits, so this was kept deliberately)
-  - the scheduled trigger
+  - the scheduled trigger during this run (it was enabled afterwards; see "Update, later on 2026-11-18")
   - any production run
 
 ## Configuration done to get here (founder, 2026-11-17 to 2026-11-18; no code)
@@ -56,13 +56,35 @@ Database and accounts:
 - a staging account signed up and onboarded (Super Admin)
 
 ## Open items
-1. **Stable worker target.** `AxxessBaseUrl` is a per-deployment URL, because `staging.triaxisventures.com` is behind Vercel Authentication. Every staging deploy needs a worker redeploy. This is a blocker before the schedule is enabled.
+1. ~~**Stable worker target.**~~ Resolved later on 2026-11-18; see the update below.
 2. **Production key in Preview.** The generic Preview `SUPABASE_SECRET_KEY`, `SUPABASE_SERVICE_ROLE_KEY` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` are shared with Production, so the production keys reach every non-staging preview branch. Flagged and not changed.
-3. **No vault key in production.** `AXXESS_TOKEN_VAULT_KEY` is not set for Production, so production cannot issue agent keys (the same 500 seen on staging). It is needed before any production lead-sourcing run.
-4. **Production run.** Not started. It needs the founder's go, plus items 1 (if scheduled) and 3.
+3. ~~**No vault key in production.**~~ Corrected; see the update below. The live production app already had a vault key.
+4. **Production run.** Not started. It needs the founder's go, a production worker stack with its own secrets, and must point at the live app (landing.triaxisventures.com).
+
+## Update, later on 2026-11-18
+**Stable worker target (item 1), resolved.**
+- `AxxessBaseUrl` now points at the Vercel branch alias for `staging`: `https://axxesstr-git-cbf2f7-axxess-tri-axis-powered-by-triaxis-ventures.vercel.app`. The alias is not behind Vercel Authentication and moves to each new staging deploy on its own.
+- Verified: after staging deploy `17a3faa1`, the alias resolved to the new deployment (`dpl_C8ZTykhVL6UySH8tzeTtaaeMNb5t`), and the worker, not redeployed, still claimed successfully (`{"claimed":false}`, no error). Staging deploys no longer need a worker redeploy.
+- `staging.triaxisventures.com` stays behind Vercel Authentication (302).
+
+**Schedule enabled (founder go).**
+- `ScheduleState=ENABLED` at 06:30:48 UTC, `rate(5 minutes)`.
+- Scheduled runs at 06:31:31 and 06:36:30 UTC. CloudWatch, 06:31 to 06:42 UTC: 2 invocations, 0 errors, longest 1,454 ms.
+- Any later `sam deploy` must pass `ScheduleState=ENABLED`, or it switches the schedule off.
+
+**Production vault key (item 3), corrected.**
+- Two Vercel production projects run this app on the same Supabase project (`vnliomnfabaicvvvfwia`, read from each site's public JavaScript):
+  - `triaxis-www-frontend-import` serves landing.triaxisventures.com, the live app. It already had `AXXESS_TOKEN_VAULT_KEY`, `AXXESS_TOKEN_VAULT_KEY_ID` and `NEXT_PUBLIC_APP_URL`.
+  - `axxesstriaxis` serves beta.triaxisventures.com, triaxisventures.com and www. The founder states beta is not used. The `staging` Preview belongs to this project.
+- Item 3 checked only `axxesstriaxis`, so it was wrong for the live app.
+- A new key was set on `axxesstriaxis` Production. Two different keys on one database would make agent keys and connector tokens saved on one domain unreadable on the other. So the same day, on the founder's decision:
+  - the key was removed from `axxesstriaxis` Production (the `Preview (staging)` copy stays)
+  - `axxesstriaxis` was redeployed (`axxesstriaxis-mxbfuopi1`)
+  - its AWS backup was deleted by the founder (7-day recovery window)
+- Verified: a signed-in check of `beta.triaxisventures.com/api/connectors/oauth/start?provider=notion` again lists `AXXESS_TOKEN_VAULT_KEY` as missing. landing.triaxisventures.com still loads its sign-in page (200), and nothing changed in its project.
 
 ## Commands run (summary)
 - `node ls-e2e.mjs <staging> queue | read | approve`: a local script, not committed. It reads the agent key from a file and never prints it.
 - `aws lambda invoke --function-name axxess-lead-sourcing-staging` (profile axxess-triaxis, ap-southeast-2).
-- `sam deploy --stack-name axxess-lead-sourcing-staging … ScheduleState=DISABLED`, after each staging redeploy.
+- `sam deploy --stack-name axxess-lead-sourcing-staging … ScheduleState=DISABLED`, after each staging redeploy (until the branch alias replaced the per-deployment URL; now `ScheduleState=ENABLED`).
 - Staging browser session checks of `/api/crm/leads`, `/api/approvals` and `/api/outreach/sequences`.
