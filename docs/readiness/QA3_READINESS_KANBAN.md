@@ -465,3 +465,11 @@ No cards moved yet.
 - Blocker 2: intermittent staging slowness (saves over 5 to 30 s, "Checking session" over 20 s). Owner: Claude Code investigation. Next review: 2026-11-29.
 - Open product question: should Sign out end every session of the user (current global scope)?
 - Evidence: `docs/readiness/E2E_STAGING_TRIAGE_CLOSEOUT_2026_11_15.md`, PR #504.
+
+## Lead Milestones Update (2026-11-15)
+
+- Card: LEAD-MILESTONES (GTM funnel: meetings and trials).
+- Column: Blocked, not Verified. The full local suite passes (2,261 tests), but nothing is deployed.
+- Blocker: apply `20261115140000_lead_milestones.sql` to production, then founder review, merge and deploy. Owner: founder.
+- Evidence: `docs/readiness/LEAD_MILESTONES_CLOSEOUT_2026_11_15.md`.
+- Still untracked: paid, until billing records exist.

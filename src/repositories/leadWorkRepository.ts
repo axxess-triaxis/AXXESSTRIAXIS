@@ -3,6 +3,7 @@
 // and the routes decide which leads a role may see before calling these.
 import type { ConsentBasis, ContactChannel } from "../compliance/contactability";
 import type { CallOutcome, QueueLead } from "../services/outbound/callQueue";
+import type { MilestoneInput, MilestoneKind } from "../services/outbound/leadMilestones";
 import type { TenantScope } from "./interfaces";
 import { isSupabaseAdminConfigured, supabaseAdminRest } from "./supabaseAdmin";
 
@@ -94,6 +95,15 @@ export async function recordCall(scope: TenantScope, call: {
   } });
 }
 
+/** Appends one milestone (meeting or trial) to lead_milestones. */
+export async function recordMilestone(scope: TenantScope, leadId: string, milestone: MilestoneInput): Promise<void> {
+  ensureConfigured();
+  await supabaseAdminRest("lead_milestones", { method: "POST", prefer: "return=minimal", body: {
+    organization_id: scope.organizationId, lead_id: leadId, kind: milestone.kind, occurred_at: milestone.occurredAt,
+    note: milestone.note, recorded_by: scope.userId,
+  } });
+}
+
 /** True if the user is an active staff member of the caller's organization (a valid lead owner). */
 export async function isActiveStaffMember(scope: TenantScope, userId: string): Promise<boolean> {
   ensureConfigured();
@@ -118,30 +128,36 @@ export async function listActiveStaff(scope: TenantScope): Promise<StaffMember[]
 export type HistoryEntry =
   | { kind: "attempt"; at: string; channel: ContactChannel; decision: "allowed" | "refused"; reasons: string[]; outcome: string | null; note: string | null }
   | { kind: "change"; at: string; action: string; metadata: Record<string, unknown> }
-  | { kind: "reply"; at: string; category: string; subject: string; fromEmail: string };
+  | { kind: "reply"; at: string; category: string; subject: string; fromEmail: string }
+  | { kind: "milestone"; at: string; milestone: MilestoneKind; note: string | null };
 
 export async function loadLeadHistory(scope: TenantScope, leadId: string): Promise<HistoryEntry[]> {
   ensureConfigured();
   const org = `eq.${scope.organizationId}`;
-  const [attempts, changes, replies] = await Promise.all([
+  const [attempts, changes, replies, milestones] = await Promise.all([
     supabaseAdminRest<{ created_at: string; channel: ContactChannel; decision: "allowed" | "refused"; reasons: string[]; outcome: string | null; note: string | null }[]>(
       "contact_attempts", { query: new URLSearchParams({
         organization_id: org, lead_id: `eq.${leadId}`, select: "created_at,channel,decision,reasons,outcome,note", order: "created_at.desc", limit: "200",
       }) }),
     supabaseAdminRest<{ created_at: string; action: string; metadata: Record<string, unknown> | null }[]>(
       "audit_logs", { query: new URLSearchParams({
-        organization_id: org, resource_type: "eq.crm_lead", resource_id: `eq.${leadId}`, action: "neq.outreach.reply.received",
+        organization_id: org, resource_type: "eq.crm_lead", resource_id: `eq.${leadId}`, action: "not.in.(outreach.reply.received,crm.lead.milestone_recorded)",
         select: "created_at,action,metadata", order: "created_at.desc", limit: "200",
       }) }),
     supabaseAdminRest<{ created_at: string; category: string; subject: string; from_email: string }[]>(
       "lead_replies", { query: new URLSearchParams({
         organization_id: org, lead_id: `eq.${leadId}`, select: "created_at,category,subject,from_email", order: "created_at.desc", limit: "200",
       }) }),
+    supabaseAdminRest<{ occurred_at: string; kind: MilestoneKind; note: string | null }[]>(
+      "lead_milestones", { query: new URLSearchParams({
+        organization_id: org, lead_id: `eq.${leadId}`, select: "occurred_at,kind,note", order: "occurred_at.desc", limit: "200",
+      }) }),
   ]);
   const entries: HistoryEntry[] = [
     ...attempts.map((a) => ({ kind: "attempt" as const, at: a.created_at, channel: a.channel, decision: a.decision, reasons: a.reasons ?? [], outcome: a.outcome, note: a.note })),
     ...changes.map((c) => ({ kind: "change" as const, at: c.created_at, action: c.action, metadata: c.metadata ?? {} })),
     ...replies.map((r) => ({ kind: "reply" as const, at: r.created_at, category: r.category, subject: r.subject, fromEmail: r.from_email })),
+    ...milestones.map((m) => ({ kind: "milestone" as const, at: m.occurred_at, milestone: m.kind, note: m.note })),
   ];
   return entries.sort((a, b) => b.at.localeCompare(a.at));
 }

@@ -11,6 +11,7 @@ import { canReadAllLeads } from "../../security/rbac";
 import { FunnelPanel } from "./FunnelPanel";
 import { clearPendingCall, readPendingCall, savePendingCall, type PendingCall } from "./pendingCall";
 import { CALL_OUTCOMES, type CallOutcome, type QueueLead, type QueueReason } from "../../services/outbound/callQueue";
+import { MAX_MILESTONE_NOTE, MILESTONE_KINDS, type MilestoneKind } from "../../services/outbound/leadMilestones";
 
 // Leads page and daily call queue (GTM plan 2026-11-11, Day 3). Everything comes from the CRM
 // routes; the server decides what each role may see and change, and the contactability gate
@@ -48,7 +49,12 @@ type QueueResponse = {
 type HistoryEntry =
   | { kind: "attempt"; at: string; channel: string; decision: string; reasons: string[]; outcome: string | null; note: string | null }
   | { kind: "change"; at: string; action: string; metadata: Record<string, unknown> }
-  | { kind: "reply"; at: string; category: string; subject: string; fromEmail: string };
+  | { kind: "reply"; at: string; category: string; subject: string; fromEmail: string }
+  | { kind: "milestone"; at: string; milestone: MilestoneKind; note: string | null };
+
+export const MILESTONE_LABELS: Record<MilestoneKind, string> = {
+  meeting_booked: "Meeting booked", meeting_held: "Meeting held", trial_started: "Trial started",
+};
 
 const REPLY_LABELS: Record<string, string> = {
   interested: "Interested", not_now: "Not now", unsubscribe: "Unsubscribe", out_of_office: "Out of office", other: "Needs reading",
@@ -63,16 +69,59 @@ async function getJson<T>(url: string): Promise<T | null> {
   return response.json() as Promise<T>;
 }
 
+// Meetings and trials (2026-11-15): logged here, counted by the funnel. Logging one also stops the
+// lead's outreach emails and moves the stage forward; the server decides both.
+function LogMilestoneForm(props: { leadId: string; onLogged: () => void }) {
+  const [kind, setKind] = useState<MilestoneKind>("meeting_booked");
+  const [occurredAt, setOccurredAt] = useState("");
+  const [note, setNote] = useState("");
+  const [message, setMessage] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const submit = async () => {
+    setBusy(true);
+    setMessage(null);
+    const response = await fetch(`/api/crm/leads/${props.leadId}/milestones`, {
+      method: "POST", credentials: "include", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ kind, ...(occurredAt ? { occurredAt: new Date(occurredAt).toISOString() } : {}), ...(note.trim() ? { note: note.trim() } : {}) }),
+    }).catch(() => null);
+    const data = (await response?.json().catch(() => null)) as { error?: string; stoppedEnrollments?: number } | null;
+    setBusy(false);
+    if (response?.status === 201) {
+      setNote("");
+      setOccurredAt("");
+      setMessage(`${MILESTONE_LABELS[kind]} logged.${data?.stoppedEnrollments ? " Outreach emails to this lead are stopped." : ""}`);
+      props.onLogged();
+      return;
+    }
+    setMessage(data?.error ?? "Could not log it.");
+  };
+
+  return (
+    <div data-testid="log-milestone" className="mt-2 flex flex-wrap items-center gap-2">
+      <select aria-label="Milestone" className={input} value={kind} onChange={(e) => setKind(e.target.value as MilestoneKind)}>
+        {MILESTONE_KINDS.map((k) => <option key={k} value={k}>{MILESTONE_LABELS[k]}</option>)}
+      </select>
+      <input aria-label="When" type="datetime-local" className={input} value={occurredAt} onChange={(e) => setOccurredAt(e.target.value)} />
+      <input aria-label="Milestone note" className={`${input} min-w-0 flex-1`} maxLength={MAX_MILESTONE_NOTE} placeholder="Note (optional)" value={note} onChange={(e) => setNote(e.target.value)} />
+      <button type="button" disabled={busy} onClick={() => void submit()} className="rounded-md bg-[#8B1E2D] px-3 py-1 text-xs font-semibold text-white disabled:opacity-50">Log</button>
+      {message ? <p className="w-full text-xs text-[#5F6B73]">{message}</p> : null}
+    </div>
+  );
+}
+
 function LeadPanel(props: { lead: CrmLead; senior: boolean; staff: { id: string; displayName: string }[]; onClose: () => void; onSaved: () => void }) {
   const { lead } = props;
   const [history, setHistory] = useState<HistoryEntry[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Bumped after a milestone is logged: the stage may not change, so lead.updatedAt may not either.
+  const [historyVersion, setHistoryVersion] = useState(0);
 
   useEffect(() => {
     let active = true;
     void getJson<{ history: HistoryEntry[] }>(`/api/crm/leads/${lead.id}/history`).then((data) => { if (active) setHistory(data?.history ?? []); });
     return () => { active = false; };
-  }, [lead.id, lead.updatedAt]);
+  }, [lead.id, lead.updatedAt, historyVersion]);
 
   const save = async (change: Record<string, unknown>) => {
     setError(null);
@@ -116,13 +165,17 @@ function LeadPanel(props: { lead: CrmLead; senior: boolean; staff: { id: string;
         ) : null}
       </div>
       {error ? <p className="mt-2 text-xs text-red-700">{error}</p> : null}
+      <h3 className="mt-4 text-[11px] font-semibold uppercase tracking-wide text-[#5F6B73]">Log a meeting or trial</h3>
+      <LogMilestoneForm leadId={lead.id} onLogged={() => { setHistoryVersion((v) => v + 1); props.onSaved(); }} />
       <h3 className="mt-4 text-[11px] font-semibold uppercase tracking-wide text-[#5F6B73]">History</h3>
       {history === null ? <p className="mt-1 text-xs text-[#5F6B73]">Loading...</p> : history.length === 0 ? <p className="mt-1 text-xs text-[#5F6B73]">No contact or changes yet.</p> : (
         <ul className="mt-1 space-y-1">
           {history.map((h, i) => (
             <li key={i} className="text-xs text-[#0F1117]">
               <span className="text-[#5F6B73]">{when(h.at)}</span>{" "}
-              {h.kind === "reply"
+              {h.kind === "milestone"
+                ? `${MILESTONE_LABELS[h.milestone] ?? h.milestone}${h.note ? ` (${h.note})` : ""}`
+                : h.kind === "reply"
                 ? `Reply: ${REPLY_LABELS[h.category] ?? h.category}${h.subject ? ` - ${h.subject}` : ""}`
                 : h.kind === "attempt"
                 ? `${h.channel === "voice_human" ? "Call" : h.channel} ${h.decision}${h.outcome ? `: ${OUTCOME_LABELS[h.outcome as CallOutcome] ?? h.outcome}` : ""}${h.note ? ` (${h.note})` : ""}${h.reasons.length ? ` [${h.reasons.join(", ")}]` : ""}`

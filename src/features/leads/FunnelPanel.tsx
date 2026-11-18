@@ -5,11 +5,13 @@ import { Card } from "../../components/ui/Card";
 
 // Outreach funnel and sending health (GTM plan 2026-11-11, Day 4). Senior roles only; the route
 // refuses everyone else. Every number comes from a named table, and stages with no source rows
-// are shown as "Not tracked yet" rather than estimated.
+// are shown as "Not tracked yet" rather than estimated. Meetings and trials come from the
+// milestones staff log on a lead (2026-11-15).
 
 type Funnel = {
   window: { days: number };
-  activity: { leadsAdded: number; emailsSent: number; delivered: number; bounced: number; complained: number; replies: number; repliesByCategory: Record<string, number> };
+  activity: { leadsAdded: number; emailsSent: number; delivered: number; bounced: number; complained: number; replies: number; repliesByCategory: Record<string, number>;
+    meetingsBooked: number; meetingsHeld: number; trialsStarted: number };
   pipelineNow: { open: number; byStage: Record<string, number>; won: number; lost: number };
   notTracked: string[];
   ramp: { budget: number; reason: string; sendingEnabled: boolean; sent7d: number; bounceRate7d: number; complaintRate7d: number };
@@ -19,6 +21,7 @@ const REPLY_LABELS: Record<string, string> = {
   interested: "Interested", not_now: "Not now", unsubscribe: "Unsubscribe", out_of_office: "Out of office", other: "Needs reading",
 };
 const NOT_TRACKED_LABELS: Record<string, string> = { meetings: "Meetings", trials: "Trials", paid: "Paid" };
+const NOT_TRACKED_NOTES: Record<string, string> = { paid: "Not tracked yet (needs billing records)" };
 
 const pct = (n: number) => `${(n * 100).toFixed(n > 0 && n < 0.01 ? 2 : 1)}%`;
 const of = (part: number, whole: number) => (whole > 0 ? ` (${pct(part / whole)})` : "");
@@ -83,6 +86,9 @@ export function FunnelPanel() {
             <Row label="Spam complaints" value={`${a.complained}${of(a.complained, a.emailsSent)}`} />
             <Row label="Replies" value={`${a.replies}${of(a.replies, a.emailsSent)}`} />
             {Object.entries(a.repliesByCategory).map(([category, n]) => <Row key={category} label={`  ${REPLY_LABELS[category] ?? category}`} value={n} muted />)}
+            <Row label="Meetings booked" value={a.meetingsBooked ?? 0} />
+            <Row label="Meetings held" value={a.meetingsHeld ?? 0} />
+            <Row label="Trials started" value={a.trialsStarted ?? 0} />
           </Card>
         </div>
         <div data-testid="funnel-pipeline">
@@ -92,7 +98,7 @@ export function FunnelPanel() {
             {["new", "qualifying", "proposal", "negotiation"].map((stage) => <Row key={stage} label={`  ${stage}`} value={funnel.pipelineNow.byStage[stage] ?? 0} muted />)}
             <Row label="Won" value={funnel.pipelineNow.won} />
             <Row label="Lost" value={funnel.pipelineNow.lost} />
-            {funnel.notTracked.map((stage) => <Row key={stage} label={NOT_TRACKED_LABELS[stage] ?? stage} value="Not tracked yet" muted />)}
+            {funnel.notTracked.map((stage) => <Row key={stage} label={NOT_TRACKED_LABELS[stage] ?? stage} value={NOT_TRACKED_NOTES[stage] ?? "Not tracked yet"} muted />)}
           </Card>
         </div>
       </div>

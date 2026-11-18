@@ -12,7 +12,7 @@ vi.mock("../../../../services/audit/auditEvents", () => ({ recordDeniedAttempt: 
 vi.mock("../../../../repositories/funnelRepository", () => ({
   loadFunnel: async (_scope: unknown, days: number) => {
     state.funnelArgs.push(days);
-    return { window: { days, since: "x" }, activity: { emailsSent: 80 }, pipelineNow: { open: 3, byStage: {}, won: 0, lost: 0 }, sources: {}, notTracked: ["meetings", "trials", "paid"] };
+    return { window: { days, since: "x" }, activity: { emailsSent: 80 }, pipelineNow: { open: 3, byStage: {}, won: 0, lost: 0 }, sources: {}, notTracked: ["paid"] };
   },
 }));
 vi.mock("../../../../repositories/outboundRepository", () => ({ loadSendHealth: async () => health }));
@@ -42,7 +42,7 @@ describe("GET /api/crm/funnel", () => {
     process.env.OUTREACH_SENDING_ENABLED = "true";
     const body = await (await get("?days=7")).json();
     expect(state.funnelArgs).toEqual([7]);
-    expect(body.notTracked).toEqual(["meetings", "trials", "paid"]);
+    expect(body.notTracked).toEqual(["paid"]);
     expect(body.ramp).toMatchObject({ budget: 30, reason: "ramping", sendingEnabled: true, sent7d: 80, bounceRate7d: 1 / 80, complaintRate7d: 0 });
   });
 
