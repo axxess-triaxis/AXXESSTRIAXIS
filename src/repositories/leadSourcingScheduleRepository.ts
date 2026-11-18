@@ -267,3 +267,70 @@ export async function expireUnclaimedDiscovery(hours = 24, now = new Date()): Pr
     body: { status: "failed", error: "discovery was not picked up in time", finished_at: now.toISOString() },
   });
 }
+
+// ---- Discovery results (worker) ---------------------------------------------------------------
+
+export type DiscoveryRun = { id: string; organizationId: string; status: string; seedSource: string; startedAt: string | null; discovery: DiscoverySpec | null; stats: Record<string, number | string> };
+
+export async function getDiscoveryRun(runId: string): Promise<DiscoveryRun | null> {
+  ensureConfigured();
+  const rows = await supabaseAdminRest<{ id: string; organization_id: string; status: string; seed_source: string; started_at: string | null; discovery: DiscoverySpec | null; stats: Record<string, number | string> | null }[]>("lead_sourcing_runs", {
+    query: new URLSearchParams({ id: `eq.${runId}`, select: "id,organization_id,status,seed_source,started_at,discovery,stats", limit: "1" }),
+  });
+  const r = rows?.[0];
+  return r ? { id: r.id, organizationId: r.organization_id, status: r.status, seedSource: r.seed_source, startedAt: r.started_at, discovery: r.discovery, stats: r.stats ?? {} } : null;
+}
+
+export type DiscoveryUsage = { searchCount: number; llmInputTokens: number; llmOutputTokens: number };
+const usageColumns = (u: DiscoveryUsage) => ({ search_count: u.searchCount, llm_input_tokens: u.llmInputTokens, llm_output_tokens: u.llmOutputTokens });
+
+/**
+ * Hands a discovered run to the crawler: stores its seeds and moves it from discovering to queued.
+ * started_at is cleared so the crawl claim sets its own start time. False if the run moved on.
+ */
+export async function queueDiscoveredSeeds(
+  run: Pick<DiscoveryRun, "id" | "organizationId">,
+  seeds: import("../services/leadSourcing/types.ts").Seed[],
+  usage: DiscoveryUsage,
+  stats: Record<string, number | string>,
+): Promise<boolean> {
+  ensureConfigured();
+  const rows = await supabaseAdminRest<{ id: string }[]>("lead_sourcing_runs", {
+    method: "PATCH",
+    query: new URLSearchParams({ id: `eq.${run.id}`, organization_id: `eq.${run.organizationId}`, status: "eq.discovering", select: "id" }),
+    body: { status: "queued", seeds, seed_count: seeds.length, verify_cap: 0, started_at: null, stats, ...usageColumns(usage) },
+  });
+  return (rows ?? []).length > 0;
+}
+
+/** Ends a discovery run that produced nothing to crawl (done) or broke (failed), recording what it used. */
+export async function finishDiscovery(
+  run: Pick<DiscoveryRun, "id" | "organizationId">,
+  outcome: { status: "done" | "failed"; error?: string; stats: Record<string, number | string> },
+  usage: DiscoveryUsage,
+): Promise<void> {
+  ensureConfigured();
+  await supabaseAdminRest("lead_sourcing_runs", {
+    method: "PATCH",
+    prefer: "return=minimal",
+    query: new URLSearchParams({ id: `eq.${run.id}`, organization_id: `eq.${run.organizationId}`, status: "eq.discovering" }),
+    body: { status: outcome.status, error: outcome.error?.slice(0, 300) ?? null, stats: outcome.stats, finished_at: new Date().toISOString(), ...usageColumns(usage) },
+  });
+}
+
+/** Domains this organization's earlier runs already researched, so discovery never re-proposes them. */
+export async function loadPastSeedDomains(organizationId: string): Promise<string[]> {
+  ensureConfigured();
+  const rows = await supabaseAdminRest<{ seeds: unknown }[]>("lead_sourcing_runs", {
+    query: new URLSearchParams({ organization_id: `eq.${organizationId}`, select: "seeds", order: "created_at.desc", limit: "500" }),
+  });
+  const out: string[] = [];
+  for (const r of rows ?? []) {
+    if (!Array.isArray(r.seeds)) continue;
+    for (const s of r.seeds) {
+      const d = s && typeof s === "object" ? (s as Record<string, unknown>).domain : undefined;
+      if (typeof d === "string" && d) out.push(d);
+    }
+  }
+  return out;
+}
