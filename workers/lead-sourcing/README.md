@@ -36,6 +36,16 @@ sam deploy --guided --profile axxess-triaxis --region ap-southeast-2 --stack-nam
 - Then redeploy with `ScheduleState=ENABLED`.
 - The `AlarmEmail` subscription needs confirming from the email it sends.
 
+### Stacks (2026-11-18)
+
+| Stack | `Stage` | `AxxessBaseUrl` | Notes |
+|---|---|---|---|
+| `axxess-lead-sourcing-staging` | `staging` | `https://axxesstr-git-cbf2f7-axxess-tri-axis-powered-by-triaxis-ventures.vercel.app` | Stable `staging` branch alias, not behind Vercel Authentication. Schedule ENABLED. |
+| `axxess-lead-sourcing-prod` | `prod` | `https://landing.triaxisventures.com` | Live app (Vercel project `triaxis-www-frontend-import`). No QEV secret. Schedule DISABLED. |
+
+- Every redeploy must pass the current `ScheduleState`, or it falls back to `DISABLED`.
+- The production `LEAD_SOURCING_WORKER_SECRET` lives on `triaxis-www-frontend-import`, not on `axxesstriaxis`. Landing only picks up an env change from a fresh build, such as a merge to `main`. `vercel redeploy` reuses the prebuilt output.
+
 ## Limits
 
 - 15 minutes per invocation and at most 150 seeds per run. Reserved concurrency is the optional `ReservedConcurrency` parameter (default 0, none): new accounts with a 10-execution limit cannot reserve any. Overlapping invocations are safe because a run is claimed only while still queued and its verify credits are reserved when it is queued.

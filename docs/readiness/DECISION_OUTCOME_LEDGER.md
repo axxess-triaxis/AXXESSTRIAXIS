@@ -123,6 +123,12 @@ Existing rows are not rewritten.
 |---|---|---|---|---|---|---|---|---|
 | Outreach email sends only 09:00 to 18:00 local time: India Monday to Saturday, UAE Monday to Friday. Out-of-window enrollments wait with no log row and no budget used | 2026-11-17 | Founder-approved plan, executed by Claude Code | OUTREACH-SEND-WINDOW | The sender had no time-of-day rule; tick logs show sends at 16:04 UTC (21:34 IST), and the 30 leads queued on 2026-11-17 were due to start at 21:35 IST | Pending merge and deploy. Review by 2026-12-01 (reply rate and the first in-window sends) | #527 (`0ac379aa`) | Unit tests for both countries' hours and weekends, budget not used while waiting | `docs/readiness/OUTREACH_SEND_WINDOW_CLOSEOUT_2026_11_17.md` |
 
+## Lead sourcing first production run (2026-11-18)
+
+| Decision | Date | Session/tool | Issue ID | Why | Outcome | Commit/PR | Verification | Closeout |
+|---|---|---|---|---|---|---|---|---|
+| First production run on 30 fresh, founder-approved seeds (brokerages and clinics, India and UAE), verify_cap 0, worker deployed with its schedule off and invoked once by hand, founder picks imports | 2026-11-18 | Founder-approved plan, executed by Claude Code | LEAD-SOURCING-PROD-RUN1 | Staging was proven (#530); the GTM pivot needs real leads in the live CRM | Done: 30 queued, 26 sites reached, 8 candidates, 0 credits; founder imported 7 (skipped 1 mislabelled role inbox); 0 sequence enrolments; schedule DISABLED | #532 (`8f6237f1`), stack `axxess-lead-sourcing-prod`, run `cc7a2676`; fix #533 | `source_leads` output; Lambda invoke 200; approval `49b19763` executed; prod CRM 76 -> 83 | `docs/readiness/LEAD_SOURCING_PROD_RUN1_CLOSEOUT_2026_11_18.md` |
+
 ## Lead sourcing staging end-to-end test (2026-11-18)
 
 | Decision | Date | Session/tool | Issue ID | Why | Outcome | Commit/PR | Verification | Closeout |
