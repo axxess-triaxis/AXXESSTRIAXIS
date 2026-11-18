@@ -465,3 +465,7 @@ No cards moved yet.
 - Blocker 2: intermittent staging slowness (saves over 5 to 30 s, "Checking session" over 20 s). Owner: Claude Code investigation. Next review: 2026-11-29.
 - Open product question: should Sign out end every session of the user (current global scope)?
 - Evidence: `docs/readiness/E2E_STAGING_TRIAGE_CLOSEOUT_2026_11_15.md`, PR #504.
+- Update 2026-11-18 (PR #541, not merged):
+  - Founder answered both questions on 2026-11-15. Sign out now ends only the current device's session (`scope=local`), with a unit regression test; not deployed yet.
+  - Blocker 1 cleared: the `knowledge-hub` test uploads its own document. Staging run kh2: 2 passed.
+  - Blocker 2 is unchanged. The Knowledge Hub admin page also took more than 5 s to load on staging (run kh1).
