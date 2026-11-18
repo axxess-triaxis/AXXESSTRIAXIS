@@ -122,3 +122,15 @@ Existing rows are not rewritten.
 | Decision | Date | Session/tool | Issue ID | Why | Outcome | Commit/PR | Verification | Closeout |
 |---|---|---|---|---|---|---|---|---|
 | Outreach email sends only 09:00 to 18:00 local time: India Monday to Saturday, UAE Monday to Friday. Out-of-window enrollments wait with no log row and no budget used | 2026-11-17 | Founder-approved plan, executed by Claude Code | OUTREACH-SEND-WINDOW | The sender had no time-of-day rule; tick logs show sends at 16:04 UTC (21:34 IST), and the 30 leads queued on 2026-11-17 were due to start at 21:35 IST | Pending merge and deploy. Review by 2026-12-01 (reply rate and the first in-window sends) | #527 (`0ac379aa`) | Unit tests for both countries' hours and weekends, budget not used while waiting | `docs/readiness/OUTREACH_SEND_WINDOW_CLOSEOUT_2026_11_17.md` |
+
+## Lead sourcing first production run (2026-11-18)
+
+| Decision | Date | Session/tool | Issue ID | Why | Outcome | Commit/PR | Verification | Closeout |
+|---|---|---|---|---|---|---|---|---|
+| First production run on 30 fresh, founder-approved seeds (brokerages and clinics, India and UAE), verify_cap 0, worker deployed with its schedule off and invoked once by hand, founder picks imports | 2026-11-18 | Founder-approved plan, executed by Claude Code | LEAD-SOURCING-PROD-RUN1 | Staging was proven (#530); the GTM pivot needs real leads in the live CRM | Done: 30 queued, 26 sites reached, 8 candidates, 0 credits; founder imported 7 (skipped 1 mislabelled role inbox); 0 sequence enrolments; schedule DISABLED | #532 (`8f6237f1`), stack `axxess-lead-sourcing-prod`, run `cc7a2676`; fix #533 | `source_leads` output; Lambda invoke 200; approval `49b19763` executed; prod CRM 76 -> 83 | `docs/readiness/LEAD_SOURCING_PROD_RUN1_CLOSEOUT_2026_11_18.md` |
+
+## Lead sourcing staging end-to-end test (2026-11-18)
+
+| Decision | Date | Session/tool | Issue ID | Why | Outcome | Commit/PR | Verification | Closeout |
+|---|---|---|---|---|---|---|---|---|
+| Prove the lead-sourcing path on staging with 20 known batch 5 companies plus an exclusion canary, verify_cap 0, and a human-approved import of 2 candidates; no production run, no schedule | 2026-11-18 | Founder-approved plan, executed by Claude Code | LEAD-SOURCING-E2E | The worker was deployed (#529) but no run had ever gone through queue, crawl, report and approval | Passed: queued 20, excluded 1; done in 60 s with 0 credits; 20/20 names and emails match batch 5 (same crawler code, so this shows reproduction, not independent accuracy); 2 leads imported after the founder's approval, 0 sequences | Staging `81679518`, run `592aed06`; code from #529 (`dd25d70e`) | MCP `source_leads` / `get_sourcing_run` output; Lambda invoke `{"claimed":true,"status":200}`; staging `/api/crm/leads` = 2, `/api/outreach/sequences` = 0 | `docs/readiness/LEAD_SOURCING_STAGING_E2E_CLOSEOUT_2026_11_18.md` |

@@ -82,11 +82,14 @@ const csvCell = (value: string | undefined | null) => {
 
 export type ImportableCandidate = { company: string; contactName: string; email: string; country: string; role: string; emailKind: string; domain: string | null };
 
-/** Approved candidates as an import CSV, so they pass through parseLeadImport's normal rules. */
-export function candidatesToImportCsv(candidates: ImportableCandidate[], date: string): string {
+/**
+ * Candidates as an import CSV, so they pass through parseLeadImport's normal rules. `automatic`
+ * (2026-11-18) marks leads a schedule imported without a person approving them first.
+ */
+export function candidatesToImportCsv(candidates: ImportableCandidate[], date: string, automatic = false): string {
   const header = "company,contact_name,email,phone,country,consent_basis,source";
   const rows = candidates.map((c) =>
-    [c.company, c.contactName, c.email, "", c.country, "b2b_legitimate_interest", `Lead sourcing (${c.role} named on ${c.domain ?? "company site"}; ${c.emailKind}); approved ${date}`]
+    [c.company, c.contactName, c.email, "", c.country, "b2b_legitimate_interest", `Lead sourcing (${c.role} named on ${c.domain ?? "company site"}; ${c.emailKind}); ${automatic ? "auto-imported" : "approved"} ${date}`]
       .map(csvCell)
       .join(","),
   );

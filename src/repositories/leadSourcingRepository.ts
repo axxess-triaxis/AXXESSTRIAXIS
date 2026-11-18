@@ -5,7 +5,7 @@ import type { TenantScope } from "./interfaces";
 import { isSupabaseAdminConfigured, supabaseAdminRest } from "./supabaseAdmin";
 import type { Candidate, Seed } from "../services/leadSourcing/types.ts";
 
-export type RunStatus = "queued" | "running" | "done" | "failed";
+export type RunStatus = "discovering" | "queued" | "running" | "done" | "failed";
 export type CandidateStatus = "pending" | "approved" | "rejected" | "imported";
 
 export type SourcingRun = {
@@ -22,6 +22,10 @@ export type SourcingRun = {
   error: string | null;
   createdAt: string;
   finishedAt: string | null;
+  /** 2026-11-18: "discovery" runs come from a schedule and are imported automatically. */
+  seedSource: "agent" | "discovery";
+  requestedByUser: string | null;
+  scheduleId: string | null;
 };
 
 export type SourcedCandidate = {
@@ -40,20 +44,23 @@ export type SourcedCandidate = {
   evidence: string[];
   status: CandidateStatus;
   leadId: string | null;
+  importedAutomatically: boolean;
+  removedAt: string | null;
 };
 
 type RunRow = {
   id: string; organization_id: string; status: RunStatus; segment: string | null; country: string | null; seeds: unknown;
   seed_count: number; verify_cap: number; credits_spent: number; stats: unknown; error: string | null; created_at: string; finished_at: string | null;
+  seed_source: "agent" | "discovery" | null; requested_by_user: string | null; schedule_id: string | null;
 };
-const RUN_SELECT = "id,organization_id,status,segment,country,seeds,seed_count,verify_cap,credits_spent,stats,error,created_at,finished_at";
+const RUN_SELECT = "id,organization_id,status,segment,country,seeds,seed_count,verify_cap,credits_spent,stats,error,created_at,finished_at,seed_source,requested_by_user,schedule_id";
 
 type CandidateRow = {
   id: string; run_id: string; company: string; domain: string | null; country: string; segment: string | null; contact_name: string;
   role: string; email: string; email_kind: Candidate["emailKind"]; verified: Candidate["verified"] | null; score: number;
-  evidence: unknown; status: CandidateStatus; lead_id: string | null;
+  evidence: unknown; status: CandidateStatus; lead_id: string | null; imported_automatically?: boolean | null; removed_at?: string | null;
 };
-const CANDIDATE_SELECT = "id,run_id,company,domain,country,segment,contact_name,role,email,email_kind,verified,score,evidence,status,lead_id";
+const CANDIDATE_SELECT = "id,run_id,company,domain,country,segment,contact_name,role,email,email_kind,verified,score,evidence,status,lead_id,imported_automatically,removed_at";
 
 const isRecord = (v: unknown): v is Record<string, unknown> => Boolean(v) && typeof v === "object" && !Array.isArray(v);
 
@@ -72,6 +79,9 @@ function toRun(row: RunRow): SourcingRun {
     error: row.error,
     createdAt: row.created_at,
     finishedAt: row.finished_at,
+    seedSource: row.seed_source ?? "agent",
+    requestedByUser: row.requested_by_user,
+    scheduleId: row.schedule_id,
   };
 }
 
@@ -80,7 +90,7 @@ function toCandidate(row: CandidateRow): SourcedCandidate {
     id: row.id, runId: row.run_id, company: row.company, domain: row.domain, country: row.country, segment: row.segment,
     contactName: row.contact_name, role: row.role, email: row.email, emailKind: row.email_kind, verified: row.verified,
     score: row.score, evidence: Array.isArray(row.evidence) ? row.evidence.filter((e): e is string => typeof e === "string") : [],
-    status: row.status, leadId: row.lead_id,
+    status: row.status, leadId: row.lead_id, importedAutomatically: Boolean(row.imported_automatically), removedAt: row.removed_at ?? null,
   };
 }
 
@@ -135,7 +145,7 @@ export async function getCandidates(scope: TenantScope, runId: string, ids: stri
   return (rows ?? []).map(toCandidate);
 }
 
-export async function markCandidates(scope: TenantScope, updates: { id: string; status: CandidateStatus; leadId?: string }[]): Promise<void> {
+export async function markCandidates(scope: TenantScope, updates: { id: string; status: CandidateStatus; leadId?: string; automatic?: boolean }[]): Promise<void> {
   ensureConfigured();
   const decidedAt = new Date().toISOString();
   for (const u of updates) {
@@ -143,7 +153,7 @@ export async function markCandidates(scope: TenantScope, updates: { id: string; 
       method: "PATCH",
       prefer: "return=minimal",
       query: new URLSearchParams({ organization_id: `eq.${scope.organizationId}`, id: `eq.${u.id}` }),
-      body: { status: u.status, lead_id: u.leadId ?? null, decided_at: decidedAt },
+      body: { status: u.status, lead_id: u.leadId ?? null, decided_at: decidedAt, ...(u.automatic ? { imported_automatically: true } : {}) },
     });
   }
 }
@@ -155,8 +165,8 @@ export async function creditsSpentThisMonth(scope: TenantScope, now = new Date()
   const rows = await supabaseAdminRest<{ credits_spent: number; verify_cap: number; status: RunStatus }[]>("lead_sourcing_runs", {
     query: new URLSearchParams({ organization_id: `eq.${scope.organizationId}`, created_at: `gte.${monthStart}`, select: "credits_spent,verify_cap,status", limit: "1000" }),
   });
-  // A run still queued or running may spend up to its cap, so it counts at its cap.
-  return (rows ?? []).reduce((sum, r) => sum + (r.status === "queued" || r.status === "running" ? Math.max(r.verify_cap, r.credits_spent) : r.credits_spent), 0);
+  // A run not yet finished may spend up to its cap, so it counts at its cap.
+  return (rows ?? []).reduce((sum, r) => sum + (r.status === "discovering" || r.status === "queued" || r.status === "running" ? Math.max(r.verify_cap, r.credits_spent) : r.credits_spent), 0);
 }
 
 export type ExclusionSets = { companies: Set<string>; labels: Set<string> };
@@ -264,7 +274,7 @@ export async function failRun(runId: string, error: string, creditsSpent = 0): P
   await supabaseAdminRest("lead_sourcing_runs", {
     method: "PATCH",
     prefer: "return=minimal",
-    query: new URLSearchParams({ id: `eq.${runId}`, status: "in.(queued,running)" }),
+    query: new URLSearchParams({ id: `eq.${runId}`, status: "in.(discovering,queued,running)" }),
     body: { status: "failed", error: error.slice(0, 300), credits_spent: creditsSpent, finished_at: new Date().toISOString() },
   });
 }
@@ -292,4 +302,15 @@ export async function getRunForWorker(runId: string): Promise<SourcingRun | null
     query: new URLSearchParams({ id: `eq.${runId}`, select: RUN_SELECT, limit: "1" }),
   });
   return rows?.[0] ? toRun(rows[0]) : null;
+}
+
+/** Adds keys to a finished run's stats (for example, how many leads were imported automatically). */
+export async function mergeRunStats(run: Pick<SourcingRun, "id" | "organizationId" | "stats">, extra: Record<string, number | string>): Promise<void> {
+  ensureConfigured();
+  await supabaseAdminRest("lead_sourcing_runs", {
+    method: "PATCH",
+    prefer: "return=minimal",
+    query: new URLSearchParams({ id: `eq.${run.id}`, organization_id: `eq.${run.organizationId}` }),
+    body: { stats: { ...run.stats, ...extra } },
+  });
 }

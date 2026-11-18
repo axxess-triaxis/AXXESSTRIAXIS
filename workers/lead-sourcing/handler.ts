@@ -2,10 +2,16 @@
 // AXXESS, crawls it (headless Chromium from @sparticuz/chromium for JavaScript-built sites), verifies
 // guessed addresses under the run's credit cap, and posts the result back. Secrets are read at run
 // time from Secrets Manager by ARN; nothing secret is in the template or the bundle.
+// 2026-11-18: with DISCOVERY_ENABLED=true it first runs the AXXESS scheduler tick, then takes a
+// discovery run (a model on Bedrock + AgentCore web search) before any crawl run. One unit per call.
+import { BedrockAgentCoreClient, InvokeWebSearchCommand } from "@aws-sdk/client-bedrock-agentcore";
+import { BedrockRuntimeClient, ConverseCommand, type ConverseCommandInput } from "@aws-sdk/client-bedrock-runtime";
 import { GetSecretValueCommand, SecretsManagerClient } from "@aws-sdk/client-secrets-manager";
 import { verifyEmails } from "../../scripts/check-leads-csv.mts";
 import { USER_AGENT } from "../../src/services/leadSourcing/crawl.ts";
 import type { FetchText, RenderHtml } from "../../src/services/leadSourcing/types.ts";
+import type { Converse, ConverseResponse, WebSearch } from "../../src/services/leadSourcing/discover.ts";
+import { runDiscovery, type ClaimedDiscovery } from "./discovery.ts";
 import { processRun, type ClaimedRun } from "./process.ts";
 
 const secrets = new SecretsManagerClient({});
@@ -77,10 +83,60 @@ async function post(base: string, path: string, token: string, body: unknown): P
 
 type LambdaContext = { getRemainingTimeInMillis: () => number };
 
+const bedrock = new BedrockRuntimeClient({});
+const agentcore = new BedrockAgentCoreClient({});
+
+const converse: Converse = async (request) =>
+  (await bedrock.send(new ConverseCommand(request as unknown as ConverseCommandInput))) as unknown as ConverseResponse;
+
+const search: WebSearch = async (query) => {
+  const out = await agentcore.send(new InvokeWebSearchCommand({ webSearchId: "web-search.v1", searchQuery: query, maxResults: 8 }));
+  return (out.results ?? []).map((r) => ({ title: r.title ?? "", url: r.url ?? "", text: r.text ?? "" }));
+};
+
+/** CloudWatch embedded metric (written to stdout directly: Text-format console.log would prefix it). */
+function metric(values: Record<string, number>) {
+  process.stdout.write(
+    JSON.stringify({
+      _aws: { Timestamp: Date.now(), CloudWatchMetrics: [{ Namespace: "AXXESS/LeadSourcing", Dimensions: [["Stage"]], Metrics: Object.keys(values).map((Name) => ({ Name, Unit: "Count" })) }] },
+      Stage: process.env.STAGE ?? "unknown",
+      ...values,
+    }) + "\n",
+  );
+}
+
+async function discoverOne(base: string, token: string): Promise<{ claimed: boolean; runId?: string; status?: number }> {
+  const tick = await post(base, "/api/lead-sourcing/worker/tick", token, {});
+  if (!tick.ok) console.error(`Scheduler tick failed: HTTP ${tick.status}`);
+  else console.log(JSON.stringify({ tick: await tick.json() }));
+
+  const claim = await post(base, "/api/lead-sourcing/worker/claim-discovery", token, {});
+  if (!claim.ok) throw new Error(`Discovery claim failed: HTTP ${claim.status}`);
+  const { run } = (await claim.json()) as { run: ClaimedDiscovery | null };
+  if (!run) return { claimed: false };
+  try {
+    const payload = await runDiscovery(run, { converse, search, fetchText, modelId: process.env.DISCOVERY_MODEL_ID ?? "openai.gpt-oss-20b-1:0" });
+    const done = await post(base, `/api/lead-sourcing/worker/runs/${run.id}/seeds`, token, payload);
+    metric({ DiscoverySearches: payload.searchCount, DiscoveryCompanies: payload.companies.length, DiscoveryFailures: 0 });
+    console.log(JSON.stringify({ discoveryRunId: run.id, status: done.status, ...payload.stats, inputTokens: payload.llmInputTokens, outputTokens: payload.llmOutputTokens }));
+    return { claimed: true, runId: run.id, status: done.status };
+  } catch (error) {
+    metric({ DiscoverySearches: 0, DiscoveryCompanies: 0, DiscoveryFailures: 1 });
+    const message = error instanceof Error ? error.message : String(error);
+    await post(base, `/api/lead-sourcing/worker/runs/${run.id}/seeds`, token, { failure: message.slice(0, 300) }).catch(() => undefined);
+    throw error;
+  }
+}
+
 export async function handler(_event: unknown, context: LambdaContext): Promise<{ claimed: boolean; runId?: string; status?: number }> {
   const base = (process.env.AXXESS_BASE_URL ?? "").replace(/\/$/, "");
   const token = await secret(process.env.WORKER_SECRET_ARN);
   if (!base || !token) throw new Error("AXXESS_BASE_URL and WORKER_SECRET_ARN must be set.");
+
+  if (process.env.DISCOVERY_ENABLED === "true") {
+    const discovered = await discoverOne(base, token);
+    if (discovered.claimed) return discovered;
+  }
 
   const claim = await post(base, "/api/lead-sourcing/worker/claim", token, {});
   if (!claim.ok) throw new Error(`Claim failed: HTTP ${claim.status}`);
