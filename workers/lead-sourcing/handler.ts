@@ -3,7 +3,7 @@
 // guessed addresses under the run's credit cap, and posts the result back. Secrets are read at run
 // time from Secrets Manager by ARN; nothing secret is in the template or the bundle.
 // 2026-11-18: with DISCOVERY_ENABLED=true it first runs the AXXESS scheduler tick, then takes a
-// discovery run (Claude on Bedrock + AgentCore web search) before any crawl run. One unit per call.
+// discovery run (a model on Bedrock + AgentCore web search) before any crawl run. One unit per call.
 import { BedrockAgentCoreClient, InvokeWebSearchCommand } from "@aws-sdk/client-bedrock-agentcore";
 import { BedrockRuntimeClient, ConverseCommand, type ConverseCommandInput } from "@aws-sdk/client-bedrock-runtime";
 import { GetSecretValueCommand, SecretsManagerClient } from "@aws-sdk/client-secrets-manager";
@@ -115,7 +115,7 @@ async function discoverOne(base: string, token: string): Promise<{ claimed: bool
   const { run } = (await claim.json()) as { run: ClaimedDiscovery | null };
   if (!run) return { claimed: false };
   try {
-    const payload = await runDiscovery(run, { converse, search, fetchText, modelId: process.env.DISCOVERY_MODEL_ID ?? "au.anthropic.claude-haiku-5-5" });
+    const payload = await runDiscovery(run, { converse, search, fetchText, modelId: process.env.DISCOVERY_MODEL_ID ?? "openai.gpt-oss-20b-1:0" });
     const done = await post(base, `/api/lead-sourcing/worker/runs/${run.id}/seeds`, token, payload);
     metric({ DiscoverySearches: payload.searchCount, DiscoveryCompanies: payload.companies.length, DiscoveryFailures: 0 });
     console.log(JSON.stringify({ discoveryRunId: run.id, status: done.status, ...payload.stats, inputTokens: payload.llmInputTokens, outputTokens: payload.llmOutputTokens }));

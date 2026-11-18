@@ -46,6 +46,10 @@ export type DiscoveryResult = {
 };
 
 export const MAX_TURNS = 8;
+// Extra submit-only turns after the limit (2026-11-18). Open-weight models such as gpt-oss on
+// Bedrock do not always honour a forced tool choice, and now and then call a tool that is not
+// offered; one or two retries with only submit_companies on offer recover the run cheaply.
+export const SUBMIT_RETRIES = 2;
 const RESULTS_PER_SEARCH = 8;
 const SNIPPET_CHARS = 400;
 
@@ -108,6 +112,7 @@ const TOOLS: ConverseRequest["toolConfig"]["tools"] = [
     },
   },
 ];
+const SUBMIT_ONLY = (TOOLS ?? []).filter((t) => t.toolSpec.name === "submit_companies");
 
 const str = (v: unknown, max: number) => (typeof v === "string" ? v.trim().slice(0, max) : "");
 
@@ -135,13 +140,15 @@ export async function discoverCompanies(
     { role: "user", content: [{ text: `Find ${req.target} companies now. Segment: ${req.segment}. Countries: ${req.countries.join(", ")}. Cities: ${req.cities.join(", ") || "any"}.` }] },
   ];
 
-  for (let turn = 0; turn < maxTurns; turn += 1) {
-    const mustSubmit = turn === maxTurns - 1 || result.searches >= req.maxSearches;
+  for (let turn = 0; turn < maxTurns + SUBMIT_RETRIES; turn += 1) {
+    const mustSubmit = turn >= maxTurns - 1 || result.searches >= req.maxSearches;
+    // Once it must submit, submit_companies is the only tool on offer. "any" with a single tool is
+    // a forced call on every Converse model; a named tool choice is not honoured by all of them.
     const response = await deps.converse({
       modelId: deps.modelId,
       system: [{ text: systemPrompt(req) }],
       messages,
-      toolConfig: { tools: TOOLS, toolChoice: mustSubmit ? { tool: { name: "submit_companies" } } : { any: {} } },
+      toolConfig: { tools: mustSubmit ? SUBMIT_ONLY : TOOLS, toolChoice: { any: {} } },
       inferenceConfig: { maxTokens: 4096, temperature: 0 },
     });
     result.turns += 1;
@@ -173,7 +180,7 @@ export async function discoverCompanies(
         results.push({ toolResult: { toolUseId: use.toolUseId, content: [{ text: "query is required." }], status: "error" } });
         continue;
       }
-      if (result.searches >= req.maxSearches) {
+      if (mustSubmit || result.searches >= req.maxSearches) {
         results.push({ toolResult: { toolUseId: use.toolUseId, content: [{ text: "Search budget used up. Call submit_companies now." }], status: "error" } });
         continue;
       }
@@ -195,5 +202,5 @@ export async function discoverCompanies(
     }
     messages.push({ role: "user", content: results });
   }
-  return { ...result, seenUrls: [...seen], incomplete: `No submission after ${maxTurns} turns.` };
+  return { ...result, seenUrls: [...seen], incomplete: `No submission after ${result.turns} turns.` };
 }

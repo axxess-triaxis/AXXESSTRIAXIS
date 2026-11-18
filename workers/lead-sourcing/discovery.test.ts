@@ -24,7 +24,7 @@ describe("worker runDiscovery", () => {
     const payload = await runDiscovery(
       { id: "run-1", segment: "brokerage", countries: ["AE"], cities: ["Dubai"], target: 5, maxSearches: 8 },
       {
-        modelId: "au.anthropic.claude-haiku-5-5",
+        modelId: "openai.gpt-oss-20b-1:0",
         converse: async () => turns[turn++],
         search: async () => [
           { title: "Alpha", url: "https://alpha-homes.example/", text: "" },
