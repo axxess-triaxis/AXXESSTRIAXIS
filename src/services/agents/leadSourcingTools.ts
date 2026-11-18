@@ -15,15 +15,13 @@ import {
   getSourcingRun,
   loadExclusions,
   loadKnownLeadCompanies,
-  markCandidates,
 } from "../../repositories/leadSourcingRepository";
-import { insertImportedLeadsReturningIds, loadImportContext } from "../../repositories/outboundRepository";
 import { auditLogsRepository } from "../../repositories/supabaseEnterpriseRepositories";
 import { canReadAllLeads, canUseCapability } from "../../security/rbac";
 import type { AgentScope } from "../../security/agentScope";
-import { parseLeadImport } from "../outbound/leadImport";
+import { importCandidates } from "../leadSourcing/importCandidates";
 import { knownSets } from "../leadSourcing/seeds.ts";
-import { DEFAULT_MONTHLY_VERIFY_CAP, MAX_SEEDS_PER_RUN, candidatesToImportCsv, planRun } from "../leadSourcing/sourcingService.ts";
+import { DEFAULT_MONTHLY_VERIFY_CAP, MAX_SEEDS_PER_RUN, planRun } from "../leadSourcing/sourcingService.ts";
 import type { McpToolDefinition, McpToolResult } from "./toolRegistry";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -173,29 +171,16 @@ export const approveSourcedLeadsTool: McpToolDefinition = {
     // Imported leads are owned by the person who issued this agent key; without one there is no owner.
     if (!scope.issuedByUserId) return refuse("This agent key has no issuing user, so imported leads would have no owner.");
 
-    const date = new Date().toISOString().slice(0, 10);
-    const csv = candidatesToImportCsv(candidates, date);
-    const result = parseLeadImport(csv, await loadImportContext(t));
-    if (result.fileError) return refuse(result.fileError);
-    const inserted = await insertImportedLeadsReturningIds(t, result.accepted);
-    const leadByEmail = new Map(inserted.map((r) => [r.contactEmail?.toLowerCase(), r.id]));
-    const imported = candidates.filter((c) => leadByEmail.has(c.email));
-    const rejected = candidates.filter((c) => !leadByEmail.has(c.email));
-    await markCandidates(t, [
-      ...imported.map((c) => ({ id: c.id, status: "imported" as const, leadId: leadByEmail.get(c.email) })),
-      ...rejected.map((c) => ({ id: c.id, status: "rejected" as const })),
-    ]);
+    const outcome = await importCandidates(t, candidates, { automatic: false });
+    if (!outcome.ok) return refuse(outcome.reason);
+    const { imported, skipped: rejected } = outcome;
     await auditLogsRepository.record(t, {
       action: "crm.leads.sourced_imported",
       resourceType: "crm_lead",
       category: "crm",
       metadata: { runId, imported: imported.length, rejected: rejected.length, agentConnectionId: scope.agentConnectionId },
     }).catch(() => undefined);
-    return text({
-      imported: imported.length,
-      rejected: result.rejected.map((r) => ({ line: r.line, reason: r.reason })),
-      leadIds: imported.map((c) => leadByEmail.get(c.email)),
-    });
+    return text({ imported: imported.length, rejected: outcome.rejected, leadIds: outcome.leadIds });
   },
 };
 
