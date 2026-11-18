@@ -94,6 +94,9 @@ Resources:
         EveryFiveMinutes:
           Type: ScheduleV2
           Properties:
+            # Stage-specific name: without it SAM names the schedule WorkerFunctionEveryFiveMinutes
+            # in every stack, and a second stage's deploy fails NAME_CONFLICT_VALIDATION.
+            Name: !Sub axxess-lead-sourcing-${Stage}-every-5-min
             ScheduleExpression: rate(5 minutes)
             State: !Ref ScheduleState
             RetryPolicy:
