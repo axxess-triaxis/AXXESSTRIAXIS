@@ -1,0 +1,269 @@
+// Lead sourcing schedules and discovery runs (2026-11-18). Service-role REST like
+// leadSourcingRepository.ts. User routes pass a server-derived tenant scope; the worker tick has no
+// tenant and acts on rows by id, each row carrying its own organization.
+import type { TenantScope } from "./interfaces";
+import { isSupabaseAdminConfigured, supabaseAdminRest } from "./supabaseAdmin";
+import type { CapUsage, Cadence, ScheduleInput } from "../services/leadSourcing/schedule";
+
+export type SourcingSchedule = {
+  id: string;
+  organizationId: string;
+  name: string;
+  segment: string;
+  countries: string[];
+  cities: string[];
+  perRun: number;
+  cadence: Cadence;
+  dayOfWeek: number | null;
+  dayOfMonth: number | null;
+  hourLocal: number;
+  timezone: string;
+  enabled: boolean;
+  nextRunAt: string | null;
+  lastRunAt: string | null;
+  lastSkipReason: string | null;
+  createdBy: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+type ScheduleRow = {
+  id: string; organization_id: string; name: string; segment: string; countries: string[]; cities: string[]; per_run: number;
+  cadence: Cadence; day_of_week: number | null; day_of_month: number | null; hour_local: number; timezone: string; enabled: boolean;
+  next_run_at: string | null; last_run_at: string | null; last_skip_reason: string | null; created_by: string | null;
+  created_at: string; updated_at: string;
+};
+const SCHEDULE_SELECT =
+  "id,organization_id,name,segment,countries,cities,per_run,cadence,day_of_week,day_of_month,hour_local,timezone,enabled,next_run_at,last_run_at,last_skip_reason,created_by,created_at,updated_at";
+
+function toSchedule(r: ScheduleRow): SourcingSchedule {
+  return {
+    id: r.id, organizationId: r.organization_id, name: r.name, segment: r.segment, countries: r.countries ?? [], cities: r.cities ?? [],
+    perRun: r.per_run, cadence: r.cadence, dayOfWeek: r.day_of_week, dayOfMonth: r.day_of_month, hourLocal: r.hour_local,
+    timezone: r.timezone, enabled: r.enabled, nextRunAt: r.next_run_at, lastRunAt: r.last_run_at, lastSkipReason: r.last_skip_reason,
+    createdBy: r.created_by, createdAt: r.created_at, updatedAt: r.updated_at,
+  };
+}
+
+function toRow(input: Partial<ScheduleInput>): Record<string, unknown> {
+  const map: Record<string, string> = {
+    name: "name", segment: "segment", countries: "countries", cities: "cities", perRun: "per_run", cadence: "cadence",
+    dayOfWeek: "day_of_week", dayOfMonth: "day_of_month", hourLocal: "hour_local", timezone: "timezone", enabled: "enabled",
+  };
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(input)) if (k in map && v !== undefined) out[map[k]] = v;
+  return out;
+}
+
+function ensureConfigured() {
+  if (!isSupabaseAdminConfigured()) throw new Error("Lead sourcing repository is not configured (Supabase admin credentials missing).");
+}
+
+export const MAX_SCHEDULES_PER_ORG = 20;
+
+export async function listSchedules(scope: TenantScope): Promise<SourcingSchedule[]> {
+  ensureConfigured();
+  const rows = await supabaseAdminRest<ScheduleRow[]>("lead_sourcing_schedules", {
+    query: new URLSearchParams({ organization_id: `eq.${scope.organizationId}`, select: SCHEDULE_SELECT, order: "created_at.asc", limit: "100" }),
+  });
+  return (rows ?? []).map(toSchedule);
+}
+
+export async function getSchedule(scope: TenantScope, id: string): Promise<SourcingSchedule | null> {
+  ensureConfigured();
+  const rows = await supabaseAdminRest<ScheduleRow[]>("lead_sourcing_schedules", {
+    query: new URLSearchParams({ organization_id: `eq.${scope.organizationId}`, id: `eq.${id}`, select: SCHEDULE_SELECT, limit: "1" }),
+  });
+  return rows?.[0] ? toSchedule(rows[0]) : null;
+}
+
+export async function createSchedule(scope: TenantScope, input: ScheduleInput, nextRunAt: Date | null): Promise<SourcingSchedule> {
+  ensureConfigured();
+  const rows = await supabaseAdminRest<ScheduleRow[]>("lead_sourcing_schedules", {
+    method: "POST",
+    query: new URLSearchParams({ select: SCHEDULE_SELECT }),
+    body: { ...toRow(input), organization_id: scope.organizationId, created_by: scope.userId || null, next_run_at: nextRunAt?.toISOString() ?? null },
+  });
+  if (!rows?.[0]) throw new Error("Lead sourcing schedule was not created.");
+  return toSchedule(rows[0]);
+}
+
+export async function updateSchedule(
+  scope: TenantScope,
+  id: string,
+  input: Partial<ScheduleInput>,
+  nextRunAt: Date | null,
+): Promise<SourcingSchedule | null> {
+  ensureConfigured();
+  const rows = await supabaseAdminRest<ScheduleRow[]>("lead_sourcing_schedules", {
+    method: "PATCH",
+    query: new URLSearchParams({ organization_id: `eq.${scope.organizationId}`, id: `eq.${id}`, select: SCHEDULE_SELECT }),
+    body: { ...toRow(input), next_run_at: nextRunAt?.toISOString() ?? null, updated_at: new Date().toISOString() },
+  });
+  return rows?.[0] ? toSchedule(rows[0]) : null;
+}
+
+export async function deleteSchedule(scope: TenantScope, id: string): Promise<boolean> {
+  ensureConfigured();
+  const rows = await supabaseAdminRest<{ id: string }[]>("lead_sourcing_schedules", {
+    method: "DELETE",
+    query: new URLSearchParams({ organization_id: `eq.${scope.organizationId}`, id: `eq.${id}`, select: "id" }),
+  });
+  return (rows ?? []).length > 0;
+}
+
+// ---- Caps --------------------------------------------------------------------------------------
+
+export async function loadCapOverride(organizationId: string): Promise<{ monthlySearchCap: number | null; monthlyCompanyCap: number | null } | null> {
+  ensureConfigured();
+  const rows = await supabaseAdminRest<{ monthly_search_cap: number | null; monthly_company_cap: number | null }[]>("lead_sourcing_settings", {
+    query: new URLSearchParams({ organization_id: `eq.${organizationId}`, select: "monthly_search_cap,monthly_company_cap", limit: "1" }),
+  });
+  return rows?.[0] ? { monthlySearchCap: rows[0].monthly_search_cap, monthlyCompanyCap: rows[0].monthly_company_cap } : null;
+}
+
+type UsageRow = { organization_id: string; status: string; seed_source: string; seed_count: number; search_count: number; discovery: unknown };
+
+/** Reads `discovery.target` / `discovery.maxSearches` safely. */
+const reserved = (d: unknown, key: "target" | "maxSearches") => {
+  const v = d && typeof d === "object" ? (d as Record<string, unknown>)[key] : undefined;
+  return typeof v === "number" && Number.isFinite(v) ? v : 0;
+};
+
+/**
+ * Searches and companies used this UTC month by discovery runs. A run still discovering counts at
+ * what it reserved, so two schedules due in the same tick cannot both spend the same allowance.
+ */
+export function sumUsage(rows: UsageRow[], organizationId: string): CapUsage {
+  const usage: CapUsage = { orgSearches: 0, orgCompanies: 0, globalSearches: 0 };
+  for (const r of rows) {
+    if (r.seed_source !== "discovery") continue;
+    const pending = r.status === "discovering";
+    const searches = pending ? Math.max(r.search_count, reserved(r.discovery, "maxSearches")) : r.search_count;
+    const companies = pending ? reserved(r.discovery, "target") : r.seed_count;
+    usage.globalSearches += searches;
+    if (r.organization_id === organizationId) {
+      usage.orgSearches += searches;
+      usage.orgCompanies += companies;
+    }
+  }
+  return usage;
+}
+
+export async function capUsageThisMonth(organizationId: string, now = new Date()): Promise<CapUsage> {
+  ensureConfigured();
+  const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString();
+  const rows: UsageRow[] = [];
+  for (let offset = 0; ; offset += 1000) {
+    const page = await supabaseAdminRest<UsageRow[]>("lead_sourcing_runs", {
+      query: new URLSearchParams({
+        created_at: `gte.${monthStart}`, seed_source: "eq.discovery", select: "organization_id,status,seed_source,seed_count,search_count,discovery",
+        order: "id.asc", limit: "1000", offset: String(offset),
+      }),
+    });
+    rows.push(...(page ?? []));
+    if ((page ?? []).length < 1000) break;
+  }
+  return sumUsage(rows, organizationId);
+}
+
+// ---- Scheduler (worker tick) ---------------------------------------------------------------------
+
+export async function dueSchedules(now: Date, limit = 50): Promise<SourcingSchedule[]> {
+  ensureConfigured();
+  const rows = await supabaseAdminRest<ScheduleRow[]>("lead_sourcing_schedules", {
+    query: new URLSearchParams({ enabled: "eq.true", next_run_at: `lte.${now.toISOString()}`, select: SCHEDULE_SELECT, order: "next_run_at.asc", limit: String(limit) }),
+  });
+  return (rows ?? []).map(toSchedule);
+}
+
+/**
+ * Moves a due schedule to its next slot, only if nobody else did first (compare-and-set on the old
+ * next_run_at). True means this caller owns the due slot.
+ */
+export async function advanceSchedule(id: string, expectedNextRunAt: string, next: Date): Promise<boolean> {
+  ensureConfigured();
+  const rows = await supabaseAdminRest<{ id: string }[]>("lead_sourcing_schedules", {
+    method: "PATCH",
+    query: new URLSearchParams({ id: `eq.${id}`, enabled: "eq.true", next_run_at: `eq.${expectedNextRunAt}`, select: "id" }),
+    body: { next_run_at: next.toISOString() },
+  });
+  return (rows ?? []).length > 0;
+}
+
+export async function noteScheduleOutcome(id: string, outcome: { ranAt?: Date; skipReason: string | null }): Promise<void> {
+  ensureConfigured();
+  await supabaseAdminRest("lead_sourcing_schedules", {
+    method: "PATCH",
+    prefer: "return=minimal",
+    query: new URLSearchParams({ id: `eq.${id}` }),
+    body: { last_skip_reason: outcome.skipReason?.slice(0, 200) ?? null, ...(outcome.ranAt ? { last_run_at: outcome.ranAt.toISOString() } : {}) },
+  });
+}
+
+export type DiscoverySpec = { segment: string; countries: string[]; cities: string[]; target: number; maxSearches: number; trigger: "schedule" | "manual" };
+
+export async function createDiscoveryRun(
+  schedule: Pick<SourcingSchedule, "id" | "organizationId">,
+  spec: DiscoverySpec,
+  requestedByUser: string | null,
+): Promise<{ id: string }> {
+  ensureConfigured();
+  const rows = await supabaseAdminRest<{ id: string }[]>("lead_sourcing_runs", {
+    method: "POST",
+    query: new URLSearchParams({ select: "id" }),
+    body: {
+      organization_id: schedule.organizationId,
+      requested_by_user: requestedByUser,
+      schedule_id: schedule.id,
+      seed_source: "discovery",
+      status: "discovering",
+      segment: spec.segment,
+      country: spec.countries.length === 1 ? spec.countries[0] : null,
+      seeds: [],
+      seed_count: 0,
+      verify_cap: 0,
+      discovery: spec,
+      stats: {},
+    },
+  });
+  if (!rows?.[0]) throw new Error("Discovery run was not created.");
+  return rows[0];
+}
+
+export type DiscoveryClaim = { id: string; organizationId: string; discovery: DiscoverySpec };
+
+/** Claims the oldest unclaimed discovery run, after failing claimed ones that never reported back. */
+export async function claimNextDiscovery(staleAfterMinutes = 30): Promise<DiscoveryClaim | null> {
+  ensureConfigured();
+  const now = new Date();
+  const staleBefore = new Date(now.getTime() - staleAfterMinutes * 60_000).toISOString();
+  await supabaseAdminRest("lead_sourcing_runs", {
+    method: "PATCH",
+    prefer: "return=minimal",
+    query: new URLSearchParams({ status: "eq.discovering", started_at: `lt.${staleBefore}` }),
+    body: { status: "failed", error: "discovery did not finish in time", finished_at: now.toISOString() },
+  });
+  const open = await supabaseAdminRest<{ id: string }[]>("lead_sourcing_runs", {
+    query: new URLSearchParams({ status: "eq.discovering", started_at: "is.null", select: "id", order: "created_at.asc", limit: "1" }),
+  });
+  if (!open?.[0]) return null;
+  const rows = await supabaseAdminRest<{ id: string; organization_id: string; discovery: DiscoverySpec }[]>("lead_sourcing_runs", {
+    method: "PATCH",
+    query: new URLSearchParams({ id: `eq.${open[0].id}`, status: "eq.discovering", started_at: "is.null", select: "id,organization_id,discovery" }),
+    body: { started_at: now.toISOString() },
+  });
+  return rows?.[0] ? { id: rows[0].id, organizationId: rows[0].organization_id, discovery: rows[0].discovery } : null;
+}
+
+/** Fails discovery runs nobody claimed within `hours` (for example, discovery switched off), releasing their reserved allowance. */
+export async function expireUnclaimedDiscovery(hours = 24, now = new Date()): Promise<void> {
+  ensureConfigured();
+  const before = new Date(now.getTime() - hours * 3_600_000).toISOString();
+  await supabaseAdminRest("lead_sourcing_runs", {
+    method: "PATCH",
+    prefer: "return=minimal",
+    query: new URLSearchParams({ status: "eq.discovering", started_at: "is.null", created_at: `lt.${before}` }),
+    body: { status: "failed", error: "discovery was not picked up in time", finished_at: now.toISOString() },
+  });
+}

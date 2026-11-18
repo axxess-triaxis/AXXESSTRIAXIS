@@ -5,7 +5,7 @@ import type { TenantScope } from "./interfaces";
 import { isSupabaseAdminConfigured, supabaseAdminRest } from "./supabaseAdmin";
 import type { Candidate, Seed } from "../services/leadSourcing/types.ts";
 
-export type RunStatus = "queued" | "running" | "done" | "failed";
+export type RunStatus = "discovering" | "queued" | "running" | "done" | "failed";
 export type CandidateStatus = "pending" | "approved" | "rejected" | "imported";
 
 export type SourcingRun = {
@@ -155,8 +155,8 @@ export async function creditsSpentThisMonth(scope: TenantScope, now = new Date()
   const rows = await supabaseAdminRest<{ credits_spent: number; verify_cap: number; status: RunStatus }[]>("lead_sourcing_runs", {
     query: new URLSearchParams({ organization_id: `eq.${scope.organizationId}`, created_at: `gte.${monthStart}`, select: "credits_spent,verify_cap,status", limit: "1000" }),
   });
-  // A run still queued or running may spend up to its cap, so it counts at its cap.
-  return (rows ?? []).reduce((sum, r) => sum + (r.status === "queued" || r.status === "running" ? Math.max(r.verify_cap, r.credits_spent) : r.credits_spent), 0);
+  // A run not yet finished may spend up to its cap, so it counts at its cap.
+  return (rows ?? []).reduce((sum, r) => sum + (r.status === "discovering" || r.status === "queued" || r.status === "running" ? Math.max(r.verify_cap, r.credits_spent) : r.credits_spent), 0);
 }
 
 export type ExclusionSets = { companies: Set<string>; labels: Set<string> };
@@ -264,7 +264,7 @@ export async function failRun(runId: string, error: string, creditsSpent = 0): P
   await supabaseAdminRest("lead_sourcing_runs", {
     method: "PATCH",
     prefer: "return=minimal",
-    query: new URLSearchParams({ id: `eq.${runId}`, status: "in.(queued,running)" }),
+    query: new URLSearchParams({ id: `eq.${runId}`, status: "in.(discovering,queued,running)" }),
     body: { status: "failed", error: error.slice(0, 300), credits_spent: creditsSpent, finished_at: new Date().toISOString() },
   });
 }
