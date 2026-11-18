@@ -6,7 +6,7 @@ import type { EmailVerification } from "./types.ts";
 import { crawlSite, mapLimit, parseRobots, robotsAllows } from "./crawl.ts";
 import { cleanPersonName, decodeCfEmail, domainLabel, extractEmails, extractJsonLdPeople, extractRolePeople, extractTeamLinks, textBlocks } from "./extract.ts";
 import { IMPORT_HEADER, toImportCsv, toReviewMarkdown } from "./output.ts";
-import { bestPerson, guessPatterns, isRoleAddress, pickCandidate, verifyGuess, type Budget, type Verifier } from "./pick.ts";
+import { bestPerson, guessPatterns, isRoleAddress, pickCandidate, publishedPersonal, verifyGuess, type Budget, type Verifier } from "./pick.ts";
 import { filterSeeds, knownFromCsv, parseApolloSeeds, parsePipeSeeds } from "./seeds.ts";
 import type { Seed, SiteResult } from "./types.ts";
 
@@ -204,6 +204,19 @@ describe("pick", () => {
     expect(fallback).toMatchObject({ email: "info@example.com", emailKind: "published-role" });
     expect(await pickCandidate(site({ people: [] }), { date: "2026-11-17" })).toBeUndefined();
     expect(await pickCandidate(site({ emails: [] }), { date: "2026-11-17" })).toBeUndefined();
+  });
+
+  it("matches a personal address only on whole name parts, not letters inside another word", () => {
+    const person = (name: string) => ({ name, role: "Co-Founder", url: "u", via: "role-block" as const, doctor: false });
+    const emails = (...list: string[]) => site({ emails: list.map((email) => ({ email, url: "u" })) });
+    // Prod run 1 (2026-11-18): "Ain" was found inside "maintenance".
+    expect(publishedPersonal(emails("maintenance@example.com"), person("Qurat Ul Ain"))).toBeUndefined();
+    expect(publishedPersonal(emails("ain@example.com"), person("Qurat Ul Ain"))).toBe("ain@example.com");
+    expect(publishedPersonal(emails("jake@example.com"), person("Jake Jones"))).toBe("jake@example.com");
+    expect(publishedPersonal(emails("jake.jones@example.com"), person("Jake Jones"))).toBe("jake.jones@example.com");
+    expect(publishedPersonal(emails("jakejones@example.com"), person("Jake Jones"))).toBe("jakejones@example.com");
+    expect(publishedPersonal(emails("jjones@example.com"), person("Jake Jones"))).toBe("jjones@example.com");
+    expect(publishedPersonal(emails("salesjonesboro@example.com"), person("Jake Jones"))).toBeUndefined();
   });
 
   it("recognises role inboxes", () => {

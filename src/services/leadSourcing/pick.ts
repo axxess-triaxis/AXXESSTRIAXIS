@@ -51,10 +51,20 @@ export function guessPatterns(name: string, domain: string): string[] {
   return [...new Set([`${first}@${domain}`, `${first}.${last}@${domain}`, `${first}${last}@${domain}`, `${first[0]}.${last}@${domain}`])];
 }
 
-/** A published address whose local part contains the person's first or last name. */
+/**
+ * A published address that belongs to the person: a name token is a whole part of the local part
+ * (jake@, jake.jones@), or, for tokens of 4+ letters, starts or ends it (jakejones@, jjones@).
+ * Matching anywhere inside it (2026-11-18 prod run 1) let "Ain" from "Qurat Ul Ain" claim
+ * maintenance@drehomes.com as her personal address.
+ */
 export function publishedPersonal(site: SiteResult, person: Person): string | undefined {
   const tokens = person.name.split(" ").map(ascii).filter((t) => t.length > 2);
-  return site.emails.map((e) => e.email).find((e) => !isRoleAddress(e) && tokens.some((t) => e.split("@")[0].includes(t)));
+  const belongs = (email: string) => {
+    const parts = email.split("@")[0].toLowerCase().split(/[^a-z]+/).filter(Boolean);
+    const letters = parts.join("");
+    return tokens.some((t) => parts.includes(t) || (t.length >= 4 && (letters.startsWith(t) || letters.endsWith(t))));
+  };
+  return site.emails.map((e) => e.email).find((e) => !isRoleAddress(e) && belongs(e));
 }
 
 export type Verifier = (emails: string[]) => Promise<VerifyReport>;
