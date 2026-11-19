@@ -39,6 +39,14 @@ describe("extract: names", () => {
     const html = `<h3>Approved Maintenance Works</h3><p>Owner</p><h3>Omar Testname</h3><p>Owner</p>`;
     expect(extractRolePeople(html, "https://example.com/services").map((p) => p.name)).toEqual(["Omar Testname"]);
   });
+
+  it("skips a menu heading after a role when it recurs on the page, keeps a role-then-name card (staging run 09a9ad4f)", () => {
+    const quote = `<p>${"We built this firm to raise the standard of service in the city. ".repeat(3)}</p>`;
+    const menu = `<h4>Hidden Gems</h4><a>Homes in the Marina</a>`;
+    const html = `${quote}<p>Founder &amp; CEO</p>${menu}<div><p>Managing Director</p><h3>Lina Samplename</h3></div><footer>${menu}<h4>Popular Search</h4></footer>`;
+    expect(extractRolePeople(html, "https://example.com/about").map((p) => [p.name, p.role])).toEqual([["Lina Samplename", "Managing Director"]]);
+    expect(cleanPersonName("Popular Search")).toBeNull();
+  });
 });
 
 describe("extract: emails", () => {
