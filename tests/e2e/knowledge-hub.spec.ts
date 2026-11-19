@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { loginAs, seededUsers, skipUnlessSeeded } from "./helpers";
+import { buildMinimalPdf } from "./minimalPdf";
 
 test.describe("Sprint 9 Knowledge Hub", () => {
   test.beforeEach(() => {
@@ -53,6 +54,28 @@ test.describe("Sprint 9 Knowledge Hub", () => {
     // Clean up: soft delete, so staging does not accumulate test documents.
     await page.getByRole("button", { name: "Delete", exact: true }).click();
     await expect(page.getByText("Document deleted.", { exact: true })).toBeVisible(saveWait);
+  });
+
+  // PDFs need pdf-parse and the @napi-rs/canvas native addon on the server. Staging 2026-11-19:
+  // that failed to load on Vercel, so this checks a real PDF gets its text layer indexed.
+  test("indexes the text of an uploaded PDF", async ({ page }) => {
+    test.setTimeout(90_000);
+    const fileName = `E2E knowledge pdf ${Date.now()}.pdf`;
+
+    await loginAs(page, seededUsers.orgAdminAlpha);
+    await page.getByRole("button", { name: /Knowledge Hub/i }).click();
+    await expect(page.getByRole("heading", { name: "Knowledge Hub" })).toBeVisible({ timeout: 30_000 });
+
+    await page.locator('input[type="file"]').setInputFiles({
+      name: fileName,
+      mimeType: "application/pdf",
+      buffer: buildMinimalPdf("Risk register review created by the Playwright suite"),
+    });
+    await expect(page.getByText(`${fileName}: Indexed for search.`, { exact: true })).toBeVisible({ timeout: 45_000 });
+
+    // Clean up: the uploaded document is selected; soft delete it.
+    await page.getByRole("button", { name: "Delete", exact: true }).click();
+    await expect(page.getByText("Document deleted.", { exact: true })).toBeVisible({ timeout: 20_000 });
   });
 
   test("hides upload actions from guest users", async ({ page }) => {
