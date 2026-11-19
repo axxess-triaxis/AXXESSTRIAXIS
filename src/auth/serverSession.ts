@@ -339,7 +339,9 @@ export async function getServerAuthSession(
 
 export async function signOutServerSide(accessToken?: string) {
   if (isSupabaseServerConfigured() && accessToken) {
-    await supabaseAuthRequest("logout", { method: "POST" }, accessToken).catch(() => undefined);
+    // scope=local ends this device's session only (founder decision 2026-11-15). Supabase's default,
+    // scope=global, also signed the user out on every other device.
+    await supabaseAuthRequest("logout?scope=local", { method: "POST" }, accessToken).catch(() => undefined);
   }
   await clearServerAuthCookies();
 }
