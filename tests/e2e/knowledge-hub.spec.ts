@@ -9,6 +9,10 @@ test.describe("Sprint 9 Knowledge Hub", () => {
   // No seed file inserts documents, so the test uploads its own uniquely named document
   // (founder decision 2026-11-15) and soft-deletes it at the end.
   test("uploads, searches, previews, archives and restores a document", async ({ page }) => {
+    // Eight steps against a remote target; staging run7 (2026-11-19) reached "Restore" and hit the 30 s default.
+    test.setTimeout(90_000);
+    // Saves on staging sometimes take over 5 s (run8: Delete was still saving at 5 s).
+    const saveWait = { timeout: 20_000 };
     const title = `E2E knowledge doc ${Date.now()}`;
     const fileName = `${title}.md`;
 
@@ -27,6 +31,9 @@ test.describe("Sprint 9 Knowledge Hub", () => {
 
     // The card only appears once the storage upload and the documents row both succeeded.
     await expect(page.getByRole("button", { name: new RegExp(title) })).toBeVisible({ timeout: 30_000 });
+    // Extraction and indexing must succeed too. Staging 2026-11-19: /api/documents/extract returned 500
+    // on every upload, which the old test could not see, because the card still appeared.
+    await expect(page.getByText(`${fileName}: Indexed for search.`, { exact: true })).toBeVisible({ timeout: 30_000 });
     await expect(page.getByText("Document Preview")).toBeVisible();
 
     await page.getByPlaceholder(/Search title/i).fill(title);
@@ -36,16 +43,16 @@ test.describe("Sprint 9 Knowledge Hub", () => {
 
     // Exact toast text: the local-fallback variant appends "Local fallback is active." and must fail here.
     await page.getByRole("button", { name: "Un-index (Archive)" }).click();
-    await expect(page.getByText("Document archived and removed from AI/RAG indexing.", { exact: true })).toBeVisible();
+    await expect(page.getByText("Document archived and removed from AI/RAG indexing.", { exact: true })).toBeVisible(saveWait);
 
     await page.getByRole("button", { name: "Archived", exact: true }).click();
     await expect(page.getByRole("button", { name: new RegExp(title) })).toBeVisible();
     await page.getByRole("button", { name: "Restore", exact: true }).click();
-    await expect(page.getByText("Document restored.", { exact: true })).toBeVisible();
+    await expect(page.getByText("Document restored.", { exact: true })).toBeVisible(saveWait);
 
     // Clean up: soft delete, so staging does not accumulate test documents.
     await page.getByRole("button", { name: "Delete", exact: true }).click();
-    await expect(page.getByText("Document deleted.", { exact: true })).toBeVisible();
+    await expect(page.getByText("Document deleted.", { exact: true })).toBeVisible(saveWait);
   });
 
   test("hides upload actions from guest users", async ({ page }) => {
