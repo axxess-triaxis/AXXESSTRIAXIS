@@ -9,6 +9,8 @@ test.describe("Sprint 9 Knowledge Hub", () => {
   // No seed file inserts documents, so the test uploads its own uniquely named document
   // (founder decision 2026-11-15) and soft-deletes it at the end.
   test("uploads, searches, previews, archives and restores a document", async ({ page }) => {
+    // Eight steps against a remote target; staging run7 (2026-11-19) reached "Restore" and hit the 30 s default.
+    test.setTimeout(90_000);
     const title = `E2E knowledge doc ${Date.now()}`;
     const fileName = `${title}.md`;
 
