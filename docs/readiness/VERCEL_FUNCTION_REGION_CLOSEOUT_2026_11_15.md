@@ -33,6 +33,8 @@ Every server-to-database call therefore crosses an ocean. A create makes at leas
 
 The repository is also built by the Vercel projects `triaxis-www-frontend-import` and `triaxis-product-investor-demo` (deploy statuses on `9a2b6765`). If they read this `vercel.json`, their functions move to `syd1` too. That is harmless for demo and marketing pages but not verified. Each project's Settings, then Functions, shows the region in effect after deploy.
 
+Update 2026-11-19: `staging.triaxisventures.com` is served by `triaxis-www-frontend-import` (branch `staging`), not `axxesstriaxis`. So the staging probes in this closeout measured that project. Its latest staging deployment (`07afb1c0`) has regions `["syd1"]`, so it does read this `vercel.json`. Production (`axxesstriaxis`, `443e18d1`) is also `["syd1"]`. Full map: `docs/readiness/E2E_STAGING_TRIAGE_CLOSEOUT_2026_11_15.md`, "Vercel project map".
+
 ## What was verified
 
 - `vercel.json` parses as JSON. The change is config only, so typecheck, lint, unit tests and build are unaffected. CI on the PR runs them anyway.

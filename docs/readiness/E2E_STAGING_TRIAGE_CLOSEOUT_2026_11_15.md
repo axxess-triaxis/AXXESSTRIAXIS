@@ -8,7 +8,7 @@ Only the golden-path and pilot-acceptance specs run in CI against a seeded datab
 
 ## What changed
 
-PR [#504](https://github.com/axxess-triaxis/AXXESSTRIAXIS/pull/504), branch `fix/e2e-staging-triage`, also merged into `staging` as `94b003c4` (deployed by Vercel project `axxesstriaxis`, status success).
+PR [#504](https://github.com/axxess-triaxis/AXXESSTRIAXIS/pull/504), branch `fix/e2e-staging-triage`, also merged into `staging` as `94b003c4`. (Correction, 2026-11-19: this line first said the `axxesstriaxis` project deployed it. `staging.triaxisventures.com` is served by `triaxis-www-frontend-import`; see the project map in the update below.)
 
 | Commit | Change |
 | --- | --- |
@@ -121,7 +121,7 @@ Not verified:
 
 ## Update 2026-11-19: full suite on staging after PR #541
 
-The founder approved deploying to staging. `main` was merged into `staging` as `1e3c8ad3`, and Vercel project `axxesstriaxis` deployed it successfully.
+The founder approved deploying to staging. `main` was merged into `staging` as `1e3c8ad3`, and the deploy succeeded. Staging is served by Vercel project `triaxis-www-frontend-import`, not `axxesstriaxis`; see the project map below.
 
 | Run | Specs | Passed | Skipped | Failed | Failures |
 | --- | --- | --- | --- | --- | --- |
@@ -136,3 +136,36 @@ What runs 8 and 9 show:
 - **Every remaining failure is staging slowness.** Each one is a sign-in or a save that ran out of time, and each failing test passed in another run. This blocker is still open.
 
 Left on staging: 2 test documents named "E2E knowledge doc ..." from runs 7 and 8, which stopped before their soft-delete step.
+
+## Update 2026-11-19: document text extraction fixed (PR #543)
+
+Found while reading the staging Vercel logs for the slowness investigation: `POST /api/documents/extract` returned 500 on every upload. Users saw "Uploaded. Indexing status unavailable.", and nothing was indexed for AI answers.
+
+Causes:
+- The deployed function lacked the `@napi-rs/canvas` package ("DOMMatrix is not defined"), and then PDF.js's worker file.
+- `pdf-parse` was a top-level import, so its failure broke markdown and text files too.
+
+Fix: PR #543, merged as `443e18d1`. It loads `pdf-parse` only for PDFs, and adds the canvas package and the worker file to the route's traced files.
+
+| Run | Staging code | Knowledge-hub result |
+| --- | --- | --- |
+| run10 | before the fix | markdown not indexed; extract 500 |
+| run11 | `4ee62e1a` | markdown "Indexed for search."; extract 200 |
+| run12 | `4ee62e1a` + PDF test | PDF "Not indexed": `pdf.worker.mjs` missing |
+| run13 | `07afb1c0` | 3 of 3 pass, including a real PDF upload |
+
+Production deployed `443e18d1` successfully. A production upload has not been checked; that needs the founder.
+
+## Vercel project map (2026-11-19, read with `vercel api`)
+
+| Domain | Vercel project | Branch | Function region of the latest deployment |
+| --- | --- | --- | --- |
+| `www.triaxisventures.com`, `triaxisventures.com`, `beta.triaxisventures.com` | `axxesstriaxis` | `main` | `syd1` (`443e18d1`) |
+| `staging.triaxisventures.com` | `triaxis-www-frontend-import` | `staging` | `syd1` (`07afb1c0`) |
+| `landing.triaxisventures.com` | `triaxis-www-frontend-import` | `main` | not checked |
+| `investor.triaxisventures.com` | `triaxis-product-investor-demo` | `main` | not checked |
+
+- Each project's own default region is `iad1`. The repository's `vercel.json` (`regions: ["syd1"]`) overrides it.
+- The `region` field in `vercel logs runtime` follows the client's edge, so `bom1` (Mumbai) for runs from India. It is not the function's region. An earlier reading of it as "staging functions run in Mumbai" was wrong.
+- Staging's database is in Tokyo and production's is in Sydney. Every staging call therefore crosses from Sydney to Tokyo; production calls stay in Sydney.
+- Staging and production are separate Vercel projects that build the same code. Their environment variables can differ.
