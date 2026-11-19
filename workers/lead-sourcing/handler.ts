@@ -3,7 +3,7 @@
 // guessed addresses under the run's credit cap, and posts the result back. Secrets are read at run
 // time from Secrets Manager by ARN; nothing secret is in the template or the bundle.
 // 2026-11-18: with DISCOVERY_ENABLED=true it first runs the AXXESS scheduler tick, then takes a
-// discovery run (Claude on Bedrock + AgentCore web search) before any crawl run. One unit per call.
+// discovery run (a model on Bedrock + AgentCore web search) before any crawl run. One unit per call.
 import { BedrockAgentCoreClient, InvokeWebSearchCommand } from "@aws-sdk/client-bedrock-agentcore";
 import { BedrockRuntimeClient, ConverseCommand, type ConverseCommandInput } from "@aws-sdk/client-bedrock-runtime";
 import { GetSecretValueCommand, SecretsManagerClient } from "@aws-sdk/client-secrets-manager";
@@ -12,7 +12,7 @@ import { USER_AGENT } from "../../src/services/leadSourcing/crawl.ts";
 import type { FetchText, RenderHtml } from "../../src/services/leadSourcing/types.ts";
 import type { Converse, ConverseResponse, WebSearch } from "../../src/services/leadSourcing/discover.ts";
 import { runDiscovery, type ClaimedDiscovery } from "./discovery.ts";
-import { processRun, type ClaimedRun } from "./process.ts";
+import { processRun, settleWithin, type ClaimedRun } from "./process.ts";
 
 const secrets = new SecretsManagerClient({});
 const cache = new Map<string, string>();
@@ -46,29 +46,30 @@ async function browserRenderer(): Promise<{ render: RenderHtml; close: () => Pro
   const get = async () => {
     if (!browser) {
       const [{ chromium }, sparticuz] = await Promise.all([import("playwright-core"), import("@sparticuz/chromium")]);
-      browser = await chromium.launch({ executablePath: await sparticuz.default.executablePath(), args: sparticuz.default.args, headless: true });
+      const launched = await chromium.launch({ executablePath: await sparticuz.default.executablePath(), args: sparticuz.default.args, headless: true });
+      // A crashed browser is relaunched for the next page instead of being reused.
+      launched.on("disconnected", () => {
+        if (browser === launched) browser = undefined;
+      });
+      browser = launched;
     }
     return browser;
   };
+  const renderOnce = async (url: string) => {
+    const context = await (await get()).newContext({ userAgent: USER_AGENT });
+    try {
+      const page = await context.newPage();
+      await page.goto(url, { waitUntil: "domcontentloaded", timeout: 15_000 });
+      await page.waitForLoadState("networkidle", { timeout: 5_000 }).catch(() => undefined);
+      return await page.content();
+    } finally {
+      await context.close();
+    }
+  };
   return {
-    render: async (url) => {
-      try {
-        const context = await (await get()).newContext({ userAgent: USER_AGENT });
-        try {
-          const page = await context.newPage();
-          await page.goto(url, { waitUntil: "domcontentloaded", timeout: 15_000 });
-          await page.waitForLoadState("networkidle", { timeout: 5_000 }).catch(() => undefined);
-          return await page.content();
-        } finally {
-          await context.close();
-        }
-      } catch {
-        return "";
-      }
-    },
-    close: async () => {
-      await browser?.close();
-    },
+    // Launch (cold start unpacks Chromium) plus goto plus idle wait stays well under 60 s.
+    render: (url) => settleWithin(renderOnce(url), 60_000, ""),
+    close: () => settleWithin(browser?.close() ?? Promise.resolve(), 10_000, undefined),
   };
 }
 
@@ -115,7 +116,7 @@ async function discoverOne(base: string, token: string): Promise<{ claimed: bool
   const { run } = (await claim.json()) as { run: ClaimedDiscovery | null };
   if (!run) return { claimed: false };
   try {
-    const payload = await runDiscovery(run, { converse, search, fetchText, modelId: process.env.DISCOVERY_MODEL_ID ?? "au.anthropic.claude-haiku-5-5" });
+    const payload = await runDiscovery(run, { converse, search, fetchText, modelId: process.env.DISCOVERY_MODEL_ID ?? "openai.gpt-oss-20b-1:0" });
     const done = await post(base, `/api/lead-sourcing/worker/runs/${run.id}/seeds`, token, payload);
     metric({ DiscoverySearches: payload.searchCount, DiscoveryCompanies: payload.companies.length, DiscoveryFailures: 0 });
     console.log(JSON.stringify({ discoveryRunId: run.id, status: done.status, ...payload.stats, inputTokens: payload.llmInputTokens, outputTokens: payload.llmOutputTokens }));

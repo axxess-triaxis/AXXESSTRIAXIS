@@ -1,4 +1,4 @@
-// Runs one claimed discovery run (2026-11-18): Claude on Bedrock finds companies with web search,
+// Runs one claimed discovery run (2026-11-18): a model on Bedrock (gpt-oss-20b by default) finds companies with web search,
 // then the deterministic checks drop anything that is not a reachable, independent business site.
 // AWS clients are injected by handler.ts, so this is unit-tested without a network.
 import { discoverCompanies, type Converse, type DiscoveredCompany, type WebSearch } from "../../src/services/leadSourcing/discover.ts";
@@ -40,6 +40,7 @@ export async function runDiscovery(
       "Rejected: robots.txt": rejected("robots"),
       "Companies checked": checked.kept.length,
       "Discovery incomplete": found.incomplete ? 1 : 0,
+      "Listed by no-tool extraction": found.extracted ? 1 : 0,
     },
   };
 }
