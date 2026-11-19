@@ -27,6 +27,18 @@ describe("extract: names", () => {
       expect(cleanPersonName(s), s).toBeNull();
     }
   });
+
+  it("rejects service and business phrases but keeps real names that look similar (staging run 1c8c5775)", () => {
+    for (const s of ["Approved Maintenance Works", "Property Valuation Experts", "Holiday Homes Leasing", "Wellness Partnership", "Interior Fitout"]) {
+      expect(cleanPersonName(s), s).toBeNull();
+    }
+    for (const s of ["Clement Samplename", "Florence Testname", "Ming Examplename"]) expect(cleanPersonName(s)?.name, s).toBe(s);
+  });
+
+  it("does not take a service heading next to 'Owner' as a person (staging run 1c8c5775)", () => {
+    const html = `<h3>Approved Maintenance Works</h3><p>Owner</p><h3>Omar Testname</h3><p>Owner</p>`;
+    expect(extractRolePeople(html, "https://example.com/services").map((p) => p.name)).toEqual(["Omar Testname"]);
+  });
 });
 
 describe("extract: emails", () => {
