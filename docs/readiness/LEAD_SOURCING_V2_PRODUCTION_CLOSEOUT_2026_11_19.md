@@ -15,7 +15,10 @@
   - Stacked, merged down the stack, then #535 into `main` as merge commit `afd0c898`.
   - Migration `20261118120000_lead_sourcing_schedules.sql`. The founder ran it in the prod SQL editor (project vnliomnfabaicvvvfwia). It was applied in staging on 2026-11-18.
 - **Verification:** below.
-- **Current status:** live in production with no production schedule yet. The first schedule is created by a person in the app.
+- **Current status:** live in production. The first production schedule was created on 2026-11-19 at the founder's request ("Create the first production schedule if plan permits"):
+  - Schedule `6bfdb12b`, "Dubai real estate brokerages": brokerages in Dubai, AE, 10 companies per run, weekly on Monday at 09:00 Asia/Dubai, turned on.
+  - The API returned 201, with the first run due 2026-11-23 at 05:00 UTC.
+  - Before it was created, the production exclusion list was checked and holds all 15 `founder_network` companies.
 
 ## What changed
 
@@ -86,7 +89,7 @@
     - Remove (optionally with "also exclude") takes one click
   - The staging CRM still holds the "Popular Search" lead from `09a9ad4f`. That is staging data only.
 - **Staging page hangs on "Checking session"** while the APIs answer 200. It was seen after PR #545 (sign-in timing) was merged into `staging` by another session. It is not from this work and has not been investigated here.
-- **No production discovery has run yet.** The first production schedule, and checking its run, are the next step.
+- **No production discovery has run yet.** The first scheduled run is due 2026-11-23 at 05:00 UTC. Checking that run (stats, imported names, 0 enrolments) is the next step.
 - **Anthropic on Bedrock** needs an AWS Support case ("Account and billing"), which has not been opened. Switching back later is a parameter change, because the IAM policy already allows the Haiku profile.
 - **Search quota.** AgentCore web search is free up to 5,000 queries a month for the AWS organisation. The app caps searches at 300 per org per month and 4,500 across all orgs.
 
