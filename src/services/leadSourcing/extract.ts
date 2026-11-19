@@ -38,7 +38,13 @@ const STOPWORDS = new Set(
     "contact services service welcome best top luxury capital realty brokerage llc ltd pvt company " +
     "message vision mission view more read learn testimonials client clients customer customers " +
     "solutions solution technologies technology digital media agency consulting studio sensory systems " +
-    "premium apple kenapa pilih kami"
+    "premium apple kenapa pilih kami " +
+    // Service and listing vocabulary: "Approved Maintenance Works" was imported as a person (staging run 1c8c5775).
+    "approved maintenance works repair repairs renovation renovations interior interiors fitout fit out leasing " +
+    "rental rentals rent sales sale buy sell investment investments valuation inspection cleaning facility " +
+    "facilities certified licensed professional professionals residential commercial villa villas apartment " +
+    "apartments office offices landlord landlords tenant tenants listing listings mortgage mortgages holiday " +
+    "handover snagging conveyancing advisory finance global international national quality expert experts"
   ).split(" "),
 );
 
@@ -57,6 +63,8 @@ export function cleanPersonName(raw: string): { name: string; doctor: boolean } 
   if (!/^[A-Z]/.test(tokens[0]) || !/^[A-Z]/.test(tokens[tokens.length - 1])) return null;
   if (tokens.some((t) => !NAME_TOKEN.test(t))) return null;
   if (tokens.some((t) => STOPWORDS.has(t.toLowerCase().replace(/[.'’]/g, "")))) return null;
+  // Abstract nouns ("Valuation", "Management", "Wellness") are not names. Length 8+ keeps "Clement".
+  if (tokens.some((t) => t.length >= 8 && /(tion|sion|ment|ness|ship)$/i.test(t))) return null;
   // A single-letter last token ("Chandrakala P") is an initial, not a surname we can address.
   if (tokens[tokens.length - 1].replace(".", "").length < 2) return null;
   const name = tokens.join(" ");
