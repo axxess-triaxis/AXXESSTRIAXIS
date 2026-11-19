@@ -44,7 +44,9 @@ const STOPWORDS = new Set(
     "rental rentals rent sales sale buy sell investment investments valuation inspection cleaning facility " +
     "facilities certified licensed professional professionals residential commercial villa villas apartment " +
     "apartments office offices landlord landlords tenant tenants listing listings mortgage mortgages holiday " +
-    "handover snagging conveyancing advisory finance global international national quality expert experts"
+    "handover snagging conveyancing advisory finance global international national quality expert experts " +
+    // Menu headings: "Popular Search" was imported as a founder (staging run 09a9ad4f, 2026-11-19).
+    "popular search searches trending featured quick links useful explore browse newsletter subscribe follow"
   ).split(" "),
 );
 
@@ -163,6 +165,8 @@ export function extractRolePeople(html: string, url: string): Person[] {
       // The role sits alone in its block: the name is the nearest short block before or after.
       for (const j of [i - 1, i + 1]) {
         const near = blocks[j];
+        // Text after a role that recurs elsewhere on the page is a menu or footer heading, not a name.
+        if (j > i && near && blocks.indexOf(near, j + 1) !== -1) continue;
         if (near && near.length <= 40 && cleanPersonName(near)) {
           add(near, role);
           break;

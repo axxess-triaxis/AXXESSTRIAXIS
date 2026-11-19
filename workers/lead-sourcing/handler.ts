@@ -12,7 +12,7 @@ import { USER_AGENT } from "../../src/services/leadSourcing/crawl.ts";
 import type { FetchText, RenderHtml } from "../../src/services/leadSourcing/types.ts";
 import type { Converse, ConverseResponse, WebSearch } from "../../src/services/leadSourcing/discover.ts";
 import { runDiscovery, type ClaimedDiscovery } from "./discovery.ts";
-import { processRun, type ClaimedRun } from "./process.ts";
+import { processRun, settleWithin, type ClaimedRun } from "./process.ts";
 
 const secrets = new SecretsManagerClient({});
 const cache = new Map<string, string>();
@@ -46,29 +46,30 @@ async function browserRenderer(): Promise<{ render: RenderHtml; close: () => Pro
   const get = async () => {
     if (!browser) {
       const [{ chromium }, sparticuz] = await Promise.all([import("playwright-core"), import("@sparticuz/chromium")]);
-      browser = await chromium.launch({ executablePath: await sparticuz.default.executablePath(), args: sparticuz.default.args, headless: true });
+      const launched = await chromium.launch({ executablePath: await sparticuz.default.executablePath(), args: sparticuz.default.args, headless: true });
+      // A crashed browser is relaunched for the next page instead of being reused.
+      launched.on("disconnected", () => {
+        if (browser === launched) browser = undefined;
+      });
+      browser = launched;
     }
     return browser;
   };
+  const renderOnce = async (url: string) => {
+    const context = await (await get()).newContext({ userAgent: USER_AGENT });
+    try {
+      const page = await context.newPage();
+      await page.goto(url, { waitUntil: "domcontentloaded", timeout: 15_000 });
+      await page.waitForLoadState("networkidle", { timeout: 5_000 }).catch(() => undefined);
+      return await page.content();
+    } finally {
+      await context.close();
+    }
+  };
   return {
-    render: async (url) => {
-      try {
-        const context = await (await get()).newContext({ userAgent: USER_AGENT });
-        try {
-          const page = await context.newPage();
-          await page.goto(url, { waitUntil: "domcontentloaded", timeout: 15_000 });
-          await page.waitForLoadState("networkidle", { timeout: 5_000 }).catch(() => undefined);
-          return await page.content();
-        } finally {
-          await context.close();
-        }
-      } catch {
-        return "";
-      }
-    },
-    close: async () => {
-      await browser?.close();
-    },
+    // Launch (cold start unpacks Chromium) plus goto plus idle wait stays well under 60 s.
+    render: (url) => settleWithin(renderOnce(url), 60_000, ""),
+    close: () => settleWithin(browser?.close() ?? Promise.resolve(), 10_000, undefined),
   };
 }
 
