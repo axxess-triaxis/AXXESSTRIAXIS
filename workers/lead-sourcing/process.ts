@@ -18,7 +18,20 @@ export type ProcessDeps = {
   concurrency?: number;
 };
 
-export type ProcessResult = { candidates: WorkerCandidateInput[]; creditsSpent: number; stats: Record<string, number> };
+/**
+ * Resolves with `work`, or with `fallback` after `ms`. The pending timer keeps the event loop
+ * alive, so a promise orphaned by a crashed browser can no longer end the Lambda with
+ * Runtime.NodeJsExit (staging run 1f823eb2, 2026-11-19). A rejection also becomes `fallback`.
+ */
+export function settleWithin<T>(work: Promise<T>, ms: number, fallback: T): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<T>((resolve) => {
+    timer = setTimeout(() => resolve(fallback), ms);
+  });
+  return Promise.race([work.catch(() => fallback), timeout]).finally(() => clearTimeout(timer));
+}
+
+export type ProcessResult ={ candidates: WorkerCandidateInput[]; creditsSpent: number; stats: Record<string, number> };
 
 export async function processRun(run: ClaimedRun, deps: ProcessDeps): Promise<ProcessResult> {
   let skippedForTime = 0;
