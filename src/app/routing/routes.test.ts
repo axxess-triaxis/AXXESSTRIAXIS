@@ -68,6 +68,12 @@ describe("enterprise route metadata", () => {
     expect(routeForSection("approvals").label).toBe("Approvals & Governance");
   });
 
+  it("maps the Lead sourcing page to a senior-only route under CRM (2026-11-18)", () => {
+    expect(routeForSection("lead-sourcing").path).toBe("crm/lead-sourcing");
+    expect(sectionFromPath("/crm/lead-sourcing")).toBe("lead-sourcing");
+    expect(routeForPath("/crm/lead-sourcing").requiredRoles).toEqual(["Super Admin", "Organization Admin", "Executive", "Manager"]);
+  });
+
   it("routes Employees to a section they can act on instead of a mostly-locked dashboard", () => {
     expect(defaultSectionForRole("Employee")).toBe("tasks");
     expect(defaultSectionForRole("Super Admin")).toBe("dashboard");

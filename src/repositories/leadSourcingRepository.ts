@@ -44,6 +44,8 @@ export type SourcedCandidate = {
   evidence: string[];
   status: CandidateStatus;
   leadId: string | null;
+  importedAutomatically: boolean;
+  removedAt: string | null;
 };
 
 type RunRow = {
@@ -56,9 +58,9 @@ const RUN_SELECT = "id,organization_id,status,segment,country,seeds,seed_count,v
 type CandidateRow = {
   id: string; run_id: string; company: string; domain: string | null; country: string; segment: string | null; contact_name: string;
   role: string; email: string; email_kind: Candidate["emailKind"]; verified: Candidate["verified"] | null; score: number;
-  evidence: unknown; status: CandidateStatus; lead_id: string | null;
+  evidence: unknown; status: CandidateStatus; lead_id: string | null; imported_automatically?: boolean | null; removed_at?: string | null;
 };
-const CANDIDATE_SELECT = "id,run_id,company,domain,country,segment,contact_name,role,email,email_kind,verified,score,evidence,status,lead_id";
+const CANDIDATE_SELECT = "id,run_id,company,domain,country,segment,contact_name,role,email,email_kind,verified,score,evidence,status,lead_id,imported_automatically,removed_at";
 
 const isRecord = (v: unknown): v is Record<string, unknown> => Boolean(v) && typeof v === "object" && !Array.isArray(v);
 
@@ -88,7 +90,7 @@ function toCandidate(row: CandidateRow): SourcedCandidate {
     id: row.id, runId: row.run_id, company: row.company, domain: row.domain, country: row.country, segment: row.segment,
     contactName: row.contact_name, role: row.role, email: row.email, emailKind: row.email_kind, verified: row.verified,
     score: row.score, evidence: Array.isArray(row.evidence) ? row.evidence.filter((e): e is string => typeof e === "string") : [],
-    status: row.status, leadId: row.lead_id,
+    status: row.status, leadId: row.lead_id, importedAutomatically: Boolean(row.imported_automatically), removedAt: row.removed_at ?? null,
   };
 }
 

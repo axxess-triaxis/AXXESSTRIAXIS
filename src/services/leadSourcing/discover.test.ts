@@ -1,6 +1,6 @@
 // Discovery loop and checks with a fake Converse and fake search. Reserved domains and invented names.
 import { describe, expect, it } from "vitest";
-import { discoverCompanies, parseSubmission, systemPrompt, type Converse, type ConverseRequest, type ConverseResponse } from "./discover";
+import { countryCode, discoverCompanies, parseJsonObject, parseSubmission, systemPrompt, type Converse, type ConverseRequest, type ConverseResponse } from "./discover";
 import { checkHomepages, isBlockedDomain, screenCompanies } from "./discoverValidate";
 
 const REQ = { segment: "brokerage", countries: ["AE"], cities: ["Dubai"], target: 3, maxSearches: 2 };
@@ -58,21 +58,78 @@ describe("discoverCompanies", () => {
     const result = await discoverCompanies(REQ, { converse, modelId: "m", search: async () => (searches++, []) });
     expect(searches).toBe(2);
     expect(result.searches).toBe(2);
-    expect(requests[1].toolConfig.toolChoice).toEqual({ tool: { name: "submit_companies" } });
+    expect(requests[1].toolConfig.toolChoice).toEqual({ any: {} });
+    expect(requests[1].toolConfig.tools.map((t) => t.toolSpec.name)).toEqual(["submit_companies"]);
     const third = requests[1].messages.at(-1)?.content[2];
     expect(third && "toolResult" in third && third.toolResult.status).toBe("error");
   });
 
-  it("stops after the turn limit and says so, forcing submission on the last turn", async () => {
-    const { converse, requests } = scripted([
-      () => ({ output: { message: { role: "assistant", content: [{ text: "thinking" }] } } }),
-      () => ({ output: { message: { role: "assistant", content: [{ text: "still thinking" }] } } }),
-    ]);
+  it("stops after the turn limit plus submit-only retries and says so", async () => {
+    const thinking = () => ({ output: { message: { role: "assistant", content: [{ text: "thinking" }] } } });
+    const { converse, requests } = scripted([thinking, thinking, thinking]);
     const result = await discoverCompanies(REQ, { converse, modelId: "m", search: async () => [], maxTurns: 2 });
-    expect(result.incomplete).toContain("2 turns");
+    expect(result.turns).toBe(3);
+    expect(result.incomplete).toContain("3 turns");
     expect(result.companies).toEqual([]);
-    expect(requests[0].toolConfig.toolChoice).toEqual({ any: {} });
-    expect(requests[1].toolConfig.toolChoice).toEqual({ tool: { name: "submit_companies" } });
+    expect(requests[0].toolConfig.tools.map((t) => t.toolSpec.name)).toEqual(["web_search", "submit_companies"]);
+    for (const r of requests.slice(1)) expect(r.toolConfig.tools.map((t) => t.toolSpec.name)).toEqual(["submit_companies"]);
+  });
+
+  it("refuses a stray search once it must submit and recovers on a retry (gpt-oss behaviour)", async () => {
+    let searches = 0;
+    const { converse, requests } = scripted([
+      () => toolUse("t1", "web_search", { query: "q1" }),
+      () => toolUse("t2", "web_search", { query: "q2" }),
+      () => toolUse("t3", "submit_companies", { companies: [] }),
+    ]);
+    const result = await discoverCompanies(REQ, { converse, modelId: "m", search: async () => (searches++, []), maxTurns: 2 });
+    expect(searches).toBe(1);
+    expect(result.incomplete).toBeUndefined();
+    expect(result.turns).toBe(3);
+    const refused = requests[2].messages.at(-1)?.content[0];
+    expect(refused && "toolResult" in refused && refused.toolResult.status).toBe("error");
+  });
+
+  it("falls back to a no-tool JSON extraction when the model never submits (staging run dc81bd30)", async () => {
+    const searchOnly = () => toolUse("x", "web_search", { query: "again" });
+    const { converse, requests } = scripted([
+      () => toolUse("t1", "web_search", { query: "Dubai brokerages" }),
+      searchOnly,
+      searchOnly,
+      () => ({
+        output: { message: { role: "assistant", content: [{ text: 'Here you go: ```json\n{"companies":[{"company":"Alpha Homes","domain":"alpha-homes.example","country":"United Arab Emirates","city":"Dubai","evidence_url":"https://alpha-homes.example/contact"}]}\n```' }] } },
+        usage: { inputTokens: 500, outputTokens: 50 },
+      }),
+    ]);
+    const result = await discoverCompanies(REQ, { converse, modelId: "m", search: async () => hits, maxTurns: 2 });
+    expect(result.extracted).toBe(true);
+    expect(result.incomplete).toBeUndefined();
+    expect(result.companies).toEqual([{ company: "Alpha Homes", domain: "alpha-homes.example", country: "AE", city: "Dubai", evidenceUrl: "https://alpha-homes.example/contact" }]);
+    const last = requests.at(-1)!;
+    expect(last.toolConfig).toBeUndefined();
+    expect(last.messages).toHaveLength(1);
+    const prompt = (last.messages[0].content[0] as { text: string }).text;
+    expect(prompt).toContain("https://alpha-homes.example/contact");
+    expect(prompt).toContain("untrusted");
+  });
+
+  it("skips extraction when no search ever returned anything", async () => {
+    const thinking = () => ({ output: { message: { role: "assistant", content: [{ text: "thinking" }] } } });
+    const { converse, requests } = scripted([thinking, thinking, thinking]);
+    const result = await discoverCompanies(REQ, { converse, modelId: "m", search: async () => [], maxTurns: 2 });
+    expect(result.incomplete).toBeDefined();
+    expect(requests).toHaveLength(3);
+  });
+
+  it("maps country names to ISO codes and reads JSON wrapped in prose", () => {
+    expect(countryCode("United Arab Emirates")).toBe("AE");
+    expect(countryCode("u.a.e.")).toBe("AE");
+    expect(countryCode("India")).toBe("IN");
+    expect(countryCode("ae")).toBe("AE");
+    expect(countryCode("Atlantis")).toBe("");
+    expect(parseJsonObject('noise {"a":1} more')).toEqual({ a: 1 });
+    expect(parseJsonObject("no json here")).toBeNull();
+    expect(parseJsonObject("{broken")).toBeNull();
   });
 
   it("reports a failed search to the model instead of crashing", async () => {

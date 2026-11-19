@@ -334,3 +334,80 @@ export async function loadPastSeedDomains(organizationId: string): Promise<strin
   }
   return out;
 }
+
+// ---- App page (session routes, tenant-scoped) ----------------------------------------------------
+
+export type RunSummary = {
+  id: string;
+  status: string;
+  seedSource: "agent" | "discovery";
+  scheduleId: string | null;
+  segment: string | null;
+  seedCount: number;
+  searchCount: number;
+  stats: Record<string, number | string>;
+  error: string | null;
+  createdAt: string;
+  finishedAt: string | null;
+};
+
+export async function listRuns(scope: TenantScope, limit = 30): Promise<RunSummary[]> {
+  ensureConfigured();
+  const rows = await supabaseAdminRest<{
+    id: string; status: string; seed_source: "agent" | "discovery"; schedule_id: string | null; segment: string | null; seed_count: number;
+    search_count: number; stats: Record<string, number | string> | null; error: string | null; created_at: string; finished_at: string | null;
+  }[]>("lead_sourcing_runs", {
+    query: new URLSearchParams({
+      organization_id: `eq.${scope.organizationId}`,
+      select: "id,status,seed_source,schedule_id,segment,seed_count,search_count,stats,error,created_at,finished_at",
+      order: "created_at.desc",
+      limit: String(Math.min(100, Math.max(1, limit))),
+    }),
+  });
+  return (rows ?? []).map((r) => ({
+    id: r.id, status: r.status, seedSource: r.seed_source, scheduleId: r.schedule_id, segment: r.segment, seedCount: r.seed_count,
+    searchCount: r.search_count, stats: r.stats ?? {}, error: r.error, createdAt: r.created_at, finishedAt: r.finished_at,
+  }));
+}
+
+export type Exclusion = { id: string; companyNorm: string; domainLabel: string; reason: string; createdAt: string };
+
+export async function listExclusions(scope: TenantScope): Promise<Exclusion[]> {
+  ensureConfigured();
+  const rows = await supabaseAdminRest<{ id: string; company_norm: string; domain_label: string; reason: string; created_at: string }[]>("lead_source_exclusions", {
+    query: new URLSearchParams({ organization_id: `eq.${scope.organizationId}`, select: "id,company_norm,domain_label,reason,created_at", order: "created_at.desc", limit: "2000" }),
+  });
+  return (rows ?? []).map((r) => ({ id: r.id, companyNorm: r.company_norm, domainLabel: r.domain_label, reason: r.reason, createdAt: r.created_at }));
+}
+
+export async function deleteExclusion(scope: TenantScope, id: string): Promise<boolean> {
+  ensureConfigured();
+  const rows = await supabaseAdminRest<{ id: string }[]>("lead_source_exclusions", {
+    method: "DELETE",
+    query: new URLSearchParams({ organization_id: `eq.${scope.organizationId}`, id: `eq.${id}`, select: "id" }),
+  });
+  return (rows ?? []).length > 0;
+}
+
+/**
+ * Removes a sourced lead after review: the lead is closed as lost (kept for the record, never
+ * deleted) and the candidate is marked removed. Only a lead nobody has worked on yet (stage new,
+ * status open) can be removed here; anything further along is changed in Leads & Calls.
+ */
+export async function removeSourcedLead(scope: TenantScope, candidate: { id: string; leadId: string }): Promise<boolean> {
+  ensureConfigured();
+  const now = new Date().toISOString();
+  const leads = await supabaseAdminRest<{ id: string }[]>("crm_leads", {
+    method: "PATCH",
+    query: new URLSearchParams({ organization_id: `eq.${scope.organizationId}`, id: `eq.${candidate.leadId}`, stage: "eq.new", status: "eq.open", select: "id" }),
+    body: { status: "lost", stage: "lost", updated_at: now },
+  });
+  if ((leads ?? []).length === 0) return false;
+  await supabaseAdminRest("lead_sourcing_candidates", {
+    method: "PATCH",
+    prefer: "return=minimal",
+    query: new URLSearchParams({ organization_id: `eq.${scope.organizationId}`, id: `eq.${candidate.id}` }),
+    body: { removed_at: now },
+  });
+  return true;
+}
