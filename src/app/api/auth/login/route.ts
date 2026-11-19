@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { signInServerSide } from "../../../../auth/serverSession";
 import { auditLogsRepository } from "../../../../repositories/supabaseEnterpriseRepositories";
 import { SupabaseAuthError } from "../../../../auth/supabaseAuthError";
@@ -58,7 +58,12 @@ export async function POST(request: Request) {
           organization_id: session.user.organizationId,
         },
       });
-      await posthog.flush();
+      // Sent after the response (staging run14, 2026-11-19: waiting here was ~669 ms of a ~1,115 ms
+      // sign-in, and a hung outbound call would hold the response). after() keeps the function alive
+      // until the flush finishes; a failed flush loses the analytics event, never the sign-in.
+      after(() => posthog.flush().catch((error: unknown) => {
+        console.warn("[auth/login] PostHog flush failed:", error instanceof Error ? error.message : error);
+      }));
     }
     const analyticsMs = elapsed(analyticsStartedAt);
     const totalMs = elapsed(startedAt);
