@@ -100,3 +100,21 @@ Verification: Standard suite at d41898e3. Staging went from 13 passed / 33 faile
 Outcome: Partial. 3 failures remain: 1 seed gap and 2 intermittent staging slowness.
 Follow-up: Documents seed decision, staging latency investigation, sign-out scope decision, merge #504 to main.
 ```
+
+## Update 2026-11-18: founder decisions, PR #541
+
+On 2026-11-15 the founder answered both open questions.
+
+- **Sign out ends only the current device's session.** `signOutServerSide` now calls `POST /auth/v1/logout?scope=local`. The regression test in `src/auth/serverSession.test.ts` fails on the old call and passes now. Seeded e2e runs keep one worker, because the specs share seeded rows.
+- **The knowledge-hub test uploads its own document.** It uploads a uniquely named markdown file, then searches, previews, archives, restores and soft-deletes it. Toasts are matched exactly, so the local-fallback path fails the test.
+  - Staging run kh1: 1 passed, 1 failed. The admin page stayed on its loading state past the 5 s default.
+  - `6710bdcb` gives that first load 30 s.
+  - Staging run kh2: 2 passed.
+
+Verified at `faf224df` (on `main` `e5e05bb9`):
+- typecheck, mobile typecheck, lint, build and `supabase:verify`: exit 0
+- tests: 379/379 files, 2315/2315 tests
+
+Not verified:
+- Sign-out on staging or production. It is not deployed.
+- A full-suite staging run after this change. The run started on 2026-11-15 never finished, because its terminal was closed.
