@@ -58,6 +58,9 @@ const nextConfig = {
       "./node_modules/.pnpm/@napi-rs+canvas@*/node_modules/@napi-rs/canvas/**/*",
       "./node_modules/.pnpm/@napi-rs+canvas@*/node_modules/@napi-rs/canvas-linux-x64-gnu/**/*",
       "./node_modules/.pnpm/pdfjs-dist@*/node_modules/@napi-rs/canvas/**/*",
+      // pdfjs-dist loads its worker by a runtime path, so the trace misses it (staging 2026-11-19:
+      // "Setting up fake worker failed: Cannot find module .../legacy/build/pdf.worker.mjs").
+      "./node_modules/.pnpm/pdfjs-dist@*/node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs",
     ],
   },
   async rewrites() {
