@@ -2,6 +2,13 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 // Staging 2026-11-19: about 1 in 20 sign-ins stalled ~21 s after Vercel logged the login 200.
 // The request log has no duration, so the route now reports how long each phase took.
+// after() needs a real request scope; here it just runs the callback.
+vi.mock("next/server", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("next/server")>()),
+  after: vi.fn((callback: () => unknown) => {
+    void callback();
+  }),
+}));
 vi.mock("../../../../auth/serverSession", () => ({
   signInServerSide: vi.fn(async () => ({
     accessToken: "access-1",
