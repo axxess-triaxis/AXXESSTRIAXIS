@@ -470,3 +470,4 @@ No cards moved yet.
   - Blocker 1 cleared: the `knowledge-hub` test uploads its own document. Staging run kh2: 2 passed.
   - Blocker 2 is unchanged. The Knowledge Hub admin page also took more than 5 s to load on staging (run kh1).
 - Update 2026-11-19: full suite on staging at `1e3c8ad3`, run9: 20 passed, 25 skipped, 1 failed (a sign-in over 20 s). Column stays Blocked on staging slowness.
+- Update 2026-11-19 (PR #543): upload text extraction fixed. It had returned 500 on every upload. Working on staging (run13, including a real PDF); a production upload check is pending. Also: staging is served by Vercel project `triaxis-www-frontend-import`, and its functions run in `syd1`.
