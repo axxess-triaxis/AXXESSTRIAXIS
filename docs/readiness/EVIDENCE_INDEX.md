@@ -51,3 +51,9 @@ number, existing closeout doc) -- not backfilled in bulk from memory or estimate
    as "forgot to check," `Pending` reads as "known gap").
 4. Cross-link: if the row involved a scope/architecture call, add the matching row in
    `docs/readiness/DECISION_OUTCOME_LEDGER.md` and reference it back here.
+
+## Lead sourcing v2 (2026-11-19)
+
+| Issue ID | Title | Origin plan | Research artifact | Implementation commit(s) | PR | Test evidence | Deploy evidence | Closeout artifact | Final status |
+|---|---|---|---|---|---|---|---|---|---|
+| LEAD-SOURCING-V2 | Automatic discovery on schedules, auto-import | Approved plan-mode plan, `~/.claude/plans/i-need-to-log-eager-donut.md` | Bedrock and AgentCore research in the plan; staging runs `1c8c5775`, `1f823eb2`, `09a9ad4f` | `23b3c2b2`, `bfe64637`, `368cb82e` and the PR stack | #535, #536, #538, #539, #540 (merge `afd0c898`) | 2373 tests; 24 of 24 PR checks incl. Playwright | Vercel prod serving `afd0c898` (tick route 401 at 12:06 UTC); `axxess-lead-sourcing-prod` updated, 12:12 UTC tick clean | `LEAD_SOURCING_V2_PRODUCTION_CLOSEOUT_2026_11_19.md` | Shipped; first production schedule pending |
