@@ -1,7 +1,7 @@
 // Real document text extraction for RAG indexing. Nothing here fabricates text: unsupported file
 // types and failed extractions return `supported: false` with a human-readable reason so callers
 // can be honest with the user instead of silently indexing an empty or metadata-only document.
-import { PDFParse } from "pdf-parse";
+import type { PDFParse } from "pdf-parse";
 import mammoth from "mammoth";
 import { createWorker } from "tesseract.js";
 
@@ -52,8 +52,29 @@ function capText(text: string, maxChars: number): { text: string; truncated: boo
   return { text: text.slice(0, maxChars), truncated: true };
 }
 
+// pdf-parse is loaded only when a PDF arrives. Its pdfjs-dist needs the @napi-rs/canvas native addon
+// at load time; on Vercel that load failed (staging, 2026-11-19), and as a top-level import it took
+// down extraction for every file type with a 500. Loading it here keeps markdown, text and DOCX
+// working, and turns a PDF library failure into an honest "not supported" result.
+async function loadPdfParse(): Promise<typeof PDFParse | Error> {
+  try {
+    return (await import("pdf-parse")).PDFParse;
+  } catch (error) {
+    return error instanceof Error ? error : new Error(String(error));
+  }
+}
+
 async function extractPdf(buffer: Buffer): Promise<DocumentExtractionResult> {
-  const parser = new PDFParse({ data: buffer });
+  const PdfParser = await loadPdfParse();
+  if (PdfParser instanceof Error) {
+    return {
+      supported: false,
+      text: "",
+      truncated: false,
+      reason: `PDF text extraction is unavailable on this server (${PdfParser.message}).`,
+    };
+  }
+  const parser = new PdfParser({ data: buffer });
   try {
     const info = await parser.getInfo();
     const totalPages = info.total;

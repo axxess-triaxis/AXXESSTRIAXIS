@@ -31,6 +31,9 @@ test.describe("Sprint 9 Knowledge Hub", () => {
 
     // The card only appears once the storage upload and the documents row both succeeded.
     await expect(page.getByRole("button", { name: new RegExp(title) })).toBeVisible({ timeout: 30_000 });
+    // Extraction and indexing must succeed too. Staging 2026-11-19: /api/documents/extract returned 500
+    // on every upload, which the old test could not see, because the card still appeared.
+    await expect(page.getByText(`${fileName}: Indexed for search.`, { exact: true })).toBeVisible({ timeout: 30_000 });
     await expect(page.getByText("Document Preview")).toBeVisible();
 
     await page.getByPlaceholder(/Search title/i).fill(title);

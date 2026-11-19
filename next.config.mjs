@@ -49,7 +49,16 @@ const nextConfig = {
   // serverless runtime architecture) for the one route that actually triggers canvas usage (OCR
   // fallback rendering).
   outputFileTracingIncludes: {
-    "/api/documents/extract": ["./node_modules/.pnpm/@napi-rs+canvas-linux-x64-gnu@*/node_modules/@napi-rs/canvas-linux-x64-gnu/**/*"],
+    // Staging 2026-11-19: the trace held the binary but not the @napi-rs/canvas package itself, which
+    // pdfjs-dist loads through a runtime require ("Cannot find module '@napi-rs/canvas'"). Include
+    // the package and the paths it is resolved from: pdfjs-dist's own node_modules, and the binary
+    // next to the canvas package.
+    "/api/documents/extract": [
+      "./node_modules/.pnpm/@napi-rs+canvas-linux-x64-gnu@*/node_modules/@napi-rs/canvas-linux-x64-gnu/**/*",
+      "./node_modules/.pnpm/@napi-rs+canvas@*/node_modules/@napi-rs/canvas/**/*",
+      "./node_modules/.pnpm/@napi-rs+canvas@*/node_modules/@napi-rs/canvas-linux-x64-gnu/**/*",
+      "./node_modules/.pnpm/pdfjs-dist@*/node_modules/@napi-rs/canvas/**/*",
+    ],
   },
   async rewrites() {
     return [
