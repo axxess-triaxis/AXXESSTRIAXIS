@@ -469,3 +469,4 @@ No cards moved yet.
   - Founder answered both questions on 2026-11-15. Sign out now ends only the current device's session (`scope=local`), with a unit regression test; not deployed yet.
   - Blocker 1 cleared: the `knowledge-hub` test uploads its own document. Staging run kh2: 2 passed.
   - Blocker 2 is unchanged. The Knowledge Hub admin page also took more than 5 s to load on staging (run kh1).
+- Update 2026-11-19: full suite on staging at `1e3c8ad3`, run9: 20 passed, 25 skipped, 1 failed (a sign-in over 20 s). Column stays Blocked on staging slowness.

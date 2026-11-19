@@ -118,3 +118,21 @@ Verified at `faf224df` (on `main` `e5e05bb9`):
 Not verified:
 - Sign-out on staging or production. It is not deployed.
 - A full-suite staging run after this change. The run started on 2026-11-15 never finished, because its terminal was closed.
+
+## Update 2026-11-19: full suite on staging after PR #541
+
+The founder approved deploying to staging. `main` was merged into `staging` as `1e3c8ad3`, and Vercel project `axxesstriaxis` deployed it successfully.
+
+| Run | Specs | Passed | Skipped | Failed | Failures |
+| --- | --- | --- | --- | --- | --- |
+| run7 | knowledge-hub only (an old listener took the trigger) | 0 | 0 | 2 | Admin: hit the 30 s per-test default at Restore. Guest: sign-in over 20 s |
+| run8 | all 46 | 17 | 25 | 4 | knowledge-hub (Delete still saving at 5 s), projects (sign-in over 20 s), sprint17 mobile ("Organization Admin" not shown in 5 s), sprint8 ("Project created." not shown in 5 s) |
+| run9 | all 46 | **20** | 25 | **1** | leads-call-queue manager: sign-in over 20 s (it passed in run8) |
+
+The knowledge-hub admin test now has 90 s in total and waits up to 20 s for each save message.
+
+What runs 8 and 9 show:
+- **Sign-out on staging.** `auth` login/logout and the `sprint8` admin-then-guest re-login passed in both runs. So sign-out ends the session. No test shows that another device stays signed in; that is the founder's two-device check.
+- **Every remaining failure is staging slowness.** Each one is a sign-in or a save that ran out of time, and each failing test passed in another run. This blocker is still open.
+
+Left on staging: 2 test documents named "E2E knowledge doc ..." from runs 7 and 8, which stopped before their soft-delete step.
