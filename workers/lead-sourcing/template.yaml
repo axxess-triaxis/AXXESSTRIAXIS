@@ -4,7 +4,8 @@ Description: >-
   AXXESS lead-sourcing worker. On a schedule it claims the oldest queued lead-sourcing run from
   AXXESS, crawls the seed companies' public websites (headless Chromium for JavaScript-built
   sites), verifies guessed addresses under the run's credit cap, and posts the candidates back.
-  Nothing is imported or contacted here; a person approves candidates in AXXESS.
+  With discovery on, it also runs the AXXESS scheduler and finds companies for scheduled runs with
+  an open-weight model on Amazon Bedrock and AgentCore web search. Nothing is contacted from here.
 
 Metadata:
   AWSToolsMetrics:
@@ -36,6 +37,21 @@ Parameters:
     Type: String
     Default: ""
     Description: Email for failure alarms (confirm the SNS subscription email). Empty = no subscription.
+  DiscoveryEnabled:
+    Type: String
+    Default: "false"
+    AllowedValues: ["true", "false"]
+    Description: >-
+      true = run the AXXESS scheduler tick and discovery runs (Bedrock + AgentCore web search) before
+      crawl runs.
+  DiscoveryModelId:
+    Type: String
+    # 2026-11-18 founder: "Use cheapest oss models, Anthropic later on". Anthropic models are blocked
+    # for this account at account level (AccessDeniedException "not available for this account");
+    # gpt-oss runs on demand in Sydney itself. Switch back to Haiku by changing this parameter.
+    Default: openai.gpt-oss-20b-1:0
+    AllowedValues: [openai.gpt-oss-20b-1:0, openai.gpt-oss-120b-1:0, au.anthropic.claude-haiku-5-5]
+    Description: Bedrock model for discovery. gpt-oss runs in Sydney only; the au. Haiku profile in Sydney and Melbourne.
   ReservedConcurrency:
     Type: Number
     Default: 0
@@ -81,6 +97,8 @@ Resources:
           WORKER_SECRET_ARN: !Ref WorkerSecretArn
           QEV_SECRET_ARN: !If [HasQev, !Ref QevSecretArn, ""]
           STAGE: !Ref Stage
+          DISCOVERY_ENABLED: !Ref DiscoveryEnabled
+          DISCOVERY_MODEL_ID: !Ref DiscoveryModelId
       Policies:
         - Statement:
             - Sid: ReadWorkerSecrets
@@ -90,6 +108,21 @@ Resources:
                 - HasQev
                 - [!Ref WorkerSecretArn, !Ref QevSecretArn]
                 - [!Ref WorkerSecretArn]
+            # Converse is authorised by bedrock:InvokeModel. gpt-oss is on demand in Sydney; the au. Haiku
+            # profile routes to Sydney and Melbourne and stays allowed for the later switch back.
+            - Sid: InvokeDiscoveryModel
+              Effect: Allow
+              Action: bedrock:InvokeModel
+              Resource:
+                - arn:aws:bedrock:ap-southeast-2::foundation-model/openai.gpt-oss-20b-1:0
+                - arn:aws:bedrock:ap-southeast-2::foundation-model/openai.gpt-oss-120b-1:0
+                - !Sub arn:aws:bedrock:${AWS::Region}:${AWS::AccountId}:inference-profile/au.anthropic.claude-haiku-5-5
+                - arn:aws:bedrock:ap-southeast-2::foundation-model/anthropic.claude-haiku-5-5
+                - arn:aws:bedrock:ap-southeast-4::foundation-model/anthropic.claude-haiku-5-5
+            - Sid: WebSearch
+              Effect: Allow
+              Action: bedrock-agentcore:InvokeWebSearch
+              Resource: !Sub arn:${AWS::Partition}:bedrock-agentcore:${AWS::Region}:aws:tool/web-search.v1
       Events:
         EveryFiveMinutes:
           Type: ScheduleV2
@@ -138,6 +171,44 @@ Resources:
       EvaluationPeriods: 1
       Threshold: 1
       ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref AlarmTopic]
+
+  DiscoveryFailuresAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub axxess-lead-sourcing-${Stage}-discovery-failures
+      AlarmDescription: A discovery run failed (Bedrock, web search or AXXESS). Check the worker log group.
+      Namespace: AXXESS/LeadSourcing
+      MetricName: DiscoveryFailures
+      Dimensions:
+        - Name: Stage
+          Value: !Ref Stage
+      Statistic: Sum
+      Period: 3600
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref AlarmTopic]
+
+  DiscoverySearchesAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub axxess-lead-sourcing-${Stage}-discovery-searches-high
+      AlarmDescription: >-
+        More than 500 web searches in a day. The monthly caps in AXXESS should prevent this; the
+        AgentCore free tier (5,000 a month) is shared by the whole AWS organization.
+      Namespace: AXXESS/LeadSourcing
+      MetricName: DiscoverySearches
+      Dimensions:
+        - Name: Stage
+          Value: !Ref Stage
+      Statistic: Sum
+      Period: 86400
+      EvaluationPeriods: 1
+      Threshold: 500
+      ComparisonOperator: GreaterThanThreshold
       TreatMissingData: notBreaching
       AlarmActions: [!Ref AlarmTopic]
 

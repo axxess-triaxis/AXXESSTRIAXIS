@@ -23,6 +23,14 @@ vi.mock("../../../../repositories/leadSourcingRepository", () => ({
   },
 }));
 
+const autoCalls: Array<Record<string, unknown>> = [];
+vi.mock("../../../../services/leadSourcing/autoImport", () => ({
+  autoImportRun: async (run: Record<string, unknown>) => {
+    autoCalls.push(run);
+    return run.seedSource === "discovery" ? { attempted: true, imported: 1, skipped: 0 } : { attempted: false, imported: 0, skipped: 0 };
+  },
+}));
+
 import { POST as claim } from "./claim/route";
 import { POST as report } from "./runs/[id]/route";
 
@@ -91,5 +99,14 @@ describe("lead sourcing worker routes", () => {
   it("rejects a malformed result body", async () => {
     state.run = { id: RUN, organizationId: "org-1", seeds, verifyCap: 0, status: "running", stats: {} };
     expect((await report(req({ candidates: "x" }), params(RUN))).status).toBe(400);
+  });
+
+  it("auto-imports a finished discovery run, and only reports it for discovery runs", async () => {
+    state.run = { id: RUN, organizationId: "org-1", seeds, verifyCap: 0, status: "running", stats: {}, seedSource: "discovery" };
+    const body = { candidates: [{ domain: "alpha.example", contactName: "Amara Samplefield", role: "Founder", email: "info@alpha.example", emailKind: "published-role" }], creditsSpent: 0, stats: {} };
+    expect(await (await report(req(body), params(RUN))).json()).toEqual({ status: "done", stored: 1, dropped: 0, autoImported: 1, autoSkipped: 0 });
+    expect(autoCalls.at(-1)).toMatchObject({ id: RUN, status: "done", seedSource: "discovery" });
+    state.run = { id: RUN, organizationId: "org-1", seeds, verifyCap: 0, status: "running", stats: {}, seedSource: "agent" };
+    expect(await (await report(req(body), params(RUN))).json()).toEqual({ status: "done", stored: 1, dropped: 0 });
   });
 });
