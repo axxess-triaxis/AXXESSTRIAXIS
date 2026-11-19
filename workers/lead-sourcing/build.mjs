@@ -1,6 +1,7 @@
 // Bundles handler.ts (and the shared core it imports from src/ and scripts/) into dist/handler.mjs.
-// Chromium, playwright-core and the AWS SDK stay external: the first two are installed into dist/
-// by `sam build` from dist/package.json, the SDK is provided by the nodejs22.x runtime.
+// Chromium and playwright-core stay external (installed into dist/ by `sam build` from
+// dist/package.json); Secrets Manager comes from the nodejs22.x runtime's SDK. The Bedrock runtime
+// and AgentCore clients are bundled (2026-11-18): the runtime's SDK may predate InvokeWebSearch.
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { build } from "esbuild";
@@ -17,7 +18,7 @@ await build({
   platform: "node",
   target: "node22",
   format: "esm",
-  external: ["@aws-sdk/*", "playwright-core", "@sparticuz/chromium"],
+  external: ["@aws-sdk/client-secrets-manager", "playwright-core", "@sparticuz/chromium"],
   // esbuild's ESM output needs require() for any CommonJS left in the bundle.
   banner: { js: "import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);" },
   legalComments: "none",

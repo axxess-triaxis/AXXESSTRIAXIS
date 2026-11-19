@@ -11,6 +11,8 @@
     "playwright-core": "1.62.0"
   },
   "devDependencies": {
+    "@aws-sdk/client-bedrock-agentcore": "3.1165.0",
+    "@aws-sdk/client-bedrock-runtime": "3.1165.0",
     "@aws-sdk/client-secrets-manager": "3.1161.0",
     "esbuild": "0.28.2"
   }

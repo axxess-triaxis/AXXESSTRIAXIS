@@ -267,3 +267,147 @@ export async function expireUnclaimedDiscovery(hours = 24, now = new Date()): Pr
     body: { status: "failed", error: "discovery was not picked up in time", finished_at: now.toISOString() },
   });
 }
+
+// ---- Discovery results (worker) ---------------------------------------------------------------
+
+export type DiscoveryRun = { id: string; organizationId: string; status: string; seedSource: string; startedAt: string | null; discovery: DiscoverySpec | null; stats: Record<string, number | string> };
+
+export async function getDiscoveryRun(runId: string): Promise<DiscoveryRun | null> {
+  ensureConfigured();
+  const rows = await supabaseAdminRest<{ id: string; organization_id: string; status: string; seed_source: string; started_at: string | null; discovery: DiscoverySpec | null; stats: Record<string, number | string> | null }[]>("lead_sourcing_runs", {
+    query: new URLSearchParams({ id: `eq.${runId}`, select: "id,organization_id,status,seed_source,started_at,discovery,stats", limit: "1" }),
+  });
+  const r = rows?.[0];
+  return r ? { id: r.id, organizationId: r.organization_id, status: r.status, seedSource: r.seed_source, startedAt: r.started_at, discovery: r.discovery, stats: r.stats ?? {} } : null;
+}
+
+export type DiscoveryUsage = { searchCount: number; llmInputTokens: number; llmOutputTokens: number };
+const usageColumns = (u: DiscoveryUsage) => ({ search_count: u.searchCount, llm_input_tokens: u.llmInputTokens, llm_output_tokens: u.llmOutputTokens });
+
+/**
+ * Hands a discovered run to the crawler: stores its seeds and moves it from discovering to queued.
+ * started_at is cleared so the crawl claim sets its own start time. False if the run moved on.
+ */
+export async function queueDiscoveredSeeds(
+  run: Pick<DiscoveryRun, "id" | "organizationId">,
+  seeds: import("../services/leadSourcing/types.ts").Seed[],
+  usage: DiscoveryUsage,
+  stats: Record<string, number | string>,
+): Promise<boolean> {
+  ensureConfigured();
+  const rows = await supabaseAdminRest<{ id: string }[]>("lead_sourcing_runs", {
+    method: "PATCH",
+    query: new URLSearchParams({ id: `eq.${run.id}`, organization_id: `eq.${run.organizationId}`, status: "eq.discovering", select: "id" }),
+    body: { status: "queued", seeds, seed_count: seeds.length, verify_cap: 0, started_at: null, stats, ...usageColumns(usage) },
+  });
+  return (rows ?? []).length > 0;
+}
+
+/** Ends a discovery run that produced nothing to crawl (done) or broke (failed), recording what it used. */
+export async function finishDiscovery(
+  run: Pick<DiscoveryRun, "id" | "organizationId">,
+  outcome: { status: "done" | "failed"; error?: string; stats: Record<string, number | string> },
+  usage: DiscoveryUsage,
+): Promise<void> {
+  ensureConfigured();
+  await supabaseAdminRest("lead_sourcing_runs", {
+    method: "PATCH",
+    prefer: "return=minimal",
+    query: new URLSearchParams({ id: `eq.${run.id}`, organization_id: `eq.${run.organizationId}`, status: "eq.discovering" }),
+    body: { status: outcome.status, error: outcome.error?.slice(0, 300) ?? null, stats: outcome.stats, finished_at: new Date().toISOString(), ...usageColumns(usage) },
+  });
+}
+
+/** Domains this organization's earlier runs already researched, so discovery never re-proposes them. */
+export async function loadPastSeedDomains(organizationId: string): Promise<string[]> {
+  ensureConfigured();
+  const rows = await supabaseAdminRest<{ seeds: unknown }[]>("lead_sourcing_runs", {
+    query: new URLSearchParams({ organization_id: `eq.${organizationId}`, select: "seeds", order: "created_at.desc", limit: "500" }),
+  });
+  const out: string[] = [];
+  for (const r of rows ?? []) {
+    if (!Array.isArray(r.seeds)) continue;
+    for (const s of r.seeds) {
+      const d = s && typeof s === "object" ? (s as Record<string, unknown>).domain : undefined;
+      if (typeof d === "string" && d) out.push(d);
+    }
+  }
+  return out;
+}
+
+// ---- App page (session routes, tenant-scoped) ----------------------------------------------------
+
+export type RunSummary = {
+  id: string;
+  status: string;
+  seedSource: "agent" | "discovery";
+  scheduleId: string | null;
+  segment: string | null;
+  seedCount: number;
+  searchCount: number;
+  stats: Record<string, number | string>;
+  error: string | null;
+  createdAt: string;
+  finishedAt: string | null;
+};
+
+export async function listRuns(scope: TenantScope, limit = 30): Promise<RunSummary[]> {
+  ensureConfigured();
+  const rows = await supabaseAdminRest<{
+    id: string; status: string; seed_source: "agent" | "discovery"; schedule_id: string | null; segment: string | null; seed_count: number;
+    search_count: number; stats: Record<string, number | string> | null; error: string | null; created_at: string; finished_at: string | null;
+  }[]>("lead_sourcing_runs", {
+    query: new URLSearchParams({
+      organization_id: `eq.${scope.organizationId}`,
+      select: "id,status,seed_source,schedule_id,segment,seed_count,search_count,stats,error,created_at,finished_at",
+      order: "created_at.desc",
+      limit: String(Math.min(100, Math.max(1, limit))),
+    }),
+  });
+  return (rows ?? []).map((r) => ({
+    id: r.id, status: r.status, seedSource: r.seed_source, scheduleId: r.schedule_id, segment: r.segment, seedCount: r.seed_count,
+    searchCount: r.search_count, stats: r.stats ?? {}, error: r.error, createdAt: r.created_at, finishedAt: r.finished_at,
+  }));
+}
+
+export type Exclusion = { id: string; companyNorm: string; domainLabel: string; reason: string; createdAt: string };
+
+export async function listExclusions(scope: TenantScope): Promise<Exclusion[]> {
+  ensureConfigured();
+  const rows = await supabaseAdminRest<{ id: string; company_norm: string; domain_label: string; reason: string; created_at: string }[]>("lead_source_exclusions", {
+    query: new URLSearchParams({ organization_id: `eq.${scope.organizationId}`, select: "id,company_norm,domain_label,reason,created_at", order: "created_at.desc", limit: "2000" }),
+  });
+  return (rows ?? []).map((r) => ({ id: r.id, companyNorm: r.company_norm, domainLabel: r.domain_label, reason: r.reason, createdAt: r.created_at }));
+}
+
+export async function deleteExclusion(scope: TenantScope, id: string): Promise<boolean> {
+  ensureConfigured();
+  const rows = await supabaseAdminRest<{ id: string }[]>("lead_source_exclusions", {
+    method: "DELETE",
+    query: new URLSearchParams({ organization_id: `eq.${scope.organizationId}`, id: `eq.${id}`, select: "id" }),
+  });
+  return (rows ?? []).length > 0;
+}
+
+/**
+ * Removes a sourced lead after review: the lead is closed as lost (kept for the record, never
+ * deleted) and the candidate is marked removed. Only a lead nobody has worked on yet (stage new,
+ * status open) can be removed here; anything further along is changed in Leads & Calls.
+ */
+export async function removeSourcedLead(scope: TenantScope, candidate: { id: string; leadId: string }): Promise<boolean> {
+  ensureConfigured();
+  const now = new Date().toISOString();
+  const leads = await supabaseAdminRest<{ id: string }[]>("crm_leads", {
+    method: "PATCH",
+    query: new URLSearchParams({ organization_id: `eq.${scope.organizationId}`, id: `eq.${candidate.leadId}`, stage: "eq.new", status: "eq.open", select: "id" }),
+    body: { status: "lost", stage: "lost", updated_at: now },
+  });
+  if ((leads ?? []).length === 0) return false;
+  await supabaseAdminRest("lead_sourcing_candidates", {
+    method: "PATCH",
+    prefer: "return=minimal",
+    query: new URLSearchParams({ organization_id: `eq.${scope.organizationId}`, id: `eq.${candidate.id}` }),
+    body: { removed_at: now },
+  });
+  return true;
+}
