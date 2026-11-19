@@ -5,7 +5,7 @@ Description: >-
   AXXESS, crawls the seed companies' public websites (headless Chromium for JavaScript-built
   sites), verifies guessed addresses under the run's credit cap, and posts the candidates back.
   With discovery on, it also runs the AXXESS scheduler and finds companies for scheduled runs with
-  Claude on Amazon Bedrock and AgentCore web search. Nothing is contacted from here.
+  an open-weight model on Amazon Bedrock and AgentCore web search. Nothing is contacted from here.
 
 Metadata:
   AWSToolsMetrics:
@@ -43,12 +43,15 @@ Parameters:
     AllowedValues: ["true", "false"]
     Description: >-
       true = run the AXXESS scheduler tick and discovery runs (Bedrock + AgentCore web search) before
-      crawl runs. Needs Anthropic model access enabled in Bedrock for this account.
+      crawl runs.
   DiscoveryModelId:
     Type: String
-    Default: au.anthropic.claude-haiku-5-5
-    AllowedValues: [au.anthropic.claude-haiku-5-5]
-    Description: Bedrock inference profile for discovery (Sydney and Melbourne only).
+    # 2026-11-18 founder: "Use cheapest oss models, Anthropic later on". Anthropic models are blocked
+    # for this account at account level (AccessDeniedException "not available for this account");
+    # gpt-oss runs on demand in Sydney itself. Switch back to Haiku by changing this parameter.
+    Default: openai.gpt-oss-20b-1:0
+    AllowedValues: [openai.gpt-oss-20b-1:0, openai.gpt-oss-120b-1:0, au.anthropic.claude-haiku-5-5]
+    Description: Bedrock model for discovery. gpt-oss runs in Sydney only; the au. Haiku profile in Sydney and Melbourne.
   ReservedConcurrency:
     Type: Number
     Default: 0
@@ -105,12 +108,15 @@ Resources:
                 - HasQev
                 - [!Ref WorkerSecretArn, !Ref QevSecretArn]
                 - [!Ref WorkerSecretArn]
-            # Converse is authorised by bedrock:InvokeModel. The au. profile routes to Sydney and Melbourne.
+            # Converse is authorised by bedrock:InvokeModel. gpt-oss is on demand in Sydney; the au. Haiku
+            # profile routes to Sydney and Melbourne and stays allowed for the later switch back.
             - Sid: InvokeDiscoveryModel
               Effect: Allow
               Action: bedrock:InvokeModel
               Resource:
-                - !Sub arn:aws:bedrock:${AWS::Region}:${AWS::AccountId}:inference-profile/${DiscoveryModelId}
+                - arn:aws:bedrock:ap-southeast-2::foundation-model/openai.gpt-oss-20b-1:0
+                - arn:aws:bedrock:ap-southeast-2::foundation-model/openai.gpt-oss-120b-1:0
+                - !Sub arn:aws:bedrock:${AWS::Region}:${AWS::AccountId}:inference-profile/au.anthropic.claude-haiku-5-5
                 - arn:aws:bedrock:ap-southeast-2::foundation-model/anthropic.claude-haiku-5-5
                 - arn:aws:bedrock:ap-southeast-4::foundation-model/anthropic.claude-haiku-5-5
             - Sid: WebSearch

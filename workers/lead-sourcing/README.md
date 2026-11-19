@@ -50,7 +50,11 @@ sam deploy --guided --profile axxess-triaxis --region ap-southeast-2 --stack-nam
 
 With `DiscoveryEnabled=true` (default `false`), every invocation first calls `/api/lead-sourcing/worker/tick`, so due schedules become discovery runs. It then claims one discovery run before any crawl run.
 
-- **Finding companies:** Claude Haiku 5.5 on Bedrock (`au.anthropic.claude-haiku-5-5`, Sydney and Melbourne only) searches with AgentCore web search (`web-search.v1`) and submits companies through a tool.
+- **Finding companies:** an open-weight model on Bedrock searches with AgentCore web search (`web-search.v1`) and submits companies through a tool.
+  - The default is `openai.gpt-oss-20b-1:0`, which runs on demand in Sydney. It is the cheapest model that passed the tool-loop checks.
+  - `DiscoveryModelId` also allows `openai.gpt-oss-120b-1:0` and `au.anthropic.claude-haiku-5-5`.
+  - Anthropic models are blocked for this AWS account at account level as of 2026-11-18. Haiku stays allowed in IAM, so switching back later only needs the parameter.
+  - gpt-oss does not always honour a forced tool choice. Once a run must submit, only `submit_companies` is offered, stray searches are refused, and up to 2 extra submit-only turns are allowed (`SUBMIT_RETRIES`).
 - **Checks in the worker** (`src/services/leadSourcing/discoverValidate.ts`) drop:
   - directories, portals, social and government domains
   - domains whose own pages no search returned
