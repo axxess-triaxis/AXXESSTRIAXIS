@@ -167,8 +167,8 @@ export default function HomePage() {
               <li>The AXXESS web app, plus a demo with sample data you can open without signing in.</li>
               <li>AXXESS for Android on Google Play.</li>
               <li>
-                Lead sourcing: AXXESS finds contacts on company websites, and nothing enters your CRM
-                until a person approves it.
+                Lead sourcing on a schedule you set: AXXESS finds companies and their contacts and
+                adds them to your CRM for review. It never messages anyone.
               </li>
               <li>Two pilot organisations use the live app.</li>
             </ul>
