@@ -7,6 +7,8 @@ import {
   githubStats,
   githubStatsAsOf,
   vision,
+  markets,
+  foundersLivedIt,
 } from "../components/marketing/siteFacts";
 
 const productLinks = [
@@ -68,7 +70,8 @@ export default function HomePage() {
               {vision}
             </h1>
             <p className="max-w-3xl text-lg leading-8 text-[#3f5165] md:text-xl">
-              We start with the boring part: work that gets lost between email, WhatsApp, meetings
+              Small businesses, councils, clinics, corporates, non-profits and governments all lose
+              work the same way. We start with the boring part: work that gets lost between email, WhatsApp, meetings
               and spreadsheets. AXXESS TRIaxis turns each piece of it into a decision. Yes, no or
               something else. There is no Dismiss button. AI agents do the follow-up, a person signs
               off on anything critical, and every action is logged.
@@ -76,6 +79,12 @@ export default function HomePage() {
             <p className="max-w-3xl text-base leading-7 text-[#4a5a6a]">
               You probably have 5 to 10 tools for this already. Great. Let&apos;s see how that&apos;s
               going in a few months.
+            </p>
+            <p className="max-w-3xl text-base leading-7 text-[#4a5a6a]">
+              {foundersLivedIt}{" "}
+              <a href="/founders" className="font-semibold text-[#8b1e2d] underline underline-offset-4">
+                Meet the founders
+              </a>
             </p>
           </div>
 
@@ -85,7 +94,7 @@ export default function HomePage() {
                 Based in
               </p>
               <p className="mt-2 text-base font-semibold leading-6 text-[#172231]">
-                India. Selling first in India and the UAE.
+                India. {markets}.
               </p>
             </div>
             <div className="rounded-lg border border-[#d6dee8] bg-white p-4 shadow-sm">
