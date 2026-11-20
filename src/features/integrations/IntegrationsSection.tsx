@@ -661,9 +661,11 @@ export const IntegrationsSection = () => {
       </div>
     </Card>
 
-    {/* Customer-fireable stack (2026-11-20): the organization's voice and messaging agents. Shown
-        only to organization admins; the card hides itself when the settings route refuses. */}
-    <AgentsCard />
+    {/* Customer-fireable stack (2026-11-20): the organization's voice and messaging agents. Rendered
+        only for organization admins outside demo mode, so no one else's page calls the settings
+        route (the investor demo has no session and must make no failing API call). The server
+        still enforces the same check. */}
+    {canConnect && !demoMode ? <AgentsCard /> : null}
   </div>
   );
 };
