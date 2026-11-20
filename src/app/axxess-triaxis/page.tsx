@@ -12,7 +12,7 @@ const capabilities = [
   "Ask a question and it answers from your own documents, with the sources",
   "Approvals: anything critical waits for a person",
   "An audit log of every action, by people and by agents",
-  "Lead sourcing: it finds contacts on company websites, and you approve each one before it enters the CRM",
+  "Lead sourcing on a schedule you set: it finds companies and their contacts and adds them to your CRM for review. It never messages anyone",
   "Connect outside AI agents, such as ChatGPT or Claude, with a key your admin issues and limits",
 ];
 
