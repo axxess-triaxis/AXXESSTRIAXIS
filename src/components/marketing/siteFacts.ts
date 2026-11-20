@@ -15,9 +15,10 @@ export const githubStats = [
   { value: "18", label: "public repositories" },
 ];
 
-// docs/readiness/PITCH_AND_TRACTION_LOG_2026_07_24.md, entry 54 (profile as shown 2026-11-14).
+// Read from https://profile.codersrank.io/user/axxess-triaxis/ on 2026-11-20: score 618.4, rank Top 1%
+// (was Top 2% on 2026-11-14, docs/readiness/PITCH_AND_TRACTION_LOG_2026_07_24.md entry 54).
 // A third-party score computed from repository activity, not an audited ranking.
-export const codersRankNote = "Top 2% on CodersRank, a third-party score from repository activity (14 November 2026).";
+export const codersRankNote = "Top 1% on CodersRank, a third-party score from repository activity (20 November 2026).";
 export const codersRankUrl = "https://profile.codersrank.io/user/axxess-triaxis/";
 
 export const vision = "Automating every organization in the world, we are truly horizontal.";
@@ -31,16 +32,23 @@ export const bundleProducts = [
     state: "Live on the web and on Android",
     href: "https://github.com/axxess-triaxis/AXXESSTRIAXIS",
   },
+  // Callismatic (checked 2026-11-20): inbound triage is live; outbound AI calls are built but off until
+  // DLT registration with TRAI, counsel sign-off and a DLT-registered Indian voice provider exist
+  // (docs/readiness/AGENT_CALL_PIPELINE_CLOSEOUT_2026_11_13.md; callismatic README).
   {
     name: "Callismatic",
-    job: "Answers the calls and voicemails nobody checks, works out who needs a callback, and calls back.",
-    state: "Live; we use it ourselves",
+    job: "Listens to the calls and voicemails nobody checks and works out who needs a reply. Outbound calls are built and switched off.",
+    state: "Inbound live; outbound calls wait on DLT registration with TRAI",
     href: "https://github.com/axxess-triaxis/callismatic",
   },
+  // Omnidamus (checked 2026-11-20): Meta's display-name decision arrived 2026-10-28, and production
+  // logs (/aws/lambda/omnidamus-OmnidamusFunction-*, ap-southeast-2) show a WhatsApp message on
+  // 2026-10-29 going accepted, sent, delivered and read with no errors. The README's "blocked" note
+  // (error 131037 from 27 Oct) is out of date.
   {
     name: "Omnidamus",
     job: "Holds one conversation across SMS, WhatsApp and email.",
-    state: "Deployed; WhatsApp is waiting on Meta",
+    state: "Live; WhatsApp messages delivered",
     href: "https://github.com/axxess-triaxis/Omnidamus",
   },
   {
