@@ -1,7 +1,24 @@
 # Plan: customers can fire Callismatic and Omnidamus from AXXESS TRIaxis (2026-11-20)
 
-Status: **approved by the founder 2026-11-20 ("Approve, start PR 1").** PR 1 (AXXESS routing core) is in
-review. PRs 2 to 7 are not started.
+Status: **approved by the founder 2026-11-20 ("Approve, start PR 1").**
+
+| PR | Repository | State (2026-11-20) | Evidence |
+|---|---|---|---|
+| 1. Routing core | AXXESSTRIAXIS | Merged, not live (migration and secret pending) | #555, merge `0eef8486`; `/api/stack/results` answered 401 without the secret at 11:10 UTC |
+| 2. STILL results route | STILL | Merged, not deployed | STILL #13, merge `5350f6fb` |
+| 3. Omnidamus org conversations and `POST /start` | Omnidamus | Merged, not deployed | Omnidamus #8, merge `38e62cc9`; 132 tests |
+| 4. Callismatic customer calls | callismatic | Merged, not deployed; customer-call script approved by the founder ("Approve and merge") | callismatic #21, merge `cce79de5`; 197 tests |
+| 5. AXXESS Agents card, Message with agent, per-org registration gate | AXXESSTRIAXIS | In review (this branch) | see below |
+| 6. Two-org staging end to end | all | Not started | |
+| 7. Production | all | Not started | |
+
+PR 5 adds:
+- **Migration** `20261120140000_org_agent_settings_details.sql`: `call_purpose`, `sms_opening_text`, `whatsapp_template`, `whatsapp_number_e164`, `sms_number_e164` on `org_agent_settings`.
+- **Per-org registration gate.** `CURRENT_REGISTRATIONS` (a global, all false) is gone. The call queue, logged calls, Call with agent and Message with agent read the organization's own DLT, TDRA and counsel flags (`loadRegistrations`). With no row, every flag is false, so behaviour is unchanged until Triaxis records one.
+- **Who sets what.** Organization admins set the agent switches, call purpose and opening SMS (`/api/stack/agent-settings`). Only Triaxis's own Super Admin (`AXXESS_PLATFORM_OPERATOR_ORGANIZATION_ID`) links caller IDs, numbers and senders and records registrations (`/api/stack/agent-settings/[organizationId]`). A number can belong to one organization only (`org_channel_numbers`).
+- **Call with agent** needs Callismatic on for the organization; a customer organization also needs its caller ID and call purpose, which go to Callismatic with its name.
+- **Message with agent** (lead panel, WhatsApp or SMS): setup check, the contactability gate for the channel, an `agent_message_jobs` row, then Omnidamus `POST /start` (`OMNIDAMUS_START_URL`, `OMNIDAMUS_START_API_KEY`). Triaxis's own organization does not use it.
+- **Agents card** on the Integrations page, with Triaxis's operator panel for its own Super Admin.
 
 PR 1 adds:
 - **Migration** `supabase/migrations/20261120120000_stack_org_routing.sql`: tables `agent_message_jobs`, `org_agent_settings` and `org_channel_numbers`. Every product is off for every organization until a row turns it on.

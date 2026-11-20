@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildCallQueue, CURRENT_REGISTRATIONS, leadChangesForOutcome, type QueueLead } from "./callQueue";
+import { buildCallQueue, NO_REGISTRATIONS, leadChangesForOutcome, type QueueLead } from "./callQueue";
 
 // 10:00 and 22:00 in India (UTC+5:30).
 const TEN_IST = new Date("2026-11-13T04:30:00Z");
@@ -10,7 +10,7 @@ const lead = (over: Partial<QueueLead> = {}): QueueLead => ({
   registryStatus: "unchecked", registryCheckedAt: null, ...over,
 });
 const build = (leads: QueueLead[], now = TEN_IST, extra: Partial<Parameters<typeof buildCallQueue>[0]> = {}) =>
-  buildCallQueue({ leads, suppressed: new Set(), attemptsByLead: new Map(), registrations: CURRENT_REGISTRATIONS, now, ...extra });
+  buildCallQueue({ leads, suppressed: new Set(), attemptsByLead: new Map(), registrations: NO_REGISTRATIONS, now, ...extra });
 
 describe("call queue", () => {
   it("lets staff call an opted-in Indian contact at 10:00 IST", () => {

@@ -34,8 +34,12 @@ export type CallQueue = {
 
 export type Registrations = { dltIndia: boolean; tdraUae: boolean; counselSignedOff: boolean };
 
-/** Sender-side registrations. None is recorded yet, so all are false, as in the email sender. */
-export const CURRENT_REGISTRATIONS: Registrations = { dltIndia: false, tdraUae: false, counselSignedOff: false };
+/**
+ * Sender-side registrations are per organization since 2026-11-20 (customer-fireable stack, PR 5):
+ * Triaxis records them in org_agent_settings after seeing proof, and routes read them with
+ * loadRegistrations. NO_REGISTRATIONS is what an organization has until then.
+ */
+export const NO_REGISTRATIONS: Readonly<Registrations> = Object.freeze({ dltIndia: false, tdraUae: false, counselSignedOff: false });
 
 export function decideCall(input: {
   lead: QueueLead;
