@@ -154,6 +154,13 @@ export function canViewCrossTenantPilotPortfolio(user: UserContext, env: NodeJS.
   return user.role === "Super Admin" && user.organizationId === operatorOrgId;
 }
 
+// Customer-fireable stack (2026-11-20): only Triaxis, as the platform operator, links an
+// organization's numbers and senders and records its DLT / TDRA / counsel sign-off. Same narrow
+// gate as the pilot portfolio: the operator organization's own Super Admin, failing closed.
+export function canManageStackAgentsForAnyOrganization(user: UserContext, env: NodeJS.ProcessEnv = process.env): boolean {
+  return canViewCrossTenantPilotPortfolio(user, env);
+}
+
 export function getVisibleNavGroups(groups: NavGroup[], user: UserContext): NavGroup[] {
   return groups
     .map((group) => ({

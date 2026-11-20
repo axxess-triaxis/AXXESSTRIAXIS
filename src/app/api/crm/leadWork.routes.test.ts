@@ -24,6 +24,9 @@ vi.mock("../../../repositories/supabaseEnterpriseRepositories", () => ({
   auditLogsRepository: { record: async (_s: unknown, e: { action: string }) => { calls.audits.push(e); } },
 }));
 vi.mock("../../../services/audit/auditEvents", () => ({ recordDeniedAttempt: async (_s: unknown, a: unknown) => { calls.denied.push(a); } }));
+vi.mock("../../../repositories/orgAgentSettingsRepository", () => ({
+  loadRegistrations: async () => ({ dltIndia: false, tdraUae: false, counselSignedOff: false }),
+}));
 vi.mock("../../../repositories/crmRepository", () => ({
   updateCrmLead: async (_s: unknown, id: string, input: Record<string, unknown>) => { calls.updates.push({ id, input }); return { id, ...input }; },
 }));
