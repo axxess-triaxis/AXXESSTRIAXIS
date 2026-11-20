@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { signInServerSide } from "../../../../auth/serverSession";
 import { auditLogsRepository } from "../../../../repositories/supabaseEnterpriseRepositories";
 import { SupabaseAuthError } from "../../../../auth/supabaseAuthError";
@@ -14,8 +14,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Email and password are required." }, { status: 400 });
   }
 
+  // Phase timings (staging 2026-11-19: ~1 in 20 sign-ins stalled ~21 s after Vercel logged 200, and
+  // the request log has no duration). Logged as one line and returned as Server-Timing; never
+  // includes the email or password.
+  const startedAt = performance.now();
+  const elapsed = (from: number) => Math.round(performance.now() - from);
+
   try {
     const session = await signInServerSide(email, password);
+    const signinMs = elapsed(startedAt);
+    const auditStartedAt = performance.now();
     await auditLogsRepository.record({
       organizationId: session.user.organizationId,
       userId: session.user.id,
@@ -28,7 +36,9 @@ export async function POST(request: Request) {
       category: "authentication",
       metadata: { email },
     }).catch(() => undefined);
+    const auditMs = elapsed(auditStartedAt);
 
+    const analyticsStartedAt = performance.now();
     const posthog = getPostHogClient();
     if (posthog) {
       posthog.identify({
@@ -48,10 +58,22 @@ export async function POST(request: Request) {
           organization_id: session.user.organizationId,
         },
       });
-      await posthog.flush();
+      // Sent after the response (staging run14, 2026-11-19: waiting here was ~669 ms of a ~1,115 ms
+      // sign-in, and a hung outbound call would hold the response). after() keeps the function alive
+      // until the flush finishes; a failed flush loses the analytics event, never the sign-in.
+      after(() => posthog.flush().catch((error: unknown) => {
+        console.warn("[auth/login] PostHog flush failed:", error instanceof Error ? error.message : error);
+      }));
     }
+    const analyticsMs = elapsed(analyticsStartedAt);
+    const totalMs = elapsed(startedAt);
 
-    return NextResponse.json({ user: session.user });
+    console.info(`[auth/login] timing signin=${signinMs}ms audit=${auditMs}ms analytics=${analyticsMs}ms total=${totalMs}ms`);
+    return NextResponse.json({ user: session.user }, {
+      headers: {
+        "Server-Timing": `signin;dur=${signinMs}, audit;dur=${auditMs}, analytics;dur=${analyticsMs}, total;dur=${totalMs}`,
+      },
+    });
   } catch (error) {
     if (error instanceof AccountSuspendedError) {
       return NextResponse.json({ error: "This account is suspended. Contact your organization admin.", code: "account_suspended" }, { status: 403 });
