@@ -21,7 +21,21 @@ export const githubStats = [
 export const codersRankNote = "Top 1% on CodersRank, a third-party score from repository activity (20 November 2026).";
 export const codersRankUrl = "https://profile.codersrank.io/user/axxess-triaxis/";
 
-export const vision = "Automating every organization in the world, we are truly horizontal.";
+// Founder's words, 2026-11-20. A stated aim, not a claim about what is done.
+export const vision = "Trying to automate every organization in the world. We are truly horizontal.";
+
+// Founder's words, 2026-11-20. "Coming to" means planned: no customers, entity or compliance work
+// in the EU exists in this repository yet. Selling today starts in India and the UAE
+// (first lead segments: real estate brokerages and private clinics).
+export const markets = "Coming to India, UAE and EU";
+
+// Founder's words, 2026-11-20 (grammar and punctuation only). Founder-stated, source artifact needed:
+// the 15+ years are the two careers together (nine years in banking, 6+ in healthcare, per the
+// investor deck), and "community healthcare" is not yet in any repo document.
+export const foundersLivedIt =
+  "The founders have lived the problem for 15+ years, first hand, in finance and healthcare.";
+export const foundersJourney =
+  "From selling derivatives and credit products to corporates, to running community healthcare, to automating the world: this founder couple is at work.";
 
 // Where each product stands. Sources: README.md status table (2026-11-18), docs/TRIAXIS_STACK.md,
 // and the product repositories' own READMEs.

@@ -47,7 +47,7 @@ const points = [
   },
   {
     title: "Built by people who did this work.",
-    body: "Nine years in banking. Six years in hospitals and nursing colleges. We have sat on the committees that buy this.",
+    body: "Nine years in banking. More than six years in hospitals and nursing colleges. We have sat on the committees that buy this.",
   },
 ];
 
