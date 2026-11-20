@@ -19,9 +19,9 @@ describe("HomePage", () => {
     render(<HomePage />);
 
     expect(
-      screen.getByRole("heading", { level: 1, name: /automating every organization in the world, we are truly horizontal/i }),
+      screen.getByRole("heading", { level: 1, name: /trying to automate every organization in the world. we are truly horizontal/i }),
     ).toBeInTheDocument();
-    expect(screen.getByText(/selling first in india and the uae/i)).toBeInTheDocument();
+    expect(screen.getByText(/coming to india, uae and eu/i)).toBeInTheDocument();
     expect(screen.getByText(/triaxis ventures private limited, owned and run by its two co-founders/i)).toBeInTheDocument();
     expect(screen.getAllByRole("link", { name: /axxess triaxis/i })[0]).toHaveAttribute("href", "/axxess-triaxis");
     expect(screen.getAllByRole("link", { name: /founders/i })[0]).toHaveAttribute("href", "/founders");

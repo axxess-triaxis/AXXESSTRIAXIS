@@ -471,3 +471,18 @@ No cards moved yet.
   - Blocker 2 is unchanged. The Knowledge Hub admin page also took more than 5 s to load on staging (run kh1).
 - Update 2026-11-19: full suite on staging at `1e3c8ad3`, run9: 20 passed, 25 skipped, 1 failed (a sign-in over 20 s). Column stays Blocked on staging slowness.
 - Update 2026-11-19 (PR #543): upload text extraction fixed. It had returned 500 on every upload. Working on staging (run13, including a real PDF); a production upload check is pending. Also: staging is served by Vercel project `triaxis-www-frontend-import`, and its functions run in `syd1`.
+
+## Dependency Security Update (2026-11-20)
+
+- Dependabot on `main` before this batch: 26 open (11 high, 9 medium, 6 low).
+- High-alert batch (this PR): `node-forge@<1.4.3` -> 1.4.3 and `metro@0.87.0` -> 0.87.2 overrides.
+  Closes node-forge #136, #189-#192, #196, #203, #204 and image-size #123/#124 (high), plus 7
+  medium and 6 low node-forge alerts. Ledger 82.
+- Expected after merge: 3 open (1 high, 2 medium). Confirm on GitHub after the merge.
+- Cards moved: none -- no actionables card tracks dependency security; evidence only.
+- Blocked (named blocker, owner, next action):
+  - zod #179 (high) -- no 3.x fix; zod 3.22.4 is in the Vercel CLI dev tooling and 3.25.76 in
+    `@expo/cli@58.1.14`. Owner: Claude Code. Next action: re-check on Vercel CLI and Expo updates.
+  - glob #200, minimatch #202 (medium) -- not in this high-only pass.
+- Entry 81 blockers cleared: node-forge now has a patched release; image-size is gone from the tree.
+- HITL decision pending: merge to `main` (deploys production).

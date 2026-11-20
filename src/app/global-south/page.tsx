@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { markets as marketsLine } from "../../components/marketing/siteFacts";
 
 // Route kept as /global-south so existing links still work; the page is now "Where We Sell".
 
@@ -17,7 +18,7 @@ const reasons = [
   },
 ];
 
-const markets = ["India", "United Arab Emirates", "More countries next. We are horizontal, remember?"];
+const markets = ["India", "United Arab Emirates", "European Union", "Everywhere else after that. We are horizontal, remember?"];
 
 export default function GlobalSouthPage() {
   return (
@@ -32,18 +33,18 @@ export default function GlobalSouthPage() {
               Where We Sell
             </p>
             <h1 className="max-w-4xl text-4xl font-semibold leading-tight md:text-6xl">
-              India and the UAE first. Then everywhere else.
+              {marketsLine}. Then everywhere else.
             </h1>
             <p className="max-w-3xl text-lg leading-8 text-[#3f5165] md:text-xl">
-              Work gets lost the same way in every country. We start in India and the UAE, with real
-              estate brokerages and private clinics.
+              Work gets lost the same way in every country. We are based in India. We are starting with
+              real estate brokerages and private clinics in India and the UAE, and the EU is on the way.
             </p>
           </div>
         </div>
 
         <div className="rounded-xl border border-[#d6dee8] bg-white p-6 shadow-sm">
           <p className="text-sm font-semibold uppercase tracking-[0.1em] text-[#6c7a89]">
-            First markets
+            Coming to
           </p>
           <ul className="mt-5 grid gap-3">
             {markets.map((market) => (

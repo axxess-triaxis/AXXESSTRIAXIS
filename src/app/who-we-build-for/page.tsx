@@ -32,7 +32,7 @@ export default function WhoWeBuildForPage() {
           </h1>
           <p className="text-lg leading-8 text-[#3f5165] md:text-xl">
             That is every organisation. We are starting with real estate brokerages and private
-            clinics in India and the UAE.
+            clinics in India and the UAE, and coming to the EU.
           </p>
         </div>
       </section>
