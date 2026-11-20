@@ -1,30 +1,23 @@
 import Link from "next/link";
 
+// Route kept as /global-south so existing links still work; the page is now "Where We Sell".
+
 const reasons = [
   {
-    title: "Fragmented work is normal, not an edge case.",
-    body: "Teams often run serious operations across WhatsApp, email, spreadsheets, meetings and manual notes. AXXESS starts from that reality instead of assuming clean enterprise stacks.",
+    title: "Most teams run on WhatsApp, email and spreadsheets.",
+    body: "That is not an edge case to clean up first. AXXESS is built for it.",
   },
   {
-    title: "Governance matters before scale.",
-    body: "Healthcare, banking, education, NGOs and public-sector teams need accountability, approvals and audit trails long before they have Fortune 500 software budgets.",
+    title: "Approvals and records matter before the big-software budget does.",
+    body: "A clinic or a brokerage needs to know who approved what long before it can afford enterprise software and the consultants that come with it.",
   },
   {
-    title: "Localization beats one-size-fits-all automation.",
-    body: "AXXESS is shaped around the principle of 80% automation and 20% localization, so the product can adapt to local workflows, languages, regulations and buyer behavior.",
-  },
-  {
-    title: "India and the GCC are the right first arc.",
-    body: "India gives scale, urgency and price sensitivity. The GCC gives enterprise demand, capital depth and governance-heavy buyers. Together they form a practical first market path.",
+    title: "We know these buyers.",
+    body: "We spent years on the other side of the table, in banks and in hospitals. We start where we know how the work really happens.",
   },
 ];
 
-const markets = [
-  "India",
-  "GCC",
-  "Broader Global South",
-  "Emerging-market institutions with fragmented systems",
-];
+const markets = ["India", "United Arab Emirates", "More countries next. We are horizontal, remember?"];
 
 export default function GlobalSouthPage() {
   return (
@@ -36,22 +29,21 @@ export default function GlobalSouthPage() {
           </Link>
           <div className="space-y-5">
             <p className="inline-flex rounded-full border border-[#cdd5df] bg-white px-4 py-1 text-sm font-medium text-[#35506b]">
-              Why build for the Global South
+              Where We Sell
             </p>
             <h1 className="max-w-4xl text-4xl font-semibold leading-tight md:text-6xl">
-              Because the hardest coordination problems are not waiting for perfect software stacks.
+              India and the UAE first. Then everywhere else.
             </h1>
             <p className="max-w-3xl text-lg leading-8 text-[#3f5165] md:text-xl">
-              AXXESS TRIaxis is being built first for India, the GCC and the broader Global South
-              because these markets combine high coordination friction, governance needs, mobile-first
-              behavior and deep institutional ambition.
+              Work gets lost the same way in every country. We start in India and the UAE, with real
+              estate brokerages and private clinics.
             </p>
           </div>
         </div>
 
         <div className="rounded-xl border border-[#d6dee8] bg-white p-6 shadow-sm">
           <p className="text-sm font-semibold uppercase tracking-[0.1em] text-[#6c7a89]">
-            First market arc
+            First markets
           </p>
           <ul className="mt-5 grid gap-3">
             {markets.map((market) => (

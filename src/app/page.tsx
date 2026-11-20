@@ -1,18 +1,27 @@
 import { VideoShowreel } from "../components/marketing/VideoShowreel";
+import {
+  bundleProducts,
+  codersRankNote,
+  codersRankUrl,
+  githubProfileUrl,
+  githubStats,
+  githubStatsAsOf,
+  vision,
+} from "../components/marketing/siteFacts";
 
 const productLinks = [
   {
-    label: "Welcome Aboard",
+    label: "Sign in to AXXESS",
     href: "https://landing.triaxisventures.com",
     style: "bg-[#00c2ff] text-[#02050a] hover:bg-[#6dff6a]",
   },
   {
-    label: "Experience AXXESS",
+    label: "Try the demo (no sign-in)",
     href: "https://investor.triaxisventures.com",
     style: "border border-[#00c2ff]/45 bg-[#07111d]/85 text-[#e6f7ff] hover:border-[#6dff6a]/70 hover:text-[#6dff6a]",
   },
   {
-    label: "Stay Lite (for now)",
+    label: "AXXESS Lite",
     href: "https://lite.triaxisventures.com",
     style: "border border-[#00c2ff]/45 bg-[#07111d]/85 text-[#e6f7ff] hover:border-[#6dff6a]/70 hover:text-[#6dff6a]",
   },
@@ -23,8 +32,8 @@ const companyLinks = [
   { label: "Founders", href: "/founders" },
   { label: "Pricing & Plans", href: "/pricing-plans" },
   { label: "Who We Build For", href: "/who-we-build-for" },
-  { label: "Why It Disrupts", href: "/why-axxess-is-disruptive" },
-  { label: "Global South", href: "/global-south" },
+  { label: "How It Works", href: "/why-axxess-is-disruptive" },
+  { label: "Where We Sell", href: "/global-south" },
   { label: "Privacy", href: "/privacy" },
 ];
 
@@ -56,12 +65,17 @@ export default function HomePage() {
 
           <div className="space-y-5">
             <h1 className="max-w-4xl text-4xl font-semibold leading-tight md:text-6xl">
-              Triaxis Ventures builds governed AI products for work.
+              {vision}
             </h1>
             <p className="max-w-3xl text-lg leading-8 text-[#3f5165] md:text-xl">
-              Triaxis Ventures Private Limited is an India-based company building AXXESS TRIaxis:
-              an AI-native operating layer for enterprises, public-sector bodies, NGOs, MSMEs,
-              startups and mid-sized businesses.
+              We start with the boring part: work that gets lost between email, WhatsApp, meetings
+              and spreadsheets. AXXESS TRIaxis turns each piece of it into a decision. Yes, no or
+              something else. There is no Dismiss button. AI agents do the follow-up, a person signs
+              off on anything critical, and every action is logged.
+            </p>
+            <p className="max-w-3xl text-base leading-7 text-[#4a5a6a]">
+              You probably have 5 to 10 tools for this already. Great. Let&apos;s see how that&apos;s
+              going in a few months.
             </p>
           </div>
 
@@ -71,7 +85,7 @@ export default function HomePage() {
                 Based in
               </p>
               <p className="mt-2 text-base font-semibold leading-6 text-[#172231]">
-                India, building for India, the GCC, and the Global South
+                India. Selling first in India and the UAE.
               </p>
             </div>
             <div className="rounded-lg border border-[#d6dee8] bg-white p-4 shadow-sm">
@@ -79,7 +93,7 @@ export default function HomePage() {
                 Ownership
               </p>
               <p className="mt-2 text-base font-semibold leading-6 text-[#172231]">
-                Founder-led private company; AXXESS TRIaxis is owned and operated by Triaxis Ventures Private Limited
+                Triaxis Ventures Private Limited, owned and run by its two co-founders
               </p>
             </div>
           </div>
@@ -144,16 +158,20 @@ export default function HomePage() {
         <div className="mx-auto grid max-w-7xl gap-8 px-6 py-12 md:grid-cols-2 md:px-10">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.1em] text-[#8b1e2d]">
-              What Triaxis Ventures is
+              What is live today
             </p>
             <h2 className="mt-3 text-3xl font-semibold text-[#111827]">
-              The company behind the AXXESS product family.
+              Working software, not a waitlist.
             </h2>
-            <p className="mt-4 text-base leading-7 text-[#4a5a6a]">
-              Triaxis Ventures focuses on strategy, intelligence, governance and impact software.
-              Its first product is AXXESS TRIaxis, with enterprise, demo and lite surfaces kept
-              separate for different buyer and user needs.
-            </p>
+            <ul className="mt-4 grid gap-2 text-base leading-7 text-[#4a5a6a]">
+              <li>The AXXESS web app, plus a demo with sample data you can open without signing in.</li>
+              <li>AXXESS for Android on Google Play.</li>
+              <li>
+                Lead sourcing: AXXESS finds contacts on company websites, and nothing enters your CRM
+                until a person approves it.
+              </li>
+              <li>Two pilot organisations use the live app.</li>
+            </ul>
           </div>
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.1em] text-[#0b6b82]">
@@ -174,13 +192,72 @@ export default function HomePage() {
         </div>
       </section>
 
+      <section aria-label="The AXXESS Bundle" className="mx-auto max-w-7xl px-6 py-12 md:px-10">
+        <p className="text-sm font-semibold uppercase tracking-[0.1em] text-[#8b1e2d]">
+          The AXXESS Bundle
+        </p>
+        <h2 className="mt-3 max-w-4xl text-3xl font-semibold text-[#111827]">
+          Four products. We run our own company on all of them first.
+        </h2>
+        <p className="mt-4 max-w-4xl text-base leading-7 text-[#4a5a6a]">
+          Buy AXXESS on its own, or take the bundle. Either way, a person still signs off on anything
+          critical. No robot takeover.
+        </p>
+        <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {bundleProducts.map((product) => (
+            <article key={product.name} className="rounded-xl border border-[#d6dee8] bg-white p-5 shadow-sm">
+              <h3 className="text-xl font-semibold text-[#111827]">
+                <a href={product.href} className="hover:underline">
+                  {product.name}
+                </a>
+              </h3>
+              <p className="mt-3 text-sm leading-6 text-[#4a5a6a]">{product.job}</p>
+              <p className="mt-3 text-xs font-semibold uppercase tracking-[0.08em] text-[#0b6b82]">
+                {product.state}
+              </p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section aria-label="Built in public on GitHub" className="border-y border-[#dde5ee] bg-white">
+        <div className="mx-auto max-w-7xl px-6 py-12 md:px-10">
+          <p className="text-sm font-semibold uppercase tracking-[0.1em] text-[#0b6b82]">
+            Built in public on GitHub
+          </p>
+          <h2 className="mt-3 max-w-4xl text-3xl font-semibold text-[#111827]">
+            Don&apos;t take our word for it. Read the code.
+          </h2>
+          <dl className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {githubStats.map((stat) => (
+              <div key={stat.label} className="rounded-lg border border-[#d6dee8] bg-[#f8fafc] p-4">
+                <dt className="text-sm text-[#4a5a6a]">{stat.label}</dt>
+                <dd className="mt-1 text-3xl font-semibold text-[#111827]">{stat.value}</dd>
+              </div>
+            ))}
+          </dl>
+          <p className="mt-4 text-sm leading-6 text-[#4a5a6a]">
+            From the GitHub API on {githubStatsAsOf}.{" "}
+            <a href={codersRankUrl} className="underline underline-offset-4">
+              {codersRankNote}
+            </a>
+          </p>
+          <a
+            href={githubProfileUrl}
+            className="mt-5 inline-block rounded-lg bg-[#111827] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#243244]"
+          >
+            See everything on GitHub
+          </a>
+        </div>
+      </section>
+
       <section className="mx-auto grid max-w-7xl gap-8 px-6 py-12 md:grid-cols-2 md:px-10">
         <div className="rounded-xl border border-[#d6dee8] bg-white p-5 shadow-sm">
           <div className="mb-4">
             <p className="text-sm font-semibold uppercase tracking-[0.1em] text-[#0b6b82]">
               AXXESS TRIaxis demo
             </p>
-            <h2 className="mt-2 text-3xl font-semibold text-[#111827]">Watch the product in motion.</h2>
+            <h2 className="mt-2 text-3xl font-semibold text-[#111827]">A short demo of AXXESS.</h2>
           </div>
           <video
             aria-label="AXXESS TRIaxis product demo"
@@ -201,7 +278,7 @@ export default function HomePage() {
             <p className="text-sm font-semibold uppercase tracking-[0.1em] text-[#8b1e2d]">
               AXXESS showreel
             </p>
-            <h2 className="mt-2 text-3xl font-semibold text-[#111827]">One window, three looping clips.</h2>
+            <h2 className="mt-2 text-3xl font-semibold text-[#111827]">Three short promo clips.</h2>
           </div>
           <VideoShowreel videos={promoVideos} label="AXXESS looping promo showreel" />
         </div>

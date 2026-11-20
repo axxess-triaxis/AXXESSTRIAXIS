@@ -15,7 +15,8 @@ const productionSiteUrl = process.env.NEXT_PUBLIC_APP_URL || "https://www.triaxi
 export const metadata: Metadata = {
   metadataBase: new URL(productionSiteUrl),
   title: "AXXESS by Triaxis",
-  description: "AI-enabled human-in-the-loop institutional intelligence platform.",
+  description:
+    "AXXESS TRIaxis turns your team's work into decisions. Agents do the follow-up, a person signs off on anything critical, and every action is logged.",
   alternates: {
     canonical: "/",
   },

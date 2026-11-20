@@ -1,93 +1,57 @@
 import Link from "next/link";
+import { vision } from "../../components/marketing/siteFacts";
+
+// Route kept as /why-axxess-is-disruptive so existing links still work; the page is now "How It Works".
 
 const contrasts = [
   {
-    oldWay: "Legacy SaaS",
-    oldBody: "Records what happened after people already did the work.",
-    axxessWay: "AXXESS TRIaxis",
-    axxessBody: "Keeps institutional memory alive and helps move from knowledge to governed action.",
+    oldWay: "Most software",
+    oldBody: "Records the work after it is done.",
+    axxessWay: "AXXESS",
+    axxessBody: "Asks for the next decision, and keeps asking until someone answers.",
   },
   {
-    oldWay: "AI copilots",
-    oldBody: "Answer questions, but usually own no workflow, decision right, audit trail or follow-through.",
-    axxessWay: "Governed agents",
-    axxessBody: "Act inside permission boundaries, with human approval for consequential decisions.",
+    oldWay: "Chat assistants",
+    oldBody: "Suggest five things. You forget four of them.",
+    axxessWay: "AXXESS agents",
+    axxessBody: "Do the follow-up, within the limits you set.",
   },
   {
-    oldWay: "Scattered channels",
-    oldBody: "Email, WhatsApp, Teams, Zoom and documents split context across too many places.",
-    axxessWay: "One governed workspace",
-    axxessBody: "Connects documents, meetings, tasks, approvals, stakeholders, analytics and AI answers.",
+    oldWay: "Email, WhatsApp, Zoom, files",
+    oldBody: "Each holds a piece of the story. Nobody holds all of it.",
+    axxessWay: "One place",
+    axxessBody: "Tasks, documents, meetings, contacts and approvals together.",
   },
 ];
 
-const disruptionPoints = [
+const points = [
   {
-    title: "Enterprise brain and AI OS for institutions.",
-    body: "AXXESS is built as institutional memory plus execution infrastructure, not a generic chatbot or another dashboard.",
+    title: "A person signs off on anything critical.",
+    body: "Agents execute. People decide. We do not believe in robots running the world, and neither does your auditor.",
   },
   {
-    title: "Agentic automation with human oversight.",
-    body: "Agents can help work move, but consequential actions remain governed by approvals, permissions and human decision rights.",
+    title: "Every action is logged.",
+    body: "Who saw it, who decided, what happened next. \"He says he never saw the attachment\" stops being a debate.",
   },
   {
-    title: "Immutable auditability and strict policy adherence.",
-    body: "Every serious workflow is designed around traceability: who knew what, what decision was made, what action followed, and under which policy.",
+    title: "It tracks work, not people.",
+    body: "It tells a supervisor when work piles up on someone. It does not watch anyone's lunch hour or weekend.",
   },
   {
-    title: "Productivity and auditability, without surveillance.",
-    body: "The point is not to monitor people. The point is to preserve decisions, context, approvals and follow-through so teams can work with less confusion.",
+    title: "Truly horizontal.",
+    body: "Clinics, brokerages, councils, NGOs and corporates lose work the same way. One product, many ways in, no extra cost line per team.",
   },
   {
-    title: "Light on the pocket.",
-    body: "AXXESS is being built to cost a fraction of traditional enterprise software and consulting-heavy transformation programs.",
+    title: "We run our own company on it.",
+    body: "Our own leads and customer conversations turn up in AXXESS as tasks. If it breaks, we find out first.",
   },
   {
-    title: "Horizontal SaaS with a common kernel.",
-    body: "The product thesis is 80% common operating kernel and 20% customization, so very different institutions can share the same core while adapting to local workflows.",
-  },
-  {
-    title: "Built for emerging-market budgets and layered context.",
-    body: "AXXESS starts from how institutions actually work in India, the GCC and the Global South: multilingual, multi-channel, cost-sensitive and governance-heavy.",
-  },
-  {
-    title: "Useful for governments without waiting for a GovTech procurement cycle.",
-    body: "Public-sector and public-adjacent teams can start with operating workflows, audit trails and coordination layers before a long formal government software buying process finishes.",
-  },
-  {
-    title: "Built for markets software giants ignored.",
-    body: "AXXESS is aimed at institutions, MSMEs, NGOs, education, healthcare, public-sector bodies and mid-market teams that rarely get software designed around their realities.",
-  },
-  {
-    title: "AI-native build by nominally non-technical founders.",
-    body: "The build itself is part of the disruption: domain operators used AI-native engineering tools to move faster and cheaper than a conventional outsourced build.",
-  },
-  {
-    title: "Real domain expertise behind the product.",
-    body: "The founders bring 15+ years of combined enterprise, banking, healthcare, education and institutional operating experience into the product decisions.",
-  },
-  {
-    title: "Autonomous founder-led execution.",
-    body: "AXXESS has been built by a married founder team without outsourcing judgment to consultants, agencies or an external product studio.",
-  },
-  {
-    title: "Built without grants or agency dependency.",
-    body: "The product has been bootstrapped with extreme capital discipline rather than built around a grant cycle, consultant team or high-burn agency model.",
-  },
-  {
-    title: "Validation arrived within months.",
-    body: "Within months of conceptualization, AXXESS gathered meaningful validation from pilots, LOIs, beta feedback, waitlist interest and conversations across markets.",
+    title: "Built by people who did this work.",
+    body: "Nine years in banking. Six years in hospitals and nursing colleges. We have sat on the committees that buy this.",
   },
 ];
 
-const thesisBands = [
-  "Enterprise brain",
-  "Governed agents",
-  "Audit-first execution",
-  "Low-cost adoption",
-  "Global South first",
-  "Founder-built",
-];
+const thesisBands = ["No Dismiss button", "Human sign-off", "Audit log", "Tracks work, not people", "We use it ourselves"];
 
 export default function WhyAxxessIsDisruptivePage() {
   return (
@@ -99,16 +63,15 @@ export default function WhyAxxessIsDisruptivePage() {
           </Link>
           <div className="space-y-5">
             <p className="inline-flex rounded-full border border-[#cdd5df] bg-white px-4 py-1 text-sm font-medium text-[#35506b]">
-              Why AXXESS TRIaxis is disruptive
+              How It Works
             </p>
             <h1 className="max-w-4xl text-4xl font-semibold leading-tight md:text-6xl">
-              Because it turns enterprise AI into governed, affordable action.
+              Work slips because every decision can wait until tomorrow.
             </h1>
             <p className="max-w-3xl text-lg leading-8 text-[#3f5165] md:text-xl">
-              AXXESS TRIaxis is disruptive in a beautiful way because it does not ask institutions to
-              choose between speed and accountability. It gives AI a governed path to help work move,
-              while preserving human oversight, policy adherence, auditability and institutional
-              memory.
+              Most teams already have email, chat, a CRM and an AI assistant. Things still slip,
+              because every decision is optional and can be snoozed. AXXESS asks for the decision,
+              does the follow-up and keeps the record. {vision}
             </p>
             <div className="flex flex-wrap gap-3">
               {thesisBands.map((band) => (
@@ -139,10 +102,10 @@ export default function WhyAxxessIsDisruptivePage() {
       <section className="border-y border-[#dde5ee] bg-white">
         <div className="mx-auto max-w-7xl px-6 py-12 md:px-10">
           <p className="text-sm font-semibold uppercase tracking-[0.1em] text-[#8b1e2d]">
-            The simple shift
+            The difference
           </p>
           <h2 className="mt-3 max-w-4xl text-3xl font-semibold text-[#111827]">
-            Legacy software records. Copilots answer. AXXESS remembers, governs and helps execute.
+            Software records. Chat answers. AXXESS asks, follows up and remembers.
           </h2>
           <div className="mt-8 grid gap-5 md:grid-cols-3">
             {contrasts.map((item) => (
@@ -163,7 +126,7 @@ export default function WhyAxxessIsDisruptivePage() {
       </section>
 
       <section className="mx-auto grid max-w-7xl gap-5 px-6 py-12 md:grid-cols-2 md:px-10">
-        {disruptionPoints.map((point) => (
+        {points.map((point) => (
           <article key={point.title} className="rounded-xl border border-[#d6dee8] bg-white p-6 shadow-sm">
             <h2 className="text-2xl font-semibold text-[#111827]">{point.title}</h2>
             <p className="mt-4 text-base leading-7 text-[#4a5a6a]">{point.body}</p>
