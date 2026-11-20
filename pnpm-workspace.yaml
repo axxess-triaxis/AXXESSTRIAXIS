@@ -87,7 +87,13 @@ overrides:
   js-yaml@>=4.0.0 <4.2.0: '>=4.2.0'
   # Dependabot #50 (high): ReDoS via combinatorial GLOBSTAR backtracking, fixed upstream in
   # 10.2.3. Transitive via eslint's dependency chain (devDependency only).
-  minimatch@>=10.0.0 <10.2.3: '>=10.2.3'
+  # Dependabot #202 (medium), 2026-11-20: DoS via globparts amplification, fixed only in 11.0.1
+  # (no backport to 7-10). Widened from '>=10.0.0 <10.2.3' to cover #50 too. Transitive via
+  # @expo/fingerprint and glob (build tooling). minimatch 3.x (eslint) is outside the range.
+  minimatch@>=7.0.0 <11.0.1: '^11.0.1'
+  # Dependabot #200 (medium), 2026-11-20: AbortSignal cancellation bypass, fixed in 14.0.2.
+  # Transitive via rimraf, @expo/*, @sentry/bundler-plugins and @vercel/nft (build tooling).
+  glob@>=9.0.0 <14.0.2: '^14.0.2'
   # Dependabot #44/#45 (medium/low): HTTP request smuggling / insufficiently random values /
   # DoS via malformed certificate data, fixed upstream in 5.29.0. The 6.x/7.x resolutions already
   # in the lockfile are unaffected; only the 5.28.4 resolution needed forcing forward.
