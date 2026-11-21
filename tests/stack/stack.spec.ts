@@ -1,30 +1,17 @@
-import { execFileSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 import { loginAs, seededUsers } from "../e2e/helpers";
-import { assertStagingBundle, loadStackConfig } from "./guard";
+import { loadStackConfig } from "./guard";
+import { assertStagingSite, aws, bypassHeaders, countTasksMentioning, expectExactlyOneTask, regionOf, testPhone } from "./stackHelpers";
 
 // Triggers each product through its real entry point, then checks the result in the AXXESS UI.
 // Uses the AWS CLI so the app's own dependencies do not grow for a staging-only test.
 // Tasks stay in staging afterwards: AXXESS has no delete tool, and each run's are marked by its ID.
 const config = loadStackConfig();
 const runId = `stack-${Date.now()}-${randomUUID().slice(0, 8)}`;
-
-function regionOf(arn: string): string {
-  return arn.split(":")[3];
-}
-
-function aws(region: string, ...args: string[]): string {
-  return execFileSync("aws", [...args, "--region", region, "--output", "json"], { encoding: "utf8" });
-}
-
-// A number that cannot belong to anyone: 555-0100 to 555-0199 are reserved for fiction.
-function testPhone(): string {
-  return `+120255501${String(Math.floor(Math.random() * 100)).padStart(2, "0")}`;
-}
 
 function invokeLambda(region: string, functionName: string, payload: object): Record<string, unknown> {
   const dir = mkdtempSync(join(tmpdir(), "stack-e2e-"));
@@ -57,27 +44,6 @@ async function triage(sender: string, messageId: string, text: string) {
   return (await response.json()) as { error: string | null; callback_result: unknown; triage: { category: string; needs_decision: boolean } | null };
 }
 
-// A task's description only shows once it is opened, so each row is opened in turn.
-async function countTasksMentioning(page: Page, marker: string): Promise<number> {
-  await page.goto("/tasks");
-  const rows = page.locator("button.min-w-0.flex-1.text-left");
-  await expect(rows.first()).toBeVisible({ timeout: 30_000 });
-  let found = 0;
-  for (let index = 0; index < (await rows.count()); index += 1) {
-    const title = (await rows.nth(index).locator("span").first().textContent())?.trim() ?? "";
-    await rows.nth(index).click();
-    // Wait for this row's details, then check only this task. A marker in another row's title must not count.
-    await expect(page.getByRole("heading", { level: 3, name: title, exact: true })).toBeVisible();
-    const inDescription = await page.locator("p.leading-relaxed").filter({ hasText: marker }).count();
-    if (title.includes(marker) || inDescription > 0) found += 1;
-  }
-  return found;
-}
-
-async function expectExactlyOneTask(page: Page, marker: string, timeoutMs = 3 * 60_000) {
-  await expect.poll(() => countTasksMentioning(page, marker), { timeout: timeoutMs, intervals: [15_000] }).toBe(1);
-}
-
 function leadEnvelope(id: string, marker: string, overrides: object = {}) {
   const now = new Date().toISOString();
   return {
@@ -108,17 +74,10 @@ function leadEnvelope(id: string, marker: string, overrides: object = {}) {
   };
 }
 
-// Sent only to the staging site: as a browser-wide header it would also reach Supabase, whose CORS rules reject it.
-const bypassHeaders: Record<string, string> = process.env.VERCEL_AUTOMATION_BYPASS_SECRET
-  ? { "x-vercel-protection-bypass": process.env.VERCEL_AUTOMATION_BYPASS_SECRET, "x-vercel-set-bypass-cookie": "true" }
-  : {};
-
 test.describe.configure({ mode: "serial" });
 
 test.beforeAll(async ({ request }) => {
-  const html = await (await request.get("/auth", { headers: bypassHeaders })).text();
-  const paths = [...new Set(html.match(/\/_next\/static\/[^"\\]+\.js/g) ?? [])];
-  assertStagingBundle(await Promise.all(paths.map(async (path) => (await request.get(path, { headers: bypassHeaders })).text())));
+  await assertStagingSite(request);
 });
 
 test.beforeEach(async ({ page }) => {
