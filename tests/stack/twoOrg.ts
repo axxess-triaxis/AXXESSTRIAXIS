@@ -39,6 +39,22 @@ export function loadTwoOrgConfig(env: Record<string, string | undefined> = proce
   };
 }
 
+// Ordinary geographic area codes. 555-0100 to 555-0199 is reserved for fiction in each of them.
+const AREA_CODES = ["202", "203", "206", "208", "212", "213", "214", "215", "216", "217", "303", "304", "305", "307", "312", "313", "314", "315", "401", "402"];
+
+/**
+ * A fictional number outside `exclude`. Imported leads stay in org B, so one area code's 100 numbers
+ * would run out, and one of them is org B's own WhatsApp line.
+ */
+export function fictionalPhone(exclude: readonly string[], random: () => number = Math.random): string {
+  for (let attempt = 0; attempt < 50; attempt += 1) {
+    const areaCode = AREA_CODES[Math.floor(random() * AREA_CODES.length)];
+    const phone = `+1${areaCode}55501${String(Math.floor(random() * 100)).padStart(2, "0")}`;
+    if (!exclude.includes(phone)) return phone;
+  }
+  throw new Error("No fictional number is left outside the excluded ones");
+}
+
 function csvField(value: string): string {
   return /[",\n]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value;
 }

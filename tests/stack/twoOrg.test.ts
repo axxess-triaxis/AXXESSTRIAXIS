@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { parseLeadImport } from "../../src/services/outbound/leadImport";
-import { forgedConversationResult, leadImportCsv, loadTwoOrgConfig, SEEDED_ALPHA_ORGANIZATION_ID, whatsappInboundMessage } from "./twoOrg";
+import { fictionalPhone, forgedConversationResult, leadImportCsv, loadTwoOrgConfig, SEEDED_ALPHA_ORGANIZATION_ID, whatsappInboundMessage } from "./twoOrg";
 
 const topic = "arn:aws:sns:ap-southeast-2:227214487086:omnidamus-staging-WhatsAppInboundTopic-abc";
 
@@ -29,6 +29,28 @@ describe("loadTwoOrgConfig", () => {
     ["STACK_ALPHA_ORGANIZATION_ID", "alpha", /UUID/],
   ])("rejects a malformed %s", (name, value, error) => {
     expect(() => loadTwoOrgConfig({ STACK_OMNIDAMUS_WHATSAPP_TOPIC_ARN: topic, [name]: value })).toThrow(error);
+  });
+});
+
+describe("fictionalPhone", () => {
+  const line = "+12025550190";
+
+  it("stays in the 555-01xx range reserved for fiction, across area codes", () => {
+    const phones = Array.from({ length: 500 }, () => fictionalPhone([line]));
+    phones.forEach((phone) => expect(phone).toMatch(/^\+1[2-9][0-9]{2}55501[0-9]{2}$/));
+    expect(new Set(phones.map((phone) => phone.slice(2, 5))).size).toBeGreaterThan(5);
+  });
+
+  it("never returns an excluded number, such as org B's own line or one already imported", () => {
+    // The first draw lands exactly on the excluded line, the second does not.
+    const draws = [0, 0.905, 0, 0.5];
+    const random = () => draws.shift() ?? 0.5;
+    expect(fictionalPhone([line], random)).toBe("+12025550150");
+  });
+
+  it("stops instead of looping when the generator only produces excluded numbers", () => {
+    expect(() => fictionalPhone([line], () => 0)).not.toThrow();
+    expect(() => fictionalPhone(["+12025550100"], () => 0)).toThrow(/fictional/);
   });
 });
 

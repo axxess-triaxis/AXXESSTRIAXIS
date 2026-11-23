@@ -2,8 +2,8 @@ import { randomUUID } from "node:crypto";
 import { expect, test } from "@playwright/test";
 import { loginAs, logout, seededUsers } from "../e2e/helpers";
 import { loadStackConfig } from "./guard";
-import { assertStagingSite, aws, bypassHeaders, countTasksMentioning, regionOf, testPhone } from "./stackHelpers";
-import { forgedConversationResult, leadImportCsv, loadTwoOrgConfig, whatsappInboundMessage } from "./twoOrg";
+import { assertStagingSite, aws, bypassHeaders, countTasksMentioning, regionOf } from "./stackHelpers";
+import { fictionalPhone, forgedConversationResult, leadImportCsv, loadTwoOrgConfig, whatsappInboundMessage } from "./twoOrg";
 
 // Customer-fireable stack, PR 6 (2026-11-21). A customer organization ("org B", the seeded
 // "Triaxis Enterprise Studio") fires an Omnidamus WhatsApp conversation with "Message with agent".
@@ -33,17 +33,27 @@ test.beforeEach(async ({ page }) => {
 
 test("org B's Message with agent becomes a task in org B only", async ({ page }) => {
   if ("skip" in twoOrg) return;
-  const phone = testPhone();
   const marker = `${runId}-orgb`;
   const company = `Stack ${marker}`;
   await loginAs(page, twoOrg.orgBAdmin);
 
-  const imported = await page.request.post("/api/crm/leads/import", {
-    data: { csv: leadImportCsv({ company, contactName: "Stack Test", email: `${marker}@example.com`, phone }) },
-  });
-  const importBody = await imported.json() as { imported?: number; rejected?: unknown[]; error?: string };
-  expect(imported.status(), JSON.stringify(importBody)).toBe(200);
-  expect(importBody.imported, JSON.stringify(importBody)).toBe(1);
+  // Leads from earlier runs stay in org B, and their numbers are refused. Only that refusal gets
+  // another number: any other one fails at once.
+  const tried: string[] = [twoOrg.orgBWhatsAppLine];
+  let phone = "";
+  let accepted = false;
+  while (!accepted) {
+    phone = fictionalPhone(tried);
+    tried.push(phone);
+    const imported = await page.request.post("/api/crm/leads/import", {
+      data: { csv: leadImportCsv({ company, contactName: "Stack Test", email: `${marker}@example.com`, phone }) },
+    });
+    const importBody = await imported.json() as { imported?: number; rejected?: Array<{ reason?: string }>; error?: string };
+    expect(imported.status(), JSON.stringify(importBody)).toBe(200);
+    accepted = importBody.imported === 1;
+    const repeated = importBody.rejected?.[0]?.reason === "already_a_lead" && tried.length <= 10;
+    expect(accepted || repeated, JSON.stringify(importBody)).toBe(true);
+  }
 
   const leads = await (await page.request.get("/api/crm/leads")).json() as { leads: Array<{ id: string; organizationName?: string; title: string }> };
   const lead = leads.leads.find((row) => row.organizationName === company || row.title.includes(marker));
@@ -72,7 +82,7 @@ test("org B's Message with agent becomes a task in org B only", async ({ page })
     }));
     const deadline = Date.now() + (attempt === 3 ? 3 : 2) * 60_000;
     while (Date.now() < deadline && found === 0) {
-      found = await countTasksMentioning(page, taskMarker);
+      found = await countTasksMentioning(page, taskMarker, { allowEmpty: true });
       if (found === 0) await page.waitForTimeout(15_000);
     }
   }

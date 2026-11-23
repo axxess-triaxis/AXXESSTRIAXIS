@@ -18,9 +18,16 @@ export function testPhone(): string {
 }
 
 // A task's description only shows once it is opened, so each row is opened in turn.
-export async function countTasksMentioning(page: Page, marker: string): Promise<number> {
+// An empty list fails unless allowEmpty is set, so a page that did not load never passes a "no task" check.
+export async function countTasksMentioning(page: Page, marker: string, options: { allowEmpty?: boolean } = {}): Promise<number> {
   await page.goto("/tasks");
   const rows = page.locator("button.min-w-0.flex-1.text-left");
+  if (options.allowEmpty) {
+    await expect(rows.first().or(page.getByText("No tasks yet", { exact: true }))).toBeVisible({ timeout: 30_000 });
+    // A failed load also shows the empty list, with this message.
+    await expect(page.getByText("Unable to load task workflow data.")).toHaveCount(0);
+    if ((await rows.count()) === 0) return 0;
+  }
   await expect(rows.first()).toBeVisible({ timeout: 30_000 });
   let found = 0;
   for (let index = 0; index < (await rows.count()); index += 1) {
