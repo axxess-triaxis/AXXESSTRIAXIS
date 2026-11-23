@@ -192,7 +192,7 @@
     "@vitest/coverage-v8": "5.0.5",
     "eslint": "^9.39.4",
     "eslint-config-next": "^16.4.5",
-    "jsdom": "^31.0.0",
+    "jsdom": "^31.0.1",
     "supabase": "2.117.0",
     "tailwindcss": "4.3.3",
     "typescript": "^6.0.3",
