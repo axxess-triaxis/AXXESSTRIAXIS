@@ -40,13 +40,20 @@ type RouteContext = {
   params: Promise<{ resource: string }>;
 };
 
+// Undefined leaves the page size to the resource's own default.
+function requestedPageSize(url: URL): number | undefined {
+  const value = url.searchParams.get("pageSize");
+  if (value === null) return undefined;
+  const pageSize = Number(value);
+  return Number.isFinite(pageSize) ? pageSize : undefined;
+}
+
 function repositoryQueryFromUrl(url: URL): RepositoryQuery {
   const page = Number(url.searchParams.get("page") ?? "1");
-  const pageSize = Number(url.searchParams.get("pageSize") ?? "50");
 
   return {
     page: Number.isFinite(page) ? page : 1,
-    pageSize: Number.isFinite(pageSize) ? pageSize : 50,
+    pageSize: requestedPageSize(url),
     search: url.searchParams.get("search") ?? undefined,
   };
 }
