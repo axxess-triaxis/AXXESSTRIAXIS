@@ -16,6 +16,11 @@ describe("tenant-scoped repository gateway API (Sprint 2 -- POST /api/repositori
     }
   });
 
+  it("leaves the page size to each resource's default when the request names none", () => {
+    expect(routeSource).not.toContain('searchParams.get("pageSize") ?? "50"');
+    expect(routeSource).toContain("pageSize: requestedPageSize(url)");
+  });
+
   it("derives the tenant scope from the authenticated session, never from the request body", () => {
     const postBlock = routeSource.slice(routeSource.indexOf("export async function POST"), routeSource.indexOf("export async function PATCH"));
     expect(postBlock).toContain("tenantScopeFromUser(session.user, session.accessToken)");
