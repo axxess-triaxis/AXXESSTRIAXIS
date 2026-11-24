@@ -9,7 +9,7 @@ Status: **approved by the founder 2026-11-20 ("Approve, start PR 1").**
 | 3. Omnidamus org conversations and `POST /start` | Omnidamus | Merged; `/start` live in production and staging, 2026-11-20 15:21 and 16:25 UTC; correct-key production call not made | Omnidamus #8, merge `38e62cc9`; 132 tests; #9, merge `56c4312` |
 | 4. Callismatic customer calls | callismatic | Merged; production deploy not recorded; customer-call script approved by the founder ("Approve and merge") | callismatic #21, merge `cce79de5`; 197 tests |
 | 5. AXXESS Agents card, Message with agent, per-org registration gate | AXXESSTRIAXIS | Merged and deployed; production migrations not reported run; operator panel not yet seen working | #556, merge `cb2f4a83`; `/api/stack/agent-settings` answered 401 without sign-in, 2026-11-20 14:16 UTC |
-| 6. Two-org staging end to end | all | Passed on staging, not merged | #557; run 45347097022, 7 of 7, 2026-11-24; `STACK_TWO_ORG_E2E_CLOSEOUT_2026_11_24.md` |
+| 6. Two-org staging end to end | all | Passed on staging; merged 2026-11-24 | #557, merge `b482c7b1`; run 45347097022, 7 of 7, 2026-11-24; `STACK_TWO_ORG_E2E_CLOSEOUT_2026_11_24.md` |
 | 7. Production | all | Not started | |
 
 PR 5 adds:
