@@ -57,7 +57,6 @@ list. Both fixed in `5a52f9a0`, unit tests first.
 ## What remains partial or blocked
 
 - Org B was set up with SQL, not the operator panel. The panel did not appear for the founder on staging. Cause not known. Owner: Claude, needs the founder's `/api/stack/agent-settings` reply. It must work before a customer is set up.
-- Production migrations `20261120120000`, `20261120140000` and `20261124060000`: run, founder-stated 2026-11-24 ("Yes, all three"). Source artifact needed: the result of the verification query.
 - Production secret values are unverified. A correct-key production `/start` call has not been made.
 - "Call with agent" for a customer, and SMS, are not covered (plan: PR 7).
 - The scheduled run from main (Monday 2026-11-30 03:30 UTC) has not run with this test.
@@ -79,7 +78,12 @@ Live check, 08:01 to 08:06 UTC, landing deployment `dpl_JDkdtpXCh8ycoPFyirTSZ6X5
   and the main area (5426px in 435px) scroll independently, and the page itself does not scroll.
 - One request to a path that does not exist (`/api/health`) got no response in 19s. Three repeats answered
   404 in under 0.4s. Cause not known.
-- Not checked live: #570 (needs a signed-in organization with more than 50 tasks) and #571 (SQL run is founder-stated, not seen).
+- Not checked live: #570 (needs a signed-in organization with more than 50 tasks) and saving a WhatsApp template (#571).
+
+Production migrations `20261120120000`, `20261120140000` and `20261124060000`: run by the founder and
+confirmed 2026-11-24 by a read-only catalog query the founder ran in the production SQL editor (project
+`vnliomnfabaicvvvfwia`), result read by Claude Code in the browser pane: three tables present, row level
+security on 3, policies 3, new columns 5, and the template check is the #571 form (`length <= 512`).
 
 Rollback target: `triaxis-www-frontend-import-lwpllhsov` (2026-11-20).
 
