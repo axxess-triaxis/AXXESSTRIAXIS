@@ -484,7 +484,7 @@ async function semanticCitationsForQuestion(
   if (!rows?.length) return null;
 
   const documentById = new Map(authorizedDocuments.map((document) => [document.id, document]));
-  const citations = authorizedCitations(scope, permissions, documentById, rows, limit, (row) => similarityById.get(row.id) ?? 0);
+  const citations = authorizedCitations(scope, permissions, documentById, rows, limit, (row) => 1 - (similarityById.get(row.id) ?? 0));
   return citations.length ? citations : null;
 }
 
