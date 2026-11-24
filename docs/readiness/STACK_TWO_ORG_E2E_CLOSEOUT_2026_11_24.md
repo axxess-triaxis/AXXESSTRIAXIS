@@ -89,6 +89,12 @@ Production operator panel: seen by Claude Code 2026-11-24 about 09:20 UTC in the
 landing `/integrations`. `/api/stack/agent-settings` returned 200 and `operator: true` for the Triaxis organization;
 the panel listed 4 organizations and each one's settings answered 200. Reads only, nothing saved by Claude Code.
 
+Found during the check, not caused by these PRs: browser error reporting is off on landing. The shipped code
+contains `dsn:"[SENSITIVE]"` (one match in 13 scripts on `/auth`; none on lite or investor), because
+`NEXT_PUBLIC_SENTRY_DSN` is a Sensitive row in Vercel and `vercel pull` cannot read it. This proves the cause that
+`INVESTOR_LANDING_PAR_CLOSEOUT_2026_11_05.md` line 57 called likely. ID: STACK-E2E-SENTRY-1. Owner: founder (re-add
+the row as not Sensitive, then rebuild). Server-side reporting was not checked.
+
 Rollback target: `triaxis-www-frontend-import-lwpllhsov` (2026-11-20).
 
 ## What is unsupported
