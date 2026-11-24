@@ -56,7 +56,7 @@ list. Both fixed in `5a52f9a0`, unit tests first.
 
 ## What remains partial or blocked
 
-- Org B was set up with SQL, not the operator panel. The panel did not appear for the founder on staging. Cause not known. Owner: Claude, needs the founder's `/api/stack/agent-settings` reply. It must work before a customer is set up.
+- Org B was set up with SQL, not the operator panel. The panel did not appear for the founder on staging. Cause not known. Owner: Claude, needs the founder's `/api/stack/agent-settings` reply. It works in production (see the live check below).
 - Production secret values are unverified. A correct-key production `/start` call has not been made.
 - "Call with agent" for a customer, and SMS, are not covered (plan: PR 7).
 - The scheduled run from main (Monday 2026-11-30 03:30 UTC) has not run with this test.
@@ -85,8 +85,9 @@ confirmed 2026-11-24 by a read-only catalog query the founder ran in the product
 `vnliomnfabaicvvvfwia`), result read by Claude Code in the browser pane: three tables present, row level
 security on 3, policies 3, new columns 5, and the template check is the #571 form (`length <= 512`).
 
-Production operator access: `/api/stack/agent-settings` on landing returned `operator: true` for the founder's
-account (founder-stated 2026-11-24, response not seen by Claude Code). The panel itself is not yet reported seen.
+Production operator panel: seen by Claude Code 2026-11-24 about 09:20 UTC in the founder's signed-in session on
+landing `/integrations`. `/api/stack/agent-settings` returned 200 and `operator: true` for the Triaxis organization;
+the panel listed 4 organizations and each one's settings answered 200. Reads only, nothing saved by Claude Code.
 
 Rollback target: `triaxis-www-frontend-import-lwpllhsov` (2026-11-20).
 
