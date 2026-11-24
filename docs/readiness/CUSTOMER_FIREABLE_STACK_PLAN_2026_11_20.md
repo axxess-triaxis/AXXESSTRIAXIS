@@ -9,7 +9,7 @@ Status: **approved by the founder 2026-11-20 ("Approve, start PR 1").**
 | 3. Omnidamus org conversations and `POST /start` | Omnidamus | Merged, not deployed | Omnidamus #8, merge `38e62cc9`; 132 tests |
 | 4. Callismatic customer calls | callismatic | Merged, not deployed; customer-call script approved by the founder ("Approve and merge") | callismatic #21, merge `cce79de5`; 197 tests |
 | 5. AXXESS Agents card, Message with agent, per-org registration gate | AXXESSTRIAXIS | In review (this branch) | see below |
-| 6. Two-org staging end to end | all | Not started | |
+| 6. Two-org staging end to end | all | Passed on staging, not merged | #557; run 45347097022, 7 of 7, 2026-11-24; `STACK_TWO_ORG_E2E_CLOSEOUT_2026_11_24.md` |
 | 7. Production | all | Not started | |
 
 PR 5 adds:
