@@ -1,5 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
+import { githubStatsAsOf } from "@/components/marketing/siteFacts";
 import HomePage from "./page";
 
 // Attempt 4 (2026-07-24): the public home page previously funneled both "Open Beta Workspace" and
@@ -41,7 +42,8 @@ describe("HomePage", () => {
       expect(bundle).toHaveTextContent(product);
     }
     const github = screen.getByRole("region", { name: /built in public on github/i });
-    expect(github).toHaveTextContent(/from the github api on 20 november 2026/i);
+    expect(githubStatsAsOf).toMatch(/^\d{1,2} [A-Z][a-z]+ \d{4}$/);
+    expect(github).toHaveTextContent(`From the GitHub API on ${githubStatsAsOf}`);
     expect(screen.getByRole("link", { name: /see everything on github/i })).toHaveAttribute("href", "https://github.com/axxess-triaxis");
   });
 

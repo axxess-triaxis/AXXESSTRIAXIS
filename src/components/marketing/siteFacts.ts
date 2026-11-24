@@ -3,15 +3,15 @@
 
 export const githubProfileUrl = "https://github.com/axxess-triaxis";
 
-// Read 2026-11-20 with the GitHub API as the `axxess-triaxis` account (created 2026-07-02):
+// Read 2026-11-24 with the GitHub API as the `axxess-triaxis` account (created 2026-07-02):
 // - contributions and commits: GraphQL `contributionsCollection` for the last year
 // - merged pull requests: search `org:axxess-triaxis is:pr is:merged`
 // - public repositories: REST `GET /user`
-export const githubStatsAsOf = "20 November 2026";
+export const githubStatsAsOf = "24 November 2026";
 export const githubStats = [
-  { value: "2,615", label: "GitHub contributions since July 2026" },
-  { value: "2,130", label: "commits" },
-  { value: "518", label: "merged pull requests" },
+  { value: "2,683", label: "GitHub contributions since July 2026" },
+  { value: "2,177", label: "commits" },
+  { value: "538", label: "merged pull requests" },
   { value: "18", label: "public repositories" },
 ];
 
