@@ -85,6 +85,9 @@ confirmed 2026-11-24 by a read-only catalog query the founder ran in the product
 `vnliomnfabaicvvvfwia`), result read by Claude Code in the browser pane: three tables present, row level
 security on 3, policies 3, new columns 5, and the template check is the #571 form (`length <= 512`).
 
+Production operator access: `/api/stack/agent-settings` on landing returned `operator: true` for the founder's
+account (founder-stated 2026-11-24, response not seen by Claude Code). The panel itself is not yet reported seen.
+
 Rollback target: `triaxis-www-frontend-import-lwpllhsov` (2026-11-20).
 
 ## What is unsupported
