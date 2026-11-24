@@ -91,7 +91,6 @@ export async function prepareGoldenSet(backend: HarnessBackend, golden: GoldenSe
     await insert("organizations", { id, tenant_id: id, name: tenant.name, slug: `${tenant.slug}-${run}`, sector: tenant.sector });
   }
 
-  const roleIds = new Map<string, string>();
   const scopes: Record<string, TenantScope> = {};
   for (const user of golden.corpus.users) {
     const organizationId = organizationIds[user.tenant];
@@ -100,15 +99,9 @@ export async function prepareGoldenSet(backend: HarnessBackend, golden: GoldenSe
     const created = await authRequest<{ id: string }>(backend, "admin/users", backend.serviceRoleKey, { email, password, email_confirm: true });
     const profile = { id: created.id, email, display_name: user.key, avatar_initials: "RG" };
     await insert("profiles", profile);
+    // The sync_user_access trigger grants the database role from this row, as it does for real users.
     await insert("users", { ...profile, organization_id: organizationId, role: user.role, status: "active" });
     await insert("organization_members", { organization_id: organizationId, user_id: created.id, title: user.role, status: "active" });
-    const roleKey = `${user.tenant}:${user.role}`;
-    if (!roleIds.has(roleKey)) {
-      const id = randomUUID();
-      await insert("roles", { id, organization_id: organizationId, name: user.role });
-      roleIds.set(roleKey, id);
-    }
-    await insert("user_roles", { organization_id: organizationId, user_id: created.id, role_id: roleIds.get(roleKey)! });
     const session = await authRequest<{ access_token: string }>(backend, "token?grant_type=password", backend.anonKey, { email, password });
     scopes[user.key] = { organizationId, userId: created.id, role: user.role as RoleName, accessToken: session.access_token };
   }
