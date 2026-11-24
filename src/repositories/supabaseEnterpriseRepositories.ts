@@ -359,11 +359,17 @@ type BetaFeedbackRow = {
   created_at: string;
 };
 
+// Work lists that a screen shows whole, with no paging control. Supabase returns at most 1000 rows per
+// request (supabase/config.toml max_rows), so this is the largest page that is not cut short.
+const FULL_LIST_PAGE_SIZE = 1000;
+
 type ResourceConfig<TRow, TResource> = {
   table: ResourceName;
   select: string;
   searchColumns: string[];
   defaultOrder: string;
+  /** Rows returned when the caller names no page size. Defaults to 50. */
+  defaultPageSize?: number;
   map(row: TRow): TResource;
   toInsert?(scope: TenantScope, input: Record<string, unknown>): Record<string, unknown>;
   toUpdate?(scope: TenantScope, input: Record<string, unknown>): Record<string, unknown>;
@@ -412,7 +418,7 @@ function applyRepositoryQuery(params: URLSearchParams, config: ResourceConfig<un
   // (RAG retrieval, Knowledge Hub, live-platform aggregation, onboarding sample-data) request up to
   // 2500 and were silently getting only the first 100 rows back. Raised to match the largest existing
   // caller; this only ever returns more rows than before, never fewer, for every call site.
-  const pageSize = Math.min(Math.max(query?.pageSize ?? 50, 1), 2500);
+  const pageSize = Math.min(Math.max(query?.pageSize ?? config.defaultPageSize ?? 50, 1), 2500);
   const page = Math.max(query?.page ?? 1, 1);
   params.set("limit", String(pageSize));
   params.set("offset", String((page - 1) * pageSize));
@@ -1097,6 +1103,7 @@ const userConfig: ResourceConfig<UserRow, User> = {
   select: "id,organization_id,email,display_name,avatar_initials,avatar_path,availability,role,status,department_name,title,timezone,created_at,updated_at",
   searchColumns: ["email", "display_name"],
   defaultOrder: "display_name.asc",
+  defaultPageSize: FULL_LIST_PAGE_SIZE,
   map: (row) => ({
     id: row.id,
     organizationId: row.organization_id,
@@ -1122,6 +1129,7 @@ const programConfig: ResourceConfig<ProgramRow, Program> = {
   select: "id,organization_id,name,owner_id,status,start_date,end_date",
   searchColumns: ["name"],
   defaultOrder: "name.asc",
+  defaultPageSize: FULL_LIST_PAGE_SIZE,
   map: (row) => ({
     id: row.id,
     organizationId: row.organization_id,
@@ -1138,6 +1146,7 @@ const projectConfig: ResourceConfig<ProjectRow, Project> = {
   select: "id,organization_id,program_id,name,description,owner_id,progress,risk_level,priority,status,start_date,due_date,tags",
   searchColumns: ["name", "description"],
   defaultOrder: "due_date.asc",
+  defaultPageSize: FULL_LIST_PAGE_SIZE,
   map: (row) => ({
     id: row.id,
     organizationId: row.organization_id,
@@ -1162,6 +1171,7 @@ const stakeholderConfig: ResourceConfig<StakeholderRow, Stakeholder> = {
   select: "id,organization_id,name,affiliation,role,relationship_owner_id,influence_score,engagement_level",
   searchColumns: ["name", "affiliation", "role"],
   defaultOrder: "name.asc",
+  defaultPageSize: FULL_LIST_PAGE_SIZE,
   map: (row) => ({
     id: row.id,
     organizationId: row.organization_id,
@@ -1179,7 +1189,8 @@ const taskConfig: ResourceConfig<TaskRow, Task> = {
   table: "tasks",
   select: "id,organization_id,program_id,project_id,title,description,assignee_id,priority,status,due_date,tags",
   searchColumns: ["title", "description"],
-  defaultOrder: "due_date.asc",
+  defaultOrder: "due_date.asc,created_at.desc",
+  defaultPageSize: FULL_LIST_PAGE_SIZE,
   map: (row) => ({
     id: row.id,
     organizationId: row.organization_id,
@@ -1389,6 +1400,7 @@ const meetingConfig: ResourceConfig<MeetingRow, Meeting> = {
   select: "id,organization_id,project_id,program_id,stakeholder_id,title,starts_at,ends_at,attendee_ids,agenda,notes,decisions,action_items,status",
   searchColumns: ["title"],
   defaultOrder: "starts_at.asc",
+  defaultPageSize: FULL_LIST_PAGE_SIZE,
   map: (row) => ({
     id: row.id,
     organizationId: row.organization_id,

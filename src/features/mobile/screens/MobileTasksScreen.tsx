@@ -65,7 +65,7 @@ export function MobileTasksScreen() {
     let cancelled = false;
     setLoading(true);
     Promise.all([
-      applicationServices.tasksRepository.list(scope, { pageSize: 100 }),
+      applicationServices.tasksRepository.list(scope),
       applicationServices.remindersRepository.list(scope, { pageSize: 100 }),
     ])
       .then(([taskRows, reminderRows]) => {

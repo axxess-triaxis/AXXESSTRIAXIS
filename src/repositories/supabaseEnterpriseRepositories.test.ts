@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { auditLogsRepository, documentsRepository, invitationsRepository, projectsRepository, ragFullTextSearchRepository, remindersRepository, stakeholdersRepository, tasksRepository } from "./supabaseEnterpriseRepositories";
+import { auditLogsRepository, documentsRepository, invitationsRepository, meetingsRepository, programsRepository, projectsRepository, ragFullTextSearchRepository, remindersRepository, stakeholdersRepository, tasksRepository, usersRepository } from "./supabaseEnterpriseRepositories";
 import type { TenantScope } from "./interfaces";
 
 const scope: TenantScope = {
@@ -495,6 +495,48 @@ describe("Supabase enterprise repositories", () => {
 
     const [url] = fetchCall(fetchMock);
     expect(String(url)).toContain("limit=2500");
+  });
+
+  // Staging stack test, 2026-11-23: an agent's task was created but never shown, because the Tasks page
+  // asks for no page size, got 50 rows, and an undated task sorts after every dated one.
+  it.each([
+    ["tasks", (s: TenantScope) => tasksRepository.list(s)],
+    ["projects", (s: TenantScope) => projectsRepository.list(s)],
+    ["programs", (s: TenantScope) => programsRepository.list(s)],
+    ["meetings", (s: TenantScope) => meetingsRepository.list(s)],
+    ["users", (s: TenantScope) => usersRepository.listByOrganization(s)],
+    ["stakeholders", (s: TenantScope) => stakeholdersRepository.list(s)],
+  ])("lists %s past 50 rows when no page size is asked for", async (_name, list) => {
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify([]), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://example.supabase.co");
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY", "anon-key");
+
+    await list({ ...scope, accessToken: "server-token" });
+
+    expect(new URL(String(fetchCall(fetchMock)[0])).searchParams.get("limit")).toBe("1000");
+  });
+
+  it("keeps 50 rows as the default for logs and other lists", async () => {
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify([]), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://example.supabase.co");
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY", "anon-key");
+
+    await auditLogsRepository.list({ ...scope, accessToken: "server-token" });
+
+    expect(new URL(String(fetchCall(fetchMock)[0])).searchParams.get("limit")).toBe("50");
+  });
+
+  it("lists undated tasks newest first, so a new agent task is not last", async () => {
+    const fetchMock = vi.fn(async () => new Response(JSON.stringify([]), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://example.supabase.co");
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY", "anon-key");
+
+    await tasksRepository.list({ ...scope, accessToken: "server-token" });
+
+    expect(new URL(String(fetchCall(fetchMock)[0])).searchParams.get("order")).toBe("due_date.asc,created_at.desc");
   });
 
   describe("ragFullTextSearchRepository", () => {
