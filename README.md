@@ -15,15 +15,18 @@ audit log. Built by [Triaxis Ventures Private Limited](https://github.com/axxess
 - **[landing.triaxisventures.com](https://landing.triaxisventures.com)**: the live app. Sign-in required.
 - **[investor.triaxisventures.com](https://investor.triaxisventures.com)**: the demo. No sign-in, demo data only.
 
-## Status, checked 2026-11-18
+## Status
 
-| | Status | Evidence |
-|---|---|---|
-| Web | Live. Both links above return HTTP 200. Every merge to `main` deploys the live app | `curl`, 2026-11-18; [`deploy-production.yml`](.github/workflows/deploy-production.yml) |
-| Android | Version 5 (0.9.0) on Google Play: Production track, full rollout, 172 countries and regions (as of 2026-08-30) | [Android production closeout, 2026-08-30](docs/readiness/ANDROID_BETA_0_9_PRODUCTION_RELEASE_CLOSEOUT_2026_08_30.md) |
-| Pilots | 2 pilot organisations onboarded on the live app (July and August 2026); 5 signed letters of intent | [LOI and pilot log](docs/LOIS_BETA_PILOT_INTEREST_REFERRAL_AND_STRATEGIC_PARTNERSHIPS_LOG.md) |
-| Prepayment | Both pilots have committed to prepay. One commitment is in writing (2026-08-12); that both are in writing and both pilots are still active is *Founder-stated, source artifact needed* | Same log |
-| Revenue | None collected. The latest commercial record in this repo (2026-08-11) says collection waits on the company's current account and GST registration | [Commercial evidence](docs/audit/08_COMMERCIAL_EVIDENCE.md) |
+Each row gives the date of its evidence. Only the web row was checked live, on 2026-11-25.
+
+| | Status | As of | Evidence |
+|---|---|---|---|
+| Web | Live. Both links above return HTTP 200. Every merge to `main` deploys the live app | 2026-11-25 | Live `curl`; [`deploy-production.yml`](.github/workflows/deploy-production.yml) |
+| Android | Version 5 (0.9.0) on Google Play: Production track, full rollout, 172 countries and regions | 2026-08-30 | [Android production closeout](docs/readiness/ANDROID_BETA_0_9_PRODUCTION_RELEASE_CLOSEOUT_2026_08_30.md) |
+| Pilots | 2 pilot organisations, both onboarded 2026-07-29 | 2026-08-11 | [Claims register](docs/audit/14_CLAIMS_REGISTER.md), row 6 |
+| Letters of intent | 5 received, in 3 documents | 2026-08-13 | [LOI and pilot log](docs/LOIS_BETA_PILOT_INTEREST_REFERRAL_AND_STRATEGIC_PARTNERSHIPS_LOG.md) |
+| Prepayment | Both pilots have offered an advance: one in writing (2026-08-12), conditional on the company's current account and GST setup, and one orally. That both are now in writing and both pilots are still active is *Founder-stated, source artifact needed* | 2026-08-13 | Same log |
+| Revenue | No collected payment is recorded in this repo. Collection waits on the company's current account and GST registration | 2026-08-11 | [Commercial evidence](docs/audit/08_COMMERCIAL_EVIDENCE.md) |
 
 ## Lead sourcing
 
@@ -48,8 +51,8 @@ invoked once by hand, before schedules shipped.
 
 **Schedules and discovery, 2026-11-19:** merged to `main` as `afd0c898` and deployed. The first
 production schedule (`6bfdb12b`, Dubai real estate brokerages, 10 companies, weekly on Monday 09:00
-Asia/Dubai) is on; its first run is due 2026-11-23 at 05:00 UTC, so **no production discovery run has
-happened yet** (as of 2026-11-20).
+Asia/Dubai) is on; its first run was due 2026-11-23 at 05:00 UTC. **Its result is not recorded in this repo**
+(checked 2026-11-25).
 [Closeout](docs/readiness/LEAD_SOURCING_V2_PRODUCTION_CLOSEOUT_2026_11_19.md)
 
 ## Stack
@@ -70,14 +73,15 @@ pnpm run dev                 # http://localhost:3000
 pnpm run typecheck && pnpm run lint && pnpm run test
 ```
 
-**Which CI is real:** GitHub Actions ([`.github/workflows`](.github/workflows)) gates every PR; the
-badge above is `ci.yml`. `.gitlab-ci.yml` mirrors those checks on a GitLab copy and `bitrise.yml` is
-an optional mobile pipeline; neither gates merges here. The app is Next.js. The root `vite.config.ts`
+**Which CI is real:** GitHub Actions ([`.github/workflows`](.github/workflows)) runs on every PR; the
+badge above is `ci.yml`. GitHub does not require those checks to pass before a merge; the rule that
+they must is in [`CLAUDE.md`](CLAUDE.md). `.gitlab-ci.yml` mirrors those checks on a GitLab copy and `bitrise.yml` is
+an optional mobile pipeline; neither is used for merges here. The app is Next.js. The root `vite.config.ts`
 and `index.html` are left over from the first prototype and no script builds them.
 
 ## How status is tracked
 
-Every claim above links to a file in this repo. Status lives in:
+Status claims above cite a file or PR in this repo, or a dated live check. Status lives in:
 
 - [Readiness matrix](docs/readiness/ACTIONABLES_READINESS_MATRIX.md): every actionable as `Yes`, `Blocked`, `No` or `Deferred`
 - [Decision and outcome ledger](docs/readiness/DECISION_OUTCOME_LEDGER.md): each major decision, its PR and its verification
