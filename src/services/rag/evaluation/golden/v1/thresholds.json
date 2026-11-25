@@ -5,7 +5,10 @@
   "knownVacuous": "noAnswerCorrectness is 0 in every mode, and noAnswerAbstainedOrFlagged is 0 in semantic mode, because retrieval has no relevance cutoff. Those minimums cannot fail. Raise them when abstention is built.",
   "modes": {
     "hash": { "recallAt5": 0.5466, "mrr": 0.3884, "ndcgAt5": 0.4273, "noAnswerCorrectness": 0, "noAnswerAbstainedOrFlagged": 0.375, "servedByModeShare": 1 },
-    "fulltext": { "recallAt5": 0.5599, "mrr": 0.4302, "ndcgAt5": 0.4622, "noAnswerCorrectness": 0, "noAnswerAbstainedOrFlagged": 0.375, "servedByModeShare": 0.0833 },
+    "fulltext": { "recallAt5": 0.76, "mrr": 0.6966, "ndcgAt5": 0.7127, "noAnswerCorrectness": 0, "noAnswerAbstainedOrFlagged": 0.6875, "servedByModeShare": 0.8425 },
     "semantic": { "recallAt5": 0.9733, "mrr": 0.8982, "ndcgAt5": 0.9169, "noAnswerCorrectness": 0, "noAnswerAbstainedOrFlagged": 0, "servedByModeShare": 0.9907 }
-  }
+  },
+  "raised": [
+    "fulltext: chunk full text, CI run 45545327157 on 247aa457 (2026-11-25)"
+  ]
 }
