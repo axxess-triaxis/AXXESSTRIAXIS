@@ -68,14 +68,16 @@ The tests use an in-memory store in place of the Supabase REST call. It applies 
 - `pnpm --dir apps/mobile run typecheck`: exit 0
 - `pnpm run lint`: exit 0, zero warnings
 - `pnpm run build`: exit 0
-- `pnpm run supabase:verify`: exit 0, 61 migrations, 129 of 129 tables with RLS, 1 existing warning (`20260702165736_initial_enterprise_schema.sql`, not touched here)
-- CI on `ec13fe28`: 16 checks passed, none failed (Supabase Preview and the two mobile previews skip). CI runs on the later head with `main` merged in are in PR #579.
+- `pnpm run supabase:verify`: exit 0, 62 migrations, 129 of 129 tables with RLS, 1 existing warning (`20260702165736_initial_enterprise_schema.sql`, not touched here)
+- CI on `ec13fe28`: 17 checks passed, none failed (Supabase Preview and the two mobile previews skip). CI runs on the later head with `main` merged in are in PR #579.
 
 ### Errors hit this session
 
 - Error: first full run exited 1. `Test Files  397 passed (397)`, `Tests  2558 passed (2558)`, and 6 test files never started (`Timeout waiting for worker to respond`); 2 more appeared in a targeted run that still passed. Hypothesis: memory pressure; 667 MB of 8 GB was free and another session was running vitest.
   Resolution: rerun after rebasing on `main`, with no code change from this session, passed with all 408 files reporting and no start timeout. The machine's memory was still low (482 MB free), so the hypothesis is not proven; the cause is being worked on in the vitest reliability session. My check that waited for other vitest runs was faulty and may have started early.
 - Error: `pnpm install` took 68 minutes. Not investigated; the machine was under load.
+
+After merging `main` (#572, #577): `pnpm run typecheck` exit 0, and the agent, chatbot, approvals and agentic-chat tests `Test Files  54 passed (54)`, `Tests  548 passed (548)`. The full suite on that head ran in CI only.
 
 ### What is still unverified or partial
 
@@ -92,5 +94,5 @@ The tests use an in-memory store in place of the Supabase REST call. It applies 
 
 Final status: Code complete
 Remaining risk: listed above
-Follow-up: approving a pending call runs it even if the agent connection was revoked after the request (`src/app/api/approvals/[id]/route.ts`, found by reading, not tested). Proposed as its own session, owner founder to start.
+Follow-up: approving a pending call runs it even if the agent connection was revoked after the request (`src/app/api/approvals/[id]/route.ts`, found by reading, not tested). Being fixed on its own branch, at the founder's request (2026-11-25).
 Deploy evidence: none, not merged or deployed
