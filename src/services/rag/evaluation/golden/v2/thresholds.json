@@ -2,15 +2,16 @@
   "version": "v2",
   "rule": "Measured baseline minus one question: 1/76 for recall, MRR and nDCG (76 questions have an answer), 1/33 for no-answer shares, no allowance for the share served by the mode's own path. Rounded down to 4 decimals. Leaks, errors and missing questions are always failures and have no threshold.",
   "baseline": "CI run 45543893235 on 6d3cb068d9dc4bc60cafd8cc4ac24b1d7f8dcb68, retrieval code unchanged (2026-11-25).",
-  "knownVacuous": "noAnswerCorrectness is 0 in every mode, and noAnswerAbstainedOrFlagged is 0 in semantic mode, because retrieval has no relevance cutoff.",
+  "knownVacuous": "noAnswerCorrectness is 0 in hash and fulltext modes, because neither abstains. Those minimums cannot fail.",
   "modes": {
     "hash": { "recallAt5": 0.5921, "mrr": 0.2723, "ndcgAt5": 0.3501, "noAnswerCorrectness": 0, "noAnswerAbstainedOrFlagged": 0.5757, "servedByModeShare": 1.0 },
-    "fulltext": { "recallAt5": 0.6842, "mrr": 0.5973, "ndcgAt5": 0.6187, "noAnswerCorrectness": 0, "noAnswerAbstainedOrFlagged": 0.8181, "servedByModeShare": 0.84 },
+    "fulltext": { "recallAt5": 0.6842, "mrr": 0.5973, "ndcgAt5": 0.6187, "noAnswerCorrectness": 0, "noAnswerAbstainedOrFlagged": 0.9393, "servedByModeShare": 0.84 },
     "semantic": { "recallAt5": 0.9736, "mrr": 0.932, "ndcgAt5": 0.9428, "noAnswerCorrectness": 0.2727, "noAnswerAbstainedOrFlagged": 0.5757, "servedByModeShare": 0.992 }
   },
   "raised": [
     "fulltext: chunk full text, CI run 45545327157 on 247aa457 (2026-11-25)",
     "semantic: rank fusion, commit 9bfd41cd, CI run 45546783045, 2026-11-25",
-    "semantic: semantic abstention, commit 532a0226, CI run 45547527087, 2026-11-25"
+    "semantic: semantic abstention, commit 532a0226, CI run 45547527087, 2026-11-25",
+    "fulltext: full-text review flag, commit 33f1b04a, CI run 45548722741, 2026-11-25"
   ]
 }
