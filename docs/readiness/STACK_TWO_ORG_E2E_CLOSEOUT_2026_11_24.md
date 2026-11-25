@@ -56,12 +56,46 @@ list. Both fixed in `5a52f9a0`, unit tests first.
 
 ## What remains partial or blocked
 
-- Org B was set up with SQL, not the operator panel. The panel did not appear for the founder on staging. Cause not known. Owner: Claude, needs the founder's `/api/stack/agent-settings` reply. It must work before a customer is set up.
-- Staging has #569 and #570, and the #571 change by SQL. None is on main.
-- Production migrations `20261120120000`, `20261120140000` and then `20261124060000` (#571) are not reported run.
+- Org B was set up with SQL, not the operator panel. The panel did not appear for the founder on staging. Cause not known. Owner: Claude, needs the founder's `/api/stack/agent-settings` reply. It works in production (see the live check below).
 - Production secret values are unverified. A correct-key production `/start` call has not been made.
 - "Call with agent" for a customer, and SMS, are not covered (plan: PR 7).
 - The scheduled run from main (Monday 2026-11-30 03:30 UTC) has not run with this test.
+
+## Merge and production deploy, 2026-11-24
+
+Founder: "Merge all four". Merged 07:46:30 to 07:47:34 UTC: #571 `e5e71690`, #570 `df547b2b`, #569
+`2695fbaf`, #557 `b482c7b1`. Issue #568 closed 07:47:36 UTC. GitHub cancelled the superseded deploys of
+#570 and #569; run [45350738407](https://github.com/axxess-triaxis/AXXESSTRIAXIS/actions/runs/45350738407)
+deployed `b482c7b1` (landing 07:59:37, investor 08:02:12, lite 08:04:35 UTC, all success). Repository
+Quality, Security Gates and Pilot Golden Path on `b482c7b1`: success. Capacitor Mobile Build: success on
+`2695fbaf`.
+
+Live check, 08:01 to 08:06 UTC, landing deployment `dpl_JDkdtpXCh8ycoPFyirTSZ6X5Z6Xn`:
+
+- Landing `/tasks` 307 to `/auth`, which answers 200. `/api/stack/agent-settings`, `/api/stack/results`
+  and `/api/repositories/tasks` answer 401 without credentials. Investor and lite answer 200.
+- #569: on `investor.triaxisventures.com/dashboard` at 1280x500 the sidebar (699px of content in 374px)
+  and the main area (5426px in 435px) scroll independently, and the page itself does not scroll.
+- One request to a path that does not exist (`/api/health`) got no response in 19s. Three repeats answered
+  404 in under 0.4s. Cause not known.
+- Not checked live: #570 (needs a signed-in organization with more than 50 tasks) and saving a WhatsApp template (#571).
+
+Production migrations `20261120120000`, `20261120140000` and `20261124060000`: run by the founder and
+confirmed 2026-11-24 by a read-only catalog query the founder ran in the production SQL editor (project
+`vnliomnfabaicvvvfwia`), result read by Claude Code in the browser pane: three tables present, row level
+security on 3, policies 3, new columns 5, and the template check is the #571 form (`length <= 512`).
+
+Production operator panel: seen by Claude Code 2026-11-24 about 09:20 UTC in the founder's signed-in session on
+landing `/integrations`. `/api/stack/agent-settings` returned 200 and `operator: true` for the Triaxis organization;
+the panel listed 4 organizations and each one's settings answered 200. Reads only, nothing saved by Claude Code.
+
+Found during the check, not caused by these PRs: browser error reporting is off on landing. The shipped code
+contains `dsn:"[SENSITIVE]"` (one match in 13 scripts on `/auth`; none on lite or investor), because
+`NEXT_PUBLIC_SENTRY_DSN` is a Sensitive row in Vercel and `vercel pull` cannot read it. This proves the cause that
+`INVESTOR_LANDING_PAR_CLOSEOUT_2026_11_05.md` line 57 called likely. ID: STACK-E2E-SENTRY-1. Owner: founder (re-add
+the row as not Sensitive, then rebuild). Server-side reporting was not checked.
+
+Rollback target: `triaxis-www-frontend-import-lwpllhsov` (2026-11-20).
 
 ## What is unsupported
 
