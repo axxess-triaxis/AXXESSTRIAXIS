@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerAuthSession } from "../../../auth/serverSession";
 import { auditLogsRepository, tenantScopeFromUser } from "../../../repositories/supabaseEnterpriseRepositories";
 import { routeAiRequest } from "../../../services/ai/router/aiRouter";
+import { buildCallerRoutingContext } from "../../../services/ai/callerRoutingContext";
 import type { AiPromptRequest, AiRoutingContext } from "../../../services/ai/types";
 import { getPostHogClient } from "../../../lib/posthog-server";
 
@@ -19,12 +20,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Cross-organization AI context is not allowed." }, { status: 403 });
   }
 
-  const context: AiRoutingContext = {
-    ...requestedContext,
-    organizationId: session.user.organizationId,
-    userId: session.user.id,
-    userRole: session.user.role,
-  };
+  const context = buildCallerRoutingContext({ prompt: body.prompt, task: body.task, context: body.context }, session.user);
 
   const result = await routeAiRequest({
     prompt: body.prompt,

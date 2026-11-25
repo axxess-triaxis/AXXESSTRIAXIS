@@ -171,3 +171,9 @@ Existing rows are not rewritten.
 |---|---|---|---|---|---|---|---|---|
 | Auto-fix on without asking, and 50 to 70% fewer approval questions by doing reversible steps and batching the rest; critical actions still asked every time, except merges covered below | 2026-11-25 | Founder instruction, executed by Claude Code | APPROVAL-LOAD | In the RAG retrieval session the agent asked 9 next-step questions between its gate passing and the docs PR, and one merge took more than one ask | Pending, review by 2026-12-09: count questions per session against 9 | #578 | Baseline, counted from that session's next-step questions: Auto-fix 2, #574 merge 4, deploy check 1, #575 merge 1, docs PR 1; 9 in all | This row |
 | Merge fully ready PRs without waiting for an explicit request, with "fully ready" defined in `CLAUDE.md` and the merge-triggered deploy included | 2026-11-25 | Founder instruction, executed by Claude Code | MERGE-WHEN-READY | Most approval questions were about merges already green | Pending, review by 2026-12-09: merges made, live checks, reverts | #578 | Open PRs audited 2026-11-25 (20 open): reasons recorded in the session report | This row |
+
+## Server-side AI routing context (2026-11-25)
+
+| Decision | Date | Session/tool | Issue ID | Why | Outcome | Commit/PR | Verification | Closeout |
+|---|---|---|---|---|---|---|---|---|
+| Build the AI routing context on the server from an allowlist; the tenant policy is server-only and a caller can only raise sensitivity | 2026-11-25 | Founder-approved plan (step A0), executed by Claude Code | AI-ROUTING-CONTEXT | The prompt classifier planned next needs one place that decides routing | Pending, review by 2026-12-09 | #580 | Regression tests 8 failed, 10 passed before; all pass after | After deploy |
