@@ -150,6 +150,7 @@ export function createOpenRouterProvider(
         return {
           text: text ?? "",
           confidence: 0.78,
+          model: modelSlug,
           latencyMs: Date.now() - startedAt,
           usage: { promptTokens, completionTokens },
           actualCostUsd,

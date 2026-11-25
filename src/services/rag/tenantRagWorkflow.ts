@@ -13,6 +13,7 @@ import { isSupabaseAdminConfigured, supabaseAdminRest } from "../../repositories
 import { appendConversationMessage, createConversation, listConversationMessages } from "../../repositories/aiConversationsRepository";
 import { routeAiRequest } from "../ai/router/aiRouter";
 import { liveModelProviders } from "../ai/providers";
+import { isAiTracingActive, traceAi } from "../ai/tracing/aiTracing";
 import { extractKeywords, summarizeText } from "../nlp/localNlp";
 import { answerWithGovernedRag, canRetrieveDocument, type RagAnswer, type RagCitation, type RagRetrievalMode } from "./governedRag";
 import { evidenceDecision, type EvidenceDecision } from "./abstention";
@@ -562,6 +563,18 @@ async function semanticCitationsForQuestion(
   return { citations, evidence: semanticEvidence(hits.filter((hit) => readable.has(hit.id)), searched) };
 }
 
+// Citations from stored chunks carry no classification, so a trace may only hold their text once each cited
+// document is read and found not to be restricted. Anything unknown counts as restricted.
+async function sourcesKnownUnrestricted(repositories: TenantRagRepositories, scope: TenantScope, sources: RagCitation[]): Promise<boolean> {
+  const documentIds = [...new Set(sources.filter((source) => source.sourceType === "document").map((source) => source.sourceId))];
+  try {
+    const documents = await Promise.all(documentIds.map((id) => repositories.documentsRepository.getById(scope, id)));
+    return documents.every((document) => document?.classification !== undefined && document.classification !== "restricted");
+  } catch {
+    return false;
+  }
+}
+
 export async function answerTenantQuestion(
   repositories: TenantRagRepositories,
   scope: TenantScope,
@@ -633,7 +646,17 @@ export async function answerTenantQuestion(
     baseAnswer = await answerWithGovernedRag(repositories, scope, { question, limit });
   }
 
-  const routeResult = await routeAiRequest({
+  // Follow-ups carry earlier answers, whose sources are not known here.
+  const redactTrace = isAiTracingActive()
+    && (priorMessages.length > 0 || !(await sourcesKnownUnrestricted(repositories, scope, baseAnswer.sources)));
+  const routeResult = await traceAi(() => ({
+    name: "axxess-knowledge-answer",
+    kind: "chain",
+    redactContent: redactTrace,
+    inputs: { question },
+    outputs: (result) => ({ answer: result.answer, provider: result.providerUsed, confidence: result.confidence, sources: baseAnswer.sources.length }),
+    context: { organizationId: scope.organizationId, role: scope.role, task: "rag_answer", threadKey: conversationId },
+  }), () => routeAiRequest({
     prompt: `${conversationTranscript}${question}\n\nAuthorized source summary:\n${baseAnswer.sources.map((source) => `${source.title}: ${source.excerpt}`).join("\n")}`,
     task: "rag_answer",
     context: {
@@ -646,7 +669,7 @@ export async function answerTenantQuestion(
       costPreference: "balanced",
       latencyPreference: "balanced",
     },
-  });
+  }));
 
   // 2026-07-30: routeAiRequest was already being called here, but only routeResult.confidence was
   // ever used -- routeResult.answer (the model's actual synthesized text) was silently discarded,

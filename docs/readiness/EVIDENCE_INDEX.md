@@ -57,3 +57,10 @@ number, existing closeout doc) -- not backfilled in bulk from memory or estimate
 | Issue ID | Title | Origin plan | Research artifact | Implementation commit(s) | PR | Test evidence | Deploy evidence | Closeout artifact | Final status |
 |---|---|---|---|---|---|---|---|---|---|
 | LEAD-SOURCING-V2 | Automatic discovery on schedules, auto-import | Approved plan-mode plan, `~/.claude/plans/i-need-to-log-eager-donut.md` | Bedrock and AgentCore research in the plan; staging runs `1c8c5775`, `1f823eb2`, `09a9ad4f` | `23b3c2b2`, `bfe64637`, `368cb82e` and the PR stack | #535, #536, #538, #539, #540 (merge `afd0c898`) | 2373 tests; 24 of 24 PR checks incl. Playwright | Vercel prod serving `afd0c898` (tick route 401 at 12:06 UTC); `axxess-lead-sourcing-prod` updated, 12:12 UTC tick clean | `LEAD_SOURCING_V2_PRODUCTION_CLOSEOUT_2026_11_19.md` | Shipped; first production schedule pending |
+
+## LangSmith tracing (2026-11-25)
+
+| Issue ID | Title | Origin plan | Research artifact | Implementation commit(s) | PR | Test evidence | Deploy evidence | Closeout artifact | Final status |
+|---|---|---|---|---|---|---|---|---|---|
+| LANGSMITH-TRACING | LangSmith tracing for the app's AI, developer machine only | Approved plan-mode plan, 2026-11-25 | The plan's Context section | `feat/langsmith-tracing`, commit that adds this row | None | 2714 passed, 1 skipped (forks pool); 225 in the touched folders on final code | Not deployed | `docs/readiness/LANGSMITH_TRACING_CLOSEOUT_2026_11_25.md` | Implemented locally |
+| VITEST-EXIT-139 | Full suite can exit 139 after every test passes (threads pool) | None | `CHUNKED_DOCUMENT_UPLOAD_ARCHITECTURE_CLOSEOUT_2026_07_31.md:117` | None | None | Forks pool exits 0 | Not applicable | Recorded in `docs/readiness/LANGSMITH_TRACING_CLOSEOUT_2026_11_25.md`, owner Claude Code | Researched |
