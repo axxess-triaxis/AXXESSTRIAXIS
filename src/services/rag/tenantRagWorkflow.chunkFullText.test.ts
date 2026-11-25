@@ -130,3 +130,56 @@ describe("chunk full text", () => {
     expect(sql).toContain("c.document_id = any(p_document_ids)");
   });
 });
+
+describe("rank fusion in the semantic path", () => {
+  function semanticBackend() {
+    vi.stubGlobal("fetch", vi.fn(async (_url: string, init: RequestInit) => {
+      const { texts } = JSON.parse(String(init.body)) as { texts: string[] };
+      return new Response(JSON.stringify({ embeddings: texts.map(() => Array.from({ length: 384 }, () => 0.05)) }), { status: 200 });
+    }));
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://example.supabase.co");
+    vi.stubEnv("EMBED_FUNCTION_SECRET", "test-secret");
+    admin.rows["rpc/match_rag_document_chunks"] = [
+      { id: "chunk-berth", similarity: 0.81 },
+      { id: "chunk-crane", similarity: 0.8 },
+      { id: "chunk-pilot", similarity: 0.79 },
+    ];
+    admin.rows.rag_document_chunks = [chunk("berth", "Berth text."), chunk("crane", "Crane text."), chunk("pilot", "Form HB-PIL-221.")];
+    return [document("berth"), document("crane"), document("pilot")];
+  }
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
+  });
+
+  it("ranks the document holding the exact code first and keeps similarity as the score", async () => {
+    const documents = semanticBackend();
+    admin.rows["rpc/search_rag_chunks_fulltext"] = [{ id: "chunk-pilot", rank: 6, coverage: 0.95 }];
+
+    const answer = await answerTenantQuestion(repositories(documents), scope, "form HB-PIL-221");
+
+    expect(answer.retrievalMode).toBe("semantic");
+    expect(answer.sources.map((source) => [source.sourceId, source.score])).toEqual([["pilot", 0.79], ["berth", 0.81], ["crane", 0.8]]);
+  });
+
+  it.each([["fails", new Error("404")], ["matches nothing", []]])("keeps the similarity order when full text %s", async (_label, result) => {
+    const documents = semanticBackend();
+    admin.rows["rpc/search_rag_chunks_fulltext"] = result;
+
+    const answer = await answerTenantQuestion(repositories(documents), scope, "form HB-PIL-221");
+
+    expect(answer.sources.map((source) => source.sourceId)).toEqual(["berth", "crane", "pilot"]);
+  });
+
+  it("never fuses in a chunk the user may not read", async () => {
+    const documents = [...semanticBackend(), document("secret", { classification: "restricted" })];
+    admin.rows.rag_document_chunks = [...(admin.rows.rag_document_chunks as unknown[]), chunk("secret", "Secret text.")];
+    admin.rows["rpc/search_rag_chunks_fulltext"] = [{ id: "chunk-secret", rank: 9, coverage: 1 }];
+
+    const answer = await answerTenantQuestion(repositories(documents), scope, "secret");
+
+    expect(JSON.stringify(answer)).not.toContain("Secret text");
+    expect(answer.sources.map((source) => source.sourceId)).toEqual(["berth", "crane", "pilot"]);
+  });
+});

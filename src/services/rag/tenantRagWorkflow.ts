@@ -17,6 +17,7 @@ import { extractKeywords, summarizeText } from "../nlp/localNlp";
 import { answerWithGovernedRag, canRetrieveDocument, type RagAnswer, type RagCitation, type RagRetrievalMode } from "./governedRag";
 import { searchChunksFullText } from "./chunkFullText";
 import { buildConfidenceExplanation } from "./confidenceExplanation";
+import { displayScores, fuseRanks } from "./retrievalFusion";
 import { deterministicEmbeddingProvider } from "./embeddings/embeddingProvider";
 import { embedTexts, SEMANTIC_EMBEDDING_MODEL, toPgVector } from "./embeddings/semanticEmbeddings";
 import { buildRagIngestionRecord, chunkInstitutionalText } from "./ingestion/ingestionPipeline";
@@ -375,7 +376,9 @@ async function persistentCitationsForQuestion(
 
   // Semantic first: it ranks across every authorized document, so it runs before (and instead of)
   // the keyword narrowing below, which would drop documents that answer the question in other words.
-  const semantic = await semanticCitationsForQuestion(scope, permissions, authorizedDocuments, question, limit);
+  const semantic = await semanticCitationsForQuestion(
+    scope, permissions, authorizedDocuments, question, limit, Boolean(repositories.ragFullTextSearchRepository),
+  );
   if (semantic) return { citations: semantic, retrievalMode: "semantic" };
 
   // Full text over chunk bodies (2026-11-25), when a full-text repository is in use. If it cannot run or
@@ -501,6 +504,7 @@ async function semanticCitationsForQuestion(
   authorizedDocuments: Document[],
   question: string,
   limit: number,
+  fuseFullText: boolean,
 ): Promise<RagCitation[] | null> {
   const questionVectors = await embedTexts([question]);
   if (!questionVectors) return null;
@@ -516,12 +520,22 @@ async function semanticCitationsForQuestion(
   }).catch(() => null);
   if (!hits?.length) return null;
 
-  const similarityById = new Map(hits.map((hit) => [hit.id, hit.similarity]));
-  const rows = await chunkRowsById(scope, hits.map((hit) => hit.id));
+  // Rank fusion (2026-11-25): full text finds the codes and rare terms embeddings rank low. Without a
+  // full-text repository, or with nothing matched, the order is the similarity order as before.
+  const fullText = fuseFullText
+    ? await searchChunksFullText(scope, authorizedDocuments.map((document) => document.id), question, limit * 10) ?? []
+    : [];
+  const scoreById = displayScores({ semantic: hits, fullText });
+  const orderById = fuseRanks({ semantic: hits, fullText });
+  const rows = await chunkRowsById(scope, [...orderById.keys()]);
   if (!rows?.length) return null;
 
   const documentById = new Map(authorizedDocuments.map((document) => [document.id, document]));
-  const citations = authorizedCitations(scope, permissions, documentById, rows, limit, (row) => similarityById.get(row.id) ?? 0);
+  const citations = authorizedCitations(
+    scope, permissions, documentById, rows, limit,
+    (row) => scoreById.get(row.id) ?? 0,
+    (row) => orderById.get(row.id) ?? 0,
+  );
   return citations.length ? citations : null;
 }
 
