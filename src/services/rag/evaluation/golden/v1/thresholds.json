@@ -1,0 +1,11 @@
+{
+  "version": "v1",
+  "rule": "Measured baseline minus one question: 1/75 for recall, MRR and nDCG (75 questions have an answer), 1/16 for no-answer shares, no allowance for the share served by the mode's own path. Rounded down to 4 decimals. Leaks, errors and missing questions are always failures and have no threshold.",
+  "baseline": "CI run 45449439144 on fa0c17dbd166eecc8737b8b1ab89ea4b3f82250c, attempts 1 to 3, identical metrics (2026-11-24).",
+  "knownVacuous": "noAnswerCorrectness is 0 in every mode, and noAnswerAbstainedOrFlagged is 0 in semantic mode, because retrieval has no relevance cutoff. Those minimums cannot fail. Raise them when abstention is built.",
+  "modes": {
+    "hash": { "recallAt5": 0.5466, "mrr": 0.3884, "ndcgAt5": 0.4273, "noAnswerCorrectness": 0, "noAnswerAbstainedOrFlagged": 0.375, "servedByModeShare": 1 },
+    "fulltext": { "recallAt5": 0.5599, "mrr": 0.4302, "ndcgAt5": 0.4622, "noAnswerCorrectness": 0, "noAnswerAbstainedOrFlagged": 0.375, "servedByModeShare": 0.0833 },
+    "semantic": { "recallAt5": 0.9733, "mrr": 0.8982, "ndcgAt5": 0.9169, "noAnswerCorrectness": 0, "noAnswerAbstainedOrFlagged": 0, "servedByModeShare": 0.9907 }
+  }
+}

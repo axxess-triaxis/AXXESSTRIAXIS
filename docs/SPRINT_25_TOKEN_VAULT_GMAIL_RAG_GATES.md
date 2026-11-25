@@ -1,5 +1,7 @@
 # Sprint 25 - Token Vault, Gmail Import, Snapshot Fan-Out, And RAG Release Gates
 
+> **Correction, 2026-11-24:** the RAG release gate cited here is not evidence of retrieval quality or tenant isolation. Until 2026-11-24 it scored observations built from its own two fixtures and ran no retrieval code, so it could not fail. The replacement runs real retrieval: see `docs/readiness/RAG_RETRIEVAL_GATE_CLOSEOUT_2026_11_24.md`.
+
 Sprint 25 hardens the Sprint 24 operating layer so live connectors and release quality gates can move closer to production use without exposing provider tokens or relying on manual tenant-by-tenant operations.
 
 ## What Shipped

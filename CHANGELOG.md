@@ -82,6 +82,7 @@ All notable changes to AXXESS are documented here. This project follows the spir
 - Added all-tenant scheduled Pilot Command Center snapshot fan-out with run evidence.
 - Added AI Workspace navigation entry to the tenant AI Review Inbox.
 - Added required RAG release gate script and GitHub Actions workflow for citation, confidence, human-review, and permission regression checks.
+  - **Correction, 2026-11-24:** the RAG release gate cited here is not evidence of retrieval quality or tenant isolation. Until 2026-11-24 it scored observations built from its own two fixtures and ran no retrieval code, so it could not fail. The replacement runs real retrieval: see `docs/readiness/RAG_RETRIEVAL_GATE_CLOSEOUT_2026_11_24.md`.
 - Added Sprint 25 Supabase migration for `oauth_token_vault`, `gmail_selected_message_imports`, and `command_center_snapshot_runs` with RLS.
 - Added Sprint 24 tenant-facing AI Review Inbox with review read/decision APIs.
 - Added Sprint 24 OAuth callback/token exchange path with signed state verification and token-reference connection upserts.

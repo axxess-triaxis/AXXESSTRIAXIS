@@ -65,7 +65,7 @@ export function evaluateRagReleaseGate(
       messages.push("Restricted fixture without expected sources must require human review.");
     }
 
-    const status: "passed" | "warning" | "failed" = messages.some((message) => message.includes("Unauthorized")) || messages.some((message) => message.includes("Missing expected")) ? "failed" : messages.length > 0 ? "warning" : "passed";
+    const status: "passed" | "warning" | "failed" = !observation || messages.some((message) => message.includes("Unauthorized")) || messages.some((message) => message.includes("Missing expected")) ? "failed" : messages.length > 0 ? "warning" : "passed";
     return { fixtureId: fixture.id, status, messages };
   });
   const failedFixtures = findings.filter((finding) => finding.status === "failed").length;
@@ -80,12 +80,14 @@ export function evaluateRagReleaseGate(
   };
 }
 
-export function buildPassingRagReleaseGateObservations(fixtures: RagEvaluationFixture[] = ragEvaluationFixtures): RagEvaluationObservation[] {
-  return fixtures.map((fixture) => ({
-    fixtureId: fixture.id,
-    sourceIds: fixture.expectedSourceIds,
-    confidence: Math.max(fixture.minimumConfidence, 0.74),
-    humanReviewRequired: fixture.expectedSourceIds.length === 0,
-  }));
+/** True only for a complete observation; a partial one must not be scored as if it were measured. */
+export function isRagEvaluationObservation(value: unknown): value is RagEvaluationObservation {
+  if (typeof value !== "object" || value === null) return false;
+  const observation = value as Record<string, unknown>;
+  const isStringList = (list: unknown) => Array.isArray(list) && list.every((item) => typeof item === "string");
+  return typeof observation.fixtureId === "string"
+    && isStringList(observation.sourceIds)
+    && typeof observation.confidence === "number" && Number.isFinite(observation.confidence)
+    && (observation.unauthorizedSourceIds === undefined || isStringList(observation.unauthorizedSourceIds))
+    && (observation.humanReviewRequired === undefined || typeof observation.humanReviewRequired === "boolean");
 }
-
