@@ -135,9 +135,50 @@ check; they were not edited one by one, and this paragraph is their correction.
 - Founder merge decision on the PR.
 - `rag_release_gates` in production may hold passes recorded with no observations. Not checked; production
   was out of scope. Treat every row dated before this change as unverified.
-- `POST /api/rag/evaluation` still lets any signed-in user record observations they typed in, because it
-  writes with the service role. The row now says `client_supplied`. An admin-only check is a separate change.
+- `POST /api/rag/evaluation` let any signed-in user record observations they typed in, because it writes
+  with the service role. Fixed in a follow-up change on `fix/rag-evaluation-admin-only`; see the next
+  section. Not merged.
 - Findings 3 to 5 are candidates for later work, measured with this gate.
+
+## Follow-up: POST is admin only (2026-11-25)
+
+Branch `fix/rag-evaluation-admin-only`, stacked on PR #574. Status: **PR open; not merged, not deployed. No
+production data was read or written.**
+
+- **What changed.** `POST /api/rag/evaluation` now calls the shared `canManageOrganization` check in
+  `src/security/rbac.ts`, before the body is read. Anyone but a Super Admin or Organization Admin gets 403,
+  nothing is written, and the refusal is recorded as `access.denied`. These are the roles in
+  `rag_release_gates_admin_access`.
+- **What did not change.** `GET`, the RLS policy, migrations, and the service-role write itself. An admin can
+  still record observations they typed in, marked `client_supplied`. Rows already in production were not
+  checked.
+- **Red first.** On `5c287e92` (tests only): 6 failed, 9 passed of 15. The five non-admin roles got 200
+  instead of 403, and an Employee with an empty body got 400. On `cb266df3`: 15 of 15 pass.
+
+| Check on `cb266df3` | Command | Result |
+|---|---|---|
+| Typecheck | `pnpm run typecheck` | exit 0 |
+| Mobile typecheck | `pnpm --dir apps/mobile run typecheck` | exit 0 |
+| Lint | `pnpm run lint` | exit 0, zero warnings |
+| Supabase verify | `pnpm run supabase:verify` | passed, 61 migrations, 129 of 129 tables with RLS |
+| Full suite | `pnpm run test --pool=forks --maxWorkers=2` | exit 0, 402 of 402 files, 2585 of 2585 tests |
+| Build | `pnpm run build` | exit 0 |
+
+**Error on the way.** `pnpm run test --maxWorkers=2` with the configured `threads` pool ended in a segmentation
+fault (exit 139) after about 8 minutes, with no summary. The hypothesis was a native fault that takes down the
+one shared process; `forks` gives each file its own. The forks run passed, which fits but does not prove the
+cause. No config was changed here. Owner: branch `fix/vitest-local-reliability`.
+
+```
+Decision: Enforce the rag_release_gates admin rule in the route with the existing canManageOrganization helper.
+Why: The service-role write bypasses RLS, so any signed-in user could record gate results.
+What changed: One check and one denied-attempt audit record in POST; nine tests.
+Architecture boundary: Existing helpers only. No migration, no new dependency.
+Product boundary: GET and retrieval are unchanged.
+Verification: The table above.
+Outcome: Pending, review by 2026-12-08 (merge, after #574).
+Follow-up: None in code. Rows recorded before the fix remain unverified.
+```
 
 ## Decision ledger
 
@@ -149,5 +190,5 @@ Architecture boundary: Existing pgvector and PostgREST path only. No LangChain, 
 Product boundary: Retrieval behaviour is unchanged. POST /api/rag/evaluation now rejects empty input.
 Verification: CI runs 45447751231 (red), 45451898878 (pass), 45452956838 (deliberate failure).
 Outcome: The gate fails on real breakages. Merge: Pending, review by 2026-12-08.
-Follow-up: Abstention, full-text coverage and the API role check, each as its own change.
+Follow-up: Abstention and full-text coverage, each as its own change. API role check: see the follow-up above.
 ```

@@ -140,7 +140,8 @@ self-test edit stop matching, the gate fails and names it: update `scripts/rag-g
 secret.
 
 **API.** `GET /api/rag/evaluation` reports `not_measured`. `POST` scores only complete observations the
-caller supplies, returns 400 and records nothing otherwise, and marks the row `client_supplied`. Rows in
+caller supplies, returns 400 and records nothing otherwise, and marks the row `client_supplied`. `POST` is for
+Super Admins and Organization Admins; other roles get 403 and nothing is recorded. Rows in
 `rag_release_gates` from before 2026-11-24 may be passes with nothing observed.
 
 ## Chunk full text, rank fusion and abstention (2026-11-25)
