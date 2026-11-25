@@ -1,7 +1,7 @@
 # Chunk full text, rank fusion and abstention: closeout, 2026-11-25
 
 PR [#575](https://github.com/axxess-triaxis/AXXESSTRIAXIS/pull/575), branch `feat/rag-retrieval-quality`,
-stacked on `feat/rag-real-retrieval-gate` (PR #574, head `ba73ac89`, open when this was written). Status:
+built on PR #574 (head `ba73ac89`, merged to `main` 2026-11-25 as `306f2c89`); now targets `main`. Status:
 **PR open; not merged, not deployed. The migration is applied to no hosted project. No production data was
 read or written.** Plan and acceptance criteria: `RAG_RETRIEVAL_QUALITY_PLAN_2026_11_24.md`.
 
@@ -174,7 +174,7 @@ Screens were not checked by hand: no UI changed.
   happen on the rerun or in CI. `CHUNKED_DOCUMENT_UPLOAD_ARCHITECTURE_CLOSEOUT_2026_07_31.md` and
   `RAG_DOCUMENT_TEXT_EXTRACTION_CLOSEOUT_2026_07_30.md` describe similar local crashes from native modules.
   Same cause here is a hypothesis, not shown.
-- Founder decisions: merge #574, then #575; and when to apply the migration.
+- Founder decisions: merge #575 (a push to `main` deploys production); and when to apply the migration.
 - Possible follow-up, unverified: `match_rag_document_chunks` filters by organization and document after the
   HNSW search, so on a large multi-tenant table it could return fewer rows than exist. The golden sets are
   too small to show it.
