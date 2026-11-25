@@ -1,30 +1,11 @@
 {
   "version": "v2",
-  "rule": "Same rule as v1: measured baseline minus one question. Not measured yet: every minimum is 0 until the first CI run on unchanged retrieval code. Leaks, errors and missing questions fail regardless.",
+  "rule": "Measured baseline minus one question: 1/76 for recall, MRR and nDCG (76 questions have an answer), 1/33 for no-answer shares, no allowance for the share served by the mode's own path. Rounded down to 4 decimals. Leaks, errors and missing questions are always failures and have no threshold.",
+  "baseline": "CI run 45543893235 on 6d3cb068d9dc4bc60cafd8cc4ac24b1d7f8dcb68, retrieval code unchanged (2026-11-25).",
+  "knownVacuous": "noAnswerCorrectness is 0 in every mode, and noAnswerAbstainedOrFlagged is 0 in semantic mode, because retrieval has no relevance cutoff.",
   "modes": {
-    "hash": {
-      "recallAt5": 0,
-      "mrr": 0,
-      "ndcgAt5": 0,
-      "noAnswerCorrectness": 0,
-      "noAnswerAbstainedOrFlagged": 0,
-      "servedByModeShare": 0
-    },
-    "fulltext": {
-      "recallAt5": 0,
-      "mrr": 0,
-      "ndcgAt5": 0,
-      "noAnswerCorrectness": 0,
-      "noAnswerAbstainedOrFlagged": 0,
-      "servedByModeShare": 0
-    },
-    "semantic": {
-      "recallAt5": 0,
-      "mrr": 0,
-      "ndcgAt5": 0,
-      "noAnswerCorrectness": 0,
-      "noAnswerAbstainedOrFlagged": 0,
-      "servedByModeShare": 0
-    }
+    "hash": { "recallAt5": 0.5921, "mrr": 0.2723, "ndcgAt5": 0.3501, "noAnswerCorrectness": 0, "noAnswerAbstainedOrFlagged": 0.5757, "servedByModeShare": 1.0 },
+    "fulltext": { "recallAt5": 0.6184, "mrr": 0.3282, "ndcgAt5": 0.3989, "noAnswerCorrectness": 0, "noAnswerAbstainedOrFlagged": 0.5757, "servedByModeShare": 0.064 },
+    "semantic": { "recallAt5": 0.9736, "mrr": 0.91, "ndcgAt5": 0.9265, "noAnswerCorrectness": 0, "noAnswerAbstainedOrFlagged": 0, "servedByModeShare": 0.992 }
   }
 }
