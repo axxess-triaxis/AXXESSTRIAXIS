@@ -74,9 +74,9 @@ export const MUTATIONS = [
     edits: [[ABSTENTION, "if (topSimilarity === undefined || topCoverage === undefined) return \"answer\";", "return \"answer\";"]],
   },
   {
-    id: "full-text-abstention-removed",
+    id: "full-text-review-flag-removed",
     modes: ["fulltext"],
-    description: "With no matching word, full-text mode goes back to ranking by the token hash.",
+    description: "With no matching word, full-text mode no longer asks for human review.",
     edits: [[WORKFLOW, "noWordMatches = hits?.length === 0;", "noWordMatches = false;"]],
   },
   {

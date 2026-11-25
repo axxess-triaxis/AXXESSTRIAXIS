@@ -431,11 +431,11 @@ async function persistentCitationsForQuestion(
   const citations = authorizedCitations(scope, permissions, documentById, rows, limit, (row) =>
     row.embedding_hash.reduce((sum, value, index) => sum + value * (questionVector[index] ?? 0), 0));
 
-  // Abstention (2026-11-25): with no word of the question in any readable chunk, title or description, the
-  // token hash would only be ranking noise. With nothing indexed there are no citations here either, and the
-  // caller's governed fallback still runs.
-  if (noWordMatches && retrievalMode === "full_scan" && !documentIdFilter && citations.length) {
-    return { citations: [], retrievalMode: "fulltext_search", evidence: { candidates: 0, topCoverage: 0 }, decision: "abstain" };
+  // No word of the question is in any readable chunk, title or description, so only the token hash ranked
+  // these: ask for review. Abstaining here was measured and dropped: on the held-out golden set v2 it removed
+  // 4 of 53 correct answers (CI run 45547527087).
+  if (noWordMatches && retrievalMode === "full_scan" && !documentIdFilter) {
+    return { citations, retrievalMode, evidence: { candidates: 0, topCoverage: 0 }, decision: "review" };
   }
 
   return { citations, retrievalMode };

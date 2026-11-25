@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Document } from "../../domain";
+import { deterministicEmbeddingProvider } from "./embeddings/embeddingProvider";
 import type { TenantRagRepositories } from "./tenantRagWorkflow";
 
 const { admin } = vi.hoisted(() => ({
@@ -202,8 +203,6 @@ describe("rank fusion in the semantic path", () => {
 });
 
 describe("abstention", () => {
-  const hashed = { embedding_hash: Array.from({ length: 16 }, () => 0.25) };
-
   afterEach(() => {
     vi.unstubAllGlobals();
     vi.unstubAllEnvs();
@@ -251,15 +250,17 @@ describe("abstention", () => {
     expect((await answerTenantQuestion(repositories(documents), scope, "Where do I park bicycles?")).sources).toHaveLength(2);
   });
 
-  it("abstains in full-text mode when no word of the question is in any readable chunk, title or description", async () => {
+  it("flags for review, and still shows sources, when no word of the question is in any readable chunk, title or description", async () => {
     admin.rows["rpc/search_rag_chunks_fulltext"] = [];
-    admin.rows.rag_document_chunks = [chunk("crane", "Crane text.", hashed)];
+    // A perfect hash match, so the score alone would not ask for review.
+    admin.rows.rag_document_chunks = [chunk("crane", "Crane text.", { embedding_hash: await deterministicEmbeddingProvider.embed("bicycles") })];
 
     const answer = await answerTenantQuestion(repositories([document("crane")]), scope, "bicycles");
 
-    expect(answer.sources).toEqual([]);
+    expect(answer.sources).toHaveLength(1);
+    expect(answer.sources[0].score).toBeGreaterThan(0.5);
     expect(answer.humanReviewRequired).toBe(true);
-    expect(answer.retrievalMode).toBe("fulltext_search");
+    expect(answer.retrievalMode).toBe("full_scan");
     expect(answer.retrievalEvidence).toEqual({ candidates: 0, topCoverage: 0 });
   });
 
