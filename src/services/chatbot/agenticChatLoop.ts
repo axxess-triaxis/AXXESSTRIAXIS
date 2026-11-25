@@ -233,28 +233,72 @@ async function stepLoop(
   };
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+// One turn writes at most an assistant message and a tool message per iteration.
+const MAX_RESUME_TRANSCRIPT_ENTRIES = MAX_AGENTIC_LOOP_ITERATIONS * 2;
+
+/** The resume payload as the browser sent it, or undefined if its shape is wrong. Shape only: what it
+ *  asks for is checked again in executeConfirmedPendingTool. */
+export function parseAgenticResume(value: unknown): AgenticChatResumeInput | undefined {
+  if (!isRecord(value)) return undefined;
+  const { transcript, pendingTool, userMessage, iterationsUsed, confirmed } = value;
+  if (typeof confirmed !== "boolean" || typeof iterationsUsed !== "number") return undefined;
+  if (typeof userMessage !== "string" || !userMessage) return undefined;
+  if (!isRecord(pendingTool) || typeof pendingTool.id !== "string" || typeof pendingTool.name !== "string" || !isRecord(pendingTool.arguments)) return undefined;
+  if (!Array.isArray(transcript) || transcript.length > MAX_RESUME_TRANSCRIPT_ENTRIES) return undefined;
+  if (!transcript.every((entry) => isRecord(entry) && (entry.role === "assistant" || entry.role === "tool"))) return undefined;
+  return {
+    transcript: transcript as AiConversationMessage[],
+    pendingTool: { id: pendingTool.id, name: pendingTool.name, arguments: pendingTool.arguments },
+    userMessage,
+    iterationsUsed,
+    confirmed,
+  };
+}
+
+// The paused state round-trips through the browser, so nothing in it is trusted: the tool must still
+// be one this user's role may use, one that pauses for confirmation, with arguments that pass its
+// schema -- the same checks stepLoop makes before pausing. A pause always follows at least one
+// iteration; any other count ends the turn after this tool rather than buying extra model calls.
+// Not covered here: the state is not stored server-side, so a repeated confirm runs again.
 async function executeConfirmedPendingTool(resume: AgenticChatResumeInput, scope: AgentScope): Promise<LoopState> {
-  const state: LoopState = { transcript: [...resume.transcript], iterationsUsed: resume.iterationsUsed, steps: [], costUsd: 0 };
+  const iterationsUsed = Number.isInteger(resume.iterationsUsed) && resume.iterationsUsed >= 1
+    ? resume.iterationsUsed
+    : MAX_AGENTIC_LOOP_ITERATIONS;
+  const state: LoopState = { transcript: [...resume.transcript], iterationsUsed, steps: [], costUsd: 0 };
   const tool = getAgentTool(resume.pendingTool.name);
 
-  if (!tool) {
+  if (!tool || tool.criticality !== "critical" || !agentScopeHasCapability(scope, tool.requiredCapability)) {
+    if (tool) {
+      await recordAgentToolAuditEvent(scope, { toolName: tool.name, success: false, errorMessage: "Confirmed action refused: not available to this user." });
+    }
     state.transcript.push({ role: "tool", toolCallId: resume.pendingTool.id, name: resume.pendingTool.name, content: `That action isn't available: ${resume.pendingTool.name}.` });
     return state;
   }
 
+  const validation = validateAgentToolArguments(tool, resume.pendingTool.arguments);
+  if (!validation.ok) {
+    await recordAgentToolAuditEvent(scope, { toolName: tool.name, success: false, errorMessage: `Confirmed action refused: ${validation.message}` });
+    state.transcript.push({ role: "tool", toolCallId: resume.pendingTool.id, name: tool.name, content: `Invalid arguments: ${validation.message}` });
+    return state;
+  }
+
   try {
-    const result = await tool.handler(scope, resume.pendingTool.arguments);
+    const result = await tool.handler(scope, validation.args);
     await recordAgentToolAuditEvent(scope, {
       toolName: tool.name,
       success: !result.isError,
-      argsSummary: resume.pendingTool.arguments,
+      argsSummary: validation.args,
       errorMessage: result.isError ? resultText(result.content) : undefined,
     });
     state.transcript.push({ role: "tool", toolCallId: resume.pendingTool.id, name: tool.name, content: resultText(result.content) });
     if (!result.isError) state.steps.push({ toolName: tool.name, summary: summarizeStep(tool.name) });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown tool execution error.";
-    await recordAgentToolAuditEvent(scope, { toolName: tool.name, success: false, argsSummary: resume.pendingTool.arguments, errorMessage: message });
+    await recordAgentToolAuditEvent(scope, { toolName: tool.name, success: false, argsSummary: validation.args, errorMessage: message });
     state.transcript.push({ role: "tool", toolCallId: resume.pendingTool.id, name: tool.name, content: `Tool execution failed: ${message}` });
   }
 
