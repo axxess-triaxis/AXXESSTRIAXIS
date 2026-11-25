@@ -538,7 +538,14 @@ async function semanticCitationsForQuestion(
     (row) => scoreById.get(row.id) ?? 0,
     (row) => orderById.get(row.id) ?? 0,
   );
-  return citations.length ? { citations, evidence: semanticEvidence(hits, searched) } : null;
+  if (!citations.length) return null;
+
+  // The similarity search is limited by document, not by chunk role, so role-restricted chunks are dropped
+  // before anything is judged from the scores.
+  const readable = new Set(
+    rows.filter((row) => row.role_allowlist.length === 0 || row.role_allowlist.includes(scope.role)).map((row) => row.id),
+  );
+  return { citations, evidence: semanticEvidence(hits.filter((hit) => readable.has(hit.id)), searched) };
 }
 
 export async function answerTenantQuestion(

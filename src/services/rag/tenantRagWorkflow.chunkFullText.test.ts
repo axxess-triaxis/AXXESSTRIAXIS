@@ -172,6 +172,23 @@ describe("rank fusion in the semantic path", () => {
     expect(answer.sources.map((source) => source.sourceId)).toEqual(["berth", "crane", "pilot"]);
   });
 
+  it("leaves role-restricted chunks out of the evidence", async () => {
+    const documents = semanticBackend();
+    admin.rows["rpc/match_rag_document_chunks"] = [
+      { id: "chunk-board", similarity: 0.97 },
+      ...(admin.rows["rpc/match_rag_document_chunks"] as unknown[]),
+    ];
+    admin.rows.rag_document_chunks = [
+      ...(admin.rows.rag_document_chunks as unknown[]),
+      { ...chunk("berth", "Board text."), id: "chunk-board", role_allowlist: ["Super Admin"] },
+    ];
+    admin.rows["rpc/search_rag_chunks_fulltext"] = [{ id: "chunk-berth", rank: 1, coverage: 0.7 }];
+
+    const answer = await answerTenantQuestion(repositories(documents), scope, "board");
+
+    expect(answer.retrievalEvidence).toMatchObject({ topSimilarity: 0.81, candidates: 3, semanticTopCoverage: 0.7 });
+  });
+
   it("never fuses in a chunk the user may not read", async () => {
     const documents = [...semanticBackend(), document("secret", { classification: "restricted" })];
     admin.rows.rag_document_chunks = [...(admin.rows.rag_document_chunks as unknown[]), chunk("secret", "Secret text.")];
