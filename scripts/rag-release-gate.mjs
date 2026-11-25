@@ -16,7 +16,10 @@ import { fileURLToPath } from "node:url";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const EVALUATION = "src/services/rag/evaluation";
-const GOLDEN_VERSION = "v1";
+// Measured in this order. Each set is measured and self-tested before the next one is indexed, so adding a
+// set never changes the numbers of the ones before it. v1 is for choosing rules, v2 is held out.
+const GOLDEN_VERSIONS = ["v1", "v2"];
+const SELF_TEST_VERSION = "v1";
 const OUTPUT_DIRECTORY = path.join(ROOT, "test-results", "rag-release-gate");
 
 function notMeasured(reason) {
@@ -32,8 +35,8 @@ function readBackend() {
   return Object.fromEntries(Object.entries(names).map(([key, name]) => [key, process.env[name]]));
 }
 
-function readJson(file) {
-  return JSON.parse(readFileSync(path.join(ROOT, EVALUATION, "golden", GOLDEN_VERSION, file), "utf8"));
+function readJson(version, file) {
+  return JSON.parse(readFileSync(path.join(ROOT, EVALUATION, "golden", version, file), "utf8"));
 }
 
 function commit() {
@@ -74,75 +77,91 @@ async function load(file, plugins = []) {
   return module;
 }
 
-const golden = { corpus: readJson("corpus.json"), questions: readJson("questions.json").questions };
-const thresholds = readJson("thresholds.json");
 const { goldenSetProblems } = await load("goldenSet.ts");
 const { RETRIEVAL_MODES, gateFailures, scoreMode } = await load("retrievalScoring.ts");
-
-const problems = goldenSetProblems(golden);
-if (problems.length > 0) notMeasured(`The golden set is inconsistent: ${problems.join(" ")}`);
-
 const harness = await load("retrievalHarness.ts");
-const state = await harness.prepareGoldenSet(backend, golden);
-console.error(`Indexed ${golden.corpus.documents.length} documents as ${state.chunks} chunks for ${golden.corpus.tenants.length} tenants.`);
 
-const modes = [];
-for (const mode of RETRIEVAL_MODES) {
-  const { metrics, scores } = scoreMode(golden, mode, await harness.observeMode(backend, golden, state, mode));
-  modes.push({ metrics, scores, failures: gateFailures(golden, metrics, thresholds.modes[mode] ?? {}) });
-}
+async function measureSet(version) {
+  const golden = { corpus: readJson(version, "corpus.json"), questions: readJson(version, "questions.json").questions };
+  const thresholds = readJson(version, "thresholds.json");
+  const problems = goldenSetProblems(golden);
+  if (problems.length > 0) notMeasured(`Golden set ${version} is inconsistent: ${problems.join(" ")}`);
 
-const failures = modes.flatMap((mode) => mode.failures);
-for (const mode of RETRIEVAL_MODES) if (!thresholds.modes[mode]) failures.push(`${mode}: no thresholds are set.`);
+  const state = await harness.prepareGoldenSet(backend, golden);
+  console.error(`${version}: indexed ${golden.corpus.documents.length} documents as ${state.chunks} chunks for ${golden.corpus.tenants.length} tenants.`);
 
-const selfTest = [];
-if (process.argv.includes("--self-test")) {
-  for (const mutation of MUTATIONS) {
-    const { plugin, assertApplied } = mutationPlugin(mutation);
-    const broken = await load("retrievalHarness.ts", [plugin]);
-    assertApplied();
-    for (const mode of mutation.modes) {
-      const { metrics } = scoreMode(golden, mode, await broken.observeMode(backend, golden, state, mode));
-      const caughtBy = gateFailures(golden, metrics, thresholds.modes[mode] ?? {});
-      selfTest.push({ mutation: mutation.id, description: mutation.description, mode, caught: caughtBy.length > 0, caughtBy, metrics });
-      if (caughtBy.length === 0) failures.push(`Self-test: ${mutation.id} in ${mode} mode was not caught.`);
+  const modes = [];
+  for (const mode of RETRIEVAL_MODES) {
+    const { metrics, scores } = scoreMode(golden, mode, await harness.observeMode(backend, golden, state, mode));
+    modes.push({ metrics, scores, failures: gateFailures(golden, metrics, thresholds.modes[mode] ?? {}) });
+  }
+  const failures = modes.flatMap((mode) => mode.failures);
+  for (const mode of RETRIEVAL_MODES) if (!thresholds.modes[mode]) failures.push(`${mode}: no thresholds are set.`);
+
+  const selfTest = [];
+  if (version === SELF_TEST_VERSION && process.argv.includes("--self-test")) {
+    for (const mutation of MUTATIONS) {
+      const { plugin, assertApplied } = mutationPlugin(mutation);
+      const broken = await load("retrievalHarness.ts", [plugin]);
+      assertApplied();
+      for (const mode of mutation.modes) {
+        const { metrics } = scoreMode(golden, mode, await broken.observeMode(backend, golden, state, mode));
+        const caughtBy = gateFailures(golden, metrics, thresholds.modes[mode] ?? {});
+        selfTest.push({ mutation: mutation.id, description: mutation.description, mode, caught: caughtBy.length > 0, caughtBy, metrics });
+        if (caughtBy.length === 0) failures.push(`Self-test: ${mutation.id} in ${mode} mode was not caught.`);
+      }
     }
   }
+
+  const set = {
+    goldenVersion: version,
+    documents: golden.corpus.documents.length,
+    chunks: state.chunks,
+    questions: golden.questions.length,
+    failures: failures.map((failure) => `${version}: ${failure}`),
+    thresholds: thresholds.modes,
+    modes: modes.map(({ metrics }) => metrics),
+    selfTest: selfTest.map(({ metrics, ...entry }) => ({
+      ...entry,
+      recallAt5: metrics.recallAt5,
+      mrr: metrics.mrr,
+      crossTenantLeaks: metrics.crossTenantLeaks,
+      unauthorizedLeaks: metrics.unauthorizedLeaks,
+    })),
+    perQuestion: Object.fromEntries(modes.map(({ metrics, scores }) => [metrics.mode, scores])),
+  };
+  return { set, modes };
 }
 
+const measured = [];
+for (const version of GOLDEN_VERSIONS) measured.push(await measureSet(version));
+
+const failures = measured.flatMap(({ set }) => set.failures);
 const result = {
   gate: "rag-release-gate",
   status: failures.length === 0 ? "passed" : "failed",
-  goldenVersion: golden.corpus.version,
   commit: commit(),
   measuredAt: new Date().toISOString(),
-  documents: golden.corpus.documents.length,
-  chunks: state.chunks,
-  questions: golden.questions.length,
   failures,
-  thresholds: thresholds.modes,
-  modes: modes.map(({ metrics }) => metrics),
-  selfTest: selfTest.map(({ metrics, ...entry }) => ({
-    ...entry,
-    recallAt5: metrics.recallAt5,
-    mrr: metrics.mrr,
-    crossTenantLeaks: metrics.crossTenantLeaks,
-    unauthorizedLeaks: metrics.unauthorizedLeaks,
-  })),
-  perQuestion: Object.fromEntries(modes.map(({ metrics, scores }) => [metrics.mode, scores])),
+  sets: Object.fromEntries(measured.map(({ set }) => [set.goldenVersion, set])),
 };
 
 mkdirSync(OUTPUT_DIRECTORY, { recursive: true });
 writeFileSync(path.join(OUTPUT_DIRECTORY, "results.json"), `${JSON.stringify(result, null, 2)}\n`);
 
-const selfTestTable = selfTest.length === 0 ? "" : [
-  "", "### Deliberate breakages", "", "| Breakage | Mode | Caught | Reason |", "|---|---|---|---|",
-  ...selfTest.map((entry) => `| ${entry.mutation} | ${entry.mode} | ${entry.caught ? "yes" : "NO"} | ${entry.caughtBy.join(" ")} |`),
-].join("\n");
+function selfTestTable(selfTest) {
+  return selfTest.length === 0 ? "" : [
+    "", "### Deliberate breakages", "", "| Breakage | Mode | Caught | Reason |", "|---|---|---|---|",
+    ...selfTest.map((entry) => `| ${entry.mutation} | ${entry.mode} | ${entry.caught ? "yes" : "NO"} | ${entry.caughtBy.join(" ")} |`),
+  ].join("\n");
+}
 const report = [
   `## RAG release gate: ${result.status}`, "",
-  `Golden set ${result.goldenVersion}, commit \`${result.commit}\`, measured ${result.measuredAt}: ${result.documents} synthetic documents, ${result.chunks} chunks, ${result.questions} questions.`,
-  "", resultsTable(modes), "", categoryTable(modes), selfTestTable,
+  `Commit \`${result.commit}\`, measured ${result.measuredAt}.`,
+  ...measured.flatMap(({ set, modes }) => [
+    "", `### Golden set ${set.goldenVersion}: ${set.documents} synthetic documents, ${set.chunks} chunks, ${set.questions} questions`,
+    "", resultsTable(modes), "", categoryTable(modes), selfTestTable(set.selfTest),
+  ]),
   ...(failures.length > 0 ? ["", "### Failures", "", ...failures.map((failure) => `- ${failure}`)] : []),
   "",
 ].join("\n");
