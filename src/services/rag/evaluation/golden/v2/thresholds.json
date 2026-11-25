@@ -6,10 +6,11 @@
   "modes": {
     "hash": { "recallAt5": 0.5921, "mrr": 0.2723, "ndcgAt5": 0.3501, "noAnswerCorrectness": 0, "noAnswerAbstainedOrFlagged": 0.5757, "servedByModeShare": 1.0 },
     "fulltext": { "recallAt5": 0.6842, "mrr": 0.5973, "ndcgAt5": 0.6187, "noAnswerCorrectness": 0, "noAnswerAbstainedOrFlagged": 0.8181, "servedByModeShare": 0.84 },
-    "semantic": { "recallAt5": 0.9736, "mrr": 0.932, "ndcgAt5": 0.9428, "noAnswerCorrectness": 0, "noAnswerAbstainedOrFlagged": 0, "servedByModeShare": 0.992 }
+    "semantic": { "recallAt5": 0.9736, "mrr": 0.932, "ndcgAt5": 0.9428, "noAnswerCorrectness": 0.2727, "noAnswerAbstainedOrFlagged": 0.5757, "servedByModeShare": 0.992 }
   },
   "raised": [
     "fulltext: chunk full text, CI run 45545327157 on 247aa457 (2026-11-25)",
-    "semantic: rank fusion, commit 9bfd41cd, CI run 45546783045, 2026-11-25"
+    "semantic: rank fusion, commit 9bfd41cd, CI run 45546783045, 2026-11-25",
+    "semantic: semantic abstention, commit 532a0226, CI run 45547527087, 2026-11-25"
   ]
 }
