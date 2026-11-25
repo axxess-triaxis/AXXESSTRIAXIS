@@ -5,6 +5,7 @@ import { isSupabaseAdminConfigured, supabaseAdminRest } from "../../../../reposi
 import { getAiProviderConfigurations } from "../../../../services/ai/model-routing-policy";
 import { classifyAiPrompt } from "../../../../services/ai/prompt-classifier";
 import { buildTenantModelPolicy, selectTenantModelRoute } from "../../../../services/ai/tenantModelPolicy";
+import { buildCallerRoutingContext } from "../../../../services/ai/callerRoutingContext";
 import type { AiPromptRequest, AiRoutingContext } from "../../../../services/ai/types";
 import { getAiRouterStatusSnapshot } from "../../../../services/ai/router/aiRouter";
 
@@ -41,12 +42,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Cross-organization AI policy preview is not allowed." }, { status: 403 });
   }
 
-  const context: AiRoutingContext = {
-    ...requestedContext,
-    organizationId: session.user.organizationId,
-    userId: session.user.id,
-    userRole: session.user.role,
-  };
+  const context = buildCallerRoutingContext({ prompt: body.prompt, task: body.task, context: body.context }, session.user);
   const classification = classifyAiPrompt({ prompt: body.prompt, task: body.task, context });
   const decision = selectTenantModelRoute(body.prompt, classification, context, getAiProviderConfigurations());
   const scope = tenantScopeFromUser(session.user, session.accessToken);
