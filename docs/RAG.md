@@ -34,6 +34,9 @@ Restricted documents require elevated roles and automatically flag human review 
 
 ## Current Retrieval
 
+> Historical (Sprint 11). Semantic retrieval was added 2026-10-05; measured results are under
+> "Retrieval quality gate" below.
+
 The current implementation uses deterministic local token similarity. This keeps investor preview and offline development reliable without downloading external models. The service is structured so production embeddings can be introduced later without changing UI contracts.
 
 ## Audit
@@ -88,3 +91,79 @@ The Supabase migration `202607100001_sprint14_rag_integrations_alerts.sql` intro
 - Organization-scoped policies
 
 The runtime remains safe when remote model providers are unavailable because deterministic local embeddings and in-memory vector storage are available for tests, investor preview, and clean development tenants.
+
+## Retrieval quality gate (2026-11-24)
+
+`pnpm run rag:release-gate` measures the real retrieval path. It replaced a gate that scored observations
+built from its own fixtures and so could not fail.
+
+**What runs.** `.github/workflows/rag-release-gate.yml` starts a local Supabase stack on the runner: the
+real migrations, PostgREST, Auth, pgvector and the `embed` function (gte-small). The harness creates three
+synthetic tenants, signs in as synthetic users, indexes 56 documents with `ingestTenantDocument`, and asks
+108 questions with `answerTenantQuestion`, the function behind `POST /api/rag/query`. No hosted project and
+no model provider is contacted, and the harness refuses any URL that is not local.
+
+**Modes.** `semantic` (embed function configured), `fulltext` (not configured: full-text search narrows,
+the token hash ranks) and `hash` (token hash over every authorized document). These are the ways production
+itself degrades.
+
+**Measured 2026-11-24** on commit `5b1e7dcf`, CI run 45451898878:
+
+| Mode | Recall at 5 | MRR | nDCG at 5 | No-answer correct | Cross-tenant leaks | Unauthorized leaks |
+|---|---|---|---|---|---|---|
+| hash | 0.5600 | 0.4018 | 0.4407 | 0/16 | 0 | 0 |
+| fulltext | 0.5733 | 0.4436 | 0.4756 | 0/16 | 0 | 0 |
+| semantic | 0.9867 | 0.9116 | 0.9303 | 0/16 | 0 | 0 |
+| *random order, calculated* | *0.3511* | *0.1603* | *0.2070* | | | |
+
+**What fails the build.** Any cross-tenant or unauthorized-document leak, any query error, any chunk without
+an embedding, any question not asked, or a metric below `golden/v1/thresholds.json` (the measured baseline
+minus one question). CI also runs `--self-test`, which breaks the real source in memory in eight ways and
+fails unless each is caught. With no backend the script exits 2 and reports `not_measured`.
+
+**Leaks** are judged by an access oracle written from the golden set, not by `canRetrieveDocument`, and by
+searching the answer and excerpts for sentences of forbidden documents.
+
+**Limits.** The data is synthetic, small (13 to 18 readable documents per user), English, clean and written
+by one author together with the questions. The numbers compare changes on this set. They do not predict
+quality on customer documents. At that commit retrieval never abstained and full text served 9 of 108
+questions; see the next section for what changed. Details and the raw table:
+`docs/readiness/RAG_RETRIEVAL_GATE_CLOSEOUT_2026_11_24.md`.
+
+**Changing it.** Keep `golden/v1` and `golden/v2` frozen so results stay comparable; add `v3` for new questions. If a change
+improves retrieval, re-measure and raise the thresholds in the same pull request. If a refactor makes a
+self-test edit stop matching, the gate fails and names it: update `scripts/rag-gate-mutations.mjs`.
+
+**Run it locally** (needs Docker): put `EMBED_FUNCTION_SECRET` in `supabase/functions/.env`, run
+`pnpm exec supabase start`, then set `RAG_GATE_SUPABASE_URL`, `RAG_GATE_ANON_KEY` and
+`RAG_GATE_SERVICE_ROLE_KEY` from `pnpm exec supabase status -o env` and `RAG_GATE_EMBED_SECRET` to the same
+secret.
+
+**API.** `GET /api/rag/evaluation` reports `not_measured`. `POST` scores only complete observations the
+caller supplies, returns 400 and records nothing otherwise, and marks the row `client_supplied`. `POST` is for
+Super Admins and Organization Admins; other roles get 403 and nothing is recorded. Rows in
+`rag_release_gates` from before 2026-11-24 may be passes with nothing observed.
+
+## Chunk full text, rank fusion and abstention (2026-11-25)
+
+Not applied to any hosted project. Full text over chunks needs
+`supabase/migrations/20261125120000_rag_chunk_fulltext.sql`. Without it retrieval takes its previous path.
+
+- **Chunk full text.** `search_rag_chunks_fulltext` searches chunk text and title, matches any word, and
+  ranks by how rare each word is. Only `service_role` may call it. It is limited to document ids the
+  application already authorized and skips chunks the user's role may not read. It returns coverage: the
+  share of the question's word weight found in a chunk.
+- **Rank fusion** (`retrievalFusion.ts`), semantic mode: reciprocal rank of the similarity list plus the
+  full-text list. Full text votes only for a chunk with coverage above 0.5. The score shown is still the
+  similarity.
+- **Abstention** (`abstention.ts`), semantic mode: no sources and a human-review request when the best
+  similarity is below 0.785 and the best coverage is below 0.2. Below 0.82 and 0.25 it shows sources and
+  asks for review. It never abstains on documents the user attached, or when full text could not run.
+- **Full-text mode** asks for review, but does not abstain, when no word of the question is in any readable
+  chunk, title or description. Abstaining there was measured and dropped. **Hash mode** is unchanged.
+- **Evidence** (`retrievalEvidence.ts`) is computed only over chunks the user may read, so an abstention
+  says nothing about documents they may not.
+
+The limits are tied to gte-small and English text, and were chosen on golden v1. Re-measure them if either
+changes. Before and after table, by commit and run:
+`docs/readiness/RAG_RETRIEVAL_QUALITY_CLOSEOUT_2026_11_25.md`.

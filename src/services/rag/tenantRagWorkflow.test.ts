@@ -400,6 +400,8 @@ describe("tenant RAG workflow -- Sprint 4 conversation memory (2026-08-16)", () 
       visibility: "organization", role_allowlist: [] as string[], metadata: { title: "Cachar Referral Review" },
     }];
 
+    // Chunk full text is unavailable too: anything that is not a list of rows counts as "could not run".
+    supabaseAdminState.rows["rpc/search_rag_chunks_fulltext"] = { unavailable: true } as unknown as unknown[];
     repo.ragFullTextSearchRepository = {
       async searchDocuments() {
         throw new Error("RPC unavailable");

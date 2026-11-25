@@ -1,5 +1,7 @@
 # Sprint 29 - Pilot Tenant Acceptance And Live Operations
 
+> **Correction, 2026-11-24:** the RAG release gate cited here is not evidence of retrieval quality or tenant isolation. Until 2026-11-24 it scored observations built from its own two fixtures and ran no retrieval code, so it could not fail. The replacement runs real retrieval: see `docs/readiness/RAG_RETRIEVAL_GATE_CLOSEOUT_2026_11_24.md`.
+
 Sprint 29 turns the Sprint 27/28 golden path into a customer-success acceptance process. The goal is to make a real pilot tenant reviewable, sign-off ready, and operable after the first meaningful workflow is completed.
 
 ## What Changed
