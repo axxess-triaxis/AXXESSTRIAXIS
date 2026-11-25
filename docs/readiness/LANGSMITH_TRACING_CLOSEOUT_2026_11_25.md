@@ -101,7 +101,7 @@ Errors hit this session:
 | SDK copied `LANGSMITH_*` and `LANGCHAIN_*` variable values it did not consider secret into run metadata. Stored before the fix: `LANGSMITH_LIVE_TEST` and `LANGSMITH_TRACING` only, on 4 runs. Keys and tokens are excluded by the SDK | Fixed with `omitTracedRuntimeInfo`; re-run live at 10:56 |
 | Wrong text saved as the key, and one live test run on it | The test recorded no writes, and no run from it is stored. That recording was unreliable, so the text may have been sent as a request header. Guard added, key re-entered by the founder from the clipboard |
 | Live test recorded 0 writes while uploads were still in the background | Fixed: it waits for the writes and then reads the runs back |
-| PR #584 Secret Scan failed on one finding: gitleaks `generic-api-key` matched the test value `threadKey: "conversation-42"` (`langsmithTracer.test.ts:10`, commit `a6474ebf`). Not a secret | Value reworded. The scan reads each commit, so the pushed one still needs an exact-finding line in `.gitleaksignore`; founder's decision |
+| PR #584 Secret Scan failed on one finding: gitleaks `generic-api-key` matched the test value `threadKey: "conversation-42"` (`langsmithTracer.test.ts:10`, commit `a6474ebf`). Not a secret | Value reworded. The scan reads each commit, so the pushed one has an exact-finding line in `.gitleaksignore`, approved by the founder 2026-11-25 |
 | Unused-variable lint warning | Fixed, lint exit 0 |
 
 Deviations from the plan: content is cleaned before the SDK holds it, instead of by the SDK's `anonymizer`; the key

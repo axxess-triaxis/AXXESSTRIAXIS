@@ -15,3 +15,7 @@ a8bea30c597cf92b0ae6b4e8cca5a94fc7585120:docs/readiness/FOUNDER_BUG_CLOSURE_LEDG
 d9c9b24ee3817a4ec7652f49fb7be32adf2e0c2f:src/app/api/outreach/unsubscribe/route.test.ts:generic-api-key:11
 87629c8214638b211cd79cb094703b50f015d2d1:src/app/api/outreach/tick/route.test.ts:generic-api-key:16
 87629c8214638b211cd79cb094703b50f015d2d1:src/app/api/outreach/tick/route.test.ts:generic-api-key:22
+
+# 2026-11-25, PR #584: generic-api-key matched a made-up conversation ID in a unit test, because the
+# property is named threadKey. Not a secret. Reworded in a later commit; this covers the earlier one.
+a6474ebf5247fbafa74a816b17709825f4318cc8:src/services/ai/tracing/langsmithTracer.test.ts:generic-api-key:10
