@@ -92,8 +92,8 @@ The temporary route and launch entries were removed. Deploy evidence (founder sa
   and investor; `POST /api/stack/results` with a wrong key 401 on both; 13 scripts on each `/auth`, all loaded, 0 mention
   `langsmith`, 0 `[SENSITIVE]`.
 - The RAG Release Gate failed on `main` at 15:06 UTC ("1 of 61 chunks have no embedding"). Three branches containing
-  `b677d0f6` passed it minutes later, and attempt 2 of run 45641421366 passed. Cause not found; it needs an owner if it
-  happens again.
+  `b677d0f6` passed it minutes later, and attempt 2 of run 45641421366 passed. Cause not found: open as RAG-GATE-EMBED-1, owner Claude Code.
+  A second occurrence is investigated before any rerun.
 - Not verified: a signed-in AI request in production, and a real customer message with the rotated keys.
 
 Acceptance criteria, from the plan:
