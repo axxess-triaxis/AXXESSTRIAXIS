@@ -1,7 +1,8 @@
 # Plan: rank fusion, chunk full text and abstention (2026-11-24)
 
-Status: **approved by the user in this session ("Yes, after merge"), to start only once #574 is on `main`.
-No code, branch or PR exists yet.** Goes to `docs/readiness/` as the first commit.
+Status: **approved by the user ("Yes, after merge"). On 2026-11-25 the user changed the start condition to
+"Start stacked now", because #574 was still open, so this work is stacked on its branch in PR
+axxess-triaxis/AXXESSTRIAXIS#575.** Results: `RAG_RETRIEVAL_QUALITY_CLOSEOUT_2026_11_25.md`.
 
 Prerequisite: PR axxess-triaxis/AXXESSTRIAXIS#574 on `main`. Checked 2026-11-24 and 2026-11-25: OPEN,
 CLEAN, head `ba73ac89`. Everything below was read from that commit.
