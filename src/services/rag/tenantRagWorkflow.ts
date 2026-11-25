@@ -15,6 +15,7 @@ import { routeAiRequest } from "../ai/router/aiRouter";
 import { liveModelProviders } from "../ai/providers";
 import { extractKeywords, summarizeText } from "../nlp/localNlp";
 import { answerWithGovernedRag, canRetrieveDocument, type RagAnswer, type RagCitation, type RagRetrievalMode } from "./governedRag";
+import { searchChunksFullText } from "./chunkFullText";
 import { buildConfidenceExplanation } from "./confidenceExplanation";
 import { deterministicEmbeddingProvider } from "./embeddings/embeddingProvider";
 import { embedTexts, SEMANTIC_EMBEDDING_MODEL, toPgVector } from "./embeddings/semanticEmbeddings";
@@ -377,6 +378,13 @@ async function persistentCitationsForQuestion(
   const semantic = await semanticCitationsForQuestion(scope, permissions, authorizedDocuments, question, limit);
   if (semantic) return { citations: semantic, retrievalMode: "semantic" };
 
+  // Full text over chunk bodies (2026-11-25), when a full-text repository is in use. If it cannot run or
+  // no word matches, the title-and-description narrowing below still applies.
+  if (repositories.ragFullTextSearchRepository) {
+    const fullText = await fullTextCitationsForQuestion(scope, permissions, authorizedDocuments, question, limit);
+    if (fullText) return { citations: fullText, retrievalMode: "fulltext_search" };
+  }
+
   // RAG retrieval quality (2026-09-12): narrows which authorized documents' chunks get fetched
   // from rag_document_chunks -- ranking/narrowing only, canRetrieveDocument() above already ran
   // and remains the real authorization gate; this never widens what a user could otherwise see.
@@ -424,6 +432,7 @@ function authorizedCitations(
   rows: RagChunkRow[],
   limit: number,
   scoreFor: (row: RagChunkRow) => number,
+  orderFor: (row: RagChunkRow) => number = scoreFor,
 ): RagCitation[] {
   const tenantContext = tenantRequestContextFromScope(scope);
   for (const row of rows) {
@@ -437,16 +446,49 @@ function authorizedCitations(
       if (row.role_allowlist.length > 0 && !row.role_allowlist.includes(scope.role)) return false;
       return canRetrieveDocument(scope, document, permissions);
     })
-    .map((row): RagCitation => ({
+    .map((row) => ({ row, score: scoreFor(row), order: orderFor(row) }))
+    .filter((candidate) => candidate.score > 0)
+    .sort((left, right) => right.order - left.order)
+    .slice(0, limit)
+    .map(({ row, score }): RagCitation => ({
       sourceType: "document",
       sourceId: row.document_id,
       title: row.metadata?.title ?? documentById.get(row.document_id)?.title ?? "Institutional document",
-      score: scoreFor(row),
+      score,
       excerpt: summarizeText(row.chunk_text, 1),
-    }))
-    .filter((citation) => citation.score > 0)
-    .sort((left, right) => right.score - left.score)
-    .slice(0, limit);
+    }));
+}
+
+async function chunkRowsById(scope: TenantScope, ids: string[]): Promise<RagChunkRow[] | null> {
+  const query = new URLSearchParams({
+    organization_id: `eq.${scope.organizationId}`,
+    id: `in.(${ids.join(",")})`,
+    select: "id,organization_id,document_id,chunk_index,chunk_text,embedding_hash,visibility,role_allowlist,metadata",
+  });
+  return supabaseAdminRest<RagChunkRow[]>("rag_document_chunks", { query }).catch(() => null);
+}
+
+// Ordered by full-text rank. The displayed score is coverage, which is 0 to 1 like every other score.
+async function fullTextCitationsForQuestion(
+  scope: TenantScope,
+  permissions: DocumentPermission[],
+  authorizedDocuments: Document[],
+  question: string,
+  limit: number,
+): Promise<RagCitation[] | null> {
+  const hits = await searchChunksFullText(scope, authorizedDocuments.map((document) => document.id), question, limit * 10);
+  if (!hits?.length) return null;
+  const rows = await chunkRowsById(scope, hits.map((hit) => hit.id));
+  if (!rows?.length) return null;
+
+  const hitById = new Map(hits.map((hit) => [hit.id, hit]));
+  const documentById = new Map(authorizedDocuments.map((document) => [document.id, document]));
+  const citations = authorizedCitations(
+    scope, permissions, documentById, rows, limit,
+    (row) => hitById.get(row.id)?.coverage ?? 0,
+    (row) => hitById.get(row.id)?.rank ?? 0,
+  );
+  return citations.length ? citations : null;
 }
 
 // Semantic retrieval (2026-10-05): rank this question's gte-small embedding against the chunk
@@ -475,12 +517,7 @@ async function semanticCitationsForQuestion(
   if (!hits?.length) return null;
 
   const similarityById = new Map(hits.map((hit) => [hit.id, hit.similarity]));
-  const query = new URLSearchParams({
-    organization_id: `eq.${scope.organizationId}`,
-    id: `in.(${hits.map((hit) => hit.id).join(",")})`,
-    select: "id,organization_id,document_id,chunk_index,chunk_text,embedding_hash,visibility,role_allowlist,metadata",
-  });
-  const rows = await supabaseAdminRest<RagChunkRow[]>("rag_document_chunks", { query }).catch(() => null);
+  const rows = await chunkRowsById(scope, hits.map((hit) => hit.id));
   if (!rows?.length) return null;
 
   const documentById = new Map(authorizedDocuments.map((document) => [document.id, document]));
