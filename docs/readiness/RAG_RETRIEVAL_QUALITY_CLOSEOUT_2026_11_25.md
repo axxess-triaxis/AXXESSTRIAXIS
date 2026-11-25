@@ -1,9 +1,9 @@
 # Chunk full text, rank fusion and abstention: closeout, 2026-11-25
 
 PR [#575](https://github.com/axxess-triaxis/AXXESSTRIAXIS/pull/575), branch `feat/rag-retrieval-quality`,
-built on PR #574 (head `ba73ac89`, merged to `main` 2026-11-25 as `306f2c89`); now targets `main`. Status:
-**PR open; not merged, not deployed. The migration is applied to no hosted project. No production data was
-read or written.** Plan and acceptance criteria: `RAG_RETRIEVAL_QUALITY_PLAN_2026_11_24.md`.
+built on PR #574 (head `ba73ac89`, merged 2026-11-25 as `306f2c89`). Status: **merged 2026-11-25 as `54b62521`
+and deployed. The migration is applied to no hosted project, so the new retrieval is off in production. No
+production data was read or written.** Plan and acceptance criteria: `RAG_RETRIEVAL_QUALITY_PLAN_2026_11_24.md`.
 
 ## Signal and decision
 
@@ -168,13 +168,28 @@ the routes. Where the migration is not applied, retrieval takes its previous pat
 The migration ran only in CI's throwaway database, through `supabase start`. Its SQL has no hosted run.
 Screens were not checked by hand: no UI changed.
 
+## Merged and deployed, 2026-11-25
+
+Merged at 07:11:16Z as `54b62521`, on the user's explicit approval to merge and deploy. Head `3a20af74` had 20
+checks passed, 4 skipped, none failed; RAG gate run 45565189270 passed on it. No gate was bypassed.
+
+| Check | Evidence |
+|---|---|
+| Deploy of `54b62521` | run 45566179137: landing, investor and lite succeeded, last at 07:20:48Z |
+| Sites, 07:42:06Z | landing, investor and lite return 200. Each ETag differs from the one read just before the merge |
+| `GET /api/rag/evaluation`, no sign-in | 401 on landing and investor, 404 on lite, as before the merge |
+| Other workflows on `54b62521` | RAG gate, Repository Quality, Security Gates, Security Isolation, Capacitor, Pilot Golden Path, Supabase CLI, Mobile Store: passed |
+
+**Not verified:** any signed-in question in production, and the new retrieval on a hosted database. No endpoint
+reports the running commit, so the commit comes from the deploy run.
+
 ## Remains open
 
 - RAGQ-1, owner Claude Code: the first local full-suite run exited 139 after every test passed. It did not
   happen on the rerun or in CI. `CHUNKED_DOCUMENT_UPLOAD_ARCHITECTURE_CLOSEOUT_2026_07_31.md` and
   `RAG_DOCUMENT_TEXT_EXTRACTION_CLOSEOUT_2026_07_30.md` describe similar local crashes from native modules.
   Same cause here is a hypothesis, not shown.
-- Founder decisions: merge #575 (a push to `main` deploys production); and when to apply the migration.
+- Founder decision: when to apply the migration. Staging first.
 - Possible follow-up, unverified: `match_rag_document_chunks` filters by organization and document after the
   HNSW search, so on a large multi-tenant table it could return fewer rows than exist. The golden sets are
   too small to show it.
@@ -188,6 +203,6 @@ What changed: One additive migration, retrieval order in semantic mode, full-tex
 Architecture boundary: Postgres full text and pgvector only. Authorization stays in tenantRagWorkflow.ts.
 Product boundary: Some questions now return no sources and ask for human review.
 Verification: CI runs listed under Results, each on its own commit.
-Outcome: Measured on v1 and held-out v2 as above. Merge: Pending, review by 2026-12-09.
+Outcome: Measured on v1 and held-out v2 as above. Merged and deployed 2026-11-25; inactive until the migration. Migration: Pending, review by 2026-12-09.
 Follow-up: Real-question set from pilot users; abstention limits re-measured if the embedding model changes.
 ```
