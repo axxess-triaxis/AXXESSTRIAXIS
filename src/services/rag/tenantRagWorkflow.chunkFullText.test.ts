@@ -59,6 +59,22 @@ function repositories(documents: Document[], withFullText = true): TenantRagRepo
   } as unknown as TenantRagRepositories;
 }
 
+function semanticBackend() {
+  vi.stubGlobal("fetch", vi.fn(async (_url: string, init: RequestInit) => {
+    const { texts } = JSON.parse(String(init.body)) as { texts: string[] };
+    return new Response(JSON.stringify({ embeddings: texts.map(() => Array.from({ length: 384 }, () => 0.05)) }), { status: 200 });
+  }));
+  vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://example.supabase.co");
+  vi.stubEnv("EMBED_FUNCTION_SECRET", "test-secret");
+  admin.rows["rpc/match_rag_document_chunks"] = [
+    { id: "chunk-berth", similarity: 0.81 },
+    { id: "chunk-crane", similarity: 0.8 },
+    { id: "chunk-pilot", similarity: 0.79 },
+  ];
+  admin.rows.rag_document_chunks = [chunk("berth", "Berth text."), chunk("crane", "Crane text."), chunk("pilot", "Form HB-PIL-221.")];
+  return [document("berth"), document("crane"), document("pilot")];
+}
+
 const rpcCalls = () => admin.calls.filter((call) => call.table === "rpc/search_rag_chunks_fulltext").map((call) => call.body as Record<string, unknown>);
 
 afterEach(() => {
@@ -132,22 +148,6 @@ describe("chunk full text", () => {
 });
 
 describe("rank fusion in the semantic path", () => {
-  function semanticBackend() {
-    vi.stubGlobal("fetch", vi.fn(async (_url: string, init: RequestInit) => {
-      const { texts } = JSON.parse(String(init.body)) as { texts: string[] };
-      return new Response(JSON.stringify({ embeddings: texts.map(() => Array.from({ length: 384 }, () => 0.05)) }), { status: 200 });
-    }));
-    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://example.supabase.co");
-    vi.stubEnv("EMBED_FUNCTION_SECRET", "test-secret");
-    admin.rows["rpc/match_rag_document_chunks"] = [
-      { id: "chunk-berth", similarity: 0.81 },
-      { id: "chunk-crane", similarity: 0.8 },
-      { id: "chunk-pilot", similarity: 0.79 },
-    ];
-    admin.rows.rag_document_chunks = [chunk("berth", "Berth text."), chunk("crane", "Crane text."), chunk("pilot", "Form HB-PIL-221.")];
-    return [document("berth"), document("crane"), document("pilot")];
-  }
-
   afterEach(() => {
     vi.unstubAllGlobals();
     vi.unstubAllEnvs();
@@ -198,5 +198,77 @@ describe("rank fusion in the semantic path", () => {
 
     expect(JSON.stringify(answer)).not.toContain("Secret text");
     expect(answer.sources.map((source) => source.sourceId)).toEqual(["berth", "crane", "pilot"]);
+  });
+});
+
+describe("abstention", () => {
+  const hashed = { embedding_hash: Array.from({ length: 16 }, () => 0.25) };
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
+  });
+
+  function weakSemantic() {
+    const documents = semanticBackend().map((item) => ({ ...item, description: "where to park bicycles" }));
+    admin.rows["rpc/match_rag_document_chunks"] = [{ id: "chunk-berth", similarity: 0.76 }, { id: "chunk-crane", similarity: 0.75 }];
+    admin.rows["rpc/search_rag_chunks_fulltext"] = [];
+    return documents;
+  }
+
+  it("returns no sources, asks for review, and does not fall back to titles and descriptions", async () => {
+    const answer = await answerTenantQuestion(repositories(weakSemantic()), scope, "Where do I park bicycles?");
+
+    expect(answer.sources).toEqual([]);
+    expect(answer.humanReviewRequired).toBe(true);
+    expect(answer.confidence).toBe(0);
+    expect(answer.answer).toContain("No authorized institutional source matched");
+    expect(answer.retrievalMode).toBe("semantic");
+    expect(answer.retrievalEvidence).toMatchObject({ topSimilarity: 0.76, topCoverage: 0 });
+  });
+
+  it("flags a middling match for review and still shows its sources", async () => {
+    const documents = weakSemantic();
+    admin.rows["rpc/match_rag_document_chunks"] = [{ id: "chunk-berth", similarity: 0.81 }, { id: "chunk-crane", similarity: 0.8 }];
+
+    const answer = await answerTenantQuestion(repositories(documents), scope, "Where do I park bicycles?");
+
+    expect(answer.sources).toHaveLength(2);
+    expect(answer.humanReviewRequired).toBe(true);
+  });
+
+  it("does not abstain on documents the user attached to the question", async () => {
+    const answer = await answerTenantQuestion(repositories(weakSemantic()), scope, "Summarise this", { documentIds: ["berth", "crane"] });
+
+    expect(answer.sources).toHaveLength(2);
+    expect(answer.humanReviewRequired).toBe(true);
+  });
+
+  it("does not abstain in the semantic path when full text could not run", async () => {
+    const documents = weakSemantic();
+    admin.rows["rpc/search_rag_chunks_fulltext"] = new Error("404 function not found");
+
+    expect((await answerTenantQuestion(repositories(documents), scope, "Where do I park bicycles?")).sources).toHaveLength(2);
+  });
+
+  it("abstains in full-text mode when no word of the question is in any readable chunk, title or description", async () => {
+    admin.rows["rpc/search_rag_chunks_fulltext"] = [];
+    admin.rows.rag_document_chunks = [chunk("crane", "Crane text.", hashed)];
+
+    const answer = await answerTenantQuestion(repositories([document("crane")]), scope, "bicycles");
+
+    expect(answer.sources).toEqual([]);
+    expect(answer.humanReviewRequired).toBe(true);
+    expect(answer.retrievalMode).toBe("fulltext_search");
+    expect(answer.retrievalEvidence).toEqual({ candidates: 0, topCoverage: 0 });
+  });
+
+  it("still uses titles and descriptions when nothing has been indexed as chunks", async () => {
+    admin.rows["rpc/search_rag_chunks_fulltext"] = [];
+    admin.rows.rag_document_chunks = [];
+
+    const answer = await answerTenantQuestion(repositories([document("bicycles", { description: "where to park bicycles" })]), scope, "bicycles");
+
+    expect(answer.sources).toHaveLength(1);
   });
 });

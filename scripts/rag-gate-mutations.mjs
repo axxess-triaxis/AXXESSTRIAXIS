@@ -9,6 +9,7 @@ const HASH = "src/services/rag/embeddings/embeddingProvider.ts";
 const SEMANTIC = "src/services/rag/embeddings/semanticEmbeddings.ts";
 const GUARD = "src/security/tenantGuard.ts";
 const FUSION = "src/services/rag/retrievalFusion.ts";
+const ABSTENTION = "src/services/rag/abstention.ts";
 const CHUNK_FULLTEXT = "src/services/rag/chunkFullText.ts";
 
 export const MUTATIONS = [
@@ -65,6 +66,24 @@ export const MUTATIONS = [
     modes: ["semantic"],
     description: "Rank fusion drops the full-text list, so codes rank low again.",
     edits: [[FUSION, "order.set(hit.id, (order.get(hit.id) ?? 0) + hit.coverage / (RANK_CONSTANT + index + 1));", "order.set(hit.id, order.get(hit.id) ?? index * 0);"]],
+  },
+  {
+    id: "abstention-removed",
+    modes: ["semantic"],
+    description: "Weak evidence is never judged, so every question is answered.",
+    edits: [[ABSTENTION, "if (topSimilarity === undefined || topCoverage === undefined) return \"answer\";", "return \"answer\";"]],
+  },
+  {
+    id: "full-text-abstention-removed",
+    modes: ["fulltext"],
+    description: "With no matching word, full-text mode goes back to ranking by the token hash.",
+    edits: [[WORKFLOW, "noWordMatches = hits?.length === 0;", "noWordMatches = false;"]],
+  },
+  {
+    id: "abstains-on-everything",
+    modes: ["semantic"],
+    description: "Every question is judged to have weak evidence.",
+    edits: [[ABSTENTION, "return evidence.topSimilarity < limit.similarity && evidence.topCoverage < limit.coverage;", "return true;"]],
   },
   {
     id: "document-authorization-removed",

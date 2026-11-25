@@ -15,7 +15,8 @@ import { routeAiRequest } from "../ai/router/aiRouter";
 import { liveModelProviders } from "../ai/providers";
 import { extractKeywords, summarizeText } from "../nlp/localNlp";
 import { answerWithGovernedRag, canRetrieveDocument, type RagAnswer, type RagCitation, type RagRetrievalMode } from "./governedRag";
-import { searchChunksFullText } from "./chunkFullText";
+import { evidenceDecision, type EvidenceDecision } from "./abstention";
+import { searchChunksFullText, type ChunkFullTextHit } from "./chunkFullText";
 import { buildConfidenceExplanation } from "./confidenceExplanation";
 import { fullTextEvidence, semanticEvidence, type RetrievalEvidence } from "./retrievalEvidence";
 import { displayScores, fuseRanks } from "./retrievalFusion";
@@ -358,7 +359,7 @@ async function persistentCitationsForQuestion(
   question: string,
   limit: number,
   documentIds?: string[],
-): Promise<{ citations: RagCitation[]; retrievalMode: RagRetrievalMode; evidence?: RetrievalEvidence }> {
+): Promise<{ citations: RagCitation[]; retrievalMode: RagRetrievalMode; evidence?: RetrievalEvidence; decision?: EvidenceDecision }> {
   if (!isSupabaseAdminConfigured()) return { citations: [], retrievalMode: "full_scan" };
 
   const [documents, permissions] = await Promise.all([
@@ -380,13 +381,21 @@ async function persistentCitationsForQuestion(
   const semantic = await semanticCitationsForQuestion(
     scope, permissions, authorizedDocuments, question, limit, Boolean(repositories.ragFullTextSearchRepository),
   );
-  if (semantic) return { ...semantic, retrievalMode: "semantic" };
+  if (semantic) {
+    const judged = evidenceDecision(semantic.evidence);
+    // A user who attached documents asked about exactly those ("summarise this"), so they are always shown.
+    const decision = judged === "abstain" && documentIdFilter ? "review" : judged;
+    return { ...semantic, citations: decision === "abstain" ? [] : semantic.citations, retrievalMode: "semantic", decision };
+  }
 
   // Full text over chunk bodies (2026-11-25), when a full-text repository is in use. If it cannot run or
   // no word matches, the title-and-description narrowing below still applies.
+  let noWordMatches = false;
   if (repositories.ragFullTextSearchRepository) {
-    const fullText = await fullTextCitationsForQuestion(scope, permissions, authorizedDocuments, question, limit);
+    const hits = await searchChunksFullText(scope, authorizedDocuments.map((document) => document.id), question, limit * 10);
+    const fullText = hits?.length ? await fullTextCitations(scope, permissions, authorizedDocuments, hits, limit) : null;
     if (fullText) return { ...fullText, retrievalMode: "fulltext_search" };
+    noWordMatches = hits?.length === 0;
   }
 
   // RAG retrieval quality (2026-09-12): narrows which authorized documents' chunks get fetched
@@ -421,6 +430,13 @@ async function persistentCitationsForQuestion(
   const questionVector = await deterministicEmbeddingProvider.embed(question);
   const citations = authorizedCitations(scope, permissions, documentById, rows, limit, (row) =>
     row.embedding_hash.reduce((sum, value, index) => sum + value * (questionVector[index] ?? 0), 0));
+
+  // Abstention (2026-11-25): with no word of the question in any readable chunk, title or description, the
+  // token hash would only be ranking noise. With nothing indexed there are no citations here either, and the
+  // caller's governed fallback still runs.
+  if (noWordMatches && retrievalMode === "full_scan" && !documentIdFilter && citations.length) {
+    return { citations: [], retrievalMode: "fulltext_search", evidence: { candidates: 0, topCoverage: 0 }, decision: "abstain" };
+  }
 
   return { citations, retrievalMode };
 }
@@ -473,15 +489,13 @@ async function chunkRowsById(scope: TenantScope, ids: string[]): Promise<RagChun
 }
 
 // Ordered by full-text rank. The displayed score is coverage, which is 0 to 1 like every other score.
-async function fullTextCitationsForQuestion(
+async function fullTextCitations(
   scope: TenantScope,
   permissions: DocumentPermission[],
   authorizedDocuments: Document[],
-  question: string,
+  hits: ChunkFullTextHit[],
   limit: number,
 ): Promise<{ citations: RagCitation[]; evidence: RetrievalEvidence } | null> {
-  const hits = await searchChunksFullText(scope, authorizedDocuments.map((document) => document.id), question, limit * 10);
-  if (!hits?.length) return null;
   const rows = await chunkRowsById(scope, hits.map((hit) => hit.id));
   if (!rows?.length) return null;
 
@@ -576,14 +590,14 @@ export async function answerTenantQuestion(
     ? `Conversation so far:\n${priorMessages.map((message) => `${message.role === "user" ? "Q" : "A"}: ${message.content}`).join("\n")}\n\n`
     : "";
 
-  const { citations, retrievalMode: persistentRetrievalMode, evidence } = await persistentCitationsForQuestion(repositories, scope, question, limit, options.documentIds);
+  const { citations, retrievalMode: persistentRetrievalMode, evidence, decision } = await persistentCitationsForQuestion(repositories, scope, question, limit, options.documentIds);
   let baseAnswer: RagAnswer;
   if (citations.length) {
     const rawConfidence = Math.min(0.96, Math.max(0.42, citations.reduce((sum, citation) => sum + citation.score, 0) / citations.length + 0.28));
     const { confidence, explanation } = buildConfidenceExplanation({
       citations,
       rawConfidence,
-      humanReviewRequired: citations.some((citation) => citation.score < 0.5),
+      humanReviewRequired: decision === "review" || citations.some((citation) => citation.score < 0.5),
       // Known limitation (documented in the RAG Remediation Sprint 2 closeout): RagCitation does
       // not carry document classification for this persistent-chunk path, unlike governedRag.ts's
       // in-memory path, so restricted-source detection isn't available here yet.
@@ -596,6 +610,21 @@ export async function answerTenantQuestion(
       sources: citations,
       keywords: extractKeywords(question, 6),
       rationale: `Synthesized from ${citations.length} governed source${citations.length === 1 ? "" : "s"} (top match: "${citations[0].title}", ${Math.round(citations[0].score * 100)}% relevance).`,
+      confidenceExplanation: explanation,
+      retrievalMode: persistentRetrievalMode,
+      retrievalEvidence: evidence,
+    };
+  } else if (decision === "abstain") {
+    // Not the governed fallback below: it matches on titles and descriptions and would cite the documents
+    // just judged not to answer this.
+    const { confidence, explanation } = buildConfidenceExplanation({ citations: [], rawConfidence: 0, humanReviewRequired: true, hasRestrictedSource: false });
+    baseAnswer = {
+      answer: contextAnswer([]),
+      confidence,
+      humanReviewRequired: true,
+      sources: [],
+      keywords: extractKeywords(question, 6),
+      rationale: "The closest authorized sources did not match this question closely enough to cite.",
       confidenceExplanation: explanation,
       retrievalMode: persistentRetrievalMode,
       retrievalEvidence: evidence,
