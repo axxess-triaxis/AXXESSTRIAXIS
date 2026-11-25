@@ -2,6 +2,7 @@ name: Repository Quality
 
 on:
   pull_request:
+  workflow_dispatch: # readme-activity.yml starts it: a pull request opened with GITHUB_TOKEN does not
   push:
     branches:
       - main

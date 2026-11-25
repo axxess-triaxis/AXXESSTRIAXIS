@@ -25,6 +25,31 @@ audit log. Built by [Triaxis Ventures Private Limited](https://github.com/axxess
 | Prepayment | Both pilots have committed to prepay. One commitment is in writing (2026-08-12); that both are in writing and both pilots are still active is *Founder-stated, source artifact needed* | Same log |
 | Revenue | None collected. The latest commercial record in this repo (2026-08-11) says collection waits on the company's current account and GST registration | [Commercial evidence](docs/audit/08_COMMERCIAL_EVIDENCE.md) |
 
+<!-- readme-activity:start (generated; edits here are overwritten) -->
+## Recent changes
+
+<sub>Generated 2026-11-25 from this repository's history, last 14 days. Documentation, dependency and housekeeping changes are left out.</sub>
+
+| Date | Change |
+|---|---|
+| 2026-11-25 | [fix(copilot): validate confirmed actions on the server](https://github.com/axxess-triaxis/AXXESSTRIAXIS/pull/577) |
+| 2026-11-25 | [feat(rag): chunk full text, rank fusion and abstention, measured](https://github.com/axxess-triaxis/AXXESSTRIAXIS/pull/575) |
+| 2026-11-25 | [Only organization admins can POST /api/rag/evaluation](https://github.com/axxess-triaxis/AXXESSTRIAXIS/pull/576) |
+| 2026-11-25 | [Make the RAG release gate run real retrieval](https://github.com/axxess-triaxis/AXXESSTRIAXIS/pull/574) |
+| 2026-11-24 | [fix(layout): sidebar and main content scroll separately](https://github.com/axxess-triaxis/AXXESSTRIAXIS/pull/569) |
+| 2026-11-24 | [fix(lists): show work lists past 50 rows](https://github.com/axxess-triaxis/AXXESSTRIAXIS/pull/570) |
+| 2026-11-24 | [fix(stack): WhatsApp template check that PostgreSQL can evaluate](https://github.com/axxess-triaxis/AXXESSTRIAXIS/pull/571) |
+| 2026-11-20 | [feat(stack): Agents card, Message with agent, per-org registration gate](https://github.com/axxess-triaxis/AXXESSTRIAXIS/pull/556) |
+
+And 31 more in the same period.
+
+| Live check | Result |
+|---|---|
+| https://landing.triaxisventures.com | HTTP 200 |
+| https://investor.triaxisventures.com | HTTP 200 |
+| https://lite.triaxisventures.com | HTTP 200 |
+<!-- readme-activity:end -->
+
 ## Lead sourcing
 
 AXXESS finds sales leads, for its own go-to-market and for any organisation on it. There are two ways
