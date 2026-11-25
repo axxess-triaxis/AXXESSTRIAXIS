@@ -33,7 +33,8 @@ dated review) for every decision, plan-first in at least 95% of build sessions, 
 its own checkout, and a filled exception template for every gate bypass.
 
 Added 2026-11-25: every session follows **Approval Load** below -- Auto-fix on without asking, reversible
-steps done without asking, approvals batched, and critical actions still asked every time.
+steps done without asking, approvals batched, and critical actions still asked every time -- and **Merge When
+Ready**: a fully ready PR is merged without waiting for a request.
 
 ### Mandatory Plan-First Sessions -- Standing Rule
 
@@ -134,7 +135,7 @@ Standard verification suite for this repo: `pnpm run typecheck`, `pnpm --dir app
 
 ## Git and Deployment Discipline
 
-- Never push or deploy to production without explicit confirmation in the current conversation, even if a prior conversation already approved a similar action.
+- Never push or deploy to production without explicit confirmation in the current conversation, even if a prior conversation already approved a similar action. The one exception is the deploy triggered by merging a fully ready PR under Merge When Ready below.
 - Prefer new commits over amending; never force-push without explicit request.
 - Before any destructive git operation, run `git status` and preserve uncommitted work.
 
@@ -144,12 +145,26 @@ Adopted 2026-11-25 on the founder's instruction: "Auto-execute auto-fix wherever
 
 1. **Auto-fix is on by default.** A session that opens a PR turns Auto-fix on for it without asking, wherever the app allows it, and says so in one line. This covers CI failures, merge conflicts and review comments on that PR. Auto-merge is never turned on this way.
 2. **Do without asking** what is reversible and inside the task: edits, tests and checks, feature-branch commits and pushes, opening a PR, retargeting it, marking it ready when its checks pass, conflicts that need no product decision, closeout, ledger and matrix records in the same PR, reading CI, and post-deploy live checks.
-3. **Batch what does need a yes.** Check the consequences first, then ask once, naming all of them, for example: "Merge A, then B. Each deploys landing, investor and lite. No migration. Live check and record follow." One yes covers exactly what it names.
-4. **Still asked, every time:** merging to `main` or any production deploy, a migration on a hosted project, production data, any gate bypass (its five items still apply), sending or publishing on the founder's behalf, spending, accounts, secrets, permissions or security settings, deleting data or branches, force-push, and a product choice the repository cannot settle.
+3. **Batch what does need a yes.** Check the consequences first, then ask once, naming all of them, for example: "Apply migration A to staging, then run the gate. Table locked for about a minute. Rollback file ready." One yes covers exactly what it names.
+4. **Still asked, every time:** a merge or production deploy outside Merge When Ready below, a migration on a hosted project, production data, any gate bypass (its five items still apply), sending or publishing on the founder's behalf, spending, accounts, secrets, permissions or security settings, deleting data or branches, force-push, and a product choice the repository cannot settle.
 5. **A claim is checked, not assumed.** If the founder or a tool says a step was done and it was not, report what was observed and do not act on the claim.
 6. **Measure it.** Each closeout that asked for approvals lists how many and which could have been avoided. The 50 to 70% is a target; no percentage is claimed until sessions are counted.
 
-These rules change when to ask, not what is allowed. They relax no gate, no evidence rule, and no rule in this file. The app's own permission prompts are separate and are not bypassed. Plan-first approval still applies.
+These rules change when to ask. They relax no gate and no evidence rule. The app's own permission prompts are separate and are not bypassed. Plan-first approval still applies.
+
+### Merge When Ready -- Standing Rule
+
+Adopted 2026-11-25 on the founder's instruction: "Merge all unmerged PRs whenever they are fully ready for merge. Do not wait for HITL explicit requests." A push to `main` deploys landing, investor and lite, so this is standing approval for that deploy too.
+
+**Fully ready** means all of these, checked by the session that merges:
+
+1. Open, not a draft, based on `main`, no conflicts, no requested changes, no unresolved review thread.
+2. Every check passed on a head that contains the current `main`. None failed or pending. Skips are only the usual ones for that PR type. `main` has no required status checks, so GitHub's `CLEAN` is not proof, and GitHub auto-merge is not used until it has them.
+3. Its own acceptance criteria are met and its closeout or PR text leaves nothing that has to be done before merging. A PR-specific hold ("needs the founder's go", "not to be merged until") is lifted by the founder, not by this rule.
+4. It depends on no unapplied hosted migration, secret, setting or founder sign-in, and bypasses no gate. A major dependency version also needs its release notes read and the result recorded.
+5. No other session is working on its branch.
+
+Merge one PR at a time, with a merge commit, at the exact head that was checked. Do the live check and record it before the next merge. If a live check fails or `main` goes red, stop merging, open a revert PR, and tell the founder. A PR that is not ready is reported with its reason, and is not pushed to unless that is the session's own task.
 
 ### Production Gate Bypass -- Standing Rule
 
