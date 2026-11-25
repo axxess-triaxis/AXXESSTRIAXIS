@@ -177,3 +177,9 @@ Existing rows are not rewritten.
 | Decision | Date | Session/tool | Issue ID | Why | Outcome | Commit/PR | Verification | Closeout |
 |---|---|---|---|---|---|---|---|---|
 | Build the AI routing context on the server from an allowlist; the tenant policy is server-only and a caller can only raise sensitivity | 2026-11-25 | Founder-approved plan (step A0), executed by Claude Code | AI-ROUTING-CONTEXT | The prompt classifier planned next needs one place that decides routing | Pending, review by 2026-12-09 | #580 | Regression tests 8 failed, 10 passed before; all pass after | After deploy |
+
+## LangSmith tracing, local only (2026-11-25)
+
+| Decision | Date | Session/tool | Issue ID | Why | Outcome | Commit/PR | Verification | Closeout |
+|---|---|---|---|---|---|---|---|---|
+| Trace Copilot and all `routeAiRequest` calls in LangSmith from a developer machine only, with masked content; refused in code anywhere else. Tracing only: the 2026-11-24 "no LangChain" decision for the RAG gate still holds | 2026-11-25 | Founder choice, executed by Claude Code | LANGSMITH-TRACING | Tenants default to zero data retention and LangSmith stores what it receives | Code complete. Usefulness pending, review by 2026-12-09 | #584 | Live traces read back from LangSmith 2026-11-25 10:53 to 11:00 UTC; nothing stored in the two off modes | `docs/readiness/LANGSMITH_TRACING_CLOSEOUT_2026_11_25.md` |
