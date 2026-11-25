@@ -2,6 +2,7 @@ import type { AuditLogsRepository, DocumentsRepository, DocumentPermissionsRepos
 import type { Document, DocumentPermission, KnowledgeArticle, RoleName } from "../../domain";
 import { extractKeywords, summarizeText, tokenize } from "../nlp/localNlp";
 import { buildConfidenceExplanation, type RagConfidenceExplanation } from "./confidenceExplanation";
+import type { RetrievalEvidence } from "./retrievalEvidence";
 
 export type RagSourceType = "document" | "knowledge-article";
 
@@ -44,6 +45,8 @@ export type RagAnswer = {
    * answerWithGovernedRag; other producers of a RagAnswer (e.g. tenantRagWorkflow.ts's persistent-
    * chunk path) set their own. Optional so every existing RagAnswer literal stays valid. */
   retrievalMode?: RagRetrievalMode;
+  /** 2026-11-25: what retrieval saw, over chunks this user may read. Set by tenantRagWorkflow.ts. */
+  retrievalEvidence?: RetrievalEvidence;
 };
 
 export type RagRepositories = {

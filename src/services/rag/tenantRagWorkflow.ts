@@ -17,6 +17,7 @@ import { extractKeywords, summarizeText } from "../nlp/localNlp";
 import { answerWithGovernedRag, canRetrieveDocument, type RagAnswer, type RagCitation, type RagRetrievalMode } from "./governedRag";
 import { searchChunksFullText } from "./chunkFullText";
 import { buildConfidenceExplanation } from "./confidenceExplanation";
+import { fullTextEvidence, semanticEvidence, type RetrievalEvidence } from "./retrievalEvidence";
 import { displayScores, fuseRanks } from "./retrievalFusion";
 import { deterministicEmbeddingProvider } from "./embeddings/embeddingProvider";
 import { embedTexts, SEMANTIC_EMBEDDING_MODEL, toPgVector } from "./embeddings/semanticEmbeddings";
@@ -357,7 +358,7 @@ async function persistentCitationsForQuestion(
   question: string,
   limit: number,
   documentIds?: string[],
-): Promise<{ citations: RagCitation[]; retrievalMode: RagRetrievalMode }> {
+): Promise<{ citations: RagCitation[]; retrievalMode: RagRetrievalMode; evidence?: RetrievalEvidence }> {
   if (!isSupabaseAdminConfigured()) return { citations: [], retrievalMode: "full_scan" };
 
   const [documents, permissions] = await Promise.all([
@@ -379,13 +380,13 @@ async function persistentCitationsForQuestion(
   const semantic = await semanticCitationsForQuestion(
     scope, permissions, authorizedDocuments, question, limit, Boolean(repositories.ragFullTextSearchRepository),
   );
-  if (semantic) return { citations: semantic, retrievalMode: "semantic" };
+  if (semantic) return { ...semantic, retrievalMode: "semantic" };
 
   // Full text over chunk bodies (2026-11-25), when a full-text repository is in use. If it cannot run or
   // no word matches, the title-and-description narrowing below still applies.
   if (repositories.ragFullTextSearchRepository) {
     const fullText = await fullTextCitationsForQuestion(scope, permissions, authorizedDocuments, question, limit);
-    if (fullText) return { citations: fullText, retrievalMode: "fulltext_search" };
+    if (fullText) return { ...fullText, retrievalMode: "fulltext_search" };
   }
 
   // RAG retrieval quality (2026-09-12): narrows which authorized documents' chunks get fetched
@@ -478,7 +479,7 @@ async function fullTextCitationsForQuestion(
   authorizedDocuments: Document[],
   question: string,
   limit: number,
-): Promise<RagCitation[] | null> {
+): Promise<{ citations: RagCitation[]; evidence: RetrievalEvidence } | null> {
   const hits = await searchChunksFullText(scope, authorizedDocuments.map((document) => document.id), question, limit * 10);
   if (!hits?.length) return null;
   const rows = await chunkRowsById(scope, hits.map((hit) => hit.id));
@@ -491,7 +492,7 @@ async function fullTextCitationsForQuestion(
     (row) => hitById.get(row.id)?.coverage ?? 0,
     (row) => hitById.get(row.id)?.rank ?? 0,
   );
-  return citations.length ? citations : null;
+  return citations.length ? { citations, evidence: { candidates: hits.length, ...fullTextEvidence(hits) } } : null;
 }
 
 // Semantic retrieval (2026-10-05): rank this question's gte-small embedding against the chunk
@@ -505,7 +506,7 @@ async function semanticCitationsForQuestion(
   question: string,
   limit: number,
   fuseFullText: boolean,
-): Promise<RagCitation[] | null> {
+): Promise<{ citations: RagCitation[]; evidence: RetrievalEvidence } | null> {
   const questionVectors = await embedTexts([question]);
   if (!questionVectors) return null;
 
@@ -522,9 +523,10 @@ async function semanticCitationsForQuestion(
 
   // Rank fusion (2026-11-25): full text finds the codes and rare terms embeddings rank low. Without a
   // full-text repository, or with nothing matched, the order is the similarity order as before.
-  const fullText = fuseFullText
-    ? await searchChunksFullText(scope, authorizedDocuments.map((document) => document.id), question, limit * 10) ?? []
-    : [];
+  const searched = fuseFullText
+    ? await searchChunksFullText(scope, authorizedDocuments.map((document) => document.id), question, limit * 10)
+    : null;
+  const fullText = searched ?? [];
   const scoreById = displayScores({ semantic: hits, fullText });
   const orderById = fuseRanks({ semantic: hits, fullText });
   const rows = await chunkRowsById(scope, [...orderById.keys()]);
@@ -536,7 +538,7 @@ async function semanticCitationsForQuestion(
     (row) => scoreById.get(row.id) ?? 0,
     (row) => orderById.get(row.id) ?? 0,
   );
-  return citations.length ? citations : null;
+  return citations.length ? { citations, evidence: semanticEvidence(hits, searched) } : null;
 }
 
 export async function answerTenantQuestion(
@@ -567,7 +569,7 @@ export async function answerTenantQuestion(
     ? `Conversation so far:\n${priorMessages.map((message) => `${message.role === "user" ? "Q" : "A"}: ${message.content}`).join("\n")}\n\n`
     : "";
 
-  const { citations, retrievalMode: persistentRetrievalMode } = await persistentCitationsForQuestion(repositories, scope, question, limit, options.documentIds);
+  const { citations, retrievalMode: persistentRetrievalMode, evidence } = await persistentCitationsForQuestion(repositories, scope, question, limit, options.documentIds);
   let baseAnswer: RagAnswer;
   if (citations.length) {
     const rawConfidence = Math.min(0.96, Math.max(0.42, citations.reduce((sum, citation) => sum + citation.score, 0) / citations.length + 0.28));
@@ -589,6 +591,7 @@ export async function answerTenantQuestion(
       rationale: `Synthesized from ${citations.length} governed source${citations.length === 1 ? "" : "s"} (top match: "${citations[0].title}", ${Math.round(citations[0].score * 100)}% relevance).`,
       confidenceExplanation: explanation,
       retrievalMode: persistentRetrievalMode,
+      retrievalEvidence: evidence,
     };
   } else {
     baseAnswer = await answerWithGovernedRag(repositories, scope, { question, limit });
