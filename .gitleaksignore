@@ -19,3 +19,6 @@ d9c9b24ee3817a4ec7652f49fb7be32adf2e0c2f:src/app/api/outreach/unsubscribe/route.
 # 2026-11-25, PR #584: generic-api-key matched a made-up conversation ID in a unit test, because the
 # property is named threadKey. Not a secret. Reworded in a later commit; this covers the earlier one.
 a6474ebf5247fbafa74a816b17709825f4318cc8:src/services/ai/tracing/langsmithTracer.test.ts:generic-api-key:10
+# The same value, quoted in the closeout by two later commits and since removed.
+7f51cf3808bb336a286220b28e777660d304b580:docs/readiness/LANGSMITH_TRACING_CLOSEOUT_2026_11_25.md:generic-api-key:104
+ebb679107fa541bd337d0b30a57eea2726d88f69:docs/readiness/LANGSMITH_TRACING_CLOSEOUT_2026_11_25.md:generic-api-key:104
