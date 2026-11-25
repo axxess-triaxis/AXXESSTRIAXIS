@@ -192,3 +192,18 @@ Verification: CI runs 45447751231 (red), 45451898878 (pass), 45452956838 (delibe
 Outcome: The gate fails on real breakages. Merge: Pending, review by 2026-12-08.
 Follow-up: Abstention and full-text coverage, each as its own change. API role check: see the follow-up above.
 ```
+
+## Merged and deployed, 2026-11-25
+
+PR #574 was merged at 05:06:48Z as `306f2c89`, on the user's explicit approval to merge and deploy. Its head
+`ba73ac89` had 19 checks passed, 3 skipped, none failed.
+
+| Check | Evidence |
+|---|---|
+| Deploy of `306f2c89` | run 45551305266: landing, investor and lite succeeded, last at 05:14:59Z |
+| Deploy of `02b90721` (adds #576) | run 45553173173: all three succeeded, last at 05:31:12Z |
+| Sites, 07:02:50Z | landing, investor and lite return 200. Each ETag differs from the one at 05:08Z, and the cached pages date from about 05:34Z, after the second deploy |
+| `GET /api/rag/evaluation`, no sign-in | 401 on landing and investor, 404 on lite, the same as at 05:07:32Z, before that deploy finished |
+
+**Not verified:** the signed-in behaviour (`not_measured`, and 400 for incomplete observations) needs a
+founder sign-in. No endpoint reports the running commit, so the commit comes from the deploy runs.

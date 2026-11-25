@@ -1,3 +1,4 @@
+import type { RetrievalEvidence } from "../retrievalEvidence";
 import { accessVerdict, type GoldenCategory, type GoldenSet } from "./goldenSet";
 import { dedupeRanked, mean, ndcgAtK, recallAtK, reciprocalRank } from "./retrievalMetrics";
 
@@ -13,6 +14,7 @@ export type RetrievalObservation = {
   humanReviewRequired: boolean;
   /** The path the code under test says served the answer. */
   servedBy: string;
+  evidence?: RetrievalEvidence;
   error?: string;
 };
 
@@ -21,6 +23,7 @@ export type QuestionScore = {
   category: GoldenCategory;
   ranked: string[];
   topScore?: number;
+  evidence?: RetrievalEvidence;
   recallAt5?: number;
   reciprocalRank?: number;
   ndcgAt5?: number;
@@ -110,6 +113,7 @@ export function scoreQuestion(golden: GoldenSet, observation: RetrievalObservati
     category: question.category,
     ranked,
     topScore: observation.sources[0]?.score,
+    evidence: observation.evidence,
     ...(question.relevant.length > 0
       ? {
           recallAt5: recallAtK(ranked, question.relevant),

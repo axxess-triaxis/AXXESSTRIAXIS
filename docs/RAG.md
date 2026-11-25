@@ -126,11 +126,11 @@ searching the answer and excerpts for sentences of forbidden documents.
 
 **Limits.** The data is synthetic, small (13 to 18 readable documents per user), English, clean and written
 by one author together with the questions. The numbers compare changes on this set. They do not predict
-quality on customer documents. Retrieval never abstains today: every no-answer question returned sources.
-Full text served 9 of 108 questions. Details and the raw table:
+quality on customer documents. At that commit retrieval never abstained and full text served 9 of 108
+questions; see the next section for what changed. Details and the raw table:
 `docs/readiness/RAG_RETRIEVAL_GATE_CLOSEOUT_2026_11_24.md`.
 
-**Changing it.** Keep `golden/v1` frozen so results stay comparable; add `v2` for new questions. If a change
+**Changing it.** Keep `golden/v1` and `golden/v2` frozen so results stay comparable; add `v3` for new questions. If a change
 improves retrieval, re-measure and raise the thresholds in the same pull request. If a refactor makes a
 self-test edit stop matching, the gate fails and names it: update `scripts/rag-gate-mutations.mjs`.
 
@@ -143,3 +143,27 @@ secret.
 caller supplies, returns 400 and records nothing otherwise, and marks the row `client_supplied`. `POST` is for
 Super Admins and Organization Admins; other roles get 403 and nothing is recorded. Rows in
 `rag_release_gates` from before 2026-11-24 may be passes with nothing observed.
+
+## Chunk full text, rank fusion and abstention (2026-11-25)
+
+Not applied to any hosted project. Full text over chunks needs
+`supabase/migrations/20261125120000_rag_chunk_fulltext.sql`. Without it retrieval takes its previous path.
+
+- **Chunk full text.** `search_rag_chunks_fulltext` searches chunk text and title, matches any word, and
+  ranks by how rare each word is. Only `service_role` may call it. It is limited to document ids the
+  application already authorized and skips chunks the user's role may not read. It returns coverage: the
+  share of the question's word weight found in a chunk.
+- **Rank fusion** (`retrievalFusion.ts`), semantic mode: reciprocal rank of the similarity list plus the
+  full-text list. Full text votes only for a chunk with coverage above 0.5. The score shown is still the
+  similarity.
+- **Abstention** (`abstention.ts`), semantic mode: no sources and a human-review request when the best
+  similarity is below 0.785 and the best coverage is below 0.2. Below 0.82 and 0.25 it shows sources and
+  asks for review. It never abstains on documents the user attached, or when full text could not run.
+- **Full-text mode** asks for review, but does not abstain, when no word of the question is in any readable
+  chunk, title or description. Abstaining there was measured and dropped. **Hash mode** is unchanged.
+- **Evidence** (`retrievalEvidence.ts`) is computed only over chunks the user may read, so an abstention
+  says nothing about documents they may not.
+
+The limits are tied to gte-small and English text, and were chosen on golden v1. Re-measure them if either
+changes. Before and after table, by commit and run:
+`docs/readiness/RAG_RETRIEVAL_QUALITY_CLOSEOUT_2026_11_25.md`.

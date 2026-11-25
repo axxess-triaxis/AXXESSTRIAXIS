@@ -181,6 +181,7 @@ export async function observeMode(
         answer: answer.answer,
         humanReviewRequired: answer.humanReviewRequired,
         servedBy: answer.retrievalMode ?? "unknown",
+        evidence: answer.retrievalEvidence,
       });
     } catch (error) {
       observations.push({

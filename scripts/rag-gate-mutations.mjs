@@ -8,7 +8,9 @@ const GOVERNED = "src/services/rag/governedRag.ts";
 const HASH = "src/services/rag/embeddings/embeddingProvider.ts";
 const SEMANTIC = "src/services/rag/embeddings/semanticEmbeddings.ts";
 const GUARD = "src/security/tenantGuard.ts";
-const FULLTEXT = "src/repositories/supabaseEnterpriseRepositories.ts";
+const FUSION = "src/services/rag/retrievalFusion.ts";
+const ABSTENTION = "src/services/rag/abstention.ts";
+const CHUNK_FULLTEXT = "src/services/rag/chunkFullText.ts";
 
 export const MUTATIONS = [
   {
@@ -25,15 +27,15 @@ export const MUTATIONS = [
   },
   {
     id: "ranking-reversed",
-    modes: ["hash", "semantic"],
+    modes: ["hash", "fulltext", "semantic"],
     description: "The worst matches are returned first.",
-    edits: [[WORKFLOW, ".sort((left, right) => right.score - left.score)", ".sort((left, right) => left.score - right.score)"]],
+    edits: [[WORKFLOW, ".sort((left, right) => right.order - left.order)", ".sort((left, right) => left.order - right.order)"]],
   },
   {
     id: "retrieval-returns-nothing",
     modes: ["semantic"],
     description: "Every citation is dropped after ranking.",
-    edits: [[WORKFLOW, ".slice(0, limit);\n}\n\n// Semantic retrieval", ".slice(0, 0);\n}\n\n// Semantic retrieval"]],
+    edits: [[WORKFLOW, ".slice(0, limit)\n    .map(({ row, score })", ".slice(0, 0)\n    .map(({ row, score })"]],
   },
   {
     id: "hash-collapsed",
@@ -44,8 +46,44 @@ export const MUTATIONS = [
   {
     id: "fulltext-returns-nothing",
     modes: ["fulltext"],
-    description: "Full-text search never returns a hit, so the mode falls back to a full scan.",
-    edits: [[FULLTEXT, "return rows.map((row): FullTextSearchHit => ({ id: row.id, rank: row.rank }));\n  },\n  async searchArticles", "return rows.slice(0, 0).map((row): FullTextSearchHit => ({ id: row.id, rank: row.rank }));\n  },\n  async searchArticles"]],
+    description: "Chunk full text never returns a hit, so the mode falls back to the title-and-description search.",
+    edits: [[CHUNK_FULLTEXT, "return Array.isArray(hits) ? hits : null;", "return Array.isArray(hits) ? hits.slice(0, 0) : null;"]],
+  },
+  {
+    id: "fulltext-question-dropped",
+    modes: ["fulltext"],
+    description: "Full text searches for a fixed word instead of the question.",
+    edits: [[CHUNK_FULLTEXT, "p_query: question,", "p_query: \"staff\","]],
+  },
+  {
+    id: "fusion-ignores-semantic-ranks",
+    modes: ["semantic"],
+    description: "Rank fusion drops the semantic list, so only full text decides the order.",
+    edits: [[FUSION, "semantic.forEach((hit, index) => order.set(hit.id, 1 / (RANK_CONSTANT + index + 1)));", "semantic.forEach((hit) => order.set(hit.id, 0));"]],
+  },
+  {
+    id: "fusion-ignores-full-text",
+    modes: ["semantic"],
+    description: "Rank fusion drops the full-text list, so codes rank low again.",
+    edits: [[FUSION, "order.set(hit.id, (order.get(hit.id) ?? 0) + hit.coverage / (RANK_CONSTANT + index + 1));", "order.set(hit.id, order.get(hit.id) ?? index * 0);"]],
+  },
+  {
+    id: "abstention-removed",
+    modes: ["semantic"],
+    description: "Weak evidence is never judged, so every question is answered.",
+    edits: [[ABSTENTION, "if (topSimilarity === undefined || topCoverage === undefined) return \"answer\";", "return \"answer\";"]],
+  },
+  {
+    id: "full-text-review-flag-removed",
+    modes: ["fulltext"],
+    description: "With no matching word, full-text mode no longer asks for human review.",
+    edits: [[WORKFLOW, "noWordMatches = hits?.length === 0;", "noWordMatches = false;"]],
+  },
+  {
+    id: "abstains-on-everything",
+    modes: ["semantic"],
+    description: "Every question is judged to have weak evidence.",
+    edits: [[ABSTENTION, "return evidence.topSimilarity < limit.similarity && evidence.topCoverage < limit.coverage;", "return true;"]],
   },
   {
     id: "document-authorization-removed",
