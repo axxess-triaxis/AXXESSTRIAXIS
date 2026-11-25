@@ -172,6 +172,12 @@ Existing rows are not rewritten.
 | Auto-fix on without asking, and 50 to 70% fewer approval questions by doing reversible steps and batching the rest; critical actions still asked every time, except merges covered below | 2026-11-25 | Founder instruction, executed by Claude Code | APPROVAL-LOAD | In the RAG retrieval session the agent asked 9 next-step questions between its gate passing and the docs PR, and one merge took more than one ask | Pending, review by 2026-12-09: count questions per session against 9 | #578 | Baseline, counted from that session's next-step questions: Auto-fix 2, #574 merge 4, deploy check 1, #575 merge 1, docs PR 1; 9 in all | This row |
 | Merge fully ready PRs without waiting for an explicit request, with "fully ready" defined in `CLAUDE.md` and the merge-triggered deploy included | 2026-11-25 | Founder instruction, executed by Claude Code | MERGE-WHEN-READY | Most approval questions were about merges already green | Pending, review by 2026-12-09: merges made, live checks, reverts | #578 | Open PRs audited 2026-11-25 (20 open): reasons recorded in the session report | This row |
 
+## Approved calls from revoked agent keys (2026-11-25)
+
+| Decision | Date | Session/tool | Issue ID | Why | Outcome | Commit/PR | Verification | Closeout |
+|---|---|---|---|---|---|---|---|---|
+| Check the agent connection when an approved call runs, and before an Always Allow grant: revoked, missing or without the capability means failed, not run | 2026-11-25 | Claude Code finding, founder chose to fix it | AGENT-REVOKED-APPROVALS | A key revoked while its call waited still had the call run on approval | Pending, review by 2026-12-09: founder's merge decision | `3a5a55a6` (red), `5e303380` (fix) | 3 of 24 tests failed on the old code, all pass on the new; full suite 2674 of 2674 with `--pool=forks --maxWorkers=2` | `REVOKED_AGENT_APPROVALS_CLOSEOUT_2026_11_25.md` |
+
 ## Server-side AI routing context (2026-11-25)
 
 | Decision | Date | Session/tool | Issue ID | Why | Outcome | Commit/PR | Verification | Closeout |
