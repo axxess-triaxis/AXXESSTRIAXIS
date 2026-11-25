@@ -1,7 +1,7 @@
 # LangSmith tracing, local only: closeout, 2026-11-25
 
-Branch `feat/langsmith-tracing`, from `origin/main` at `754524ff`. Status: **Live verified on landing and
-investor; lite not deployed.** PR #584, merge `b677d0f6`. No change to any hosted project or Vercel setting.
+Branch `feat/langsmith-tracing`, from `origin/main` at `754524ff`. Status: **Live verified on landing,
+investor and lite.** PR #584, merge `b677d0f6`. No change to any hosted project or Vercel setting.
 
 ## Signal and decision
 
@@ -84,6 +84,16 @@ The temporary route and launch entries were removed. Deploy evidence (founder sa
 - Investor: `dpl_2j9QbveCrY8zYCgRG9MHeJaRZLAr`, created 15:06:34 UTC by Vercel's Git link, same commit. Previous `dpl_Ez7fZP1fURW5MP5RfEebD4ADgUVG`.
 - Lite: still `dpl_3WCAzg3AfGpb8WdjTrinGH9DDh7n`, created 09:35 UTC.
 - Live checks 15:19 to 15:22 UTC: `/` and `/auth` 200 on all three sites; `POST /api/ai` 401 and `POST /api/ai/agentic-chat` 400 without a sign-in on landing and investor, as before the merge on landing; `POST /api/stack/results` and `GET /api/agents/stack-runs` 401 with a wrong key; 13 scripts on each `/auth`, 0 mention `langsmith`; 0 `[SENSITIVE]` placeholders on landing; no LangSmith rows in either project's production settings; 0 runs stored in LangSmith since 11:00 UTC.
+- Retry, founder said "Anything pending; commit, push, deploy" for any session. Hypothesis: the quota had eased, because
+  Vercel had just built three previews of this branch. Run 45641421107 attempt 2: investor and lite success, 18:20 UTC,
+  `main` still `b677d0f6`. Investor `dpl_BAEieVd9QC8xU4LF7BggqDo7aVLi` (18:17:18 UTC), lite
+  `dpl_ACnweEUYpA9VWhjmEvyJWtvDGSuB` (18:19:54 UTC). Roll back to the two builds above.
+- Live checks 18:20 to 18:22 UTC: `/` and `/auth` 200 on all three sites; `POST /api/ai` without a sign-in 401 on landing
+  and investor; `POST /api/stack/results` with a wrong key 401 on both; 13 scripts on each `/auth`, all loaded, 0 mention
+  `langsmith`, 0 `[SENSITIVE]`.
+- The RAG Release Gate failed on `main` at 15:06 UTC ("1 of 61 chunks have no embedding"). Three branches containing
+  `b677d0f6` passed it minutes later, and attempt 2 of run 45641421366 passed. Cause not found; it needs an owner if it
+  happens again.
 - Not verified: a signed-in AI request in production, and a real customer message with the rotated keys.
 
 Acceptance criteria, from the plan:
@@ -120,7 +130,7 @@ Decision outcomes:
 - Decision: trace the app's AI in LangSmith, local only, masked.
   Outcome: works locally, as above. Whether it helps: Pending, review by 2026-12-09.
 
-Final status: Live verified on landing and investor. Lite: not deployed, owner Claude Code, rerun the failed jobs of run 45641421107 when Vercel's daily limit clears
+Final status: Live verified on landing, investor and lite
 Remaining risk: names and business details are not masked, so use test data only. A restricted text that the
 sensitivity rules do not recognize would be sent. Copilot has no server-side conversation ID, so its thread is a token
 of organization, user and message. Copilot and Knowledge Hub traces are not yet seen live (they need a sign-in).
