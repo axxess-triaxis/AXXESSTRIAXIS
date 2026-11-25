@@ -19,8 +19,12 @@ describe("rank fusion", () => {
     expect(ranked(fuseRanks({ semantic, fullText: [{ id: "code", coverage: 0.95 }] }))[0]).toBe("code");
   });
 
+  it("ignores full text that covers no more than half of the question, so one shared word cannot move a paraphrase", () => {
+    expect(ranked(fuseRanks({ semantic, fullText: [{ id: "code", coverage: 0.5 }, { id: "c", coverage: 0.2 }] }))).toEqual(["a", "b", "c", "code"]);
+  });
+
   it("keeps semantic rank as a vote: equal full-text votes leave the better semantic hit first", () => {
-    const fused = fuseRanks({ semantic, fullText: [{ id: "a", coverage: 0.5 }, { id: "code", coverage: 0.5 }] });
+    const fused = fuseRanks({ semantic, fullText: [{ id: "a", coverage: 0.6 }, { id: "code", coverage: 0.6 }] });
     expect(ranked(fused).slice(0, 2)).toEqual(["a", "code"]);
   });
 
@@ -29,9 +33,9 @@ describe("rank fusion", () => {
   });
 
   it("shows similarity as the score, and never scores a full-text-only chunk above the weakest semantic hit", () => {
-    const scores = displayScores({ semantic, fullText: [{ id: "code", coverage: 1 }, { id: "only", coverage: 1 }, { id: "weak", coverage: 0.2 }] });
+    const scores = displayScores({ semantic, fullText: [{ id: "code", coverage: 1 }, { id: "only", coverage: 1 }, { id: "weak", coverage: 0.6 }] });
     expect(scores.get("code")).toBe(0.79);
     expect(scores.get("only")).toBe(0.79);
-    expect(scores.get("weak")).toBe(0.2);
+    expect(scores.get("weak")).toBe(0.6);
   });
 });
