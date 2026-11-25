@@ -1,0 +1,30 @@
+{
+  "version": "v2",
+  "rule": "Same rule as v1: measured baseline minus one question. Not measured yet: every minimum is 0 until the first CI run on unchanged retrieval code. Leaks, errors and missing questions fail regardless.",
+  "modes": {
+    "hash": {
+      "recallAt5": 0,
+      "mrr": 0,
+      "ndcgAt5": 0,
+      "noAnswerCorrectness": 0,
+      "noAnswerAbstainedOrFlagged": 0,
+      "servedByModeShare": 0
+    },
+    "fulltext": {
+      "recallAt5": 0,
+      "mrr": 0,
+      "ndcgAt5": 0,
+      "noAnswerCorrectness": 0,
+      "noAnswerAbstainedOrFlagged": 0,
+      "servedByModeShare": 0
+    },
+    "semantic": {
+      "recallAt5": 0,
+      "mrr": 0,
+      "ndcgAt5": 0,
+      "noAnswerCorrectness": 0,
+      "noAnswerAbstainedOrFlagged": 0,
+      "servedByModeShare": 0
+    }
+  }
+}
