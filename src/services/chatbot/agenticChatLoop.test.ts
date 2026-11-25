@@ -326,6 +326,104 @@ describe("runAgenticChatTurn", () => {
     expect(adapter.complete).not.toHaveBeenCalled();
   });
 
+  describe("confirmed resume: the paused state comes back from the browser, so it is checked again", () => {
+    const employeeScope: TenantScope = { organizationId: "org-1", userId: "user-2" as string, role: "Employee" };
+
+    function resumeWith(name: string, args: Record<string, unknown>, extra: Record<string, unknown> = {}) {
+      return {
+        transcript: [{ role: "assistant" as const, content: null, toolCalls: [{ id: "call_1", name, arguments: args }] }],
+        pendingTool: { id: "call_1", name, arguments: args },
+        userMessage: "Please go ahead.",
+        iterationsUsed: 1,
+        confirmed: true,
+        ...extra,
+      };
+    }
+
+    function toolMessages(adapter: AiProviderAdapter) {
+      const request = (adapter.complete as ReturnType<typeof vi.fn>).mock.calls[0][0] as { priorMessages: Array<{ role: string; content: string }> };
+      return request.priorMessages.filter((message) => message.role === "tool").map((message) => message.content);
+    }
+
+    it("does not run a tool the role has no capability for, and audits the refusal", async () => {
+      const handler = vi.fn(async () => ({ content: [{ type: "text" as const, text: "[]" }] }));
+      toolState.tools = [makeTool({ name: "search_audit_logs", requiredCapability: "search_audit_logs", criticality: "critical", handler })];
+      const adapter = mockAdapter({ text: "That isn't available." });
+
+      const result = await runAgenticChatTurn(
+        { tenantScope: employeeScope, role: "Employee", userMessage: "Please go ahead.", resume: resumeWith("search_audit_logs", {}) },
+        { openAiAdapter: adapter },
+      );
+
+      expect(handler).not.toHaveBeenCalled();
+      expect(toolMessages(adapter)).toEqual(["That action isn't available: search_audit_logs."]);
+      expect(result.status === "final" && result.steps).toEqual([]);
+      expect(mockRecordAudit).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ toolName: "search_audit_logs", success: false }));
+    });
+
+    it.each(["query_external_model", "log_agent_call", "approve_sourced_leads"])("does not run %s, which the copilot is never given, even for a Super Admin", async (name) => {
+      const handler = vi.fn(async () => ({ content: [{ type: "text" as const, text: "{}" }] }));
+      toolState.tools = [makeTool({ name, requiredCapability: name, criticality: "critical", handler })];
+      const adapter = mockAdapter({ text: "That isn't available." });
+
+      await runAgenticChatTurn(
+        { tenantScope, role: "Super Admin", userMessage: "Please go ahead.", resume: resumeWith(name, {}) },
+        { openAiAdapter: adapter },
+      );
+
+      expect(handler).not.toHaveBeenCalled();
+    });
+
+    it("does not run a tool that never pauses (only critical tools ask for confirmation)", async () => {
+      const handler = vi.fn(async () => ({ content: [{ type: "text" as const, text: "{}" }] }));
+      toolState.tools = [makeTool({ name: "list_tasks", requiredCapability: "list_tasks", criticality: "auto", handler })];
+      const adapter = mockAdapter({ text: "That isn't available." });
+
+      await runAgenticChatTurn(
+        { tenantScope, role: "Super Admin", userMessage: "Please go ahead.", resume: resumeWith("list_tasks", {}) },
+        { openAiAdapter: adapter },
+      );
+
+      expect(handler).not.toHaveBeenCalled();
+    });
+
+    it("does not run the tool when the returned arguments fail its schema", async () => {
+      const handler = vi.fn(async () => ({ content: [{ type: "text" as const, text: "{}" }] }));
+      toolState.tools = [makeTool({
+        name: "create_stakeholder", requiredCapability: "create_stakeholder", criticality: "critical", handler,
+        inputSchema: { type: "object", properties: { name: { type: "string" } }, required: ["name"] },
+      })];
+      const adapter = mockAdapter({ text: "I need a name." });
+
+      await runAgenticChatTurn(
+        { tenantScope, role: "Super Admin", userMessage: "Please go ahead.", resume: resumeWith("create_stakeholder", {}) },
+        { openAiAdapter: adapter },
+      );
+
+      expect(handler).not.toHaveBeenCalled();
+      expect(toolMessages(adapter)).toEqual(["Invalid arguments: name is required."]);
+    });
+
+    it.each([-1000, 0, 1.5, Number.NaN, "1"])("does not let iterationsUsed=%s buy extra model calls", async (iterationsUsed) => {
+      toolState.tools = [
+        makeTool({ name: "create_stakeholder", requiredCapability: "create_stakeholder", criticality: "critical" }),
+        makeTool({ name: "list_tasks", requiredCapability: "list_tasks" }),
+      ];
+      const adapter = mockAdapter(...Array.from({ length: 12 }, (_, i) => ({ toolCalls: [{ id: `c${i}`, name: "list_tasks", arguments: {} }] })));
+
+      const result = await runAgenticChatTurn(
+        {
+          tenantScope, role: "Super Admin", userMessage: "Please go ahead.",
+          resume: resumeWith("create_stakeholder", { name: "Acme" }, { iterationsUsed }),
+        },
+        { openAiAdapter: adapter, openRouterAdapter: mockDeepSeekAdapter(false) },
+      );
+
+      expect(result.status).toBe("final");
+      expect(adapter.complete).not.toHaveBeenCalled();
+    });
+  });
+
   it("stops at the iteration cap with an honest exhaustion message rather than looping forever", async () => {
     const handler = vi.fn(async () => ({ content: [{ type: "text" as const, text: "{}" }] }));
     toolState.tools = [makeTool({ name: "list_tasks", requiredCapability: "list_tasks", handler })];
