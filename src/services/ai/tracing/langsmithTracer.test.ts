@@ -7,7 +7,7 @@ import { routeAiRequest } from "../router/aiRouter";
 
 // Nothing here reaches LangSmith: the SDK client gets a fetch that records what would have been sent.
 const start = startRecordedTracing;
-const context = { organizationId: "11111111-aaaa-4000-8000-000000000001", role: "Executive", task: "general_chat", threadKey: "conversation-42" };
+const context = { organizationId: "11111111-aaaa-4000-8000-000000000001", role: "Executive", task: "general_chat", threadKey: "chat-42" };
 
 describe("LangSmith tracing", () => {
   beforeEach(() => clearAiTracer());

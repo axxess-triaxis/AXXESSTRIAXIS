@@ -1,7 +1,7 @@
 # LangSmith tracing, local only: closeout, 2026-11-25
 
-Branch `feat/langsmith-tracing`, from `origin/main` at `754524ff`. Status: **Implemented locally.** Committed on an
-unpushed branch. No PR, no deploy, no change to any hosted project or Vercel setting.
+Branch `feat/langsmith-tracing`, from `origin/main` at `754524ff`. Status: **Code complete.** Open as PR #584.
+No deploy, no change to any hosted project or Vercel setting.
 
 ## Signal and decision
 
@@ -39,8 +39,8 @@ Issue ID: LANGSMITH-TRACING
 Title: LangSmith tracing for the app's AI, developer machine only
 Origin plan: `~/.claude/plans/install-langsmith-skills-from-splendid-moon-of-0e5e8cf4-ad81-4ce5-91a0-5986cf1b3a92.md`, approved 2026-11-25
 Research artifact: the plan's Context section
-Implementation commit(s): this commit
-PR: none
+Implementation commit(s): `a6474ebf` and later commits on the branch
+PR: #584
 Branch: `feat/langsmith-tracing`
 Files changed: above
 
@@ -101,6 +101,7 @@ Errors hit this session:
 | SDK copied `LANGSMITH_*` and `LANGCHAIN_*` variable values it did not consider secret into run metadata. Stored before the fix: `LANGSMITH_LIVE_TEST` and `LANGSMITH_TRACING` only, on 4 runs. Keys and tokens are excluded by the SDK | Fixed with `omitTracedRuntimeInfo`; re-run live at 10:56 |
 | Wrong text saved as the key, and one live test run on it | The test recorded no writes, and no run from it is stored. That recording was unreliable, so the text may have been sent as a request header. Guard added, key re-entered by the founder from the clipboard |
 | Live test recorded 0 writes while uploads were still in the background | Fixed: it waits for the writes and then reads the runs back |
+| PR #584 Secret Scan failed on one finding: gitleaks `generic-api-key` matched the test value `threadKey: "conversation-42"` (`langsmithTracer.test.ts:10`, commit `a6474ebf`). Not a secret | Value reworded. The scan reads each commit, so the pushed one still needs an exact-finding line in `.gitleaksignore`; founder's decision |
 | Unused-variable lint warning | Fixed, lint exit 0 |
 
 Deviations from the plan: content is cleaned before the SDK holds it, instead of by the SDK's `anonymizer`; the key
@@ -111,7 +112,7 @@ Decision outcomes:
 - Decision: trace the app's AI in LangSmith, local only, masked.
   Outcome: works locally, as above. Whether it helps: Pending, review by 2026-12-09.
 
-Final status: Implemented locally
+Final status: Code complete (PR #584 open, checks not all passed)
 Remaining risk: names and business details are not masked, so use test data only. A restricted text that the
 sensitivity rules do not recognize would be sent. Copilot has no server-side conversation ID, so its thread is a token
 of organization, user and message. Copilot and Knowledge Hub traces are not yet seen live (they need a sign-in).
