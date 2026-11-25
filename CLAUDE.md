@@ -32,6 +32,9 @@ live-check every deploy, regression test first, no bare retries, acceptance crit
 dated review) for every decision, plan-first in at least 95% of build sessions, each repository's work in
 its own checkout, and a filled exception template for every gate bypass.
 
+Added 2026-11-25: every session follows **Approval Load** below -- Auto-fix on without asking, reversible
+steps done without asking, approvals batched, and critical actions still asked every time.
+
 ### Mandatory Plan-First Sessions -- Standing Rule
 
 Every session in this repository must start in Plan Mode automatically -- no separate prompt or slash command from the founder should be required to trigger it. This is enforced at the harness level via `.claude/settings.json` (`permissions.defaultMode: "plan"`), not left to a memory/instruction that could be forgotten or skipped under time pressure: a session opening in this repo starts gated behind an approved plan before any file edit or command executes.
@@ -134,6 +137,19 @@ Standard verification suite for this repo: `pnpm run typecheck`, `pnpm --dir app
 - Never push or deploy to production without explicit confirmation in the current conversation, even if a prior conversation already approved a similar action.
 - Prefer new commits over amending; never force-push without explicit request.
 - Before any destructive git operation, run `git status` and preserve uncommitted work.
+
+### Approval Load -- Standing Rule
+
+Adopted 2026-11-25 on the founder's instruction: "Auto-execute auto-fix wherever fit (it's not a critical decision)" and "Reduce number of 'Approve' decisions by HITL by 50-70%". The aim is that each question the founder sees is one only the founder can answer.
+
+1. **Auto-fix is on by default.** A session that opens a PR turns Auto-fix on for it without asking, wherever the app allows it, and says so in one line. This covers CI failures, merge conflicts and review comments on that PR. Auto-merge is never turned on this way.
+2. **Do without asking** what is reversible and inside the task: edits, tests and checks, feature-branch commits and pushes, opening a PR, retargeting it, marking it ready when its checks pass, conflicts that need no product decision, closeout, ledger and matrix records in the same PR, reading CI, and post-deploy live checks.
+3. **Batch what does need a yes.** Check the consequences first, then ask once, naming all of them, for example: "Merge A, then B. Each deploys landing, investor and lite. No migration. Live check and record follow." One yes covers exactly what it names.
+4. **Still asked, every time:** merging to `main` or any production deploy, a migration on a hosted project, production data, any gate bypass (its five items still apply), sending or publishing on the founder's behalf, spending, accounts, secrets, permissions or security settings, deleting data or branches, force-push, and a product choice the repository cannot settle.
+5. **A claim is checked, not assumed.** If the founder or a tool says a step was done and it was not, report what was observed and do not act on the claim.
+6. **Measure it.** Each closeout that asked for approvals lists how many and which could have been avoided. The 50 to 70% is a target; no percentage is claimed until sessions are counted.
+
+These rules change when to ask, not what is allowed. They relax no gate, no evidence rule, and no rule in this file. The app's own permission prompts are separate and are not bypassed. Plan-first approval still applies.
 
 ### Production Gate Bypass -- Standing Rule
 
