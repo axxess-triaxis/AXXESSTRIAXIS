@@ -116,6 +116,22 @@ describe("GET /api/agents/activity", () => {
     expect(body.pendingApprovals).toHaveLength(1);
   });
 
+  it("does not count a retry of an already decided call as a failure (2026-11-25)", async () => {
+    state.session = { user: user("Organization Admin", "org-7") };
+    state.auditRows = [{
+      id: "audit-1",
+      action: "agent.anthropic.tool.create_project",
+      category: "agentic-infrastructure",
+      metadata: { provider: "anthropic", toolName: "create_project", success: false, errorMessage: "duplicate_call", agentConnectionId: "conn-2" },
+      created_at: "2026-11-25T10:00:00.000Z",
+    }];
+
+    const body = await (await GET()).json() as { activity: Array<{ status: string }>; summary: { failures: number } };
+
+    expect(body.activity.map((event) => event.status)).toEqual(["denied"]);
+    expect(body.summary.failures).toBe(0);
+  });
+
   // MCP3-3: governance-dashboard additions -- roster, activeAgents/activeProviders, approved/
   // rejected/pending split. All sourced from the same organization-scoped fetches as the rest of
   // this route (mocked repositories below are themselves org-agnostic in this test, but the route's

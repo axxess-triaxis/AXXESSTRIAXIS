@@ -63,10 +63,9 @@ function toSummary(row: PendingToolCallRow): PendingToolCallSummary {
 
 // Created by POST /api/agents/mcp's tools/call handler, in the same request that creates the
 // linked approval_requests row -- this is the machine-execution counterpart to that human-facing
-// governance record. idempotencyKey is a fresh UUID per pending call (each distinct MCP call
-// attempt gets its own row; this is not intended to dedupe identical-looking calls, only to give
-// the exactly-once execution guard in the approval route a stable key to reason about).
-export async function createPendingToolCall(input: {
+// governance record. Without a caller key, idempotencyKey is a fresh UUID per pending call (each
+// distinct MCP call attempt gets its own row; identical-looking calls are not deduplicated).
+export type CreatePendingToolCallInput = {
   organizationId: string;
   agentConnectionId: string;
   approvalRequestId: string;
@@ -75,25 +74,108 @@ export async function createPendingToolCall(input: {
   provider: AgentProviderId;
   arguments: Record<string, unknown>;
   idempotencyKey: string;
-}): Promise<PendingToolCallSummary> {
+};
+
+function insertBody(input: CreatePendingToolCallInput) {
+  return {
+    organization_id: input.organizationId,
+    agent_connection_id: input.agentConnectionId,
+    approval_request_id: input.approvalRequestId,
+    tool_name: input.toolName,
+    tool_version: input.toolVersion,
+    provider: input.provider,
+    arguments: input.arguments,
+    idempotency_key: input.idempotencyKey,
+    status: "pending",
+  };
+}
+
+export async function createPendingToolCall(input: CreatePendingToolCallInput): Promise<PendingToolCallSummary> {
   const rows = await supabaseAdminRest<PendingToolCallRow[]>("agent_pending_tool_calls", {
     method: "POST",
     prefer: "return=representation",
-    body: {
-      organization_id: input.organizationId,
-      agent_connection_id: input.agentConnectionId,
-      approval_request_id: input.approvalRequestId,
-      tool_name: input.toolName,
-      tool_version: input.toolVersion,
-      provider: input.provider,
-      arguments: input.arguments,
-      idempotency_key: input.idempotencyKey,
-      status: "pending",
-    },
+    body: insertBody(input),
   });
   const row = rows?.[0];
   if (!row) throw new Error("Pending tool call was not returned by Supabase.");
   return toSummary(row);
+}
+
+// Ops worker support (2026-11-25): the insert for a call that carries a caller key. The UNIQUE
+// constraint on idempotency_key decides a race between two calls: the second insert writes nothing
+// and returns undefined, and the caller then reads the row that won.
+export async function createPendingToolCallUnlessExists(input: CreatePendingToolCallInput): Promise<PendingToolCallSummary | undefined> {
+  const rows = await supabaseAdminRest<PendingToolCallRow[]>("agent_pending_tool_calls", {
+    method: "POST",
+    query: new URLSearchParams({ on_conflict: "idempotency_key" }),
+    prefer: "resolution=ignore-duplicates,return=representation",
+    body: insertBody(input),
+  });
+  const row = rows?.[0];
+  return row ? toSummary(row) : undefined;
+}
+
+export async function getPendingToolCallByIdempotencyKey(input: {
+  organizationId: string;
+  agentConnectionId: string;
+  idempotencyKey: string;
+}): Promise<PendingToolCallSummary | undefined> {
+  const rows = await supabaseAdminRest<PendingToolCallRow[]>("agent_pending_tool_calls", {
+    method: "GET",
+    query: new URLSearchParams({
+      select: pendingCallSelect,
+      idempotency_key: `eq.${input.idempotencyKey}`,
+      organization_id: `eq.${input.organizationId}`,
+      agent_connection_id: `eq.${input.agentConnectionId}`,
+      limit: "1",
+    }),
+  });
+  const row = rows?.[0];
+  return row ? toSummary(row) : undefined;
+}
+
+/** A pending call is readable only by the connection that made it, in its own organization. */
+export async function getPendingToolCallForConnection(input: {
+  organizationId: string;
+  agentConnectionId: string;
+  id: string;
+}): Promise<PendingToolCallSummary | undefined> {
+  const rows = await supabaseAdminRest<PendingToolCallRow[]>("agent_pending_tool_calls", {
+    method: "GET",
+    query: new URLSearchParams({
+      select: pendingCallSelect,
+      id: `eq.${input.id}`,
+      organization_id: `eq.${input.organizationId}`,
+      agent_connection_id: `eq.${input.agentConnectionId}`,
+      limit: "1",
+    }),
+  });
+  const row = rows?.[0];
+  return row ? toSummary(row) : undefined;
+}
+
+// Closes the approval request of a call that lost the race above: nothing is linked to it, so a
+// human approving it would run nothing. Not approvalRequestsRepository.decide(), which would record
+// the key's issuer as the reviewer of a decision no person made. "rejected" because the status
+// CHECK has no "cancelled". Only a still-pending request is touched, so a human decision stands.
+export async function closeDuplicateApprovalRequest(input: {
+  organizationId: string;
+  approvalRequestId: string;
+}): Promise<void> {
+  await supabaseAdminRest("approval_requests", {
+    method: "PATCH",
+    query: new URLSearchParams({
+      id: `eq.${input.approvalRequestId}`,
+      organization_id: `eq.${input.organizationId}`,
+      status: "eq.pending",
+    }),
+    prefer: "return=minimal",
+    body: {
+      status: "rejected",
+      decision_reason: "Closed automatically: the agent sent the same call twice, and the first request is the one to decide.",
+      decided_at: new Date().toISOString(),
+    },
+  });
 }
 
 export async function getPendingToolCallByApprovalId(organizationId: string, approvalRequestId: string): Promise<PendingToolCallSummary | undefined> {
