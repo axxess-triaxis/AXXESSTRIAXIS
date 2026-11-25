@@ -1,7 +1,7 @@
 # LangSmith tracing, local only: closeout, 2026-11-25
 
-Branch `feat/langsmith-tracing`, from `origin/main` at `754524ff`. Status: **Code complete.** Open as PR #584.
-No deploy, no change to any hosted project or Vercel setting.
+Branch `feat/langsmith-tracing`, from `origin/main` at `754524ff`. Status: **Live verified on landing and
+investor; lite not deployed.** PR #584, merge `b677d0f6`. No change to any hosted project or Vercel setting.
 
 ## Signal and decision
 
@@ -76,7 +76,15 @@ Live checks (2026-11-25, UTC). Each was read back from LangSmith, because a 202 
 | 11:02 | Dev server, tracing off | no LangSmith log line; route 200; nothing stored |
 | 11:00 | All runs stored that day | LOCAL 8 runs in 4 traces; DEVELOPMENT, STAGING and PRODUCTION 0 |
 
-The temporary route and launch entries were removed. Deploy evidence: not applicable.
+The temporary route and launch entries were removed. Deploy evidence (founder said "Deploy", 2026-11-25):
+
+- All checks passed on `033cc0ad`, which contained `main` `754524ff`. Merged 15:06:30 UTC as `b677d0f6`. Also ships #580.
+- Run 45641421107: landing success; investor failed, `api-deployments-free-per-day` (more than 100); lite skipped. Not a code failure.
+- Landing: `dpl_4tY1Eeize1v2TxrkWqoEAT39aMDB`, created 15:08:25 UTC, after the rotated key rows (09:56 UTC). Previous `dpl_Ejkpc7F3hxeRTk4QP6CdwY9NGpoH`.
+- Investor: `dpl_2j9QbveCrY8zYCgRG9MHeJaRZLAr`, created 15:06:34 UTC by Vercel's Git link, same commit. Previous `dpl_Ez7fZP1fURW5MP5RfEebD4ADgUVG`.
+- Lite: still `dpl_3WCAzg3AfGpb8WdjTrinGH9DDh7n`, created 09:35 UTC.
+- Live checks 15:19 to 15:22 UTC: `/` and `/auth` 200 on all three sites; `POST /api/ai` 401 and `POST /api/ai/agentic-chat` 400 without a sign-in on landing and investor, as before the merge on landing; `POST /api/stack/results` and `GET /api/agents/stack-runs` 401 with a wrong key; 13 scripts on each `/auth`, 0 mention `langsmith`; 0 `[SENSITIVE]` placeholders on landing; no LangSmith rows in either project's production settings; 0 runs stored in LangSmith since 11:00 UTC.
+- Not verified: a signed-in AI request in production, and a real customer message with the rotated keys.
 
 Acceptance criteria, from the plan:
 
@@ -112,7 +120,7 @@ Decision outcomes:
 - Decision: trace the app's AI in LangSmith, local only, masked.
   Outcome: works locally, as above. Whether it helps: Pending, review by 2026-12-09.
 
-Final status: Code complete (PR #584 open, checks not all passed)
+Final status: Live verified on landing and investor. Lite: not deployed, owner Claude Code, rerun the failed jobs of run 45641421107 when Vercel's daily limit clears
 Remaining risk: names and business details are not masked, so use test data only. A restricted text that the
 sensitivity rules do not recognize would be sent. Copilot has no server-side conversation ID, so its thread is a token
 of organization, user and message. Copilot and Knowledge Hub traces are not yet seen live (they need a sign-in).
