@@ -29,6 +29,8 @@ function activityStatus(metadata: Record<string, unknown>) {
   const errorMessage = readString(metadata.errorMessage);
   if (errorMessage === "pending_approval") return "pending";
   if (errorMessage?.toLowerCase().includes("capability")) return "denied";
+  // A retry of a call that was already decided: nothing ran, so it is neither a success nor a failure.
+  if (errorMessage === "duplicate_call") return "denied";
   return "failure";
 }
 

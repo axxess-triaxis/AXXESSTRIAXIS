@@ -1,7 +1,20 @@
 import { NextResponse } from "next/server";
 import { resolveAgentScopeFromApiKey, recordAgentToolAuditEvent } from "../../../../services/agents/agentConnectionRepository";
 import { hasGrant } from "../../../../services/agents/agentGrantsRepository";
-import { createPendingToolCall } from "../../../../services/agents/agentPendingToolCallRepository";
+import {
+  closeDuplicateApprovalRequest,
+  createPendingToolCall,
+  createPendingToolCallUnlessExists,
+  getPendingToolCallByIdempotencyKey,
+  type PendingToolCallSummary,
+} from "../../../../services/agents/agentPendingToolCallRepository";
+import {
+  idempotencyNotApplied,
+  isSameToolCall,
+  pendingToolCallState,
+  readCallerIdempotencyKey,
+  scopedIdempotencyKey,
+} from "../../../../services/agents/agentToolCallIdempotency";
 import { approvalRequestsRepository } from "../../../../repositories/workflowActionRepositories";
 import { agentScopeHasCapability, type AgentScope } from "../../../../security/agentScope";
 import { agentToolRegistry, getAgentTool, validateAgentToolArguments } from "../../../../services/agents/toolRegistry";
@@ -44,6 +57,27 @@ function tenantScopeForApproval(scope: AgentScope) {
   };
 }
 
+// Answers a tools/call whose idempotency key already has a pending call: the same call again gets
+// the existing one back, a different call is refused. Either way nothing is created or run.
+async function replayPendingCall(
+  id: string | number | null,
+  scope: AgentScope,
+  existing: PendingToolCallSummary,
+  toolName: string,
+  toolArgs: Record<string, unknown>,
+) {
+  if (!isSameToolCall(existing, toolName, toolArgs)) {
+    const message = "This idempotency key was already used by this connection for a different tool or different arguments.";
+    await recordAgentToolAuditEvent(scope, { toolName, success: false, argsSummary: toolArgs, errorMessage: message });
+    return rpcError(id, -32009, message);
+  }
+  const status = pendingToolCallState(existing);
+  await recordAgentToolAuditEvent(scope, { toolName, success: false, argsSummary: toolArgs, errorMessage: status === "pending_approval" ? status : "duplicate_call" });
+  return rpcResult(id, {
+    content: [{ type: "text", text: JSON.stringify({ status, approvalRequestId: existing.approvalRequestId, pendingToolCallId: existing.id, duplicate: true }) }],
+  });
+}
+
 export async function POST(request: Request) {
   const contentLength = Number(request.headers.get("content-length") ?? "0");
   if (contentLength > maxMcpRequestBytes) {
@@ -64,6 +98,12 @@ export async function POST(request: Request) {
   const body = await request.json().catch(() => undefined) as JsonRpcRequest | undefined;
   if (!body || body.jsonrpc !== "2.0" || typeof body.method !== "string") {
     return rpcError(body?.id ?? null, -32600, "Invalid JSON-RPC 2.0 request.");
+  }
+
+  // MCP Streamable HTTP (2025-06-18): a notification -- no id, e.g. notifications/initialized -- gets
+  // 202 with no body. The server acts on none of them yet.
+  if (body.id === undefined && body.method.startsWith("notifications/")) {
+    return new NextResponse(null, { status: 202 });
   }
 
   if (body.method === "initialize") {
@@ -100,6 +140,24 @@ export async function POST(request: Request) {
     }
     const toolArgs = validation.args;
 
+    // Ops worker support (2026-11-25): an optional caller key (agentToolCallIdempotency.ts) makes a
+    // retry return the first pending call. Checked before the grant, so that a retry after "approve
+    // and always allow" cannot run the same call a second time.
+    const callerKey = readCallerIdempotencyKey(body.params?._meta);
+    if (!callerKey.ok) {
+      await recordAgentToolAuditEvent(scope, { toolName, success: false, errorMessage: callerKey.message });
+      return rpcError(body.id, -32602, callerKey.message);
+    }
+    const keyLookup = callerKey.key === undefined ? undefined : {
+      organizationId: scope.organizationId,
+      agentConnectionId: scope.agentConnectionId,
+      idempotencyKey: scopedIdempotencyKey(scope.agentConnectionId, callerKey.key),
+    };
+    if (keyLookup) {
+      const existing = await getPendingToolCallByIdempotencyKey(keyLookup);
+      if (existing) return replayPendingCall(body.id, scope, existing, toolName, toolArgs);
+    }
+
     // Agentic Infrastructure Phase 2 (2026-07-30): critical tools (anything real-world-visible --
     // notifies people, writes an external-facing record, or spends money on an external model
     // call) don't execute on a caller's say-so alone. They need either a standing "Always Allow"
@@ -116,10 +174,10 @@ export async function POST(request: Request) {
         });
         // MCP3-2: the machine-execution counterpart to the approval_requests row above -- this is
         // what PATCH /api/approvals/[id] atomically reserves and executes exactly once when a
-        // human approves. idempotencyKey is a fresh id per call attempt (not a content hash), so
-        // two distinct MCP tools/call requests with identical arguments still get their own
-        // separate pending row rather than being silently merged.
-        const pendingCall = await createPendingToolCall({
+        // human approves. Without a caller key, idempotencyKey is a fresh id per call attempt (not a
+        // content hash), so two distinct MCP tools/call requests with identical arguments still get
+        // their own separate pending row rather than being silently merged.
+        const pendingCallInput = {
           organizationId: scope.organizationId,
           agentConnectionId: scope.agentConnectionId,
           approvalRequestId: approval.id,
@@ -127,8 +185,17 @@ export async function POST(request: Request) {
           toolVersion: tool.version,
           provider: scope.provider,
           arguments: toolArgs,
-          idempotencyKey: crypto.randomUUID(),
-        });
+          idempotencyKey: keyLookup?.idempotencyKey ?? crypto.randomUUID(),
+        };
+        const pendingCall = keyLookup ? await createPendingToolCallUnlessExists(pendingCallInput) : await createPendingToolCall(pendingCallInput);
+        if (!pendingCall) {
+          // Another call with the same key won the race after the lookup above found nothing.
+          await closeDuplicateApprovalRequest({ organizationId: scope.organizationId, approvalRequestId: approval.id }).catch(() =>
+            recordAgentToolAuditEvent(scope, { toolName, success: false, argsSummary: toolArgs, errorMessage: `Duplicate approval request ${approval.id} could not be closed.` }));
+          const winner = keyLookup && await getPendingToolCallByIdempotencyKey(keyLookup);
+          if (!winner) return rpcError(body.id, -32603, "The pending tool call for this idempotency key could not be read. Retry with the same key.");
+          return replayPendingCall(body.id, scope, winner, toolName, toolArgs);
+        }
         await recordAgentToolAuditEvent(scope, { toolName, success: false, argsSummary: toolArgs, errorMessage: "pending_approval" });
         return rpcResult(body.id, {
           content: [{ type: "text", text: JSON.stringify({ status: "pending_approval", approvalRequestId: approval.id, pendingToolCallId: pendingCall.id }) }],
@@ -139,7 +206,7 @@ export async function POST(request: Request) {
     try {
       const result = await tool.handler(scope, toolArgs);
       await recordAgentToolAuditEvent(scope, { toolName, success: !result.isError, argsSummary: toolArgs, errorMessage: result.isError ? result.content[0]?.text : undefined });
-      return rpcResult(body.id, result);
+      return rpcResult(body.id, keyLookup ? { ...result, _meta: idempotencyNotApplied } : result);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown tool execution error.";
       await recordAgentToolAuditEvent(scope, { toolName, success: false, argsSummary: toolArgs, errorMessage: message });
