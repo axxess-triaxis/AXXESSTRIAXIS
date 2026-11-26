@@ -44,14 +44,19 @@ ECR Public mirror (on 2026-11-26 Docker Hub layer downloads stalled from the fou
 docker run --rm -v "${PWD}\..\..:/repo" -v opennlp-m2:/root/.m2 -w /repo/workers/opennlp public.ecr.aws/docker/library/maven:3.9-eclipse-temurin-21 mvn -B test
 ```
 
-```powershell
-sam build --use-container
+Build the deployable jar (`dist/opennlp-enrich.jar`, the template's `CodeUri`). It builds on the container's own
+filesystem because the shade step fails on a Windows bind mount ("Error creating shaded jar: No such file or directory"):
+
+```bash
+docker run --rm -v "$(pwd -W)/../..:/src:ro" -v "$(pwd -W)/dist:/out" -v opennlp-m2:/root/.m2 public.ecr.aws/docker/library/maven:3.9-eclipse-temurin-21 sh -c 'mkdir -p /b/workers /b/src/services/nlp && cp -r /src/workers/opennlp /b/workers/ && rm -rf /b/workers/opennlp/dist /b/workers/opennlp/target && cp /src/src/services/nlp/gazetteers.json /b/src/services/nlp/ && cd /b/workers/opennlp && mvn -B package && cp target/opennlp-enrich-0.1.0.jar /out/opennlp-enrich.jar'
 ```
+
+Then deploy without `sam build` (the template already points at the jar).
 
 ## Deploy (founder approval required: AWS spend, secret)
 
 1. Create a plain-string secret, for example `axxess/opennlp/staging-key`, with a random value. Note its ARN.
-2. `sam deploy --guided --profile axxess-triaxis --region ap-southeast-2 --stack-name axxess-opennlp-staging --parameter-overrides Stage=staging KeySecretArn=<arn>`
+2. `sam deploy --resolve-s3 --capabilities CAPABILITY_IAM --profile axxess-triaxis --region ap-southeast-2 --stack-name axxess-opennlp-staging --parameter-overrides Stage=staging KeySecretArn=<arn>`
 3. Set `OPENNLP_ENDPOINT` (stack output `EnrichFunctionUrl`, no trailing slash), `OPENNLP_KEY` (same value) and
    `OPENNLP_ENABLED=true` on the staging Vercel environment.
 4. Live check: `GET <url>/health`, then `POST <url>/enrich` with test text and the key.

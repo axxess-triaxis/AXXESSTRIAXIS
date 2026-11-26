@@ -43,7 +43,9 @@ Resources:
     Properties:
       FunctionName: !Sub axxess-opennlp-${Stage}
       Description: OpenNLP sentence, token and dictionary entity enrichment for AXXESS RAG ingestion.
-      CodeUri: .
+      # Prebuilt shaded jar (see README: built inside the Maven container; sam build --use-container
+      # could not pull its 259 MB image on 2026-11-26). sam deploy uploads it as is.
+      CodeUri: dist/opennlp-enrich.jar
       Handler: com.triaxis.axxess.opennlp.EnrichHandler::handleRequest
       Runtime: java21
       Architectures: [x86_64]
