@@ -1,14 +1,14 @@
 name: EOD Investor Sync (investor -> landing's live commit)
 
 # 2026-10-29: founder rule -- "investor version auto-syncs to live version on landing at every EOD".
-# deploy-production.yml already deploys investor right after landing on every merge to main. This
+# deploy-production.yml deploys investor on every merge to main (Vercel Git integration deploys landing). This
 # is the end-of-day safety net for when that chain does not finish (a cancelled or failed investor
 # job, a Vercel quota error, a manual landing deploy): at 23:30 IST it compares the commit behind
 # each domain and, only if they differ, redeploys investor from landing's commit.
 #
 # Gates, none of which can be skipped (CLAUDE.md "Production Gate Bypass" rule):
 #   1. landing's commit must be on main and READY on Vercel;
-#   2. the required check runs on that commit must have succeeded
+#   2. the required checks on that commit must have succeeded, including Vercel's landing commit status
 #      (scripts/investor-sync-lib.mjs REQUIRED_CHECKS);
 #   3. the pulled investor env must force NEXT_PUBLIC_AXXESS_DEMO_MODE=true and carry no live
 #      credential names (demo/live partition guard);
@@ -32,6 +32,7 @@ on:
 permissions:
   contents: read
   checks: read
+  statuses: read
   actions: read
 
 # Deliberately NOT the deploy-production group: GitHub keeps only one pending run per group, so a

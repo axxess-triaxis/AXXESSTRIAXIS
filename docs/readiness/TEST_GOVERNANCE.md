@@ -27,6 +27,18 @@ Three rules apply to every row (`CLAUDE.md`, "Paxel 9.5 Practice Standards -- St
 - **Live check before "done".** For a deploy-facing change, a green workflow or a Vercel "ready" is not the live
   check; the live endpoint check against the deployed SHA is, and it goes in the closeout.
 
+**Usual Vercel skips (2026-11-26, `docs/VERCEL_DEPLOYMENT.md` "Who deploys what").** These are expected and
+do not mean a check failed:
+
+- `docs/**` and `dependabot/**` PRs have no Vercel status at all, because `vercel.json` creates no deployment
+  for them.
+- Once Git is disconnected on `triaxis-product-investor-demo` and `axxesstriaxis`, PRs show only the landing
+  Vercel status.
+- The `deploy-app` job in `deploy-production.yml` shows as skipped while `vars.VERCEL_APP_DEPLOY_VIA_CLI` is
+  not `true`.
+
+A Vercel status that is present and failed or pending still blocks Merge When Ready.
+
 None of these replace the standard suite already in `CLAUDE.md` (`pnpm run typecheck`,
 `pnpm --dir apps/mobile run typecheck`, `pnpm run lint` zero-warnings, `pnpm run test`, `pnpm run build`,
 `pnpm run supabase:verify`) -- this table narrows which *subset* is minimally required for a given

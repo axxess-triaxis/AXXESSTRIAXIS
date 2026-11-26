@@ -10,6 +10,7 @@ import { getLead } from "../../repositories/leadWorkRepository";
 import { updateCrmLead } from "../../repositories/crmRepository";
 import { CALL_OUTCOMES, isCallOutcome, leadChangesForOutcome } from "../outbound/callQueue";
 import { leadSourcingTools } from "./leadSourcingTools";
+import { getPendingToolCallTool } from "./pendingToolCallTool";
 
 export type McpToolContent = { type: "text"; text: string };
 export type McpToolResult = { content: McpToolContent[]; isError?: boolean };
@@ -987,6 +988,7 @@ export const agentToolRegistry: McpToolDefinition[] = [
   queryExternalModelTool,
   logAgentCallTool,
   ...leadSourcingTools,
+  getPendingToolCallTool,
 ];
 
 export function getAgentTool(name: string): McpToolDefinition | undefined {
