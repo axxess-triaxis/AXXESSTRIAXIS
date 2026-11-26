@@ -31,7 +31,9 @@ describe("agentScope", () => {
       "source_leads",
       "get_sourcing_run",
       "approve_sourced_leads",
+      "get_pending_tool_call",
     ]);
+    expect(defaultAgentCapabilities).not.toContain("get_pending_tool_call");
     expect(defaultAgentCapabilities).not.toContain("log_agent_call");
     for (const c of ["source_leads", "get_sourcing_run", "approve_sourced_leads"] as const) expect(defaultAgentCapabilities).not.toContain(c);
     expect(defaultAgentCapabilities).not.toEqual(allAgentCapabilities);
