@@ -9,7 +9,11 @@
 // agent_connections row, never persisted anywhere. Safe/additive: no migration or CHECK constraint
 // touches this value since synthesized scopes are never written to agent_connections/
 // agent_action_grants/agent_pending_tool_calls.
-export type AgentProviderId = "openai" | "anthropic" | "microsoft_copilot" | "axxess_copilot_inapp";
+// "triaxis_stack" (2026-11-20) identifies scopes synthesized by src/services/stack/stackResults.ts when
+// STILL files a Callismatic or Omnidamus result into the organization that started the job. Like
+// "axxess_copilot_inapp" it is never written to agent_connections, and it is deliberately absent from
+// agentProviderIds, so no connection can be created with it.
+export type AgentProviderId = "openai" | "anthropic" | "microsoft_copilot" | "axxess_copilot_inapp" | "triaxis_stack";
 
 export const agentProviderIds: AgentProviderId[] = ["openai", "anthropic", "microsoft_copilot", "axxess_copilot_inapp"];
 

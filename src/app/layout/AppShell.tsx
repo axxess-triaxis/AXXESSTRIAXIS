@@ -57,8 +57,10 @@ export function AppShell({
           aria-hidden="true"
         />
       )}
+      {/* The height limit lets the sidebar's own list scroll. Without it the sidebar grows past the
+          screen and its lower items are cut off. */}
       <div
-        className={isMobile ? `fixed inset-y-0 left-0 z-50 transition-transform duration-300 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}` : undefined}
+        className={isMobile ? `fixed inset-y-0 left-0 z-50 transition-transform duration-300 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}` : "h-full flex-shrink-0"}
       >
         <Sidebar
           active={active}
@@ -79,7 +81,7 @@ export function AppShell({
           onLogout={onLogout}
         />
 
-        <main className="flex-1 overflow-y-auto px-6 py-6 [&::-webkit-scrollbar]:hidden" onClick={onCloseNotifications}>
+        <main className="flex-1 overflow-y-auto overscroll-contain px-6 py-6 [&::-webkit-scrollbar]:hidden" onClick={onCloseNotifications}>
           {children}
         </main>
       </div>

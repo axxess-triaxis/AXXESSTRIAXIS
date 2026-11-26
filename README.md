@@ -27,26 +27,30 @@ audit log. Built by [Triaxis Ventures Private Limited](https://github.com/axxess
 
 ## Lead sourcing
 
-AXXESS can find sales leads for its own go-to-market, with a person approving every lead before it
-enters the CRM.
+AXXESS finds sales leads, for its own go-to-market and for any organisation on it. There are two ways
+in: a hand-picked seed list, where a person approves every lead before it enters the CRM, and
+scheduled discovery, where leads are imported automatically and reviewed afterwards. Neither path
+enrolls anyone in a sequence or contacts anyone.
 
 | Step | What happens | State |
 |---|---|---|
 | 1. Seed list | An agent queues a run of company websites through the MCP tool `source_leads`. A founder-maintained exclusion list is checked first | Shipped ([#525](https://github.com/axxess-triaxis/AXXESSTRIAXIS/pull/525)) |
 | 2. Crawl | An AWS Lambda worker ([`workers/lead-sourcing`](workers/lead-sourcing/README.md)) claims the run over HTTPS, crawls each site, skips pages that `robots.txt` disallows, and posts back contacts found on the company's own domain | Shipped ([#524](https://github.com/axxess-triaxis/AXXESSTRIAXIS/pull/524) crawler, [#525](https://github.com/axxess-triaxis/AXXESSTRIAXIS/pull/525) worker; fixes [#529](https://github.com/axxess-triaxis/AXXESSTRIAXIS/pull/529), [#532](https://github.com/axxess-triaxis/AXXESSTRIAXIS/pull/532), [#533](https://github.com/axxess-triaxis/AXXESSTRIAXIS/pull/533)) |
-| 3. Approve and import | `approve_sourced_leads` always needs a fresh human approval; standing grants never cover it. Only approved candidates become CRM leads. The worker never imports, enrolls or contacts anyone | Shipped ([#525](https://github.com/axxess-triaxis/AXXESSTRIAXIS/pull/525)) |
+| 3. Approve and import | Seed-list runs: `approve_sourced_leads` always needs a fresh human approval; standing grants never cover it, and only approved candidates become CRM leads. The worker never enrolls or contacts anyone | Shipped ([#525](https://github.com/axxess-triaxis/AXXESSTRIAXIS/pull/525)) |
+| 4. Schedules and discovery | Users set a schedule on the Lead sourcing page (`/crm/lead-sourcing`). Amazon Bedrock (`openai.gpt-oss-20b-1:0`, ap-southeast-2) finds companies; the crawler finds contacts; candidates are imported automatically for review afterwards, within monthly caps and after the exclusion list | Live in production since 2026-11-19 ([#535](https://github.com/axxess-triaxis/AXXESSTRIAXIS/pull/535), [#536](https://github.com/axxess-triaxis/AXXESSTRIAXIS/pull/536), [#538](https://github.com/axxess-triaxis/AXXESSTRIAXIS/pull/538), [#539](https://github.com/axxess-triaxis/AXXESSTRIAXIS/pull/539), [#540](https://github.com/axxess-triaxis/AXXESSTRIAXIS/pull/540)) |
 
 **First production run, 2026-11-18:** 30 founder-approved seed companies, 26 sites reached,
-8 candidates, 7 imported after the founder chose them. Nothing was sent to them. The production
-worker's schedule is off; this run was invoked once by hand.
+8 candidates, 7 imported after the founder chose them. Nothing was sent to them. This run was
+invoked once by hand, before schedules shipped.
 [Closeout](docs/readiness/LEAD_SOURCING_PROD_RUN1_CLOSEOUT_2026_11_18.md) ·
 [staging end-to-end test](docs/readiness/LEAD_SOURCING_STAGING_E2E_CLOSEOUT_2026_11_18.md) ·
 [agent and MCP design](docs/readiness/LEAD_SOURCING_AGENT_MCP_CLOSEOUT_2026_11_17.md)
 
-**In progress, not shipped:** automatic run schedules
-([#535](https://github.com/axxess-triaxis/AXXESSTRIAXIS/pull/535)) and automatic company discovery
-on Amazon Bedrock ([#536](https://github.com/axxess-triaxis/AXXESSTRIAXIS/pull/536)). Both PRs are
-open and unmerged.
+**Schedules and discovery, 2026-11-19:** merged to `main` as `afd0c898` and deployed. The first
+production schedule (`6bfdb12b`, Dubai real estate brokerages, 10 companies, weekly on Monday 09:00
+Asia/Dubai) is on; its first run is due 2026-11-23 at 05:00 UTC, so **no production discovery run has
+happened yet** (as of 2026-11-20).
+[Closeout](docs/readiness/LEAD_SOURCING_V2_PRODUCTION_CLOSEOUT_2026_11_19.md)
 
 ## Stack
 

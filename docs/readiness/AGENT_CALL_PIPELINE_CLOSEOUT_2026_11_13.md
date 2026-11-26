@@ -1,5 +1,7 @@
 # Agent Call Pipeline: Closeout (2026-11-13), Built and Gated Off
 
+> **Correction, 2026-11-24:** the RAG release gate cited here is not evidence of retrieval quality or tenant isolation. Until 2026-11-24 it scored observations built from its own two fixtures and ran no retrieval code, so it could not fail. The replacement runs real retrieval: see `docs/readiness/RAG_RETRIEVAL_GATE_CLOSEOUT_2026_11_24.md`.
+
 GTM plan `GTM_4_DAY_AUTOMATION_PLAN_2026_11_11.md`, outbound calling. **Status: Partial.** The pipeline is built across AXXESS, Callismatic and STILL, and is off end to end. **No real call can be placed.** That waits on DLT registration, counsel sign-off and an Indian voice provider, which are founder (HITL) actions.
 
 ## External signal

@@ -130,6 +130,7 @@ export function createGroqProvider(
           return {
             text: text ?? "",
             confidence: 0.78,
+            model,
             latencyMs: Date.now() - startedAt,
             usage: { promptTokens: payload.usage?.prompt_tokens ?? 0, completionTokens: payload.usage?.completion_tokens ?? 0 },
             // Free tier: no billed cost to record against a spend guard.

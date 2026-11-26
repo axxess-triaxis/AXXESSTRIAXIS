@@ -13,8 +13,10 @@ import { getAiProviderConfigurations } from "../ai/model-routing-policy";
 import { createGroqProvider } from "../ai/providers/groqProvider";
 import { createOpenAiProvider } from "../ai/providers/openAiProvider";
 import { createOpenRouterProvider } from "../ai/providers/openRouterProvider";
+import { traceAi } from "../ai/tracing/aiTracing";
+import { traceModelCall } from "../ai/tracing/traceModelCall";
 import type { AiConversationMessage, AiPromptClassification, AiPromptRequest, AiProviderAdapter, AiProviderCompletion, AiRoutingContext, AiToolDefinition } from "../ai/types";
-import { agentToolRegistry, getAgentTool, validateAgentToolArguments } from "../agents/toolRegistry";
+import { agentToolRegistry, getAgentTool, validateAgentToolArguments, type McpToolDefinition } from "../agents/toolRegistry";
 import { recordAgentToolAuditEvent } from "../agents/agentConnectionRepository";
 import { synthesizeChatbotAgentScope } from "../../security/chatbotAgentScope";
 import { agentScopeHasCapability, type AgentScope } from "../../security/agentScope";
@@ -81,11 +83,11 @@ async function completeWithFallback(
   request: AiPromptRequest,
   classification: AiPromptClassification,
 ): Promise<AiProviderCompletion> {
-  const primaryResult = await pair.primary.complete(request, classification);
+  const primaryResult = await traceModelCall(pair.primary, request, classification);
   if (primaryResult.confidence >= 0.62) return primaryResult;
   if (!pair.fallback?.config.configured) return primaryResult;
 
-  const fallbackResult = await pair.fallback.complete(request, classification);
+  const fallbackResult = await traceModelCall(pair.fallback, request, classification);
   return {
     ...fallbackResult,
     actualCostUsd: (primaryResult.actualCostUsd ?? 0) + (fallbackResult.actualCostUsd ?? 0),
@@ -139,6 +141,19 @@ function buildToolDefinitions(scope: AgentScope): AiToolDefinition[] {
 
 function resultText(content: { type: "text"; text: string }[]): string {
   return content.map((entry) => entry.text).join("\n");
+}
+
+// Traced by name, arguments and result text only; the scope never goes into a trace.
+function runTool(tool: McpToolDefinition, scope: AgentScope, args: Record<string, unknown>) {
+  return traceAi(
+    () => ({
+      name: `axxess-tool:${tool.name}`,
+      kind: "tool",
+      inputs: { arguments: args },
+      outputs: (result) => ({ text: resultText(result.content), isError: Boolean(result.isError) }),
+    }),
+    () => tool.handler(scope, args),
+  );
 }
 
 type LoopState = {
@@ -209,7 +224,7 @@ async function stepLoop(
     }
 
     try {
-      const result = await tool.handler(scope, validation.args);
+      const result = await runTool(tool, scope, validation.args);
       await recordAgentToolAuditEvent(scope, {
         toolName: tool.name,
         success: !result.isError,
@@ -233,32 +248,82 @@ async function stepLoop(
   };
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+// One turn writes at most an assistant message and a tool message per iteration.
+const MAX_RESUME_TRANSCRIPT_ENTRIES = MAX_AGENTIC_LOOP_ITERATIONS * 2;
+
+/** The resume payload as the browser sent it, or undefined if its shape is wrong. Shape only: what it
+ *  asks for is checked again in executeConfirmedPendingTool. */
+export function parseAgenticResume(value: unknown): AgenticChatResumeInput | undefined {
+  if (!isRecord(value)) return undefined;
+  const { transcript, pendingTool, userMessage, iterationsUsed, confirmed } = value;
+  if (typeof confirmed !== "boolean" || typeof iterationsUsed !== "number") return undefined;
+  if (typeof userMessage !== "string" || !userMessage) return undefined;
+  if (!isRecord(pendingTool) || typeof pendingTool.id !== "string" || typeof pendingTool.name !== "string" || !isRecord(pendingTool.arguments)) return undefined;
+  if (!Array.isArray(transcript) || transcript.length > MAX_RESUME_TRANSCRIPT_ENTRIES) return undefined;
+  if (!transcript.every((entry) => isRecord(entry) && (entry.role === "assistant" || entry.role === "tool"))) return undefined;
+  return {
+    transcript: transcript as AiConversationMessage[],
+    pendingTool: { id: pendingTool.id, name: pendingTool.name, arguments: pendingTool.arguments },
+    userMessage,
+    iterationsUsed,
+    confirmed,
+  };
+}
+
+// The paused state round-trips through the browser, so nothing in it is trusted: the tool must still
+// be one this user's role may use, one that pauses for confirmation, with arguments that pass its
+// schema -- the same checks stepLoop makes before pausing. A pause always follows at least one
+// iteration; any other count ends the turn after this tool rather than buying extra model calls.
+// Not covered here: the state is not stored server-side, so a repeated confirm runs again.
 async function executeConfirmedPendingTool(resume: AgenticChatResumeInput, scope: AgentScope): Promise<LoopState> {
-  const state: LoopState = { transcript: [...resume.transcript], iterationsUsed: resume.iterationsUsed, steps: [], costUsd: 0 };
+  const iterationsUsed = Number.isInteger(resume.iterationsUsed) && resume.iterationsUsed >= 1
+    ? resume.iterationsUsed
+    : MAX_AGENTIC_LOOP_ITERATIONS;
+  const state: LoopState = { transcript: [...resume.transcript], iterationsUsed, steps: [], costUsd: 0 };
   const tool = getAgentTool(resume.pendingTool.name);
 
-  if (!tool) {
+  if (!tool || tool.criticality !== "critical" || !agentScopeHasCapability(scope, tool.requiredCapability)) {
+    if (tool) {
+      await recordAgentToolAuditEvent(scope, { toolName: tool.name, success: false, errorMessage: "Confirmed action refused: not available to this user." });
+    }
     state.transcript.push({ role: "tool", toolCallId: resume.pendingTool.id, name: resume.pendingTool.name, content: `That action isn't available: ${resume.pendingTool.name}.` });
     return state;
   }
 
+  const validation = validateAgentToolArguments(tool, resume.pendingTool.arguments);
+  if (!validation.ok) {
+    await recordAgentToolAuditEvent(scope, { toolName: tool.name, success: false, errorMessage: `Confirmed action refused: ${validation.message}` });
+    state.transcript.push({ role: "tool", toolCallId: resume.pendingTool.id, name: tool.name, content: `Invalid arguments: ${validation.message}` });
+    return state;
+  }
+
   try {
-    const result = await tool.handler(scope, resume.pendingTool.arguments);
+    const result = await runTool(tool, scope, validation.args);
     await recordAgentToolAuditEvent(scope, {
       toolName: tool.name,
       success: !result.isError,
-      argsSummary: resume.pendingTool.arguments,
+      argsSummary: validation.args,
       errorMessage: result.isError ? resultText(result.content) : undefined,
     });
     state.transcript.push({ role: "tool", toolCallId: resume.pendingTool.id, name: tool.name, content: resultText(result.content) });
     if (!result.isError) state.steps.push({ toolName: tool.name, summary: summarizeStep(tool.name) });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown tool execution error.";
-    await recordAgentToolAuditEvent(scope, { toolName: tool.name, success: false, argsSummary: resume.pendingTool.arguments, errorMessage: message });
+    await recordAgentToolAuditEvent(scope, { toolName: tool.name, success: false, argsSummary: validation.args, errorMessage: message });
     state.transcript.push({ role: "tool", toolCallId: resume.pendingTool.id, name: tool.name, content: `Tool execution failed: ${message}` });
   }
 
   return state;
+}
+
+function describeTurn(result: AgenticChatLoopResult): Record<string, unknown> {
+  if (result.status === "final") return { status: result.status, reply: result.reply, toolsUsed: result.steps.map((step) => step.toolName), costUsd: result.costUsd };
+  if (result.status === "paused") return { status: result.status, summary: result.summary, pendingTool: result.pendingTool.name, costUsd: result.costUsd };
+  return { status: result.status };
 }
 
 // Free-first (2026-10-05): Groq when configured, else OpenAI -- which only counts as configured
@@ -319,11 +384,29 @@ export async function runAgenticChatTurn(input: AgenticChatLoopInput, deps: Agen
   const fallback = deepSeekAllowed ? (deps.openRouterAdapter ?? resolveDeepSeekAdapter(env)) : undefined;
   const pair: AdapterPair = { primary, fallback };
 
-  if (input.resume) {
-    if (!input.resume.confirmed) return { status: "cancelled" };
-    const state = await executeConfirmedPendingTool(input.resume, scope);
-    return stepLoop(input.resume.userMessage, state, scope, pair, tools, context);
-  }
+  const resume = input.resume;
+  if (resume && !resume.confirmed) return { status: "cancelled" };
 
-  return stepLoop(input.userMessage, { transcript: [], iterationsUsed: 0, steps: [], costUsd: 0 }, scope, pair, tools, context);
+  return traceAi<AgenticChatLoopResult>(
+    () => ({
+      name: "axxess-copilot-turn",
+      kind: "chain",
+      inputs: { message: promptForClassification, resumed: Boolean(resume) },
+      outputs: describeTurn,
+      context: {
+        organizationId: tenantScope.organizationId,
+        role,
+        task: classification.category,
+        sensitivity: classification.sensitivity,
+        // No conversation ID reaches the server. This joins a paused turn to its confirmation.
+        threadKey: `${tenantScope.userId}:${promptForClassification}`,
+      },
+    }),
+    async () => {
+      const state = resume
+        ? await executeConfirmedPendingTool(resume, scope)
+        : { transcript: [], iterationsUsed: 0, steps: [], costUsd: 0 };
+      return stepLoop(promptForClassification, state, scope, pair, tools, context);
+    },
+  );
 }

@@ -49,6 +49,7 @@ const sectionPermissions: Record<NavSection, RoleName[]> = {
   "pilot-conversion": ["Super Admin", "Organization Admin"],
   "stack-status": ["Super Admin", "Organization Admin"],
   leads: ["Super Admin", "Organization Admin", "Executive", "Manager", "Employee"],
+  "lead-sourcing": ["Super Admin", "Organization Admin", "Executive", "Manager"],
   "organization-admin": ["Super Admin", "Organization Admin"],
   integrations: ["Super Admin", "Organization Admin"],
   settings: ["Super Admin", "Organization Admin", "Executive", "Manager"],
@@ -151,6 +152,13 @@ export function canViewCrossTenantPilotPortfolio(user: UserContext, env: NodeJS.
   const operatorOrgId = env.AXXESS_PLATFORM_OPERATOR_ORGANIZATION_ID;
   if (!operatorOrgId) return false;
   return user.role === "Super Admin" && user.organizationId === operatorOrgId;
+}
+
+// Customer-fireable stack (2026-11-20): only Triaxis, as the platform operator, links an
+// organization's numbers and senders and records its DLT / TDRA / counsel sign-off. Same narrow
+// gate as the pilot portfolio: the operator organization's own Super Admin, failing closed.
+export function canManageStackAgentsForAnyOrganization(user: UserContext, env: NodeJS.ProcessEnv = process.env): boolean {
+  return canViewCrossTenantPilotPortfolio(user, env);
 }
 
 export function getVisibleNavGroups(groups: NavGroup[], user: UserContext): NavGroup[] {

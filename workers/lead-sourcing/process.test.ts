@@ -2,7 +2,15 @@
 import { describe, expect, it, vi } from "vitest";
 import { validateWorkerResult } from "../../src/services/leadSourcing/sourcingService.ts";
 import type { Seed, VerifyReport } from "../../src/services/leadSourcing/types.ts";
-import { processRun } from "./process.ts";
+import { processRun, settleWithin } from "./process.ts";
+
+describe("settleWithin", () => {
+  it("returns the work's value, or the fallback on rejection or a promise that never settles (run 1f823eb2)", async () => {
+    expect(await settleWithin(Promise.resolve("html"), 1_000, "")).toBe("html");
+    expect(await settleWithin(Promise.reject(new Error("Target closed")), 1_000, "")).toBe("");
+    expect(await settleWithin(new Promise<string>(() => undefined), 20, "")).toBe("");
+  });
+});
 
 const seeds: Seed[] = [
   { segment: "brokerage", country: "AE", company: "Alpha", domain: "alpha.example", source: "Agent seed list" },

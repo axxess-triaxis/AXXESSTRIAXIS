@@ -40,7 +40,7 @@ const nextConfig = {
   // '@napi-rs/canvas'"), even though it installs and runs correctly locally and in tests.
   // serverExternalPackages tells Next.js to leave these as real require()s so Vercel's file
   // tracing includes their actual (including native) files in the deployed function bundle.
-  serverExternalPackages: ["@napi-rs/canvas", "pdfjs-dist", "pdf-parse", "tesseract.js", "mammoth"],
+  serverExternalPackages: ["@napi-rs/canvas", "pdfjs-dist", "pdf-parse", "tesseract.js", "mammoth", "langsmith"],
   // serverExternalPackages alone wasn't enough for @napi-rs/canvas specifically: confirmed via the
   // actual build trace (route.js.nft.json) that pdf-parse/pdfjs-dist get traced (21/3 files) but
   // @napi-rs/canvas gets zero -- its js-binding.js resolves the platform-specific native binary

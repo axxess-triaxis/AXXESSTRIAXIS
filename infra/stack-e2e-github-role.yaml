@@ -1,0 +1,108 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >-
+  Role that the GitHub workflow stack-e2e.yml assumes (OIDC, no stored AWS keys) to run the
+  cross-product staging test. It can only touch the staging stacks the test uses.
+
+# Deploy from the repository root (2026-11-19):
+#   aws cloudformation deploy --stack-name axxess-stack-e2e-github-role --template-file infra/stack-e2e-github-role.yaml
+#     --capabilities CAPABILITY_NAMED_IAM --region ap-southeast-2 --profile axxess-triaxis
+# Set CreateOidcProvider=false if the account already has token.actions.githubusercontent.com.
+
+Parameters:
+  CreateOidcProvider:
+    Type: String
+    AllowedValues: ["true", "false"]
+    Default: "true"
+  GitHubRepository:
+    Type: String
+    Default: axxess-triaxis/AXXESSTRIAXIS
+  StillBusName:
+    Type: String
+    Default: still-staging
+  AdapterFailureQueueName:
+    Type: String
+    Default: still-staging-AdapterFailureQueue-uyEH1xLwIzsH
+  OmnidamusFunctionName:
+    Type: String
+    Default: omnidamus-staging-OmnidamusFunction-yWdnJgGudVs0
+  OmnidamusSmsTopicName:
+    Type: String
+    Default: omnidamus-staging-SmsInboundTopic-L7ETNKeq5QsW
+  # Two-org test (2026-11-21) publishes a customer's WhatsApp reply. The name after the last colon
+  # of the omnidamus-staging WhatsAppInboundTopicArn output.
+  OmnidamusWhatsAppTopicName:
+    Type: String
+    AllowedPattern: "^omnidamus-staging-[A-Za-z0-9_-]+$"
+  CallismaticFunctionName:
+    Type: String
+    Default: callismatic-staging-AppFunction-PtzRmGhxmEE2
+  StagingRegion:
+    Type: String
+    Default: ap-southeast-2
+  CallismaticRegion:
+    Type: String
+    Default: us-east-1
+
+Conditions:
+  MakeProvider: !Equals [!Ref CreateOidcProvider, "true"]
+
+Resources:
+  GitHubOidcProvider:
+    Type: AWS::IAM::OIDCProvider
+    Condition: MakeProvider
+    Properties:
+      Url: https://token.actions.githubusercontent.com
+      ClientIdList: [sts.amazonaws.com]
+
+  StackE2eRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: axxess-stack-e2e-github
+      Description: GitHub stack-e2e.yml, staging environment only
+      MaxSessionDuration: 3600
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Federated: !Sub arn:${AWS::Partition}:iam::${AWS::AccountId}:oidc-provider/token.actions.githubusercontent.com
+            Action: sts:AssumeRoleWithWebIdentity
+            Condition:
+              StringEquals:
+                token.actions.githubusercontent.com:aud: sts.amazonaws.com
+                # Only jobs that run in the repository's "staging" environment.
+                token.actions.githubusercontent.com:sub: !Sub repo:${GitHubRepository}:environment:staging
+      Policies:
+        - PolicyName: stack-e2e-staging-only
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Sid: PutTestEventsOnStillStaging
+                Effect: Allow
+                Action: events:PutEvents
+                Resource: !Sub arn:${AWS::Partition}:events:${StagingRegion}:${AWS::AccountId}:event-bus/${StillBusName}
+              - Sid: ReadAndClearAdapterFailureQueue
+                Effect: Allow
+                Action: [sqs:ReceiveMessage, sqs:DeleteMessage]
+                Resource: !Sub arn:${AWS::Partition}:sqs:${StagingRegion}:${AWS::AccountId}:${AdapterFailureQueueName}
+              - Sid: InvokeOmnidamusStaging
+                Effect: Allow
+                Action: lambda:InvokeFunction
+                Resource: !Sub arn:${AWS::Partition}:lambda:${StagingRegion}:${AWS::AccountId}:function:${OmnidamusFunctionName}
+              - Sid: PublishOmnidamusStagingSms
+                Effect: Allow
+                Action: sns:Publish
+                Resource: !Sub arn:${AWS::Partition}:sns:${StagingRegion}:${AWS::AccountId}:${OmnidamusSmsTopicName}
+              - Sid: PublishOmnidamusStagingWhatsApp
+                Effect: Allow
+                Action: sns:Publish
+                Resource: !Sub arn:${AWS::Partition}:sns:${StagingRegion}:${AWS::AccountId}:${OmnidamusWhatsAppTopicName}
+              - Sid: ReadCallismaticStagingUrl
+                Effect: Allow
+                Action: lambda:GetFunctionUrlConfig
+                Resource: !Sub arn:${AWS::Partition}:lambda:${CallismaticRegion}:${AWS::AccountId}:function:${CallismaticFunctionName}
+
+Outputs:
+  RoleArn:
+    Description: Set as the staging environment variable STACK_AWS_ROLE_ARN
+    Value: !GetAtt StackE2eRole.Arn

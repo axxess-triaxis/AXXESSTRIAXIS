@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { WorkLead } from "../../../repositories/leadWorkRepository";
-import { CURRENT_REGISTRATIONS } from "../../../services/outbound/callQueue";
+import { DEFAULT_AGENT_SETTINGS, type AgentSettings } from "../../../services/stack/agentSettings";
 
 type Session = { user: { id: string; organizationId: string; role: string } };
 const state = { session: null as Session | null, start: { ok: true } as { ok: true } | { ok: false; reason: string }, configured: true };
@@ -11,6 +11,8 @@ const calls = {
   created: [] as string[],
 };
 let leads: WorkLead[] = [];
+let settings: AgentSettings = { ...DEFAULT_AGENT_SETTINGS, callismaticEnabled: true };
+const registered = () => { settings = { ...settings, dltIndiaRegistered: true, counselSignedOff: true }; };
 let suppressedAi = new Set<string>();
 
 const lead = (over: Partial<WorkLead> = {}): WorkLead => ({
@@ -34,6 +36,10 @@ vi.mock("../../../repositories/agentCallRepository", () => ({
   setAgentCallJobStatus: async (_s: unknown, jobId: string, change: Record<string, unknown>) => { calls.statuses.push({ jobId, ...change }); },
   latestAgentCallJobs: async () => new Map([["l1", { id: "job-1", leadId: "l1", status: "completed", outcome: "interested" }]]),
 }));
+vi.mock("../../../repositories/orgAgentSettingsRepository", () => ({
+  loadAgentSettings: async () => settings,
+  getOrganizationName: async () => "Sharma Realty",
+}));
 vi.mock("../../../services/outbound/callismaticClient", () => ({
   isCallismaticConfigured: () => state.configured,
   startAgentCall: async (r: Record<string, unknown>) => { calls.started.push(r); return state.start; },
@@ -54,10 +60,13 @@ describe("agent call route", () => {
     suppressedAi = new Set();
     state.start = { ok: true };
     state.configured = true;
+    settings = { ...DEFAULT_AGENT_SETTINGS, callismaticEnabled: true };
+    // org-1 is Triaxis's own organization in these tests: calls go out with Callismatic's defaults.
+    vi.stubEnv("AXXESS_PLATFORM_OPERATOR_ORGANIZATION_ID", "org-1");
   });
   afterEach(() => {
     vi.useRealTimers();
-    Object.assign(CURRENT_REGISTRATIONS, { dltIndia: false, tdraUae: false, counselSignedOff: false });
+    vi.unstubAllEnvs();
     for (const list of Object.values(calls)) list.length = 0;
   });
 
@@ -72,7 +81,7 @@ describe("agent call route", () => {
   });
 
   it("once registrations are recorded, starts the job and logs an allowed voice_ai attempt", async () => {
-    Object.assign(CURRENT_REGISTRATIONS, { dltIndia: true, counselSignedOff: true });
+    registered();
     as("Employee");
     const res = await POST(req(), params("l1"));
     expect(res.status).toBe(202);
@@ -83,7 +92,7 @@ describe("agent call route", () => {
   });
 
   it("marks the job failed and logs no attempt when Callismatic cannot place the call", async () => {
-    Object.assign(CURRENT_REGISTRATIONS, { dltIndia: true, counselSignedOff: true });
+    registered();
     state.start = { ok: false, reason: "provider_unavailable" };
     as("Manager");
     const res = await POST(req(), params("l1"));
@@ -94,7 +103,7 @@ describe("agent call route", () => {
   });
 
   it("answers 503 without creating a job when Callismatic is not configured", async () => {
-    Object.assign(CURRENT_REGISTRATIONS, { dltIndia: true, counselSignedOff: true });
+    registered();
     state.configured = false;
     as("Manager");
     const res = await POST(req(), params("l1"));
@@ -103,7 +112,7 @@ describe("agent call route", () => {
   });
 
   it("respects a voice_ai suppression", async () => {
-    Object.assign(CURRENT_REGISTRATIONS, { dltIndia: true, counselSignedOff: true });
+    registered();
     suppressedAi = new Set(["+919876543210"]);
     as("Manager");
     const res = await POST(req(), params("l1"));
@@ -121,5 +130,54 @@ describe("agent call route", () => {
     as("Employee");
     const res = await GET(req(), params("l1"));
     expect((await res.json()).job).toEqual(expect.objectContaining({ id: "job-1", status: "completed", outcome: "interested" }));
+  });
+
+  // Customer-fireable stack, PR 5 (2026-11-20).
+  it("refuses with the setup list, logging nothing, while Callismatic is off for the organization", async () => {
+    registered();
+    settings = { ...settings, callismaticEnabled: false };
+    as("Manager");
+    const res = await POST(req(), params("l1"));
+    expect(res.status).toBe(409);
+    expect((await res.json()).setup).toEqual(["callismatic_off"]);
+    expect(calls.recorded).toEqual([]);
+    expect(calls.created).toEqual([]);
+  });
+
+  it("a customer organization must have its caller ID and call purpose before anything is logged", async () => {
+    vi.stubEnv("AXXESS_PLATFORM_OPERATOR_ORGANIZATION_ID", "org-triaxis");
+    registered();
+    as("Manager");
+    const res = await POST(req(), params("l1"));
+    expect(res.status).toBe(409);
+    expect((await res.json()).setup).toEqual(["caller_id_missing", "call_purpose_missing"]);
+    expect(calls.recorded).toEqual([]);
+  });
+
+  it("a set-up customer organization calls from its own caller ID, as itself", async () => {
+    vi.stubEnv("AXXESS_PLATFORM_OPERATOR_ORGANIZATION_ID", "org-triaxis");
+    registered();
+    settings = { ...settings, callerIdE164: "+919800000001", callPurpose: "Ask about the flat viewing." };
+    as("Manager");
+    const res = await POST(req(), params("l1"));
+    expect(res.status).toBe(202);
+    expect(calls.started).toEqual([expect.objectContaining({
+      organizationId: "org-1",
+      customer: { callerId: "+919800000001", organizationName: "Sharma Realty", callPurpose: "Ask about the flat viewing." },
+    })]);
+  });
+
+  it("Triaxis's own calls carry no customer identity", async () => {
+    registered();
+    as("Manager");
+    await POST(req(), params("l1"));
+    expect(calls.started[0]).not.toHaveProperty("customer");
+  });
+
+  it("uses the organization's own registrations: UAE TDRA recorded does not open an Indian call", async () => {
+    settings = { ...settings, tdraUaeRegistered: true, counselSignedOff: true };
+    as("Manager");
+    const res = await POST(req(), params("l1"));
+    expect((await res.json()).reasons).toEqual(["dlt_registration_missing"]);
   });
 });

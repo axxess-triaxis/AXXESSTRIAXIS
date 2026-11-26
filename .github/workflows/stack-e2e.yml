@@ -1,8 +1,12 @@
 name: Stack E2E (staging)
 
-# Cross-product end-to-end test: AXXESS, Callismatic, Omnidamus, STILL. Manual only, against
-# staging only (tests/stack/guard.ts refuses anything else). No schedule until it has proven stable.
+# Cross-product end-to-end test: AXXESS, Callismatic, Omnidamus, STILL, against staging only
+# (tests/stack/guard.ts refuses anything else). Weekly since 2026-11-19 (founder: "Yes, weekly"),
+# Monday 03:30 UTC, before the Monday lead-sourcing run. AWS access is the OIDC role from
+# infra/stack-e2e-github-role.yaml. A failed run opens (or comments on) a GitHub issue.
 on:
+  schedule:
+    - cron: "30 3 * * 1"
   workflow_dispatch:
 
 permissions:
@@ -25,6 +29,10 @@ jobs:
       STACK_CALLISMATIC_FUNCTION: ${{ vars.STACK_CALLISMATIC_FUNCTION }}
       STACK_OMNIDAMUS_FUNCTION: ${{ vars.STACK_OMNIDAMUS_FUNCTION }}
       STACK_OMNIDAMUS_SMS_TOPIC_ARN: ${{ vars.STACK_OMNIDAMUS_SMS_TOPIC_ARN }}
+      # Two-org scenario (tests/stack/two-org.spec.ts). It skips, with the reason, until these are set.
+      STACK_OMNIDAMUS_WHATSAPP_TOPIC_ARN: ${{ vars.STACK_OMNIDAMUS_WHATSAPP_TOPIC_ARN }}
+      STACK_ORG_B_WHATSAPP_LINE: ${{ vars.STACK_ORG_B_WHATSAPP_LINE }}
+      STACK_RESULTS_SECRET: ${{ secrets.STACK_RESULTS_SECRET }}
       STACK_CALLISMATIC_ADMIN_KEY: ${{ secrets.STACK_CALLISMATIC_ADMIN_KEY }}
       VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
       E2E_ORG_ADMIN_ALPHA: ${{ vars.E2E_ORG_ADMIN_ALPHA }}
@@ -51,3 +59,25 @@ jobs:
         with:
           name: playwright-report-stack
           path: playwright-report-stack
+
+  alert-on-failure:
+    needs: stack-e2e
+    if: failure()
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Open or update the stack test issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          title="Stack E2E (staging) is failing"
+          body="The cross-product staging test failed (${{ github.event_name }}): $RUN_URL. Report artifact: playwright-report-stack."
+          existing=$(gh issue list --state open --search "\"$title\" in:title" --json number --jq '.[0].number // empty')
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --body "$body"
+          else
+            gh issue create --title "$title" --body "$body"
+          fi

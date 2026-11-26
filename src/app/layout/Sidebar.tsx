@@ -21,7 +21,7 @@ export function Sidebar({ active, sidebarOpen, onSelectSection, onToggleSidebar 
   return (
     <aside
       aria-label="Primary navigation"
-      className={`flex flex-col flex-shrink-0 transition-all duration-300 overflow-hidden ${sidebarOpen ? "w-[232px]" : "w-[56px]"}`}
+      className={`flex h-full flex-col flex-shrink-0 transition-all duration-300 overflow-hidden ${sidebarOpen ? "w-[232px]" : "w-[56px]"}`}
       style={{ backgroundColor: "#0F1117", borderRight: "1px solid rgba(255,255,255,0.05)" }}
     >
       <div className="flex items-center gap-3 px-3 py-4 border-b border-[rgba(255,255,255,0.06)]">

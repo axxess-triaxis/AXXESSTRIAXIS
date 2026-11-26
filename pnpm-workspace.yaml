@@ -87,7 +87,13 @@ overrides:
   js-yaml@>=4.0.0 <4.2.0: '>=4.2.0'
   # Dependabot #50 (high): ReDoS via combinatorial GLOBSTAR backtracking, fixed upstream in
   # 10.2.3. Transitive via eslint's dependency chain (devDependency only).
-  minimatch@>=10.0.0 <10.2.3: '>=10.2.3'
+  # Dependabot #202 (medium), 2026-11-20: DoS via globparts amplification, fixed only in 11.0.1
+  # (no backport to 7-10). Widened from '>=10.0.0 <10.2.3' to cover #50 too. Transitive via
+  # @expo/fingerprint and glob (build tooling). minimatch 3.x (eslint) is outside the range.
+  minimatch@>=7.0.0 <11.0.1: '^11.0.1'
+  # Dependabot #200 (medium), 2026-11-20: AbortSignal cancellation bypass, fixed in 14.0.2.
+  # Transitive via rimraf, @expo/*, @sentry/bundler-plugins and @vercel/nft (build tooling).
+  glob@>=9.0.0 <14.0.2: '^14.0.2'
   # Dependabot #44/#45 (medium/low): HTTP request smuggling / insufficiently random values /
   # DoS via malformed certificate data, fixed upstream in 5.29.0. The 6.x/7.x resolutions already
   # in the lockfile are unaffected; only the 5.28.4 resolution needed forcing forward.
@@ -186,6 +192,22 @@ overrides:
   # nonexistent version breaks `pnpm install` outright (confirmed by testing it). Transitive via
   # metro (Expo mobile build tooling), not part of the deployed web app's runtime -- left open,
   # re-check when npm actually publishes the fix.
+  # Dependabot #123/#124 (high, same two advisories, reopened), 2026-11-20: image-size 2.0.3+ now
+  # exists, but the only consumer is metro@0.87.0 (`image-size: ^1.0.2`, and 2.x changes the
+  # export shape metro's Assets.js calls), so overriding image-size itself would be a breaking
+  # major. metro 0.87.1 and later drop the image-size dependency entirely, and the lockfile
+  # already carries 0.87.1 and 0.87.2 for other consumers. metro@0.87.0 only remains because
+  # @react-native/community-cli-plugin's `^0.87.0` request (and metro-config/
+  # metro-transform-worker 0.87.0) resolved to it; lifting that one resolution to 0.87.2 (same
+  # minor, published 2026-10-26, past minimumReleaseAge) removes image-size from the tree.
+  metro@0.87.0: '0.87.2'
+  # Dependabot #136/#189-#192/#196/#203/#204 (high), #193/#197/#198/#205/#208-#210 (medium) and
+  # #194/#195/#199/#206/#207/#211 (low), 2026-11-20: 21 node-forge advisories (signature forgery,
+  # X.509 chain-validation bypasses, TLS/ASN.1/PEM DoS, PKCS#12 MAC forgery), all affecting
+  # <=1.4.0 or <=1.4.2 and fixed by 1.4.3 (published 2026-11-04, past minimumReleaseAge).
+  # Transitive via @expo/cli and @expo/code-signing-certificates (both request ^1.4.0, so this
+  # stays inside the declared range). Mobile build tooling only, not in the deployed web app.
+  node-forge@<1.4.3: '1.4.3'
   # Dependabot #58 (low): incorrect control flow scoping, fixed upstream in 2.0.1. Transitive via
   # @vercel/fun (Vercel CLI devDependency tree only).
   '@tootallnate/once': 2.0.1

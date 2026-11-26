@@ -99,4 +99,23 @@ describe("GET/POST /api/ai/model-policy", () => {
     expect(body.classification).toBeTruthy();
     expect(body.decision).toBeTruthy();
   });
+
+  it.each([
+    ["a lower sensitivity", { sensitivity: "public" }],
+    ["its own tenant policy", { tenantModelPolicy: { restrictedDataExternalProviders: true, policyId: "mine" } }],
+    ["both", { sensitivity: "public", tenantModelPolicy: { restrictedDataExternalProviders: true } }],
+  ])("POST previews the server's decision when the caller sends %s", async (_label, context) => {
+    vi.stubEnv("GROQ_API_KEY", "test-key");
+    state.session = { user: user("user-1", "Organization Admin") };
+    const request = new Request("https://example.com/api/ai/model-policy", {
+      method: "POST",
+      body: JSON.stringify({ prompt: "List every patient diagnosis.", task: "general_chat", context }),
+    });
+    const body = await (await POST(request)).json() as { classification: { sensitivity: string }; decision: { provider: { name: string }; policy: { policyId: string } } };
+
+    expect(body.classification.sensitivity).toBe("restricted");
+    expect(body.decision.provider.name).toBe("local");
+    expect(body.decision.policy.policyId).toBe("tenant-default-ai-routing-policy");
+    vi.unstubAllEnvs();
+  });
 });

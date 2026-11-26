@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { updateCrmLead } from "../../../../../../repositories/crmRepository";
 import { loadCallContext, recordCall } from "../../../../../../repositories/leadWorkRepository";
 import { auditLogsRepository } from "../../../../../../repositories/supabaseEnterpriseRepositories";
-import { CURRENT_REGISTRATIONS, decideCall, isCallOutcome, leadChangesForOutcome } from "../../../../../../services/outbound/callQueue";
+import { loadRegistrations } from "../../../../../../repositories/orgAgentSettingsRepository";
+import { decideCall, isCallOutcome, leadChangesForOutcome } from "../../../../../../services/outbound/callQueue";
 import { loadVisibleLead, requireCrmAccess } from "../../../leadAccess";
 
 const MAX_NOTE = 500;
@@ -34,7 +35,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     lead,
     suppressed: Boolean(lead.phoneE164 && context.suppressed.has(lead.phoneE164)),
     attempts: context.attemptsByLead.get(lead.id) ?? [],
-    registrations: CURRENT_REGISTRATIONS,
+    registrations: await loadRegistrations(access.scope.organizationId),
     now,
   });
 

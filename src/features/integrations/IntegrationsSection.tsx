@@ -19,6 +19,7 @@ import type { NotionPageSummary } from "../../services/integrations/notionPages"
 import { getDisplayedIntegrationHealth, getIntegrationHealth, getInfrastructureOnlyIntegrations, getPilotIntegrations } from "../../services/integrations/pluginRegistry";
 import { useFacebookLoginStatus, facebookLoginStatusCopy } from "../../hooks/useFacebookLoginStatus";
 import { WhatsAppPhoneNumberField } from "./WhatsAppPhoneNumberField";
+import { AgentsCard } from "./AgentsCard";
 import { allAgentCapabilities, mcp2AgentCapabilities, type AgentCapability } from "../../security/agentScope";
 import { agentPolicyTemplates } from "../../services/agents/agentPolicyTemplates";
 import { Layers } from "lucide-react";
@@ -659,6 +660,12 @@ export const IntegrationsSection = () => {
         })}
       </div>
     </Card>
+
+    {/* Customer-fireable stack (2026-11-20): the organization's voice and messaging agents. Rendered
+        only for organization admins outside demo mode, so no one else's page calls the settings
+        route (the investor demo has no session and must make no failing API call). The server
+        still enforces the same check. */}
+    {canConnect && !demoMode ? <AgentsCard /> : null}
   </div>
   );
 };

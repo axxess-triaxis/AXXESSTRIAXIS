@@ -137,3 +137,49 @@ Existing rows are not rewritten.
 | Decision | Date | Session/tool | Issue ID | Why | Outcome | Commit/PR | Verification | Closeout |
 |---|---|---|---|---|---|---|---|---|
 | Prove the lead-sourcing path on staging with 20 known batch 5 companies plus an exclusion canary, verify_cap 0, and a human-approved import of 2 candidates; no production run, no schedule | 2026-11-18 | Founder-approved plan, executed by Claude Code | LEAD-SOURCING-E2E | The worker was deployed (#529) but no run had ever gone through queue, crawl, report and approval | Passed: queued 20, excluded 1; done in 60 s with 0 credits; 20/20 names and emails match batch 5 (same crawler code, so this shows reproduction, not independent accuracy); 2 leads imported after the founder's approval, 0 sequences | Staging `81679518`, run `592aed06`; code from #529 (`dd25d70e`) | MCP `source_leads` / `get_sourcing_run` output; Lambda invoke `{"claimed":true,"status":200}`; staging `/api/crm/leads` = 2, `/api/outreach/sequences` = 0 | `docs/readiness/LEAD_SOURCING_STAGING_E2E_CLOSEOUT_2026_11_18.md` |
+
+## Lead sourcing v2: automatic discovery on schedules, to production (2026-11-19)
+
+| Decision | Date | Session/tool | Issue ID | Why | Outcome | Commit/PR | Verification | Closeout |
+|---|---|---|---|---|---|---|---|---|
+| Ship scheduled discovery (gpt-oss-20b on Bedrock + AgentCore web search) with auto-import and no enrolment, for all orgs with monthly caps | 2026-11-19 | Founder-approved plan, executed by Claude Code | LEAD-SOURCING-V2 | Founder: "fully automated and on Bedrock... set it on schedule"; Anthropic blocked on the account, so the cheapest oss model per founder | Live in production; staging schedule fired on its own (11:30 UTC, `due:1, started:1`) and auto-imported 1 lead; prod worker tick clean | #535, #536, #538, #539, #540; `main` `afd0c898` | 2373 tests, 24 of 24 PR checks, staging runs `1c8c5775`, `1f823eb2`, `09a9ad4f`, prod tick 12:12 UTC | `LEAD_SOURCING_V2_PRODUCTION_CLOSEOUT_2026_11_19.md` |
+| Fix three faults found on staging before production: two false contact names and a crawl crash | 2026-11-19 | Claude Code | LEAD-SOURCING-V2 | Staging imported "Approved Maintenance Works" and "Popular Search" as people; a browser render ended a run with `Runtime.NodeJsExit` | Fixed; each new test fails on the old code; the 09a9ad4f crawl rendered 2 pages without a crash. Names stay rule-based, so more false names are expected and are handled by Remove | `23b3c2b2`, `bfe64637`, `368cb82e` | Unit tests plus the live White & Co page now giving no name | Same |
+
+## Stack E2E on a weekly schedule (2026-11-19)
+
+| Decision | Date | Session/tool | Issue ID | Why | Outcome | Commit/PR | Verification | Closeout |
+|---|---|---|---|---|---|---|---|---|
+| Run the cross-product staging test (AXXESS, Callismatic, Omnidamus, STILL) from GitHub every Monday 03:30 UTC, with a GitHub issue opened on failure | 2026-11-19 | Founder: "Yes, weekly", "Yes, set it up"; executed by Claude Code | STACK-E2E-WEEKLY | Founder asked whether the harness works at the meta level; the test had only ever run from the founder's laptop and nothing checked the four products together on a schedule | Passed: first GitHub run 44535298156, 5 of 5 scenarios in 7.7 min (lead to task, Omnidamus conversation to task with no real send, duplicate makes one task, spam makes none, malformed event reaches the failure queue) | #548; AWS stack `axxess-stack-e2e-github-role` (OIDC role `axxess-stack-e2e-github`, staging environment only, five staging actions) | `aws cloudformation validate-template`; GitHub run 44535298156 | This row. Open: Callismatic lead labelling can still vary, so a weekly failure may be a model wobble rather than a break. Secrets were set by the founder; the Callismatic staging admin key rotation is founder-reported, not verified here |
+| Set org B up by SQL for the two-organization stack test instead of waiting for the operator panel | 2026-11-24 | Founder ran it, proposed by Claude Code | CUSTOMER-FIREABLE-STACK | The panel did not appear on staging and the test needs only the stored settings | Passed on staging: run 45347097022, 7 of 7. Panel cause: Pending, review by 2026-12-08 | #557, merge `b482c7b1` | One task in org B, none in org alpha, forged results 409, 404 and 401 | `STACK_TWO_ORG_E2E_CLOSEOUT_2026_11_24.md` |
+
+## RAG gate runs real retrieval (2026-11-24)
+
+| Decision | Date | Session/tool | Issue ID | Why | Outcome | Commit/PR | Verification | Closeout |
+|---|---|---|---|---|---|---|---|---|
+| Replace the self-passing RAG release gate with one that runs production retrieval on a disposable Supabase stack; no LangChain, LangGraph or MongoDB | 2026-11-24 | Founder intent, executed by Claude Code | RAG-REAL-GATE | The old gate scored observations built from its own fixtures, so its passes were not evidence and later comparisons had no honest baseline | Gate passes on real retrieval and fails on real breakages. Merged 2026-11-25 as `306f2c89`, deployed; signed-in check: Pending, review by 2026-12-08 | #574, measured on `5b1e7dcf` | CI runs 45447751231 (red first), 45451898878 (pass, 9 of 9 breakage runs caught), 45452956838 (pushed break failed) | `RAG_RETRIEVAL_GATE_CLOSEOUT_2026_11_24.md` |
+| Enforce the `rag_release_gates` admin rule in `POST /api/rag/evaluation` with the existing `canManageOrganization` helper | 2026-11-25 | Founder-approved plan, executed by Claude Code | RAG-REAL-GATE | The route writes with the service role, so the admin-only RLS policy never applied and any signed-in user could record gate results | Non-admins get 403 and nothing is written. Merge: Pending, review by 2026-12-08 | `5c287e92` (red), `cb266df3` (fix), stacked on #574 | 6 of 15 route tests failed before, 15 of 15 pass after; full suite 2585 of 2585 with `--pool=forks` | `RAG_RETRIEVAL_GATE_CLOSEOUT_2026_11_24.md` |
+
+## Chunk full text, rank fusion and abstention (2026-11-25)
+
+| Decision | Date | Session/tool | Issue ID | Why | Outcome | Commit/PR | Verification | Closeout |
+|---|---|---|---|---|---|---|---|---|
+| Any-word full text over chunk bodies, coverage-gated rank fusion and two-signal semantic abstention, chosen on golden v1 and reported on held-out v2. Full-text abstention was measured, failed v2, and became a review flag | 2026-11-25 | Founder intent ("Start stacked now"), executed by Claude Code | RAG-RETRIEVAL-QUALITY | Full text served 9 of 108 questions, codes ranked low, nothing abstained | Measured, see closeout. Merged 2026-11-25 as `54b62521` and deployed; inactive until the migration. Migration: Pending, review by 2026-12-09 | #575 | RAG gate runs listed in the closeout | `RAG_RETRIEVAL_QUALITY_CLOSEOUT_2026_11_25.md` |
+
+## Approval load (2026-11-25)
+
+| Decision | Date | Session/tool | Issue ID | Why | Outcome | Commit/PR | Verification | Closeout |
+|---|---|---|---|---|---|---|---|---|
+| Auto-fix on without asking, and 50 to 70% fewer approval questions by doing reversible steps and batching the rest; critical actions still asked every time, except merges covered below | 2026-11-25 | Founder instruction, executed by Claude Code | APPROVAL-LOAD | In the RAG retrieval session the agent asked 9 next-step questions between its gate passing and the docs PR, and one merge took more than one ask | Pending, review by 2026-12-09: count questions per session against 9 | #578 | Baseline, counted from that session's next-step questions: Auto-fix 2, #574 merge 4, deploy check 1, #575 merge 1, docs PR 1; 9 in all | This row |
+| Merge fully ready PRs without waiting for an explicit request, with "fully ready" defined in `CLAUDE.md` and the merge-triggered deploy included | 2026-11-25 | Founder instruction, executed by Claude Code | MERGE-WHEN-READY | Most approval questions were about merges already green | Pending, review by 2026-12-09: merges made, live checks, reverts | #578 | Open PRs audited 2026-11-25 (20 open): reasons recorded in the session report | This row |
+
+## Server-side AI routing context (2026-11-25)
+
+| Decision | Date | Session/tool | Issue ID | Why | Outcome | Commit/PR | Verification | Closeout |
+|---|---|---|---|---|---|---|---|---|
+| Build the AI routing context on the server from an allowlist; the tenant policy is server-only and a caller can only raise sensitivity | 2026-11-25 | Founder-approved plan (step A0), executed by Claude Code | AI-ROUTING-CONTEXT | The prompt classifier planned next needs one place that decides routing | Pending, review by 2026-12-09 | #580 | Regression tests 8 failed, 10 passed before; all pass after | After deploy |
+
+## LangSmith tracing, local only (2026-11-25)
+
+| Decision | Date | Session/tool | Issue ID | Why | Outcome | Commit/PR | Verification | Closeout |
+|---|---|---|---|---|---|---|---|---|
+| Trace Copilot and all `routeAiRequest` calls in LangSmith from a developer machine only, with masked content; refused in code anywhere else. Tracing only: the 2026-11-24 "no LangChain" decision for the RAG gate still holds | 2026-11-25 | Founder choice, executed by Claude Code | LANGSMITH-TRACING | Tenants default to zero data retention and LangSmith stores what it receives | Shipped off in production (landing, investor and lite). Usefulness pending, review by 2026-12-09 | #584 (`b677d0f6`) | Live traces read back from LangSmith 2026-11-25 10:53 to 11:00 UTC; nothing stored in the two off modes | `docs/readiness/LANGSMITH_TRACING_CLOSEOUT_2026_11_25.md` |

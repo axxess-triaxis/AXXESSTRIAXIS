@@ -1,5 +1,7 @@
 # Testing Due Diligence
 
+> **Correction, 2026-11-24:** the RAG release gate cited here is not evidence of retrieval quality or tenant isolation. Until 2026-11-24 it scored observations built from its own two fixtures and ran no retrieval code, so it could not fail. The replacement runs real retrieval: see `docs/readiness/RAG_RETRIEVAL_GATE_CLOSEOUT_2026_11_24.md`.
+
 ## Purpose
 
 This document summarizes the automated testing, validation, and release-readiness evidence currently checked into the AXXESS repository so external reviewers can evaluate software diligence without inferring it from the codebase alone.

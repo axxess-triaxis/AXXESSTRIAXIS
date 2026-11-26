@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server";
 import { getServerAuthSession } from "../../../../auth/serverSession";
 import { addExclusions } from "../../../../repositories/leadSourcingRepository";
+import { deleteExclusion, listExclusions } from "../../../../repositories/leadSourcingScheduleRepository";
 import { auditLogsRepository, tenantScopeFromUser } from "../../../../repositories/supabaseEnterpriseRepositories";
 import { canReadAllLeads, canUseCapability } from "../../../../security/rbac";
 import { recordDeniedAttempt } from "../../../../services/audit/auditEvents";
 import { domainLabel } from "../../../../services/leadSourcing/extract";
 import { normCompany } from "../../../../services/leadSourcing/seeds";
+import { UUID_PATTERN, leadSourcingAccess } from "../../../../services/leadSourcing/sessionAccess";
 
 const REASONS = ["founder_network", "customer", "competitor", "manual"] as const;
 type Reason = (typeof REASONS)[number];
@@ -40,4 +42,27 @@ export async function POST(request: Request) {
     metadata: { added, submitted: rows.length, reason },
   }).catch(() => undefined);
   return NextResponse.json({ added, submitted: rows.length });
+}
+
+// 2026-11-18: list and remove entries from the Lead sourcing page. Senior roles read; removing also
+// needs crm.create, like adding.
+export async function GET() {
+  const access = await leadSourcingAccess(false, "/api/lead-sourcing/exclusions", "GET");
+  if (!access.ok) return access.response;
+  return NextResponse.json({ exclusions: await listExclusions(access.scope) });
+}
+
+export async function DELETE(request: Request) {
+  const access = await leadSourcingAccess(true, "/api/lead-sourcing/exclusions", "DELETE");
+  if (!access.ok) return access.response;
+  const id = new URL(request.url).searchParams.get("id") ?? "";
+  if (!UUID_PATTERN.test(id) || !(await deleteExclusion(access.scope, id))) return NextResponse.json({ error: "Exclusion not found." }, { status: 404 });
+  await auditLogsRepository.record(access.scope, {
+    action: "lead_sourcing.exclusion_removed",
+    resourceType: "lead_source_exclusion",
+    resourceId: id,
+    category: "crm",
+    metadata: {},
+  }).catch(() => undefined);
+  return NextResponse.json({ deleted: true });
 }

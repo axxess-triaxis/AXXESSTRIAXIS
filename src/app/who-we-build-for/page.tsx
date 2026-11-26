@@ -2,28 +2,17 @@ import Link from "next/link";
 
 const segments = [
   {
-    name: "Healthcare",
-    examples: "Discharge approvals, ICU coordination, billing closure and clinical audit trails",
+    name: "Real estate brokerages",
+    examples: "Leads from portals, calls and WhatsApp. Site visits. The follow-up that was due yesterday.",
   },
   {
-    name: "Banking & Finance",
-    examples: "Credit workflows, compliance sign-offs, treasury operations and relationship management",
+    name: "Private clinics",
+    examples: "Patient enquiries, appointment follow-ups, approvals and the records an auditor will ask for.",
   },
   {
-    name: "Universities & Education",
-    examples: "Academic governance, faculty approvals, student records and institutional audits",
-  },
-  {
-    name: "MSMEs & Mid-Market",
-    examples: "Operational workflows, vendor approvals, team coordination and knowledge retention",
-  },
-  {
-    name: "NGOs & Public-Sector Bodies",
-    examples: "Program coordination, grant workflows, field follow-ups, evidence trails and reporting",
-  },
-  {
-    name: "Startups & Operators",
-    examples: "Company memory, stakeholder follow-through, founder workflows and execution tracking",
+    name: "Everyone else, eventually",
+    examples:
+      "Small businesses, councils, schools and colleges, NGOs and corporates. Meetings, employees, vendors and, most importantly, customers. Same problem everywhere.",
   },
 ];
 
@@ -39,12 +28,11 @@ export default function WhoWeBuildForPage() {
             Who We Build For
           </p>
           <h1 className="text-4xl font-semibold leading-tight md:text-6xl">
-            Institutions and teams where coordination failure is expensive.
+            Any organisation where work gets lost between people and tools.
           </h1>
           <p className="text-lg leading-8 text-[#3f5165] md:text-xl">
-            Primary markets are India and the GCC. The broader focus is Global South and emerging-market
-            organizations with fragmented systems, multilingual environments and high coordination
-            friction.
+            That is every organisation. We are starting with real estate brokerages and private
+            clinics in India and the UAE, and coming to the EU.
           </p>
         </div>
       </section>

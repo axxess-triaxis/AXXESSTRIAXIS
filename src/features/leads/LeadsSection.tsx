@@ -9,6 +9,7 @@ import { isDemoModeEnabled } from "../../demo/demoMode";
 import type { CrmLead, CrmLeadStage, CrmLeadStatus } from "../../domain";
 import { canReadAllLeads } from "../../security/rbac";
 import { FunnelPanel } from "./FunnelPanel";
+import { SETUP_LABELS } from "../integrations/agentSetupLabels";
 import { clearPendingCall, readPendingCall, savePendingCall, type PendingCall } from "./pendingCall";
 import { CALL_OUTCOMES, type CallOutcome, type QueueLead, type QueueReason } from "../../services/outbound/callQueue";
 
@@ -116,6 +117,7 @@ function LeadPanel(props: { lead: CrmLead; senior: boolean; staff: { id: string;
         ) : null}
       </div>
       {error ? <p className="mt-2 text-xs text-red-700">{error}</p> : null}
+      <AgentMessageControl leadId={lead.id} />
       <h3 className="mt-4 text-[11px] font-semibold uppercase tracking-wide text-[#5F6B73]">History</h3>
       {history === null ? <p className="mt-1 text-xs text-[#5F6B73]">Loading...</p> : history.length === 0 ? <p className="mt-1 text-xs text-[#5F6B73]">No contact or changes yet.</p> : (
         <ul className="mt-1 space-y-1">
@@ -187,6 +189,55 @@ function PendingCallBanner(props: { onLogged: () => void }) {
   );
 }
 
+const setupText = (setup: string[]) => setup.map((s) => SETUP_LABELS[s] ?? s).join("; ");
+
+type MessageJob = { id: string; channel: "whatsapp" | "sms"; status: "queued" | "running" | "completed" | "failed"; summary: string | null; failureReason: string | null };
+
+// Message with agent (2026-11-20): one click asks Omnidamus to open a WhatsApp or SMS conversation with
+// the lead from the organization's own number. The server checks the setup and the contactability gate.
+function AgentMessageControl(props: { leadId: string }) {
+  const [job, setJob] = useState<MessageJob | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  const load = useCallback(() => {
+    void getJson<{ job: MessageJob | null }>(`/api/crm/leads/${props.leadId}/agent-messages`).then((data) => setJob(data?.job ?? null));
+  }, [props.leadId]);
+  useEffect(load, [load]);
+
+  const start = async (channel: "whatsapp" | "sms") => {
+    setBusy(true);
+    setMessage(null);
+    const response = await fetch(`/api/crm/leads/${props.leadId}/agent-messages`, {
+      method: "POST", credentials: "include", headers: { "content-type": "application/json" }, body: JSON.stringify({ channel }),
+    }).catch(() => null);
+    const data = (await response?.json().catch(() => null)) as { error?: string; reasons?: QueueReason[]; setup?: string[]; failureReason?: string } | null;
+    setBusy(false);
+    if (response?.status === 202) { setMessage("The agent has opened the conversation. The result will appear here."); load(); return; }
+    if (data?.setup?.length) setMessage(`Not set up: ${setupText(data.setup)}.`);
+    else if (data?.reasons?.length) setMessage(`Refused: ${data.reasons.map((r) => REASON_LABELS[r] ?? r).join("; ")}`);
+    else setMessage(data?.failureReason ? `The agent could not start: ${data.failureReason}` : data?.error ?? "Could not start the conversation.");
+  };
+
+  return (
+    <div data-testid="agent-message" className="mt-3 text-xs">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="font-semibold text-[#0F1117]">Message with agent</span>
+        <button type="button" disabled={busy} onClick={() => void start("whatsapp")} className="rounded-md bg-[#0F1117] px-3 py-1 font-semibold text-white disabled:opacity-40">WhatsApp</button>
+        <button type="button" disabled={busy} onClick={() => void start("sms")} className="rounded-md bg-[#0F1117] px-3 py-1 font-semibold text-white disabled:opacity-40">SMS</button>
+      </div>
+      {job ? (
+        <p className="mt-1 text-[#5F6B73]">
+          {job.status === "completed" ? `Agent conversation (${job.channel}): done${job.summary ? ` - ${job.summary}` : ""}`
+            : job.status === "failed" ? `Agent conversation failed: ${job.failureReason ?? "unknown"}`
+            : `Agent conversation (${job.channel}) in progress`}
+        </p>
+      ) : null}
+      {message ? <p className="mt-1 text-[#8B1E2D]">{message}</p> : null}
+    </div>
+  );
+}
+
 // Agent call pipeline (2026-11-13): one click asks the voice agent to call this lead. The server
 // gate decides (channel voice_ai); while it refuses, the button stays disabled and says why.
 const AGENT_REASON_LABELS: Partial<Record<QueueReason, string>> = {
@@ -205,10 +256,11 @@ function AgentCallControl(props: { leadId: string; agentCall?: { allowed: boolea
     setBusy(true);
     setMessage(null);
     const response = await fetch(`/api/crm/leads/${props.leadId}/agent-calls`, { method: "POST", credentials: "include" }).catch(() => null);
-    const data = (await response?.json().catch(() => null)) as { error?: string; reasons?: QueueReason[]; failureReason?: string } | null;
+    const data = (await response?.json().catch(() => null)) as { error?: string; reasons?: QueueReason[]; setup?: string[]; failureReason?: string } | null;
     setBusy(false);
     if (response?.status === 202) { setMessage("The agent is calling. The result will appear here."); props.onStarted(); return; }
-    if (data?.reasons?.length) setMessage(`Refused: ${data.reasons.map((r) => AGENT_REASON_LABELS[r] ?? REASON_LABELS[r] ?? r).join("; ")}`);
+    if (data?.setup?.length) setMessage(`Not set up: ${setupText(data.setup)}.`);
+    else if (data?.reasons?.length) setMessage(`Refused: ${data.reasons.map((r) => AGENT_REASON_LABELS[r] ?? REASON_LABELS[r] ?? r).join("; ")}`);
     else setMessage(data?.failureReason ? `The agent could not call: ${data.failureReason}` : data?.error ?? "Could not start the agent call.");
   };
 

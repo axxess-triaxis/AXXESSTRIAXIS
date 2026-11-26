@@ -34,4 +34,17 @@ describe("callismaticClient", () => {
     expect(await startAgentCall(request, reply(500, { error: "Something long with spaces" }))).toEqual({ ok: false, reason: "http_500" });
     expect(await startAgentCall(request, vi.fn(async () => { throw new Error("down"); }))).toEqual({ ok: false, reason: "callismatic_unreachable" });
   });
+
+  it("sends a customer's caller ID, name and purpose only for a customer call (2026-11-20)", async () => {
+    vi.stubEnv("CALLISMATIC_URL", "https://callismatic.example");
+    vi.stubEnv("CALLISMATIC_API_KEY", "k");
+    const triaxis = reply(202);
+    await startAgentCall(request, triaxis);
+    expect(JSON.parse(String((triaxis.mock.calls[0] as unknown as [string, RequestInit])[1].body))).not.toHaveProperty("caller_id");
+    const customer = reply(202);
+    await startAgentCall({ ...request, customer: { callerId: "+919800000001", organizationName: "Sharma Realty", callPurpose: "Viewing" } }, customer);
+    expect(JSON.parse(String((customer.mock.calls[0] as unknown as [string, RequestInit])[1].body))).toEqual(expect.objectContaining({
+      caller_id: "+919800000001", organization_name: "Sharma Realty", call_purpose: "Viewing",
+    }));
+  });
 });
