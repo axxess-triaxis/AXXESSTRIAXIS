@@ -1,0 +1,31 @@
+{
+  "locations": [
+    "Kamrup",
+    "Dibrugarh",
+    "Nagaon",
+    "Barpeta",
+    "Cachar",
+    "Tinsukia",
+    "Jorhat",
+    "Golaghat",
+    "Kokrajhar",
+    "Dhubri",
+    "Kohima",
+    "Imphal",
+    "Aizawl",
+    "Shillong",
+    "Agartala",
+    "Itanagar"
+  ],
+  "organizations": [
+    "North East Health Mission",
+    "State Health Directorate",
+    "Gauhati Medical College Hospital",
+    "Assam Medical College Dibrugarh",
+    "Silchar Medical College",
+    "NEIGRIHMS Shillong",
+    "Regional Institute of Medical Sciences Imphal",
+    "District Hospital",
+    "Mission Secretariat"
+  ]
+}

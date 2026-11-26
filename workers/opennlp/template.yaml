@@ -1,0 +1,111 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: >-
+  AXXESS OpenNLP enrichment worker. Function URL that takes document text from AXXESS RAG ingestion
+  and returns sentences, token count and dictionary entities (Apache OpenNLP 3.0). Stores nothing.
+
+Metadata:
+  AWSToolsMetrics:
+    AWSAgentToolkit: aws-cloudformation@2
+
+Parameters:
+  Stage:
+    Type: String
+    Default: staging
+    AllowedValues: [staging, prod]
+  KeySecretArn:
+    Type: String
+    AllowedPattern: "^arn:aws:secretsmanager:[a-z0-9-]+:[0-9]{12}:secret:.+$"
+    Description: Secrets Manager ARN of the shared key (plain string; the same value as the AXXESS OPENNLP_KEY env var).
+  AlarmEmail:
+    Type: String
+    Default: ""
+    Description: Email for error alarms (confirm the SNS subscription email). Empty = no subscription.
+
+Conditions:
+  AlarmByEmail: !Not [!Equals [!Ref AlarmEmail, ""]]
+
+Globals:
+  Function:
+    Tags:
+      app: axxess-triaxis
+      component: opennlp
+
+Resources:
+  EnrichLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/axxess-opennlp-${Stage}
+      RetentionInDays: 14
+
+  EnrichFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub axxess-opennlp-${Stage}
+      Description: OpenNLP sentence, token and dictionary entity enrichment for AXXESS RAG ingestion.
+      CodeUri: .
+      Handler: com.triaxis.axxess.opennlp.EnrichHandler::handleRequest
+      Runtime: java21
+      Architectures: [x86_64]
+      MemorySize: 1024
+      Timeout: 10
+      AutoPublishAlias: live
+      SnapStart:
+        ApplyOn: PublishedVersions
+      LoggingConfig:
+        LogGroup: !Ref EnrichLogGroup
+        LogFormat: Text
+      Environment:
+        Variables:
+          OPENNLP_KEY_SECRET_ARN: !Ref KeySecretArn
+          STAGE: !Ref Stage
+      Policies:
+        - Statement:
+            - Sid: ReadSharedKey
+              Effect: Allow
+              Action: secretsmanager:GetSecretValue
+              Resource: !Ref KeySecretArn
+      FunctionUrlConfig:
+        # The handler checks x-opennlp-key on every request; AXXESS runs on Vercel and cannot sign SigV4 cheaply.
+        AuthType: NONE
+
+  AlarmTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub axxess-opennlp-alarms-${Stage}
+      KmsMasterKeyId: alias/aws/sns
+
+  AlarmTopicEmail:
+    Type: AWS::SNS::Subscription
+    Condition: AlarmByEmail
+    Properties:
+      TopicArn: !Ref AlarmTopic
+      Protocol: email
+      Endpoint: !Ref AlarmEmail
+
+  EnrichErrorsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub axxess-opennlp-${Stage}-errors
+      AlarmDescription: The OpenNLP worker threw. AXXESS falls back to local NLP; check the log group.
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref EnrichFunction
+      Statistic: Sum
+      Period: 900
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref AlarmTopic]
+
+Outputs:
+  EnrichFunctionUrl:
+    Description: Set as OPENNLP_ENDPOINT in AXXESS (without the trailing slash).
+    Value: !GetAtt EnrichFunctionUrl.FunctionUrl
+  EnrichFunctionName:
+    Value: !Ref EnrichFunction
+  EnrichLogGroupName:
+    Value: !Ref EnrichLogGroup

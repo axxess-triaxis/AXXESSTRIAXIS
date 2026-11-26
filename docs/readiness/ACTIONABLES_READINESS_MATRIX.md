@@ -402,3 +402,10 @@ Fixed by: (1) splitting public entry into two dedicated, non-overlapping routes 
 | ID | Actionable | Area | Acceptance Criteria | Status | Confidence | Evidence / Notes |
 |---|---|---|---|---|---:|---|
 | LEAD-SOURCING-V2 | Automatic lead discovery on user schedules, auto-imported into the CRM, never enrolled | Growth / CRM | Schedule fires on its own, discovery and crawl finish, leads imported with 0 enrolments, caps enforced, standard suite and PR CI pass, production deployed | Yes | 80% | Staging: scheduled run `09a9ad4f` fired at 11:30 UTC and imported 1 lead; manual run `1c8c5775` imported 2 and Remove worked. Production: `main` `afd0c898`, prod worker deployed with discovery on, 12:12 UTC tick clean. 2373 tests, 24 of 24 PR checks. **Open:** no production discovery run yet (needs the first schedule); contact names are rule-based and will sometimes be wrong. See `LEAD_SOURCING_V2_PRODUCTION_CLOSEOUT_2026_11_19.md` |
+
+## OpenNLP Ingestion Addendum (2026-11-26)
+
+| ID | Actionable | Area | Acceptance Criteria | Status | Confidence | Evidence / Notes |
+|---|---|---|---|---|---:|---|
+| OPENNLP-INGEST | Apache OpenNLP 3.0 enrichment for RAG ingestion (sentences, tokens, dictionary entities) behind `OPENNLP_ENABLED`, local NLP fallback | AI / RAG | Worker JUnit green, client and parity tests green, standard suite and PR CI pass, staging live check of `/enrich`, one staging document compared with a flag-off run | No | 50% | Code only, not deployed. 9/9 JUnit, 160/160 NLP+RAG Vitest, typecheck, lint, supabase:verify pass; full test and build ran out of memory locally (OPENNLP-E1), so CI decides them. **Blocker:** founder yes for the staging secret, `sam deploy` and Vercel env vars. Owner: founder. See `OPENNLP_INGESTION_CLOSEOUT_2026_11_26.md`. Next review: 2026-12-10 |
+| OPENNLP-E1 | Restore the Vitest worker cap | Test infra | `maxWorkers` set at top level (Vitest 5), full suite runs locally without running out of memory | No | 90% | `vitest.config.mjs:45-50` `poolOptions` is ignored since Vitest 4 (Vitest warns); a run spawned 22 workers. Owner: Claude Code. Separate PR. Next review: 2026-12-03 |
