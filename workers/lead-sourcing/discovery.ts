@@ -41,6 +41,7 @@ export async function runDiscovery(
       "Companies checked": checked.kept.length,
       "Discovery incomplete": found.incomplete ? 1 : 0,
       "Listed by no-tool extraction": found.extracted ? 1 : 0,
+      "Calls cut off at the token limit": found.cutOffTurns ?? 0,
     },
   };
 }
