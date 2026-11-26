@@ -6,6 +6,12 @@
   "regions": [
     "syd1"
   ],
+  "git": {
+    "deploymentEnabled": {
+      "dependabot/**": false,
+      "docs/**": false
+    }
+  },
   "crons": [
     {
       "path": "/api/cron/pilot-command-center-snapshot",
