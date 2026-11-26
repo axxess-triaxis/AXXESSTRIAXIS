@@ -11,6 +11,31 @@ AXXESS web remains a root-level Next.js app. Do not set the Vercel root director
 
 `vercel.json` preserves this root deployment path.
 
+## Who deploys what (2026-11-26)
+
+The account is on Vercel's free plan: at most 100 deployments a day, counted across every project
+on the account. Every Vercel project below uses Root Directory `.`, so the one root `vercel.json`
+applies to all of them. On 2026-11-25 this repository alone made 144 deployments, and a production
+deploy was refused. The full measurement is in
+`docs/readiness/VERCEL_DEPLOY_BUDGET_CLOSEOUT_2026_11_26.md`.
+
+| Project | Domain | Production deployed by | Previews |
+|---|---|---|---|
+| `triaxis-www-frontend-import` | landing.triaxisventures.com, staging.triaxisventures.com (branch `staging`) | Vercel Git integration on `main` | Every branch except `dependabot/**` and `docs/**` |
+| `triaxis-product-investor-demo` | investor.triaxisventures.com | `deploy-production.yml` job `deploy-investor-demo`, plus `eod-investor-sync.yml` | Git integration until the founder disconnects Git on this project, then none |
+| `triaxis-product-lite-web` | lite.triaxisventures.com | `deploy-production.yml` job `deploy-lite` | None (not Git-connected) |
+| `axxesstriaxis` | beta.triaxisventures.com | Vercel Git integration on `main`. After the founder disconnects Git and sets `VERCEL_APP_DEPLOY_VIA_CLI=true`, the `deploy-app` job instead | Git integration until Git is disconnected, then none |
+
+The rules behind this table:
+
+- `vercel.json` `git.deploymentEnabled` turns off Git deployments for `dependabot/**` and `docs/**`
+  branches. No deployment is created for them at all, so they also get no Vercel status on the PR.
+- Do not add an `ignoreCommand` to save deployments. Vercel's documentation says canceled builds
+  still count as full deployments.
+- Each production site is built once per merge. Landing is built by Git integration only, because it
+  also serves the `staging` branch domain that `stack-e2e.yml` tests.
+- To check the count, run `node scripts/measure-vercel-deployments.mjs --days 7`.
+
 ## Required Environment Variables
 
 Public:

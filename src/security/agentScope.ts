@@ -98,6 +98,23 @@ export function agentScopeHasCapability(scope: AgentScope, capability: AgentCapa
   return scope.capabilities.includes(capability);
 }
 
+/**
+ * Why a connection may not run a tool right now, or undefined if it may. The MCP route gets the same
+ * answer from key resolution plus the capability check; this is for a call that was accepted earlier
+ * and runs later (approval resume), by when the key may be revoked or the tool taken away.
+ */
+export function agentConnectionRefusal(
+  connection: { status: "active" | "revoked"; capabilities: AgentCapability[] } | undefined,
+  requiredCapability: AgentCapability | undefined,
+): string | undefined {
+  if (!connection) return "The agent connection that requested this call was not found.";
+  if (connection.status !== "active") return "The agent connection that requested this call was revoked.";
+  if (requiredCapability && !connection.capabilities.includes(requiredCapability)) {
+    return `The agent connection that requested this call no longer has the ${requiredCapability} capability.`;
+  }
+  return undefined;
+}
+
 export function isAgentCapability(value: unknown): value is AgentCapability {
   return typeof value === "string" && allAgentCapabilities.includes(value as AgentCapability);
 }
