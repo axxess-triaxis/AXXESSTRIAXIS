@@ -7,13 +7,14 @@ const state = {
   grantCalls: [] as Array<Record<string, unknown>>,
   auditCalls: [] as Array<{ scope: unknown; input: Record<string, unknown> }>,
   // MCP3-2 (approval resume) state
-  connection: { capabilities: ["create_meeting"], issuedByUserId: "issuer-1", issuedByRole: "Organization Admin" } as Record<string, unknown> | undefined,
+  connection: { status: "active", capabilities: ["create_meeting"], issuedByUserId: "issuer-1", issuedByRole: "Organization Admin" } as Record<string, unknown> | undefined,
   pendingCall: null as null | { id: string; toolName: string; toolVersion: string; provider: string; arguments: Record<string, unknown>; status: string },
   reserveSucceeds: true,
   reserveCalls: [] as Array<Record<string, unknown>>,
   finalizeCalls: [] as Array<Record<string, unknown>>,
   rejectCalls: [] as Array<Record<string, unknown>>,
   agentAuditCalls: [] as Array<{ scope: unknown; input: Record<string, unknown> }>,
+  executeCalls: 0,
   executionOutcome: { status: "executed", result: { id: "meeting-1" } } as { status: "executed"; result: unknown } | { status: "failed"; error: string },
 };
 
@@ -77,7 +78,10 @@ vi.mock("../../../../services/agents/agentPendingToolCallRepository", () => ({
 }));
 
 vi.mock("../../../../services/agents/agentPendingToolCallExecutor", () => ({
-  executePendingToolCall: async () => state.executionOutcome,
+  executePendingToolCall: async () => {
+    state.executeCalls += 1;
+    return state.executionOutcome;
+  },
 }));
 
 import { PATCH } from "./route";
@@ -97,13 +101,14 @@ describe("PATCH /api/approvals/[id]", () => {
     state.decideThrows = false;
     state.grantCalls = [];
     state.auditCalls = [];
-    state.connection = { capabilities: ["create_meeting"], issuedByUserId: "issuer-1", issuedByRole: "Organization Admin" };
+    state.connection = { status: "active", capabilities: ["create_meeting"], issuedByUserId: "issuer-1", issuedByRole: "Organization Admin" };
     state.pendingCall = null;
     state.reserveSucceeds = true;
     state.reserveCalls = [];
     state.finalizeCalls = [];
     state.rejectCalls = [];
     state.agentAuditCalls = [];
+    state.executeCalls = 0;
     state.executionOutcome = { status: "executed", result: { id: "meeting-1" } };
     vi.clearAllMocks();
   });
@@ -282,6 +287,58 @@ describe("PATCH /api/approvals/[id]", () => {
       expect(body.execution).toEqual({ status: "failed", error: "simulated failure" });
       expect(state.finalizeCalls[0]).toMatchObject({ id: "pending-1", failed: true });
       expect(state.agentAuditCalls[0].input).toMatchObject({ success: false, errorMessage: "simulated failure" });
+    });
+
+    // 2026-11-25: a pending call can wait a long time for a decision. Revoking the key, or taking the
+    // tool away from it, in that time must stop the call even if a human then approves it.
+    it.each([
+      ["was revoked", { status: "revoked", capabilities: ["create_meeting"], issuedByUserId: "issuer-1", issuedByRole: "Organization Admin" }, "revoked"],
+      ["no longer exists", undefined, "not found"],
+      ["lost the tool's capability", { status: "active", capabilities: ["create_task"], issuedByUserId: "issuer-1", issuedByRole: "Organization Admin" }, "capability"],
+    ])("approving a call whose connection %s fails it without running the tool or creating a grant", async (_label, connection, reason) => {
+      state.session = { user: user("user-1", "Manager") };
+      state.decideResult = { id: "approval-1", status: "pending", metadata: { agentConnectionId: "conn-1", toolName: "create_meeting" } };
+      state.pendingCall = { id: "pending-1", toolName: "create_meeting", toolVersion: "1", provider: "openai", arguments: { title: "Kickoff" }, status: "pending" };
+      state.connection = connection;
+
+      const response = await PATCH(patchRequest({ status: "approved", alwaysAllow: true }), { params: Promise.resolve({ id: "approval-1" }) });
+      const body = await response.json() as { grantCreated: boolean; execution?: { status: string; error?: string } };
+
+      expect(response.status).toBe(200);
+      expect(state.executeCalls).toBe(0);
+      expect(body.execution).toEqual({ status: "failed", error: expect.stringContaining(reason) });
+      expect(state.finalizeCalls).toEqual([expect.objectContaining({ id: "pending-1", failed: true, result: { error: expect.stringContaining(reason) } })]);
+      expect(state.agentAuditCalls).toHaveLength(1);
+      expect(state.agentAuditCalls[0].input).toMatchObject({ toolName: "create_meeting", success: false, errorMessage: expect.stringContaining(reason) });
+      expect(body.grantCreated).toBe(false);
+      expect(state.grantCalls).toEqual([]);
+      expect(state.auditCalls.map((call) => call.input.action)).toEqual(["approval.approved"]);
+    });
+
+    it("an active connection that still holds the capability runs once and can still get a grant", async () => {
+      state.session = { user: user("user-1", "Manager") };
+      state.decideResult = { id: "approval-1", status: "pending", metadata: { agentConnectionId: "conn-1", toolName: "create_meeting" } };
+      state.pendingCall = { id: "pending-1", toolName: "create_meeting", toolVersion: "1", provider: "openai", arguments: { title: "Kickoff" }, status: "pending" };
+
+      const response = await PATCH(patchRequest({ status: "approved", alwaysAllow: true }), { params: Promise.resolve({ id: "approval-1" }) });
+      const body = await response.json() as { grantCreated: boolean; execution?: { status: string } };
+
+      expect(state.executeCalls).toBe(1);
+      expect(body.execution?.status).toBe("executed");
+      expect(body.grantCreated).toBe(true);
+    });
+
+    it("a call for a revoked connection can still be rejected normally", async () => {
+      state.session = { user: user("user-1", "Manager") };
+      state.decideResult = { id: "approval-1", status: "pending", metadata: { agentConnectionId: "conn-1", toolName: "create_meeting" } };
+      state.pendingCall = { id: "pending-1", toolName: "create_meeting", toolVersion: "1", provider: "openai", arguments: { title: "Kickoff" }, status: "pending" };
+      state.connection = { status: "revoked", capabilities: ["create_meeting"] };
+
+      const response = await PATCH(patchRequest({ status: "rejected", decisionReason: "Key revoked." }), { params: Promise.resolve({ id: "approval-1" }) });
+      const body = await response.json() as { execution?: { status: string } };
+
+      expect(body.execution).toEqual({ status: "rejected" });
+      expect(state.executeCalls).toBe(0);
     });
 
     it("a plain human-originated approval with no linked pending tool call has no execution field", async () => {
