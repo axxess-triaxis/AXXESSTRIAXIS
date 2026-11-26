@@ -26,6 +26,10 @@ Claude and Codex may not commit or deploy without the required verification gate
 `docs/readiness/PRODUCTION_DEPLOY_EXCEPTION_POLICY.md` for the only sanctioned way to proceed when a gate
 is failing or unavailable.
 
+Some Vercel statuses are missing or skipped by design (Vercel free-plan limit, 2026-11-26). These do not count
+against "every check passed": no Vercel status on `docs/**` or `dependabot/**` PRs, and `deploy-app` skipped
+while its variable is unset. The full list is in `docs/readiness/TEST_GOVERNANCE.md`.
+
 ## Where each rule actually lives in `CLAUDE.md`
 
 - **Mandatory Plan-First Sessions** -- `CLAUDE.md`, under "Mandatory Plan-First Sessions -- Standing Rule"

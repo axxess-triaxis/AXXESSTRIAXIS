@@ -172,11 +172,29 @@ Existing rows are not rewritten.
 | Auto-fix on without asking, and 50 to 70% fewer approval questions by doing reversible steps and batching the rest; critical actions still asked every time, except merges covered below | 2026-11-25 | Founder instruction, executed by Claude Code | APPROVAL-LOAD | In the RAG retrieval session the agent asked 9 next-step questions between its gate passing and the docs PR, and one merge took more than one ask | Pending, review by 2026-12-09: count questions per session against 9 | #578 | Baseline, counted from that session's next-step questions: Auto-fix 2, #574 merge 4, deploy check 1, #575 merge 1, docs PR 1; 9 in all | This row |
 | Merge fully ready PRs without waiting for an explicit request, with "fully ready" defined in `CLAUDE.md` and the merge-triggered deploy included | 2026-11-25 | Founder instruction, executed by Claude Code | MERGE-WHEN-READY | Most approval questions were about merges already green | Pending, review by 2026-12-09: merges made, live checks, reverts | #578 | Open PRs audited 2026-11-25 (20 open): reasons recorded in the session report | This row |
 
+## Approved calls from revoked agent keys (2026-11-25)
+
+| Decision | Date | Session/tool | Issue ID | Why | Outcome | Commit/PR | Verification | Closeout |
+|---|---|---|---|---|---|---|---|---|
+| Check the agent connection when an approved call runs, and before an Always Allow grant: revoked, missing or without the capability means failed, not run | 2026-11-25 | Claude Code finding, founder chose to fix it | AGENT-REVOKED-APPROVALS | A key revoked while its call waited still had the call run on approval | Pending, review by 2026-12-09: founder's merge decision | `3a5a55a6` (red), `5e303380` (fix) | 3 of 24 tests failed on the old code, all pass on the new; full suite 2674 of 2674 with `--pool=forks --maxWorkers=2` | `REVOKED_AGENT_APPROVALS_CLOSEOUT_2026_11_25.md` |
+
 ## Server-side AI routing context (2026-11-25)
 
 | Decision | Date | Session/tool | Issue ID | Why | Outcome | Commit/PR | Verification | Closeout |
 |---|---|---|---|---|---|---|---|---|
 | Build the AI routing context on the server from an allowlist; the tenant policy is server-only and a caller can only raise sensitivity | 2026-11-25 | Founder-approved plan (step A0), executed by Claude Code | AI-ROUTING-CONTEXT | The prompt classifier planned next needs one place that decides routing | Pending, review by 2026-12-09 | #580 | Regression tests 8 failed, 10 passed before; all pass after | After deploy |
+
+## LangSmith tracing, local only (2026-11-25)
+
+| Decision | Date | Session/tool | Issue ID | Why | Outcome | Commit/PR | Verification | Closeout |
+|---|---|---|---|---|---|---|---|---|
+| Trace Copilot and all `routeAiRequest` calls in LangSmith from a developer machine only, with masked content; refused in code anywhere else. Tracing only: the 2026-11-24 "no LangChain" decision for the RAG gate still holds | 2026-11-25 | Founder choice, executed by Claude Code | LANGSMITH-TRACING | Tenants default to zero data retention and LangSmith stores what it receives | Shipped off in production (landing, investor and lite). Usefulness pending, review by 2026-12-09 | #584 (`b677d0f6`) | Live traces read back from LangSmith 2026-11-25 10:53 to 11:00 UTC; nothing stored in the two off modes | `docs/readiness/LANGSMITH_TRACING_CLOSEOUT_2026_11_25.md` |
+
+## Vercel deploy budget (2026-11-26)
+
+| Decision | Date | Session/tool | Issue ID | Why | Outcome | Commit/PR | Verification | Closeout |
+|---|---|---|---|---|---|---|---|---|
+| Stay on Vercel's free plan. To get under its 100-a-day cap, stop creating deployments no one uses: no Git deployments for `docs/**` and `dependabot/**` branches; each production site built once per merge (landing on Git only); previews on the landing project only, once the founder disconnects Git on investor and the app. No `ignoreCommand`, because Vercel counts a canceled build as a full deployment | 2026-11-26 | Founder-approved plan, executed by Claude Code | VERCEL-DEPLOY-BUDGET | 440 deployments in the 7 days to 2026-11-26 04:33 UTC (144 on 2026-11-25); production deploy of `754524ff` refused (run 45587323339) | Pending, review by 2026-12-03 (re-run `node scripts/measure-vercel-deployments.mjs --days 7`; expected about 351 with the repo part alone, about 161 after both dashboard steps) | PR for branch `ci/vercel-deploy-budget` | `scripts/vercel-deploy-budget.test.mjs` (dry run on last week's branches), `scripts/investor-sync-lib.test.mjs` | `docs/readiness/VERCEL_DEPLOY_BUDGET_CLOSEOUT_2026_11_26.md` |
 
 ## Ops agent MCP server support (2026-11-25)
 

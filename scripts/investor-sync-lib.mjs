@@ -5,15 +5,34 @@
 export const LANDING_HOST = "landing.triaxisventures.com";
 export const INVESTOR_HOST = "investor.triaxisventures.com";
 
-// Check runs that must have succeeded on the exact commit before investor may be moved to it.
-// "Deploy landing..." proves the commit actually reached landing through the normal merge pipeline,
-// not a manual CLI deploy from an unreviewed branch.
+// Name of the commit status Vercel's Git integration posts for the landing project.
+export const LANDING_VERCEL_STATUS = "Vercel – triaxis-www-frontend-import";
+
+// Checks that must have succeeded on the exact commit before investor may be moved to it. The
+// landing entry proves the commit actually reached landing through the normal merge pipeline, not
+// a manual CLI deploy from an unreviewed branch. Until 2026-11-26 that was the "Deploy
+// landing.triaxisventures.com" job in deploy-production.yml; that job was removed (it built landing
+// a second time on every merge, docs/readiness/VERCEL_DEPLOY_BUDGET_CLOSEOUT_2026_11_26.md), so the
+// proof is now Vercel's own commit status for the landing Git deployment.
 export const REQUIRED_CHECKS = [
   "Build, Lint, Type Check",
   "Secret Scan",
   "pnpm Critical Vulnerability Gate",
-  "Deploy landing.triaxisventures.com",
+  LANDING_VERCEL_STATUS,
 ];
+
+/**
+ * GitHub commit statuses (Vercel posts these, not check runs) in the same shape as check runs, so
+ * evaluateChecks treats both alike. "pending" stays not completed; "failure" and "error" block.
+ */
+export function statusesAsCheckRuns(statuses) {
+  return statuses.map((status) => ({
+    name: status.context,
+    status: status.state === "pending" ? "in_progress" : "completed",
+    conclusion: status.state === "pending" ? null : status.state,
+    started_at: status.updated_at ?? status.created_at,
+  }));
+}
 
 // Investor is the demo/live partition boundary: its Vercel env must force demo mode and must never
 // hold a credential that could reach live-tenant data or a paid provider. Names only -- values are
