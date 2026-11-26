@@ -87,12 +87,20 @@ After merging `main` (#572, #577): `pnpm run typecheck` exit 0, and the agent, c
 - A pending row whose approval was decided but not executed (a crash in the approvals route) stays `pending_approval`. The worker needs its own deadline.
 - A closed duplicate approval counts as `rejected` in the governance summary: the status CHECK has no `cancelled`, and adding one needs a migration.
 
+### Deploy and live check (added 2026-11-26)
+
+- PR #579 merged 2026-11-26 12:10:55 UTC with a merge commit, `1610d821`, at head `58d6631d`, which contains `main` at `aa90680f` (#583). Every check on that head passed, including all four Vercel statuses. Merged under Merge When Ready after the founder lifted the PR's hold ("After Vercel limit resets").
+- Production deploy run 45817267599: success.
+- Live check 2026-11-26 12:26:17 UTC: `GET /` and `GET /auth` returned 200 on landing, investor and lite.triaxisventures.com; `POST /api/agents/mcp` with no key returned 401 on landing and investor.
+- New deployments: landing `dpl_2jBsBUMkU7JfD7MMotYMhqCXt8eL`, investor `dpl_GgLP8GKHKVTCHdJHVS3oLauFzSCP`, lite `dpl_9FjAi96Qot6mcQY7bGS5Emfp3dQG`. Previous (rollback): the #583 deployments, landing `dpl_DzBzkAEWP11o4t6VzhNcMFUVbD3T`, investor `dpl_E5joa7KkvthkxQqWfoFRNvqUHrqn`, lite `dpl_2qyGNYc2choFhoaJH4QUMb3btNi7`.
+- The live check does not send a caller key, call `get_pending_tool_call`, or race two calls against the hosted database; those stay unverified (above).
+
 ### Decision outcomes
 
 - Decision: return the existing call on a retry with the same caller key, using the existing UNIQUE column.
-  Outcome: Pending, review by 2026-12-09 (founder's merge decision, then the worker's first staging run)
+  Outcome: Shipped to production 2026-11-26 (#579, `1610d821`). Use by a real worker: Pending, review by 2026-12-09 (the worker's first staging run)
 
-Final status: Code complete
+Final status: Deployed and live-checked; not yet used by any MCP client
 Remaining risk: listed above
-Follow-up: approving a pending call runs it even if the agent connection was revoked after the request (`src/app/api/approvals/[id]/route.ts`, found by reading, not tested). Being fixed on its own branch, at the founder's request (2026-11-25).
-Deploy evidence: none, not merged or deployed
+Follow-up: approving a pending call runs it even if the agent connection was revoked after the request (`src/app/api/approvals/[id]/route.ts`, found by reading, not tested). Fixed in #583, deployed 2026-11-26 before this PR.
+Deploy evidence: run 45817267599, live check 2026-11-26 12:26:17 UTC (above)
