@@ -402,3 +402,9 @@ Fixed by: (1) splitting public entry into two dedicated, non-overlapping routes 
 | ID | Actionable | Area | Acceptance Criteria | Status | Confidence | Evidence / Notes |
 |---|---|---|---|---|---:|---|
 | LEAD-SOURCING-V2 | Automatic lead discovery on user schedules, auto-imported into the CRM, never enrolled | Growth / CRM | Schedule fires on its own, discovery and crawl finish, leads imported with 0 enrolments, caps enforced, standard suite and PR CI pass, production deployed | Yes | 80% | Staging: scheduled run `09a9ad4f` fired at 11:30 UTC and imported 1 lead; manual run `1c8c5775` imported 2 and Remove worked. Production: `main` `afd0c898`, prod worker deployed with discovery on, 12:12 UTC tick clean. 2373 tests, 24 of 24 PR checks. **Open:** no production discovery run yet (needs the first schedule); contact names are rule-based and will sometimes be wrong. See `LEAD_SOURCING_V2_PRODUCTION_CLOSEOUT_2026_11_19.md` |
+
+## Vercel Deploy Budget Addendum (2026-11-26)
+
+| ID | Actionable | Area | Acceptance Criteria | Status | Confidence | Evidence / Notes |
+|---|---|---|---|---|---|---|
+| VERCEL-DEPLOY-BUDGET | Keep this repository well under Vercel's free 100-deployments-a-day cap without losing a preview anyone uses | Delivery / CI | Measured before and after numbers; no Git deployments for `docs/**` and `dependabot/**`; each production site built once per merge; previews on one project; EOD investor sync still gated on landing | Blocked | 70% | Before: 440 in 7 days (144 on 2026-11-25). Repository part is in the PR for `ci/vercel-deploy-budget`, with dry-run tests. **Blocked on the founder:** (1) merge; (2) disconnect Git on `triaxis-product-investor-demo` in the Vercel dashboard; (3) disconnect Git on `axxesstriaxis` and set repository variable `VERCEL_APP_DEPLOY_VIA_CLI=true` in the same sitting. Re-measure by 2026-12-03. See `VERCEL_DEPLOY_BUDGET_CLOSEOUT_2026_11_26.md` |

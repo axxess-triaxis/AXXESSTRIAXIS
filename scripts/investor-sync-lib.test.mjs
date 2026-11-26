@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  LANDING_VERCEL_STATUS,
   REQUIRED_CHECKS,
   checkInvestorPartition,
   deploymentSha,
@@ -7,6 +8,7 @@ import {
   evaluateChecks,
   isOnMain,
   planSync,
+  statusesAsCheckRuns,
 } from "./investor-sync-lib.mjs";
 
 const landing = (sha, readyState = "READY") => ({ id: "dpl_landing", readyState, meta: { githubCommitSha: sha } });
@@ -66,6 +68,27 @@ describe("EOD investor sync decision logic", () => {
       { ...green(REQUIRED_CHECKS[0], "2026-10-29T11:00:00Z"), conclusion: "failure" },
     ];
     expect(evaluateChecks([...others, ...passedThenFailed]).ok).toBe(false);
+  });
+
+  // 2026-11-26: deploy-production.yml no longer has a landing job (Vercel Git integration deploys
+  // landing alone), so the landing proof is Vercel's commit status, which GitHub reports as a status,
+  // not a check run.
+  it("requires the landing Vercel commit status instead of the removed landing deploy job", () => {
+    expect(REQUIRED_CHECKS).toContain("Vercel – triaxis-www-frontend-import");
+    expect(REQUIRED_CHECKS).not.toContain("Deploy landing.triaxisventures.com");
+  });
+
+  it("reads Vercel commit statuses like check runs, newest state winning", () => {
+    const ciGreen = REQUIRED_CHECKS.filter((name) => name !== LANDING_VERCEL_STATUS).map((name) => green(name));
+    const status = (state, updated_at) => ({ context: LANDING_VERCEL_STATUS, state, updated_at, created_at: updated_at });
+    // GitHub lists statuses newest first: Vercel posts "pending" at build start, then the result.
+    const passed = statusesAsCheckRuns([status("success", "2026-11-26T10:05:00Z"), status("pending", "2026-11-26T10:00:00Z")]);
+    expect(evaluateChecks([...ciGreen, ...passed]).ok).toBe(true);
+    const building = statusesAsCheckRuns([status("pending", "2026-11-26T10:00:00Z")]);
+    expect(evaluateChecks([...ciGreen, ...building]).problems).toEqual([`${LANDING_VERCEL_STATUS}: in_progress`]);
+    const failed = statusesAsCheckRuns([status("failure", "2026-11-26T10:05:00Z"), status("pending", "2026-11-26T10:00:00Z")]);
+    expect(evaluateChecks([...ciGreen, ...failed]).problems).toEqual([`${LANDING_VERCEL_STATUS}: failure`]);
+    expect(evaluateChecks(ciGreen).problems).toEqual([`${LANDING_VERCEL_STATUS}: missing`]);
   });
 });
 
