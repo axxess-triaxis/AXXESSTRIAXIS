@@ -46,6 +46,8 @@ export type DiscoveryResult = {
   incomplete?: string;
   /** True when the companies came from the no-tool extraction call, not from submit_companies. */
   extracted?: boolean;
+  /** Calls that stopped at the output token limit (stopReason max_tokens). */
+  cutOffTurns?: number;
 };
 
 export const MAX_TURNS = 8;
@@ -60,6 +62,13 @@ const EXTRACT_HITS = 80;
 const EXTRACT_SNIPPET_CHARS = 200;
 const RESULTS_PER_SEARCH = 8;
 const SNIPPET_CHARS = 400;
+// Output token limit for every call (2026-11-26). gpt-oss returns its reasoning as a
+// reasoningContent block that counts against maxTokens. At 4,096, production run ad073faf
+// (2026-11-23) used 5,284 output tokens over 10 turns and ended with no submission and an empty
+// extraction: a call that runs out of tokens while still reasoning returns no text and no tool
+// call (stopReason max_tokens, reproduced on Bedrock 2026-11-26). Bedrock accepts 16,384 for
+// gpt-oss-20b; a call only pays for the tokens it actually writes.
+export const MAX_OUTPUT_TOKENS = 16384;
 
 const COUNTRY_NAMES: Record<string, string> = { IN: "India", AE: "United Arab Emirates" };
 const SEGMENT_HINTS: Record<string, string> = {
@@ -167,11 +176,9 @@ export async function discoverCompanies(
       system: [{ text: systemPrompt(req) }],
       messages,
       toolConfig: { tools: mustSubmit ? SUBMIT_ONLY : TOOLS, toolChoice: { any: {} } },
-      inferenceConfig: { maxTokens: 4096, temperature: 0 },
+      inferenceConfig: { maxTokens: MAX_OUTPUT_TOKENS, temperature: 0 },
     });
-    result.turns += 1;
-    result.inputTokens += response.usage?.inputTokens ?? 0;
-    result.outputTokens += response.usage?.outputTokens ?? 0;
+    countUsage(result, response);
 
     const content = (response.output?.message?.content ?? []) as ConverseContent[];
     messages.push({ role: "assistant", content });
@@ -230,7 +237,15 @@ export async function discoverCompanies(
     const extracted = await extractCompanies(req, deps, gathered, notes, result);
     if (extracted.length) return { ...result, companies: extracted, extracted: true, seenUrls: [...seen] };
   }
-  return { ...result, seenUrls: [...seen], incomplete: `No submission after ${result.turns} turns.` };
+  const cutOff = result.cutOffTurns ? ` ${result.cutOffTurns} of them stopped at the token limit.` : "";
+  return { ...result, seenUrls: [...seen], incomplete: `No submission after ${result.turns} turns.${cutOff}` };
+}
+
+function countUsage(result: DiscoveryResult, response: ConverseResponse) {
+  result.turns += 1;
+  result.inputTokens += response.usage?.inputTokens ?? 0;
+  result.outputTokens += response.usage?.outputTokens ?? 0;
+  if (response.stopReason === "max_tokens") result.cutOffTurns = (result.cutOffTurns ?? 0) + 1;
 }
 
 /** Pulls the first JSON object out of model text (plain, fenced, or wrapped in prose). */
@@ -268,11 +283,9 @@ async function extractCompanies(
         ].join("\n"),
       }],
     }],
-    inferenceConfig: { maxTokens: 4096, temperature: 0 },
+    inferenceConfig: { maxTokens: MAX_OUTPUT_TOKENS, temperature: 0 },
   });
-  result.turns += 1;
-  result.inputTokens += response.usage?.inputTokens ?? 0;
-  result.outputTokens += response.usage?.outputTokens ?? 0;
+  countUsage(result, response);
   const text = (response.output?.message?.content ?? []).map((b) => (typeof b.text === "string" ? b.text : "")).join("\n");
   return parseSubmission(parseJsonObject(text));
 }
