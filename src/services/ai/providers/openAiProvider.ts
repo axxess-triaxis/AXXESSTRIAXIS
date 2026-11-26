@@ -132,6 +132,7 @@ export function createOpenAiProvider(
         return {
           text: text ?? "",
           confidence: 0.78,
+          model: OPENAI_MODEL,
           latencyMs: Date.now() - startedAt,
           usage: { promptTokens, completionTokens },
           actualCostUsd,
