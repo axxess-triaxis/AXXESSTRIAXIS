@@ -56,6 +56,24 @@ Error ID **OPENNLP-E1**, owner Claude Code: move the cap to top-level `maxWorker
 Regression-first note: the Vitest tests were written before the implementation, but they could not be run red first
 because `pnpm install` in the new worktree was still copying from the store. They ran green after the implementation.
 
+## Staging deploy (founder: "Yes, staging", 2026-11-26)
+
+| Step | Evidence |
+| --- | --- |
+| Secret | `arn:aws:secretsmanager:ap-southeast-2:227214487086:secret:axxess-staging-opennlp-key-zkgtx1`, default `aws/secretsmanager` key, no rotation (same pattern as the 10 existing secrets). Value generated in memory by a script and never printed or read back |
+| Stack | `axxess-opennlp-staging` CREATE_COMPLETE, ap-southeast-2, from jar built at `40506fb2` (9/9 JUnit in that build). URL `https://sayeqlxdc7kemhu4g4c4a5rk240cpfhi.lambda-url.ap-southeast-2.on.aws` |
+| Vercel | `OPENNLP_KEY`, `OPENNLP_ENDPOINT`, `OPENNLP_ENABLED` on project `axxesstriaxis` (`prj_zTMRnOsfmUUxnzJkEUDUxNvoEOFt`), Preview branch `staging` only (`vercel env ls`) |
+| Live check 2026-11-26T12:06:09Z | `GET /health` 200 `{"ok":true}` (3.76 s, 2.12 s); `POST /enrich` no key 401 (4.84 s); wrong key 401 (1.33 s); unknown path 404 |
+
+**Not yet verified:** a keyed `/enrich` call. The key cannot be read back without `get-secret-value`, which is not
+allowed, so the keyed path is proven only by staging ingestion itself. That needs this PR's code on the `staging`
+branch, which is 81 commits behind `main` (founder decision pending). Latency observation: warm calls took 1.3 to 2.1 s
+from the founder's machine against a 3 s client timeout; the staging comparison will show whether Vercel calls fit.
+
+Not applied from the `creating-secrets-using-best-practices` skill (would add spend or account-wide changes the founder
+has not approved): a dedicated KMS key, rotation, a CloudTrail trail with an S3 bucket, and secret-access alarms. The
+account has no CloudTrail trail today. The AWS profile signs in as the account root user.
+
 ## Remaining (needs the founder's yes, batched)
 
 1. Create a Secrets Manager plain-string secret for the staging key (AWS, secret).
