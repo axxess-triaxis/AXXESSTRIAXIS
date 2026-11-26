@@ -15,6 +15,7 @@ import {
   evaluateChecks,
   isOnMain,
   planSync,
+  statusesAsCheckRuns,
 } from "./investor-sync-lib.mjs";
 
 function requireEnv(name) {
@@ -60,6 +61,12 @@ async function checkRunsFor(sha) {
     const body = await getJson(`https://api.github.com/repos/${repo}/commits/${sha}/check-runs?per_page=100&page=${page}`, githubHeaders());
     runs.push(...body.check_runs);
     if (body.check_runs.length < 100) break;
+  }
+  // Vercel reports through commit statuses, not check runs (see LANDING_VERCEL_STATUS).
+  for (let page = 1; page <= 10; page += 1) {
+    const statuses = await getJson(`https://api.github.com/repos/${repo}/commits/${sha}/statuses?per_page=100&page=${page}`, githubHeaders());
+    runs.push(...statusesAsCheckRuns(statuses));
+    if (statuses.length < 100) break;
   }
   return runs;
 }
