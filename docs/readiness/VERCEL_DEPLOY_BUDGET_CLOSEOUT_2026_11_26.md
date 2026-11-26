@@ -154,7 +154,26 @@ Verification result:
   - `ChatbotConfirmCard.test.tsx`, run alone: 2 of 2 tests passed (328 ms).
   - `pnpm --dir apps/mobile run typecheck` and `pnpm run supabase:verify` were not run: no mobile or database file changed.
 
-Deploy evidence: none. No merge and no deploy in this session.
+Deploy evidence: PR 590 was merged by the founder's instruction ("merge 590") as merge commit `af1f4a78`, at checked head `4d89ca82`, which contained `main` `21ab9c0f`. Before the merge, this repository had 44 deployments in the last 24 hours.
+
+- `deploy-production.yml` run 45801622231 succeeded:
+  - Deploy investor.triaxisventures.com: success;
+  - Deploy lite.triaxisventures.com: success;
+  - Deploy beta app (axxesstriaxis): skipped, as intended while the variable is unset.
+- Vercel commit statuses on `af1f4a78`: success for axxesstriaxis, triaxis-product-investor-demo, triaxis-www-frontend-import and the team status.
+- No `Deploy landing` job ran. Landing was built once, by Git integration.
+
+Live check (2026-11-26T10:34:39Z, `curl` plus `vercel inspect <domain>`):
+
+| Domain | HTTP | Deployment served | Tie to the merge |
+|---|---|---|---|
+| landing.triaxisventures.com | 200 | `dpl_5oL1ejaxpqtt8Tnoq4gX9aS2RNuV` (`l6mvr0pvm`) | GitHub production deployment 8082694927 for `af1f4a78` has the same URL |
+| beta.triaxisventures.com | 200 | `dpl_EuFXD91EpW2MbVFtXAoD6cQBHiGs` (`of4whpmr2`) | GitHub production deployment 8082667706 for `af1f4a78` has the same URL |
+| investor.triaxisventures.com | 200 | `dpl_6rZUuD5P2kF1Q5f352T3H91fwcEX` (`r7sfmbjhx`), created 16:00 IST | Built by the `deploy-investor-demo` job of run 45801622231 |
+| lite.triaxisventures.com | 200 | `dpl_AdzG7at9FvtvTyBvkZNuEWVZ83nS`, created 16:03 IST | Built by the `deploy-lite` job of run 45801622231 |
+| staging.triaxisventures.com | 200 | `dpl_6wR5W285nqeqW5xeE3LGgsALcRJe` (2026-11-24) | Unchanged |
+
+Investor Git integration still built `af1f4a78` (`659lg7vo6`), because founder step 1 is not done. That merge used 5 deployments: 3 Git production, plus 2 CLI.
 
 Acceptance criteria (stated before the work):
 - measured before numbers;
@@ -173,7 +192,7 @@ Decision outcomes:
 - Decision: the change set above.
 - Outcome: Pending, review by 2026-12-03 (re-run the measurement for the 7 days after the merge and the founder steps).
 
-Final status: Code complete
+Final status: Merged and live checked (repository part). Founder steps 1 and 2 not done.
 Remaining risk:
 - How a `docs/*` PR looks with no Vercel status is not yet observed. It is first visible on the next `docs/*` PR after merge.
 - The founder steps are not done.
