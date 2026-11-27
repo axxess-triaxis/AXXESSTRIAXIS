@@ -64,3 +64,9 @@ number, existing closeout doc) -- not backfilled in bulk from memory or estimate
 |---|---|---|---|---|---|---|---|---|---|
 | LANGSMITH-TRACING | LangSmith tracing for the app's AI, developer machine only | Approved plan-mode plan, 2026-11-25 | The plan's Context section | `a6474ebf` | #584 | 2714 passed, 1 skipped (forks pool); 225 in the touched folders on final code | Run 45641421107: landing on attempt 1, investor and lite on attempt 2 | `docs/readiness/LANGSMITH_TRACING_CLOSEOUT_2026_11_25.md` | Live verified on landing, investor and lite |
 | VITEST-EXIT-139 | Full suite can exit 139 after every test passes (threads pool) | None | `CHUNKED_DOCUMENT_UPLOAD_ARCHITECTURE_CLOSEOUT_2026_07_31.md:117` | None | None | Forks pool exits 0 | Not applicable | Recorded in `docs/readiness/LANGSMITH_TRACING_CLOSEOUT_2026_11_25.md`, owner Claude Code | Researched |
+
+## Vector search benchmark (2026-11-27)
+
+| Issue ID | Title | Origin plan | Research artifact | Implementation commit(s) | PR | Test evidence | Deploy evidence | Closeout artifact | Final status |
+|---|---|---|---|---|---|---|---|---|---|
+| RAGBENCH | pgvector filtered search at scale; private MongoDB comparison | `RAG_VECTOR_BENCHMARK_PLAN_2026_11_25.md` | plan, licence reading | `1171d3a0`, `c5bca5ab` | #585 | 21 unit tests; CI run 45867443226 | none: nothing deployed changes | `RAG_VECTOR_BENCHMARK_CLOSEOUT_2026_11_25.md` | Partial: pgvector measured, MongoDB not run, RAG gate failing (RAGBENCH-1) |

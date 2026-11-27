@@ -201,3 +201,9 @@ Existing rows are not rewritten.
 | Decision | Date | Session/tool | Issue ID | Why | Outcome | Commit/PR | Verification | Closeout |
 |---|---|---|---|---|---|---|---|---|
 | Make agent `tools/call` retries safe with a caller key stored in the existing UNIQUE `idempotency_key`, and let an agent read its own pending call through an opt-in tool; `executed` without a result is `unknown` | 2026-11-25 | Founder-approved plan, executed by Claude Code | OPS-AGENT-B1 | A client retrying after a timeout created a second approval request and could not read the decision or result | Pending, review by 2026-12-09: founder's merge decision, then the worker's first staging run | #579, `5ed8df9f` (red), `ec13fe28` (implementation) | 24 of 32 tests failed on the old code, all pass on the new; full suite 2656 of 2656 with `--pool=forks --maxWorkers=2` | `MCP_IDEMPOTENT_TOOL_CALLS_CLOSEOUT_2026_11_25.md` |
+
+## Vector search benchmark (2026-11-27)
+
+| Decision | Date | Session/tool | Issue ID | Why | Outcome | Commit/PR | Verification | Closeout |
+|---|---|---|---|---|---|---|---|---|
+| Keep pgvector; MongoDB numbers stay private and are only a latency comparison | 2026-11-27 | Founder-approved plan, executed by Claude Code | RAGBENCH | At 2k to 50k skewed synthetic rows the shipped function lost no rows: Postgres filtered first and sorted exactly, never using HNSW | Pending, review by 2026-12-10 (RAG gate flake RAGBENCH-1, then merge) | #585, `c5bca5ab` | CI run 45867443226 | `RAG_VECTOR_BENCHMARK_CLOSEOUT_2026_11_25.md` |
