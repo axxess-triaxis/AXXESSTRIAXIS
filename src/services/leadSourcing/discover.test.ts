@@ -113,6 +113,40 @@ describe("discoverCompanies", () => {
     expect(prompt).toContain("untrusted");
   });
 
+  // Production run ad073faf (2026-11-23, gpt-oss-20b): 7 searches, 10 turns, 5,284 output tokens,
+  // 0 companies, "Discovery incomplete". gpt-oss returns its reasoning as a reasoningContent block
+  // that counts against maxTokens; at 4,096 a long reasoning pass ends with stopReason max_tokens and
+  // no text or tool call at all (reproduced on Bedrock with a 200-token limit on 2026-11-26).
+  const cutOff = (): ConverseResponse => ({
+    output: { message: { role: "assistant", content: [{ reasoningContent: { reasoningText: { text: "Let me think about which of these..." } } }] } },
+    stopReason: "max_tokens",
+    usage: { inputTokens: 900, outputTokens: 4096 },
+  });
+
+  it("gives every call room for gpt-oss reasoning before the answer (run ad073faf)", async () => {
+    const { converse, requests } = scripted([
+      () => toolUse("t1", "web_search", { query: "Dubai brokerages" }),
+      () => toolUse("t2", "submit_companies", { companies: [] }),
+    ]);
+    await discoverCompanies(REQ, { converse, modelId: "m", search: async () => hits });
+    for (const r of requests) expect(r.inferenceConfig.maxTokens).toBeGreaterThanOrEqual(16384);
+  });
+
+  it("says when calls were cut off at the token limit instead of a bare 'no submission' (run ad073faf)", async () => {
+    const { converse, requests } = scripted([
+      () => toolUse("t1", "web_search", { query: "Dubai brokerages" }),
+      cutOff,
+      cutOff,
+      cutOff,
+    ]);
+    const result = await discoverCompanies(REQ, { converse, modelId: "m", search: async () => hits, maxTurns: 2 });
+    expect(requests.at(-1)!.toolConfig).toBeUndefined();
+    expect(requests.at(-1)!.inferenceConfig.maxTokens).toBeGreaterThanOrEqual(16384);
+    expect(result.companies).toEqual([]);
+    expect(result.cutOffTurns).toBe(3);
+    expect(result.incomplete).toContain("token limit");
+  });
+
   it("skips extraction when no search ever returned anything", async () => {
     const thinking = () => ({ output: { message: { role: "assistant", content: [{ text: "thinking" }] } } });
     const { converse, requests } = scripted([thinking, thinking, thinking]);

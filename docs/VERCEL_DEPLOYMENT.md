@@ -29,7 +29,10 @@ deploy was refused. The full measurement is in
 The rules behind this table:
 
 - `vercel.json` `git.deploymentEnabled` turns off Git deployments for `dependabot/**` and `docs/**`
-  branches. No deployment is created for them at all, so they also get no Vercel status on the PR.
+  branches. No deployment is created for them at all, so they get no per-project Vercel status on the
+  PR. Vercel still posts the combined status `Vercel Deployments – AXXESS TRIaxis powered by Triaxis Ventures` as
+  pending, and it never resolves; `docs/readiness/TEST_GOVERNANCE.md` treats that as a usual skip on
+  these two branch patterns only.
 - Do not add an `ignoreCommand` to save deployments. Vercel's documentation says canceled builds
   still count as full deployments.
 - Each production site is built once per merge. Landing is built by Git integration only, because it
