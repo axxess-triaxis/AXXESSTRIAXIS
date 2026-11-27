@@ -183,13 +183,37 @@ checks passed, 4 skipped, none failed; RAG gate run 45565189270 passed on it. No
 **Not verified:** any signed-in question in production, and the new retrieval on a hosted database. No endpoint
 reports the running commit, so the commit comes from the deploy run.
 
+## Migration on staging, 2026-11-27
+
+Applied on the founder's approval, "Yes, staging only", to staging `qpbeoslikcosfytwuguf` (Tokyo) and no other
+project. The file was taken from `main` `f1a86222` (sha256 `c95721bf71656747dc0ab738ed57efd32c72cba342bf51879b7ffd46694bd72c`)
+and run alone in one transaction with `supabase db query --linked --project-ref qpbeoslikcosfytwuguf -f`,
+04:49:18Z to 04:49:55Z, exit 0. Not `db push`: staging's migration history stops at `20261115120000`, and push
+would also have run four later migrations nobody approved. This one is not recorded in
+`supabase_migrations.schema_migrations` either; it is idempotent (`if not exists`, `create or replace`).
+
+| Check, 04:51:41Z | Result |
+|---|---|
+| Before: chunks, size, column, function | 11 chunks, 120 kB, no `chunk_tsv`, no function |
+| Columns the migration reads | `organization_id`, `document_id`, `chunk_text`, `metadata`, `role_allowlist` present |
+| `chunk_tsv` filled | 11 of 11 chunks |
+| `rag_document_chunks_tsv_idx` | present |
+| Execute grant | `service_role` yes; `anon` and `authenticated` no |
+| Function call, the three most common words of the corpus | 5 chunks, best coverage 1.000 |
+| Function call, made-up words | 0 chunks |
+
+**Not verified:** retrieval through the app. The staging app runs `staging` `a6dcf64e` (2026-11-24), 116 commits
+behind `main`, without #575, so it still takes the previous path. Updating staging is a deploy and was not part
+of the approval. Production is untouched.
+
 ## Remains open
 
 - RAGQ-1, owner Claude Code: the first local full-suite run exited 139 after every test passed. It did not
   happen on the rerun or in CI. `CHUNKED_DOCUMENT_UPLOAD_ARCHITECTURE_CLOSEOUT_2026_07_31.md` and
   `RAG_DOCUMENT_TEXT_EXTRACTION_CLOSEOUT_2026_07_30.md` describe similar local crashes from native modules.
   Same cause here is a hypothesis, not shown.
-- Founder decision: when to apply the migration. Staging first.
+- Founder decisions: update the staging app to a commit with #575 and ask a signed-in question there; then
+  production. Applied on staging 2026-11-27 (above).
 - Possible follow-up, unverified: `match_rag_document_chunks` filters by organization and document after the
   HNSW search, so on a large multi-tenant table it could return fewer rows than exist. The golden sets are
   too small to show it.
@@ -203,6 +227,6 @@ What changed: One additive migration, retrieval order in semantic mode, full-tex
 Architecture boundary: Postgres full text and pgvector only. Authorization stays in tenantRagWorkflow.ts.
 Product boundary: Some questions now return no sources and ask for human review.
 Verification: CI runs listed under Results, each on its own commit.
-Outcome: Measured on v1 and held-out v2 as above. Merged and deployed 2026-11-25; inactive until the migration. Migration: Pending, review by 2026-12-09.
+Outcome: Measured on v1 and held-out v2 as above. Merged and deployed 2026-11-25; inactive until the migration. Migration: applied on staging 2026-11-27, database checks passed; staging app and production Pending, review by 2026-12-09.
 Follow-up: Real-question set from pilot users; abstention limits re-measured if the embedding model changes.
 ```
