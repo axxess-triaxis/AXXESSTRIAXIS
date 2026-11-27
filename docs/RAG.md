@@ -146,7 +146,7 @@ Super Admins and Organization Admins; other roles get 403 and nothing is recorde
 
 ## Chunk full text, rank fusion and abstention (2026-11-25)
 
-Not applied to any hosted project. Full text over chunks needs
+Applied to staging only (2026-11-27; the staging app does not run this code yet), not to production. Full text over chunks needs
 `supabase/migrations/20261125120000_rag_chunk_fulltext.sql`. Without it retrieval takes its previous path.
 
 - **Chunk full text.** `search_rag_chunks_fulltext` searches chunk text and title, matches any word, and
