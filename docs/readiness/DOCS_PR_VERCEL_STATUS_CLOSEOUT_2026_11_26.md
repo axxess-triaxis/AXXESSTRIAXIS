@@ -50,7 +50,8 @@ Merge When Ready condition 2 (`CLAUDE.md`) allows no pending check. So every doc
 - **Pointers:**
   - `docs/readiness/GOVERNANCE_RULES.md` and `docs/readiness/TEST_GOVERNANCE.md` point to the exception.
   - `docs/VERCEL_DEPLOYMENT.md` gets the corrected description.
-  - `VERCEL_DEPLOY_BUDGET_CLOSEOUT_2026_11_26.md` gets a one-line correction in its "How skips appear" table.
+  - `VERCEL_DEPLOY_BUDGET_CLOSEOUT_2026_11_26.md` was corrected by #598 (merged into `main` while this PR was open). This PR keeps #598's wording.
+- **Overlap with #598** (`5cc3d12c`, merged 2026-11-26): it corrected the pointer docs and listed the pending combined status as a usual skip in `TEST_GOVERNANCE.md` for both `docs/**` and `dependabot/**`. It did not change `CLAUDE.md`, and it set no file-type condition. The merge with `main` (`ba54b49f`) keeps #598's text and adds the `CLAUDE.md` exception and the checker for `docs/**`. For `dependabot/**`, `TEST_GOVERNANCE.md` now says plainly that `CLAUDE.md` names no exception yet.
 - **Records:** a Decision Ledger row and matrix row `DOCS-PR-VERCEL-STATUS`.
 
 ## What did not change
@@ -59,7 +60,7 @@ Merge When Ready condition 2 (`CLAUDE.md`) allows no pending check. So every doc
 - No secret.
 - No `vercel.json` change.
 - No deploy.
-- `dependabot/**` PRs get no exception. Their only status is the same pending summary, so they still need every other gate and a founder yes or the dashboard step.
+- `dependabot/**` PRs get no `CLAUDE.md` exception. Open founder decision: #598's `TEST_GOVERNANCE.md` line calls their pending combined status a usual skip, but the founder's yes in this session covered docs PRs only. Until the founder decides, treat `CLAUDE.md` as governing: a Dependabot PR with that status pending still needs a founder yes, or the dashboard step.
 - No other check is relaxed. The rest of Merge When Ready is unchanged.
 
 ## Verification
