@@ -194,6 +194,7 @@
     "eslint": "^9.39.4",
     "eslint-config-next": "^16.4.5",
     "jsdom": "^31.0.1",
+    "mongodb": "7.9.0",
     "supabase": "2.117.0",
     "tailwindcss": "4.3.5",
     "typescript": "^6.0.3",
