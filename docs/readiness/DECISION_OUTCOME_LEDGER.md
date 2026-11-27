@@ -190,6 +190,12 @@ Existing rows are not rewritten.
 |---|---|---|---|---|---|---|---|---|
 | Trace Copilot and all `routeAiRequest` calls in LangSmith from a developer machine only, with masked content; refused in code anywhere else. Tracing only: the 2026-11-24 "no LangChain" decision for the RAG gate still holds | 2026-11-25 | Founder choice, executed by Claude Code | LANGSMITH-TRACING | Tenants default to zero data retention and LangSmith stores what it receives | Shipped off in production (landing, investor and lite). Usefulness pending, review by 2026-12-09 | #584 (`b677d0f6`) | Live traces read back from LangSmith 2026-11-25 10:53 to 11:00 UTC; nothing stored in the two off modes | `docs/readiness/LANGSMITH_TRACING_CLOSEOUT_2026_11_25.md` |
 
+## Docs PR Vercel status exception (2026-11-26)
+
+| Decision | Date | Session/tool | Issue ID | Why | Outcome | Commit/PR | Verification | Closeout |
+|---|---|---|---|---|---|---|---|---|
+| Add one named exception to Merge When Ready condition 2: on a `docs/**` PR that changes only `docs/` or `.md` files and has no per-project Vercel status, Vercel's consolidated status `Vercel Deployments – AXXESS TRIaxis powered by Triaxis Ventures` left pending ("Required and affected projects deploying") counts as the usual skip, checked by `scripts/docs-pr-vercel-skip.mjs`. Chosen over a dashboard change (turn the consolidated status off) and over re-enabling docs previews | 2026-11-26 | Founder yes in this session; executed by Claude Code | DOCS-PR-VERCEL-STATUS | Since #590 no project deploys `docs/**`, so Vercel never resolves the status (#582, #592, #597); every docs PR needed a founder yes. Vercel documents no repo-only way to resolve it | Pending, review by 2026-12-10: count docs PRs merged under the exception without a founder prompt, and any where the script refused | see PR, branch `chore/docs-pr-vercel-status-skip` | `scripts/docs-pr-vercel-skip.test.mjs`; script run on a test docs PR (closeout) | `DOCS_PR_VERCEL_STATUS_CLOSEOUT_2026_11_26.md` |
+
 ## Vercel deploy budget (2026-11-26)
 
 | Decision | Date | Session/tool | Issue ID | Why | Outcome | Commit/PR | Verification | Closeout |

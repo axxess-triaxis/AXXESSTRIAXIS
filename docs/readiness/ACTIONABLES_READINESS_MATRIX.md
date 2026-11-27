@@ -415,3 +415,9 @@ Fixed by: (1) splitting public entry into two dedicated, non-overlapping routes 
 |---|---|---|---|---|---:|---|
 | OPENNLP-INGEST | Apache OpenNLP 3.0 enrichment for RAG ingestion (sentences, tokens, dictionary entities) behind `OPENNLP_ENABLED`, local NLP fallback | AI / RAG | Worker JUnit green, client and parity tests green, standard suite and PR CI pass, staging live check of `/enrich`, one staging document compared with a flag-off run | No | 50% | Code only, not deployed. 9/9 JUnit, 160/160 NLP+RAG Vitest, typecheck, lint, supabase:verify pass; full test and build ran out of memory locally (OPENNLP-E1), so CI decides them. **Blocker:** founder yes for the staging secret, `sam deploy` and Vercel env vars. Owner: founder. See `OPENNLP_INGESTION_CLOSEOUT_2026_11_26.md`. Next review: 2026-12-10 |
 | OPENNLP-E1 | Restore the Vitest worker cap | Test infra | `maxWorkers` set at top level (Vitest 5), full suite runs locally without running out of memory | No | 90% | `vitest.config.mjs:45-50` `poolOptions` is ignored since Vitest 4 (Vitest warns); a run spawned 22 workers. Owner: Claude Code. Separate PR. Next review: 2026-12-03 |
+
+## Docs PR Vercel Status Addendum (2026-11-26)
+
+| ID | Actionable | Area | Acceptance Criteria | Status | Confidence | Evidence / Notes |
+|---|---|---|---|---|---|---|
+| DOCS-PR-VERCEL-STATUS | Let docs-only PRs meet Merge When Ready without a founder yes each time, despite Vercel's never-ending consolidated status | Delivery / Governance | The rule names the exact status as an allowed skip for docs-only PRs; a script checks the conditions; shown on a real docs PR | Partial | Medium | `CLAUDE.md` Merge When Ready condition 2; `scripts/docs-pr-vercel-skip.mjs` + test; `DOCS_PR_VERCEL_STATUS_CLOSEOUT_2026_11_26.md`. Optional founder step: turn off the consolidated status in Vercel Settings > Git |

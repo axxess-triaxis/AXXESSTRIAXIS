@@ -28,7 +28,9 @@ is failing or unavailable.
 
 Some Vercel statuses are missing or skipped by design (Vercel free-plan limit, 2026-11-26). These do not count
 against "every check passed": on `docs/**` or `dependabot/**` PRs, no per-project Vercel status and a combined
-Vercel status that stays pending; and `deploy-app` skipped while its variable is unset. The full list is in `docs/readiness/TEST_GOVERNANCE.md`.
+Vercel status that stays pending; and `deploy-app` skipped while its variable is unset. The full list is in `docs/readiness/TEST_GOVERNANCE.md`. For `docs/**` PRs the
+named exception in `CLAUDE.md` (Merge When Ready, condition 2) applies, checked by
+`node scripts/docs-pr-vercel-skip.mjs <pr>`.
 
 ## Where each rule actually lives in `CLAUDE.md`
 
