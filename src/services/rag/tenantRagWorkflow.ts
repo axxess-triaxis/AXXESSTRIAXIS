@@ -23,7 +23,7 @@ import { fullTextEvidence, semanticEvidence, type RetrievalEvidence } from "./re
 import { displayScores, fuseRanks } from "./retrievalFusion";
 import { deterministicEmbeddingProvider } from "./embeddings/embeddingProvider";
 import { embedTexts, SEMANTIC_EMBEDDING_MODEL, toPgVector } from "./embeddings/semanticEmbeddings";
-import { buildRagIngestionRecord, chunkInstitutionalText } from "./ingestion/ingestionPipeline";
+import { buildRagIngestionRecordEnriched } from "./ingestion/enrichedIngestion";
 import { recordWorkflowTimelineEvent } from "../workflows/liveTenantWorkflow";
 import { assertTenantBoundary, type TenantRequestContext } from "../../security/tenantGuard";
 import type { EnterpriseRole } from "../../security/enterpriseIam";
@@ -264,8 +264,7 @@ export async function ingestTenantDocument(
 
   const title = document.title ?? document.name;
 
-  const ingestionRecord = buildRagIngestionRecord(document, bodyText);
-  const chunks = chunkInstitutionalText(bodyText);
+  const { record: ingestionRecord, chunks, nlpSource } = await buildRagIngestionRecordEnriched(document, bodyText);
   let ingestionRunId: string | undefined;
 
   if (isSupabaseAdminConfigured()) {
@@ -280,6 +279,7 @@ export async function ingestTenantDocument(
         metadata: {
           classification: ingestionRecord.classification,
           tags: ingestionRecord.tags,
+          nlpSource,
           sourceTextDigest: textHash(bodyText),
         },
         created_by: scope.userId,

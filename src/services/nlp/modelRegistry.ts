@@ -19,6 +19,7 @@ export const openSourceNlpModelRegistry: NlpModelRegistryEntry[] = [
   { id: "bge-m3", name: "bge-m3", intendedUse: ["embeddings", "hybrid retrieval"], languageCoverage: ["English", "Hindi", "Bengali", "Arabic", "French"], providerMode: "external-endpoint", status: "adapter-ready" },
   { id: "paraphrase-multilingual", name: "sentence-transformers paraphrase-multilingual", intendedUse: ["embeddings", "similarity"], languageCoverage: ["English", "Hindi", "Bengali", "French"], providerMode: "external-endpoint", status: "adapter-ready" },
   { id: "fasttext-language-id", name: "fastText language ID", intendedUse: ["language detection"], languageCoverage: ["English", "Hindi", "Assamese", "Bengali", "Bodo", "Nepali", "Arabic", "French"], providerMode: "local-deterministic", status: "implemented-local" },
+  { id: "apache-opennlp", name: "Apache OpenNLP 3.0 (sentence, tokenizer, dictionary NER)", intendedUse: ["sentence detection", "entity extraction"], languageCoverage: ["English"], providerMode: "external-endpoint", status: "adapter-ready" },
   { id: "nllb", name: "NLLB translation model", intendedUse: ["translation"], languageCoverage: ["English", "Hindi", "Bengali", "Arabic", "French"], providerMode: "external-endpoint", status: "roadmap" },
 ];
 
