@@ -110,11 +110,11 @@ Each is reversible. Do them after the merge.
 
 | Case | What GitHub shows |
 |---|---|
-| `docs/**` and `dependabot/**` PRs | No Vercel status at all (no deployment exists), so nothing is pending or failed. **Corrected 2026-11-26:** Vercel's consolidated status is still posted and stays pending; see `DOCS_PR_VERCEL_STATUS_CLOSEOUT_2026_11_26.md` |
+| `docs/**` and `dependabot/**` PRs | No deployment and no per-project Vercel status. Correction, 2026-11-26: the combined status `Vercel Deployments – AXXESS TRIaxis powered by Triaxis Ventures` is still posted and stays pending ("Required and affected projects deploying"); seen on #582, #592, #597, #593, #594 and #595. It is a usual skip on these branch patterns only |
 | After steps 1 and 2 | One Vercel status per PR (landing) |
 | `deploy-app`, while the variable is unset | Skipped |
 
-`main` has no required status checks. Merge When Ready's "every check passed" treats these as the usual skips (`TEST_GOVERNANCE.md`). A Vercel status that is present and failed or pending still blocks.
+`main` has no required status checks. Merge When Ready's "every check passed" treats these as the usual skips (`TEST_GOVERNANCE.md`). Any other Vercel status that is failed or pending still blocks: every per-project status, and the combined status on any other branch.
 
 ## Risks and rollback
 
@@ -194,8 +194,9 @@ Decision outcomes:
 
 Final status: Merged and live checked (repository part). Founder steps 1 and 2 not done.
 Remaining risk:
-- How a `docs/*` PR looks with no Vercel status is not yet observed. It is first visible on the next `docs/*` PR after merge.
+- Observed after merge (2026-11-26): `docs/*` and `dependabot/*` PRs get the combined Vercel status stuck on pending, not "no status" as first written. #592 and #582 were merged with it pending; #582 on the founder's explicit "Merge #582 after #589". The usual-skip rule above was corrected to match.
 - The founder steps are not done.
+- The daily limit was still hit after this merge: run 45861025634 (merge of #582, 2026-11-26 16:46 UTC), lite job, `api-deployments-free-per-day`. Landing and investor deployed; lite stayed on its previous build (README-only change). Input for the 2026-12-03 review.
 - Deployments from other repositories on the account are unmeasured.
 
 Follow-up issue IDs: VERCEL-DEPLOY-BUDGET (matrix)

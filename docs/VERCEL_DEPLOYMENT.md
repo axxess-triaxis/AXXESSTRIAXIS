@@ -29,11 +29,12 @@ deploy was refused. The full measurement is in
 The rules behind this table:
 
 - `vercel.json` `git.deploymentEnabled` turns off Git deployments for `dependabot/**` and `docs/**`
-  branches. No deployment is created for them at all, so they get no per-project `Vercel – <project>`
-  status. They do get Vercel's consolidated status (`Vercel Deployments – AXXESS TRIaxis powered by Triaxis
-  Ventures`), which stays `pending` forever because no project deploys (observed 2026-11-26 on #582, #592,
-  #597). For docs-only PRs, Merge When Ready treats it as a skip under a named exception; check it with
-  `node scripts/docs-pr-vercel-skip.mjs <pr>` (`docs/readiness/DOCS_PR_VERCEL_STATUS_CLOSEOUT_2026_11_26.md`).
+  branches. No deployment is created for them at all, so they get no per-project Vercel status on the
+  PR. Vercel still posts the combined status `Vercel Deployments – AXXESS TRIaxis powered by Triaxis Ventures` as
+  pending, and it never resolves; `docs/readiness/TEST_GOVERNANCE.md` treats that as a usual skip on
+  these two branch patterns only. For `docs/**` PRs, `CLAUDE.md` (Merge When Ready, condition 2) also
+  requires `node scripts/docs-pr-vercel-skip.mjs <pr>` to print `"ok":true`
+  (`docs/readiness/DOCS_PR_VERCEL_STATUS_CLOSEOUT_2026_11_26.md`).
 - Do not add an `ignoreCommand` to save deployments. Vercel's documentation says canceled builds
   still count as full deployments.
 - Each production site is built once per merge. Landing is built by Git integration only, because it
