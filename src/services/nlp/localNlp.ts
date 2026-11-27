@@ -1,3 +1,5 @@
+import gazetteers from "./gazetteers.json";
+
 export type SupportedLanguage = "english" | "assamese" | "bengali" | "hindi" | "mixed" | "unknown";
 
 export type EntityExtraction = {
@@ -70,36 +72,9 @@ const classificationRules: Array<{ classification: DocumentClassification; terms
   { classification: "vendor-onboarding", terms: ["vendor onboarding", "bank details", "service scope", "credential"] },
 ];
 
-const localLocations = [
-  "Kamrup",
-  "Dibrugarh",
-  "Nagaon",
-  "Barpeta",
-  "Cachar",
-  "Tinsukia",
-  "Jorhat",
-  "Golaghat",
-  "Kokrajhar",
-  "Dhubri",
-  "Kohima",
-  "Imphal",
-  "Aizawl",
-  "Shillong",
-  "Agartala",
-  "Itanagar",
-];
+const localLocations: string[] = gazetteers.locations;
 
-const localOrganizations = [
-  "North East Health Mission",
-  "State Health Directorate",
-  "Gauhati Medical College Hospital",
-  "Assam Medical College Dibrugarh",
-  "Silchar Medical College",
-  "NEIGRIHMS Shillong",
-  "Regional Institute of Medical Sciences Imphal",
-  "District Hospital",
-  "Mission Secretariat",
-];
+const localOrganizations: string[] = gazetteers.organizations;
 
 export function normalizeText(value: string) {
   return value

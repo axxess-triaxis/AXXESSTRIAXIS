@@ -409,6 +409,13 @@ Fixed by: (1) splitting public entry into two dedicated, non-overlapping routes 
 |---|---|---|---|---|---|---|
 | VERCEL-DEPLOY-BUDGET | Keep this repository well under Vercel's free 100-deployments-a-day cap without losing a preview anyone uses | Delivery / CI | Measured before and after numbers; no Git deployments for `docs/**` and `dependabot/**`; each production site built once per merge; previews on one project; EOD investor sync still gated on landing | Blocked | 70% | Before: 440 in 7 days (144 on 2026-11-25). Repository part merged in PR 590 (`af1f4a78`, 2026-11-26), and all four production domains were live checked at 2026-11-26T10:34Z (closeout). **Blocked on the founder:** (1) done; (2) disconnect Git on `triaxis-product-investor-demo` in the Vercel dashboard; (3) disconnect Git on `axxesstriaxis` and set repository variable `VERCEL_APP_DEPLOY_VIA_CLI=true` in the same sitting. Re-measure by 2026-12-03. See `VERCEL_DEPLOY_BUDGET_CLOSEOUT_2026_11_26.md` |
 
+## OpenNLP Ingestion Addendum (2026-11-26)
+
+| ID | Actionable | Area | Acceptance Criteria | Status | Confidence | Evidence / Notes |
+|---|---|---|---|---|---:|---|
+| OPENNLP-INGEST | Apache OpenNLP 3.0 enrichment for RAG ingestion (sentences, tokens, dictionary entities) behind `OPENNLP_ENABLED`, local NLP fallback | AI / RAG | Worker JUnit green, client and parity tests green, standard suite and PR CI pass, staging live check of `/enrich`, one staging document compared with a flag-off run | No | 50% | Code only, not deployed. 9/9 JUnit, 160/160 NLP+RAG Vitest, typecheck, lint, supabase:verify pass; full test and build ran out of memory locally (OPENNLP-E1), so CI decides them. **Blocker:** founder yes for the staging secret, `sam deploy` and Vercel env vars. Owner: founder. See `OPENNLP_INGESTION_CLOSEOUT_2026_11_26.md`. Next review: 2026-12-10 |
+| OPENNLP-E1 | Restore the Vitest worker cap | Test infra | `maxWorkers` set at top level (Vitest 5), full suite runs locally without running out of memory | No | 90% | `vitest.config.mjs:45-50` `poolOptions` is ignored since Vitest 4 (Vitest warns); a run spawned 22 workers. Owner: Claude Code. Separate PR. Next review: 2026-12-03 |
+
 ## Docs PR Vercel Status Addendum (2026-11-26)
 
 | ID | Actionable | Area | Acceptance Criteria | Status | Confidence | Evidence / Notes |
