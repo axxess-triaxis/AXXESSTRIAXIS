@@ -79,9 +79,17 @@ function main(argv) {
     console.error("usage: node scripts/docs-pr-vercel-skip.mjs <pr-number> [--repo owner/name]");
     process.exit(2);
   }
-  const info = gh(["api", `repos/${repo}/pulls/${pr}`]);
-  const files = gh(["api", "--paginate", "--slurp", `repos/${repo}/pulls/${pr}/files?per_page=100`]).flat().map((f) => f.filename);
-  const statuses = gh(["api", "--paginate", "--slurp", `repos/${repo}/commits/${info.head.sha}/statuses?per_page=100`]).flat();
+  let info, files, statuses;
+  try {
+    info = gh(["api", `repos/${repo}/pulls/${pr}`]);
+    files = gh(["api", "--paginate", "--slurp", `repos/${repo}/pulls/${pr}/files?per_page=100`]).flat().map((f) => f.filename);
+    statuses = gh(["api", "--paginate", "--slurp", `repos/${repo}/commits/${info.head.sha}/statuses?per_page=100`]).flat();
+  } catch (error) {
+    // Fail closed: without the PR's real files and statuses the exception never applies.
+    const detail = String(error.stderr || error.message).trim().split("\n")[0];
+    console.log(JSON.stringify({ pr: Number(pr), ok: false, problems: [`could not read the PR from GitHub: ${detail}`] }));
+    process.exit(1);
+  }
   const result = checkDocsPrVercelSkip({ branch: info.head.ref, files, statuses });
   console.log(JSON.stringify({ pr: Number(pr), head: info.head.sha, branch: info.head.ref, ...result }));
   process.exit(result.ok ? 0 : 1);
