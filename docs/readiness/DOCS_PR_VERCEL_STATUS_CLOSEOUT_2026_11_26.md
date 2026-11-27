@@ -77,7 +77,7 @@ Merge When Ready condition 2 (`CLAUDE.md`) allows no pending check. So every doc
   - `pnpm run typecheck`: exit 0.
   - `pnpm run lint` (`--max-warnings=0`): exit 0.
   - `pnpm run build`: exit 0.
-  - `pnpm run test`, full local run: did not finish. Node segfaulted (exit 139) after a Vitest worker for `src/app/api/rag/query/route.test.ts` was "torn down or never initialized", and `DashboardSection.test.tsx` ED3-04 timed out at 18 s. This is the known local worker pattern (`FAILED_OR_TIMED_OUT_CHECKS.md`, "Known recurring pattern: Vitest Worker exited unexpectedly"; also seen in the #590 closeout). This PR changes no `src/` file. ISOLATED_RERUN
+  - `pnpm run test`, full local run: did not finish. Node segfaulted (exit 139) after a Vitest worker for `src/app/api/rag/query/route.test.ts` was "torn down or never initialized", and `DashboardSection.test.tsx` ED3-04 timed out at 18 s. This is the known local worker pattern (`FAILED_OR_TIMED_OUT_CHECKS.md`, "Known recurring pattern: Vitest Worker exited unexpectedly"; also seen in the #590 closeout). This PR changes no `src/` file. Rerun of just those two files: `pnpm exec vitest run src/app/api/rag/query/route.test.ts src/features/dashboard/DashboardSection.test.tsx`, 2 files and 20 of 20 tests passed.
   - CI full suite on the PR head: CI_RESULT
 - Shown on a new docs PR: TEST_DOCS_PR
 
