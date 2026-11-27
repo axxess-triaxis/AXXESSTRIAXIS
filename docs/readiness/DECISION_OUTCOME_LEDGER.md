@@ -176,7 +176,7 @@ Existing rows are not rewritten.
 
 | Decision | Date | Session/tool | Issue ID | Why | Outcome | Commit/PR | Verification | Closeout |
 |---|---|---|---|---|---|---|---|---|
-| Check the agent connection when an approved call runs, and before an Always Allow grant: revoked, missing or without the capability means failed, not run | 2026-11-25 | Claude Code finding, founder chose to fix it | AGENT-REVOKED-APPROVALS | A key revoked while its call waited still had the call run on approval | Pending, review by 2026-12-09: founder's merge decision | `3a5a55a6` (red), `5e303380` (fix) | 3 of 24 tests failed on the old code, all pass on the new; full suite 2674 of 2674 with `--pool=forks --maxWorkers=2` | `REVOKED_AGENT_APPROVALS_CLOSEOUT_2026_11_25.md` |
+| Check the agent connection when an approved call runs, and before an Always Allow grant: revoked, missing or without the capability means failed, not run | 2026-11-25 | Claude Code finding, founder chose to fix it | AGENT-REVOKED-APPROVALS | A key revoked while its call waited still had the call run on approval | Shipped 2026-11-26: #583 merged as `aa90680f`, deploy run 45814407393, live check 11:58 UTC passed. Refusing a real revoked key: Pending, review by 2026-12-09 | #583, `3a5a55a6` (red), `5e303380` (fix) | 3 of 24 tests failed on the old code, all pass on the new; full suite 2674 of 2674 with `--pool=forks --maxWorkers=2` | `REVOKED_AGENT_APPROVALS_CLOSEOUT_2026_11_25.md` |
 
 ## Server-side AI routing context (2026-11-25)
 
@@ -200,7 +200,7 @@ Existing rows are not rewritten.
 
 | Decision | Date | Session/tool | Issue ID | Why | Outcome | Commit/PR | Verification | Closeout |
 |---|---|---|---|---|---|---|---|---|
-| Make agent `tools/call` retries safe with a caller key stored in the existing UNIQUE `idempotency_key`, and let an agent read its own pending call through an opt-in tool; `executed` without a result is `unknown` | 2026-11-25 | Founder-approved plan, executed by Claude Code | OPS-AGENT-B1 | A client retrying after a timeout created a second approval request and could not read the decision or result | Pending, review by 2026-12-09: founder's merge decision, then the worker's first staging run | #579, `5ed8df9f` (red), `ec13fe28` (implementation) | 24 of 32 tests failed on the old code, all pass on the new; full suite 2656 of 2656 with `--pool=forks --maxWorkers=2` | `MCP_IDEMPOTENT_TOOL_CALLS_CLOSEOUT_2026_11_25.md` |
+| Make agent `tools/call` retries safe with a caller key stored in the existing UNIQUE `idempotency_key`, and let an agent read its own pending call through an opt-in tool; `executed` without a result is `unknown` | 2026-11-25 | Founder-approved plan, executed by Claude Code | OPS-AGENT-B1 | A client retrying after a timeout created a second approval request and could not read the decision or result | Shipped 2026-11-26: #579 merged as `1610d821`, deploy run 45817267599, live check 12:26 UTC passed. Use by a real worker: Pending, review by 2026-12-09 (first staging run) | #579, `5ed8df9f` (red), `ec13fe28` (implementation) | 24 of 32 tests failed on the old code, all pass on the new; full suite 2656 of 2656 with `--pool=forks --maxWorkers=2` | `MCP_IDEMPOTENT_TOOL_CALLS_CLOSEOUT_2026_11_25.md` |
 
 ## Vector search benchmark (2026-11-27)
 

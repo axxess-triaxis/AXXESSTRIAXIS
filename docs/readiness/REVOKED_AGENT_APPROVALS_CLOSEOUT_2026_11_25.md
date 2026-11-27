@@ -7,7 +7,7 @@ Title: Refuse approved calls from revoked, missing or stripped agent connections
 Origin plan: follow-up found while building PR #579; the founder chose to do it (2026-11-25)
 Research artifact: none
 Implementation commits: `3a5a55a6` (red tests), `5e303380` (fix)
-PR: see the branch
+PR: #583
 Branch: `fix/refuse-revoked-agent-approvals`, from `main` at `754524ff`; does not depend on #579
 
 ### What was wrong
@@ -58,11 +58,19 @@ Confirm with a failing test; refuse when the connection is missing, revoked or l
 - A failure to read the connection after the row is reserved still leaves the row `executed` without a result, as before. The tool does not run.
 - Pending calls of a revoked connection stay in the Approvals queue until someone decides them.
 
+### Deploy and live check (added 2026-11-26)
+
+- PR #583 merged 2026-11-26 11:52:02 UTC with a merge commit, `aa90680f`, at the head whose checks all passed. Merged under Merge When Ready after the founder lifted the PR's hold ("After Vercel limit resets").
+- Production deploy run 45814407393: success (investor and lite jobs; landing through the Vercel Git link).
+- Live check 2026-11-26 11:58:49 UTC: `GET /` and `GET /auth` returned 200 on landing, investor and lite.triaxisventures.com; `POST /api/agents/mcp` with no key returned 401 on landing and investor.
+- New deployments: landing `dpl_DzBzkAEWP11o4t6VzhNcMFUVbD3T`, investor `dpl_E5joa7KkvthkxQqWfoFRNvqUHrqn`, lite `dpl_2qyGNYc2choFhoaJH4QUMb3btNi7`. Previous (rollback): landing `dpl_GCGx5b8uzeXhjXQF8JyXdxpiaNdg`, investor `dpl_FiBJkntoAVjkQPfsGBjaQrk4TaDZ`, lite `dpl_8NVwJ1Mg4mPoJQVyn7KucWvWidY4`.
+- The live check shows the sites serve and refuse unauthenticated agent calls. It does not exercise an approval with a revoked key; that is still unverified (above).
+
 ### Decision outcomes
 
 - Decision: check the connection when the call runs, not only when it was requested.
-  Outcome: Pending, review by 2026-12-09 (founder's merge decision)
+  Outcome: Shipped to production 2026-11-26 (#583, `aa90680f`). Whether it refuses a real revoked key: Pending, review by 2026-12-09
 
-Final status: Code complete
+Final status: Deployed and live-checked; behaviour with a real revoked key not verified
 Remaining risk: listed above
-Deploy evidence: none, not merged or deployed
+Deploy evidence: run 45814407393, live check 2026-11-26 11:58:49 UTC (above)
