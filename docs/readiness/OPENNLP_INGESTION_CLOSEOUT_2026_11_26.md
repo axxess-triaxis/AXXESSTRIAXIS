@@ -74,6 +74,18 @@ Not applied from the `creating-secrets-using-best-practices` skill (would add sp
 has not approved): a dedicated KMS key, rotation, a CloudTrail trail with an S3 bucket, and secret-access alarms. The
 account has no CloudTrail trail today. The AWS profile signs in as the account root user.
 
+## Merge and production live check (2026-11-27)
+
+- PR #591 merged by merge commit `f1a8622207c0b20dc15db17030425f93e575cfc1` at 2026-11-27T04:31:41Z (founder: "Yes, merge
+  when green"), at checked head `f67a2d55`: 14 check runs and 4 Vercel statuses succeeded; skipped `android-preview`,
+  `ios-preview`, `Supabase Preview` (usual for a PR with no mobile or migration change); 0 commits behind `main`.
+- PR CI ran the full Vitest suite and the build green, closing the local out-of-memory gap for this change.
+- Deploy Production run 45940466115: investor and lite deployed, beta skipped. GitHub deployments for `f1a86222`:
+  axxesstriaxis, triaxis-product-investor-demo, triaxis-www-frontend-import all `success`.
+- Live check 2026-11-27T04:49Z: landing 200 (`/auth?next=%2Fdashboard`, served by `dpl_9tRYBSkVQ8vUvKKnmuxB6hT6Liko`,
+  the `f1a86222` deployment), lite 200 (`/lite`), investor 200 (`/dashboard`). OpenNLP stays off in production
+  (`OPENNLP_*` set only on Preview `staging`). Staging Lambda re-checked 2026-11-27T03:53Z: `/health` 200, no key 401.
+
 ## Remaining (needs the founder's yes, batched)
 
 1. Create a Secrets Manager plain-string secret for the staging key (AWS, secret).
