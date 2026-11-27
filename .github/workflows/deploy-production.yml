@@ -1,4 +1,4 @@
-name: Deploy Production (landing + investor demo + lite)
+name: Deploy Production (investor demo + lite + app)
 
 # A-88 (2026-08-03): landing.triaxisventures.com and investor.triaxisventures.com are two
 # separate Vercel projects (triaxis-www-frontend-import / triaxis-product-investor-demo) built
@@ -21,9 +21,15 @@ name: Deploy Production (landing + investor demo + lite)
 # Required repo secrets (Settings > Secrets and variables > Actions):
 #   VERCEL_TOKEN                     - a Vercel account/team token with deploy access to all three projects
 #   VERCEL_ORG_ID                    - team_dODwKUnt7TOneVcLbI5E8aIq
-#   VERCEL_PROJECT_ID_LANDING        - prj_TKNsiB2hMIHUy8bqEmJVpAq4EiTT (triaxis-www-frontend-import)
+#   VERCEL_PROJECT_ID_LANDING        - prj_TKNsiB2hMIHUy8bqEmJVpAq4EiTT (triaxis-www-frontend-import), no longer used here
 #   VERCEL_PROJECT_ID_INVESTOR_DEMO  - prj_DmQEa8CtZss0eTnZgGL4aZA6Y8gP (triaxis-product-investor-demo)
 #   VERCEL_PROJECT_ID_LITE           - prj_NQOBzuj4wpO5UnlRB6L0xdO1nT6f (triaxis-product-lite-web)
+#
+# 2026-11-26 (Vercel free plan, 100 deployments a day; docs/readiness/VERCEL_DEPLOY_BUDGET_CLOSEOUT_2026_11_26.md):
+# the landing job was removed. Landing production was built twice on every merge, once here and once
+# by Vercel Git integration; Git integration now does it alone, because landing also serves the
+# staging branch domain that stack-e2e.yml tests. Investor and lite stay here. deploy-app is gated
+# on vars.VERCEL_APP_DEPLOY_VIA_CLI (see the job).
 
 on:
   push:
@@ -38,12 +44,17 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  deploy-landing:
-    name: Deploy landing.triaxisventures.com
+  deploy-app:
+    name: Deploy beta app (axxesstriaxis)
+    # 2026-11-26: off until the founder disconnects Git on the axxesstriaxis Vercel project and sets
+    # the repository variable VERCEL_APP_DEPLOY_VIA_CLI=true in the same sitting. Until then the job
+    # shows as skipped and Git integration keeps deploying the app, so nothing is built twice.
+    if: ${{ vars.VERCEL_APP_DEPLOY_VIA_CLI == 'true' }}
     runs-on: ubuntu-latest
     env:
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_LANDING }}
+      # Project IDs are identifiers, not secrets (the others are listed in the header comment too).
+      VERCEL_PROJECT_ID: prj_zTMRnOsfmUUxnzJkEUDUxNvoEOFt
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -75,10 +86,10 @@ jobs:
         # per-deploy file-upload count against the same quota.
         run: npx vercel deploy --prebuilt --prod --archive=tgz --token=${{ secrets.VERCEL_TOKEN }}
 
+
   deploy-investor-demo:
     name: Deploy investor.triaxisventures.com
     runs-on: ubuntu-latest
-    needs: deploy-landing
     env:
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID_INVESTOR_DEMO }}

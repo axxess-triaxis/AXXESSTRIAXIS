@@ -158,4 +158,7 @@ Steps 1–5 are done (table above). Remaining:
 - **Groq free-tier limits:** live limits observed on one account on 2026-10-05. They may change.
 - **gte-small quality and latency:** not measured on AXXESS documents yet. That needs the live
   backfill and the step-7 check.
+  - **Update, 2026-11-24:** retrieval quality was measured on a synthetic golden set (semantic recall at 5
+    0.9867, 74 of 75). Still not measured on real AXXESS documents, and latency is not measured. See
+    `RAG_RETRIEVAL_GATE_CLOSEOUT_2026_11_24.md`.
 - **Production impact:** none yet. Nothing in production has changed.

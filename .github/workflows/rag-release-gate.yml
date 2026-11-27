@@ -4,9 +4,16 @@ on:
   pull_request:
     paths:
       - "src/services/rag/**"
+      - "src/services/nlp/**"
       - "src/app/api/rag/**"
+      - "src/repositories/supabaseAdmin.ts"
+      - "src/repositories/supabaseEnterpriseRepositories.ts"
+      - "src/security/tenantGuard.ts"
       - "supabase/migrations/**"
+      - "supabase/functions/**"
+      - "supabase/config.toml"
       - "scripts/rag-release-gate.mjs"
+      - "scripts/rag-gate-mutations.mjs"
       - ".github/workflows/rag-release-gate.yml"
       - "package.json"
       - "pnpm-lock.yaml"
@@ -15,9 +22,16 @@ on:
       - main
     paths:
       - "src/services/rag/**"
+      - "src/services/nlp/**"
       - "src/app/api/rag/**"
+      - "src/repositories/supabaseAdmin.ts"
+      - "src/repositories/supabaseEnterpriseRepositories.ts"
+      - "src/security/tenantGuard.ts"
       - "supabase/migrations/**"
+      - "supabase/functions/**"
+      - "supabase/config.toml"
       - "scripts/rag-release-gate.mjs"
+      - "scripts/rag-gate-mutations.mjs"
       - ".github/workflows/rag-release-gate.yml"
       - "package.json"
       - "pnpm-lock.yaml"
@@ -33,9 +47,9 @@ jobs:
   rag-release-gate:
     name: Required RAG Release Gate
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     env:
       NEXT_TELEMETRY_DISABLED: "1"
-      RAG_RELEASE_GATE_WARNINGS_BLOCK: "true"
 
     steps:
       - name: Checkout
@@ -56,5 +70,45 @@ jobs:
       - name: Install
         run: pnpm install --frozen-lockfile
 
+      # A disposable database on this runner: the real migrations, PostgREST, Auth and the real embed
+      # function (gte-small runs inside the Edge Runtime image). No hosted project is contacted.
+      - name: Start local Supabase
+        run: |
+          secret="$(openssl rand -hex 32)"
+          echo "::add-mask::$secret"
+          echo "EMBED_FUNCTION_SECRET=$secret" > supabase/functions/.env
+          echo "RAG_GATE_EMBED_SECRET=$secret" >> "$GITHUB_ENV"
+          pnpm exec supabase start --exclude studio,imgproxy,realtime,mailpit,logflare,vector,postgres-meta,supavisor,storage-api
+
+      - name: Read local connection details
+        run: |
+          pnpm exec supabase status -o env > "$RUNNER_TEMP/supabase.env"
+          for pair in API_URL:RAG_GATE_SUPABASE_URL ANON_KEY:RAG_GATE_ANON_KEY SERVICE_ROLE_KEY:RAG_GATE_SERVICE_ROLE_KEY; do
+            value="$(sed -n "s/^${pair%%:*}=\"\(.*\)\"$/\1/p" "$RUNNER_TEMP/supabase.env")"
+            test -n "$value" || { echo "${pair%%:*} is missing from supabase status"; exit 1; }
+            echo "${pair##*:}=$value" >> "$GITHUB_ENV"
+          done
+
       - name: Run RAG release gate
-        run: pnpm run rag:release-gate
+        env:
+          RAG_GATE_COMMIT: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: pnpm run rag:release-gate --self-test
+
+      - name: Container logs on failure
+        if: failure()
+        run: |
+          docker ps -a
+          docker logs supabase_edge_runtime_axxess-triaxis 2>&1 | tail -40 || true
+          docker logs supabase_db_axxess-triaxis 2>&1 | grep -iE "error|fatal" | tail -40 || true
+
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: rag-release-gate
+          path: test-results/rag-release-gate
+          if-no-files-found: ignore
+
+      - name: Stop local Supabase
+        if: always()
+        run: pnpm exec supabase stop --no-backup || true

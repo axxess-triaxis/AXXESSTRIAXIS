@@ -26,6 +26,10 @@ Claude and Codex may not commit or deploy without the required verification gate
 `docs/readiness/PRODUCTION_DEPLOY_EXCEPTION_POLICY.md` for the only sanctioned way to proceed when a gate
 is failing or unavailable.
 
+Some Vercel statuses are missing or skipped by design (Vercel free-plan limit, 2026-11-26). These do not count
+against "every check passed": on `docs/**` or `dependabot/**` PRs, no per-project Vercel status and a combined
+Vercel status that stays pending; and `deploy-app` skipped while its variable is unset. The full list is in `docs/readiness/TEST_GOVERNANCE.md`.
+
 ## Where each rule actually lives in `CLAUDE.md`
 
 - **Mandatory Plan-First Sessions** -- `CLAUDE.md`, under "Mandatory Plan-First Sessions -- Standing Rule"
@@ -38,6 +42,11 @@ is failing or unavailable.
 - **Production Gate Bypass** (five required elements before any bypass) -- `CLAUDE.md`, under
   "Production Gate Bypass -- Standing Rule"; fillable template at
   `docs/readiness/PRODUCTION_DEPLOY_EXCEPTION_POLICY.md`
+- **Approval Load** (added 2026-11-25) -- `CLAUDE.md`, under "Approval Load -- Standing Rule": Auto-fix on
+  without asking, reversible steps done without asking, approvals batched into one complete ask. Hosted
+  migrations, production data, gate bypass and the rest of its list are still asked every time
+- **Merge When Ready** (added 2026-11-25) -- `CLAUDE.md`, under "Merge When Ready -- Standing Rule": a PR that
+  meets all five conditions is merged without waiting, one at a time, with a live check after each
 - **Paxel 9.5 Practice Standards** (added 2026-11-01) -- `CLAUDE.md`, under "Paxel 9.5 Practice Standards --
   Standing Rule"; full plan, targets and measures at
   `docs/readiness/PAXEL_REPORT_28_BEHAVIORAL_ANALYSIS_2026_11_01.md`. In short:

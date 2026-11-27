@@ -27,6 +27,22 @@ Three rules apply to every row (`CLAUDE.md`, "Paxel 9.5 Practice Standards -- St
 - **Live check before "done".** For a deploy-facing change, a green workflow or a Vercel "ready" is not the live
   check; the live endpoint check against the deployed SHA is, and it goes in the closeout.
 
+**Usual Vercel skips (2026-11-26, `docs/VERCEL_DEPLOYMENT.md` "Who deploys what").** These are expected and
+do not mean a check failed:
+
+- `docs/**` and `dependabot/**` PRs get no deployment, because `vercel.json` turns Git deployments off for
+  them. They have no per-project `Vercel – <project>` status. Vercel still posts the combined status
+  `Vercel Deployments – AXXESS TRIaxis powered by Triaxis Ventures` as pending ("Required and affected projects deploying"), and it never
+  resolves (observed 2026-11-26 on #582, #592, #597, #593, #594 and #595). On these two branch patterns, that
+  combined status pending with no per-project status is a usual skip.
+- Once Git is disconnected on `triaxis-product-investor-demo` and `axxesstriaxis`, PRs show only the landing
+  Vercel status.
+- The `deploy-app` job in `deploy-production.yml` shows as skipped while `vars.VERCEL_APP_DEPLOY_VIA_CLI` is
+  not `true`.
+
+Any other Vercel status that is failed or pending still blocks Merge When Ready: every per-project status,
+and the combined status on any other branch.
+
 None of these replace the standard suite already in `CLAUDE.md` (`pnpm run typecheck`,
 `pnpm --dir apps/mobile run typecheck`, `pnpm run lint` zero-warnings, `pnpm run test`, `pnpm run build`,
 `pnpm run supabase:verify`) -- this table narrows which *subset* is minimally required for a given

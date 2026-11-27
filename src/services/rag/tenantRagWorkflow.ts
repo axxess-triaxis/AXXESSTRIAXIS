@@ -13,12 +13,17 @@ import { isSupabaseAdminConfigured, supabaseAdminRest } from "../../repositories
 import { appendConversationMessage, createConversation, listConversationMessages } from "../../repositories/aiConversationsRepository";
 import { routeAiRequest } from "../ai/router/aiRouter";
 import { liveModelProviders } from "../ai/providers";
+import { isAiTracingActive, traceAi } from "../ai/tracing/aiTracing";
 import { extractKeywords, summarizeText } from "../nlp/localNlp";
 import { answerWithGovernedRag, canRetrieveDocument, type RagAnswer, type RagCitation, type RagRetrievalMode } from "./governedRag";
+import { evidenceDecision, type EvidenceDecision } from "./abstention";
+import { searchChunksFullText, type ChunkFullTextHit } from "./chunkFullText";
 import { buildConfidenceExplanation } from "./confidenceExplanation";
+import { fullTextEvidence, semanticEvidence, type RetrievalEvidence } from "./retrievalEvidence";
+import { displayScores, fuseRanks } from "./retrievalFusion";
 import { deterministicEmbeddingProvider } from "./embeddings/embeddingProvider";
 import { embedTexts, SEMANTIC_EMBEDDING_MODEL, toPgVector } from "./embeddings/semanticEmbeddings";
-import { buildRagIngestionRecord, chunkInstitutionalText } from "./ingestion/ingestionPipeline";
+import { buildRagIngestionRecordEnriched } from "./ingestion/enrichedIngestion";
 import { recordWorkflowTimelineEvent } from "../workflows/liveTenantWorkflow";
 import { assertTenantBoundary, type TenantRequestContext } from "../../security/tenantGuard";
 import type { EnterpriseRole } from "../../security/enterpriseIam";
@@ -259,8 +264,7 @@ export async function ingestTenantDocument(
 
   const title = document.title ?? document.name;
 
-  const ingestionRecord = buildRagIngestionRecord(document, bodyText);
-  const chunks = chunkInstitutionalText(bodyText);
+  const { record: ingestionRecord, chunks, nlpSource } = await buildRagIngestionRecordEnriched(document, bodyText);
   let ingestionRunId: string | undefined;
 
   if (isSupabaseAdminConfigured()) {
@@ -275,6 +279,7 @@ export async function ingestTenantDocument(
         metadata: {
           classification: ingestionRecord.classification,
           tags: ingestionRecord.tags,
+          nlpSource,
           sourceTextDigest: textHash(bodyText),
         },
         created_by: scope.userId,
@@ -355,7 +360,7 @@ async function persistentCitationsForQuestion(
   question: string,
   limit: number,
   documentIds?: string[],
-): Promise<{ citations: RagCitation[]; retrievalMode: RagRetrievalMode }> {
+): Promise<{ citations: RagCitation[]; retrievalMode: RagRetrievalMode; evidence?: RetrievalEvidence; decision?: EvidenceDecision }> {
   if (!isSupabaseAdminConfigured()) return { citations: [], retrievalMode: "full_scan" };
 
   const [documents, permissions] = await Promise.all([
@@ -374,8 +379,25 @@ async function persistentCitationsForQuestion(
 
   // Semantic first: it ranks across every authorized document, so it runs before (and instead of)
   // the keyword narrowing below, which would drop documents that answer the question in other words.
-  const semantic = await semanticCitationsForQuestion(scope, permissions, authorizedDocuments, question, limit);
-  if (semantic) return { citations: semantic, retrievalMode: "semantic" };
+  const semantic = await semanticCitationsForQuestion(
+    scope, permissions, authorizedDocuments, question, limit, Boolean(repositories.ragFullTextSearchRepository),
+  );
+  if (semantic) {
+    const judged = evidenceDecision(semantic.evidence);
+    // A user who attached documents asked about exactly those ("summarise this"), so they are always shown.
+    const decision = judged === "abstain" && documentIdFilter ? "review" : judged;
+    return { ...semantic, citations: decision === "abstain" ? [] : semantic.citations, retrievalMode: "semantic", decision };
+  }
+
+  // Full text over chunk bodies (2026-11-25), when a full-text repository is in use. If it cannot run or
+  // no word matches, the title-and-description narrowing below still applies.
+  let noWordMatches = false;
+  if (repositories.ragFullTextSearchRepository) {
+    const hits = await searchChunksFullText(scope, authorizedDocuments.map((document) => document.id), question, limit * 10);
+    const fullText = hits?.length ? await fullTextCitations(scope, permissions, authorizedDocuments, hits, limit) : null;
+    if (fullText) return { ...fullText, retrievalMode: "fulltext_search" };
+    noWordMatches = hits?.length === 0;
+  }
 
   // RAG retrieval quality (2026-09-12): narrows which authorized documents' chunks get fetched
   // from rag_document_chunks -- ranking/narrowing only, canRetrieveDocument() above already ran
@@ -410,6 +432,13 @@ async function persistentCitationsForQuestion(
   const citations = authorizedCitations(scope, permissions, documentById, rows, limit, (row) =>
     row.embedding_hash.reduce((sum, value, index) => sum + value * (questionVector[index] ?? 0), 0));
 
+  // No word of the question is in any readable chunk, title or description, so only the token hash ranked
+  // these: ask for review. Abstaining here was measured and dropped: on the held-out golden set v2 it removed
+  // 4 of 53 correct answers (CI run 45547527087).
+  if (noWordMatches && retrievalMode === "full_scan" && !documentIdFilter) {
+    return { citations, retrievalMode, evidence: { candidates: 0, topCoverage: 0 }, decision: "review" };
+  }
+
   return { citations, retrievalMode };
 }
 
@@ -424,6 +453,7 @@ function authorizedCitations(
   rows: RagChunkRow[],
   limit: number,
   scoreFor: (row: RagChunkRow) => number,
+  orderFor: (row: RagChunkRow) => number = scoreFor,
 ): RagCitation[] {
   const tenantContext = tenantRequestContextFromScope(scope);
   for (const row of rows) {
@@ -437,16 +467,47 @@ function authorizedCitations(
       if (row.role_allowlist.length > 0 && !row.role_allowlist.includes(scope.role)) return false;
       return canRetrieveDocument(scope, document, permissions);
     })
-    .map((row): RagCitation => ({
+    .map((row) => ({ row, score: scoreFor(row), order: orderFor(row) }))
+    .filter((candidate) => candidate.score > 0)
+    .sort((left, right) => right.order - left.order)
+    .slice(0, limit)
+    .map(({ row, score }): RagCitation => ({
       sourceType: "document",
       sourceId: row.document_id,
       title: row.metadata?.title ?? documentById.get(row.document_id)?.title ?? "Institutional document",
-      score: scoreFor(row),
+      score,
       excerpt: summarizeText(row.chunk_text, 1),
-    }))
-    .filter((citation) => citation.score > 0)
-    .sort((left, right) => right.score - left.score)
-    .slice(0, limit);
+    }));
+}
+
+async function chunkRowsById(scope: TenantScope, ids: string[]): Promise<RagChunkRow[] | null> {
+  const query = new URLSearchParams({
+    organization_id: `eq.${scope.organizationId}`,
+    id: `in.(${ids.join(",")})`,
+    select: "id,organization_id,document_id,chunk_index,chunk_text,embedding_hash,visibility,role_allowlist,metadata",
+  });
+  return supabaseAdminRest<RagChunkRow[]>("rag_document_chunks", { query }).catch(() => null);
+}
+
+// Ordered by full-text rank. The displayed score is coverage, which is 0 to 1 like every other score.
+async function fullTextCitations(
+  scope: TenantScope,
+  permissions: DocumentPermission[],
+  authorizedDocuments: Document[],
+  hits: ChunkFullTextHit[],
+  limit: number,
+): Promise<{ citations: RagCitation[]; evidence: RetrievalEvidence } | null> {
+  const rows = await chunkRowsById(scope, hits.map((hit) => hit.id));
+  if (!rows?.length) return null;
+
+  const hitById = new Map(hits.map((hit) => [hit.id, hit]));
+  const documentById = new Map(authorizedDocuments.map((document) => [document.id, document]));
+  const citations = authorizedCitations(
+    scope, permissions, documentById, rows, limit,
+    (row) => hitById.get(row.id)?.coverage ?? 0,
+    (row) => hitById.get(row.id)?.rank ?? 0,
+  );
+  return citations.length ? { citations, evidence: { candidates: hits.length, ...fullTextEvidence(hits) } } : null;
 }
 
 // Semantic retrieval (2026-10-05): rank this question's gte-small embedding against the chunk
@@ -459,7 +520,8 @@ async function semanticCitationsForQuestion(
   authorizedDocuments: Document[],
   question: string,
   limit: number,
-): Promise<RagCitation[] | null> {
+  fuseFullText: boolean,
+): Promise<{ citations: RagCitation[]; evidence: RetrievalEvidence } | null> {
   const questionVectors = await embedTexts([question]);
   if (!questionVectors) return null;
 
@@ -474,18 +536,43 @@ async function semanticCitationsForQuestion(
   }).catch(() => null);
   if (!hits?.length) return null;
 
-  const similarityById = new Map(hits.map((hit) => [hit.id, hit.similarity]));
-  const query = new URLSearchParams({
-    organization_id: `eq.${scope.organizationId}`,
-    id: `in.(${hits.map((hit) => hit.id).join(",")})`,
-    select: "id,organization_id,document_id,chunk_index,chunk_text,embedding_hash,visibility,role_allowlist,metadata",
-  });
-  const rows = await supabaseAdminRest<RagChunkRow[]>("rag_document_chunks", { query }).catch(() => null);
+  // Rank fusion (2026-11-25): full text finds the codes and rare terms embeddings rank low. Without a
+  // full-text repository, or with nothing matched, the order is the similarity order as before.
+  const searched = fuseFullText
+    ? await searchChunksFullText(scope, authorizedDocuments.map((document) => document.id), question, limit * 10)
+    : null;
+  const fullText = searched ?? [];
+  const scoreById = displayScores({ semantic: hits, fullText });
+  const orderById = fuseRanks({ semantic: hits, fullText });
+  const rows = await chunkRowsById(scope, [...orderById.keys()]);
   if (!rows?.length) return null;
 
   const documentById = new Map(authorizedDocuments.map((document) => [document.id, document]));
-  const citations = authorizedCitations(scope, permissions, documentById, rows, limit, (row) => similarityById.get(row.id) ?? 0);
-  return citations.length ? citations : null;
+  const citations = authorizedCitations(
+    scope, permissions, documentById, rows, limit,
+    (row) => scoreById.get(row.id) ?? 0,
+    (row) => orderById.get(row.id) ?? 0,
+  );
+  if (!citations.length) return null;
+
+  // The similarity search is limited by document, not by chunk role, so role-restricted chunks are dropped
+  // before anything is judged from the scores.
+  const readable = new Set(
+    rows.filter((row) => row.role_allowlist.length === 0 || row.role_allowlist.includes(scope.role)).map((row) => row.id),
+  );
+  return { citations, evidence: semanticEvidence(hits.filter((hit) => readable.has(hit.id)), searched) };
+}
+
+// Citations from stored chunks carry no classification, so a trace may only hold their text once each cited
+// document is read and found not to be restricted. Anything unknown counts as restricted.
+async function sourcesKnownUnrestricted(repositories: TenantRagRepositories, scope: TenantScope, sources: RagCitation[]): Promise<boolean> {
+  const documentIds = [...new Set(sources.filter((source) => source.sourceType === "document").map((source) => source.sourceId))];
+  try {
+    const documents = await Promise.all(documentIds.map((id) => repositories.documentsRepository.getById(scope, id)));
+    return documents.every((document) => document?.classification !== undefined && document.classification !== "restricted");
+  } catch {
+    return false;
+  }
 }
 
 export async function answerTenantQuestion(
@@ -516,14 +603,14 @@ export async function answerTenantQuestion(
     ? `Conversation so far:\n${priorMessages.map((message) => `${message.role === "user" ? "Q" : "A"}: ${message.content}`).join("\n")}\n\n`
     : "";
 
-  const { citations, retrievalMode: persistentRetrievalMode } = await persistentCitationsForQuestion(repositories, scope, question, limit, options.documentIds);
+  const { citations, retrievalMode: persistentRetrievalMode, evidence, decision } = await persistentCitationsForQuestion(repositories, scope, question, limit, options.documentIds);
   let baseAnswer: RagAnswer;
   if (citations.length) {
     const rawConfidence = Math.min(0.96, Math.max(0.42, citations.reduce((sum, citation) => sum + citation.score, 0) / citations.length + 0.28));
     const { confidence, explanation } = buildConfidenceExplanation({
       citations,
       rawConfidence,
-      humanReviewRequired: citations.some((citation) => citation.score < 0.5),
+      humanReviewRequired: decision === "review" || citations.some((citation) => citation.score < 0.5),
       // Known limitation (documented in the RAG Remediation Sprint 2 closeout): RagCitation does
       // not carry document classification for this persistent-chunk path, unlike governedRag.ts's
       // in-memory path, so restricted-source detection isn't available here yet.
@@ -538,12 +625,38 @@ export async function answerTenantQuestion(
       rationale: `Synthesized from ${citations.length} governed source${citations.length === 1 ? "" : "s"} (top match: "${citations[0].title}", ${Math.round(citations[0].score * 100)}% relevance).`,
       confidenceExplanation: explanation,
       retrievalMode: persistentRetrievalMode,
+      retrievalEvidence: evidence,
+    };
+  } else if (decision === "abstain") {
+    // Not the governed fallback below: it matches on titles and descriptions and would cite the documents
+    // just judged not to answer this.
+    const { confidence, explanation } = buildConfidenceExplanation({ citations: [], rawConfidence: 0, humanReviewRequired: true, hasRestrictedSource: false });
+    baseAnswer = {
+      answer: contextAnswer([]),
+      confidence,
+      humanReviewRequired: true,
+      sources: [],
+      keywords: extractKeywords(question, 6),
+      rationale: "The closest authorized sources did not match this question closely enough to cite.",
+      confidenceExplanation: explanation,
+      retrievalMode: persistentRetrievalMode,
+      retrievalEvidence: evidence,
     };
   } else {
     baseAnswer = await answerWithGovernedRag(repositories, scope, { question, limit });
   }
 
-  const routeResult = await routeAiRequest({
+  // Follow-ups carry earlier answers, whose sources are not known here.
+  const redactTrace = isAiTracingActive()
+    && (priorMessages.length > 0 || !(await sourcesKnownUnrestricted(repositories, scope, baseAnswer.sources)));
+  const routeResult = await traceAi(() => ({
+    name: "axxess-knowledge-answer",
+    kind: "chain",
+    redactContent: redactTrace,
+    inputs: { question },
+    outputs: (result) => ({ answer: result.answer, provider: result.providerUsed, confidence: result.confidence, sources: baseAnswer.sources.length }),
+    context: { organizationId: scope.organizationId, role: scope.role, task: "rag_answer", threadKey: conversationId },
+  }), () => routeAiRequest({
     prompt: `${conversationTranscript}${question}\n\nAuthorized source summary:\n${baseAnswer.sources.map((source) => `${source.title}: ${source.excerpt}`).join("\n")}`,
     task: "rag_answer",
     context: {
@@ -556,7 +669,7 @@ export async function answerTenantQuestion(
       costPreference: "balanced",
       latencyPreference: "balanced",
     },
-  });
+  }));
 
   // 2026-07-30: routeAiRequest was already being called here, but only routeResult.confidence was
   // ever used -- routeResult.answer (the model's actual synthesized text) was silently discarded,

@@ -28,6 +28,11 @@ Parameters:
   OmnidamusSmsTopicName:
     Type: String
     Default: omnidamus-staging-SmsInboundTopic-L7ETNKeq5QsW
+  # Two-org test (2026-11-21) publishes a customer's WhatsApp reply. The name after the last colon
+  # of the omnidamus-staging WhatsAppInboundTopicArn output.
+  OmnidamusWhatsAppTopicName:
+    Type: String
+    AllowedPattern: "^omnidamus-staging-[A-Za-z0-9_-]+$"
   CallismaticFunctionName:
     Type: String
     Default: callismatic-staging-AppFunction-PtzRmGhxmEE2
@@ -88,6 +93,10 @@ Resources:
                 Effect: Allow
                 Action: sns:Publish
                 Resource: !Sub arn:${AWS::Partition}:sns:${StagingRegion}:${AWS::AccountId}:${OmnidamusSmsTopicName}
+              - Sid: PublishOmnidamusStagingWhatsApp
+                Effect: Allow
+                Action: sns:Publish
+                Resource: !Sub arn:${AWS::Partition}:sns:${StagingRegion}:${AWS::AccountId}:${OmnidamusWhatsAppTopicName}
               - Sid: ReadCallismaticStagingUrl
                 Effect: Allow
                 Action: lambda:GetFunctionUrlConfig

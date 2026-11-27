@@ -134,6 +134,8 @@ export type AiProviderCompletion = {
   // reported by an OpenAI-compatible API response). When present, these supersede the router's
   // pre-call cost estimate rather than supplementing it -- see routeAiRequest().
   usage?: { promptTokens: number; completionTokens: number };
+  // The model that answered, when the adapter made a live call.
+  model?: string;
   actualCostUsd?: number;
   // Sprint 1 agentic chatbot: present only when the model chose to call a tool instead of (or
   // alongside) returning text -- absent for every existing single-shot text completion.

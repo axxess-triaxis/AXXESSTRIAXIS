@@ -1,5 +1,7 @@
 # Security Hardening (SecOps) -- Closeout (2026-08-22)
 
+> **Correction, 2026-11-24:** the RAG release gate cited here is not evidence of retrieval quality or tenant isolation. Until 2026-11-24 it scored observations built from its own two fixtures and ran no retrieval code, so it could not fail. The replacement runs real retrieval: see `docs/readiness/RAG_RETRIEVAL_GATE_CLOSEOUT_2026_11_24.md`.
+
 PR: [#292](https://github.com/axxess-triaxis/AXXESSTRIAXIS/pull/292), branch `security/pnpm-overrides-audit-fixes` -> `main`. Merged 2026-08-22 09:28 UTC. Plus one repo-settings change (no PR -- see Tasks executed).
 
 ## Operation

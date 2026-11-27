@@ -150,3 +150,54 @@ Existing rows are not rewritten.
 | Decision | Date | Session/tool | Issue ID | Why | Outcome | Commit/PR | Verification | Closeout |
 |---|---|---|---|---|---|---|---|---|
 | Run the cross-product staging test (AXXESS, Callismatic, Omnidamus, STILL) from GitHub every Monday 03:30 UTC, with a GitHub issue opened on failure | 2026-11-19 | Founder: "Yes, weekly", "Yes, set it up"; executed by Claude Code | STACK-E2E-WEEKLY | Founder asked whether the harness works at the meta level; the test had only ever run from the founder's laptop and nothing checked the four products together on a schedule | Passed: first GitHub run 44535298156, 5 of 5 scenarios in 7.7 min (lead to task, Omnidamus conversation to task with no real send, duplicate makes one task, spam makes none, malformed event reaches the failure queue) | #548; AWS stack `axxess-stack-e2e-github-role` (OIDC role `axxess-stack-e2e-github`, staging environment only, five staging actions) | `aws cloudformation validate-template`; GitHub run 44535298156 | This row. Open: Callismatic lead labelling can still vary, so a weekly failure may be a model wobble rather than a break. Secrets were set by the founder; the Callismatic staging admin key rotation is founder-reported, not verified here |
+| Set org B up by SQL for the two-organization stack test instead of waiting for the operator panel | 2026-11-24 | Founder ran it, proposed by Claude Code | CUSTOMER-FIREABLE-STACK | The panel did not appear on staging and the test needs only the stored settings | Passed on staging: run 45347097022, 7 of 7. Panel cause: Pending, review by 2026-12-08 | #557, merge `b482c7b1` | One task in org B, none in org alpha, forged results 409, 404 and 401 | `STACK_TWO_ORG_E2E_CLOSEOUT_2026_11_24.md` |
+
+## RAG gate runs real retrieval (2026-11-24)
+
+| Decision | Date | Session/tool | Issue ID | Why | Outcome | Commit/PR | Verification | Closeout |
+|---|---|---|---|---|---|---|---|---|
+| Replace the self-passing RAG release gate with one that runs production retrieval on a disposable Supabase stack; no LangChain, LangGraph or MongoDB | 2026-11-24 | Founder intent, executed by Claude Code | RAG-REAL-GATE | The old gate scored observations built from its own fixtures, so its passes were not evidence and later comparisons had no honest baseline | Gate passes on real retrieval and fails on real breakages. Merged 2026-11-25 as `306f2c89`, deployed; signed-in check: Pending, review by 2026-12-08 | #574, measured on `5b1e7dcf` | CI runs 45447751231 (red first), 45451898878 (pass, 9 of 9 breakage runs caught), 45452956838 (pushed break failed) | `RAG_RETRIEVAL_GATE_CLOSEOUT_2026_11_24.md` |
+| Enforce the `rag_release_gates` admin rule in `POST /api/rag/evaluation` with the existing `canManageOrganization` helper | 2026-11-25 | Founder-approved plan, executed by Claude Code | RAG-REAL-GATE | The route writes with the service role, so the admin-only RLS policy never applied and any signed-in user could record gate results | Non-admins get 403 and nothing is written. Merge: Pending, review by 2026-12-08 | `5c287e92` (red), `cb266df3` (fix), stacked on #574 | 6 of 15 route tests failed before, 15 of 15 pass after; full suite 2585 of 2585 with `--pool=forks` | `RAG_RETRIEVAL_GATE_CLOSEOUT_2026_11_24.md` |
+
+## Chunk full text, rank fusion and abstention (2026-11-25)
+
+| Decision | Date | Session/tool | Issue ID | Why | Outcome | Commit/PR | Verification | Closeout |
+|---|---|---|---|---|---|---|---|---|
+| Any-word full text over chunk bodies, coverage-gated rank fusion and two-signal semantic abstention, chosen on golden v1 and reported on held-out v2. Full-text abstention was measured, failed v2, and became a review flag | 2026-11-25 | Founder intent ("Start stacked now"), executed by Claude Code | RAG-RETRIEVAL-QUALITY | Full text served 9 of 108 questions, codes ranked low, nothing abstained | Measured, see closeout. Merged 2026-11-25 as `54b62521` and deployed; inactive until the migration. Migration: Pending, review by 2026-12-09 | #575 | RAG gate runs listed in the closeout | `RAG_RETRIEVAL_QUALITY_CLOSEOUT_2026_11_25.md` |
+
+## Approval load (2026-11-25)
+
+| Decision | Date | Session/tool | Issue ID | Why | Outcome | Commit/PR | Verification | Closeout |
+|---|---|---|---|---|---|---|---|---|
+| Auto-fix on without asking, and 50 to 70% fewer approval questions by doing reversible steps and batching the rest; critical actions still asked every time, except merges covered below | 2026-11-25 | Founder instruction, executed by Claude Code | APPROVAL-LOAD | In the RAG retrieval session the agent asked 9 next-step questions between its gate passing and the docs PR, and one merge took more than one ask | Pending, review by 2026-12-09: count questions per session against 9 | #578 | Baseline, counted from that session's next-step questions: Auto-fix 2, #574 merge 4, deploy check 1, #575 merge 1, docs PR 1; 9 in all | This row |
+| Merge fully ready PRs without waiting for an explicit request, with "fully ready" defined in `CLAUDE.md` and the merge-triggered deploy included | 2026-11-25 | Founder instruction, executed by Claude Code | MERGE-WHEN-READY | Most approval questions were about merges already green | Pending, review by 2026-12-09: merges made, live checks, reverts | #578 | Open PRs audited 2026-11-25 (20 open): reasons recorded in the session report | This row |
+
+## Approved calls from revoked agent keys (2026-11-25)
+
+| Decision | Date | Session/tool | Issue ID | Why | Outcome | Commit/PR | Verification | Closeout |
+|---|---|---|---|---|---|---|---|---|
+| Check the agent connection when an approved call runs, and before an Always Allow grant: revoked, missing or without the capability means failed, not run | 2026-11-25 | Claude Code finding, founder chose to fix it | AGENT-REVOKED-APPROVALS | A key revoked while its call waited still had the call run on approval | Shipped 2026-11-26: #583 merged as `aa90680f`, deploy run 45814407393, live check 11:58 UTC passed. Refusing a real revoked key: Pending, review by 2026-12-09 | #583, `3a5a55a6` (red), `5e303380` (fix) | 3 of 24 tests failed on the old code, all pass on the new; full suite 2674 of 2674 with `--pool=forks --maxWorkers=2` | `REVOKED_AGENT_APPROVALS_CLOSEOUT_2026_11_25.md` |
+
+## Server-side AI routing context (2026-11-25)
+
+| Decision | Date | Session/tool | Issue ID | Why | Outcome | Commit/PR | Verification | Closeout |
+|---|---|---|---|---|---|---|---|---|
+| Build the AI routing context on the server from an allowlist; the tenant policy is server-only and a caller can only raise sensitivity | 2026-11-25 | Founder-approved plan (step A0), executed by Claude Code | AI-ROUTING-CONTEXT | The prompt classifier planned next needs one place that decides routing | Pending, review by 2026-12-09 | #580 | Regression tests 8 failed, 10 passed before; all pass after | After deploy |
+
+## LangSmith tracing, local only (2026-11-25)
+
+| Decision | Date | Session/tool | Issue ID | Why | Outcome | Commit/PR | Verification | Closeout |
+|---|---|---|---|---|---|---|---|---|
+| Trace Copilot and all `routeAiRequest` calls in LangSmith from a developer machine only, with masked content; refused in code anywhere else. Tracing only: the 2026-11-24 "no LangChain" decision for the RAG gate still holds | 2026-11-25 | Founder choice, executed by Claude Code | LANGSMITH-TRACING | Tenants default to zero data retention and LangSmith stores what it receives | Shipped off in production (landing, investor and lite). Usefulness pending, review by 2026-12-09 | #584 (`b677d0f6`) | Live traces read back from LangSmith 2026-11-25 10:53 to 11:00 UTC; nothing stored in the two off modes | `docs/readiness/LANGSMITH_TRACING_CLOSEOUT_2026_11_25.md` |
+
+## Vercel deploy budget (2026-11-26)
+
+| Decision | Date | Session/tool | Issue ID | Why | Outcome | Commit/PR | Verification | Closeout |
+|---|---|---|---|---|---|---|---|---|
+| Stay on Vercel's free plan. To get under its 100-a-day cap, stop creating deployments no one uses: no Git deployments for `docs/**` and `dependabot/**` branches; each production site built once per merge (landing on Git only); previews on the landing project only, once the founder disconnects Git on investor and the app. No `ignoreCommand`, because Vercel counts a canceled build as a full deployment | 2026-11-26 | Founder-approved plan, executed by Claude Code | VERCEL-DEPLOY-BUDGET | 440 deployments in the 7 days to 2026-11-26 04:33 UTC (144 on 2026-11-25); production deploy of `754524ff` refused (run 45587323339) | Pending, review by 2026-12-03 (re-run `node scripts/measure-vercel-deployments.mjs --days 7`; expected about 351 with the repo part alone, about 161 after both dashboard steps) | PR for branch `ci/vercel-deploy-budget` | `scripts/vercel-deploy-budget.test.mjs` (dry run on last week's branches), `scripts/investor-sync-lib.test.mjs` | `docs/readiness/VERCEL_DEPLOY_BUDGET_CLOSEOUT_2026_11_26.md` |
+
+## Ops agent MCP server support (2026-11-25)
+
+| Decision | Date | Session/tool | Issue ID | Why | Outcome | Commit/PR | Verification | Closeout |
+|---|---|---|---|---|---|---|---|---|
+| Make agent `tools/call` retries safe with a caller key stored in the existing UNIQUE `idempotency_key`, and let an agent read its own pending call through an opt-in tool; `executed` without a result is `unknown` | 2026-11-25 | Founder-approved plan, executed by Claude Code | OPS-AGENT-B1 | A client retrying after a timeout created a second approval request and could not read the decision or result | Shipped 2026-11-26: #579 merged as `1610d821`, deploy run 45817267599, live check 12:26 UTC passed. Use by a real worker: Pending, review by 2026-12-09 (first staging run) | #579, `5ed8df9f` (red), `ec13fe28` (implementation) | 24 of 32 tests failed on the old code, all pass on the new; full suite 2656 of 2656 with `--pool=forks --maxWorkers=2` | `MCP_IDEMPOTENT_TOOL_CALLS_CLOSEOUT_2026_11_25.md` |

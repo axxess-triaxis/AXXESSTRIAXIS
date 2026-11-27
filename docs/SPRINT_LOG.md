@@ -608,6 +608,8 @@ Sprint 26 connects the strongest AXXESS modules into one visible enterprise oper
 
 ## Sprint 25 - Token Vault, Gmail Import, Snapshot Fan-Out, And RAG Release Gates
 
+> **Correction, 2026-11-24:** the RAG release gate cited here is not evidence of retrieval quality or tenant isolation. Until 2026-11-24 it scored observations built from its own two fixtures and ran no retrieval code, so it could not fail. The replacement runs real retrieval: see `docs/readiness/RAG_RETRIEVAL_GATE_CLOSEOUT_2026_11_24.md`.
+
 Sprint 25 hardens Sprint 24 live operations by securing connector token storage, making selected Gmail import real, expanding scheduled snapshot persistence across tenants, and turning RAG evaluation into a production release check.
 
 ### Completed
@@ -644,6 +646,8 @@ Sprint 25 hardens Sprint 24 live operations by securing connector token storage,
 - Add production RAG fixture corpus backed by tenant-safe golden documents.
 
 ## Sprint 24 - Live AI Review, OAuth, Sandbox Runner, And RAG Release Gates
+
+> **Correction, 2026-11-24:** the RAG release gate cited here is not evidence of retrieval quality or tenant isolation. Until 2026-11-24 it scored observations built from its own two fixtures and ran no retrieval code, so it could not fail. The replacement runs real retrieval: see `docs/readiness/RAG_RETRIEVAL_GATE_CLOSEOUT_2026_11_24.md`.
 
 Sprint 24 closes the loop from the Pilot Command Center into tenant-facing operations. It adds a real review inbox, OAuth callback/token exchange, scheduled snapshot persistence, approved sandbox execution evidence, and RAG release gates.
 

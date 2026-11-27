@@ -12,7 +12,7 @@ import {
 } from "../../../../services/agents/agentPendingToolCallRepository";
 import { executePendingToolCall } from "../../../../services/agents/agentPendingToolCallExecutor";
 import { getAgentTool } from "../../../../services/agents/toolRegistry";
-import type { AgentScope } from "../../../../security/agentScope";
+import { agentConnectionRefusal, type AgentScope } from "../../../../security/agentScope";
 
 const decisionRoles = ["Super Admin", "Organization Admin", "Executive", "Manager"];
 
@@ -86,7 +86,13 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   let grantCreated = false;
   // Tools that require a fresh approval every time (approve_sourced_leads) never get a standing grant.
   const freshOnly = Boolean(metadata.toolName && getAgentTool(metadata.toolName)?.requiresFreshApproval);
-  if (body.status === "approved" && body.alwaysAllow && !freshOnly && metadata.agentConnectionId && metadata.toolName) {
+  // Nor does a connection that is revoked, gone, or no longer holds the tool's capability.
+  const grantAllowed = body.status === "approved" && body.alwaysAllow && !freshOnly && metadata.agentConnectionId && metadata.toolName
+    && !agentConnectionRefusal(
+      await getAgentConnectionById(scope.organizationId, metadata.agentConnectionId),
+      getAgentTool(metadata.toolName)?.requiredCapability,
+    );
+  if (grantAllowed && metadata.agentConnectionId && metadata.toolName) {
     const grant = await createGrant({
       organizationId: scope.organizationId,
       agentConnectionId: metadata.agentConnectionId,
@@ -126,7 +132,12 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
           issuedByUserId: connection?.issuedByUserId,
           issuedByRole: connection?.issuedByRole,
         };
-        const outcome = await executePendingToolCall(pendingCall, agentScope);
+        // 2026-11-25: the key may have been revoked, or the tool taken away from it, while the call
+        // waited for this decision. The reserved row then ends as failed and the handler never runs.
+        const refusal = agentConnectionRefusal(connection, getAgentTool(pendingCall.toolName)?.requiredCapability);
+        const outcome = refusal
+          ? { status: "failed" as const, error: refusal }
+          : await executePendingToolCall(pendingCall, agentScope);
         await finalizePendingToolCallExecution({
           organizationId: scope.organizationId,
           id: pendingCall.id,
