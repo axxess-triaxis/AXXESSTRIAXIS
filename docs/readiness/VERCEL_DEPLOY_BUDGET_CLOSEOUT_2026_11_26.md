@@ -110,7 +110,7 @@ Each is reversible. Do them after the merge.
 
 | Case | What GitHub shows |
 |---|---|
-| `docs/**` and `dependabot/**` PRs | No Vercel status at all (no deployment exists), so nothing is pending or failed |
+| `docs/**` and `dependabot/**` PRs | No Vercel status at all (no deployment exists), so nothing is pending or failed. **Corrected 2026-11-26:** Vercel's consolidated status is still posted and stays pending; see `DOCS_PR_VERCEL_STATUS_CLOSEOUT_2026_11_26.md` |
 | After steps 1 and 2 | One Vercel status per PR (landing) |
 | `deploy-app`, while the variable is unset | Skipped |
 

@@ -30,14 +30,20 @@ Three rules apply to every row (`CLAUDE.md`, "Paxel 9.5 Practice Standards -- St
 **Usual Vercel skips (2026-11-26, `docs/VERCEL_DEPLOYMENT.md` "Who deploys what").** These are expected and
 do not mean a check failed:
 
-- `docs/**` and `dependabot/**` PRs have no Vercel status at all, because `vercel.json` creates no deployment
-  for them.
+- `docs/**` and `dependabot/**` PRs have no per-project `Vercel – <project>` status, because `vercel.json`
+  creates no deployment for them. (Corrected 2026-11-26: they do get Vercel's consolidated status, below.)
+- On `docs/**` PRs, Vercel's consolidated status `Vercel Deployments – AXXESS TRIaxis powered by Triaxis
+  Ventures` is posted as `pending`, "Required and affected projects deploying", and never resolves (seen on
+  #582, #592, #597). It counts as a skip only when every changed file ends in `.md` or is a non-code file under `docs/`, no
+  `Vercel – <project>` status exists, and `node scripts/docs-pr-vercel-skip.mjs <pr>` prints `"ok":true`
+  (`CLAUDE.md`, Merge When Ready, condition 2). Not for `dependabot/**` PRs.
 - Once Git is disconnected on `triaxis-product-investor-demo` and `axxesstriaxis`, PRs show only the landing
   Vercel status.
 - The `deploy-app` job in `deploy-production.yml` shows as skipped while `vars.VERCEL_APP_DEPLOY_VIA_CLI` is
   not `true`.
 
-A Vercel status that is present and failed or pending still blocks Merge When Ready.
+Apart from that one exception, a Vercel status that is present and failed or pending still blocks Merge When
+Ready.
 
 None of these replace the standard suite already in `CLAUDE.md` (`pnpm run typecheck`,
 `pnpm --dir apps/mobile run typecheck`, `pnpm run lint` zero-warnings, `pnpm run test`, `pnpm run build`,
